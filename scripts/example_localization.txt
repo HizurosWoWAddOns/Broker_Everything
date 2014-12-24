@@ -1,0 +1,499 @@
+%d unspent talent
+%d unspent talents
+(Unknown)
+(finished)
+(session only)
+-
+12 / 24 hours mode
+24 hours mode
+Abilities|n& Traits
+Active
+Active quests
+Add a currency
+Add a profession
+Addon
+Addon panel
+All
+All qualities
+All qualities (+ vendor price)
+Allow mouseover
+Allows you to adjust the display options.
+Alt
+Alt+Click
+Applicant
+Are you sure you want to Reload the UI?
+Arena
+As tooltip title
+Auto
+Auto repair
+AutoRepair
+Automatic repair failed. Not enough money...
+Automaticly repair your equipment on opening a merchant with repair option.
+Automaticly repaired with guild money
+Automaticly repaired with player money
+Available
+Available Sets:
+Average
+Back
+Bags
+BattleNet
+BattleTag
+Bosses
+Broker as Minimap Buttons
+Broker format
+Broker to alert you if you have mail.
+Broker to allow you to do...Stuff! Switch to windowed mode, reload ui, logout and quit.
+Broker to allow you to toggle the various nameplates. Eg, friendly or hostile.
+Broker to show and switch your character specializations
+Broker to show count of quests in your questlog and quest titles in tooltip.
+Broker to show durability of your gear and estimated repair costs.
+Broker to show filled, total and free count of blag slots
+Broker to show gold information. Shows gold amounts for characters on the same ns.realm and faction and the amount made or lost for the session.
+Broker to show guild information. Guild members currently online, MOTD, guild xp etc.
+Broker to show how much memory are consumed through your addons.
+Broker to show invitations
+Broker to show names of frames under the mouse.
+Broker to show realm or local time
+Broker to show the name of the current Zone and the co-ordinates.
+Broker to show the name of the current zone.
+Broker to show what you are currently tracking. You can also change the tracking types from this broker.
+Broker to show you which friends are online.
+Broker to show your current co-ordinates within the zone.
+Broker to show your current latency. Can be configured to show both Home and/or World latency.
+Broker to show your different currencies.
+Broker to show your frames per second.
+Broker to show your xp. Can be shown either as a percentage, or as values.
+Broker to show, equip, delete, update and save equipment sets
+Broker_Everything will use the new setting on next reload.
+Calendar
+Cancel ticket
+Cfg
+Change Volumes and toogle some audio options.
+Change how much digits display after the dot.
+Change number of displayed addons in module memory.
+Change the color of the icons
+Change the stepping of volume changes.
+Character
+Characters
+Chars under %d only
+Chat command list for /be & /broker_everything
+Chest
+Choose an custom iconset
+Choose how much entries the list of repair costs can have.
+Choose the date format if used in the list of repair costs
+Choose your addon panel that opens if you rightclick on memory broker or disable the right click option.
+Choose your favorite
+Choose your favorite color set in which the percent text in broker should be displayed.
+Choose your favorite display format for the broker button.
+Choose your favorite website for further informations to a quest.
+Click
+Co-ordinates
+Co-ordinates indeterminable
+Co-ordination format
+Collect garbage
+Collecting Garbage...
+Combat
+Comment
+Completed quests
+Contested
+Cooldowns
+Count
+Creations
+Critical low free slots
+Ctrl
+Ctrl+Click
+Currency in title - menu
+Current
+Damage
+Data modules:
+Date format
+Default (no modifier)
+Delete a character from the list
+Delete a set
+Disable Click options
+Disable displaying game icons and use game shortcut instead of
+Disable game icons
+Disable the click options on broker button
+Disabling %s on next reload.
+Display XP in broker
+Display a list of chars on all realms with there mail counts and 3 lowest days before return to sender. Chars with empty mail box aren't displayed.
+Display a list of item qualities
+Display a list of my chars on same realm with her level and xp
+Display a list of the last repair costs in tooltip
+Display a list of your professions
+Display as favorite selected currencies only.
+Display guild level and xp (percent) in broker button
+Display in broker zone and subzone if exists or one of it.
+Display in tooltip a list of your sound output hardware.
+Display mobile chatter with own table in tooltip
+Display one of the selected tracking options in broker text.
+Display selection
+Display the lowest item durability in broker.
+Display the time with seconds in broker button and tooltip
+Display the transport menu without names of spells and items behind the icons.
+Display zone names
+Dualspec
+Edit ticket
+Enable it from the character pane
+Enable to play a sound on receiving a new mail message. Default is off
+Enable/Disable class coloring of the information display suffixes. (eg, ms, fps etc)
+Enable/Disable the display of Guild Reputation in the Guild data broker tooltip.
+Enable/Disable the display of Guild XP in the Guild data broker tooltip.
+Enable/Disable the display of the latency to the home realm
+Enable/Disable the display of the latency to the world realms
+Enable/Disable use of global Broker_Everything profile across all of your characters.
+Enable/disable tooltip scaling.
+Enabling %s on next reload.
+Equip a set
+Equip a set.
+Equipment
+Equipment manager is not enabled
+Exalted
+Experimental
+Expired
+FPS
+Faction
+Failed quests
+Fav. website
+Favorite mode
+Follower
+Framenames
+Free slots
+Friendly
+Friends
+GPS
+GPS / Location / ZoneText
+Game
+Game Menu
+Garrison
+General Options
+Gold
+Gold coloring
+Gold information
+Guild
+Head
+Healer
+Hidden
+Hide Blizzard's minimap calendar button
+Hide blizzard's tracking button on minimap
+Hide calendar button
+Hide copper
+Hide copper values of your money
+Hide minimap button
+Hide minimap mail icon
+Hide section 2
+Hide section 2 in tooltip
+Hide section 3
+Hide section 3 in tooltip
+Hide/Show tooltip hint.
+Hold '..mod])..' || '..C('green',L['Show expire date instead of duration
+Hold modifier key to display tooltip
+Hold modifier key to use mouseover in tooltip
+Home
+Honoured
+Hostile
+How fast are you swimming, walking, riding or flying.
+How would you like to view co-ordinations.
+Icon color
+Iconsets
+In title
+Info
+Inn
+Invitation
+Invitations
+Invite a friend
+Invite a member
+In|nprogress
+Items
+Jewels cooldown group
+Last %d repair costs
+Last 3 new mails
+Latency
+Leather cooldown group
+Leave in mailbox
+Left
+Left alt
+Left ctrl
+Left shift
+Left-click
+Legs
+Level
+List mails on chars
+List of available modules with his status
+List of hardware
+List of repair costs
+Local Time
+Local or server time
+Location
+Logout
+Louder
+Lowest durability
+Lowest item
+Mail
+Mail from
+Max.
+Max. list entries
+Memory
+Memory Usage
+Min.
+Misc
+Missions
+MobileChat
+Module Options
+MotD:
+Mousewheel
+My current broadcast message
+Name
+Name of Equipmentset are invalid
+Nameplates
+Names
+Names/Nameplates on/off
+Neutral
+New mail
+No Guild
+No Mail
+No Spec!
+No Text
+No buildings found...
+No data
+No data found
+No equipment sets found
+No followers found...
+No friends online.
+No invitations found
+No item found.
+No missions found...
+No set found
+No sets found
+No specialisation found
+No spells or items found
+No tracking option active.
+Non empty qualities
+Non empty qualities (+ vendor price)
+None
+None (disable right click)
+Notes
+Officer notes
+On/Off
+Only display my chars under max player level.
+Open
+Open AllInOne panel
+Open GM Ticket
+Open QuestLog and select quest
+Open World map
+Open bags
+Open broker panel
+Open calendar
+Open character info
+Open currency pane
+Open equipment manager
+Open friends roster
+Open graphics menu
+Open graphics set manager
+Open guild roster
+Open interface options
+Open option menu
+Open options panel
+Open profession menu
+Open talents pane
+Open time manager
+Open tracking menu
+Open transport menu
+Options
+Out of Level
+Over
+Percent color set
+Place
+Play sound on new mail
+Playtime
+Precision
+Professions
+Quality
+Quality list
+Quest Log
+QuestId
+Quieter
+Quit Game
+Quit game
+Rank
+Ready
+Real ID
+Realm
+Recruite a Friend
+Reduce the broker text to a number without text
+Reload UI
+Reloads the UI. You must do this to apply any changes in module activation.
+Remove
+Remove all selections from modules
+Remove entry
+Remove the currency
+Rep
+RepairAll
+Reputation discounts
+Reset
+Reset all module settings
+Reset last repairs
+Resets the Broker_Everything Defaults and Reloads the UI.
+Rest
+Revered
+Right
+Right alt
+Right ctrl
+Right shift
+Right-Click
+Right-click
+Ring1
+Ring2
+Roles
+Sanctuary
+Save repair costs
+Save the list of repair costs over the session
+Scale the tooltips with your UIScale. Default is off
+Screen capture mode
+Second tooltip
+Select all
+Select all modules
+Select none
+Select the listed broker to enable/disable. You must Reload UI for any changes to apply.
+Select the maximum free slot count to coloring in red.
+Select the maximum free slot count to coloring in yellow.
+Select the maximum number of addons to display, otherwise drag to 'All'.
+Select to show XP as an absolute value; Deselected will show it as a percentage.
+Separate mobile chatter
+Server Time
+Session
+Session loss
+Session profit
+Set your own Title instead of 'Game Menu'
+Shift
+Shift+Click
+Shift+Left-click
+Shift+Right-click
+Short transport menu
+Shorter Broker
+Shoulder
+Show BattleTags in tooltip
+Show BattleTags in tooltip behind the realID
+Show GMTicket
+Show GMTickets in tooltip and average wait time in broker button
+Show Guild Message of the Day in tooltip
+Show Guild MotD
+Show Guild XP
+Show applicants
+Show applicants in broker and tooltip
+Show cooldowns
+Show discount
+Show guild lvl&xp in broker
+Show guild reputation
+Show hints
+Show hints in tooltips.
+Show home
+Show list of reputation discounts in tooltip
+Show member professions in tooltip
+Show mobile chatter
+Show mobile chatter in tooltip (Armory App users)
+Show other chars xp
+Show professions
+Show quality
+Show quest id's
+Show quest id's in tooltip.
+Show quest items
+Show quest items in tooltip.
+Show realm name
+Show seconds
+Show tooltip
+Show world
+Show/Hide profession cooldowns from all characters.
+Show/Hide realm names behind guild and character names. Guilds and characters from connected-realms gets an asterisk behind the names if this option is unchecked.
+Showing a maximum of %d addons.
+Showing all addons.
+Shown
+SingleRepairSummary
+Sorry
+Sorry, In combat lockdown.
+Speed
+Split Characters and BattleNet-Friends in Tooltip
+Split Characters and BattleNet-Friends on Broker Button
+Split friends|nin Tooltip
+Split friends|non Broker
+Steps
+Stored mails
+Stuff
+Subzone
+Suffix coloring
+Surprise
+Switch between global and per character saved settings
+Switch between local and server time in broker button
+Switch between time format 24 hours and 12 hours with AM/PM
+Switch display
+Switch mode
+Switch spec.
+Switch window/fullscreen mode
+Talents
+Tank
+The screen capture mode replaces all characters of a name with wildcards (*) without the first. Your chars in XP, your friends battleTags/RealID and there character names and the character names in your guild and there notes.
+This option is disabled
+Til Next Level
+Tooltip Scaling
+Total
+Total Gold
+Total Memory usage
+Total slots
+Tracking
+Transmutation cooldown group
+Try fallback to player money.
+Type
+UTC Time
+Under
+Under construction
+Unknown
+Unknown Set
+Unspent talents: %d
+Update/save a set
+Usage: /be equip <SetName>
+Use LibDBIcon to add Broker to Minimap
+Use MouseWheel
+Use a set
+Use colors instead of icons for gold, silver and copper
+Use custom title as tooltip title
+Use global profile
+Use guild money
+Use guild money on auto repair if you can
+Use prefix
+Use prefix 'BE..' on module registration at LibDataBroker. This fix problems with other addons with same broker names but effect your current settings in panel addons like Bazooka or Titan Panel.
+Use the MouseWheel to change the volume
+Vendor price
+Video Volume
+Volume
+Warn low free slots
+Warning
+Where does the second tooltip for a single currency are displayed from the first tooltip
+Whisper with a friend
+Whisper with a member
+Windowed / Fullscreen
+World
+World bosses
+XP
+XP bonus
+XP gain disabled
+Your guild leadership denied the use of guild money for auto repair.
+Your other chars (%s)
+Zone
+Zone status
+ZoneText
+by guild fund
+by player money
+custom Title
+display the content of the tooltip shorter
+free
+iLevel
+mails
+not equipped
+of
+poor and common
+poor and common (+ vendor price)
+poor only
+poor only (+ vendor price)
+saved variables have been reset.
+share
+short Tooltip

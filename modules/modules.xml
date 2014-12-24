@@ -1,0 +1,37 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\..\FrameXML\UI.xsd">
+
+	<Script file="modules.lua"/>
+
+	<Script file="bags.lua"/>
+	<Script file="calendar.lua"/>
+	<Script file="clock.lua"/>
+	<Script file="currency.lua"/>
+	<Script file="dualspec.lua"/>
+	<Script file="durability.lua"/>
+	<Script file="equipment.lua"/>
+	<Script file="followers.lua" /> 
+	<Script file="fps.lua"/>
+	<Script file="framenames.lua"/>
+	<Script file="friends.lua"/>
+	<Script file="gamemenu.lua"/>
+	<Script file="garrison.lua"/>
+	<Script file="gold.lua"/>
+	<Script file="gps.lua"/>
+	<Script file="guild.lua"/>
+	<Script file="ids.lua" />
+	<Script file="latency.lua"/>
+	<Script file="mail.lua"/>
+	<Script file="memory.lua"/>
+	<Script file="missions.lua" />
+	<Script file="nameplates.lua"/>
+	<Script file="professions.lua" />
+	<Script file="questlog.lua"/>
+	<Script file="speed.lua" />
+	<Script file="stuff.lua" />
+	<Script file="surprise.lua"/>
+	<Script file="tracking.lua"/>
+	<Script file="volume.lua"/>
+	<Script file="xp.lua"/>
+
+</Ui>

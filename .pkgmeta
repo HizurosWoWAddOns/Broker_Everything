@@ -1,0 +1,35 @@
+package-as: Broker_Everything
+
+tools-used:
+	- data-tools
+	- dlcount
+	- findglobals
+
+externals:
+	libs/LibStub:
+		url: svn://svn.wowace.com/wow/libstub/mainline/trunk
+		tag: latest
+	libs/CallbackHandler-1.0:
+		url: svn://svn.wowace.com/wow/callbackhandler/mainline/trunk/CallbackHandler-1.0
+		tag: latest
+	libs/LibDataBroker-1.1:
+		url: git://github.com/tekkub/libdatabroker-1-1.git
+		tag: latest
+	libs/LibDBIcon-1.0:
+		url: svn://svn.wowace.com/wow/libdbicon-1-0/mainline/trunk/LibDBIcon-1.0
+		tag: latest
+	libs/LibQTip-1.0:
+		url: svn://svn.wowace.com/wow/libqtip-1-0/mainline/trunk
+		tag: latest
+	libs/LibSharedMedia-3.0:
+		url: svn://svn.wowace.com/wow/libsharedmedia-3-0/mainline/trunk
+		tag: latest
+	libs/LibColors-1.0:
+		url: git://git.curseforge.net/wow/libstringcoloring-1-0/mainline.git
+		tag: latest
+
+enable-nolib-creation: no
+
+ignore:
+	- .pkgmeta
+	- changelog.txt

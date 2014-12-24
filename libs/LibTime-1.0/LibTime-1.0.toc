@@ -1,0 +1,8 @@
+## Interface: 60000
+## Title: LibTime-1.0
+## Notes: A little library around date, time and GetGameTime and more...
+## Author: Hizuro@Der Mithrilorden.EU
+## Version: 1.0 r1
+## OptionalDeps: LibStub
+
+LibTime-1.0.xml
