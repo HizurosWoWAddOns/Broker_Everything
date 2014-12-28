@@ -33,3 +33,4 @@ enable-nolib-creation: no
 ignore:
 	- .pkgmeta
 	- changelog.txt
+	- modules/under_construction
