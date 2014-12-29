@@ -35,7 +35,6 @@ ns.modules[name] = {
 		"PLAYER_LOGIN",
 		"GUILD_ROSTER_UPDATE",
 		"PLAYER_ENTERING_WORLD",
-		"GUILD_XP_UPDATE",
 		"CHAT_MSG_SYSTEM",
 		"LF_GUILD_RECRUITS_UPDATED",
 		"GUILD_TRADESKILL_UPDATE",
@@ -551,7 +550,7 @@ ns.modules[name].onevent = function(self,event,msg)
 		ns.modules[name].onupdate();
 	end
 
-	if (event=="GUILD_ROSTER_UPDATE") or (event=="GUILD_XP_UPDATE") or (event=="LF_GUILD_RECRUITS_UPDATED") or (event=="BE_DUMMY_EVENT") or (event=="CHAT_MSG_SYSTEM" and (msg:find(off) or msg:find(on))) then
+	if (event=="GUILD_ROSTER_UPDATE") or (event=="LF_GUILD_RECRUITS_UPDATED") or (event=="BE_DUMMY_EVENT") or (event=="CHAT_MSG_SYSTEM" and (msg:find(off) or msg:find(on))) then
 		local totalGuildMembers, membersOnline = GetNumGuildMembers();
 		local numApplicants = (Broker_EverythingDB[name].showApplicants) and GetNumGuildApplicants() or 0;
 
