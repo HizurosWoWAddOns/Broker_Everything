@@ -302,7 +302,7 @@ ns.modules[name].onevent = function(self,event,msg)
 		data.xpMax       = UnitXPMax("player")
 		data.xpPercent   = math.floor((data.xp / data.xpMax) * 100).."%"
 		data.xpNeed      = data.xpMax - data.xp
-		data.xpRest      = GetXPExhaustion()
+		data.xpRest      = GetXPExhaustion() or 0;
 		data.xpRestStr   = (data.xp+data.xpRest>data.xpMax) and ">100%+" or ">"..("%1.2f%%"):format((data.xp+data.xpRest)/data.xpMax*100);
 	end
 
