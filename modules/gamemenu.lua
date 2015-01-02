@@ -64,9 +64,9 @@ local menu = { --section 1
 	{name=BLIZZARD_STORE,		iconName="Store",			click='StoreMicroButton',															disabled=IsTrialAccount(), taint=true},
 	{sep=true}, -- section 2
 	{name=GAMEMENU_HELP,		iconName="Help",			func=function() securecall("ToggleHelpFrame") end,		},
-	{name=SYSTEMOPTIONS_MENU,	iconName="SysOpts",			func=function() securecall("ShowUIPanel", VideoOptionsFrame) end,		},
+	{name=SYSTEMOPTIONS_MENU,	iconName="SysOpts",			func=function() securecall("VideoOptionsFrame_Toggle") end,		},
 	{name=KEY_BINDINGS,			iconName="KeyBinds",		func=function() securecall("KeyBindingFrame_LoadUI") securecall("ShowUIPanel", KeyBindingFrame) end,		taint=true},
-	{name=UIOPTIONS_MENU,		iconName="UiOpts",			func=function() securecall("ShowUIPanel", InterfaceOptionsFrame) end,		},
+	{name=UIOPTIONS_MENU,		iconName="UiOpts",			func=function() securecall("InterfaceOptionsFrame_Show") end,		},
 	{name=MACROS,				iconName="Macros",			func=function() securecall("ShowMacroFrame") end,		},
 	{name=MAC_OPTIONS,			iconName="MacOpts",			func=function() securecall("ShowUIPanel", MacOptionsFrame) end,		 view=IsMacClient()==true},
 	{name=ADDONS,				iconName="Addons",			view=( (IsAddOnLoaded("OptionHouse")) or (IsAddOnLoaded("ACP")) or (IsAddOnLoaded("Ampere")) or (IsAddOnLoaded("stAddonManager")) or (_G.AddonList) ),
