@@ -279,7 +279,7 @@ local build = {
 			else
 				self.Current:SetFormattedText(data.pat, value);
 			end
-			panel:change(data.modName,data.name,value);
+			panel:change(data.modName,data.name,(type(data.pat)=="string") and data.pat:format(value) or value);
 		end);
 		parent[Index]:SetHeight(e:GetHeight()+30);
 	end,
