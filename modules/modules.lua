@@ -75,6 +75,7 @@ local function moduleInit(name)
 				-- button data
 				type          = "data source",
 				label         = data.label or L[name],
+				text          = data.text or L[name],
 				icon          = icon.iconfile, -- default or custom icon
 				staticIcon    = icon.iconfile, -- default icon only
 				iconCoords    = icon.coords or {0, 1, 0, 1},
