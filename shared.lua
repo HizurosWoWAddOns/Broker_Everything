@@ -1132,7 +1132,7 @@ end
 ns.DurationOrExpireDate = function(timeLeft,lastTime,durationTitle,expireTitle)
 	local mod = "shift";
 	timeLeft = timeLeft or 0;
-	if (type(lastUpdate)=="number") then
+	if (type(lastTime)=="number") then
 		timeLeft = timeLeft - (time()-lastTime);
 	end
 	if (IsShiftKeyDown()) then
