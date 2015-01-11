@@ -235,51 +235,60 @@ local build = {
 	slider = function(parent,index,data)
 		local Index,cur = init(parent,index,data);
 		local e = parent[Index].__slider;
+
 		if (data.modName) then
 			cur = Broker_EverythingDB[data.modName][data.name];
 		else
 			cur = Broker_EverythingDB[data.name];
 		end
+
 		e.data=data;
 		e.Low,e.High = _G[e:GetName().."Low"],_G[e:GetName().."High"];
 		e.Text:SetText(data.label);
-		if (data.rep) and (data.rep[data.min])then
-			e.Low:SetText(data.rep[data.min]);
-		else
-			e.Low:SetFormattedText(data.pat,data.min);
-		end
-		if (data.rep) and (data.rep[data.max]) then
-			e.High:SetText(data.rep[data.max]);
-		else
-			e.High:SetFormattedText(data.pat,data.max);
-		end
-		if (data.rep) and (data.rep[cur]) then
-			e.Current:SetText(data.rep[cur]);
-		else
-			e.Current:SetFormattedText(data.pat, cur);
-		end
 		e:SetMinMaxValues(data.min,data.max);
+
+		if (data.format) then
+			data.min = tonumber(data.format:format(data.min));
+			data.max = tonumber(data.format:format(data.max));
+			cur = tonumber(data.format:format(cur));
+		end
+
 		if(data.step)then
 			e:SetValueStep(data.step);
 		end
-		if (cur) then
-			e.value = ("%d"):format(cur);
-		else
-			e.value = data.default;
-		end
+		e.value = cur;
 		e:SetValue(e.value);
+
+		do
+			local m,M,c = data.min,data.max,cur;
+			if (data.rep) then
+				if (data.rep[data.min]) then
+					m = data.rep[m];
+				end
+				if (data.rep[data.max]) then
+					M = data.rep[M];
+				end
+				if (data.rep[cur]) then
+					c = data.rep[c];
+				end
+			end
+
+			e.Low:SetText(m);
+			e.High:SetText(M);
+			e.Current:SetText(c);
+		end
+
 		e:SetScript("OnValueChanged",function(self)
 			local value = self:GetValue();
 			if (data.format) then
-				value = data.format:format(value);
+				value = tonumber(data.format:format(value));
 			end
 			self:SetValue(value)
+			panel:change(data.modName,data.name,value);
 			if (data.rep) and (data.rep[value]) then
-				self.Current:SetText(data.rep[value]);
-			else
-				self.Current:SetFormattedText(data.pat, value);
+				value = data.rep[value];
 			end
-			panel:change(data.modName,data.name,(type(data.pat)=="string") and data.pat:format(value) or value);
+			self.Current:SetText(value);
 		end);
 		parent[Index]:SetHeight(e:GetHeight()+30);
 	end,
