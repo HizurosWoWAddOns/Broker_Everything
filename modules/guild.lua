@@ -526,7 +526,7 @@ local function guildTooltip()
 	end
 
 	tt:AddSeparator(1,0,0,0,0);
-	tt:UpdateScrolling(WorldFrame:GetHeight() * Broker_EverythingDB.maxTooltipHeight);
+	tt:UpdateScrolling(GetScreenHeight() * (Broker_EverythingDB.maxTooltipHeight/100));
 end
 
 

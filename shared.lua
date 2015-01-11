@@ -209,7 +209,7 @@ ns.createTooltip = function(frame, tooltip, SetOnLeave)
 			ns.hideTooltip(self,self.key,true);
 		end
 	end);
-	tooltip:UpdateScrolling(WorldFrame:GetHeight() * (Broker_EverythingDB.maxTooltipHeight/100));
+	tooltip:UpdateScrolling(GetScreenHeight() * (Broker_EverythingDB.maxTooltipHeight/100));
 	tooltip:Show()
 end
 
