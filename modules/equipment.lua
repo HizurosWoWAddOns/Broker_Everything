@@ -266,9 +266,11 @@ ns.modules[name].ontooltip = function(tt)
 					local line = ns.AddSpannedLine(tt, "|T"..icon..":0|t "..formatName, ttColumns);
 					tt:SetLineScript(line, "OnMouseUp", function(self) 
 						if (IsShiftKeyDown()) then 
+							if (tt) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
 							local dialog = StaticPopup_Show('CONFIRM_SAVE_EQUIPMENT_SET', eName);
 							dialog.data = eName;
 						elseif (IsControlKeyDown()) then
+							if (tt) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
 							local dialog = StaticPopup_Show('CONFIRM_DELETE_EQUIPMENT_SET', eName);
 							dialog.data = eName;
 						else
