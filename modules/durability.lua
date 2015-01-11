@@ -123,7 +123,7 @@ ns.modules[name] = {
 		{ type="toggle", name="chatRepairInfo", label=L["Repair info"], tooltip=L["Post repair actions in chatframe"] },
 		{ type="toggle", name="listCosts", label=L["List of repair costs"], tooltip=L["Display a list of the last repair costs in tooltip"] },
 		{ type="toggle", name="saveCosts", label=L["Save repair costs"], tooltip=L["Save the list of repair costs over the session"] },
-		{ type="slider", name="maxCosts", label=L["Max. list entries"], tooltip=L["Choose how much entries the list of repair costs can have."], min=1, max=50, default=5, pat="%d" },
+		{ type="slider", name="maxCosts", label=L["Max. list entries"], tooltip=L["Choose how much entries the list of repair costs can have."], min=1, max=50, default=5, format="%d" },
 	},
 	clickOptions = {
 		["1_open_character_info"] = {

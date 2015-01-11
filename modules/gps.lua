@@ -110,7 +110,7 @@ ns.modules[name0] = {
 			min			= 0,
 			max			= 3,
 			default		= 0,
-			pat			= "%d"
+			format		= "%d"
 		}
 	}
 }
@@ -179,7 +179,7 @@ ns.modules[name2] = {
 	updateinterval = nil,
 	config_defaults = nil,
 	config_prepend = name0,
-	config = {},
+	config = nil,
 	clickOptions = {
 		["1_open_world_map"] = {
 			cfg_label = "Open World map",

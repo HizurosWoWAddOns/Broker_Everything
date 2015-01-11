@@ -78,8 +78,8 @@ ns.modules[name] = {
 		{ type="toggle", name="freespace",   label=L["Show freespace"],   tooltip=L["Show bagspace instead used and max. bagslots in broker button"], event=true },
 		{ type="toggle", name="showQuality", label=L["Show quality"],     tooltip=L["Display a list of item qualities"], event=true },
 		{ type="select", name="qualityMode", label=L["Quality list"],     tooltip=L["Choose your favorite"], default="1", values=qualityModeValues },
-		{ type="slider", name="critLowFree", label=L["Critical low free slots"], tooltip=L["Select the maximum free slot count to coloring in red."], min=1, max=50, default=5, pat = "%d", event=true },
-		{ type="slider", name="warnLowFree", label=L["Warn low free slots"], tooltip=L["Select the maximum free slot count to coloring in yellow."], min=2, max=100, default=15, pat = "%d", event=true }
+		{ type="slider", name="critLowFree", label=L["Critical low free slots"], tooltip=L["Select the maximum free slot count to coloring in red."], min=1, max=50, default=5, format = "%d", event=true },
+		{ type="slider", name="warnLowFree", label=L["Warn low free slots"], tooltip=L["Select the maximum free slot count to coloring in yellow."], min=2, max=100, default=15, format = "%d", event=true }
 
 		--{ type="separator", alpha=0 },
 		--{ type="header", label=L["Crap selling options"] },

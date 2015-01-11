@@ -74,7 +74,7 @@ ns.modules[name] = {
 			default = -1,
 			min = -1,
 			max = 100,
-			pat = "%d",
+			format = "%d",
 			rep = {[-1]=L["All"]}
 		},
 		{ type="select", name="addonpanel", label=L["Addon panel"], tooltip=L["Choose your addon panel that opens if you rightclick on memory broker or disable the right click option."], default = "none", values = addonpanels_select },

@@ -71,7 +71,7 @@ ns.modules[name] = {
 		{ type="header", label=L[name], align="left", icon=I[name..'_100'] },
 		{ type="separator" },
 		{ type="toggle", name="useWheel", label=L["Use MouseWheel"], tooltip=L["Use the MouseWheel to change the volume"] },
-		{ type="slider", name="steps", label=L["Change steps"], tooltip=L["Change the stepping width for volume changes with mousewheel and clicks."], min=1, max=100, default=10, pat = "%d" },
+		{ type="slider", name="steps", label=L["Change steps"], tooltip=L["Change the stepping width for volume changes with mousewheel and clicks."], min=1, max=100, default=10, format = "%d" },
 		{ type="toggle", name="listHardware", label=L["List of hardware"], tooltip=L["Display in tooltip a list of your sound output hardware."] },
 	},
 	clickOptions = {
