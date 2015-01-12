@@ -320,8 +320,13 @@ ns.modules[name].ontooltip = function(tt)
 		if (none) then
 			local l = tt:AddLine();
 			tt:SetCell(l,1,L["All slots are empty"],nil,nil,ttColumns);
-		elseif (miss) then
-			tt:AddSeparator();
+		end
+		tt:AddSeparator();
+		local _, avgItemLevelEquipped = GetAverageItemLevel();
+		local avgItemLevelEquippedf = floor(avgItemLevelEquipped);
+		local l = tt:AddLine(nil,nil,C(GetILevelColor(avgItemLevelEquippedf),"%.1f"):format(avgItemLevelEquipped));
+		tt:SetCell(l,1,C("ltblue",STAT_AVERAGE_ITEM_LEVEL),nil,nil,2);
+		if (miss) then
 			ns.AddSpannedLine(tt,C("red","#")..": "..C("ltgray",L["Item is not enchanted."]),ttColumns);
 		end
 	end
