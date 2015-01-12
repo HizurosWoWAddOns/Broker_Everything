@@ -184,9 +184,10 @@ local function makeTooltip(tt)
 		tt:AddLine(C("ltblue",L["Available blueprints level 3"]));
 		tt:AddSeparator();
 		for i,v in ipairs(blueprints3) do
-			local l = tt:AddLine(("|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltyellow","%s")):format(v.icon,v.name));
-			tt:SetCell(l,2, ("|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltyellow","%s")):format(v.iicon,v.iname), nil,nil,5);
-			--
+			if (v.iicon) and (v.iname) then
+				local l = tt:AddLine(("|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltyellow","%s")):format(v.icon,v.name));
+				tt:SetCell(l,2, ("|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltyellow","%s")):format(v.iicon,v.iname), nil,nil,5);
+			end
 		end
 	end
 
