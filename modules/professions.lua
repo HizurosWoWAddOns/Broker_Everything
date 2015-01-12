@@ -500,6 +500,9 @@ ns.modules[name].onevent = function(self,event,arg1)
 				if (n<=2) then -- ?
 					short[n] = {d[nameEnglish],d[nameLocale],d[icon],d[skill],d[maxSkill],d[skillId],d[spellId]};
 				end
+				if (n==4) then -- hide fishing in profession menu to prevent error message
+					d[disabled]=true;
+				end
 			elseif (n<=2) then
 				d[nameLocale] = (n==1) and PROFESSIONS_FIRST_PROFESSION or PROFESSIONS_SECOND_PROFESSION;
 				d[icon] = icon_placeholder;
