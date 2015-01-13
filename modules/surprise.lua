@@ -27,7 +27,7 @@ local founds,counter,items = {},{},{
 	[39883] = {ITEM_LOOTABLE}, -- Cracked Egg (prev.: Mysterious Egg)
 	[44718] = {ITEM_LOOTABLE}, -- Ripe Disgusting Jar (prev.: Disgusting Jar)
 	[94296] = {ITEM_LOOTABLE},  -- Cracked Primal Egg (prev.: Primal Egg)
-	[118206] = {ITEM_LOOTABLE} -- Cracked Goren Egg
+	[118706] = {ITEM_LOOTABLE} -- Cracked Goren Egg
 }
 
 
