@@ -1,11 +1,12 @@
 
+be_garrison_db = {};
 ----------------------------------
 -- module independent variables --
 ----------------------------------
-	local addon, ns = ...
-	local C, L, I = ns.LC.color, ns.L, ns.I
+local addon, ns = ...
+local C, L, I = ns.LC.color, ns.L, ns.I
 
-	if ns.build<60000000 then return end
+if ns.build<60000000 then return end
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
@@ -20,6 +21,7 @@ local longer = false;
 local displayAchievements=false;
 local buildings2achievements = {[9]=9129,[25]=9565,[27]=9523,[35]=9703,[38]=9497,[41]=9429,[62]=9453,[66]=9526,[117]=9406,[119]=9406,[121]=9406,[123]=9406,[125]=9406,[127]=9406,[129]=9406,[131]=9406,[134]=9462,[136]=9454,[140]=9468,[142]=9487,[144]=9478,[160]=9495,[163]=9527,[167]=9463};
 local blueprintsL3 = {[9]=111967,[25]=111969,[27]=111971,[35]=109065,[38]=109063,[41]=109255,[62]=111996,[66]=112003,[117]=111991,[119]=111930,[121]=111989,[123]=109257,[125]=111973,[127]=111993,[129]=111979,[131]=111975,[134]=111928,[136]=111997,[140]=111977,[142]=111983,[144]=111987,[160]=111981,[163]=111985,[167]=111999};
+local jobslots = {[25]=1,[27]=1,[28]=1,[52]=1,[60]=1,[62]=1,[63]=1,[76]=1,[90]=1,[91]=1,[93]=1,[94]=1,[95]=1,[96]=1,[117]=1,[118]=1,[119]=1,[120]=1,[121]=1,[122]=1,[123]=1,[124]=1,[125]=1,[126]=1,[127]=1,[128]=1,[129]=1,[130]=1,[131]=1,[132]=1,[133]=1,[135]=1,[136]=1,[137]=1,[138]=1};
 
 
 -------------------------------------------
@@ -144,7 +146,7 @@ local function makeTooltip(tt)
 						(v.canUpgrade) and "|T"..ns.media.."GarrUpgrade:12:12:0:0:32:32:4:24:4:24|t" or "",
 						v.name
 					),
-					(v.follower) and C(v.follower.class,v.follower.name) .. C(qualities[v.follower.quality], " ("..v.follower.level..")") or "",
+					((v.follower) and C(v.follower.class,v.follower.name) .. C(qualities[v.follower.quality], " ("..v.follower.level..")")) or ((jobslots[v.buildingID]~=nil) and C("gray","< "..L["free worker slot"].." >")) or "",
 					(v.shipmentCapacity) and v.shipmentCapacity or "",
 					(v.shipmentCapacity and v.shipmentsReady>0) and v.shipmentsReady or "",
 					(v.shipmentCapacity and v.shipmentsTotal>0) and (v.shipmentsTotal - v.shipmentsReady) or "",
@@ -430,3 +432,16 @@ end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 
+--[[
+
+SHOW_LOOT_TOAST
+	local typeIdentifier, itemLink, quantity, specID, sex, isPersonal, lootSource = ...;
+	if (not be_garrison_db[ns.player.name.."-"..ns.realm]) then be_garrison_db[ns.player.name.."-"..ns.realm] = {}; end
+	local db = be_garrison_db[ns.player.name.."-"..ns.realm];
+	if (isPersonal==true) and (typeIdentifier=="currency") and (lootSource==LOOT_SOURCE_GARRISON_CACHE) then
+		tinsert(db,{
+			last = time(),
+			count = quantity
+		});
+	end
+]]
