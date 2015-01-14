@@ -128,7 +128,7 @@ local cdSpells = {
 		[140050]	= {group=0,	type=2}, -- Serpent's Heart
 		[170700]	= {group=0,	type=2}, -- Taladite Crytal						[wod beta]
 		[170832]	= {group=0,	type=2}, -- Taladite Crytal						[wod beta, maybe a replacement on max skill level]
-		[176087]	= {group=0, type=1}, -- Secrets of Draenor Jewelcrafting	[wod beta, research]
+		[176087]	= {group=0, type=2}, -- Secrets of Draenor Jewelcrafting	[wod beta, research]
 	},
 	["Tailoring"] = {
 		[75141]		= {group=0,	type=1}, -- Dream of Skywall
@@ -141,7 +141,7 @@ local cdSpells = {
 		[143011]	= {group=0,	type=2}, -- Celestial Cloth
 		[168835]	= {group=0,	type=2}, -- Hexweave Cloth						[wod beta]
 		[169669]	= {group=0,	type=2}, -- Hexweave Cloth						[wod beta, maybe a replacement on max skill level]
-		[176058]	= {group=0, type=1}, -- Secrets of Draenor Tailoring		[wod beta, research]
+		[176058]	= {group=0, type=2}, -- Secrets of Draenor Tailoring		[wod beta, research]
 	},
 	["Inscription"] = {
 		[61288]		= {group=0,	type=2}, -- Minor Glyph Research
