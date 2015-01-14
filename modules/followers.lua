@@ -133,7 +133,7 @@ local function getFollowers()
 end
 
 local function makeTooltip(tt)
-	local colors, qualities,count = {"ltblue","yellow","yellow","green","red"},{"white","ff1eaa00","ff0070dd","ffa335ee"},0
+	local colors, qualities,count = {"ltblue","yellow","yellow","green","red"},{"white","ff1eaa00","ff0070dd","ffa335ee","ffff8000"},0
 	local statuscolors = {["onresting"]="ltblue",["onwork"]="orange",["onmission"]="yellow",["available"]="green",["disabled"]="red"};
 	tt:AddHeader(C("dkyellow",L["Follower"]));
 
