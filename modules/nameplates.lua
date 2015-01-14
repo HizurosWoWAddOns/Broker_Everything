@@ -146,11 +146,8 @@ ns.modules[name].ontooltip = function(tt)
 	local _, line, cell = nil,false,1
 	for _, v in ipairs(nameplateStatus) do
 
-		if (v[1]=="string") then
-			local d = {strsplit("|",v[1])};
-			if (#d>1) then
-				v[1]=d[1];
-			end
+		if (type(v[1])=="string") and (v[1]:find("\124")) then
+			v[1]=gsub(v[1],"\124T.+\124t","");
 		end
 		if v[1]==true then
 			tt:AddSeparator(1,0,0,0,0) -- transparent
