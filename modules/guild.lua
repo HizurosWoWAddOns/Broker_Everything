@@ -57,6 +57,7 @@ ns.modules[name] = {
 		-- misc
 		showApplicants = true,
 		showMobileChatter = true,
+		showMobileChatterBroker = true,
 		splitTables = false,
 	},
 	config_allowed = {
@@ -74,6 +75,7 @@ ns.modules[name] = {
 		{ type="toggle", name="showProfessions",		label=L["Show professions"],			tooltip=L["Show professions from guild members"], event = true },
 		{ type="toggle", name="showApplicants",			label=L["Show applicants"],				tooltip=L["Show applicants in broker and tooltip"], event = true },
 		{ type="toggle", name="showMobileChatter",		label=L["Show mobile chatter"],			tooltip=L["Show mobile chatter in tooltip (Armory App users)"] },
+		{ type="toggle", name="showMobileChatterBroker",label=L["Show mobile chatter in broker"], tooltip=L["Show count of mobile chatter in broker button"], event = true },
 		{ type="toggle", name="splitTables",			label=L["Separate mobile chatter"],		tooltip=L["Display mobile chatter with own table in tooltip"] },
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["Secondary tooltip options"] },
@@ -555,20 +557,34 @@ ns.modules[name].onevent = function(self,event,msg)
 		local numApplicants = (Broker_EverythingDB[name].showApplicants) and GetNumGuildApplicants() or 0;
 
 		local currentXP, nextLevelXP, dailyXP, maxDailyXP, unitWeeklyXP, unitTotalXP, maxXP, guildLevel;
-		local txt = "";
+		local txt,txt2 = {},{};
 
-		if (numApplicants>0) then txt = txt .. C("orange",numApplicants) .. "/"; end
-		txt = txt .. C("green",membersOnline) .. "/" .. C("green",totalGuildMembers);
+		if (numApplicants>0) then
+			tinsert(txt2, C("orange",numApplicants));
+		end
+		if (Broker_EverythingDB[name].showMobileChatterBroker) then
+			local numMobile = 0;
+			for i=1, GetNumGuildMembers(true) do
+				local d = {GetGuildRosterInfo(i)};
+				if (d[14]) then
+					numMobile = numMobile + 1;
+				end
+			end
+			tinsert(txt2, C("ltblue",numMobile));
+		end
+		tinsert(txt2,C("green",membersOnline));
+		tinsert(txt2,C("white",totalGuildMembers));
+		tinsert(txt,table.concat(txt2,"/"));
 
 		if not (ns.build>=60000000) and (Broker_EverythingDB[name].showLvlXPbroker) then
 			currentXP, nextLevelXP, dailyXP, maxDailyXP, unitWeeklyXP, unitTotalXP = UnitGetGuildXP("player");
 			maxXP = currentXP + nextLevelXP
 			guildLevel = GetGuildLevel()
 			if (guildLevel<25) then
-				txt = txt .. " " .. C("green",GetGuildLevel()) .. "/" .. C("green",("%.2f%%"):format( currentXP/(maxXP/100) ))
+				tinsert(C("green",GetGuildLevel()) .. "/" .. C("green",("%.2f%%"):format( currentXP/(maxXP/100) )));
 			end
 		end
-		dataobj.text = txt;
+		dataobj.text = table.concat(txt," ");
 	end
 
 	if (event=="GUILD_TRADESKILL_UPDATE") or (event=="GUILD_RECIPE_KNOWN_BY_MEMBERS") then
