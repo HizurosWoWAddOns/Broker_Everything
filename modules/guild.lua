@@ -573,7 +573,7 @@ ns.modules[name].onevent = function(self,event,msg)
 			tinsert(txt2, C("ltblue",numMobile));
 		end
 		tinsert(txt2,C("green",membersOnline));
-		tinsert(txt2,C("white",totalGuildMembers));
+		tinsert(txt2,C("green",totalGuildMembers));
 		tinsert(txt,table.concat(txt2,"/"));
 
 		if not (ns.build>=60000000) and (Broker_EverythingDB[name].showLvlXPbroker) then
