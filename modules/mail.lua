@@ -15,7 +15,7 @@ local name = "Mail" -- L["Mail"]
 local ldbName = name
 local ttName = name.."TT"
 local tooltip, tt, player_realm
-local alertLocked = false;
+local alertLocked,onUpdateLocked = false,false;
 local icons = {}
 do for i=1, 22 do local _ = ("inv_letter_%02d"):format(i) icons[_] = "|Tinterface\\icons\\".._..":16:16:0:0|t" end end
 local similar, own, unsave = "%s has a similar option to hide the minimap mail icon.","%s has its own mail icon.","%s found. It's unsave to hide the minimap mail icon without errors.";
@@ -49,7 +49,7 @@ ns.modules[name] = {
 	events = {
 		"VARIABLES_LOADED",
 		"UPDATE_PENDING_MAIL",
-		"MAIL_INBOX_UPDATE",
+		--"MAIL_INBOX_UPDATE",
 		"MAIL_CLOSED",
 		"PLAYER_ENTERING_WORLD",
 		"MAIL_SHOW"
@@ -89,7 +89,7 @@ local function UpdateStatus(event)
 	local _,sender,subject,money,daysLeft,itemCount,wasReturned,isGM,dt,ht;
 	local num,returns,mailState,next1,next2,next3,tmp = GetInboxNumItems(),(99*86400),0,nil,nil,nil,nil;
 
-	if (_G.MailFrame:IsShown()) or (MailFrame_Closed) then
+	if (_G.MailFrame:IsShown()) or (event=="MAIL_CLOSED") then
 		for i=1, num do
 			_, _, sender, subject, money, _, daysLeft, itemCount, _, wasReturned, _, _, isGM = GetInboxHeaderInfo(i)
 			itemCount = itemCount or 0; -- pre WoD compatibility
@@ -123,13 +123,15 @@ local function UpdateStatus(event)
 
 	local mailStored = false;
 	for i,v in pairs(be_mail_db) do 
-		if (i~=player_realm) and (v.count>0) then
+		if (v.count>0) then
 			mailStored = true;
 		end
 	end
 
 	local icon,text,obj = I(name), L["No Mail"],ns.LDB:GetDataObjectByName(ldbName);
-	--print(event,tostring(MailFrame_Closed),tostring(mailNew),tostring(mailUnseen));
+
+	print(event,tostring(event=="MAIL_CLOSED"),tostring(mailNew),tostring(mailUnseen));
+
 	if (mailNew) or (mailUnseen) then
 		icon, text = I(name.."_new"), C("green",L["New mail"]);
 	elseif (mailStored) then
@@ -244,7 +246,6 @@ ns.modules[name].onevent = function(self,event,msg)
 			ns.unhideFrame("MiniMapMailFrame")
 		end
 	else
-		--CheckInbox();
 		if (HasNewMail()) and (Broker_EverythingDB[name].playsound) and (not alertLocked) then
 			PlaySoundFile("Interface\\Addons\\"..addon.."\\media\\mailalert.mp3", "Master"); -- or SFX?
 			alertLocked=true;
@@ -255,9 +256,7 @@ ns.modules[name].onevent = function(self,event,msg)
 	end
 end
 
-ns.modules[name].onupdate = function(self)
-	--ns.modules[name].onevent(self,"MAIL")
-end
+-- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 
