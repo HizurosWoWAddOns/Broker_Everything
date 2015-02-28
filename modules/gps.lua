@@ -179,7 +179,9 @@ ns.modules[name2] = {
 	updateinterval = nil,
 	config_defaults = nil,
 	config_prepend = name0,
-	config = nil,
+	config = {
+		{type="header", label=L[name2], align="left", icon=I[name2] },
+	},
 	clickOptions = {
 		["1_open_world_map"] = {
 			cfg_label = "Open World map",
