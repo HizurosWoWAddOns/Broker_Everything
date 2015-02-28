@@ -130,8 +130,6 @@ local function UpdateStatus(event)
 
 	local icon,text,obj = I(name), L["No Mail"],ns.LDB:GetDataObjectByName(ldbName);
 
-	print(event,tostring(event=="MAIL_CLOSED"),tostring(mailNew),tostring(mailUnseen));
-
 	if (mailNew) or (mailUnseen) then
 		icon, text = I(name.."_new"), C("green",L["New mail"]);
 	elseif (mailStored) then
