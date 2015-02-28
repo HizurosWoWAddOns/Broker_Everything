@@ -807,6 +807,9 @@ ns.optionpanel = function()
 
 		tinsert(mods.list,1);
 		for k, v in ns.pairsByKeys(tmp1) do -- mods.list as order list with names and boolean. the booleans indicates the header "With options" and "Without options"
+			if(ns.modules[v].clickOptions)then
+				ns.clickOptions.update(ns.modules[v],Broker_EverythingDB[v]);
+			end
 			if (type(ns.modules[v].config)=="table") and (#ns.modules[v].config>1) then
 				tinsert(mods.list,v);
 			else
