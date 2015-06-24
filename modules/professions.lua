@@ -361,7 +361,7 @@ local function createTooltip(tt)
 
 		if (#lst>0) then
 			tt:AddSeparator(4,0,0,0,0);
-			tt:AddHeader(C("dkyellow",L["Cooldowns"]),C("orange","(Experimental)"));
+			tt:AddHeader(C("dkyellow",L["Cooldowns"]));
 			for i,v in ipairs(lst) do
 				if (v.type=="sep") then
 					tt:AddSeparator(unpack(v.data));
