@@ -22,6 +22,7 @@ local displayAchievements=false;
 local buildings2achievements = {[9]=9129,[25]=9565,[27]=9523,[35]=9703,[38]=9497,[41]=9429,[62]=9453,[66]=9526,[117]=9406,[119]=9406,[121]=9406,[123]=9406,[125]=9406,[127]=9406,[129]=9406,[131]=9406,[134]=9462,[136]=9454,[140]=9468,[142]=9487,[144]=9478,[160]=9495,[163]=9527,[167]=9463};
 local blueprintsL3 = {[9]=111967,[25]=111969,[27]=111971,[35]=109065,[38]=109063,[41]=109255,[62]=111996,[66]=112003,[117]=111991,[119]=111930,[121]=111989,[123]=109257,[125]=111973,[127]=111993,[129]=111979,[131]=111975,[134]=111928,[136]=111997,[140]=111977,[142]=111983,[144]=111987,[160]=111981,[163]=111985,[167]=111999};
 local jobslots = {[25]=1,[27]=1,[28]=1,[62]=1,[63]=1,[117]=1,[118]=1,[119]=1,[120]=1,[121]=1,[122]=1,[123]=1,[124]=1,[125]=1,[126]=1,[127]=1,[128]=1,[129]=1,[130]=1,[131]=1,[132]=1,[133]=1,[135]=1,[136]=1,[137]=1,[138]=1};
+local plot_order=setmetatable({[59]=1,[63]=2,[67]=3,[81]=4,[98]=5,[23]=6,[24]=7,[22]=8,[25]=9,[18]=10,[19]=11,[20]=12},{__index=function(t,k) local c=0; for i,v in pairs(t)do if(v>c)then c=v; end end c=c+1; rawset(t,k,c); return c; end});
 
 
 -------------------------------------------
@@ -127,24 +128,23 @@ local function makeTooltip(tt)
 	local none, qualities = true,{"white","ff1eaa00","ff0070dd","ffa335ee"};
 	local _,title = ns.DurationOrExpireDate(0,false,"Single|nduration","Single|nexpire date")
 	local _,title2= ns.DurationOrExpireDate(0,false,"Overall|nduration","Overall|nexpire date")
-	local building = ""..
-					"|T%s:14:14:0:0:64:64:4:56:4:56|t "..
-					C("ltgray","(%d%s)")..
-					" "..
-					C("ltyellow","%s")..
-					"";
+	local building = "|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltgray","(%d%s)").." "..C("ltyellow","%s");
+
 	local _ = function(n)
 		if (IsShiftKeyDown()) then -- TODO: modifier key adjustable...
 			return date("%Y-%m-%d %H:%M",time() + n); -- TODO: timestring adjustable...
 		end
 		return SecondsToTime(n,true);
 	end;
+
 	tt:Clear();
 	tt:AddHeader(C("dkyellow",L[name]));
 
 	if (nBuildings>0) then
 		local lst,longer = {},false;
-		for i,v in ipairs(buildings) do
+		for i=1, 11 do
+			local v = buildings[i];
+		--for i,v in ipairs(buildings) do
 			if (v) then
 				timeleft,timeleftAll = nil,nil;
 				if (v.creationTime) and (v.creationTime>0) then
@@ -158,8 +158,8 @@ local function makeTooltip(tt)
 					(building):format(
 						v.texture,
 						v.rank,
-						(v.canUpgrade) and "|T"..ns.media.."GarrUpgrade:12:12:0:0:32:32:4:24:4:24|t" or "",
-						v.name
+						((v.canUpgrade) and "|T"..ns.media.."GarrUpgrade:12:12:0:0:32:32:4:24:4:24|t") or  "", 
+						v.name .. ((v.canActivate) and C("orange"," ("..L["Upgrade finished"]..")") or "")
 					),
 					((v.follower) and C(v.follower.class,v.follower.name) .. C(qualities[v.follower.quality], " ("..v.follower.level..")")) or ((jobslots[v.buildingID]~=nil) and C("gray","< "..L["free job"].." >")) or "",
 					(v.shipmentCapacity) and v.shipmentCapacity or "",
@@ -324,11 +324,17 @@ ns.modules[name].onevent = function(self,event,...)
 
 		buildings = C_Garrison.GetBuildings() or {};
 		local names,_ = {};
+		local tmp = {};
+
 		for i=1, #buildings do
 			if (buildings[i]) and (buildings[i].buildingID) then
 				_, buildings[i].name, _, buildings[i].texture, buildings[i].rank, buildings[i].isBuilding, buildings[i].timeStart, buildings[i].buildTime, buildings[i].canActivate, buildings[i].canUpgrade, buildings[i].isPrebuilt = C_Garrison.GetOwnedBuildingInfoAbbrev(buildings[i].plotID);
 				_, _, _, _, _, _, _, _, _, _, _, _, _, buildings[i].upgrades, _, _, buildings[i].hasFollowerSlot = C_Garrison.GetBuildingInfo(buildings[i].plotID);
 				_, _, buildings[i].shipmentCapacity, buildings[i].shipmentsReady, buildings[i].shipmentsTotal, buildings[i].creationTime, buildings[i].duration = C_Garrison.GetLandingPageShipmentInfo(buildings[i].buildingID);
+
+				if(buildings[i].plotID==98)then
+					buildings[i].canUpgrade=false; -- correct wrong displaying upgrade status for the shipyard
+				end
 
 				-- catch double posted buildings while under construction
 				if (buildings[i].name) then
@@ -444,7 +450,11 @@ ns.modules[name].onevent = function(self,event,...)
 						end
 					end
 				end
+				tmp[plot_order[buildings[i].plotID]] = buildings[i];
 			end
+		end
+		if(#buildings>0)then
+			buildings = tmp;
 		end
 		if (type(be_garrison_db[ns.player.name.."-"..ns.realm])~="table") then
 			be_garrison_db[ns.player.name.."-"..ns.realm] = {class=ns.player.class};
