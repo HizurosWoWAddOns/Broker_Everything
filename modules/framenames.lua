@@ -110,7 +110,14 @@ ns.modules[name].onupdate = function(self)
 		if F == nil and type(f.key)=="string" then -- LibQTip tooltips returns nil on GetName but f.key contains the current name
 			F = f.key
 		end
-		if F == nil then F = "nil" end
+		if F == nil then
+			F = "<anonym>";
+			for i,v in pairs(f:GetParent())do
+				if(v==f)then
+					F = "(parentKey) "..i;
+				end
+			end
+		end
 		if dataobj.text ~= F then
 			dataobj.text = F
 		end
