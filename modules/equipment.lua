@@ -15,7 +15,7 @@ local ldbName = name
 local ttName = name.."TT"
 local tt,createMenu,equipPending
 local inventory = {};
-local objLink,objColor,objType,objId,objData,objName,objInfo=1,2,3,4,6,5,7;
+local objLink,objColor,objType,objId,objData,objName,objInfo,objTooltip=1,2,3,4,6,5,7,8;
 local itemEnchant,itemGem1,itemGem2,itemGem3,itemGem4=1,2,3,4,5;
 local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice=1,2,3,4,5,6,7,8,9,10,11;
 local slots = {"HEAD","NECK","SHOULDER","SHIRT","CHEST","WAIST","LEGS","FEET","WRIST","HANDS","FINGER0","FINGER1","TRINKET0","TRINKET1","BACK","MAINHAND","SECONDARYHAND","RANGED"};
@@ -39,6 +39,36 @@ local enchantSlots = { -- -1 = [iLevel<600], 0 = both, 1 = [iLevel=>600]
 
 	-- misc trade skills
 	[7]  = -1,	-- legs
+}
+local warlords_crafted = {
+	--[[ Alchemy        ]] [122601]=1,[122602]=1,[122603]=1,[122604]=1,
+	--[[ Blacksmithing  ]] [114230]=1,[114231]=1,[114232]=1,[114233]=1,[114234]=1,[114235]=1,[114236]=1,[114237]=1,
+	--[[ Engineering    ]] [109171]=1,[109172]=1,[109173]=1,[109174]=1,
+	--[[ Jewelcrafting  ]] [115794]=1,[115796]=1,[115798]=1,[115799]=1,[115800]=1,[115801]=1,
+	--[[ Leatherworking ]] [116174]=1,[116191]=1,[116193]=1,[116187]=1,[116188]=1,[116190]=1,[116194]=1,[116189]=1,[116192]=1,[116183]=1,[116176]=1,[116177]=1,[116180]=1,[116182]=1,[116179]=1,[116178]=1,[116181]=1,[116171]=1,[116175]=1,
+	--[[ Tailoring      ]] [114809]=1,[114810]=1,[114811]=1,[114812]=1,[114813]=1,[114814]=1,[114815]=1,[114816]=1,[114817]=1,[114818]=1,[114819]=1,
+}
+local tSetItems = {
+	-- (.*) of the Iron Conqueror
+	[115568]=17,[115586]=17,[115563]=17, --- heads
+	[115589]=17,[115561]=17,[115565]=17, --- shoulders
+	[115566]=17,[115588]=17,[115560]=17, --- chests
+	[115585]=17,[115562]=17,[115567]=17, --- hands
+	[115569]=17,[115587]=17,[115564]=17, --- legs
+
+	-- (.*) of the Iron Protector
+	[115579]=17,[115556]=17,[115545]=17,[115584]=17, --- heads
+	[115559]=17,[115576]=17,[115547]=17,[115581]=17, --- shoulders
+	[115582]=17,[115548]=17,[115577]=17,[115558]=17, --- chests
+	[115549]=17,[115555]=17,[115578]=17,[115583]=17, --- hands
+	[115546]=17,[115557]=17,[115575]=17,[115580]=17, --- legs
+
+	-- (.*) of the Iron Vanquisher
+	[115553]=17,[115572]=17,[115542]=17,[115539]=17, --- heads
+	[115551]=17,[115536]=17,[115574]=17,[115544]=17, --- shoulders
+	[115550]=17,[115540]=17,[115537]=17,[115570]=17, --- chests
+	[115552]=17,[115571]=17,[115541]=17,[115538]=17, --- hands
+	[115554]=17,[115573]=17,[115543]=17,[115535]=17, --- legs
 }
 
 
@@ -65,8 +95,7 @@ ns.modules[name] = {
 	config_defaults = {
 		showSets = true,
 		showInventory = true,
-		--showEnchants = true,
-		--showMissingEnchants = false
+		showItemLevel = true,
 	},
 	config_allowed = nil,
 	config = {
@@ -74,8 +103,7 @@ ns.modules[name] = {
 		{ type="separator" },
 		{ type="toggle", name="showSets",            label=L["Show Equipment sets"],            tooltip=L["Display a list of your equipment sets."]},
 		{ type="toggle", name="showInventory" ,      label=L["Show inventory"],                 tooltip=L["Display a list of currently equipped items."]},
-		--{ type="toggle", name="showEnchants",        label=L["Show enchantments"]      ,        tooltip=L["Display a list of enchantable items and there enchantments or a missing info."]},
-		--{ type="toggle", name="showMissingEnchants", label=L["Show missing enchantments only"], tooltip=L["Reduce the list of enchantable item to items without enchantments only."]}
+		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],        tooltip=L["Display your average item level on broker button"]},
 	},
 	clickOptions = {
 		["1_open_character_info"] = {
@@ -123,16 +151,19 @@ ns.toggleEquipment = function(eName)
 	ns.hideTooltip(tt,ttName,true);
 end
 
+local OBJX = {};
 local function CheckInventory()
 	wipe(inventory);
 	inventory.iLevelMin,inventory.iLevelMax = 9999,0;
-	local unit,objs,obj,_="player",{};
+	local unit,obj,_="player",{};
 	for i,slotIndex in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do
 		obj = {[objLink]=GetInventoryItemLink(unit,slotIndex)};
 		if (obj[objLink]) then
 			_,_,obj[objColor],obj[objType],obj[objId],obj[objData],obj[objName],obj[objInfo] = obj[objLink]:find("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
+			obj[objId] = tonumber(obj[objId]);
 			obj[objData] = {strsplit(":",obj[objData])};
 			obj[objInfo] = {GetItemInfo(obj[objLink])}
+			obj[objTooltip] = ns.GetLinkData(obj[objLink]);
 			inventory[slotIndex]=obj;
 			if (obj[objInfo][itemLevel]>inventory.iLevelMax) then
 				inventory.iLevelMax=obj[objInfo][itemLevel];
@@ -211,7 +242,8 @@ ns.modules[name].onevent = function(self,event,arg1,...)
 		return
 	end
 
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
+	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName);
+	local icon,iconCoords,text = I[name].iconfile,{0,1,0,1},{};
 
 	local numEquipSets = GetNumEquipmentSets()
 
@@ -220,18 +252,27 @@ ns.modules[name].onevent = function(self,event,arg1,...)
 			local equipName, iconFile, _, isEquipped, _, _, _, numMissing = GetEquipmentSetInfo(i)
 			local pending = (equipPending~=nil and C("orange",equipPending)) or false
 			if isEquipped then 
-				dataobj.iconCoords = {0.05,0.95,0.05,0.95}
-				dataobj.icon = iconFile
-				dataobj.text = pending~=false and pending or equipName
-				return
-			else 
-				dataobj.icon = I(name).iconfile
-				dataobj.text = pending~=false and pending or C("red",L["Unknown Set"])
+				iconCoords = {0.05,0.95,0.05,0.95}
+				icon = iconFile;
+				tinsert(text,pending~=false and pending or equipName);
 			end
 		end
+		if(#text==0)then
+			--dataobj.icon = I(name).iconfile
+			tinsert(text,pending~=false and pending or C("red",L["Unknown Set"]));
+		end
 	else
-		dataobj.text = L["No sets found"]
+		tinsert(text,L["No sets found"]);
 	end
+
+	if(Broker_EverythingDB[name].showItemLevel)then
+		tinsert(text,("%1.1f"):format(select(2,GetAverageItemLevel()) or 0));
+	end
+
+	dataobj.iconCoords = iconCoords;
+	dataobj.icon = icon;
+	dataobj.text = table.concat(text,", ");
+
 end
 
 -- ns.modules[name].onupdate = function(self) end
@@ -302,15 +343,22 @@ ns.modules[name].ontooltip = function(tt)
 		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do
 			local v = inventory[i];
 			if (v) then
+				local itemId=v[objId];
 				none=false;
-				local enchanted = nil;
+				local tSetItem,enchanted,greenline = "","","";
 				if (enchantSlots[i]~=nil) and ( (v[objInfo][itemLevel]>=600 and enchantSlots[i]>=0) or (v[objInfo][itemLevel]<600 and enchantSlots[i]<=0) ) and (tonumber(v[objData][itemEnchant])==0) then
-					enchanted=false;
+					enchanted=C("red"," #");
 					miss=true;
+				end
+				if(tSetItems[itemId])then
+					tSetItem=C("yellow"," T"..tSetItems[itemId]);
+				end
+				if(v[objTooltip]~=nil and type(v[objTooltip].tooltipLine2)=="string" and v[objTooltip].tooltipLine2:find("\124"))then
+					greenline = " "..v[objTooltip].tooltipLine2;
 				end
 				local l = tt:AddLine(
 					C("ltyellow",_G[slots[i].."SLOT"]),
-					C(v[objColor],v[objName]) .. (enchanted==false and C("red"," #") or ""),
+					C(v[objColor],v[objName]) .. greenline .. tSetItem .. enchanted,
 					C(GetILevelColor(v[objInfo][itemLevel]),v[objInfo][itemLevel])
 				);
 				tt:SetLineScript(l,"OnEnter",function(self) InventoryTooltip(self,v[objLink]) end);
@@ -363,7 +411,6 @@ ns.modules[name].ontooltip = function(tt)
 		tt:AddSeparator(4,0,0,0,0);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-
 end
 
 
