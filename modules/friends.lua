@@ -193,13 +193,13 @@ local function createTooltip(tt)
 			if (fi[isOnline]) then
 				for I=1, nt do
 					local bnName = fi[presenceName];
-					if (Broker_EverythingDB[name].showBattleTags) and (fi[isBattleTagPresence]) then
+					if (Broker_EverythingDB[name].showBattleTags) then
 						bnName = bnName .. " ("..fi[battleTag]..")";
 					end
 					local ti = {BNGetFriendToonInfo(i, I)};
 					if (nt>1 and ti[client]~="App") or nt==1 then
-						if (not ti[toonName]) then
-							ti[toonName] = fi[presenceName];
+						if (not ti[toonName]) or (ti[client]=="Hero") then
+							ti[toonName] = strsplit("#",fi[battleTag]);
 						end 
 
 						if (ti[client]=="WoW") then
