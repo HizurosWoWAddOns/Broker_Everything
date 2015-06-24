@@ -10,9 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Surprise" -- L["Surprise"]
-local ldbName = name
-local ttName = name.."TT"
-local tt = nil
+local ldbName,ttName,ttColumns,tt = name,name.."TT",3,nil
 local ITEM_DURATION,ITEM_COOLDOWN,ITEM_LOOTABLE=1,2,3
 local founds,counter,items = {},{},{
 	-- 1 items with duration time
@@ -26,7 +24,7 @@ local founds,counter,items = {},{},{
 	[19450] = {ITEM_LOOTABLE}, -- A Jubling's Tiny Home (prev.: Unhatched Jubling Egg)
 	[39883] = {ITEM_LOOTABLE}, -- Cracked Egg (prev.: Mysterious Egg)
 	[44718] = {ITEM_LOOTABLE}, -- Ripe Disgusting Jar (prev.: Disgusting Jar)
-	[94296] = {ITEM_LOOTABLE},  -- Cracked Primal Egg (prev.: Primal Egg)
+	[94296] = {ITEM_LOOTABLE}, -- Cracked Primal Egg (prev.: Primal Egg)
 	[118706] = {ITEM_LOOTABLE} -- Cracked Goren Egg
 }
 
@@ -45,7 +43,7 @@ ns.modules[name] = {
 	events = {
 		"PLAYER_ENTERING_WORLD",
 	},
-	updateinterval = 10,
+	updateinterval = nil,
 	config_defaults = nil,
 	config_allowed = nil,
 	config = { { type="header", label=L[name], align="left", icon=I[name] } }
@@ -55,24 +53,42 @@ ns.modules[name] = {
 --------------------------
 -- some local functions --
 --------------------------
+--[[
 local function foundFunc(item_id,bag,slot)
 	founds[item_id] = ns.GetItemData(item_id,bag,slot)
-	counter[items[item_id][1]] = (counter[items[item_id][1]] or 0) + 1
-	counter['sum'] = (counter['sum'] or 0) + 1
-end
+	counter[items[item_id][1]]-- = (counter[items[item_id][1]] or 0) + 1
+	--counter['sum'] = (counter['sum'] or 0) + 1
+--end
+
 
 local function resetFunc() -- clear founds table
-	founds = {}
-	counter = {}
+	wipe(founds); wipe(counter);
 end
 
 local function updateFunc() -- update broker
+	for i,v in pairs(items)do
+		local d = ns.items.exist(i);
+		if(d)then
+			for I,V in ipairs(d.bag)do
+				founds[i] = ns.GetItemData(i,V[1],V[2]);
+			end
+		end
+	end
+
 	local obj = ns.LDB:GetDataObjectByName(ldbName)
 	if counter.sum==nil then counter.sum = 0 end
 	if counter.sum>0 then
 		obj.text = ((counter[ITEM_LOOTABLE] and C("green",counter[ITEM_LOOTABLE])) or 0) .. "/" .. counter.sum
 	else
 		obj.text = "0/0"
+	end
+end
+
+local function updateFunc()
+	founds,counter = {},{};
+	for i,v in pairs(items)do
+		local tmp = ns.items.exist(i);
+		
 	end
 end
 
@@ -103,14 +119,13 @@ ns.modules[name].init = function(obj)
 end
 
 ns.modules[name].onevent = function(self,event,...)
-	for i,v in pairs(items) do ns.bagScan.RegisterId(name,i,foundFunc,resetFunc,updateFunc) end
-	ns.bagScan.Update(true)
+	ns.items.RegisterPreScanCallBack(name,resetFunc);
+	for i,v in pairs(items)do
+		ns.items.RegisterCallBack(name,i,updateFunc);
+	end
 end
 
-ns.modules[name].onupdate = function(self)
-	
-end
-
+-- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tt) end
@@ -122,7 +137,7 @@ end
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 
-	tt = ns.LQT:Acquire(ttName, 3, "LEFT", "LEFT", "RIGHT")
+	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "LEFT", "RIGHT")
 	getTooltip(tt)
 	ns.createTooltip(self,tt)
 end
