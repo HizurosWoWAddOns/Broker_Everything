@@ -68,6 +68,7 @@ _, ns.player.class,ns.player.classId = UnitClass("player");
 ns.player.faction,ns.player.factionL  = UnitFactionGroup("player");
 L[ns.player.faction] = ns.player.factionL
 ns.player.classLocale = ns.player.female and _G.LOCALIZED_CLASS_NAMES_FEMALE[ns.player.class] or _G.LOCALIZED_CLASS_NAMES_MALE[ns.player.class]
+ns.player.raceLocale,ns.player.race = UnitRace("player");
 ns.LC.colorset("suffix",ns.LC.colorset[ns.player.class:lower()]) -- 
 
 be_twink_db = {}
@@ -76,7 +77,6 @@ do
 	f:SetScript("OnEvent",function(self,event,...)
 		if event=="ADDON_LOADED" then
 			be_twink_db[ns.realm.." - "..ns.player.name] = ns.player
-			f:UnregisterEvent(event)
 		end
 	end)
 	f:RegisterEvent("ADDON_LOADED")
@@ -185,6 +185,7 @@ ns.hideTooltip = function(tooltip,ttName,ttForce,ttSetOnLeave)
 		end
 		tooltip:SetScript("OnUpdate",nil);
 		ns.LQT:Release(tooltip)
+		tooltip.key=nil;
 		return true;
 	end
 end
@@ -468,58 +469,130 @@ end
 
 
 -- -------------------------------------------------------------- --
--- module independent bag scan width interval                     --
+-- module independent bags and inventory scanner                  --
+-- event driven with delayed execution                            --
 -- ~Hizuro                                                        --
 -- -------------------------------------------------------------- --
 do
-	ns.bagScan = {items={},last=time(),interval=10,active=false,resets={},updates={}}
-
-	ns.bagScan.RegisterId = function(modName,itemId,foundFunc,resetFunc,updateFunc)
-		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName))
-		assert(type(itemId)=="number","argument #2 (itemId) must be a number, got "..type(itemId))
-		assert(type(foundFunc)=="function","argument #3 (foundFunc) must be a function, got "..type(foundFunc))
-		assert(type(resetFunc)=="function","argument #4 (resetFunc) must be a function, got "..type(resetFunc))
-		assert(type(updateFunc)=="function","argument #5 (updateFunc) must be a function, got "..type(updateFunc))
-
-		if ns.bagScan.items[itemId]==nil then
-			ns.bagScan.items[itemId] = {}
+	--- local elements
+	local d = {
+		ids = {}, callbacks = {}, preScanCallbacks={},
+		delay = 1.75,
+		elapsed = 0,
+		update = true
+	}
+	local function scanner()
+		local items = {};
+		local callbacks = {};
+		for i,v in pairs(d.preScanCallbacks)do
+			if(type(i)=="function")then
+				v("preScan");
+			end
 		end
-		ns.bagScan.items[itemId][modName] = foundFunc
-		ns.bagScan.resets[modName] = resetFunc
-		ns.bagScan.updates[modName] = updateFunc
-		ns.bagScan.active = true
-	end
-
-	ns.bagScan.Update = function(now)
-		-- prevent full usage of the function if no item/module registered.
-		if ns.bagScan.active~=true then return end
-
-		-- limit bagscan to a fix timeout. see ns.bagScan.interval
-		if now~=true then
-			if (time()-ns.bagScan.last)<ns.bagScan.interval then return end
-			ns.bagScan.last = time()
-		end
-
-		-- reset tables in the registered modules
-		for i,v in pairs(ns.bagScan.resets) do
-			if type(v)=="function" then v() end
-		end
-
-		-- scan the bag and execute the foundFunc for all matching items
-		for bag = 0, NUM_BAG_SLOTS do
-			for slot = 1, GetContainerNumSlots(bag) do
-				local item_id = GetContainerItemID(bag,slot)
-				if ns.bagScan.items[item_id]~=nil then
-					for i,v in pairs(ns.bagScan.items[item_id]) do v(item_id,bag,slot) end
+		-- get all itemIds from all items in the bags
+		for bag=0, NUM_BAG_SLOTS do
+			for slot=1, GetContainerNumSlots(bag) do
+				local id,_,count,rarity,price = GetContainerItemID(bag,slot);
+				if (id) then
+					if(items[id]==nil)then items[id]={}; end
+					if(items[id]["bag"]==nil) then items[id]["bag"]={}; end
+					_, count = GetContainerItemInfo(bag, slot);
+					_, _, rarity, _, _, _, _, _, _, _, price = GetItemInfo(id);
+					tinsert(items[id]["bag"],{bag=bag, slot=slot, count=count, rarity=rarity, price=price});
+					if(d.callbacks[id])then
+						for i,v in pairs(d.callbacks[id]) do
+							callbacks[i] = v;
+						end
+					end
 				end
 			end
 		end
-
-		-- trigger all updateFunc from all registered modules - mostly to update the broker button text
-		for i,v in pairs(ns.bagScan.updates) do
-			if type(v)=="function" then v() end
+		-- get all itemIds from equipped items
+		local slots = {"Back","Chest","Feet","Finger0","Finger1","Hands","Head","Legs","MainHand","Neck","SecondaryHand","Shirt","Shoulder","Tabard","Trinket0","Trinket1","Waist","Wrist"};
+		for i,v in ipairs(slots) do
+			local id = GetInventoryItemID("player",v.."Slot");
+			if (id) then
+				if(items[id]==nil)then items[id]={}; end
+				if(items[id]["inv"]==nil) then items[id]["inv"]={}; end
+				tinsert(items[id]["inv"],v);
+				if(d.callbacks[id])then
+					for i,v in pairs(d.callbacks[id]) do
+						if(type(v)=="function")then
+							callbacks[i] = v;
+						end
+					end
+				end
+			end
+		end
+		d.ids = items;
+		for i,v in ipairs(callbacks) do
+			if(type(v)=="function")then
+				v();
+			end
+		end
+		if(d.callbacks.any~=nil)then
+			for i,v in ipairs(d.callbacks.any)do
+				if(type(v)=="function")then
+					v();
+				end
+			end
 		end
 	end
+
+	--- event and update frame
+	local f = CreateFrame("Frame");
+	f:SetScript("OnUpdate",function(self,elapse)
+		if(d.update)then
+			d.elapsed=d.elapsed+elapse;
+			if(d.elapsed>=d.delay)then
+				d.elapsed=0;
+				d.update=false;
+				scanner();
+			end
+		end
+	end);
+	f:SetScript("OnEvent",function(self,event,...)
+		d.update=true;
+	end);
+	f:RegisterEvent("BAG_UPDATE_DELAYED");
+	f:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
+	f:RegisterEvent("PLAYER_ENTERING_WORLD");
+
+	--- namespace functions
+	ns.items = {};
+	ns.items.RegisterCallBack = function(modName,itemId,func)
+		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
+		assert(type(itemId)=="number","argument #2 (itemId) must be a number, got "..type(itemId));
+		assert(type(func)=="function","argument #3 (function) must be a function, got "..type(func));
+		if (d.callbacks[itemId]==nil) then
+			d.callbacks[itemId] = {};
+		end
+		d.callbacks[itemId][modName] = func;
+		d.callbacks.active = true;
+	end;
+	ns.items.RegisterCallBackForAnyItem = function(modName,func)
+		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
+		assert(type(func)=="function","argument #3 (function) must be a function, got "..type(func));
+		if (d.callbacks.any==nil) then
+			d.callbacks.any = {};
+		end
+		d.callbacks.any[modName] = func;
+		d.callbacks.active = true;
+	end;
+	ns.items.RegisterPreScanCallBack  = function(modName,func)
+		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
+		assert(type(func)=="function","argument #3 (function) must be a function, got "..type(func));
+		if(d.preScanCallbacks==nil)then
+			d.preScanCallbacks={};
+		end
+		d.preScanCallbacks[modName]=func;
+	end;
+	ns.items.exist = function(itemId)
+		return d.ids[itemId] or false;
+	end;
+	ns.items.GetItemlist = function()
+		return d.ids;
+	end;
 end
 
 
@@ -641,7 +714,7 @@ do
 			assert(type(bag)=="number","argument #2 (bag) must be a number, got "..type(bag));
 			assert(type(slot)=="number","argument #3 (slot) must be a number, got "..type(slot));
 			data.startTime, data.duration, data.isEnabled = GetContainerItemCooldown(bag,slot);
-			scanTooltip:SetBagItem(bag,slot);
+			data.hasCooldown, data.repairCost = scanTooltip:SetBagItem(bag,slot);
 		else
 			scanTooltip:SetHyperlink("item:"..id);
 		end
@@ -656,30 +729,33 @@ do
 		scanTooltip:Hide();
 		return data;
 	end
-
 	function ns.GetLinkData(link)
 		assert(type(link)=="string","argument #1 must be a string, got "..type(link));
+		local data,line,reg,_ = {},1
 		scanTooltip:Show();
 		scanTooltip:SetOwner(UIParent,"LEFT",0,0);
 		scanTooltip:SetHyperlink(link);
 		reg = {scanTooltip:GetRegions()};
 		for _,v in pairs(reg) do
 			if (v~=nil) and (v:GetObjectType()=="FontString") and (v:GetText()~=nil) then
-				data["tooltipLine"..line] = v:GetText();
-				line = line + 1;
+				data["tooltipLine"..line]=v:GetText();
+				line=line+1;
 			end
 		end
 		scanTooltip:ClearLines();
 		scanTooltip:Hide();
 		return data;
 	end
+end
 
-	-- --------------------------------------- --
-	-- GetRealFaction2PlayerStanding           --
-	-- retrun standingID of a faction          --
-	-- if faction unknown or argument nil then --
-	-- returns this function the standingID 4  --
-	-- --------------------------------------- --
+
+-- --------------------------------------- --
+-- GetRealFaction2PlayerStanding           --
+-- retrun standingID of a faction          --
+-- if faction unknown or argument nil then --
+-- returns this function the standingID 4  --
+-- --------------------------------------- --
+do
 	function ns.GetFaction2PlayerStanding(faction) -- FactionID or FactionName
 		local collapsed, standing = {},4
 		if faction~=nil then
@@ -738,93 +814,62 @@ do
 end
 
 
--- ----------------
--- tooltip graph (unstable)
--- ~Hizuro
--- ----------------
-do
-	local modData = {}
-	ns.tooltipGraph = function(modName, maxValues, maxHeight, noScale)
-		local s, barWidth, barSpace = UIParent:GetEffectiveScale(), 1, 1
-		if noScale==true then s = 1 end
-
-		local fN = ("%s_%s_ttGraph"):format(addon,modName)
-		local f = f or _G[fN] or CreateFrame("frame",fN)
-		if f.bars==nil then
-			do
-				f.bars = {}
-				local n = f
-				for i=1, maxValues do
-					f.bars[i] = CreateFrame("frame",nil,f)
-					f.bars[i]:SetWidth(barWidth * s)
-					f.bars[i]:SetBackdrop({bgFile=[[Interface\Buttons\WHITE8X8]], Tile=false})
-					if type(Broker_EverythingDB[modName].barColor)=="table" then
-						f.bars[i]:SetBackdropColor(Broker_EverythingDB[modName].barColor)
-					end
-					f.bars[i]:SetPoint("BOTTOMLEFT", n, f==n and "BOTTOMLEFT" or "BOTTOMRIGHT", f==n and 0 or barSpace * s, 0)
-					n=f.bars[i]
-				end
-			end
-		end
-
-		f:SetHeight(maxHeight)
-		f:SetWidth(#modData[modName] * (barWidth+barSpace))
-
-		local minV,maxV = 9999,0
-		for i, v in ipairs(modData[modName]) do
-			if v<minV then minV = v; end --min value
-			if v>maxV then maxV = v; end --max value
-		end
-
-		local v
-		for i=maxValues, 1, -1 do
-			if modData[modName][i]==nil then
-				v = 1;
-			else
-				v = (modData[modName][i] - minV) / ((maxV - minV) / maxHeight);
-			end
-			f.bars[maxValues - i + 1]:SetHeight(ceil(v) * s)
-		end
-
-		return f
-	end
-	ns.tooltipGraphAddValue = function(modName,value,maxValues)
-		local t = {}
-		if modData[modName]==nil then modData[modName] = {} end
-		table.insert(t,tonumber(value))
-		for i,v in ipairs(modData[modName]) do
-			if (#t < maxValues) then
-				table.insert(t,v)
-			end
-		end
-		modData[modName] = t
-	end
-end
-
-
 -- ----------------------------------------------------- --
 -- goldColor function to display amount of gold          --
 -- in colored strings or with coin textures depending on --
 -- a per module and a addon wide toggle.                 --
 -- ~Hizuro                                               --
 -- ----------------------------------------------------- --
-function ns.GetCoinColorOrTextureString(modName,amount,sep)
-	local hideCopper = false;
-	if (Broker_EverythingDB.goldHideCopper==true) then
-		if (floor(amount/100)>0) then
-			amount = floor(amount/100) * 100;
-			hideCopper=true;
+function ns.GetCoinColorOrTextureString(modName,amount,opts)
+	local zz="%02d";
+	if(type(amount)~="number")then amount=0; end
+
+	if(not opts)then opts={}; end
+	if(not opts.sep)then opts.sep="."; end
+	if(not opts.hideLowerZeros)then
+		opts.hideLowerZeros=false;
+		if (Broker_EverythingDB.goldHideLowerZeros==true)then
+			opts.hideLowerZeros=true;
 		end
 	end
-	if (Broker_EverythingDB[modName].goldColor==true) or (Broker_EverythingDB.goldColor==true) then
-		if (not sep) then sep = "." end
-		local gold, silver, copper, t, i = floor(amount / 10000), mod(floor(amount / 100), 100), mod(floor(amount), 100), {}, 1
-		if gold>0 then t[i]=ns.LC.color("gold",gold) silver=("%02d"):format(silver) i=i+1 end
-		if tonumber(silver)>0 or silver=="00" then t[i]=ns.LC.color("silver",silver) copper=("%02d"):format(copper) i=i+1 end
-		if (not hideCopper) then
-			t[i] = ns.LC.color("copper",copper)
+
+	if(not opts.hideCopper)then
+		opts.hideCopper=false;
+		if(Broker_EverythingDB.goldHideCopper==true)then
+			opts.hideCopper=true;
 		end
-		return table.concat(t,sep)
+	end
+
+	if(not opts.hideSilver)then
+		opts.hideSilver=false;
+		if(Broker_EverythingDB.goldHideSilver==true)then
+			opts.hideSilver=true;
+		end
+	end
+
+	if(opts.hideSilver)then
+		amount = floor(amount/10000)*10000;
+	elseif(opts.hideCopper)then
+		amount = floor(amount/100)*100;
+	end
+
+	if (Broker_EverythingDB[modName].goldColor==true) or (Broker_EverythingDB.goldColor==true) then
+
+		local gold, silver, copper, t, i = floor(amount/10000), mod(floor(amount/100),100), mod(floor(amount),100), {}, 1
+
+		if amount==0 or not (opts.hideCopper or (copper==0 and opts.hideLowerZeros))then
+			tinsert(t,ns.LC.color("copper",(silver>0 or gold>0) and zz:format(copper) or copper));
+		end
+
+		if amount>0 and not (opts.hideSilver or (copper==0 and silver==0 and opts.hideLowerZeros))then
+			tinsert(t,1,ns.LC.color("silver",gold>0 and zz:format(silver) or silver));
+		end
+
+		if(gold>0)then
+			tinsert(t,1,ns.LC.color("gold",gold));
+		end
+
+		return table.concat(t,opts.sep);
 	else
 		return GetCoinTextureString(amount)
 	end
@@ -1146,9 +1191,8 @@ end
 -- clickOptions System      --
 -- ~Hizuro                  --
 -- ------------------------ --
-
-ns.clickOptions = {
-	values = {
+do
+	local values = {
 		["__NONE"]     = "Disabled",			-- L["Disabled"]
 		["_CLICK"]     = "Click",				-- L["Click"]
 		["_LEFT"]      = "Left-click",			-- L["Left-click"]
@@ -1162,109 +1206,198 @@ ns.clickOptions = {
 		["CTRLCLICK"]  = "Ctrl+Click",			-- L["Ctrl+Click"]
 		["CTRLLEFT"]   = "Ctrl+Left-click",		-- L["Ctrl+Left-click"]
 		["CTRLRIGHT"]  = "Ctrl+Right-click",	-- L["Ctrl+Right-click"]
-	},
-	func =  function(name,self,button)
-		if not ((ns.modules[name]) and (ns.modules[name].onclick)) then return; end
+	};
+	ns.clickOptions = {
+		func =  function(name,self,button)
+			if not ((ns.modules[name]) and (ns.modules[name].onclick)) then return; end
 
-		-- click(plan)A = combine modifier if pressed with named button (left,right)
-		-- click(panl)B = combine modifier if pressed with left or right mouse button without expliced check.
-		local clickA,clickB="","";
+			-- click(plan)A = combine modifier if pressed with named button (left,right)
+			-- click(panl)B = combine modifier if pressed with left or right mouse button without expliced check.
+			local clickA,clickB="","";
 
-		-- check modifier
-		if (IsAltKeyDown()) then		clickA=clickA.."ALT";   clickB=clickB.."ALT"; end
-		if (IsShiftKeyDown()) then		clickA=clickA.."SHIFT"; clickB=clickB.."SHIFT"; end
-		if (IsControlKeyDown()) then	clickA=clickA.."CTRL";  clickB=clickB.."CTRL"; end
+			-- check modifier
+			if (IsAltKeyDown()) then		clickA=clickA.."ALT";   clickB=clickB.."ALT"; end
+			if (IsShiftKeyDown()) then		clickA=clickA.."SHIFT"; clickB=clickB.."SHIFT"; end
+			if (IsControlKeyDown()) then	clickA=clickA.."CTRL";  clickB=clickB.."CTRL"; end
 
-		-- no modifier used... add an undercore (for dropdown menu entry sorting)
-		if (clickA=="") then clickA=clickA.."_"; end
-		if (clickB=="") then clickB=clickB.."_"; end
+			-- no modifier used... add an undercore (for dropdown menu entry sorting)
+			if (clickA=="") then clickA=clickA.."_"; end
+			if (clickB=="") then clickB=clickB.."_"; end
 
-		-- check which mouse button is pressed
-		if (button=="LeftButton") then
-			clickA=clickA.."LEFT";
-		elseif (button=="RightButton") then
-			clickA=clickA.."RIGHT"; 
-		--elseif () then
-		--	clickA=clickA.."";
-		-- more mouse buttons?
-		end
+			-- check which mouse button is pressed
+			if (button=="LeftButton") then
+				clickA=clickA.."LEFT";
+			elseif (button=="RightButton") then
+				clickA=clickA.."RIGHT"; 
+			--elseif () then
+			--	clickA=clickA.."";
+			-- more mouse buttons?
+			end
 
-		-- planB
-		clickB=clickB.."CLICK";
+			-- planB
+			clickB=clickB.."CLICK";
 
-		if (ns.modules[name].onclick[clickA]) then
-			ns.modules[name].onclick[clickA](self,button);
-		elseif (ns.modules[name].onclick[clickB]) then
-			ns.modules[name].onclick[clickB](self,button);
-		end
-	end,
-	update = function(mod,db) -- BE_UPDATE_CLICKOPTION
-		assert(type(mod)=="table","not a table");
-		assert(type(mod.clickOptions)=="table","missing clickOptions");
+			if (ns.modules[name].onclick[clickA]) then
+				ns.modules[name].onclick[clickA](self,button);
+			elseif (ns.modules[name].onclick[clickB]) then
+				ns.modules[name].onclick[clickB](self,button);
+			end
+		end,
+		update = function(mod,db) -- BE_UPDATE_CLICKOPTION
+			assert(type(mod)=="table","not a table");
+			assert(type(mod.clickOptions)=="table","missing clickOptions");
 
-		if (not mod.clickOptionsConfigNum) then
-			mod.clickOptionsConfigNum={};
+			if (not mod.clickOptionsConfigNum) then
+				mod.clickOptionsConfigNum={};
 
-			tinsert(mod.config,{type="separator",alpha=0});
-			tinsert(mod.config,{type="header", label=L["Broker button options"]});
-			tinsert(mod.config,{type="separator"});
+				tinsert(mod.config,{type="separator",alpha=0});
+				tinsert(mod.config,{type="header", label=L["Broker button options"]});
+				tinsert(mod.config,{type="separator"});
 
-			for cfgKey,clickOpts in ns.pairsByKeys(mod.clickOptions) do
-				local cfg_entry = {
-					type	= "select",
-					name	= "clickOptions::"..cfgKey,
-					label	= L[clickOpts.cfg_label],
-					tooltip	= L["Choose your fav. combination of modifier and mouse key to "]..L[clickOpts.cfg_desc],
-					values	= ns.clickOptions.values,
-					default	= clickOpts.cfg_default or "__NONE",
-					event	= "BE_UPDATE_CLICKOPTIONS"
-				};
-				tinsert(mod.config,cfg_entry);
-				mod.clickOptionsConfigNum[cfgKey] = #mod.config;
+				for cfgKey,clickOpts in ns.pairsByKeys(mod.clickOptions) do
+					local cfg_entry = {
+						type	= "select",
+						name	= "clickOptions::"..cfgKey,
+						label	= L[clickOpts.cfg_label],
+						tooltip	= L["Choose your fav. combination of modifier and mouse key to "]..L[clickOpts.cfg_desc],
+						values	= values,
+						default	= clickOpts.cfg_default or "__NONE",
+						event	= "BE_UPDATE_CLICKOPTIONS"
+					};
+					tinsert(mod.config,cfg_entry);
+					mod.clickOptionsConfigNum[cfgKey] = #mod.config;
 
-				if (db["clickOptions::"..cfgKey]==nil) then
-					db["clickOptions::"..cfgKey] = clickOpts.cfg_default or "__NONE";
+					if (db["clickOptions::"..cfgKey]==nil) then
+						db["clickOptions::"..cfgKey] = clickOpts.cfg_default or "__NONE";
+					end
 				end
 			end
-		end
 
-		mod.onclick = {};
-		mod.clickHints = {};
-		for cfgKey,opts in ns.pairsByKeys(mod.clickOptions) do
-			if (db["clickOptions::"..cfgKey]) and (db["clickOptions::"..cfgKey]~="__NONE") then
-				mod.onclick[db["clickOptions::"..cfgKey]] = opts.func;
-				tinsert(mod.clickHints,ns.LC.color("copper",L[ns.clickOptions.values[db["clickOptions::"..cfgKey]]]).." || "..ns.LC.color("green",L[opts.hint]));
+			mod.onclick = {};
+			mod.clickHints = {};
+			for cfgKey,opts in ns.pairsByKeys(mod.clickOptions) do
+				if (db["clickOptions::"..cfgKey]) and (db["clickOptions::"..cfgKey]~="__NONE") then
+					mod.onclick[db["clickOptions::"..cfgKey]] = opts.func;
+					tinsert(mod.clickHints,ns.LC.color("copper",L[values[db["clickOptions::"..cfgKey]]]).." || "..ns.LC.color("green",L[opts.hint]));
+				end
 			end
-		end
 
-		return (#mod.clickHints>0);
-	end,
-	ttAddHints=function(tt,name,ttColumns,entriesPerLine)
-		local _lines = {};
-		if (type(entriesPerLine)~="number") then entriesPerLine=1; end
-		if (ns.modules[name].clickHints) then
-			for i=1, #ns.modules[name].clickHints, entriesPerLine do
-				if (ns.modules[name].clickHints[i]) then
-					tinsert(_lines,{});
-					for I=1, entriesPerLine do
-						if (ns.modules[name].clickHints[i+I-1]) then
-							tinsert(_lines[#_lines],ns.modules[name].clickHints[i+I-1]);
+			return (#mod.clickHints>0);
+		end,
+		ttAddHints=function(tt,name,ttColumns,entriesPerLine)
+			local _lines = {};
+			if (type(entriesPerLine)~="number") then entriesPerLine=1; end
+			if (ns.modules[name].clickHints) then
+				for i=1, #ns.modules[name].clickHints, entriesPerLine do
+					if (ns.modules[name].clickHints[i]) then
+						tinsert(_lines,{});
+						for I=1, entriesPerLine do
+							if (ns.modules[name].clickHints[i+I-1]) then
+								tinsert(_lines[#_lines],ns.modules[name].clickHints[i+I-1]);
+							end
 						end
 					end
 				end
 			end
-		end
-		for i,v in ipairs(_lines) do
-			if (v) then
-				v = table.concat(v," - ");
-				if (type(tt.SetCell)=="function") then
-					local line = tt:AddLine();
-					tt:SetCell(line,1,v,nil,"LEFT",ttColumns);
-				else
-					tt:AddLine(v);
+			for i,v in ipairs(_lines) do
+				if (v) then
+					v = table.concat(v," - ");
+					if (type(tt.SetCell)=="function") then
+						local line = tt:AddLine();
+						tt:SetCell(line,1,v,nil,"LEFT",ttColumns);
+					else
+						tt:AddLine(v);
+					end
 				end
 			end
 		end
-	end
-};
+	};
+end
 
+-- ----------------
+-- tooltip graph (unstable)
+-- ~Hizuro
+-- ----------------
+do
+	local width,height,space,count = 2,50,1,50;
+	local graphWidth=width*count+(space*count-1);
+
+	local g = CreateFrame("Frame",nil, UIParent);
+	g.bars={};g.elapsed=0;
+	g:SetScript("OnEvent",function(self,event)
+		if(event=="PLAYER_ENTERING_WORLD")then
+			local b = GameTooltip:GetBackdrop()
+			g:SetBackdrop(b)
+			if(b)then
+				g:SetBackdropColor(GameTooltip:GetBackdropColor())
+				g:SetBackdropBorderColor(GameTooltip:GetBackdropBorderColor())
+			end
+			g:SetScale(GameTooltip:GetScale())
+			g:SetAlpha(1);
+			g:SetFrameStrata("TOOLTIP");
+			g:SetWidth(graphWidth+12);
+			g:SetHeight(height+12);
+			g:Hide();
+
+			g.anchor = g:CreateTexture();
+			g.anchor:SetWidth(1); g.anchor:SetHeight(height);
+			g.anchor:SetPoint("LEFT",6+graphWidth+1,0);
+
+			for i=1, count do
+				g.bars[i] = g:CreateTexture();
+				g.bars[i]:SetTexture(1,1,1,0.8);
+				g.bars[i]:SetWidth(width); g.bars[i]:SetHeight(1);
+				g.bars[i]:SetPoint("BOTTOMRIGHT",i==1 and g.anchor or g.bars[i-1],"BOTTOMLEFT",-space,0);
+			end
+
+			g.Min = g:CreateFontString(nil,"ARTWORK","GameFontNormalSmall");
+			g.Max = g:CreateFontString(nil,"ARTWORK","GameFontNormalSmall");
+			g.Min:SetPoint("LEFT",g.anchor,"BOTTOMRIGHT",6,3);
+			g.Max:SetPoint("LEFT",g.anchor,"TOPRIGHT",6,-3);
+		end
+	end);
+	g:RegisterEvent("PLAYER_ENTERING_WORLD");
+
+	g.trackHideParent = function(self,elapse)
+		self.elapsed=self.elapsed+elapse;
+		if(self.elapsed<0.3)then return end
+		if(g.parent)then
+			if(not g.parent:IsShown())then
+				g:Hide();
+				g:ClearAllPoints();
+				g.parent=false;
+			end
+		end
+	end
+	
+	g.Update = function(parent,values,opts)
+		opts = opts or {};
+		if(g.parent~=parent)then
+			g.parent=parent;
+			g:SetPoint("TOP",parent,"BOTTOM",0,-2);
+			g:SetScript("OnUpdate",g.trackHideParent);
+			g:Show();
+		end
+		local minV,maxV=values[1],0;
+		for i,v in ipairs(values)do
+			if(v<minV)then minV=v; end
+			if(v>maxV)then maxV=v; end
+		end
+		local x = height/(maxV-minV);
+		for i,v in ipairs(ns.graphTT.bars)do
+			if(values[i])then
+				local h = (values[i]-minV)*x;
+				v:SetHeight(h);
+				v:SetAlpha(0.7);
+			else
+				v:SetAlpha(0);
+			end
+		end
+		g.Min:SetText(ceil(minV));
+		g.Max:SetText(ceil(maxV));
+		local wMin,wMax=g.Min:GetWidth(),g.Max:GetWidth()
+		g:SetWidth(6+graphWidth+6+((wMin>wMax) and wMin or wMax)+6);
+	end
+
+	ns.graphTT = g;
+end
