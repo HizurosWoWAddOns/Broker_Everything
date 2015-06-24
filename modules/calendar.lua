@@ -106,7 +106,7 @@ end
 ns.modules[name].init = function(obj)
 	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
 end
-
+EXXX={};
 ns.modules[name].onevent = function(self,event,msg)
 	self.obj = self.obj or ns.LDB:GetDataObjectByName(ldbName);
 	local num = CalendarGetNumPendingInvites();
@@ -137,18 +137,85 @@ end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 
 ns.modules[name].ontooltip = function(tooltip)
+	local _=function(y,m,d) return y*10000+m*100+d; end
 	if (ns.tooltipChkOnShowModifier(false)) then tooltip:Hide(); return; end
 	tt=tooltip;
 
 	local x = CalendarGetNumPendingInvites()
+	local weekday, month, day, year = CalendarGetDate();
+	local today=_(year,month,day);
+
 	ns.tooltipScaling(tt)
-	tt:AddLine(L[name])
+	tt:AddDoubleLine(L[name],C("ltgray",(" %d-%02d-%02d"):format(year,month,day)))
 	tt:AddLine(" ")
 	if x == 0 then
 		tt:AddLine(C("white",L["No invitations found"].."."))
 	else
 		tt:AddLine(C("white",x.." "..(x==1 and L["Invitation"] or L["Invitations"]).."."))
 	end
+
+	--- collect events of this month
+	local holidays = {};
+	local NameToIndex={};
+	local fDate = "%04d-%02d-%02d %02d:%02d";
+	for i,monthOffset in ipairs({-1,0,1})do
+		--local monthOffset=1;
+		local month, year, numDays, firstWeekday = CalendarGetMonth(monthOffset);
+		for day=1, numDays do
+			local numEvents = CalendarGetNumDayEvents(monthOffset, day);
+			for eIndex=1, numEvents do
+				local title, hour, minute, calendarType, sequenceType = CalendarGetDayEvent(monthOffset, day, eIndex);
+				if(title)then
+					if(sequenceType=="START")then
+						tinsert(holidays,{
+							title=title,
+							startStr=fDate:format(year,month,day,hour,minute),
+							startNum=_(year,month,day),
+							stopStr="",
+							stopNum=0,
+							state=4
+						});
+						NameToIndex[title]=#holidays;
+					end
+					if(sequenceType=="END" and NameToIndex[title])then
+						local I = NameToIndex[title];
+						holidays[I].stopStr=fDate:format(year,month,day,hour,minute);
+						holidays[I].stopNum=_(year,month,day);
+
+						if(today>holidays[I].stopNum)then
+							holidays[I].state=0; -- past
+						elseif(today>=holidays[I].startNum and today<=holidays[I].stopNum)then
+							holidays[I].state=1; -- current
+						else
+							holidays[I].state=2; -- future
+						end
+
+						NameToIndex[title]=nil;
+					end
+				end
+			end
+		end
+	end
+
+	if(#holidays>0)then
+		local x,soon=nil,nil;
+		tt:AddLine(" ")
+		tt:AddLine(C("dkyellow",L["Events"]));
+		for i,v in ipairs(holidays)do
+			if(v.state>0)then
+				if(x)then
+					tt:AddLine(" ");
+				end
+				tt:AddDoubleLine(C("ltblue",v.title),C("ltyellow",v.startStr));
+				tt:AddDoubleLine( (v.state==1 and C("green",L["(current)"])) or (v.state==2 and not soon and C("yellow",L["(soon)"])) or " ",C("ltyellow",L["to"].." "..v.stopStr));
+				if(v.state==2)then
+					soon=1;
+				end
+				x=1;
+			end
+		end
+	end
+
 	if Broker_EverythingDB.showHints then
 		tt:AddLine(" ")
 		ns.clickOptions.ttAddHints(tt,name);
