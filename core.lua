@@ -41,21 +41,30 @@ ns.coreOptionDefaults = {
 	ttModifierKey1 = "NONE",
 	ttModifierKey2 = "NONE",
 	goldHideCopper = false,
+	goldHideSilver = false,
+	goldHideLowerZeros = false,
 };
 
 ns.coreOptions = { -- option panel builder table
 	{type="separator", alpha=0, height=7 },
 	{type="header", label=L["Misc options"]},
 	{type="separator", alpha=1 },
-	{type="toggle", name="suffixColour",   label=L["Suffix coloring"], tooltip=L["Enable/Disable class coloring of the information display suffixes. (eg, ms, fps etc)"]},
-	{type="toggle", name="goldColor",      label=L["Gold coloring"], tooltip=L["Use colors instead of icons for gold, silver and copper"]},
-	{type="toggle", name="goldHideCopper", label=L["Hide copper"], tooltip=L["Hide copper values of your money"]},
-	{type="toggle", name="global",         label=L["Use global profile"], tooltip=L["Enable/Disable use of global Broker_Everything profile across all of your characters."], set=function(value)
+	{type="toggle", name="suffixColour",       label=L["Suffix coloring"], tooltip=L["Enable/Disable class coloring of the information display suffixes. (eg, ms, fps etc)"]},
+	{type="toggle", name="global",             label=L["Use global profile"], tooltip=L["Enable/Disable use of global Broker_Everything profile across all of your characters."], set=function(value)
 		if value == true and Broker_EverythingGlobalDB["Clock"] == nil then
 			Broker_EverythingGlobalDB = Broker_EverythingDB
 		end
 		Broker_EverythingGlobalDB.global = value
 	end, get=function() return Broker_EverythingDB.global end, default=false},
+
+	{type="separator", alpha=0 },
+
+	{type="header", label=L["Money display options"]},
+	{type="separator", alpha=1 },
+	{type="toggle", name="goldColor",          label=L["Gold coloring"], tooltip=L["Use colors instead of icons for gold, silver and copper"]},
+	{type="toggle", name="goldHideCopper",     label=L["Hide copper"], tooltip=L["Hide copper values of your money"]},
+	{type="toggle", name="goldHideSilver",     label=L["Hide silver"], tooltip=L["Hide copper and silver values of your money"]},
+	{type="toggle", name="goldHideLowerZeros", label=L["Hide lower zeros"], tooltip=L["Hide lower zero values of your money"]},
 
 	{type="separator", alpha=0 },
 
@@ -114,7 +123,6 @@ Broker_Everything:SetScript("OnUpdate",function(self,elapsed)
 			end
 		end
 	end
-	ns.bagScan:Update(elapsed)
 end)
 
 function ns.resetAllSavedVariables()
