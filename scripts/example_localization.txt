@@ -300,7 +300,6 @@ Last changed:
 Latency
 Leather cooldown group
 Leave in mailbox
-Leaved
 Left
 Left alt
 Left ctrl
