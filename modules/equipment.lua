@@ -81,6 +81,8 @@ ns.modules[name] = {
 		"EQUIPMENT_SETS_CHANGED",
 		"PLAYER_ENTERING_WORLD",
 		"PLAYER_REGEN_ENABLED",
+		"PLAYER_ALIVE",
+		"PLAYER_UNGHOST",
 		"UNIT_INVENTORY_CHANGED",
 		"EQUIPMENT_SETS_CHANGED"
 	},
@@ -135,7 +137,7 @@ end
 
 
 ns.toggleEquipment = function(eName)
-	if InCombatLockdown() then 
+	if InCombatLockdown() or UnitIsDeadOrGhost("player") then
 		equipPending = eName
 		ns.modules[name].onevent("BE_DUMMY_EVENT")
 	else
@@ -222,7 +224,7 @@ ns.modules[name].init = function(obj)
 end
 
 ns.modules[name].onevent = function(self,event,arg1,...)
-	if (event=="PLAYER_REGEN_ENABLED") and (equipPending~=nil) then
+	if (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and (equipPending~=nil) then
 		UseEquipmentSet(equipPending)
 		equipPending = nil
 	end
