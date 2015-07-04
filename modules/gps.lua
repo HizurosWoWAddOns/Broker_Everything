@@ -42,12 +42,13 @@ local zoneDisplayValues = {
 	["4"] = ("%s (%s)"):format(L["Zone"],L["Subzone"]),
 	["5"] = ("%s (%s)"):format(L["Subzone"],L["Zone"]),
 }
-local teleports, portals, spells, items_for_menu,item_replacements = {},{},{},{},{}
+local teleports, portals, spells, items_for_menu, item_replacements = {},{},{},{},{}
 local _classSpecialSpellIds = {50977,18960,556,126892,147420};
 local _teleportIds = {3561,3562,3563,3565,3566,3567,32271,32272,33690,35715,49358,49359,53140,88342,88344,120145,132621,132627,176248,176242};
 local _portalIds = {10059,11416,11417,11418,11419,11420,32266,32267,33691,35717,49360,49361,53142,88345,88346,120146,132620,132626,176246,176244};
-local _itemIds = {18984,18986,21711,30542,30544,32757,35230,37863,40585,40586,43824,44934,44935,45688,45689,45690,45691,46874,48933,48954,48955,48956,48957,50287,51557,51558,51559,51560,52251,58487,63206,63207,63352,63353,63378,63379,64457,65274,65360,87215,95050,95051,95567,95568,110560,112059};
+local _itemIds = {18984,18986,21711,30542,30544,32757,35230,37863,40585,40586,43824,44934,44935,45688,45689,45690,45691,46874,48933,48954,48955,48956,48957,50287,51557,51558,51559,51560,52251,58487,63206,63207,63352,63353,63378,63379,64457,65274,65360,87215,95050,95051,95567,95568,110560,112059,128353};
 local _itemReplacementIds = {64488,28585,6948,44315,44314,37118};
+local _itemMustBeEquipped = {32757};
 for _,v in ipairs(_itemIds) do items_for_menu[v] = true end
 for _,v in ipairs(_itemReplacementIds) do item_replacements[v] = true end
 
@@ -313,6 +314,8 @@ end
 
 local function chkInventory(ifExists)
 	local found, count = {},0
+
+	-- check bags
 	for bag = 0, NUM_BAG_SLOTS do
 		for slot = 1, GetContainerNumSlots(bag) do
 			local item_id = GetContainerItemID(bag,slot)
@@ -332,6 +335,16 @@ local function chkInventory(ifExists)
 			end
 		end
 	end
+
+	-- check character slots
+	--[[
+	local slots = {"ShirtSlot","Finger0Slot","Finger1Slot","Trinket0Slot","Trinket1Slot"};
+	for i,v in ipairs(slots) do
+		local id = GetInventoryItemID("player",v);
+		if(
+	end
+	]]
+
 	return found, count
 end
 
