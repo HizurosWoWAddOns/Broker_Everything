@@ -142,7 +142,7 @@ local function makeTooltip(tt)
 
 	if (nBuildings>0) then
 		local lst,longer = {},false;
-		for i=1, 11 do
+		for i=1, #buildings do
 			local v = buildings[i];
 		--for i,v in ipairs(buildings) do
 			if (v) then
@@ -259,10 +259,14 @@ local function makeTooltip(tt)
 			end
 			tt:SetCell(l,1,C(v.class or "white", x)..y,nil,nil,ttColumns-1);
 			local cache = floor((time()-v.cache)/600);
-			if(cache>=500)then
-				cache=C("red","500");
+			local cap = (v.trade_agreement) and 1000 or 500;
+			if(v.trade_agreement~=nil and cache>=cap)then
+				cache = C("red",cap);
+				cap = C("red",cap);
+			elseif(v.trade_agreement==nil)then
+				cap = C("dkyellow",cap);
 			end
-			tt:SetCell(l,ttColumns, "~ " .. tostring(cache)); -- 10 minutes = 1 garrison resource
+			tt:SetCell(l,ttColumns, ("~ %s/%s"):format(cache,cap)); -- 10 minutes = 1 garrison resource
 		end
 		tt:AddSeparator(4,0,0,0,0);
 		local l = tt:AddLine();
@@ -290,7 +294,6 @@ local function makeTooltip(tt)
 
 	if (none) then
 		tt:AddLine(L["No data to display..."]);
-
 	elseif (Broker_EverythingDB.showHints) then
 		tt:AddSeparator(4,0,0,0,0);
 		local _,_,mod = ns.DurationOrExpireDate();
@@ -313,6 +316,7 @@ end
 ns.modules[name].onevent = function(self,event,...)
 	local progress,ready=0,0;
 	local garrLevel = C_Garrison.GetGarrisonInfo();
+	local gdb = be_garrison_db[ns.player.name.."-"..ns.realm];
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],Broker_EverythingDB[name]);
 	else
@@ -459,11 +463,20 @@ ns.modules[name].onevent = function(self,event,...)
 		if (type(be_garrison_db[ns.player.name.."-"..ns.realm])~="table") then
 			be_garrison_db[ns.player.name.."-"..ns.realm] = {class=ns.player.class};
 		end
+		gdb = be_garrison_db[ns.player.name.."-"..ns.realm];
 		if (event=="SHOW_LOOT_TOAST") then
-			local typeIdentifier, _, _, _, _, isPersonal, lootSource = ...;
+			local typeIdentifier, _, quantity, _, _, isPersonal, lootSource = ...;
 			if (isPersonal==true) and (typeIdentifier=="currency") and (lootSource==10) then
-				be_garrison_db[ns.player.name.."-"..ns.realm].cache=time();
-				be_garrison_db[ns.player.name.."-"..ns.realm].class=ns.player.class;
+
+				local forcast = floor((time()-gdb.cache)/600);
+				if(quantity>500)then
+					gdb.trade_agreement=true; -- Trade Agreement: Arakkoa Outcasts (128294)
+				elseif(forcast > quantity and quantity==500)then
+					gdb.trade_agreement=false; -- no Trade Agreement
+				end
+
+				gdb.cache=time();
+				gdb.class=ns.player.class;
 			end
 		end
 	end
@@ -475,12 +488,22 @@ ns.modules[name].onevent = function(self,event,...)
 	local title = {};
 	tinsert(title,("%s/%s"):format(C("ltblue",ready),C("orange",progress - ready)));
 
-	if (Broker_EverythingDB[name].showCacheForcastInBroker) and (be_garrison_db[ns.player.name.."-"..ns.realm].cache~=nil) then
-		local cache = floor((time()-be_garrison_db[ns.player.name.."-"..ns.realm].cache)/600);
-		if (cache>=500) then
-			cache = C("red","500");
+	if (Broker_EverythingDB[name].showCacheForcastInBroker) and (gdb.cache~=nil) then
+		local cache = floor((time()-gdb.cache)/600);
+		local cap = (gdb.trade_agreement) and 1000 or 500;
+		----------------------------------------------------------------------------------------------
+		if(gdb.trade_agreement~=nil and cache>=cap)then
+			cache = C("red",cap);
+			cap = C("red",cap);
+		elseif(gdb.trade_agreement==nil)then
+			cache = C("white",cache);
+			cap = C("dkyellow",cap);
+		else
+			cache = C("white",cache);
+			cap = C("white",cap);
 		end
-		tinsert(title, tostring(cache));
+
+		tinsert(title, ("%s/%s"):format(cache,cap));
 	end
 
 	obj.text = table.concat(title,", ");
