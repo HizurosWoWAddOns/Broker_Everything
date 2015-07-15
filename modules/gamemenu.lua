@@ -54,12 +54,16 @@ local menu = { --section 1
 		taint=true
 	},
 	{name=SOCIAL_BUTTON,		iconName="Friends",			func=function() securecall("ToggleFriendsFrame", 1) end,		disabled=IsTrialAccount()},
-	{name=PLAYER_V_PLAYER,		iconName="PvP-{faction}",	click='PVPMicroButton',										disabled=(UnitLevel("player")<SHOW_PVP_LEVEL or IsBlizzCon()), taint},
-	{name=RAID_FINDER,			iconName="Raidfinder",		func=function() securecall("PVEFrame_ToggleFrame", 'GroupFinderFrame', RaidFinderFrame) end,					disabled=(UnitLevel("player")<SHOW_LFD_LEVEL or IsBlizzCon())},
-	{name=DUNGEONS_BUTTON,		iconName="LFDungeon",		func=function() securecall("PVEFrame_ToggleFrame", 'GroupFinderFrame', LFDParentFrame) end,					disabled=(UnitLevel("player")<SHOW_LFD_LEVEL or IsBlizzCon())},
-	{name=MOUNTS,				iconName="Mounts",			func=function() if not PetJournalParent then securecall("PetJournal_LoadUI") end securecall("TogglePetJournal", 1) end,		disabled=UnitLevel("player")<20, taint=true},
-	{name=PET_JOURNAL,			iconName="Pets",			func=function() if not PetJournalParent then securecall("PetJournal_LoadUI") end securecall("TogglePetJournal", 2) end,		taint=true},
-	{name=TOY_BOX,				iconName="ToyBox",			func=function() if not PetJournalParent then securecall("PetJournal_LoadUI") end securecall("TogglePetJournal", 3) end,		taint=true},
+
+	{name=GROUP_FINDER,			iconName="PvP-{faction}",	func=function() securecall("PVEFrame_ToggleFrame","GroupFinderFrame"); end, disabled=(UnitLevel("player")<SHOW_LFD_LEVEL or IsBlizzCon())},
+	{name=PLAYER_V_PLAYER,		iconName="LFDungeon",		func=function() securecall("PVEFrame_ToggleFrame","PVPUIFrame"); end, disabled=(UnitLevel("player")<SHOW_PVP_LEVEL or IsBlizzCon())},
+	{name=CHALLENGES,			iconName="Challenges",		func=function() securecall("PVEFrame_ToggleFrame","ChallengesFrame"); end, disabled=(UnitLevel("player")<SHOW_LFD_LEVEL or IsBlizzCon())},
+
+	{name=MOUNTS,				iconName="Mounts",			func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 1) end,		taint=true},
+	{name=PET_JOURNAL,			iconName="Pets",			func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 2) end,		taint=true},
+	{name=TOY_BOX,				iconName="ToyBox",			func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 3) end,		taint=true},
+	{name=HEIRLOOMS,			iconName="Heirlooms",		func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 4) end,		taint=true},
+
 	{name=ENCOUNTER_JOURNAL,	iconName="EJ",				func=function() securecall("ToggleEncounterJournal") end,														iconCoords=""},
 	{name=BLIZZARD_STORE,		iconName="Store",			click='StoreMicroButton',															disabled=IsTrialAccount(), taint=true},
 	{sep=true}, -- section 2
@@ -99,7 +103,23 @@ local menu = { --section 1
 I[name]              = {iconfile="Interface\\Addons\\"..addon.."\\media\\stuff"}; --IconName::Game Menu--
 
 -- game menu entry icons
-I["gm_Character-neutral"] = {iconfile="Interface\\buttons\\ui-microbutton-"..ns.player.class, coordsStr="16:16:0:-1:64:64:5:54:32:59"};						--IconName::gm_Character-neutral--
+local ClassIconCoords={
+	["WARRIOR"] = "16:16:0:-1:256:256:5:59:5:59",
+	["MAGE"] = "16:16:0:-1:256:256:69:122:5:59",
+	["ROGUE"] = "16:16:0:-1:256:256:132:185:5:59",
+	["DRUID"] = "16:16:0:-1:256:256:195:248:5:59",
+	["HUNTER"] = "16:16:0:-1:256:256:5:59:69:123",
+	["SHAMAN"] = "16:16:0:-1:256:256:69:122:69:123",
+	["PRIEST"] = "16:16:0:-1:256:256:132:185:69:123",
+	["WARLOCK"] = "16:16:0:-1:256:256:195:248:69:123",
+	["PALADIN"] = "16:16:0:-1:256:256:5:59:133:187",
+	["DEATHKNIGHT"] = "16:16:0:-1:256:256:69:123:133:187",
+	["MONK"] = "16:16:0:-1:256:256:133:184:133:187",
+}
+
+I["gm_Character-neutral"] = {iconfile="Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes", coordsStr=ClassIconCoords[ns.player.class]};						--IconName::gm_Character-neutral--
+--I["gm_Character-neutral"] = {iconfile="Interface\\buttons\\ui-microbutton-"..ns.player.class, coordsStr="16:16:0:-1:64:64:5:54:32:59"};						--IconName::gm_Character-neutral--
+
 I["gm_Spellbook"]         = {iconfile="Interface\\ICONS\\inv_misc_book_09"}																					--IconName::gm_Spellbook--
 I["gm_Talents"]           = {iconfile="Interface\\ICONS\\ability_marksmanship"}																				--IconName::gm_Talents--
 I["gm_Achievments"]       = {iconfile="Interface\\buttons\\ui-microbutton-achievement-up", coordsStr="16:16:0:-1:64:64:5:54:32:59"}							--IconName::gm_Achievments--
@@ -131,6 +151,8 @@ I["gm_ExitGame"]          = {iconfile="Interface\\ICONS\\inv_misc_enggizmos_27"}
 I["gm_gmticket"]          = {iconfile="Interface\\CHATFRAME\\UI-CHATICON-BLIZZ", coordsStr="0:2"}															--IconName::gm_gmticket--
 I["gm_gmticket_edit"]     = {iconfile="Interface\\ICONS\\inv_misc_note_05"}																					--IconName::gm_gmticket_edit--
 I["gm_gmticket_cancel"]   = {iconfile="Interface\\buttons\\ui-grouploot-pass-up",coordsStr="16:16:0:-1:32:32:2:32:2:32"}									--IconName::gm_gmticket_cancel--
+I["gm_Heirlooms"]         = {iconfile="Interface\\Icons\\inv_misc_enggizmos_19", coordsStr="16:16:0:-1:16:16:1:14:1:14"}									--IconName::gm_heirlooms--
+I["gm_Challenges"]        = {iconfile="Interface\\Icons\\Achievement_ChallengeMode_ArakkoaSpires_Hourglass",coordsStr="16:16:0:-1:16:16:1:14:1:14"}			--IconName::gm_Challenges--
 
 
 
