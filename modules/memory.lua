@@ -16,6 +16,7 @@ local ttName = name.."TT"
 local GetNumAddOns,GetAddOnMemoryUsage,GetAddOnInfo = GetNumAddOns,GetAddOnMemoryUsage,GetAddOnInfo
 local ttColumns = 3
 local data = {}
+local memHistory = {};
 local loginUpdateLock=true;
 
 local addonpanels = {};
@@ -135,6 +136,12 @@ ns.modules[name].onupdate = function(self)
 		unit = "mb";
 	end
 
+	tinsert(memHistory,1,total);
+	if(#memHistory==51)then tremove(memHistory,51); end
+	if(tt and tt.key and tt.key==ttName)then
+		--ns.graphTT.Update(tt,memHistory);
+	end
+
 	local obj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
 	obj.text = string.format ("%.2f", total) .. ns.suffixColour(unit)
 end
@@ -226,7 +233,11 @@ ns.modules[name].ontooltip = function(tt)
 
 		line, column = tt:AddLine()
 		tt:SetCell(line, 1, C("copper",L["Shift+Right-click"]).." || "..C("green",L["Collect garbage"]), nil, nil, ttColumns)
-	end	
+	end
+
+	if(#memHistory>0)then
+		--ns.graphTT.Update(tt,memHistory);
+	end
 end
 
 
