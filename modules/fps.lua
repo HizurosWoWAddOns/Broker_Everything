@@ -6,6 +6,7 @@ local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 graphicsSetsDB = {}
 
+
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
@@ -17,150 +18,16 @@ local GetFramerate = GetFramerate
 local _, playerClass = UnitClass("player")
 local _minmax = {[1] = nil,[2] = nil}
 local graph_maxValues,graph_maxHeight = 50,50
+local fpsHistory = {};
 local fps = 0
 local minmax_delay = 3
 local gfxRestart = {}
 local gameRestart = {}
 
-local gfxMenu = {
-	{ label = C("orange","("..L["Experimental"]..")"), title=true },
-	{ separator = true },
-	{ label=DISPLAY_HEADER, title=true },
---	{ label=DISPLAY_HEADER, childs={
-		{ label=DISPLAY_MODE,		--[=[	childs={
-			{label=VIDEO_OPTIONS_WINDOWED,            cvarType="num", cvars={gxWindow=1,gxMaximize=0}, controlGroup="displayMode"},
-			{label=VIDEO_OPTIONS_WINDOWED_FULLSCREEN, cvarType="num", cvars={gxWindow=1,gxMaximize=1}, controlGroup="displayMode"},
-			{label=VIDEO_OPTIONS_FULLSCREEN,          cvarType="num", cvars={gxWindow=0,gxMaximize=0}, controlGroup="displayMode"}
-		}, gxRestart=true --]=]
-		},
-		{ label=VERTICAL_SYNC,			cvarType="bool", cvar="gxVSync",			gxRestart=true},
---	}},
 
-	{ separator = true },
-
-	{label=TEXTURES_SUBHEADER, title=true },
---	{label=TEXTURES_SUBHEADER, childs={
-		{ label=TEXTURE_DETAIL,	--[=[		childs={
-			{label=VIDEO_OPTIONS_LOW,    cvarType="num", cvars={terrainMipLevel=1, componentTextureLevel=1, worldBaseMip=2}, controlGroup="textureDetails"},
-			{label=VIDEO_OPTIONS_FAIR,   cvarType="num", cvars={terrainMipLevel=1, componentTextureLevel=1, worldBaseMip=1}, controlGroup="textureDetails"},
-			{label=VIDEO_OPTIONS_MEDIUM, cvarType="num", cvars={terrainMipLevel=0, componentTextureLevel=0, worldBaseMip=1}, controlGroup="textureDetails"},
-			{label=VIDEO_OPTIONS_HIGH,   cvarType="num", cvars={terrainMipLevel=0, componentTextureLevel=0, worldBaseMip=0}, controlGroup="textureDetails"}
-		} --]=]
-		},
-		{ label=ANISOTROPIC, --[=[ groupName="anisotropic", optionGroup={
-			{label=VIDEO_OPTIONS_BILINEAR,       cvarType="num", cvars={textureFilteringMode=0}},
-			{label=VIDEO_OPTIONS_TRILINEAR,      cvarType="num", cvars={textureFilteringMode=1}},
-			{label=VIDEO_OPTIONS_2XANISOTROPIC,  cvarType="num", cvars={textureFilteringMode=2}},
-			{label=VIDEO_OPTIONS_4XANISOTROPIC,  cvarType="num", cvars={textureFilteringMode=3}},
-			{label=VIDEO_OPTIONS_8XANISOTROPIC,  cvarType="num", cvars={textureFilteringMode=4}},
-			{label=VIDEO_OPTIONS_16XANISOTROPIC, cvarType="num", cvars={textureFilteringMode=5}}
-		} --]=]
-		},
-		{ label=PROJECTED_TEXTURES,		cvarType="bool", cvar="projectedTextures"},
---	}},
-
-	{ separator = true },
-
-	{ label=EFFECTS_SUBHEADER, title=true },
---	{ label=EFFECTS_SUBHEADER, childs={
-		{ label=SHADOW_QUALITY,		--[=[	childs={ 
-			{label=VIDEO_OPTIONS_LOW,    cvarType="num", cvars={shadowMode=0, shadowTextureSize=512}, controlGroup="shadowQuality"},
-			{label=VIDEO_OPTIONS_FAIR,   cvarType="num", cvars={shadowMode=1, shadowTextureSize=1024}, controlGroup="shadowQuality"},
-			{label=VIDEO_OPTIONS_MEDIUM, cvarType="num", cvars={shadowMode=1, shadowTextureSize=2048}, controlGroup="shadowQuality"},
-			{label=VIDEO_OPTIONS_HIGH,   cvarType="num", cvars={shadowMode=2, shadowTextureSize=2048}, controlGroup="shadowQuality"},
-			{label=VIDEO_OPTIONS_ULTRA,  cvarType="num", cvars={shadowMode=3, shadowTextureSize=2048}, controlGroup="shadowQuality"}
-		} --]=]
-		},
-		{ label=LIQUID_DETAIL,		--[=[	childs={
-			{label=VIDEO_OPTIONS_LOW,    cvarType="num", cvars={waterDetail=0, reflectionMode=0, rippleDerail=0}, controlGroup="liquidDetails"},
-			{label=VIDEO_OPTIONS_FAIR,   cvarType="num", cvars={waterDetail=1, reflectionMode=0, rippleDetail=0}, controlGroup="liquidDetails"},
-			{label=VIDEO_OPTIONS_MEDIUM, cvarType="num", cvars={waterDetail=2, reflectionMode=1, rippleDetail=0}, controlGroup="liquidDetails"},
-			{label=VIDEO_OPTIONS_ULTRA,  cvarType="num", cvars={waterDetail=3, reflectionMode=2, rippleDetail=1}, controlGroup="liquidDetails"}
-		} --]=]
-		},
-		{ label=SUNSHAFTS,		--[=[		childs={
-			{label=VIDEO_OPTIONS_DISABLED, cvarType="num", cvars={sunshafts=0}, controlGroup="sunShafts"},
-			{label=VIDEO_OPTIONS_LOW,      cvarType="num", cvars={sunshafts=1}, controlGroup="sunShafts"},
-			{label=VIDEO_OPTIONS_HIGH,     cvarType="num", cvars={sunshafts=2}, controlGroup="sunShafts"}
-		} --]=]
-		},
-		{ label=PARTICLE_DENSITY,	--[=[	childs={
-			{label=VIDEO_OPTIONS_LOW,    cvarType="num", cvars={particleDensity=10,  weatherDensity=0}, controlGroup="particleDensity"},
-			{label=VIDEO_OPTIONS_FAIR,   cvarType="num", cvars={particleDensity=40,  weatherDensity=1}, controlGroup="particleDensity"},
-			{label=VIDEO_OPTIONS_MEDIUM, cvarType="num", cvars={particleDensity=60,  weatherDensity=1}, controlGroup="particleDensity"},
-			{label=VIDEO_OPTIONS_HIGH,   cvarType="num", cvars={particleDensity=80,  weatherDensity=2}, controlGroup="particleDensity"},
-			{label=VIDEO_OPTIONS_ULTRA,  cvarType="num", cvars={particleDensity=100, weatherDensity=3}, controlGroup="particleDensity"}
-		} --]=]
-		},
-		{ label=SSAO_LABEL,		--[=[		childs={
-			{label=VIDEO_OPTIONS_DISABLED, cvarType="num", cvars={ssao=0}, controlGroup="ssao"},
-			{label=VIDEO_OPTIONS_LOW,      cvarType="num", cvars={ssao=1}, controlGroup="ssao"},
-			{label=VIDEO_OPTIONS_HIGH,     cvarType="num", cvars={ssao=2}, controlGroup="ssao"}
-		} --]=]
-		},
---	}},
-
-	{ separator = true },
-
-	{ label=ENVIRONMENT_SUBHEADER, title=true },
---	{ label=ENVIRONMENT_SUBHEADER, childs={
-		{ label=FARCLIP,			--[=[	childs={
-			{label=VIDEO_OPTIONS_LOW,        cvarType="num", cvars={farClip=0,    wmoLodDist=0,   terrainLodDist=0,   terrainTextureLod=0}, controlGroup="farclip"},
-			{label=VIDEO_OPTIONS_FAIR,       cvarType="num", cvars={farClip=600,  wmoLodDist=300, terrainLodDist=300, terrainTextureLod=1}, controlGroup="farclip"},
-			{label=VIDEO_OPTIONS_MEDIUM,     cvarType="num", cvars={farClip=800,  wmoLodDist=400, terrainLodDist=450, terrainTextureLod=1}, controlGroup="farclip"},
-			{label=VIDEO_OPTIONS_HIGH,       cvarType="num", cvars={farClip=1000, wmoLodDist=500, terrainLodDist=500, terrainTextureLod=0}, controlGroup="farclip"},
-			{label=VIDEO_OPTIONS_ULTRA,      cvarType="num", cvars={farClip=1300, wmoLodDist=650, terrainLodDist=650, terrainTextureLod=0}, controlGroup="farclip"},
-			{label=VIDEO_OPTIONS_ULTRA.."+", cvarType="num", cvars={farClip=1600, wmoLodDist=800, terrainLodDist=800, terrainTextureLod=0}, controlGroup="farclip"}
-		} --]=]
-		},
-		{ label=ENVIRONMENT_DETAIL,	--[=[	childs={
-			{label=VIDEO_OPTIONS_LOW,    cvarType="num", cvars={environmentDetail=50}, controlGroup="environmentDetails"},
-			{label=VIDEO_OPTIONS_FAIR,   cvarType="num", cvars={environmentDetail=75}, controlGroup="environmentDetails"},
-			{label=VIDEO_OPTIONS_MEDIUM, cvarType="num", cvars={environmentDetail=100}, controlGroup="environmentDetails"},
-			{label=VIDEO_OPTIONS_HIGH,   cvarType="num", cvars={environmentDetail=125}, controlGroup="environmentDetails"},
-			{label=VIDEO_OPTIONS_ULTRA,  cvarType="num", cvars={environmentDetail=150}, controlGroup="environmentDetails"}
-		} --]=]
-		},
-		{ label=GROUND_CLUTTER,		--[=[	childs={
-			{label=VIDEO_OPTIONS_LOW,    cvarType="num", cvars={groundEffectDist=70,  groundEffectDensity=16}, controlGroup="groundClutter"},
-			{label=VIDEO_OPTIONS_FAIR,   cvarType="num", cvars={groundEffectDist=110, groundEffectDensity=40}, controlGroup="groundClutter"},
-			{label=VIDEO_OPTIONS_MEDIUM, cvarType="num", cvars={groundEffectDist=160, groundEffectDensity=64}, controlGroup="groundClutter"},
-			{label=VIDEO_OPTIONS_HIGH,   cvarType="num", cvars={groundEffectDist=200, groundEffectDensity=80}, controlGroup="groundClutter"},
-			{label=VIDEO_OPTIONS_ULTRA,  cvarType="num", cvars={groundEffectDist=260, groundEffectDensity=128}, controlGroup="groundClutter"}
-		} --]=]
-		},
---	}},
-
-	{ separator = true },
-
-	{ label=CAMERA_LABEL, title=true },
---	{ label=CAMERA_LABEL, childs={
-		{ label=FOLLOW_TERRAIN,			cvarType="bool", cvar="cameraTerrainTilt"},
-		{ label=HEAD_BOB,				cvarType="bool", cvar="cameraBobbing"},
-		{ label=WATER_COLLISION,		cvarType="bool", cvar="cameraWaterCollision"},
-		{ label=SMART_PIVOT,			cvarType="bool", cvar="cameraPivot"},
---	}},
-
-	{ separator = true },
-
-	{ label=EFFECTS_LABEL,  title=true },
---	{ label=EFFECTS_LABEL, childs={
-		{ label=TRIPLE_BUFFER,			cvarType="bool", cvar="gxTripleBuffer",	gxRestart=true},
-		{ label=FIX_LAG,				cvarType="bool", cvar="gxFixLag",		gxRestart=true},
-		{ label=HARDWARE_CURSOR,		cvarType="bool", cvar="gxCursor",		gxRestart=true},
-		{ label=GXAPI,		--[=[			childs={
-			{label="DirectX 9",  cvarType="num", cvars={gxapi="D3D9"},  hide=(not IsWindowsClient()), controlGroup="gxApi"},
-			{label="DirectX 11", cvarType="num", cvars={gxapi="D3D11"}, hide=(not IsWindowsClient()), controlGroup="gxApi"},
-			{label="OpenGL",     cvarType="num", cvars={gxapi="OpenGL"}, controlGroup="gxApi"}
-		}, gameRestart=true --]=]
-		},
---	}},
-}
-
-
--- ------------------------------------- --
+-------------------------------------------
 -- register icon names and default files --
--- ------------------------------------- --
+-------------------------------------------
 I[name..'_yellow'] = {iconfile="Interface\\Addons\\"..addon.."\\media\\fps_yellow"}	--IconName::FPS_yellow--
 I[name..'_red']    = {iconfile="Interface\\Addons\\"..addon.."\\media\\fps_red"}	--IconName::FPS_red--
 I[name..'_blue']   = {iconfile="Interface\\Addons\\"..addon.."\\media\\fps_blue"}	--IconName::FPS_blue--
@@ -209,24 +76,15 @@ local function fpsTooltip(tt)
 	tt:AddLine(L["Min."]..":",fps_color(_minmax[1])[3])
 	tt:AddLine(L["Max."]..":",fps_color(_minmax[2])[3])
 
-	--[[
-	tt:AddSeparator(3,0,0,0,0)
-	l,c = tt:AddLine()
-	tt:SetCell(l,1,"",nil,nil,2)
-	local cell = tt.lines[l].cells[1]
-
-	local f = ns.tooltipGraph(name,graph_maxValues,graph_maxHeight,true)
-	f:SetParent(cell)
-	f:SetPoint("TOPLEFT", cell,"TOPLEFT", 0, 0)
-	cell:SetWidth(f:GetWidth())
-	cell:SetHeight(f:GetHeight())
-	]]
-
 	--if Broker_EverythingDB.showHints then
 	if false then
 		tt:AddLine(" ")
 		tt:AddLine(C("copper",L["Click"]).." ||",C("green",L["Open graphics set manager"]))
 		tt:AddLine(C("copper",L["Right-Click"]).." ||",C("green",L["Open graphics menu"]))
+	end
+
+	if(#fpsHistory>0)then
+		--ns.graphTT.Update(tt,fpsHistory);
 	end
 end
 
@@ -375,8 +233,13 @@ ns.modules[name].onupdate = function(self)
 	local c = fps_color(fps)
 	local d = self.obj or ns.LDB:GetDataObjectByName(ldbName)
 
-	minmax(fps)
-	--ns.tooltipGraphAddValue(name,fps,graph_maxValues)
+	minmax(fps);
+
+	tinsert(fpsHistory,1,fps);
+	if(#fpsHistory==51)then tremove(fpsHistory,51); end
+	if(tt and tt.key and tt.key==ttName)then
+		--ns.graphTT.Update(tt,fpsHistory);
+	end
 
 	local icon = I(name..c[1])
 	d.iconCoords = icon.coords or {0,1,0,1}

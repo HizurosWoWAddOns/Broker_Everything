@@ -41,11 +41,12 @@ local menu = { --section 1
 		disabled=(IsTrialAccount() or IsBlizzCon()),
 		get=function(v)
 			if ns.player.faction=="Neutral" then
-				v.disabled=true
+				v.disabled=true;
+				v.iconName="Help";
 			end
 			if not v.disabled and IsInGuild() then
-				v.name=GUILD
-				v.iconName = "Guild"
+				v.name=GUILD;
+				v.iconName = "Guild";
 			end
 		end,
 		--setIcon=function()
