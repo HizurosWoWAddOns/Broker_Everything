@@ -12,8 +12,7 @@ if ns.build<60000000 then return end
 -----------------------------------------------------------
 local name = "Follower";
 L.Follower = GARRISON_FOLLOWERS;
-local ldbName,ttName = name,name.."TT"
-local tt,createMenu
+local ldbName, ttName, ttColumns, tt, createMenu = name, name.."TT", 6
 local followers = {available={}, onmission={}, onwork={}, onresting={}, unknown={},num=0};
 local delay=true;
 
@@ -41,12 +40,14 @@ ns.modules[name] = {
 	config_defaults = {
 		bgColoredStatus = true,
 		hideDisabled=false,
-		hideWorking=false
+		hideWorking=false,
+		showChars = true
 	},
 	config_allowed = {},
 	config = {
 		{ type="header", label=L[name], align="left", icon=I[name] },
 		{ type="separator" },
+		{ type="toggle", name="showChars",     label=L["Show characters"],          tooltip=L["Show a list of your characters with count of chilling, working and followers on missions in tooltip"] },
 		{ type="toggle", name="bgColoredStatus", label=L["Background colored row for status"], tooltip=L["Use background colored row for follower status instead to split in separate tables"], event=true },
 		{ type="toggle", name="hideDisabled", label=L["Hide disabled followers"], tooltip=L["Hide disabled followers in tooltip"], event=true },
 		{ type="toggle", name="hideWorking", label=L["Hide working followers"], tooltip=L["Hide working followers in tooltip"], event=true },
@@ -96,11 +97,16 @@ local function getFollowers()
 		return num
 	end
 	local xp = function(v) return (v.levelXP>0) and (v.xp/v.levelXP*100) or 100; end;
-	local tmp = C_Garrison.GetFollowers();
+	local tmp = C_Garrison.GetFollowers(LE_FOLLOWER_TYPE_GARRISON_6_0);
 	followers = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
+
+	be_character_cache[ns.player.name_realm].followers={}; -- wipe
+	local cache=be_character_cache[ns.player.name_realm].followers;
+
 	for i,v in ipairs(tmp)do
 		if (v.isCollected==true) then
 			v.AbilitiesAndTraits = C_Garrison.GetFollowerAbilities(v.followerID);
+			local s,m=0,0;
 			if (v.status==nil) then
 				v.status2="available";
 				followers.available_num = followers.available_num + 1
@@ -109,24 +115,29 @@ local function getFollowers()
 				v.status2="onmission";
 				followers.onmission_num = followers.onmission_num + 1
 				followers.onmission[_(followers.onmission_num,v.level,xp(v),v.quality,v.iLevel)] = v
+				m=time()+C_Garrison.GetFollowerMissionTimeLeftSeconds(v.followerID);
 			elseif (v.status==GARRISON_FOLLOWER_EXHAUSTED) then
 				v.status2="onresting";
 				followers.onresting_num = followers.onresting_num + 1
 				followers.onresting[_(followers.onresting_num,v.level,xp(v),v.quality,v.iLevel)] = v
+				s=1;
 			elseif (v.status==GARRISON_FOLLOWER_WORKING) then
 				v.status2="onwork";
 				followers.onwork_num = followers.onwork_num + 1
 				followers.onwork[_(followers.onwork_num,v.level,xp(v),v.quality,v.iLevel)] = v
-			else
+				s=2;
+			elseif (v.status==GARRISON_FOLLOWER_INACTIVE) then
 				v.status2="disabled";
 				followers.disabled_num = followers.disabled_num + 1
 				followers.disabled[_(followers.disabled_num,v.level,xp(v),v.quality,v.iLevel)] = v
+				s=3;
 			end
 			if (Broker_EverythingDB[name].bgColoredStatus) then
 				if (v.status==nil) then v.status="available"; end
 				followers.allinone[_(followers.num,v.level,xp(v),v.quality,v.iLevel)] = v
 			end
-			followers.num = followers.num + 1
+			tinsert(cache,{s, m}); -- status (reduced), missionEndTime
+			followers.num = followers.num + 1;
 		end
 	end
 	followers.allinone_num=followers.num;
@@ -136,6 +147,69 @@ local function makeTooltip(tt)
 	local colors, qualities,count = {"ltblue","yellow","yellow","green","red"},{"white","ff1eaa00","ff0070dd","ffa335ee","ffff8000"},0
 	local statuscolors = {["onresting"]="ltblue",["onwork"]="orange",["onmission"]="yellow",["available"]="green",["disabled"]="red"};
 	tt:AddHeader(C("dkyellow",L["Follower"]));
+
+	if (Broker_EverythingDB[name].showChars) then
+		tt:AddSeparator(4,0,0,0,0)
+		local l=tt:AddLine( C("ltblue", L["Characters"]) ); -- 1
+		if(IsShiftKeyDown())then
+			tt:SetCell(l, 2, C("ltblue",L["Back from missions"]).."|n"..L["next"].." / "..L["all"], nil, "RIGHT", 3);
+		else
+			tt:SetCell(l, 2, C("ltblue",L["On missions"]) .."|n".. C("green",L["Completed"]) .." / ".. C("yellow",L["In progress"]), nil, "RIGHT", 3);
+		end
+		tt:SetCell(l, 5, C("ltblue",L["Without missions"])     .."|n".. C("green",L["Chilling"]) .." / ".. C("yellow",L["Working"]), nil, "RIGHT", 2);
+		tt:SetCell(l, 7, C("ltblue",L["Followers"]) .. "|n" .. C("cyan",L["Collected"]) .." / ".. C("green",L["Active"]) .." / ".. C("yellow",L["Inactive"]));
+
+		tt:AddSeparator();
+		local t=time();
+
+		for i=1, #be_character_cache.order do
+			local name_realm = be_character_cache.order[i];
+			local v = be_character_cache[name_realm];
+			if(v.followers)then
+				local charName,realm=strsplit("-",name_realm);
+				local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+				realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or "";
+				local l=tt:AddLine(C(v.class,ns.scm(charName)) .. realm .. faction );
+				if(name_realm==ns.player.name_realm)then
+					--- background highlight
+				end
+
+				local c,n,a = {chilling=0,working=0,onmission=0,resting=0,disabled=0,aftermission=0},0,0;
+				local collected = #v.followers;
+
+				for _,data in ipairs(v.followers)do
+					if(type(data)=="table")then
+						local s,m=unpack(data);
+						if s == 1 then
+							c.chilling=c.chilling+1;
+						elseif s == 2 then
+							c.working=c.working+1;
+						elseif s == 3 then
+							c.disabled=c.disabled+1;
+						elseif m>t then
+							c.onmission=c.onmission+1;
+						elseif m>0 then
+							c.aftermission=c.aftermission+1;
+						else
+							c.chilling=c.chilling+1;
+						end
+						if m>t and ((n==0) or (n~=0 and m<n)) then n=m; end
+						if m>a then a=m; end
+					end
+				end
+				if IsShiftKeyDown() then
+					tt:SetCell(l, 2, SecondsToTime(n-t) .. " / " .. SecondsToTime(a-t), nil, "RIGHT", 3);
+				else
+					tt:SetCell(l, 2, (c.aftermission==0 and "−" or C("green",c.aftermission)) .." / ".. (c.onmission==0 and "−" or C("yellow",c.onmission)), nil, "RIGHT", 3);
+				end
+				tt:SetCell(l, 5, (c.chilling==0 and "−" or C("green",c.chilling)) .." / ".. (c.working==0 and "−" or C("yellow",c.working)), nil, "RIGHT", 2);
+				tt:SetCell(l, 7, C("cyan",collected) .. " / " .. C("green",collected-c.disabled) .. " / " .. C("yellow",c.disabled) );
+				if(name_realm==ns.player.name_realm)then
+					tt:SetLineColor(l, 0.1, 0.3, 0.6);
+				end
+			end
+		end
+	end
 
 	local tableOrder={
 		"available",
@@ -167,6 +241,7 @@ local function makeTooltip(tt)
 		for i,v in pairs(tableTitles)do tableTitles[i]=false; end
 		tableTitles["allinone"]=C("ltblue",L["Follower"]);
 	end
+
 	local title=true;
 	for _,n in ipairs(tableOrder) do
 		if (not tableTitles[n]) then
@@ -273,7 +348,11 @@ end
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 
-	tt = ns.LQT:Acquire(name.."TT", 6, "LEFT", "RIGHT", "RIGHT", "CENTER", "CENTER", "CENTER")
+	if Broker_EverythingDB[name].showChars then
+		ttColumns=7;
+	end
+
+	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT", "RIGHT", "CENTER", "CENTER", "CENTER", "RIGHT");
 	makeTooltip(tt)
 	ns.createTooltip(self, tt)
 end
