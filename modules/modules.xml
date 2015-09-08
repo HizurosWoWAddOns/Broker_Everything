@@ -6,7 +6,7 @@
 	<Script file="archaeology.lua"/>
 	<Script file="bags.lua"/>
 	<Script file="calendar.lua"/>
-	<Script file="chatchannels.lua" />
+	<Script file="chatchannels.lua"/>
 	<Script file="clock.lua"/>
 	<Script file="currency.lua"/>
 	<Script file="dualspec.lua"/>
@@ -30,6 +30,7 @@
 	<Script file="nameplates.lua"/>
 	<Script file="professions.lua"/>
 	<Script file="questlog.lua"/>
+	<Script file="ships.lua"/>
 	<Script file="speed.lua"/>
 	<Script file="stuff.lua"/>
 	<Script file="surprise.lua"/>
