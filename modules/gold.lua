@@ -1,7 +1,7 @@
 
 -- saved variables
-goldDB = {}
-be_gold_db = {};
+goldDB = nil; --- deprecated
+be_gold_db = nil; --- deprecated
 
 ----------------------------------
 -- module independent variables --
@@ -14,14 +14,10 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Gold" -- L["Gold"]
-local ldbName = name
-local tt = nil
-local ttName = name.."TT"
-local login_money = nil
-local next_try = false
+local ldbName, ttName, tt = name, name.."TT";
+local login_money = nil;
+local next_try = false;
 local current_money = 0
-local goldInit = false
-local goldLoaded = false
 local faction = UnitFactionGroup("Player")
 
 
@@ -42,15 +38,21 @@ ns.modules[name] = {
 		"PLAYER_MONEY",
 		"PLAYER_TRADE_MONEY",
 		"TRADE_MONEY_CHANGED",
-		"PLAYER_ENTERING_WORLD",
-		"NEUTRAL_FACTION_SELECT_RESULT"
+		"PLAYER_ENTERING_WORLD"
 	},
 	updateinterval = nil, -- 10
 	config_defaults = {
-		goldColor = nil
+		goldColor = nil,
+		showAllRealms = true,
+		showAllFactions = true
 	},
 	config_allowed = {},
-	config = { { type="header", label=L[name], align="left", icon=I[name] } }
+	config = {
+		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="separator" },
+		{ type="toggle", name="showAllRealms", label=L["Show all realms"], tooltip=L["Show characters from all realms in tooltip."] },
+		{ type="toggle", name="showAllFactions", label=L["Show all factions"], tooltip=L["Show characters from all factions in tooltip."] },
+	}
 }
 
 
@@ -64,35 +66,17 @@ ns.modules[name] = {
 ------------------------------------
 ns.modules[name].init = function(obj)
 	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
-	local empty=true;
-	if (be_gold_db) then
-		for i,v in pairs(be_gold_db) do empty=false; end
-	end
-	if (goldDB~=nil) and (empty) then
-		be_gold_db = goldDB;
-		goldDB = nil;
-	end
-	if not be_gold_db[faction] then
-		be_gold_db[faction] = { [ns.realm]={ [ns.player.name] = {0,ns.player.class} } }
-	elseif not be_gold_db[faction][ns.realm] then
-		be_gold_db[faction][ns.realm] = { [ns.player.name] = {0,ns.player.class} }
+	if(be_character_cache[ns.player.name_realm].gold==nil)then
+		be_character_cache[ns.player.name_realm].gold = 0;
 	end
 end
 
 ns.modules[name].onevent = function(self,event,msg)
-	current_money = GetMoney()
-	be_gold_db[faction][ns.realm][ns.player.name] = {current_money,ns.player.class}
+	current_money = GetMoney();
+	be_character_cache[ns.player.name_realm].gold = current_money;
 
-	if event=="PLAYER_LOGIN" or (next_try and login_money==nil) then
-		login_money = current_money
-		next_try = (next_try==false and login_money==nil)
-	end
-
-	if event == "NEUTRAL_FACTION_SELECT_RESULT" then
-		faction = UnitFactionGroup("Player")
-		ns.modules[name].init(self)
-		be_gold_db[faction][ns.realm][ns.player.name] = {current_money,ns.player.class}
-		be_gold_db["Neutral"][ns.realm][ns.player.name] = nil
+	if(event=="PLAYER_LOGIN")then
+		login_money = current_money;
 	end
 
 	(self.obj or ns.LDB:GetDataObjectByName(ldbName)).text = ns.GetCoinColorOrTextureString(name,current_money)
@@ -105,37 +89,57 @@ end
 ns.modules[name].ontooltip = function(tt)
 	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
 
-	local totalGold = 0
+	local sAR,sAF = Broker_EverythingDB[name].showAllRealms==true,Broker_EverythingDB[name].showAllFactions==true;
+	local totalGold = current_money;
 	local diff_money
-
-	current_money = GetMoney()
-	be_gold_db[faction][ns.realm][ns.player.name] = {current_money,ns.player.class}
 
 	tt:Clear()
 
-	tt:AddHeader(C("dkyellow",L["Gold information"]))
-	tt:AddSeparator()
+	tt:AddHeader(C("dkyellow",L["Gold information"]));
+	tt:AddSeparator(4,0,0,0,0);
 
-	for k,v in ns.pairsByKeys(be_gold_db[faction][ns.realm]) do
-		if type(v)~="table" then v = {v,"white"} end
-		local line, column = tt:AddLine(C(v[2],ns.scm(k)), ns.GetCoinColorOrTextureString(name,v[1]))
-		if (k~=ns.player.name) then
-		tt:SetLineScript(line, "OnMouseUp", function(self,x,button)
-			if button == "RightButton" then
-				be_gold_db[faction][ns.realm][k] = nil
-				tt:Clear()
-				ns.modules[name].ontooltip(tt)
-			end 
-		end)
-		tt:SetLineScript(line, "OnEnter", function(self) tt:SetLineColor(line, 1,192/255, 90/255, 0.3) end )
-		tt:SetLineScript(line, "OnLeave", function(self) tt:SetLineColor(line, 0,0,0,0) mButton=nil end)
-		end
-		totalGold = totalGold + v[1]
-		line, column = nil, nil
+	if(sAR or sAF)then
+		tt:AddLine(C("ltgreen", (sAR and sAF and "("..L["all realms and factions"]..")") or (sAR and "("..L["all realms"]..")") or (sAF and "("..L["all factions"]..")") or "" ));
+		tt:AddSeparator(4,0,0,0,0);
 	end
 
-	tt:AddSeparator()
-	tt:AddLine(L["Total Gold"], ns.GetCoinColorOrTextureString(name,totalGold))
+	local faction = ns.player.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..ns.player.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+	tt:AddLine(C(ns.player.class,ns.player.name) .. faction, ns.GetCoinColorOrTextureString(name,current_money));
+	tt:AddSeparator();
+
+	local lineCount=0;
+	for i=1, #be_character_cache.order do
+		local name_realm = be_character_cache.order[i];
+		local charName,realm=strsplit("-",name_realm);
+		local v = be_character_cache[name_realm];
+
+		if (v.gold) and (sAR==true or (sAR==false and realm==ns.realm)) and (sAF==true or (sAF==false and v.faction==ns.player.faction)) and (ns.player.name_realm~=name_realm) then
+			local faction = v.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+			local realm = sAR==true and C("dkyellow"," - "..ns.scm(realm)) or "";
+			local line, column = tt:AddLine( C(v.class,ns.scm(charName)) .. realm .. faction, ns.GetCoinColorOrTextureString(name,v.gold));
+
+			tt:SetLineScript(line, "OnMouseUp", function(self,x,button)
+				if button == "RightButton" then
+					be_character_cache[charName.."-"..realm].gold = nil;
+					tt:Clear();
+					ns.modules[name].ontooltip(tt);
+				end 
+			end)
+
+			tt:SetLineScript(line, "OnEnter", function(self) tt:SetLineColor(line, 1,192/255, 90/255, 0.3); end );
+			tt:SetLineScript(line, "OnLeave", function(self) tt:SetLineColor(line, 0,0,0,0); end);
+
+			totalGold = totalGold + v.gold;
+
+			line, column = nil, nil;
+			lineCount=lineCount+1;
+		end
+	end
+
+	if(lineCount>0)then
+		tt:AddSeparator()
+		tt:AddLine(L["Total Gold"], ns.GetCoinColorOrTextureString(name,totalGold))
+	end
 	tt:AddSeparator(3,0,0,0,0)
 
 	if login_money == nil then
