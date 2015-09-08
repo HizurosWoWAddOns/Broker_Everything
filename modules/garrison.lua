@@ -1,20 +1,20 @@
 
-be_garrison_db = {};
+be_garrison_db = nil; --- deprecated
+
 ----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-
 if ns.build<60000000 then return end
+
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Garrison" -- L["Garrison"]
-local ldbName = name
+local ldbName,ttName = name, name.."TT";
 local tt,createMenu,ttColumns
-local ttName = name.."TT"
 local buildings,nBuildings,construct,nConstruct,blueprints3,achievements3 = {},0,{},0,{},{}
 local updater = false;
 local longer = false;
@@ -23,6 +23,7 @@ local buildings2achievements = {[9]=9129,[25]=9565,[27]=9523,[35]=9703,[38]=9497
 local blueprintsL3 = {[9]=111967,[25]=111969,[27]=111971,[35]=109065,[38]=109063,[41]=109255,[62]=111996,[66]=112003,[117]=111991,[119]=111930,[121]=111989,[123]=109257,[125]=111973,[127]=111993,[129]=111979,[131]=111975,[134]=111928,[136]=111997,[140]=111977,[142]=111983,[144]=111987,[160]=111981,[163]=111985,[167]=111999};
 local jobslots = {[25]=1,[27]=1,[28]=1,[62]=1,[63]=1,[117]=1,[118]=1,[119]=1,[120]=1,[121]=1,[122]=1,[123]=1,[124]=1,[125]=1,[126]=1,[127]=1,[128]=1,[129]=1,[130]=1,[131]=1,[132]=1,[133]=1,[135]=1,[136]=1,[137]=1,[138]=1};
 local plot_order=setmetatable({[59]=1,[63]=2,[67]=3,[81]=4,[98]=5,[23]=6,[24]=7,[22]=8,[25]=9,[18]=10,[19]=11,[20]=12},{__index=function(t,k) local c=0; for i,v in pairs(t)do if(v>c)then c=v; end end c=c+1; rawset(t,k,c); return c; end});
+local merchant=false;
 
 
 -------------------------------------------
@@ -36,8 +37,9 @@ I[name] = {iconfile="Interface\\Icons\\inv_garrison_resource", coords={0.05,0.95
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to buildings of your garrison and there active work orders."], -- Display also if blueprints available that depending on achievements.
-	enabled = false,
+	enabled = true,
 	events = {
+		"PLAYER_ENTERING_WORLD",
 		"GARRISON_LANDINGPAGE_SHIPMENTS",
 		"GARRISON_UPDATE",
 		"GARRISON_BUILDING_UPDATE",
@@ -50,6 +52,7 @@ ns.modules[name] = {
 	},
 	updateinterval = 30, -- 10
 	config_defaults = {
+		showChars = true,
 		showConstruct = true,
 		showBlueprints = true,
 		showAchievements = true,
@@ -58,12 +61,22 @@ ns.modules[name] = {
 		showRealms = true,
 	},
 	config_allowed = {},
-	config = { { type="header", label=L[name], align="left", icon=I[name] } },
+	config = {
+		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="separator" },
+		{ type="toggle", name="showChars",                label=L["Show characters"],             tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+		{ type="toggle", name="showConstruct",            label=L["Show under construction"],     tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+		{ type="toggle", name="showBlueprints",           label=L["Show blueprints"],             tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+		{ type="toggle", name="showAchievements",         label=L["Show archievements"],          tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+		{ type="toggle", name="showCacheForcast",         label=L["Show cache forcast"],          tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+		{ type="toggle", name="showCacheForcastInBroker", label=L["Show cache forcast in title"], tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+		--{ type="toggle", name="showRealms",     label=L["Show cache forcast in title"], tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+	},
 	clickOptions = {
 		["1_open_garrison_report"] = {
 			cfg_label = "Open garrison report",
 			cfg_desc = "open the garrison report",
-			cfg_default = "__NONE",
+			cfg_default = "_LEFT",
 			hint = "Open garrison report",
 			func = function(self,button)
 				local _mod=name;
@@ -73,7 +86,7 @@ ns.modules[name] = {
 		["2_open_menu"] = {
 			cfg_label = "Open option menu",
 			cfg_desc = "open the option menu",
-			cfg_default = "__NONE",
+			cfg_default = "_RIGHT",
 			hint = "Open option menu",
 			func = function(self,button)
 				local _mod=name;
@@ -81,7 +94,6 @@ ns.modules[name] = {
 			end
 		}
 	}
-
 }
 
 
@@ -140,11 +152,51 @@ local function makeTooltip(tt)
 	tt:Clear();
 	tt:AddHeader(C("dkyellow",L[name]));
 
+	if (Broker_EverythingDB[name].showChars and false) then
+		tt:AddSeparator(4,0,0,0,0)
+		local l=tt:AddLine( C("ltblue", L["Characters"]) ); -- 1
+
+		-- Garrison /n level, buildings
+		-- Jobs /n available, worker
+		-- shipments /n finished, progress // duration /n next, all
+		-- 
+
+		if(IsShiftKeyDown())then
+			tt:SetCell(l, 2, C("ltblue",L["Garrison"]..		"|n"..C("green",L["level"])..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2 
+			tt:SetCell(l, 3, C("ltblue",L["Shipments"]..	"|n"..C("green",L["finished"])..	" / "..C("yellow",L["in progress"])), nil, "RIGHT", 3); -- 3,4,5
+			tt:SetCell(l, 6, C("ltblue",L["Jobs"]..			"|n"..C("green",L["available"])..	" / "..C("yellow",L["worker"])), nil, "RIGHT", 2); -- 6,7
+		else
+			tt:SetCell(l, 2, C("ltblue",L["Garrison"]..		"|n"..C("green",L["level"])..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2 
+			tt:SetCell(l, 3, C("ltblue",L["Shipments"]..	"|n"..C("green",L["finished"])..	" / "..C("yellow",L["in progress"])), nil, "RIGHT", 3); -- 3,4,5
+			tt:SetCell(l, 6, C("ltblue",L["Jobs"]..			"|n"..C("green",L["available"])..	" / "..C("yellow",L["worker"])), nil, "RIGHT", 2); -- 6,7
+		end
+		tt:AddSeparator();
+		local t=time();
+		for i=1, #be_character_cache.order do
+			local name_realm = be_character_cache.order[i];
+			local v = be_character_cache[name_realm];
+			if(v.missions)then
+				local charName,realm=strsplit("-",name_realm);          
+				local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+				realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or "";
+				local l=tt:AddLine(C(v.class,ns.scm(charName)) .. realm .. faction );
+				if(name_realm==ns.player.name_realm)then
+					--- background highlight
+				end
+
+				if(IsShiftKeyDown())then
+				else
+				end
+				if(name_realm==ns.player.name_realm)then
+					tt:SetLineColor(l, 0.1, 0.3, 0.6);
+				end
+			end
+		end
+	end
+
 	if (nBuildings>0) then
 		local lst,longer = {},false;
-		for i=1, #buildings do
-			local v = buildings[i];
-		--for i,v in ipairs(buildings) do
+		for i,v in pairs(buildings) do
 			if (v) then
 				timeleft,timeleftAll = nil,nil;
 				if (v.creationTime) and (v.creationTime>0) then
@@ -258,31 +310,33 @@ local function makeTooltip(tt)
 				y = (y~=ns.realm) and C("gray"," - ")..C("dkyellow",y) or "";
 			end
 			tt:SetCell(l,1,C(v.class or "white", x)..y,nil,nil,ttColumns-1);
-			local cache = floor((time()-v.cache)/600);
-			local cap = (v.trade_agreement) and 1000 or 500;
-			if(v.trade_agreement~=nil and cache>=cap)then
-				cache = C("red",cap);
-				cap = C("red",cap);
-			elseif(v.trade_agreement==nil)then
-				cap = C("dkyellow",cap);
+			if(v.garrison_cache[1]==0)then
+				tt:SetCell(l,ttColumns, C("orange","n/a"));
+			else
+				local cache = floor((time()-v.garrison_cache[1])/600);
+				local cap = (v.garrison_cache[2]) and 1000 or 500;
+				if(v.garrison_cache[2]~=nil and cache>=cap)then
+					cache = C("red",cap);
+					cap = C("red",cap);
+				elseif(v.garrison_cache[2]==nil)then
+					cap = C("dkyellow",cap);
+				end
+				tt:SetCell(l,ttColumns, ("~ %s/%s"):format(cache,cap)); -- 10 minutes = 1 garrison resource
 			end
-			tt:SetCell(l,ttColumns, ("~ %s/%s"):format(cache,cap)); -- 10 minutes = 1 garrison resource
+			if(k==ns.player.name_realm)then
+				tt:SetLineColor(l, 0.1, 0.3, 0.6);
+			end
 		end
 		tt:AddSeparator(4,0,0,0,0);
 		local l = tt:AddLine();
 		local None=true;
 		tt:SetCell(l,1,C("ltblue",L["Garrison cache forcast"]),nil,nil,ttColumns);
 		tt:AddSeparator();
-		if (type(be_garrison_db[ns.player.name.."-"..ns.realm])=="table") and (type(be_garrison_db[ns.player.name.."-"..ns.realm].cache)=="number") then
-			_(ns.player.name.."-"..ns.realm,be_garrison_db[ns.player.name.."-"..ns.realm]);
-			tt:AddSeparator(1,.6,.6,.6);
-		end
-		for k,v in ns.pairsByKeys(be_garrison_db) do
-			if (k~=ns.player.name.."-"..ns.realm) then
-				if (v.cache) then
-					_(k,v);
-					None=false;
-				end
+		for i=1, #be_character_cache.order do
+			local v = be_character_cache[be_character_cache.order[i]];
+			if (v.garrison_cache and v.garrison_cache[1]) then
+				_(be_character_cache.order[i],v);
+				None=false;
 			end
 		end
 		if (None) then
@@ -305,7 +359,6 @@ local function makeTooltip(tt)
 	end
 end
 
-
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
@@ -314,199 +367,249 @@ ns.modules[name].init = function(self)
 end
 
 ns.modules[name].onevent = function(self,event,...)
-	local progress,ready=0,0;
-	local garrLevel = C_Garrison.GetGarrisonInfo();
-	local gdb = be_garrison_db[ns.player.name.."-"..ns.realm];
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],Broker_EverythingDB[name]);
+	if(event=="PLAYER_ENTERING_WORLD")then
+
+		if be_character_cache[ns.player.name_realm].garrison and be_character_cache[ns.player.name_realm].garrison.cache then
+			for i=1, #be_character_cache.order do
+				local k = be_character_cache.order[i];
+				local v = be_character_cache[k];
+				if (v.garrison and v.garrison.cache) then
+					be_character_cache[k].garrison_cache = {
+						be_character_cache[k].garrison.cache or 0,
+						(be_character_cache[k].garrison.trade_agreement==true)
+					};
+				end
+				be_character_cache[k].garrison = {};
+			end
+		end
+
+		if not be_character_cache[ns.player.name_realm].garrison_cache then
+			be_character_cache[ns.player.name_realm].garrison_cache = {0,false};
+		elseif(be_character_cache[ns.player.name_realm].garrison_cache[1]==nil)then
+			be_character_cache[ns.player.name_realm].garrison_cache[1]=0;
+		end
+
+		--- usage tracking for the trade agreement to set garrison cache limit up to 1000
+		if(UnitLevel("player")==MAX_PLAYER_LEVEL and not be_character_cache[ns.player.name_realm].garrison_cache[2])then
+			hooksecurefunc("UseContainerItem",function(bag,slot)
+				if((GetContainerItemLink(bag,slot) or ""):match("Hitem:128294:"))then
+					be_character_cache[ns.player.name_realm].garrison_cache[2]=true;
+					ns.modules[name].onevent(self,"BE_CUSTOM_EVENT");
+				end
+			end);
+		end
 	else
-		updater,longer = true,false;
-		local bName, texture, shipmentCapacity, shipmentsReady, shipmentsTotal, creationTime, duration, timeleftString, shipmentsCurrent;
-		local tmp = C_Garrison.GetBuildings() or {};
-		wipe(construct); wipe(blueprints3); wipe(achievements3);
-		nConstruct,nBuildings=0,0;
+		local progress,ready=0,0;
+		local garrLevel = C_Garrison.GetGarrisonInfo();
 
-		buildings = C_Garrison.GetBuildings() or {};
-		local names,_ = {};
-		local tmp = {};
+		if (event=="BE_UPDATE_CLICKOPTIONS") then
+			ns.clickOptions.update(ns.modules[name],Broker_EverythingDB[name]);
+		else
+			local tmp, names, _, bName, texture, shipmentCapacity, shipmentsReady, shipmentsTotal, creationTime, duration, timeleftString, shipmentsCurrent = {}, {};
 
-		for i=1, #buildings do
-			if (buildings[i]) and (buildings[i].buildingID) then
-				_, buildings[i].name, _, buildings[i].texture, buildings[i].rank, buildings[i].isBuilding, buildings[i].timeStart, buildings[i].buildTime, buildings[i].canActivate, buildings[i].canUpgrade, buildings[i].isPrebuilt = C_Garrison.GetOwnedBuildingInfoAbbrev(buildings[i].plotID);
-				_, _, _, _, _, _, _, _, _, _, _, _, _, buildings[i].upgrades, _, _, buildings[i].hasFollowerSlot = C_Garrison.GetBuildingInfo(buildings[i].plotID);
-				_, _, buildings[i].shipmentCapacity, buildings[i].shipmentsReady, buildings[i].shipmentsTotal, buildings[i].creationTime, buildings[i].duration = C_Garrison.GetLandingPageShipmentInfo(buildings[i].buildingID);
+			wipe(construct); wipe(blueprints3); wipe(achievements3);
+			updater,longer,nConstruct,nBuildings = true,false,0,0;
 
-				if(buildings[i].plotID==98)then
-					buildings[i].canUpgrade=false; -- correct wrong displaying upgrade status for the shipyard
-				end
+			local cBuildings,cJobs,cShipments=2,3,4;
+			be_character_cache[ns.player.name_realm].garrison={garrLevel,0,{0,0},{}};
+			local cache=be_character_cache[ns.player.name_realm].garrison;
 
-				-- catch double posted buildings while under construction
-				if (buildings[i].name) then
-					if (names[buildings[i].name]) then
-						if (names[buildings[i].name][2]>buildings[i].rank) then
-							buildings[names[buildings[i].name][1]] = nil;
+			buildings = C_Garrison.GetBuildings() or {};
+
+			for i=1, #buildings do
+				if (buildings[i]) and (buildings[i].buildingID) then
+					_, buildings[i].name, _, buildings[i].texture, buildings[i].rank, buildings[i].isBuilding, buildings[i].timeStart, buildings[i].buildTime, buildings[i].canActivate, buildings[i].canUpgrade, buildings[i].isPrebuilt = C_Garrison.GetOwnedBuildingInfoAbbrev(buildings[i].plotID);
+					_, _, _, _, _, _, _, _, _, _, _, _, _, buildings[i].upgrades, _, _, buildings[i].hasFollowerSlot = C_Garrison.GetBuildingInfo(buildings[i].plotID);
+					_, _, buildings[i].shipmentCapacity, buildings[i].shipmentsReady, buildings[i].shipmentsTotal, buildings[i].creationTime, buildings[i].duration = C_Garrison.GetLandingPageShipmentInfo(buildings[i].buildingID);
+
+					if(buildings[i].plotID==98)then
+						buildings[i].canUpgrade=false; -- correct wrong displaying upgrade status for the shipyard
+					end
+
+					-- catch double posted buildings while under construction
+					if (buildings[i].name) then
+						if (names[buildings[i].name]) then
+							if (names[buildings[i].name][2]>buildings[i].rank) then
+								buildings[names[buildings[i].name][1]] = nil;
+							else
+								buildings[i] = nil;
+							end
 						else
-							buildings[i] = nil;
+							names[buildings[i].name] = {i,buildings[i].rank};
 						end
+					end
+
+					if(jobslots[buildings[i].buildingID])then
+						cache[cJobs][1] = cache[cJobs][1]+1;
+					end
+
+					local _,_,_,_,fID = C_Garrison.GetFollowerInfoForBuilding(buildings[i].plotID);
+					if (fID) then
+						buildings[i].follower = C_Garrison.GetFollowerInfo(fID);
+						buildings[i].follower.class = strsub(buildings[i].follower.classAtlas,23);
+						--(isBuilding or canActivate or not owned);
+						cache[cJobs][2] = cache[cJobs][2]+1;
+					end
+
+					if (buildings[i].shipmentCapacity==0) then
+						buildings[i].shipmentCapacity = nil;
 					else
-						names[buildings[i].name] = {i,buildings[i].rank};
-					end
-				end
+						buildings[i].shipmentsReady = buildings[i].shipmentsReady or 0;
+						if (buildings[i].shipmentsReady) then
+							ready = ready + buildings[i].shipmentsReady;
+						end
 
-				local fID = select(5,C_Garrison.GetFollowerInfoForBuilding(buildings[i].plotID));
-				if (fID) then
-					buildings[i].follower = C_Garrison.GetFollowerInfo(fID);
-					buildings[i].follower.class = strsub(buildings[i].follower.classAtlas,23);
-					--(isBuilding or canActivate or not owned);
-				end
+						buildings[i].shipmentsTotal = buildings[i].shipmentsTotal or 0;
+						if (buildings[i].shipmentsTotal) then
+							progress = progress + buildings[i].shipmentsTotal;
+						end
 
-				buildings[i].shipmentsReady = buildings[i].shipmentsReady or 0;
-				buildings[i].shipmentsTotal = buildings[i].shipmentsTotal or 0;
-
-				if (buildings[i].shipmentCapacity==0) then
-					buildings[i].shipmentCapacity = nil;
-				end
-
-				if (buildings[i].shipmentsReady) then
-					ready = ready + buildings[i].shipmentsReady;
-				end
-
-				if (buildings[i].shipmentsTotal) then
-					progress = progress + buildings[i].shipmentsTotal;
-				end
-
-				if (not buildings[i].texture) then
-					buildings[i].texture = "interface\\icons\\inv_misc_questionmark";
-				end
-
-				nBuildings = nBuildings + 1;
-
-				local aname, completed, aicon, wasEarnedByMe, earnedBy,numCriteria,description,_;
-				local id, pname, texPrefix, icon, rank, isBuilding, timeStart, buildTime, canActivate, canUpgrade, isPrebuilt = C_Garrison.GetOwnedBuildingInfoAbbrev(buildings[i].plotID);
-				if (id) then
-					local tooltip, cost, goldQty, currencyID, buildTime2, needsPlan = C_Garrison.GetBuildingTooltip(id);
-					local aid = buildings2achievements[id];
-					local timeEnd = timeStart + buildTime;
-					local duration = timeEnd - time();
-					if (aid) then
-						_, aname, _, completed, _, _, _, description, _, aicon, _, _, wasEarnedByMe, earnedBy = GetAchievementInfo(aid);
-						numCriteria = GetAchievementNumCriteria(aid);
-					end
-					if (isBuilding) or (duration>0) then
-						tinsert(construct, {
-							id			= id,
-							icon		= icon,
-							name		= pname,
-							texPrefix	= texPrefix,
-							rank		= rank,
-							isBuilding	= isBuilding,
-
-							isPrebuilt	= isPrebuilt,
-							timeStart	= timeStart,
-							timeStartStr= date("%Y-%m-%d %H:%M",timeStart),
-							timeEnd		= timeEnd,
-							timeEndStr	= date("%Y-%m-%d %H:%M",timeEnd),
-							duration	= duration,
-							durationStr	= duration
+						tinsert(cache[cShipments],{
+							buildings[i].shipmentCapacity,
+							time(),
+							buildings[i].shipmentsReady,
+							buildings[i].shipmentsTotal,
+							buildings[i].creationTime or 0,
+							buildings[i].duration or 0
 						});
-						nConstruct = nConstruct + 1;
-					elseif (garrLevel==3) and (rank==2) and (blueprintsL3[id]) then
-						local data = ns.GetItemData(blueprintsL3[id]);
-						if (aid) and (not completed) then
-							local need = {};
-							if (numCriteria>0) then
-								for ai=1, numCriteria do
-									local criteriaString, criteriaType, completed, quantity, reqQuantity, charName, flags, assetID, quantityString = GetAchievementCriteriaInfo(aid, ai);
-									if (not completed) and (bit.band(flags, EVALUATION_TREE_FLAG_PROGRESS_BAR)==EVALUATION_TREE_FLAG_PROGRESS_BAR) then
-										tinsert(need,quantityString);
+					end
+
+					if (not buildings[i].texture) then
+						buildings[i].texture = "interface\\icons\\inv_misc_questionmark";
+					end
+
+					nBuildings = nBuildings + 1;
+
+					local aname, completed, aicon, wasEarnedByMe, earnedBy,numCriteria,description,_;
+					local id, pname, texPrefix, icon, rank, isBuilding, timeStart, buildTime, canActivate, canUpgrade, isPrebuilt = C_Garrison.GetOwnedBuildingInfoAbbrev(buildings[i].plotID);
+					if (id) then
+						local tooltip, cost, goldQty, currencyID, buildTime2, needsPlan = C_Garrison.GetBuildingTooltip(id);
+						local aid = buildings2achievements[id];
+						local timeEnd = timeStart + buildTime;
+						local duration = timeEnd - time();
+						if (aid) then
+							_, aname, _, completed, _, _, _, description, _, aicon, _, _, wasEarnedByMe, earnedBy = GetAchievementInfo(aid);
+							numCriteria = GetAchievementNumCriteria(aid);
+						end
+						if (isBuilding) or (duration>0) then
+							tinsert(construct, {
+								id			= id,
+								icon		= icon,
+								name		= pname,
+								texPrefix	= texPrefix,
+								rank		= rank,
+								isBuilding	= isBuilding,
+
+								isPrebuilt	= isPrebuilt,
+								timeStart	= timeStart,
+								timeStartStr= date("%Y-%m-%d %H:%M",timeStart),
+								timeEnd		= timeEnd,
+								timeEndStr	= date("%Y-%m-%d %H:%M",timeEnd),
+								duration	= duration,
+								durationStr	= duration
+							});
+							nConstruct = nConstruct + 1;
+						elseif (garrLevel==3) and (rank==2) and (blueprintsL3[id]) then
+							local data = ns.GetItemData(blueprintsL3[id]);
+							if (aid) and (not completed) then
+								local need = {};
+								if (numCriteria>0) then
+									for ai=1, numCriteria do
+										local criteriaString, criteriaType, completed, quantity, reqQuantity, charName, flags, assetID, quantityString = GetAchievementCriteriaInfo(aid, ai);
+										if (not completed) and (bit.band(flags, EVALUATION_TREE_FLAG_PROGRESS_BAR)==EVALUATION_TREE_FLAG_PROGRESS_BAR) then
+											tinsert(need,quantityString);
+										end
+									end
+									if (#need==0) then
+										need = {L["More info in tooltip..."]};
 									end
 								end
-								if (#need==0) then
-									need = {L["More info in tooltip..."]};
-								end
-							end
-							tinsert(achievements3,{
-								id = aid,
-								name = strCut(aname,25),
-								icon = aicon,
-								bname = pname,25,
-								bicon = icon,
-								need = table.concat(need,"|n"),
-								progress = false -- later
-							});
-						else
-							local known = false;
-							for Index=1, 10 do
-								if (type(data['tooltipLine'..Index])=="string") and data['tooltipLine'..Index]:find(ITEM_SPELL_KNOWN) then
-									known=true;
-								end
-							end
-							if (not known) then
-								tinsert(blueprints3,{
-									id = id,
-									name = pname,
-									icon = icon,
-									iname = data.itemName,
-									iicon = data.itemTexture,
-									texPrefix = texPrefix,
+								tinsert(achievements3,{
+									id = aid,
+									name = strCut(aname,25),
+									icon = aicon,
+									bname = pname,25,
+									bicon = icon,
+									need = table.concat(need,"|n"),
+									progress = false -- later
 								});
+							else
+								local known = false;
+								for Index=1, 10 do
+									if (type(data['tooltipLine'..Index])=="string") and data['tooltipLine'..Index]:find(ITEM_SPELL_KNOWN) then
+										known=true;
+									end
+								end
+								if (not known) then
+									tinsert(blueprints3,{
+										id = id,
+										name = pname,
+										icon = icon,
+										iname = data.itemName,
+										iicon = data.itemTexture,
+										texPrefix = texPrefix,
+									});
+								end
 							end
 						end
 					end
+					tmp[plot_order[buildings[i].plotID]] = buildings[i];
 				end
-				tmp[plot_order[buildings[i].plotID]] = buildings[i];
+			end
+
+			if(#buildings>0)then
+				buildings = tmp;
+			end
+
+			cache[cBuildings] = #buildings;
+
+			if (event=="SHOW_LOOT_TOAST") then
+				local typeIdentifier, _, quantity, _, _, isPersonal, lootSource = ...;
+				if (isPersonal==true) and (typeIdentifier=="currency") and (lootSource==10) then
+					if(be_character_cache[ns.player.name_realm].garrison_cache[1]~=nil and be_character_cache[ns.player.name_realm].garrison_cache[1]~=0)then
+						local forcast = floor((time()-be_character_cache[ns.player.name_realm].garrison_cache[1])/600);
+						if(quantity>500)then
+							be_character_cache[ns.player.name_realm].garrison_cache[2]=true; -- Trade Agreement: Arakkoa Outcasts (128294)
+						elseif(forcast > quantity and quantity==500)then
+							be_character_cache[ns.player.name_realm].garrison_cache[2]=false; -- no Trade Agreement
+						end
+					end
+					be_character_cache[ns.player.name_realm].garrison_cache[1]=time();
+				end
 			end
 		end
-		if(#buildings>0)then
-			buildings = tmp;
-		end
-		if (type(be_garrison_db[ns.player.name.."-"..ns.realm])~="table") then
-			be_garrison_db[ns.player.name.."-"..ns.realm] = {class=ns.player.class};
-		end
-		gdb = be_garrison_db[ns.player.name.."-"..ns.realm];
-		if (event=="SHOW_LOOT_TOAST") then
-			local typeIdentifier, _, quantity, _, _, isPersonal, lootSource = ...;
-			if (isPersonal==true) and (typeIdentifier=="currency") and (lootSource==10) then
 
-				local forcast = floor((time()-gdb.cache)/600);
-				if(quantity>500)then
-					gdb.trade_agreement=true; -- Trade Agreement: Arakkoa Outcasts (128294)
-				elseif(forcast > quantity and quantity==500)then
-					gdb.trade_agreement=false; -- no Trade Agreement
+		local obj = ns.LDB:GetDataObjectByName(ldbName);
+		local title = {};
+		tinsert(title, C("ltblue",ready) .."/".. C("orange",progress - ready) );
+
+		if (Broker_EverythingDB[name].showCacheForcastInBroker) then
+			if(be_character_cache[ns.player.name_realm].garrison_cache[1]==nil or be_character_cache[ns.player.name_realm].garrison_cache[1]==0)then
+				colCache = "orange";
+				colCap = "red";
+				tinsert(title, C("orange","n/a") );
+			else
+				local colCache,colCap,cap = "white","white",500;
+				local cache = floor((time()-be_character_cache[ns.player.name_realm].garrison_cache[1])/600);
+
+				if(be_character_cache[ns.player.name_realm].garrison_cache[2])then
+					cap = 1000;
 				end
 
-				gdb.cache=time();
-				gdb.class=ns.player.class;
+				if(cache>=cap)then
+					colCache = "gray";
+					if(be_character_cache[ns.player.name_realm].garrison_cache[2]==nil)then
+						colCap = "dkyellow";
+					else
+						colCap = "red";
+					end
+				end
+				tinsert(title, C(colCache,cache) .."/".. C(colCap,cap) );
 			end
 		end
+
+		obj.text = table.concat(title,", ");
 	end
-
-	--if (not  [name.."_cache"]) then Broker_EverythingGlobalDB[name.."_cache"] = {}; end
-	--Broker_EverythingGlobalDB[name.."_cache"][C(ns.player.class,ns.player.name).." - "..ns.realm] = buildings;
-
-	local obj = ns.LDB:GetDataObjectByName(ldbName);
-	local title = {};
-	tinsert(title,("%s/%s"):format(C("ltblue",ready),C("orange",progress - ready)));
-
-	if (Broker_EverythingDB[name].showCacheForcastInBroker) and (gdb.cache~=nil) then
-		local cache = floor((time()-gdb.cache)/600);
-		local cap = (gdb.trade_agreement) and 1000 or 500;
-		----------------------------------------------------------------------------------------------
-		if(gdb.trade_agreement~=nil and cache>=cap)then
-			cache = C("red",cap);
-			cap = C("red",cap);
-		elseif(gdb.trade_agreement==nil)then
-			cache = C("white",cache);
-			cap = C("dkyellow",cap);
-		else
-			cache = C("white",cache);
-			cap = C("white",cap);
-		end
-
-		tinsert(title, ("%s/%s"):format(cache,cap));
-	end
-
-	obj.text = table.concat(title,", ");
 end
 
 ns.modules[name].onupdate = function(self)
