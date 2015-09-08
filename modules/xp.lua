@@ -4,20 +4,20 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-xpDB = {}
-be_xp_db = {};
+xpDB = nil; --- deprecated
+be_xp_db = nil; --- deprecated
+
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "XP" -- L["XP"]
-local ldbName = name
-local ttName,ttName2 = name.."TT", name.."TT2"
+local ldbName, ttName, ttName2 = name, name.."TT", name.."TT2";
 local string = string
 local tt,tooltip,tt2,createMenu,ttColumns
 local data = {};
 local sessionStartLevel = UnitLevel("player");
-local slots = {  [1]=L["Head"], [3]=L["Shoulder"], [5]=L["Chest"], [7]=L["Legs"], [15]=L["Back"], [11]=L["Ring1"], [12]=L["Ring2"]}
+local slots = {  [1]=L["Head"], [3]=L["Shoulder"], [5]=L["Chest"], [7]=L["Legs"], [15]=L["Back"], [11]=L["Ring1"], [12]=L["Ring2"], [998]=L["Guild perk"], [999]=L["Recruite a Friend"]}
 local items = { -- Heirlooms with {<percent>,<maxLevel>}
 	-- SoO Weapons
 	[104399] = {0,100}, [104400] = {0,100}, [104401] = {0,100}, [104402] = {0,100}, [104403] = {0,100}, [104404] = {0,100}, [104405] = {0,100},
@@ -60,11 +60,11 @@ local items = { -- Heirlooms with {<percent>,<maxLevel>}
 	[50255] = {5,80},
 }
 
+
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="interface\\icons\\ability_dualwield",coords={0.05,0.95,0.05,0.95}}; --IconName::XP--
---{iconfile="Interface\\Addons\\"..addon.."\\media\\xp"}
 
 
 ---------------------------------------
@@ -84,7 +84,8 @@ ns.modules[name] = {
 	config_defaults = {
 		display = "1",
 		showMyOtherChars = true,
-		showNonMaxLevelOnly = false
+		showNonMaxLevelOnly = false,
+		showAllRealms = true
 	},
 	config_allowed = {
 		display = {["1"]=true,["2"]=true,["3"]=true,["4"]=true}
@@ -94,6 +95,7 @@ ns.modules[name] = {
 		{ type="separator" },
 		{ type="toggle", name="showMyOtherChars", label=L["Show other chars xp"], tooltip=L["Display a list of my chars on same realm with her level and xp"] },
 		{ type="toggle", name="showNonMaxLevelOnly", label=L["Show non max. level characters only"], tooltip=L["Hide all characters who have reached the level cap."] },
+		{ type="toggle", name="showAllRealms", label=L["Show all realms"], tooltip=L["Show characters from all realms in tooltip."] },
 		{ type="select", name="display", label=L["Display XP in broker"], tooltip=L["Select to show XP as an absolute value; Deselected will show it as a percentage."],
 			default="1",
 			values={
@@ -138,6 +140,7 @@ ns.modules[name] = {
 	}
 }
 
+
 --------------------------
 -- some local functions --
 --------------------------
@@ -149,38 +152,36 @@ function createMenu(self)
 end
 
 local function getTooltip2(parentLine,data)
-	tt2 = ns.LQT:Acquire(ttName2, 2, "LEFT", "RIGHT")
+	tt2 = ns.LQT:Acquire(ttName2, 2, "LEFT", "RIGHT");
 
-	tt2:Clear()
+	tt2:Clear();
 
-	local removeGuildPerk=0;
-	for i,v in ns.pairsByKeys(data.xpBonus) do
-		if (i>=800) then
-			removeGuildPerk = removeGuildPerk + v.percent;
-		end
-	end
-
-	tt2:AddLine(C("ltblue",L["XP bonus"]),C("green",(data.xpBonusSum-removeGuildPerk).."%"))
-	tt2:AddSeparator(1)
-	for i,v in ns.pairsByKeys(data.xpBonus) do
-		if not (v.percent==false and (i==11 or i==12)) and (i<800) then
+	tt2:AddLine(C("ltblue",L["XP bonus"]),C("green",data.bonusSum.."%"));
+	tt2:AddSeparator(1);
+	for slotId,slotName in ns.pairsByKeys(slots) do
+		local v=data.bonus[slotId] or {};
+		if(slotId==998)then
+			tt2:AddLine(C("ltyellow",slotName),(v.percent) and v.percent.."%" or C("ltgray",L["Not in a guild"]));
+		elseif(slotId==999)then
+			-- ignore refer-a-friend
+		else
 			tt2:AddLine(
-				C(v.percent==false and "ltgray" or "ltyellow",v.name),
-				(v.percent==false and C("ltgray",L["not equipped"])) or (v.outOfLevel and C("red",L["Out of Level"])) or v.percent.."%"
-			)
+				C("ltyellow",slotName),
+				(v.percent==nil and C("ltgray",L["not equipped"])) or (v.outOfLevel==true and C("red",L["Out of Level"])) or v.percent.."%"
+			);
 		end
 	end
 
-	ns.createTooltip(parentLine, tt2)
-	tt2:ClearAllPoints()
-	tt2:SetPoint("TOP",parentLine,"TOP",0,0)
+	ns.createTooltip(parentLine, tt2);
+	tt2:ClearAllPoints();
+	tt2:SetPoint("TOP",parentLine,"TOP",0,0);
 
-	local tL,tR,tT,tB = ns.getBorderPositions(tt)
-	local uW = UIParent:GetWidth()
+	local tL,tR,tT,tB = ns.getBorderPositions(tt);
+	local uW = UIParent:GetWidth();
 	if tR<(uW/2) then
-		tt2:SetPoint("RIGHT",tt,"LEFT",-2,0)
+		tt2:SetPoint("RIGHT",tt,"LEFT",-2,0);
 	else
-		tt2:SetPoint("LEFT",tt,"RIGHT",2,0)
+		tt2:SetPoint("LEFT",tt,"RIGHT",2,0);
 	end
 end
 
@@ -196,41 +197,65 @@ local function getTooltip(tt)
 
 	if (UnitLevel("player")<MAX_PLAYER_LEVEL) then
 		tt:AddSeparator();
-		tt:AddLine(C("ltyellow",L[name]),data.xpPercent,C("white",("(%d/%d)"):format(data.xp,data.xpMax)));
-		tt:AddLine(C("ltyellow",L["Til Next Level"]),"",C("white",data.xpNeed));
-		if (data.xpRestStr) then
-			tt:AddLine(C("ltyellow",L["Rest"]),"",C("cyan",data.xpRestStr));
+		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE),"",C("white",("(%d/%d)"):format(data.cur,data.max)));
+		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE.." ("..L["Percent"]..")"), "",data.percent);
+		tt:AddLine(C("ltyellow",GARRISON_FOLLOWER_XP_STRING),"",C("white",data.need));
+		if (data.restStr) then
+			tt:AddLine(C("ltyellow",L["Rest"]),"",C("cyan",data.restStr));
 		end
 	end
 
-	if (UnitLevel("player")<MAX_PLAYER_LEVEL) and (#data.xpBonus>0) then
-		tt:AddSeparator(5,0,0,0,0)
-		tt:AddLine(C("ltblue",L["XP bonus"]),"",C("green",data.xpBonusSum.."%"));
+	if (UnitLevel("player")<MAX_PLAYER_LEVEL) and (#data.bonus>0) then
+		tt:AddSeparator(5,0,0,0,0);
+		tt:AddLine(C("ltblue",L["XP bonus"]),"",C("green",data.bonusSum.."%"));
 		tt:AddSeparator();
-		for i,v in ns.pairsByKeys(data.xpBonus) do
-			if not (v.percent==false and (i==11 or i==12)) then
-				tt:AddLine(C(v.percent==false and "ltgray" or "ltyellow",v.name), "", (v.percent==false and C("ltgray",L["not equipped"])) or (v.outOfLevel and C("red",L["Out of Level"])) or v.percent.."%");
+		for slotId,slotName in ns.pairsByKeys(slots) do
+			local v = data.bonus[slotId] or {};
+			if(slotId==999)then
+				if(v.percent)then
+					tt:AddLine(C("ltyellow", slotName),"", v.percent.."%"); -- show only if active
+				end
+			elseif(slotId==998)then
+				tt:AddLine(C("ltyellow", slotName),"", (v.percent==nil) and L["Not in a guild"] or v.percent.."%");
+			else
+				tt:AddLine(
+					C("ltyellow", slotName),
+					"",
+					(v.percent==nil and C("ltgray",L["not equipped"])) or (v.outOfLevel==true and C("red",L["Out of Level"])) or v.percent.."%"
+				);
 			end
 		end
 	end
 
 	if Broker_EverythingDB[name].showMyOtherChars then
+		local allRealms = (Broker_EverythingDB[name].showAllRealms==true);
 		tt:AddSeparator(4,0,0,0,0);
 		local l = tt:AddLine();
-		tt:SetCell(l,1,C("ltblue",L["Your other chars (%s)"]:format(ns.realm)),nil,nil,3)
+		tt:SetCell(l,1,C("ltblue",L["Your other chars (%s)"]:format(allRealms and L["all realms"] or ns.realm)),nil,nil,3);
 		tt:AddSeparator();
 		local count = 0;
-		for i,v in pairs(be_xp_db[ns.realm]) do
-			if (v~=nil) and (i~=ns.player.name) and not (Broker_EverythingDB[name].showNonMaxLevelOnly and v.level==MAX_PLAYER_LEVEL) then
+		for i=1, #be_character_cache.order do
+			local name_realm = be_character_cache.order[i];
+			local v = be_character_cache[name_realm];
+			if(v.xp and v.xp.bonus)then --- little cleanup outdated boolean usage
+				for slotId, slot in pairs(v.xp.bonus)do
+					if( slot.percent==nil or slot.percent==false )then
+						v.xp.bonus[slotId]=nil;
+					end
+				end
+			end
+			if( (name_realm:match(ns.realm) or allRealms) and (name_realm~=ns.player.name_realm) and v.xp~=nil and not (Broker_EverythingDB[name].showNonMaxLevelOnly and v.level==MAX_PLAYER_LEVEL) )then
+				local Name,Realm = strsplit("-",name_realm);
+				Realm = allRealms and " "..C("dkyellow","- "..ns.scm(Realm)) or "";
 				local l = tt:AddLine(
-					("(%d) %s %s"):format(v.level,C(v.class,ns.scm(i)), v.faction and "|TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or ""),
-					("%s "..C("cyan","%s")):format(v.xpPercent,v.xpRestStr or "> ?%"),
-					("(%d/%d)"):format(v.xp,v.xpMax)
+					("(%d) %s %s"):format(v.level,C(v.class,ns.scm(Name))..Realm, v.faction and "|TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or ""),
+					("%s "..C("cyan","%s")):format(v.xp.percent,v.xp.restStr or "> ?%"),
+					("(%d/%d)"):format(v.xp.cur,v.xp.max)
 				);
-				tt:SetLineScript(l,"OnMouseUp",function(self,button) be_xp_db[ns.realm][i] = nil getTooltip(tt) end)
-				if (#v.xpBonus>0) then
-					tt:SetLineScript(l,"OnEnter",function(self) getTooltip2(self,v) end)
-					tt:SetLineScript(l,"OnLeave",function(self) ns.hideTooltip(tt2,ttName2,true) end)
+				tt:SetLineScript(l,"OnMouseUp",function(self,button) be_character_cache[name_realm].xp = nil; getTooltip(tt); end);
+				if (#v.xp.bonus>0) then
+					tt:SetLineScript(l,"OnEnter",function(self) getTooltip2(self,v.xp) end);
+					tt:SetLineScript(l,"OnLeave",function(self) ns.hideTooltip(tt2,ttName2,true) end);
 				end
 				count = count + 1;
 			end
@@ -251,97 +276,88 @@ local function getTooltip(tt)
 	end
 end
 
+
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
 	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
-	local empty=true;
-	if (be_xp_db) then
-		for i,v in pairs(be_xp_db) do empty=false; end
-	end
-	if (xpDB~=nil) and (empty) then
-		be_xp_db = xpDB;
-		xpDB = nil;
+	if(be_character_cache[ns.player.name_realm].xp==nil)then
+		be_character_cache[ns.player.name_realm].xp={};
 	end
 end
 
 ns.modules[name].onevent = function(self,event,msg)
-
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],Broker_EverythingDB[name]);
 	end
 
 	if (event=="UNIT_INVENTORY_CHANGED") and (msg~="player") then return end
 
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
+	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName);
 
-	local xpBonus = 0
-	data.xpBonus = {}
-	for slotId,slotName in pairs(slots) do
-		local itemId = GetInventoryItemID("player",slotId)
-		--- how i can get the upgrade level from an item?
-		if itemId and items[itemId] then
-			xpBonus = xpBonus + items[itemId][1]
-			data.xpBonus[slotId] = {name=slotName, percent=items[itemId][1], outOfLevel=UnitLevel("player")>items[itemId][2]}
-		else
-			data.xpBonus[slotId] = {name=slotName, percent=false}
-		end
-	end
+	if (MAX_PLAYER_LEVEL==UnitLevel("player")) then
+		data = {cur=1,max=1,percent="100%",need=0,rest=0,restStr="n/a",bonus={},bonusSum=0};
+	else
+		data = {
+			cur = UnitXP("player"),
+			max = UnitXPMax("player"),
+			rest = GetXPExhaustion() or 0,
+		}
+		data.percent   = math.floor((data.cur / data.max) * 100).."%";
+		data.need      = data.max - data.cur;
+		data.restStr   = (data.cur+data.rest>data.max) and ">100%+" or ">"..("%1.2f%%"):format((data.cur+data.rest)/data.max*100);
+		data.bonus     = {};
+		data.bonusSum  = 0;
 
-	local count = 1
-	if IsInGroup() or IsInRaid() then
-		local raf_boost = false
-		for i=1, GetNumGroupMembers() or 0 do
-			local m = (IsInRaid() and "raid" or "party")..i
-			if UnitIsVisible(m) and IsReferAFriendLinked(m) then
-				raf_boost = true
-				data.xpBonus[999] = {name=L["Recruite a Friend"],percent=300}
+		--- Bonus by inventory items
+		for slotId,slotName in pairs(slots) do
+			local itemId = GetInventoryItemID("player",slotId);
+			if itemId and items[itemId] then
+				data.bonus[slotId] = {percent=items[itemId][1], outOfLevel=(UnitLevel("player")>items[itemId][2]) and true or nil};
 			end
 		end
-		if raf_boost then
-			xpBonus = xpBonus + 300
+
+		--- Bonus by Guild Perk
+		if IsInGuild() then
+			data.bonus[998] = {percent=10};
+		end
+
+		--- Bonus by Refer-A-Friend
+		local count = 1;
+		if IsInGroup() or IsInRaid() then
+			local raf_boost = false;
+			for i=1, GetNumGroupMembers() or 0 do
+				local m = (IsInRaid() and "raid" or "party")..i;
+				if UnitIsVisible(m) and IsReferAFriendLinked(m) then
+					raf_boost = true;
+					data.bonus[999] = {percent=300};
+				end
+			end
+		end
+
+		--- bonus summary
+		for i,v in pairs(data.bonus)do
+			if(v.percent and not v.outOfLevel)then
+				data.bonusSum = data.bonusSum + v.percent;
+			end
 		end
 	end
 
-	-- 178119
+	be_character_cache[ns.player.name_realm].xp = data;
 
-	data.level       = UnitLevel("player")
-	data.class       = ns.player.class
-	data.faction     = ns.player.faction
-	data.xpBonusSum  = xpBonus
-	if (MAX_PLAYER_LEVEL==data.level) then
-		data.xp          = 1
-		data.xpMax       = 1
-		data.xpPercent   = "100%"
-		data.xpNeed      = 0
-		data.xpRest      = 0
-		data.xpRestStr   = "n/a";
-	else
-		data.xp          = UnitXP("player")
-		data.xpMax       = UnitXPMax("player")
-		data.xpPercent   = math.floor((data.xp / data.xpMax) * 100).."%"
-		data.xpNeed      = data.xpMax - data.xp
-		data.xpRest      = GetXPExhaustion() or 0;
-		data.xpRestStr   = (data.xp+data.xpRest>data.xpMax) and ">100%+" or ">"..("%1.2f%%"):format((data.xp+data.xpRest)/data.xpMax*100);
-	end
-
-
-	if be_xp_db[ns.realm]==nil then be_xp_db[ns.realm] = {} end
-	be_xp_db[ns.realm][ns.player.name] = data
-
-	if (MAX_PLAYER_LEVEL~=sessionStartLevel) and (MAX_PLAYER_LEVEL==data.level) then
+	if (MAX_PLAYER_LEVEL~=sessionStartLevel) and (MAX_PLAYER_LEVEL==UnitLevel("player")) then
 		dataobj.text = C("ltblue",L["Max. Level reached"]);
 	elseif IsXPUserDisabled() then
 		dataobj.text = C("orange",L["XP gain disabled"])
 	elseif Broker_EverythingDB[name].display == "1" then
-		dataobj.text = data.xpPercent;
+		dataobj.text = data.percent;
 	elseif Broker_EverythingDB[name].display == "2" then
-		dataobj.text = data.xp.."/"..data.xpMax;
+		dataobj.text = data.cur.."/"..data.max;
 	elseif Broker_EverythingDB[name].display == "3" then
-		dataobj.text = data.xpNeed;
+		dataobj.text = data.need;
 	elseif Broker_EverythingDB[name].display == "4" then
-		dataobj.text = data.xpPercent.." ("..data.xpRestStr..")";
+		dataobj.text = data.percent.." ("..data.restStr..")";
 	end
 end
 
@@ -349,6 +365,7 @@ end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tooltip) end
+
 
 -------------------------------------------
 -- module functions for LDB registration --
