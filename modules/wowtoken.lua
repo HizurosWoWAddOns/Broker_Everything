@@ -4,7 +4,7 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-
+be_wowtoken_db = {}
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
@@ -13,8 +13,7 @@ local name = "WoWToken" -- L["WoWToken"]
 local ldbName, ttName = name, name.."TT"
 local tt,_,icon = nil
 local ttColumns = 1;
-local price = {last=0,money=0};
-local priceHistory = {};
+local price = {last=0,money=0,diff=0};
 
 
 -------------------------------------------
@@ -34,17 +33,22 @@ ns.modules[name] = {
 		"TOKEN_MARKET_PRICE_UPDATED"
 	},
 	updateinterval = 120, -- false or integer
-	config_defaults = {},
+	config_defaults = {
+		diff=true,
+		history=true
+	},
 	config_allowed = {},
-	config = { { type="header", label=L[name], align="left", icon=I[name] } }
+	config = {
+		{ type="header",                 label=L[name], align="left", icon=I[name] },
+		{ type="toggle", name="diff",    label=L["Show difference"], tooltip=L["Show difference of last change in tooltip"]},
+		{ type="toggle", name="history", label=L["Show history"],    tooltip=L["Show history of the 5 last changes in tooltip"]},
+	}
 }
 
 
 --------------------------
 -- some local functions --
 --------------------------
-local function updatePrice()
-end
 
 
 ------------------------------------
@@ -55,11 +59,22 @@ ns.modules[name].init = function(obj)
 end
 
 ns.modules[name].onevent = function(self,event,msg)
-	if(event=="PLAYER_ENTERING_WORLD")then
+	if(event=="ADDON_LOADED" and msg==addon)then
+		if(#be_wowtoken_db>0 and be_wowtoken_db[1].last<time()-(60*30))then
+			wipe(bw_wowtoken_db);
+		end
+	elseif(event=="PLAYER_ENTERING_WORLD")then
 		L[name] = GetItemInfo(122284);
 		C_WowTokenPublic.UpdateMarketPrice();
 	elseif(event=="TOKEN_MARKET_PRICE_UPDATED")then
+
+		if(#be_wowtoken_db==0 or (#be_wowtoken_db>0 and be_wowtoken_db[1].money~=price.money))then
+			tinsert(be_wowtoken_db,1,{money=price.money,last=price.last});
+			if(#be_wowtoken_db==7)then tremove(be_wowtoken_db,7); end
+		end
+
 		local current = C_WowTokenPublic.GetCurrentMarketPrice();
+
 		if(current)then
 			if(current~=price.money)then
 				local prev=price.money;
@@ -67,12 +82,6 @@ ns.modules[name].onevent = function(self,event,msg)
 				if(prev>0)then
 					price.diff=price.money-prev;
 				end
-			end
-
-			tinsert(priceHistory,1,price.money/10000);
-			if(#priceHistory==51)then tremove(priceHistory,51); end
-			if(tt and tt.key and tt.key==ttName)then
-				--ns.graphTT.Update(tt,priceHistory);
 			end
 
 			local obj = ns.LDB:GetDataObjectByName(ldbName);
@@ -103,7 +112,7 @@ ns.modules[name].ontooltip = function(tt)
 			C("ltblue",L["Last changed:"]),
 			C("ltyellow",date("%Y-%m-%d %H:%M",price.last))
 		);
-		if(price.diff)then
+		if(Broker_EverythingDB[name].diff and price.diff)then
 			local diff=0;
 			if(price.diff<0)then
 				diff = "- "..ns.GetCoinColorOrTextureString(name,-price.diff,{hideLowerZeros=true});
@@ -115,8 +124,14 @@ ns.modules[name].ontooltip = function(tt)
 				diff
 			);
 		end
-		if(#priceHistory>0)then
-			--ns.graphTT.Update(tt,priceHistory);
+		if(Broker_EverythingDB[name].history and #be_wowtoken_db>1)then
+			tt:AddLine(" ");
+			tt:AddLine(C("ltblue",L["Price history (last 5 changes)"]));
+			for i,v in ipairs(be_wowtoken_db)do
+				if(i>1 and v.money>0)then
+					tt:AddDoubleLine(date("%Y-%m-%d %H:%M",v.last),ns.GetCoinColorOrTextureString(name,v.money,{hideLowerZeros=true}));
+				end
+			end
 		end
 	else
 		tt:AddLine(C("orange",L["Currently no price available..."]));
