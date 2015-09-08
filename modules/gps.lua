@@ -303,13 +303,13 @@ end
 local function setSpell(tb,id)
 	if (IsSpellKnown(id)) then
 		local sName, _, icon, _, _, _, _, _, _ = GetSpellInfo(id)
-		table.insert(tb,{id=id,icon32=iStr32:format(icon),icon16=iStr16:format(icon),name=sName,name2=sName})
+		table.insert(tb,{id=id,icon32=iStr32:format(icon),icon16=iStr16:format(icon),name=sName,name2=sName});
 	end
 end
 
 local function setItem(tb,id,nameReplacement)
 	local itemName, _, _, _, _, _, _, _, _, icon, _ = GetItemInfo(id)
-	table.insert(tb,{id=id,icon32=iStr32:format(icon),icon16=iStr16:format(icon),name=itemName,name2=(nameReplacement or itemName)})
+	table.insert(tb,{id=id,icon32=iStr32:format(icon),icon16=iStr16:format(icon),name=itemName,name2=(nameReplacement or itemName)});
 end
 
 local function chkInventory(ifExists)
@@ -453,10 +453,6 @@ local function gpsTooltip(self,tt,ttName,modName)
 
 	if Broker_EverythingDB.showHints then
 		tt:AddSeparator(4,0,0,0,0)
-		--line, column = tt:AddLine()
-		--tt:SetCell(line, 1, C("copper",L["Left-click"]).." || "..C("green",L["Open World map"]), nil, nil, 3)
-		--line, column = tt:AddLine()
-		--tt:SetCell(line, 1, C("copper",L["Right-click"]).." || "..C("green",L["Open transport menu"]), nil, nil, 3)
 		ns.clickOptions.ttAddHints(tt,modName,ttColumns);
 	end
 end
@@ -473,12 +469,20 @@ function gpsTooltip2(tt)
 	end
 
 	local function add_cell(v,t)
+		local startTime, duration, enable
+		if(t=="item")then
+			startTime, duration, enable = GetItemCooldown(v.id);
+		end
 		tt:SetCell(line, cellcount, v.icon32, nil, nil, 1)
 		tt:SetCellScript(line,cellcount,"OnEnter",function(self) ns.secureButton(self,{ {typeName="type", typeValue=t, attrName=t, attrValue=v.name} }) end)
 	end
 
 	local function add_line(v,t)
-		line, column = tt:AddLine(v.icon16..(v.name2 or v.name))
+		local startTime, duration, enable
+		if(t=="item")then
+			startTime, duration, enable = GetItemCooldown(v.id);
+		end
+		local line, column = tt:AddLine(v.icon16..(v.name2 or v.name), "1","2","3")
 		tt:SetLineScript(line,"OnEnter",function(self) ns.secureButton(self,{ {typeName="type", typeValue=t, attrName=t, attrValue=v.name} }) end)
 	end
 
@@ -577,9 +581,9 @@ local function onclick(self,button)
 
 		if (InCombatLockdown()) then return; end
 		if Broker_EverythingDB[name0].shortMenu then
-			tt4 = ns.LQT:Acquire(ttName4, 4, "LEFT","LEFT","LEFT","LEFT")
+			tt4 = ns.LQT:Acquire(ttName4, 4, "LEFT","LEFT","LEFT","LEFT");
 		else
-			tt4 = ns.LQT:Acquire(ttName4, 1, "LEFT")
+			tt4 = ns.LQT:Acquire(ttName4, 4, "LEFT","RIGHT","CENTER","CENTER");
 		end
 		gpsTooltip2(tt4);
 		ns.createTooltip(self,tt4);
