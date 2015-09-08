@@ -4,17 +4,15 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-mailDB = {}
-be_mail_db = {};
+mailDB = nil; --- deprecated
+be_mail_db = nil; --- deprecated
 
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Mail" -- L["Mail"]
-local ldbName = name
-local ttName = name.."TT"
-local tooltip, tt, player_realm
+local ldbName, ttName, tooltip, tt = name, name.."TT"
 local alertLocked,onUpdateLocked = false,false;
 local icons = {}
 do for i=1, 22 do local _ = ("inv_letter_%02d"):format(i) icons[_] = "|Tinterface\\icons\\".._..":16:16:0:0|t" end end
@@ -117,13 +115,13 @@ local function UpdateStatus(event)
 				end
 			end
 		end
-		be_mail_db[player_realm].count = num;
-		be_mail_db[player_realm].mails = {next1,next2,next3};
+		be_character_cache[ns.player.name_realm].mail = { count=num, next3={next1,next2,next3} };
 	end
 
 	local mailStored = false;
-	for i,v in pairs(be_mail_db) do 
-		if (v.count>0) then
+	for i=1, #be_character_cache.order do
+		local v = be_character_cache[be_character_cache.order[i]];
+		if (v.mail and v.mail.count>0) then
 			mailStored = true;
 		end
 	end
@@ -161,11 +159,12 @@ local function getTooltip(tt)
 		tt:AddSeparator()
 
 		local n,x,t = nil,false,nil
-		for i,v in ns.pairsByKeys(be_mail_db) do
-			if i~="v2" and #v.mails~=0 then
-				n = {strsplit("/",i)}
-				tt:AddLine(("%s (%s)"):format(C(v.class,ns.scm(n[2])),C("dkyellow",ns.scm(n[1]))),((v.count>3) and "3 "..L["of"].." " or "")..v.count.." "..L["mails"])
-				for I,V in ipairs(v.mails) do
+		for i=1, #be_character_cache.order do
+			local v = be_character_cache[be_character_cache.order[i]];
+			if (v.mail and #v.mail.next3>0) then
+				n = {strsplit("-",be_character_cache.order[i])}
+				tt:AddLine(("%s (%s)"):format(C(v.class,ns.scm(n[1])),C("dkyellow",ns.scm(n[2]))),((v.mail.count>3) and "3 "..L["of"].." " or "")..v.mail.count.." "..L["mails"])
+				for I,V in ipairs(v.mail.next3) do
 					t = V.returns~=nil and V.returns-(time()-V.last) or 30*86400
 					tt:AddLine(
 						"   "..
@@ -179,12 +178,12 @@ local function getTooltip(tt)
 						C((t<86400 and "red") or (t<(3*86400) and "orange") or (t<(7*86400) and "yellow") or "green",SecondsToTime(t))
 					)
 				end
-				x = true
+				x = true;
 			end
 		end
 			
 		if x==false then
-			tt:AddLine(L["No data"])
+			tt:AddLine(L["No data"]);
 		end
 	end
 
@@ -209,31 +208,6 @@ end
 ------------------------------------
 ns.modules[name].init = function(obj)
 	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
-
-	player_realm = ns.realm.."/"..ns.player.name;
-
-	local empty=true;
-	if (be_mail_db) then
-		for i,v in pairs(be_mail_db) do empty=false; end
-	end
-	if (mailDB~=nil) and (empty) then
-		be_mail_db = mailDB;
-		mailDB = nil;
-	end
-
-	local tmp = {};
-	if (be_mail_db) then
-		for i,v in pairs(be_mail_db) do
-			if (i:match("/")) and (#v.mails>0) then
-				tmp[i] = v;
-			end
-		end
-	end
-	be_mail_db = tmp;
-
-	if (be_mail_db[player_realm]==nil) then
-		be_mail_db[player_realm] = { class=ns.player.class, count=0, mails={} };
-	end
 end
 
 ns.modules[name].onevent = function(self,event,msg)
@@ -257,23 +231,7 @@ end
 -- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
-
-ns.modules[name].ontooltip = function(tooltip)
-	local sender1, sender2, sender3 = GetLatestThreeSenders();
-	ns.tooltipScaling(tooltip);
-	tooltip:AddLine(L[name]);
-
-	tooltip:AddLine(" ");
-	if not sender1 then
-		tooltip:AddLine(L["No Mail"]);
-		return
-	end
-
-	tooltip:AddLine(L["Mail from"]);
-	tooltip:AddLine(ns.scm(sender1));
-	if (sender2) then tooltip:AddLine(ns.scm(sender2)) end
-	if (sender3) then tooltip:AddLine(ns.scm(sender3)) end
-end
+-- ns.modules[name].ontooltip = function(tooltip) end
 
 
 -------------------------------------------
