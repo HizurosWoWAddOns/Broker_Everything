@@ -30,6 +30,7 @@
 	<Script file="nameplates.lua"/>
 	<Script file="professions.lua"/>
 	<Script file="questlog.lua"/>
+	<Script file="reputation.lua"/>
 	<Script file="ships.lua"/>
 	<Script file="speed.lua"/>
 	<Script file="stuff.lua"/>
