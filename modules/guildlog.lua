@@ -19,7 +19,7 @@ local type2locale = {
 	["promote"]	= C("yellow",L["Promoted"]),
 	["demote"]	= C("orange",L["Demoted"]),
 	["remove"]	= C("red",L["Removed"]),
-	["quit"]	= C("red",L["Left"]),
+	["quit"]	= C("red",L["Left the guild"]),
 }
 local logs = {};
 
