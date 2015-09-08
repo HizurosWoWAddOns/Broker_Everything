@@ -10,22 +10,20 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Speed" -- L["Speed"]
-local ldbName, ttName = name, name.."TT"
-local tt = nil
+local ldbName, ttName, ttColumns, tt = name, name.."TT", 2
 local string,GetUnitSpeed,UnitInVehicle = string,GetUnitSpeed,UnitInVehicle
-local ttColumns = 2;
 local riding_skills = { -- <spellid>, <skill>, <minLevel>, <air speed increase>, <ground speed increase>
-	{90265, 300, 80, 310},
-	{34091, 225, 70, 280},
-	{34090, 150, 60, 150},
-	{33391,  75, 40, 100},
-	{33388,  50, 20,  60},
+	{90265, 80, 310},
+	{34091, 70, 280},
+	{34090, 60, 150},
+	{33391, 40, 100},
+	{33388, 20,  60},
 };
 local licences = { -- <spellid>, <minLevel>, <mapIds>
-	{90267,  60, {[4]=1,[9]=1,[11]=1,[13]=1,[14]=1,[16]=1,[17]=1,[19]=1,[20]=1,[21]=1,[22]=1,[23]=1,[24]=1,[26]=1,[27]=1,[28]=1,[29]=1,[30]=1,[32]=1,[34]=1,[35]=1,[36]=1,[37]=1,[38]=1,[39]=1,[40]=1,[41]=1,[42]=1,[43]=1,[61]=1,[81]=1,[101]=1,[121]=1,[141]=1,[161]=1,[181]=1,[182]=1,[201]=1,[241]=1,[261]=1,[281]=1,[301]=1,[321]=1,[341]=1,[362]=1,[381]=1,[382]=1,[462]=1,[463]=1,[464]=1,[471]=1,[476]=1,[480]=1,[499]=1,[502]=1,[545]=1,[606]=1,[607]=1,[610]=1,[611]=1,[613]=1,[614]=1,[615]=1,[640]=1,[673]=1,[684]=1,[685]=1,[689]=1,[700]=1,[708]=1,[709]=1,[720]=1,[772]=1,[795]=1,[864]=1,[866]=1,[888]=1,[889]=1,[890]=1,[891]=1,[892]=1,[893]=1,[894]=1,[895]=1}},
-	{54197,  68, {[485]=1,[486]=1,[510]=1,[504]=1,[488]=1,[490]=1,[491]=1,[541]=1,[492]=1,[493]=1,[495]=1,[501]=1,[496]=1}},
-	{115913, 85, {[862]=1,[858]=1,[929]=1,[928]=1,[857]=1,[809]=1,[905]=1,[903]=1,[806]=1,[873]=1,[808]=1,[951]=1,[810]=1,[811]=1,[807]=1}},
-	{"a10018",    90, {}},
+	{"a10018", 90, { --[[ draenor map ids? ]] }},
+	{115913,   85, {[862]=1,[858]=1,[929]=1,[928]=1,[857]=1,[809]=1,[905]=1,[903]=1,[806]=1,[873]=1,[808]=1,[951]=1,[810]=1,[811]=1,[807]=1}},
+	{54197,    68, {[485]=1,[486]=1,[510]=1,[504]=1,[488]=1,[490]=1,[491]=1,[541]=1,[492]=1,[493]=1,[495]=1,[501]=1,[496]=1}},
+	{90267,    60, {[4]=1,[9]=1,[11]=1,[13]=1,[14]=1,[16]=1,[17]=1,[19]=1,[20]=1,[21]=1,[22]=1,[23]=1,[24]=1,[26]=1,[27]=1,[28]=1,[29]=1,[30]=1,[32]=1,[34]=1,[35]=1,[36]=1,[37]=1,[38]=1,[39]=1,[40]=1,[41]=1,[42]=1,[43]=1,[61]=1,[81]=1,[101]=1,[121]=1,[141]=1,[161]=1,[181]=1,[182]=1,[201]=1,[241]=1,[261]=1,[281]=1,[301]=1,[321]=1,[341]=1,[362]=1,[381]=1,[382]=1,[462]=1,[463]=1,[464]=1,[471]=1,[476]=1,[480]=1,[499]=1,[502]=1,[545]=1,[606]=1,[607]=1,[610]=1,[611]=1,[613]=1,[614]=1,[615]=1,[640]=1,[673]=1,[684]=1,[685]=1,[689]=1,[700]=1,[708]=1,[709]=1,[720]=1,[772]=1,[795]=1,[864]=1,[866]=1,[888]=1,[889]=1,[890]=1,[891]=1,[892]=1,[893]=1,[894]=1,[895]=1}},
 }
 
 local bonus_spells = { -- <spellid>, <chkActive[bool]>, <type>, <typeValue>, <customText>, <speed increase>, <special>
@@ -38,11 +36,11 @@ local bonus_spells = { -- <spellid>, <chkActive[bool]>, <type>, <typeValue>, <cu
 
 	-- class spells
 	-- class: druid, id: 11
-	{  5215,  true, "class",        11, true, 30},
+	{  5215,  true, "class",        11, LOCALIZED_CLASS_NAMES_MALE.DRUID, 30},
 	-- glyphes
 
 	-- misc
-	{ 78633, false,    nil,        nil, true, 10}
+	{ 78633, false,    nil,        nil, true, 10} -- guild perk
 }
 
 
@@ -78,6 +76,7 @@ ns.modules[name] = {
 --------------------------
 local function createTooltip(tt)
 	local _=function(d) return ("+%d%%"):format(d); end;
+	local lvl = UnitLevel("player");
 	tt:Clear();
 
 	tt:AddHeader(C("dkyellow",L[name]));
@@ -92,29 +91,28 @@ local function createTooltip(tt)
 			learned = true;
 		end
 		if (learned==nil) then
-			if(UnitLevel("player")>=v[3])then
-				tt:AddLine(C("yellow",Name), _(v[4]));
+			if(lvl>=v[2])then
+				tt:AddLine(C("yellow",Name), C("ltgray",L["Learnable"]));
 			else
-				tt:AddLine(C("red",Name), _(v[4]));
+				tt:AddLine(C("red",Name), C("ltgray", L["Need level"].." "..v[2]));
 			end
 		elseif(learned==true)then
-			tt:AddLine(C("green",Name), _(v[4]));
+			tt:AddLine(C("green",Name), _(v[3]));
 			learned=false;
 		elseif(learned==false)then
-			tt:AddLine(C("dkgreen",Name), _(v[4]));
+			tt:AddLine(C("dkgreen",Name), C("gray",_(v[3])) );
 		end
 	end
-
-	if (UnitLevel("player")<20)then
-		tt:AddLine(C("orange","You must be reach level 20 to learn riding."));
+	if (lvl<20)then
+		tt:AddSeparator();
+		tt:AddLine(C("orange","You must be reach level 20 to learn riding."),"",C("ltgray",lvl.."/20"));
 	end
 
 	tt:AddSeparator(4,0,0,0,0);
 	tt:AddLine(C("ltblue",L["Speed bonus"]));
 	tt:AddSeparator();
-	local Id,ChkActive,Type,TypeValue,CustomText,Speed,Special=1,2,3,4,5,6,7;
+	local Id,ChkActive,Type,TypeValue,CustomText,Speed,Special,count=1,2,3,4,5,6,7,0;
 	for i,spell in ipairs(bonus_spells)do
-
 		local id = nil;
 		if(spell[Type]=="race")then
 			if(spell[TypeValue]==ns.player.race:upper())then
@@ -162,20 +160,24 @@ local function createTooltip(tt)
 					active=true;
 				end
 			elseif(spell[Special])then
-				
+				--- ?
 			else
 				active=true;
 			end
 
 			if(active)then
 				tt:AddLine(C("ltyellow",Name .. custom), _(spell[Speed]));
+				count=count+1;
 			end
 		end
 	end
-	--- inventory items ?
+	--- inventory items and enchants?
+	if(count==0)then
+		tt:AddLine(L["No speed bonus found..."]);
+	end
 
 
-	if (UnitLevel("player")>=20)then
+	if (lvl>=20)then
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",L["Flight licences"]));
 		tt:AddSeparator();
@@ -192,12 +194,16 @@ local function createTooltip(tt)
 				ready = IsSpellKnown(v[1]);
 			end
 			if(Name)then
-				if(ready) then
+
+				if(ready and lvl<v[2])then
+					tt:AddLine(C("yellow",Name),C("ltgray",L["Need level"].." "..v[2]));
+				elseif(ready) then
 					tt:AddLine(C("green",Name));
-				elseif(UnitLevel("player")>=v[2])then
-					tt:AddLine(C("yellow",Name));
+				elseif(lvl>=v[2])then
+					tt:AddLine(C("yellow",Name),C("ltgray",L["Learnable"]));
 				else
-					tt:AddLine(C("red",Name));
+					tt:AddLine(C("red",Name),C("ltgray",L["Need level"].." "..v[2]));
+					learnable=true;
 				end
 			end
 		end
