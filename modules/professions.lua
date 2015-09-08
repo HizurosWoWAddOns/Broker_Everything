@@ -5,7 +5,7 @@
 ----------------------------------
 local addon, ns = ...;
 local C,L,I = ns.LC.color,ns.L,ns.I;
-be_professions_db = {};
+be_professions_db = nil; --- deprecated
 
 
 -----------------------------------------------------------
@@ -337,27 +337,32 @@ local function createTooltip(tt)
 			end
 		end
 
-		for realmName, chars in pairs(be_professions_db) do
-			for charName, charData in pairs(chars) do
-				local char_header=false;
-				if (not (realmName==ns.realm and charName==ns.player.name)) and (charData.cooldowns) and (charData.hasCooldowns==true) then
-					for spellid, spellData in pairs(charData.cooldowns) do
-						if ( (spellData.timeLeft-(time()-spellData.lastUpdate)) > 0) then
-							if (not char_header) then
-								if (cd1>0) or (sep) then
-									tinsert(lst,{type="sep",data={4,0,0,0,0}});
-								end
-								tinsert(lst,{type="line",data={C("ltblue",charName.." - "..realmName),C("ltblue",L[durationHeader])}});
-								tinsert(lst,{type="sep",data={nil}});
-								char_header = true;
-								sep=true;
+		for i=1, #be_character_cache.order do
+			local charName,charRealm = strsplit("-",be_character_cache.order[i]);
+			local charData = be_character_cache[be_character_cache.order[i]];
+			local char_header=false;
+			if (not (charRealm==ns.realm and charName==ns.player.name)) and (charData.professions) and (charData.professions.cooldowns) and (charData.professions.hasCooldowns==true) then
+				local outdated = true;
+				for spellid, spellData in pairs(charData.professions.cooldowns) do
+					if ( (spellData.timeLeft-(time()-spellData.lastUpdate)) > 0) then
+						if (not char_header) then
+							if (cd1>0) or (sep) then
+								tinsert(lst,{type="sep",data={4,0,0,0,0}});
 							end
-							tinsert(lst,{type="cdLine",data=spellData});
+							tinsert(lst,{type="line",data={C("ltblue",ns.scm(charName).." - "..ns.scm(charRealm)),C("ltblue",L[durationHeader])}});
+							tinsert(lst,{type="sep",data={nil}});
+							char_header = true;
+							sep=true;
 						end
+						tinsert(lst,{type="cdLine",data=spellData});
+						outdated = false;
 					end
 				end
+				if(outdated)then
+					charData.professions = {cooldowns={},hasCooldowns=false};
+				end
 			end
-		end -- / pairs(be_professions_db)
+		end
 
 		if (#lst>0) then
 			tt:AddSeparator(4,0,0,0,0);
@@ -453,13 +458,10 @@ end
 ------------------------------------
 ns.modules[name].init = function(obj)
 	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
-	if (be_professions_db[ns.realm]==nil) then
-		be_professions_db[ns.realm] = {[ns.player.name]={cooldowns={},hasCooldowns=false}};
+	if(be_character_cache[ns.player.name_realm].professions==nil)then
+		be_character_cache[ns.player.name_realm].professions = {cooldowns={},hasCooldowns=false};
 	end
-	if (be_professions_db[ns.realm][ns.player.name]==nil) then
-		be_professions_db[ns.realm][ns.player.name] = {cooldowns={},hasCooldowns=false};
-	end
-	db = be_professions_db[ns.realm][ns.player.name];
+	db = be_character_cache[ns.player.name_realm].professions;
 	if (db.cooldowns==nil) then
 		db.cooldowns = {};
 	end
@@ -537,15 +539,12 @@ ns.modules[name].onevent = function(self,event,arg1)
 
 		local nCooldowns = 0;
 		for i,v in pairs(db.cooldowns) do
-			if (type(v)=="table") and (v.timeLeft) and (v.timeLeft<=0) then
+			if (type(v)=="table") and (v.timeLeft) and (v.timeLeft-(time()-v.lastUpdate)<=0) then
 				db.cooldowns[i]=nil;
 			else
 				nCooldowns=nCooldowns+1;
 				db.hasCooldowns=true;
 			end
-		end
-		if (nCooldowns==0) then
-			wipe(db.cooldowns);
 		end
 
 		local check = function(_nameEng,_nameLoc,_icon,_skill,_maxSkill,_skillId,_spellId)
