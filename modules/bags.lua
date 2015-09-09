@@ -38,10 +38,8 @@ local qualityModes = {
 }
 
 local G = {}
-for i=0, 7 do
-	G["ITEM_QUALITY"..i.."_DESC"] = _G["ITEM_QUALITY"..i.."_DESC"]
-end
-G.ITEM_QUALITY99_DESC = L["Unknown"]
+for i=0, 7 do G["ITEM_QUALITY"..i.."_DESC"] = _G["ITEM_QUALITY"..i.."_DESC"] end
+G.ITEM_QUALITY99_DESC = L["Unknown"];
 
 -- ------------------------------------- --
 -- register icon names and default files --
@@ -52,7 +50,7 @@ I[name] = {iconfile="Interface\\icons\\inv_misc_bag_08",coords={0.05,0.95,0.05,0
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["Broker to show filled, total and free count of blag slots"]
+local desc = L["Broker to show filled, total and free count of blag slots"];
 ns.modules[name] = {
 	desc = desc,
 	events = {
@@ -67,7 +65,10 @@ ns.modules[name] = {
 		warnLowFree = 15,
 		showQuality = true,
 		goldColor = false,
-		qualityMode = "1"
+		qualityMode = "1",
+	--	crapSellingEnabled = false,
+	--	crapSellingAuto = false,
+	--	crapSellingInfo = true,
 	},
 	config_allowed = {
 		qualityMode = {["1"]=true,["2"]=true,["3"]=true,["4"]=true,["5"]=true,["6"]=true,["7"]=true,["8"]=true}
@@ -84,9 +85,9 @@ ns.modules[name] = {
 		--{ type="separator", alpha=0 },
 		--{ type="header", label=L["Crap selling options"] },
 		--{ type="separator" },
-		--{ type="toggle", name="crapsell", label=L["Enable crap selling"], tooltip=L["Enable crap/junk selling on opening a mergant frame."] },
-		--{ type="toggle", name="request", label=L[""], tooltip=L[""] },
-		--{ type="toggle", name="chatInfo", label=L[""], tooltip=L[""] },
+		--{ type="toggle", name="crapSellingEnabled", label=L["Enabled"], tooltip=L["Enable crap/junk selling on opening a mergant frame."] },
+		--{ type="toggle", name="crapSellingAuto", label=L["Automatic"], tooltip=L["Automatic crap/junk selling on opening a mergant frame."] },
+		--{ type="toggle", name="crapSellingInfo", label=L["Chat info"], tooltip=L["Post earned money in general chat frame."] },
 	},
 	clickOptions = {
 		["1_open_bags"] = {
@@ -137,42 +138,38 @@ end
 
 -- Function to determine the total number of bag slots and the number of free bag slots.
 local function BagsFreeUsed()
-	local t = GetContainerNumSlots(0)
-	local f = GetContainerNumFreeSlots(0)
+	local t = GetContainerNumSlots(0);
+	local f = GetContainerNumFreeSlots(0);
 
 	for i=1,NUM_BAG_SLOTS do
-		local idtoinv = ContainerIDToInventoryID(i)
-		local il = GetInventoryItemLink("player", idtoinv)
+		local idtoinv = ContainerIDToInventoryID(i);
+		local il = GetInventoryItemLink("player", idtoinv);
 		if il then
-			local st = select(7, GetItemInfo(il))
-			if st ~= "Soul Bag"
-					and st ~= "Ammo Pouch"
-					and st ~= "Quiver" then
-				t = t + GetContainerNumSlots(i)
-				f = f + GetContainerNumFreeSlots(i)
+			local st = select(7, GetItemInfo(il));
+			if(st ~= "Soul Bag" and st ~= "Ammo Pouch" and st ~= "Quiver")then
+				t = t + GetContainerNumSlots(i);
+				f = f + GetContainerNumFreeSlots(i);
 			end
 		end
 	end
-	return f, t
+	return f, t;
 end
 
 local function itemQuality()
-	local _, item_id, xm, itemRarity, itemSellPrice, itemCount
-	local price, sum = {["0"]=0,["1"]=0,["2"]=0,["3"]=0,["4"]=0,["5"]=0,["6"]=0,["7"]=0,["99"]=0},{["0"]=0,["1"]=0,["2"]=0,["3"]=0,["4"]=0,["5"]=0,["6"]=0,["7"]=0,["99"]=0}
-	for bag = 0, NUM_BAG_SLOTS do
-		for slot = 1, GetContainerNumSlots(bag) do
-			item_id = GetContainerItemID(bag,slot)
-			if item_id then
-				xm, _, itemRarity, _, _, _, _, _, _, _, itemSellPrice = GetItemInfo(item_id)
-				_, itemCount = GetContainerItemInfo(bag, slot)
-				if itemRarity==nil then itemRarity=99 end
-				itemRarity = tostring(itemRarity)
-				price[itemRarity] = (price[itemRarity] or 0) + (itemSellPrice or 0)
-				sum[itemRarity] = (sum[itemRarity] or 0) + (itemCount or 0)
+	local price, sum, _ = {["0"]=0,["1"]=0,["2"]=0,["3"]=0,["4"]=0,["5"]=0,["6"]=0,["7"]=0,["99"]=0},{["0"]=0,["1"]=0,["2"]=0,["3"]=0,["4"]=0,["5"]=0,["6"]=0,["7"]=0,["99"]=0}
+	local items = ns.items.GetItemlist();
+
+	for itemId, objs in pairs(items) do
+		if(objs.bag)then
+			for _,entry in pairs(objs.bag) do
+				entry.rarity=tostring(entry.rarity or 99);
+				sum[entry.rarity] = sum[entry.rarity] + entry.count;
+				price[entry.rarity] = price[entry.rarity] + (entry.price*entry.count);
 			end
 		end
 	end
-	return price, sum
+
+	return price, sum;
 end
 
 
@@ -180,12 +177,12 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name;
 end
 
 ns.modules[name].init_configs = function()
-	if Broker_EverythingDB[name].freespace == nil then
-		Broker_EverythingDB[name].freespace = true
+	if (Broker_EverythingDB[name].freespace==nil) then
+		Broker_EverythingDB[name].freespace = true;
 	end
 end
 
