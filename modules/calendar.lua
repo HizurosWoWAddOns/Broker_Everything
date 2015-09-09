@@ -47,7 +47,8 @@ ns.modules[name] = {
 	updateinterval = nil, -- 10
 	config_defaults = {
 		hideMinimapCalendar = false,
-		shortBroker = false
+		shortBroker = false,
+		shortEvents = true
 	},
 	config_allowed = {
 	},
@@ -62,7 +63,8 @@ ns.modules[name] = {
 				return false;
 			end
 		},
-		{ type="toggle", name="shortBroker", label=L["Shorter Broker"], tooltip=L["Reduce the broker text to a number without text"], event=true }
+		{ type="toggle", name="shortBroker", label=L["Shorter Broker"], tooltip=L["Reduce the broker text to a number without text"], event=true },
+		{ type="toggle", name="shortEvents", label=L["Shorter Events"], tooltip=L["Reduce event list height in tooltip"] }
 	},
 	clickOptions = {
 		["1_open_character_info"] = {
@@ -203,11 +205,20 @@ ns.modules[name].ontooltip = function(tooltip)
 		tt:AddLine(C("dkyellow",L["Events"]));
 		for i,v in ipairs(holidays)do
 			if(v.state>0)then
-				if(x)then
-					tt:AddLine(" ");
+				if(Broker_EverythingDB[name].shortEvents)then
+					tt:AddDoubleLine(
+						C("ltblue",v.title)
+						.." "..
+						( (v.state==1 and C("green",L["(current)"])) or (v.state==2 and not soon and C("yellow",L["(soon)"])) or " " ),
+						C("ltyellow",v.startStr.." "..L["to"].." "..v.stopStr)
+					);
+				else
+					if(x)then
+						tt:AddLine(" ");
+					end
+					tt:AddDoubleLine(C("ltblue",v.title),C("ltyellow",v.startStr));
+					tt:AddDoubleLine( (v.state==1 and C("green",L["(current)"])) or (v.state==2 and not soon and C("yellow",L["(soon)"])) or " ",C("ltyellow",L["to"].." "..v.stopStr));
 				end
-				tt:AddDoubleLine(C("ltblue",v.title),C("ltyellow",v.startStr));
-				tt:AddDoubleLine( (v.state==1 and C("green",L["(current)"])) or (v.state==2 and not soon and C("yellow",L["(soon)"])) or " ",C("ltyellow",L["to"].." "..v.stopStr));
 				if(v.state==2)then
 					soon=1;
 				end
