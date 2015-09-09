@@ -1,8 +1,7 @@
 
 local addon, ns = ...
 local C, L = ns.LC.color, ns.L
-
-local panel;
+local panel,datapanel,profilepanel,infopanel,CharList_Update;
 
 local function setPoints(element, sibling, points, fir)
 	local parent = sibling.elem
@@ -427,12 +426,12 @@ local build = {
 
 ns.optionpanel = function()
 	local mods = {list={},events={},needs={},pointer=nil,entryHeight=0,entryOffset=0};
-	panel = CreateFrame("Frame", "BrokerEverythingOptionPanel", InterfaceOptionsFramePanelContainer, "BrokerEverythingOptionPanelTemplate");
-	panel.name, panel.controls,panel.changes = addon, {},{};
+	local f = CreateFrame("Frame", "BrokerEverythingOptionPanel", InterfaceOptionsFramePanelContainer, "BrokerEverythingOptionPanelTemplate");
+	f.name, f.controls,f.changes = addon, {},{};
 
-	function panel:okay()
+	function f:okay()
 		local needs = false;
-		for name1,value1 in pairs(panel.changes) do
+		for name1,value1 in pairs(f.changes) do
 			if (type(value1)=="table") and (name1~="iconcolor") then
 				for name2,value2 in pairs(value1) do
 					Broker_EverythingDB[name1][name2]=value2;
@@ -468,38 +467,38 @@ ns.optionpanel = function()
 		end
 
 		if (needs) then
-			panel.Needs:SetText(L["An UI reload is necessary to apply all changes."]);
-			panel.Needs:Show();
+			f.Needs:SetText(L["An UI reload is necessary to apply all changes."]);
+			f.Needs:Show();
 		end
-		wipe(panel.changes);
-		panel:refresh();
-		panel.Apply:Disable();
+		wipe(f.changes);
+		f:refresh();
+		f.Apply:Disable();
 	end
 
-	function panel:cancel()
-		wipe(panel.changes);
-		panel.Apply:Disable();
+	function f:cancel()
+		wipe(f.changes);
+		f.Apply:Disable();
 	end
 
-	function panel:default()
+	function f:default()
 		wipe(Broker_EverythingDB);
 		wipe(Broker_EverythingGlobalDB);
-		wipe(panel.changes);
-		panel.Apply:Disable();
+		wipe(f.changes);
+		f.Apply:Disable();
 	end
 
-	function panel:refresh()
+	function f:refresh()
 		local cur,r,g,b,a;
-		for i,v in pairs(panel.controls) do
+		for i,v in pairs(f.controls) do
 			if (v.data.modName) then
-				if (panel.changes[v.data.modName]) and (panel.changes[v.data.modName][v.data.name]~=nil) then
-					cur = panel.changes[v.data.modName][v.data.name];
+				if (f.changes[v.data.modName]) and (f.changes[v.data.modName][v.data.name]~=nil) then
+					cur = f.changes[v.data.modName][v.data.name];
 				else
 					cur = Broker_EverythingDB[v.data.modName][v.data.name];
 				end
 			else
-				if (panel.changes[v.data.name]~=nil) then
-					cur = panel.changes[v.data.name];
+				if (f.changes[v.data.name]~=nil) then
+					cur = f.changes[v.data.name];
 				else
 					cur = Broker_EverythingDB[v.data.name];
 				end
@@ -523,23 +522,23 @@ ns.optionpanel = function()
 			end
 		end
 
-		if (panel:IsVisible()) then
-			panel.Apply:Show()
-			panel.Reload:Show()
-			panel.Reset:Show()
+		if (f:IsVisible()) then
+			f.Apply:Show()
+			f.Reload:Show()
+			f.Reset:Show()
 		end
 	end
 
-	function panel:reset()
-		for i,v in ipairs(panel.controls)do
+	function f:reset()
+		for i,v in ipairs(f.controls)do
 			if (v.Color) then
 				v.info.cancelFunc()
 			end
 		end
-		wipe(panel.changes);
-		panel:refresh();
-		panel:ModList_Update();
-		panel.Apply:Disable();
+		wipe(f.changes);
+		f:refresh();
+		f:ModList_Update();
+		f.Apply:Disable();
 	end
 
 	local function hasChanged(o,n)
@@ -555,34 +554,34 @@ ns.optionpanel = function()
 		return (o~=n);
 	end
 
-	function panel:change(name,key,value)
+	function f:change(name,key,value)
 		local changed=false;
 		if (name) then
-			if (not panel.changes[name]) then panel.changes[name]={}; end
+			if (not f.changes[name]) then f.changes[name]={}; end
 			if (hasChanged(Broker_EverythingDB[name][key],value)) then
-				panel.changes[name][key] = value;
+				f.changes[name][key] = value;
 				changed=true;
 			end
 		else
 			if (hasChanged(Broker_EverythingDB[key],value)) then
-				panel.changes[key] = value;
+				f.changes[key] = value;
 				changed=true;
 			end
 		end
 		if(changed)then
-			panel.Apply:Enable();
+			f.Apply:Enable();
 		end
 	end
 
-	function panel:ModOpts_Choose(name)
-		local p = panel.Modules.Container;
+	function f:ModOpts_Choose(name)
+		local p = f.Modules.Container;
 
 		if (p.current) and (p.current.Hide) then
 			p.current:Hide();
 		end
 
 		if (not p.frames[name]) then
-			panel:ModOpts_Build(name);
+			f:ModOpts_Build(name);
 		end
 
 		if (p.current==p.frames[name]) or (name=="DESC") then
@@ -595,11 +594,11 @@ ns.optionpanel = function()
 		return p.current==p.frames[name];
 	end
 
-	function panel:ModOpts_Build(name)
+	function f:ModOpts_Build(name)
 		local mod = ns.modules[name];
 		if (mod) then
-			local frame, i = CreateFrame("Frame", ("%s_%s"):format(addon,gsub(gsub(gsub(name,"_",""),"/","")," ","")), panel.Modules.Container.child), 1;
-			frame:SetPoint("TOPLEFT"); frame:SetSize(panel.Modules.Container.child:GetWidth(),1); frame:Hide();
+			local frame, i = CreateFrame("Frame", ("%s_%s"):format(addon,gsub(gsub(gsub(name,"_",""),"/","")," ","")), f.Modules.Container.child), 1;
+			frame:SetPoint("TOPLEFT"); frame:SetSize(f.Modules.Container.child:GetWidth(),1); frame:Hide();
 			local icon = ns.I[name];
 
 			if (mod.config) and (#mod.config>0) then
@@ -637,18 +636,18 @@ ns.optionpanel = function()
 				end
 			end
 
-			panel.Modules.Container.frames[name] = frame;
+			f.Modules.Container.frames[name] = frame;
 		end
 	end
 
-	function panel:ModList_Update()
-		local scroll = panel.Modules.List;
+	function f:ModList_Update()
+		local scroll = f.Modules.List;
 		local button, index, offset, nButtons;
 
 		if (not scroll.buttons) then
-			panel.Modules.List.update=panel.ModList_Update;
-			HybridScrollFrame_CreateButtons(panel.Modules.List, "BEConfigPanel_ModuleButtonTemplate", 0, 0, nil, nil, 0, -mods.entryOffset);
-			mods.entryHeight = panel.Modules.List.buttons[1]:GetHeight();
+			f.Modules.List.update=f.ModList_Update;
+			HybridScrollFrame_CreateButtons(f.Modules.List, "BEConfigPanel_ModuleButtonTemplate", 0, 0, nil, nil, 0, -mods.entryOffset);
+			mods.entryHeight = f.Modules.List.buttons[1]:GetHeight();
 		end
 
 		offset = HybridScrollFrame_GetOffset(scroll);
@@ -670,8 +669,8 @@ ns.optionpanel = function()
 					button:Disable();
 				elseif (ns.modules[name]) then
 					local d,e = ns.modules[name],Broker_EverythingDB[name].enabled;
-					if (panel.changes[name]) and (panel.changes[name].enabled~=nil) then
-						e = panel.changes[name].enabled;
+					if (f.changes[name]) and (f.changes[name].enabled~=nil) then
+						e = f.changes[name].enabled;
 					end
 					button.data = {name=name,db=Broker_EverythingDB[name]};
 					button.name:SetText(L[name]);
@@ -694,19 +693,19 @@ ns.optionpanel = function()
 					button:RegisterForClicks("AnyUp");
 					button:SetScript("OnClick",function(self,button)
 						if (button=="LeftButton") then
-							if (panel:ModOpts_Choose(self.data.name)) then
+							if (f:ModOpts_Choose(self.data.name)) then
 								mods.pointer=self.data.name;
 							else
 								mods.pointer=nil;
 							end
 						elseif (button=="RightButton") then
 							local val = not Broker_EverythingDB[name].enabled;
-							if (panel.changes[name]) and (panel.changes[name].enabled~=nil) then
-								val = not panel.changes[name].enabled;
+							if (f.changes[name]) and (f.changes[name].enabled~=nil) then
+								val = not f.changes[name].enabled;
 							end
-							panel:change(name,"enabled",val);
+							f:change(name,"enabled",val);
 						end
-						panel:ModList_Update()
+						f:ModList_Update()
 					end);
 
 					button.tooltip_anchor="LEFT";
@@ -734,21 +733,21 @@ ns.optionpanel = function()
 		HybridScrollFrame_Update(scroll, nModules * height, nButtons * height);
 	end
 
-	panel:SetScript("OnShow", function()
-		panel.title:SetText(addon.." - "..L["Options"]);
-		panel.subTitle:SetText(L["Allows you to adjust the display options."]);
+	f:SetScript("OnShow", function()
+		f.title:SetText(addon.." - "..L["Options"]);
+		f.subTitle:SetText(L["Allows you to adjust the display options."]);
 
-		panel.Reset.tooltip = {RESET,L["Opens a little menu with 3 reset options"]};
-		panel.Reset:SetScript("OnEnter",tooltipOnEnter);
-		panel.Reset:SetScript("OnLeave",tooltipOnLeave);
-		panel.Reset:SetScript("OnClick",function(self,button)
+		f.Reset.tooltip = {RESET,L["Opens a little menu with 3 reset options"]};
+		f.Reset:SetScript("OnEnter",tooltipOnEnter);
+		f.Reset:SetScript("OnLeave",tooltipOnLeave);
+		f.Reset:SetScript("OnClick",function(self,button)
 			ns.EasyMenu.InitializeMenu();
 			ns.EasyMenu.addEntry({
 				label = L["Reset all data"],
 				tooltip = {L["Reset all data"],L["Your current settings and all other data collected by some modules like mail on other chars or profession cooldowns of your twinks."]},
 				func = function()
 					ns.resetAllSavedVariables();
-					panel:reset()
+					f:reset()
 				end,
 			});
 			ns.EasyMenu.addEntry({
@@ -756,51 +755,51 @@ ns.optionpanel = function()
 				tooltip={L["Reset config"],L["Resets your global and module settings but not collected data about your twinks to display mail, profession cooldowns and more."]},
 				func = function()
 					ns.resetConfigs();
-					panel:reset()
+					f:reset()
 				end,
 			});
 			ns.EasyMenu.addEntry({
 				label = L["Reset unsaved changes"],
 				tooltip = {L["Reset unsaved changes"],L["Resets your last unsaved changes. Not more..."]},
 				func = function()
-					panel:reset()
+					f:reset()
 				end,
-				disabled = not panel.Apply:IsEnabled()
+				disabled = not f.Apply:IsEnabled()
 			});
 			ns.EasyMenu.ShowMenu(self);
 		end);
 
-		panel.Reload.tooltip = {RELOADUI,L["Reloads your user interface. (It does not save changes)"]};
-		panel.Reload:SetScript("OnEnter",tooltipOnEnter);
-		panel.Reload:SetScript("OnLeave",tooltipOnLeave);
-		panel.Reload:SetScript("OnClick",ReloadUI);
+		f.Reload.tooltip = {RELOADUI,L["Reloads your user interface. (It does not save changes)"]};
+		f.Reload:SetScript("OnEnter",tooltipOnEnter);
+		f.Reload:SetScript("OnLeave",tooltipOnLeave);
+		f.Reload:SetScript("OnClick",ReloadUI);
 
-		panel.Apply.tooltip = {APPLY,L["Save changes without closing the option panel"]};
-		panel.Apply:SetScript("OnEnter",tooltipOnEnter);
-		panel.Apply:SetScript("OnLeave",tooltipOnLeave);
-		panel.Apply:SetScript("OnClick",panel.okay);
-		panel.Apply:Disable();
+		f.Apply.tooltip = {APPLY,L["Save changes without closing the option panel"]};
+		f.Apply:SetScript("OnEnter",tooltipOnEnter);
+		f.Apply:SetScript("OnLeave",tooltipOnLeave);
+		f.Apply:SetScript("OnClick",f.okay);
+		f.Apply:Disable();
 
 		-- general options
-		panel.Generals.Title:SetText(L["General options"]);
-		panel.Generals:SetHitRectInsets(3,12,3,4)
-		panel.Generals.scrollBar:SetScale(0.725);
+		f.Generals.Title:SetText(L["General options"]);
+		f.Generals:SetHitRectInsets(3,12,3,4)
+		f.Generals.scrollBar:SetScale(0.725);
 		local i = 1;
 		for _,v in ipairs(ns.coreOptions) do
 			if (build[v.type]) then
 				if (v.set) and (v.get) then
 					v.modName=false;
 				end
-				build[v.type](panel.Generals.child, i, v, nil);
+				build[v.type](f.Generals.child, i, v, nil);
 				i=i+1;
 			end
 		end
-		--panel.Generals.child:SetHeight(c)
+		--f.Generals.child:SetHeight(c)
 
 		-- module options
-		panel.Modules.Title1:SetText(L["Modules"]);
-		panel.Modules.Title2:SetText(L["Module options"]);
-		panel.Modules.Title2:SetPoint("LEFT", panel.Modules.List.split, "LEFT", 10,0);
+		f.Modules.Title1:SetText(L["Modules"]);
+		f.Modules.Title2:SetText(L["Module options"]);
+		f.Modules.Title2:SetPoint("LEFT", f.Modules.List.split, "LEFT", 10,0);
 
 		local tmp1,tmp2,d={},{};
 		for k, v in pairs(ns.modules) do tmp1[L[k]] = k; end -- tmp1 to order modules by localized names
@@ -823,36 +822,36 @@ ns.optionpanel = function()
 		tmp1,tmp2=nil,nil;
 
 		-- module list
-		panel.Modules.All.tooltip = {ALL,L["Enable all modules"]};
-		panel.Modules.All:SetScript("OnEnter",tooltipOnEnter);
-		panel.Modules.All:SetScript("OnLeave",tooltipOnLeave);
-		panel.Modules.All:SetScript("OnClick",function()
+		f.Modules.All.tooltip = {ALL,L["Enable all modules"]};
+		f.Modules.All:SetScript("OnEnter",tooltipOnEnter);
+		f.Modules.All:SetScript("OnLeave",tooltipOnLeave);
+		f.Modules.All:SetScript("OnClick",function()
 			for i,v in pairs(ns.modules) do
-				panel:change(i,"enabled",true);
+				f:change(i,"enabled",true);
 			end
-			panel:ModList_Update();
+			f:ModList_Update();
 		end);
 
-		panel.Modules.None.tooltip = {NONE_KEY,L["Disable all modules"]};
-		panel.Modules.None:SetScript("OnEnter",tooltipOnEnter);
-		panel.Modules.None:SetScript("OnLeave",tooltipOnLeave);
-		panel.Modules.None:SetScript("OnClick",function()
+		f.Modules.None.tooltip = {NONE_KEY,L["Disable all modules"]};
+		f.Modules.None:SetScript("OnEnter",tooltipOnEnter);
+		f.Modules.None:SetScript("OnLeave",tooltipOnLeave);
+		f.Modules.None:SetScript("OnClick",function()
 			for i,v in pairs(ns.modules) do
-				panel:change(i,"enabled",false);
+				f:change(i,"enabled",false);
 			end
-			panel:ModList_Update();
+			f:ModList_Update();
 		end);
 
-		panel.Modules.List.scrollBar:SetScale(0.725);
-		panel:ModList_Update();
+		f.Modules.List.scrollBar:SetScale(0.725);
+		f:ModList_Update();
 
 		-- options for any modules
-		panel.Modules.Container:SetHitRectInsets(3,12,3,4);
-		panel.Modules.Container.scrollBar:SetScale(0.725);
-		panel.Modules.Container.frames = {};
+		f.Modules.Container:SetHitRectInsets(3,12,3,4);
+		f.Modules.Container.scrollBar:SetScale(0.725);
+		f.Modules.Container.frames = {};
 
-		local frame = CreateFrame("Frame", addon.."ModuleListInfoFrame", panel.Modules.Container.child);
-		frame:SetPoint("TOPLEFT"); frame:SetSize(panel.Modules.Container.child:GetWidth(),1); frame:Hide();
+		local frame = CreateFrame("Frame", addon.."ModuleListInfoFrame", f.Modules.Container.child);
+		frame:SetPoint("TOPLEFT"); frame:SetSize(f.Modules.Container.child:GetWidth(),1); frame:Hide();
 
 		local icon1="Interface\\Tooltips\\ReforgeGreenArrow:16:16:0:0:16:16:16:0:0:16"
 		local icon2="Interface\\OPTIONSFRAME\\UI-OptionsFrame-NewFeatureIcon:0";
@@ -876,15 +875,175 @@ ns.optionpanel = function()
 			end
 		end
 
-		panel.Modules.Container.frames["DESC"] = frame;
-		panel:ModOpts_Choose("DESC");
+		f.Modules.Container.frames["DESC"] = frame;
+		f:ModOpts_Choose("DESC");
 
-		panel:SetScript("OnShow",nil --[[panel.refresh]]);
+		f:SetScript("OnShow",nil --[[f.refresh]]);
 	end);
 
-	InterfaceOptions_AddCategory(panel);
-	return panel;
+	InterfaceOptions_AddCategory(f);
+	panel = f;
+	return f;
 end
 
+ns.datapanel = function()
+	local f = CreateFrame("Frame", "BrokerEverythingDataPanel", InterfaceOptionsFramePanelContainer,"BrokerEverythingDataPanelTemplate");
+	f.name, f.parent, f.controls, f.tmpCharCache = L["Character data"], addon, {},false;
 
+	function f:okay()
+		be_character_cache = CopyTable(f.tmpCharCache);
+		f.tmpCharCache = false;
+	end
+	function f:cancel()
+		f.tmpCharCache = false;
+	end
+	function f:default()
+		--f.tmpCharCache = false;
+	end
+	function f:refresh()
+		f.CharList.update();
+	end
+	function f:reset()
+		f.tmpCharCache = false;
+		be_character_cache = {order={ns.player.name_realm}};
+		for i,v in ipairs({"name","class","faction","race"})do
+			if(ns.player[v] and be_character_cache[ns.player.name_realm][v]~=ns.player[v])then
+				be_character_cache[ns.player.name_realm][v] = ns.player[v];
+			end
+		end
+		be_character_cache[ns.player.name_realm].level = UnitLevel("player");
+	end
+
+	local function CharList_OrderUp(name)
+		tremove(f.tmpCharCache.order,f.tmpCharCache[name].orderId);
+		tinsert(f.tmpCharCache.order,f.tmpCharCache[name].orderId-1,name);
+	end
+
+	local function CharList_OrderDown(name)
+		tremove(f.tmpCharCache.order,f.tmpCharCache[name].orderId);
+		tinsert(f.tmpCharCache.order,f.tmpCharCache[name].orderId+1,name);
+	end
+
+	local function CharList_Delete(name)
+		tremove(f.tmpCharCache.order,f.tmpCharCache[name].orderId);
+		f.tmpCharCache[name]=nil;
+	end
+	
+	function CharList_Update()
+		local scroll = f.CharList;
+		local button, index, offset, nButtons;
+
+		if (not scroll.buttons) then
+			f.CharList.update=CharList_Update;
+			HybridScrollFrame_CreateButtons(f.CharList, "BECharacterListButtonTemplate", 0, 0, nil, nil, 0, -2);
+		end
+
+		if(f.tmpCharCache==false)then
+			f.tmpCharCache = CopyTable(be_character_cache);
+		end
+
+		offset = HybridScrollFrame_GetOffset(scroll);
+		nButtons = #scroll.buttons;
+		nEntries = #f.tmpCharCache.order;
+
+		for i=1, nButtons do
+			button = scroll.buttons[i];
+			index = offset+i;
+
+			if (f.tmpCharCache.order[index]) then
+				local name_realm = f.tmpCharCache.order[index];
+				local name, realm = strsplit("-",name_realm);
+				local data = f.tmpCharCache[name_realm];
+
+				local factionIcon = " |TInterface\\minimap\\tracking\\BattleMaster:16:16:0:-1:16:16:0:16:0:16|t";
+				if(data.faction~="Neutral")then
+					factionIcon = " |TInterface\\PVPFrame\\PVP-Currency-"..data.faction..":16:16:0:-1:16:16:0:16:0:16|t";
+				end
+
+				if(data.orderId==nil or data.orderId~=index)then
+					data.orderId=index;
+				end
+
+				button.Number:SetText(data.orderId..".");
+				button.Name:SetText(C(data.class,name) .. factionIcon);
+				button.Realm:SetText(realm);
+				button.ClassIcon:SetTexCoord(unpack(_G.CLASS_ICON_TCOORDS[data.class:upper()]));
+
+				button.OrderUp:Enable();
+				button.OrderDown:Enable();
+
+				button.OrderUp:SetScript("OnClick",function() CharList_OrderUp(name_realm); CharList_Update(); end);
+				button.OrderDown:SetScript("OnClick",function() CharList_OrderDown(name_realm); CharList_Update(); end);
+
+				if(data.orderId==1)then
+					button.OrderUp:Disable();
+				elseif(data.orderId==nEntries)then
+					button.OrderDown:Disable();
+				end
+
+				button.Delete:SetScript("OnClick",function() CharList_Delete(name_realm); CharList_Update(); end);
+
+				button:SetBackdropColor(1,.6,.1, index/2==floor(index/2) and .15 or .07);
+
+				button:Show();
+			else
+				button:Hide();
+			end
+		end
+
+		local height = f.CharList.buttonHeight + 1;
+		HybridScrollFrame_Update(scroll, nEntries * height, nButtons * height);
+	end
+
+	f:SetScript("OnShow",function()
+		f.title:SetText(addon.." - "..L["Character data"]);
+		f.InfoLine0:SetText(L["Your options on this panel:"]);
+		f.InfoLine1:SetText(L["1. Sort your characters"]);
+		f.InfoLine1Sub:SetText(L["That means you can sort your chars like character choose panel and all modules with informations about your characters respect this order."]);
+		f.InfoLine2:SetText(L["2. Delete character data"]);
+		f.InfoLine2Sub:SetText(L["You can delete all collected data about your characters with a single click."]);
+
+		_G[f:GetName().."DeleteAllText"]:SetText(L["Delete all character data"]);
+		f.DeleteAll:SetScript("OnClick",function()  end);
+
+		f.CharList.scrollBar:SetScale(0.725);
+		CharList_Update();
+
+		f:SetScript("OnShow",nil --[[f.refresh]]);
+	end);
+
+	InterfaceOptions_AddCategory(f);
+	datapanel = f;
+	return f;
+end
+
+ns.profilepanel = function()
+	local f = CreateFrame("Frame", "BrokerEverythingProfilePanel", InterfaceOptionsFramePanelContainer); --, "BrokerEverythingOptionPanelTemplate");
+	f.name, f.parent, f.controls, f.changes = L["Profiles"], addon, {},{};
+
+	f:SetScript("OnShow",function()
+		--f.title:SetText(addon.." - "..L["Options"]);
+		--f.subTitle:SetText(L["Allows you to adjust the display options."]);
+		f:SetScript("OnShow",nil --[[f.refresh]]);
+	end);
+
+	--InterfaceOptions_AddCategory(f);
+	profilepanel = f;
+	return f;
+end
+
+ns.infopanel = function()
+	local f = CreateFrame("Frame", "BrokerEverythingInfoPanel", InterfaceOptionsFramePanelContainer); --, "BrokerEverythingOptionPanelTemplate");
+	f.name, f.parent, f.controls, f.changes = L["Informations"], addon, {},{};
+	
+	f:SetScript("OnShow",function()
+		--f.title:SetText(addon.." - "..L["Options"]);
+		--f.subTitle:SetText(L["Allows you to adjust the display options."]);
+		f:SetScript("OnShow",nil --[[f.refresh]]);
+	end);
+
+	--InterfaceOptions_AddCategory(f);
+	infopanel = f;
+	return f;
+end
 

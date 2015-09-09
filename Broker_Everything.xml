@@ -81,49 +81,69 @@
 		</Frames>
 	</Button>
 
+	<Texture name="BEReputationBarTextureTemplate" file="Interface\BUTTONS\GreyscaleRamp64" hidden="true" virtual="true">
+		<Size x="1"/>
+		<TexCoords left="1" right="0" top="1" bottom="0" />
+		<Anchors><Anchor point="TOPLEFT" /><Anchor point="BOTTOM" /></Anchors>
+	</Texture>
 
+	<Frame name="BEStatusBarTemplate" virtual="true">
+		<Layers>
+			<Layer level="BACKGROUND" textureSubLevel="1">
+				<Texture parentKey="Bar" inherits="BEReputationBarTextureTemplate" />
+			</Layer>
+			<Layer level="BACKGROUND" textureSubLevel="-1">
+				<Texture parentKey="Bg" file="Interface\BUTTONS\GreyscaleRamp64" SetAllPoints="true">
+					<Color r="0.2" g="0.2" b="0.2" />
+					<TexCoords left="1" right="0" top="1" bottom="0" />
+				</Texture>
+			</Layer>
+		</Layers>
+	</Frame>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	<!--
-		Interface\LFGFRAME\GroupFinder
-			normal left="0" right="0.294921875" top="0.330078125" bottom="0.376953125"
-			pushed left="0" right="0.294921875" top="0.376953125" bottom="0.423828125"
-			highlight left="0" right="0.287109375" top="0.423828125" bottom="0.4619140625"
-			active left="0" right="0.287109375" top="0.4619140625" bottom="0.5"
-	-->
+	<Frame name="BEReputationBarTemplate" virtual="true">
+		<Layers>
+			<Layer level="BACKGROUND" textureSubLevel="1">
+				<Texture parentKey="BarSingle" inherits="BEReputationBarTextureTemplate" />
+				<Texture parentKey="BarAIO" file="Interface\AddOns\Broker_Everything\media\aio-reputation-bar" hidden="true">
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+						<Anchor point="BOTTOM"/>
+					</Anchors>
+					<TexCoords left="0" right="0.830078125" top="0" bottom="0" />
+				</Texture>
+				<Texture parentKey="BarAIO_friend" file="Interface\AddOns\Broker_Everything\media\aio-reputation-bar_friend" hidden="true">
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+						<Anchor point="BOTTOM"/>
+					</Anchors>
+					<TexCoords left="0" right="0.830078125" top="0" bottom="0" />
+				</Texture>
+				<Texture parentKey="BarAIO_bodyguard" file="Interface\AddOns\Broker_Everything\media\aio-reputation-bar_bodyguard" hidden="true">
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+						<Anchor point="BOTTOM"/>
+					</Anchors>
+					<TexCoords left="0" right="0.830078125" top="0" bottom="0" />
+				</Texture>
+			</Layer>
+			<Layer level="BACKGROUND" textureSubLevel="-1">
+				<Texture parentKey="Bg" file="Interface\BUTTONS\GreyscaleRamp64" SetAllPoints="true">
+					<Color r="0.2" g="0.2" b="0.2" />
+					<TexCoords left="1" right="0" top="1" bottom="0" />
+				</Texture>
+				<Texture parentKey="Bg2" file="Interface\BUTTONS\GreyscaleRamp64" hidden="true">
+					<Size x="1" />
+					<Color r="0.66" g="0.66" b="0.66" />
+					<TexCoords left="1" right="0" top="1" bottom="0" />
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeKey="$parent.Bar1" />
+						<Anchor point="BOTTOM"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+	</Frame>
 
 	<Button name="BEConfigPanel_ModuleButtonTemplate" virtual="true" hidden="false">
 		<Size x="0" y="20" />
@@ -325,6 +345,195 @@
 					</Button>
 				</Frames>
 			</Editbox>
+		</Frames>
+	</Frame>
+
+	<Frame name="BECharacterListButtonTemplate" virtual="true">
+		<Size y="40" />
+		<Anchors>
+			<Anchor point="LEFT" />
+			<Anchor point="RIGHT" />
+		</Anchors>
+		<Backdrop bgFile="interface\buttons\white8x8" tile="true">
+			<TileSize val="8"/>
+			<TileInsets left="5" right="5" top="5" bottom="5" />
+			<Color r="1" g=".6" b=".1" a=".1" />
+		</Backdrop>
+		<Layers>
+			<Layer level="ARTWORK">
+				
+				<FontString parentKey="Number" justifyH="RIGHT" inherits="GameFontNormalLarge">
+					<Size x="46"/>
+					<Anchors>
+						<Anchor point="LEFT" x="23"/>
+					</Anchors>
+				</FontString>
+
+				<Texture parentKey="Split1" file="interface\buttons\white8x8">
+					<Size x="1" />
+					<Anchors>
+						<Anchor point="LEFT" relativeKey="$parent.Number" relativePoint="RIGHT" x="6" />
+						<Anchor point="TOP" y="-3"/>
+						<Anchor point="BOTTOM" y="3"/>
+					</Anchors>
+					<Color r="1" g=".6" b=".1" a=".3"/>
+				</Texture>
+
+				<Texture parentKey="ClassIcon" file="interface\worldstateFrame\icons-classes">
+					<Size x="32" y="32" />
+					<Anchors>
+						<Anchor point="LEFT" relativeKey="$parent.Split1" relativePoint="RIGHT" x="6" />
+					</Anchors>
+				</Texture>
+				<FontString parentKey="Name" justifyH="LEFT" inherits="GameFontNormalLarge">
+					<Size x="212" />
+					<Anchors>
+						<Anchor point="LEFT" relativeKey="$parent.ClassIcon" relativePoint="RIGHT" x="6" />
+					</Anchors>
+				</FontString>
+
+				<Texture parentKey="Split2" file="interface\buttons\white8x8">
+					<Size x="1" />
+					<Anchors>
+						<Anchor point="LEFT" relativeKey="$parent.Name" relativePoint="RIGHT" x="6" />
+						<Anchor point="TOP" y="-3" />
+						<Anchor point="BOTTOM" y="3" />
+					</Anchors>
+					<Color r="1" g=".6" b=".1" a=".3"/>
+				</Texture>
+
+				<FontString parentKey="Realm" justifyH="LEFT" inherits="GameFontNormal">
+					<Size x="120" />
+					<Anchors>
+						<Anchor point="LEFT" relativeKey="$parent.Split2" relativePoint="RIGHT" x="6" />
+					</Anchors>
+				</FontString>
+
+				<Texture parentKey="Split3" file="interface\buttons\white8x8">
+					<Size x="1" />
+					<Anchors>
+						<Anchor point="TOP" y="-3" />
+						<Anchor point="BOTTOM" y="3" />
+					</Anchors>
+					<Color r="1" g=".6" b=".1" a=".3" />
+				</Texture>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Button parentKey="OrderUp" inherits="UIPanelScrollUpButtonTemplate">
+				<Anchors>
+					<Anchor point="BOTTOMLEFT" relativePoint="LEFT" x="4" y="2" />
+				</Anchors>
+			</Button>
+			<Button parentKey="OrderDown" inherits="UIPanelScrollDownButtonTemplate">
+				<Anchors>
+					<Anchor point="TOPLEFT" relativePoint="LEFT" x="4" y="-2" />
+				</Anchors>
+			</Button>
+			<Button parentKey="Delete" inherits="UIPanelButtonTemplate" text="DELETE">
+				<Size x="78" y="20" />
+				<Anchors>
+					<Anchor point="RIGHT" x="-6" />
+				</Anchors>
+			</Button>
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				self.Split3:SetPoint("RIGHT",self.Delete,"LEFT",0);
+			</OnLoad>
+		</Scripts>
+	</Frame>
+
+	<Frame name="BrokerEverythingDataPanelTemplate" virtual="true">
+		<Layers>
+			<Layer level="ARTWORK">
+				<FontString parentKey="title" inherits="GameFontNormalLarge">
+					<Anchors>
+						<Anchor point="TOPLEFT" x="10" y="-7" />
+					</Anchors>
+				</FontString>
+
+				<FontString parentKey="InfoLine0" justifyH="LEFT" inherits="GameFontHighlight">
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeKey="$parent.title" relativePoint="BOTTOMLEFT" x="0" y="-8" />
+					</Anchors>
+				</FontString>
+
+				<FontString parentKey="InfoLine1" justifyH="LEFT" inherits="GameFontNormal">
+					<Anchors>
+						<Anchor point="TOP" relativeKey="$parent.InfoLine0" relativePoint="BOTTOM" y="-8" />
+						<Anchor point="LEFT" relativeKey="$parent.title" x="14" />
+					</Anchors>
+				</FontString>
+				<FontString parentKey="InfoLine1Sub" justifyH="LEFT" inherits="GameFontHighlight">
+					<Size x="500"/>
+					<Anchors>
+						<Anchor point="TOP" relativeKey="$parent.InfoLine1" relativePoint="BOTTOM" />
+						<Anchor point="LEFT" relativeKey="$parent.title" x="26" />
+					</Anchors>
+				</FontString>
+
+				<FontString parentKey="InfoLine2" justifyH="LEFT" inherits="GameFontNormal">
+					<Anchors>
+						<Anchor point="TOP" relativeKey="$parent.InfoLine1Sub" relativePoint="BOTTOM" y="-8" />
+						<Anchor point="LEFT" relativeKey="$parent.title" x="14" />
+					</Anchors>
+				</FontString>
+				<FontString parentKey="InfoLine2Sub" justifyH="LEFT" inherits="GameFontHighlight">
+					<Size x="500"/>
+					<Anchors>
+						<Anchor point="TOP" relativeKey="$parent.InfoLine2" relativePoint="BOTTOM" />
+						<Anchor point="LEFT" relativeKey="$parent.title" x="26" />
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<Frame parentKey="CharListInset">
+				<Anchors>
+					<Anchor point="TOP" relativeKey="$parent.InfoLine2Sub" relativePoint="BOTTOM" y="-16" />
+					<Anchor point="LEFT" x="20" />
+					<Anchor point="BOTTOMRIGHT" x="-26" y="40" />
+				</Anchors>
+				<Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+					<EdgeSize val="10"/> <TileSize val="10"/>
+					<TileInsets left="5" right="5" top="5" bottom="5" />
+					<Color r="0" g="0" b="0" a="1" />
+				</Backdrop>
+			</Frame>
+			<ScrollFrame parentKey="CharList" name="$parentCharList" inherits="HybridScrollFrameTemplate">
+				<Size x="574" y="460" />
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeKey="$parent.CharListInset" X="5" y="-5" />
+					<Anchor point="BOTTOMRIGHT" relativeKey="$parent.CharListInset" x="-5" y="5" />
+				</Anchors>
+				<Frames>
+					<Slider name="$parentScrollBar" parentKey="scrollBar">
+						<Size x="12" y="0" />
+						<Anchors>
+							<Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPRIGHT" x="10" y="8" />
+							<Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMRIGHT" x="10" y="-8" />
+						</Anchors>
+						<Backdrop bgFile="Interface\Buttons\UI-SliderBar-Background" edgeFile="Interface\Buttons\UI-SliderBar-Border" tile="true">
+							<EdgeSize val="8" />
+							<TileSize val="8" />
+							<BackgroundInsets left="3" right="3" top="3" bottom="3" />
+						</Backdrop>
+						<ThumbTexture parentKey="thumbTexture" file="Interface\Buttons\UI-SliderBar-Button-Vertical" />
+						<Scripts>
+							<OnValueChanged function="HybridScrollFrame_OnValueChanged"/>
+						</Scripts>
+					</Slider>
+					<Button parentKey="scrollUp" hidden="true"/>
+					<Button parentKey="scrollDown" hidden="true"/>
+				</Frames>
+			</ScrollFrame>
+			<Button name="$parentDeleteAll" parentKey="DeleteAll" inherits="UIPanelButtonTemplate" text="DELETEALL">
+				<Size x="220" y="22" />
+				<Anchors>
+					<Anchor point="TOP" relativeKey="$parent.CharList" relativePoint="BOTTOM" y="-12" />
+				</Anchors>
+			</Button>
 		</Frames>
 	</Frame>
 
@@ -552,7 +761,6 @@
 					</ScrollFrame>
 				</Frames>
 			</Frame> <!-- / $parent.Modules -->
-
 		</Frames>
 	</Frame>
 

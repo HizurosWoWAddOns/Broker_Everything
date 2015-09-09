@@ -176,6 +176,9 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 
 		-- panels for broker and config
 		ns.be_option_panel = ns.optionpanel();
+		ns.be_data_panel = ns.datapanel();
+		ns.be_profile_panel = ns.profilepanel();
+		ns.be_info_panel = ns.infopanel();
 
 		-- coexist with other addons
 		for _,name in pairs(ns.coexist.names) do

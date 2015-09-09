@@ -48,59 +48,193 @@ ns.LC.colorset({
 })
 
 
--- ---------------------------------- --
--- misc shared data                   --
--- ~Hizuro                            --
--- ---------------------------------- --
+  ---------------------------------------
+--- misc shared data                    ---
+  ---------------------------------------
 ns.realm = GetRealmName();
 ns.media = "Interface\\AddOns\\"..addon.."\\media\\";
 
 
--- ----------------------------------- --
--- player and twinks dependent data    --
--- ~Hizuro                             --
--- ----------------------------------- --
+  ---------------------------------------
+--- player and twinks dependent data    ---
+  ---------------------------------------
 ns.player = {
 	name = UnitName("player"),
-	female = UnitSex("player")==3
+	female = UnitSex("player")==3,
 };
+ns.player.name_realm = ns.player.name.."-"..ns.realm;
 _, ns.player.class,ns.player.classId = UnitClass("player");
 ns.player.faction,ns.player.factionL  = UnitFactionGroup("player");
-L[ns.player.faction] = ns.player.factionL
-ns.player.classLocale = ns.player.female and _G.LOCALIZED_CLASS_NAMES_FEMALE[ns.player.class] or _G.LOCALIZED_CLASS_NAMES_MALE[ns.player.class]
+L[ns.player.faction] = ns.player.factionL;
+ns.player.classLocale = ns.player.female and _G.LOCALIZED_CLASS_NAMES_FEMALE[ns.player.class] or _G.LOCALIZED_CLASS_NAMES_MALE[ns.player.class];
 ns.player.raceLocale,ns.player.race = UnitRace("player");
-ns.LC.colorset("suffix",ns.LC.colorset[ns.player.class:lower()]) -- 
+ns.LC.colorset("suffix",ns.LC.colorset[ns.player.class:lower()]);
 
-be_twink_db = {}
-do
-	local f = CreateFrame("Frame")
-	f:SetScript("OnEvent",function(self,event,...)
-		if event=="ADDON_LOADED" then
-			be_twink_db[ns.realm.." - "..ns.player.name] = ns.player
-		end
-	end)
-	f:RegisterEvent("ADDON_LOADED")
-end
 
-ns.twink = function(name,realm)
-	if realm == nil then realm = ns.realm end
-	if realm ~= false then
-		local key = realm.." - "..name
-		return (be_twink_db[key]~=nil and be_twink_db[key]) or false
-	else
-		local twinks = {}
-		for i,v in pairs(be_twink_db) do
-			
+  ---------------------------------------
+--- global character data cache         ---
+--- and migration from old structure    ---
+  ---------------------------------------
+be_twink_db = nil; -- deprecated
+be_character_cache = nil;
+local f = CreateFrame("Frame");
+f:SetScript("OnEvent",function(self,event,addonName)
+	if(event=="ADDON_LOADED" and addon==addonName)then
+
+		if(not be_character_cache)then be_character_cache={order={}}; end
+		if(not be_character_cache.order)then be_character_cache.order={}; end
+		local baseData={"name","class","faction","race"};
+
+		--- =========================================== ---
+		--- Start of migration section                  ---
+		--- =========================================== ---
+
+		if(not be_character_cache.migration)then be_character_cache.migration={}; end
+
+		--- be_twink_db migration
+		if(be_character_cache.migration.twink_db~=true and be_twink_db~=nil)then
+			for i,v in pairs(be_twink_db)do
+				local realm, name = strsplit("-",i); realm,name = strtrim(realm),strtrim(name);
+				local name_realm = name.."-"..realm;
+				tinsert(be_character_cache.order, name_realm);
+				be_character_cache[name_realm] = {orderId=#be_character_cache.order};
+				for _,V in ipairs(baseData)do
+					if(ns.player[V] and be_character_cache[name_realm][V]~=ns.player[V])then
+						be_character_cache[name_realm][V] = v[V];
+					end
+				end
+			end
+			be_twink_db=nil;
+			be_character_cache.migration.twink_db=true;
 		end
+
+		--- be_mail_db migration
+		if(be_character_cache.migration.mail_db~=true and be_mail_db~=nil)then
+			local empty=true;
+			for i,v in pairs(be_mail_db) do empty=false; break; end
+			if (mailDB~=nil) and (empty) then
+				be_mail_db = mailDB;
+				mailDB = nil;
+			end
+			for i,v in pairs(be_mail_db)do
+				local realm,name = strsplit("/",i);
+				be_character_cache[name.."-"..realm].mail = { count=v.count, next3=v.mails };
+			end
+			be_mail_db=nil;
+			be_character_cache.migration.mail_db=true;
+		end
+
+		--- be_professions_db migration
+		if(be_character_cache.migration.professions_db~=true and be_professions_db~=nil)then
+			for realm, chars in pairs(be_professions_db)do
+				for name, data in pairs(chars)do
+					be_character_cache[name.."-"..realm].professions = data;
+				end
+			end
+			be_professions_db=nil;
+			be_character_cache.migration.professions_db=true;
+		end
+
+		--- be_gold_db migration
+		if(be_character_cache.migration.gold_db~=true and be_gold_db~=nil)then
+			local empty=true;
+			for i,v in pairs(be_gold_db) do empty=false; break; end
+			if (goldDB~=nil) and (empty) then
+				be_gold_db = goldDB;
+				goldDB = nil;
+			end
+			for _, realms in pairs(be_gold_db)do
+				for realmName, chars in pairs(realms)do
+					for charName, data in pairs(chars)do
+						if(be_character_cache[charName.."-"..realmName])then
+							be_character_cache[charName.."-"..realmName].gold = data[1];
+						end
+					end
+				end
+			end
+			be_gold_db=nil;
+			be_character_cache.migration.gold_db=true;
+		end
+
+		--- be_garrison_db migration
+		if(be_character_cache.migration.garrison_db~=true and be_garrison_db~=nil)then
+			for name_realm, data in pairs(be_garrison_db)do
+				data.class=nil;
+				be_character_cache[name_realm].garrison = data;
+			end
+			be_garrison_db=nil;
+			be_character_cache.migration.garrison_db=true;
+		end
+
+		--- be_xp_db migration
+		if(be_character_cache.migration.xp_db~=true and be_xp_db~=nil)then
+			--- include prev. migration from xpDB to be_xp_db
+			local empty=true;
+			for i,v in pairs(be_xp_db) do empty=false; break; end
+			if (xpDB~=nil) and (empty) then
+				be_xp_db = xpDB;
+				xpDB = nil;
+			end
+			for realm, chars in pairs(be_xp_db)do
+				for name, data in pairs(chars)do
+					for i,v in pairs(data.xpBonus)do
+						v.name=nil;
+						v.percent = v.percent or nil;
+						v.outOfLevel = v.outOfLevel or nil;
+					end 
+					be_character_cache[name.."-"..realm].xp = {
+						cur = data.xp,
+						need = data.xpNeed,
+						max = data.xpMax,
+						percent = data.xpPercent,
+						rest = data.xpRest,
+						restStr = data.xpRestStr,
+						bonus = data.xpBonus,
+						bonusSum = data.xpBonusSum,
+					};
+					be_character_cache[name.."-"..realm].level = data.level;
+				end
+			end
+			be_xp_db = nil;
+			be_character_cache.migration.xp_db=true;
+		end
+
+		--- =========================================== ---
+		--- End of migration section                    ---
+		--- =========================================== ---
+
+		if(not be_character_cache[ns.player.name_realm])then
+			tinsert(be_character_cache.order,ns.player.name_realm);
+			be_character_cache[ns.player.name_realm] = {orderId=#be_character_cache.order};
+		end
+
+		for i,v in ipairs(baseData)do
+			if(ns.player[v] and be_character_cache[ns.player.name_realm][v]~=ns.player[v])then
+				be_character_cache[ns.player.name_realm][v] = ns.player[v];
+			end
+		end
+		be_character_cache[ns.player.name_realm].level = UnitLevel("player");
+
+	elseif(event=="PLAYER_LEVEL_UP")then
+		be_character_cache[ns.player.name_realm].level = UnitLevel("player");
+
+	elseif(event=="NEUTRAL_FACTION_SELECT_RESULT")then
+		ns.player.faction, ns.player.factionL  = UnitFactionGroup("player");
+		L[ns.player.faction] = ns.player.factionL;
+
+		be_character_cache[ns.player.name_realm].faction = ns.player.faction;
 	end
-end
+end)
+f:RegisterEvent("ADDON_LOADED");
+f:RegisterEvent("PLAYER_LEVEL_UP");
+f:RegisterEvent("NEUTRAL_FACTION_SELECT_RESULT");
 
 
--- ----------------------------------- --
--- SetCVar hook
--- Thanks at blizzard for blacklisting some cvars on combat...
--- ~Hizuro
--- ----------------------------------- --
+  -----------------------------------------
+--- SetCVar hook                          ---
+--- Thanks at blizzard for blacklisting   ---
+--- some cvars on combat...               ---
+  -----------------------------------------
 do
 	local blacklist = {alwaysShowActionBars = true, bloatnameplates = true, bloatTest = true, bloatthreat = true, consolidateBuffs = true, fullSizeFocusFrame = true, maxAlgoplates = true, nameplateMotion = true, nameplateOverlapH = true, nameplateOverlapV = true, nameplateShowEnemies = true, nameplateShowEnemyGuardians = true, nameplateShowEnemyPets = true, nameplateShowEnemyTotems = true, nameplateShowFriendlyGuardians = true, nameplateShowFriendlyPets = true, nameplateShowFriendlyTotems = true, nameplateShowFriends = true, repositionfrequency = true, showArenaEnemyFrames = true, showArenaEnemyPets = true, showPartyPets = true, showTargetOfTarget = true, targetOfTargetMode = true, uiScale = true, useCompactPartyFrames = true, useUiScale = true}
 	ns.SetCVar = function(...)
@@ -122,9 +256,9 @@ do
 end
 
 
--- ----------------------------------- --
--- Helpful function for extra tooltips --
--- ----------------------------------- --
+  ---------------------------------------
+--- Helpful function for extra tooltips ---
+  ---------------------------------------
 ns.GetTipAnchor = function(frame, menu)
 	local x, y = frame:GetCenter()
 	if (not x) or (not y) then return "TOPLEFT", "BOTTOMLEFT"; end
@@ -252,10 +386,9 @@ ns.AddSpannedLine = function(tt,content,ttColumns,start)
 end
 
 
--- -------------------------- --
--- icon colouring function    --
--- ~Hizuro                    --
--- -------------------------- --
+  ---------------------------------------
+--- icon colouring function             ---
+  ---------------------------------------
 do
 	local objs = {}
 	ns.updateIconColor = function(name)
@@ -275,17 +408,16 @@ do
 end
 
 
--- -------------------------- --
--- nice little print function --
--- ~Hizuro                    --
--- -------------------------- --
+  ---------------------------------------
+--- nice little print function          ---
+  ---------------------------------------
 ns.print = function (...)
 	local colors,t = {"red","green","ltblue","yellow","orange","violet"},{}
 	for i,v in ipairs({addon..":",...}) do
 		if type(v)=="string" and v:match("||c") then
 			tinsert(t,v)
 		else
-			tinsert(t,ns.LC.color(colors[i] or "white",v))
+			tinsert(t,ns.LC.color(colors[i] or "white",tostring(v)))
 		end
 	end
 	print(unpack(t))
@@ -304,10 +436,9 @@ end
 ns.print_t = ns.print_r
 
 
--- ------------------------- --
--- suffix colour function    --
--- ~Hizuro                   --
--- ------------------------- --
+  ---------------------------------------
+--- suffix colour function              ---
+  ---------------------------------------
 ns.suffixColour = function(str)
 	if (Broker_EverythingDB.suffixColour) then
 		str = ns.LC.color("suffix",str);
@@ -316,10 +447,10 @@ ns.suffixColour = function(str)
 end
 
 
--- -------------------------------------------------- --
--- Icon provider and framework to support             --
--- use of external iconset                            --
--- -------------------------------------------------- --
+  ------------------------------------------
+--- Icon provider and framework to support ---
+--- use of external iconset                ---
+  ------------------------------------------
 do
 	local iconset = nil
 	local objs = {}
@@ -471,12 +602,11 @@ end
 -- -------------------------------------------------------------- --
 -- module independent bags and inventory scanner                  --
 -- event driven with delayed execution                            --
--- ~Hizuro                                                        --
 -- -------------------------------------------------------------- --
 do
 	--- local elements
 	local d = {
-		ids = {}, callbacks = {}, preScanCallbacks={},
+		ids = {}, callbacks = {}, preScanCallbacks={}, links={},
 		delay = 1.75,
 		elapsed = 0,
 		update = true
@@ -600,7 +730,6 @@ end
 -- secure button as transparent overlay
 -- http://wowpedia.org/SecureActionButtonTemplate
 -- be careful...
--- ~Hizuro
 -- 
 -- @param self UI_ELEMENT 
 -- @param obj  TABLE
@@ -702,7 +831,6 @@ do
 	-- GetItemData                                 --
 	-- a 2in1 function to fetch item informations  --
 	-- for use in other addons                     --
-	-- ~Hizuro                                     --
 	-- ------------------------------------------- --
 	function ns.GetItemData(id,bag,slot)
 		assert(type(id)=="number","argument #1 (id) must be a number, got "..type(id))
@@ -818,7 +946,6 @@ end
 -- goldColor function to display amount of gold          --
 -- in colored strings or with coin textures depending on --
 -- a per module and a addon wide toggle.                 --
--- ~Hizuro                                               --
 -- ----------------------------------------------------- --
 function ns.GetCoinColorOrTextureString(modName,amount,opts)
 	local zz="%02d";
@@ -878,7 +1005,6 @@ end
 
 -- ----------------------------------------------------- --
 -- screen capture mode - string replacement function     --
--- ~Hizuro                                               --
 -- ----------------------------------------------------- --
 ns.scm = function(str,all)
 	if (type(str)=="string") and (strlen(str)>0) and (Broker_EverythingDB.scm==true) then
@@ -895,7 +1021,6 @@ end
 
 -- ------------------------ --
 -- Hide blizzard elements   --
--- ~Hizuro                  --
 -- ------------------------ --
 do
 	local hidden = CreateFrame("Frame",addon.."_HideFrames")
@@ -922,7 +1047,6 @@ end
 
 -- ---------------- --
 -- EasyMenu wrapper --
--- ~Hizuro          --
 -- ---------------- --
 do
 	ns.EasyMenu = {};
@@ -1172,7 +1296,6 @@ end
 
 -- ----------------------- --
 -- DurationOrExpireDate    --
--- ~Hizuro                 --
 -- ----------------------- --
 ns.DurationOrExpireDate = function(timeLeft,lastTime,durationTitle,expireTitle)
 	local mod = "shift";
@@ -1189,7 +1312,6 @@ end
 
 -- ------------------------ --
 -- clickOptions System      --
--- ~Hizuro                  --
 -- ------------------------ --
 do
 	local values = {
@@ -1316,7 +1438,6 @@ end
 
 -- ----------------
 -- tooltip graph (unstable)
--- ~Hizuro
 -- ----------------
 do
 	local width,height,space,count = 2,50,1,50;
