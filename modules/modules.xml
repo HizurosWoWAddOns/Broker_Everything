@@ -3,6 +3,7 @@
 
 	<Script file="modules.lua"/>
 
+	<Script file="achievements.lua"/>
 	<Script file="archaeology.lua"/>
 	<Script file="bags.lua"/>
 	<Script file="calendar.lua"/>
