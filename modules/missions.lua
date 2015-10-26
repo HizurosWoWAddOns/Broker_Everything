@@ -138,7 +138,7 @@ local function makeTooltip(tt)
 								sm_completed=sm_completed+1;
 							else
 								sm_progress=sm_progress+1;
-								if(sm_next==0 or (fm_next>0 and endtime<fm_next))then sm_next = endTime; end
+								if(sm_next==0 or (fm_next>0 and endTime<fm_next))then sm_next = endTime; end
 								if(endTime>sm_all)then sm_all = endTime; end
 							end
 						end
