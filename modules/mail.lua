@@ -155,7 +155,7 @@ local function getTooltip(tt)
 	if (Broker_EverythingDB[name].showDaysLeft) then
 
 		tt:AddSeparator(3,0,0,0,0)
-		tt:AddHeader(C("dkyellow",L["Leave in mailbox"]))
+		tt:AddHeader(C("dkyellow",L["Left in mailbox"]))
 		tt:AddSeparator()
 
 		local n,x,t = nil,false,nil
