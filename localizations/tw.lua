@@ -330,7 +330,7 @@ if LOCALE_zhTW then
 	-- L["Latency"] = "";
 	-- L["Learnable"] = "";
 	-- L["Leather cooldown group"] = "";
-	-- L["Leave in mailbox"] = "";
+	-- L["Left in mailbox"] = "";
 	-- L["Left"] = "";
 	-- L["Left alt"] = "";
 	-- L["Left ctrl"] = "";

@@ -330,7 +330,7 @@ if LOCALE_deDE then
 	L["Latency"] = "Latenz";
 	L["Learnable"] = "Erlernbar";
 	L["Leather cooldown group"] = "Leder Abklingzeitgruppe";
-	L["Leave in mailbox"] = "Zurückgelassen im Postfach";
+	L["Left in mailbox"] = "Zurückgelassen im Postfach";
 	L["Left"] = "Links";
 	L["Left alt"] = "Links Alt";
 	L["Left ctrl"] = "Links Strg";

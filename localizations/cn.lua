@@ -330,7 +330,7 @@ if LOCALE_zhCN then
 	L["Latency"] = "延迟";
 	-- L["Learnable"] = "";
 	-- L["Leather cooldown group"] = "";
-	L["Leave in mailbox"] = "邮箱的邮件";
+	L["Left in mailbox"] = "邮箱的邮件";
 	L["Left"] = "左";
 	-- L["Left alt"] = "";
 	-- L["Left ctrl"] = "";
