@@ -12,8 +12,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Bags" -- L["Bags"]
-local ldbName,ttName = name,name.."TT";
-local tt,createMenu;
+local ldbName,ttName,ttColumns,tt,createMenu = name,name.."TT",3;
 local ContainerIDToInventoryID,GetInventoryItemLink = ContainerIDToInventoryID,GetInventoryItemLink
 local GetItemInfo,GetContainerNumSlots,GetContainerNumFreeSlots = GetItemInfo,GetContainerNumSlots,GetContainerNumFreeSlots
 local qualityModeValues = {
@@ -270,7 +269,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.LQT:Acquire(ttName, 3, "LEFT", "RIGHT", "RIGHT")
+	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT", "RIGHT")
 	ns.modules[name].ontooltip(tt)
 	ns.createTooltip(self,tt)
 end
