@@ -14,6 +14,43 @@ local ldbName,ttName = name,name.."TT";
 local scanTooltip = CreateFrame("GameTooltip",addon.."_"..name.."_ScanTooltip",UIParent,"GameTooltipTemplate"); scanTooltip:SetScale(0.0001); scanTooltip:Hide();
 local tt;
 
+local diffTypes = setmetatable({ -- http://wowpedia.org/API_GetDifficultyInfo
+	[1] = 1,	--  1 =  5 Regular
+	[2] = 1,	--  2 =  5 Heroic
+
+	[3] = 4,	--  3 = 10 Normal
+	[4] = 4,	--  4 = 25 Normal
+	[5] = 4,	--  5 = 10 Heroic
+	[6] = 4,	--  6 = 25 Heroic
+	[7] = 5,	--  7 = 25 LFR
+
+	[8] = 2,	--  8 =  5 Challenge
+	[9] = 4,	--  9 = 40 man classic
+
+	[11] = 3,	-- 11 = 5 Szenario Heroic
+	[12] = 3,	-- 12 = 5 Szenario Normal
+
+	[14] = 7,	-- 14 = 10-30 Normal
+	[15] = 7,	-- 15 = 10-30 Heroic
+	[16] = 7,	-- 16 = 20 Mystic
+	[17] = 7,	-- 17 = 10-30 LFR
+
+	[18] = 8,	-- 18 = ? Event
+	[19] = 8,	-- 19 = ? Event
+	[20] = 8,	-- 20 = ? Event Scenario
+},{__index=function(t,k) rawset(t,k,0); return 0; end});
+
+local diffName = {
+	"Dungeons",			-- [1]
+	"Challenges",		-- [2]
+	"Szenarios",		-- [3]
+	"Raids (Classic)",	-- [4]
+	"Raids (LFR)",		-- [5]
+	"Raids (Flex)",		-- [6]
+	"Raids",			-- [7]
+	"Events"			-- [8]
+};
+
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
@@ -66,50 +103,13 @@ local function createTooltip()
 		end
 	end
 
-	local diffTypes = { -- http://wowpedia.org/API_GetDifficultyInfo
-		[1] = 1,	--  1 =  5 Regular
-		[2] = 1,	--  2 =  5 Heroic
-
-		[3] = 4,	--  3 = 10 Normal
-		[4] = 4,	--  4 = 25 Normal
-		[5] = 4,	--  5 = 10 Heroic
-		[6] = 4,	--  6 = 25 Heroic
-		[7] = 5,	--  7 = 25 LFR
-
-		[8] = 2,	--  8 =  5 Challenge
-		[9] = 4,	--  9 = 40 man classic
-
-		[11] = 3,	-- 11 = 5 Szenario Heroic
-		[12] = 3,	-- 12 = 5 Szenario Normal
-
-		[14] = 7,	-- 14 = 10-30 Normal
-		[15] = 7,	-- 15 = 10-30 Heroic
-		[16] = 7,	-- 16 = 20 Mystic
-		[17] = 7,	-- 17 = 10-30 LFR
-
-		[18] = 8,	-- 18 = ? Event
-		[19] = 8,	-- 19 = ? Event
-		[20] = 8,	-- 20 = ? Event Scenario
-	};
-
-	local diffName = {
-		"Dungeons",			-- [1]
-		"Challenges",		-- [2]
-		"Szenarios",		-- [3]
-		"Raids (Classic)",	-- [4]
-		"Raids (LFR)",		-- [5]
-		"Raids (Flex)",		-- [6]
-		"Raids",			-- [7]
-		"Events"			-- [8]
-	};
-
 	local instanceName, instanceID, instanceReset, instanceDifficulty, locked, extended, instanceIDMostSig, isRaid, maxPlayers, difficultyName, numEncounters, encounterProgress=1,2,3,4,5,6,7,8,9,10,11,12;
 	local num = GetNumSavedInstances();
 	if (num>0) then
 		local lst,count,data = {},0;
 		for i=1, num do
 			data={GetSavedInstanceInfo(i)};
-			if (data[instanceReset]>0) and (data[instanceDifficulty]) then
+			if (data[instanceName]) and (data[instanceReset]>0) and (data[instanceDifficulty]) then
 				if (not lst[diffTypes[data[instanceDifficulty]]]) then
 					lst[diffTypes[data[instanceDifficulty]]]={};
 				end
@@ -127,7 +127,7 @@ local function createTooltip()
 					for i,v in ipairs(data) do
 						tt:AddLine(
 							C("ltyellow",v[instanceName]),
-							v[difficultyName],
+							v[difficultyName].. (not diffName[diff] and " ("..v[instanceDifficulty]..")" or ""),
 							("%s/%s"):format(
 								(v[encounterProgress]>0) and v[encounterProgress] or "?",
 								(v[numEncounters]>0) and v[numEncounters] or "?"
