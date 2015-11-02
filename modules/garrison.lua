@@ -134,7 +134,6 @@ local function AchievementTooltip(self,link)
 	end
 end
 
-
 local function makeTooltip(tt)
 	local now, timeleft, timeleftAll, shipmentsCurrent = time();
 	local none, qualities = true,{"white","ff1eaa00","ff0070dd","ffa335ee"};
@@ -152,150 +151,152 @@ local function makeTooltip(tt)
 	tt:Clear();
 	tt:AddHeader(C("dkyellow",L[name]));
 
-	if (Broker_EverythingDB[name].showChars and false) then
-		tt:AddSeparator(4,0,0,0,0)
-		local l=tt:AddLine( C("ltblue", L["Characters"]) ); -- 1
+	if (C_Garrison.GetGarrisonInfo()) then
+		if (Broker_EverythingDB[name].showChars and false) then
+			tt:AddSeparator(4,0,0,0,0)
+			local l=tt:AddLine( C("ltblue", L["Characters"]) ); -- 1
 
-		-- Garrison /n level, buildings
-		-- Jobs /n available, worker
-		-- shipments /n finished, progress // duration /n next, all
-		-- 
+			-- Garrison /n level, buildings
+			-- Jobs /n available, worker
+			-- shipments /n finished, progress // duration /n next, all
+			-- 
 
-		if(IsShiftKeyDown())then
-			tt:SetCell(l, 2, C("ltblue",L["Garrison"]..		"|n"..C("green",L["level"])..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2 
-			tt:SetCell(l, 3, C("ltblue",L["Shipments"]..	"|n"..C("green",L["finished"])..	" / "..C("yellow",L["in progress"])), nil, "RIGHT", 3); -- 3,4,5
-			tt:SetCell(l, 6, C("ltblue",L["Jobs"]..			"|n"..C("green",L["available"])..	" / "..C("yellow",L["worker"])), nil, "RIGHT", 2); -- 6,7
-		else
-			tt:SetCell(l, 2, C("ltblue",L["Garrison"]..		"|n"..C("green",L["level"])..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2 
-			tt:SetCell(l, 3, C("ltblue",L["Shipments"]..	"|n"..C("green",L["finished"])..	" / "..C("yellow",L["in progress"])), nil, "RIGHT", 3); -- 3,4,5
-			tt:SetCell(l, 6, C("ltblue",L["Jobs"]..			"|n"..C("green",L["available"])..	" / "..C("yellow",L["worker"])), nil, "RIGHT", 2); -- 6,7
-		end
-		tt:AddSeparator();
-		local t=time();
-		for i=1, #be_character_cache.order do
-			local name_realm = be_character_cache.order[i];
-			local v = be_character_cache[name_realm];
-			if(v.missions)then
-				local charName,realm=strsplit("-",name_realm);          
-				local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-				realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or "";
-				local l=tt:AddLine(C(v.class,ns.scm(charName)) .. realm .. faction );
-				if(name_realm==ns.player.name_realm)then
-					--- background highlight
-				end
-
-				if(IsShiftKeyDown())then
-				else
-				end
-				if(name_realm==ns.player.name_realm)then
-					tt:SetLineColor(l, 0.1, 0.3, 0.6);
-				end
+			if(IsShiftKeyDown())then
+				tt:SetCell(l, 2, C("ltblue",L["Garrison"]..		"|n"..C("green",L["level"])..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2 
+				tt:SetCell(l, 3, C("ltblue",L["Shipments"]..	"|n"..C("green",L["finished"])..	" / "..C("yellow",L["in progress"])), nil, "RIGHT", 3); -- 3,4,5
+				tt:SetCell(l, 6, C("ltblue",L["Jobs"]..			"|n"..C("green",L["available"])..	" / "..C("yellow",L["worker"])), nil, "RIGHT", 2); -- 6,7
+			else
+				tt:SetCell(l, 2, C("ltblue",L["Garrison"]..		"|n"..C("green",L["level"])..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2 
+				tt:SetCell(l, 3, C("ltblue",L["Shipments"]..	"|n"..C("green",L["finished"])..	" / "..C("yellow",L["in progress"])), nil, "RIGHT", 3); -- 3,4,5
+				tt:SetCell(l, 6, C("ltblue",L["Jobs"]..			"|n"..C("green",L["available"])..	" / "..C("yellow",L["worker"])), nil, "RIGHT", 2); -- 6,7
 			end
-		end
-	end
+			tt:AddSeparator();
+			local t=time();
+			for i=1, #be_character_cache.order do
+				local name_realm = be_character_cache.order[i];
+				local v = be_character_cache[name_realm];
+				if(v.missions)then
+					local charName,realm=strsplit("-",name_realm);          
+					local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+					realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or "";
+					local l=tt:AddLine(C(v.class,ns.scm(charName)) .. realm .. faction );
+					if(name_realm==ns.player.name_realm)then
+						--- background highlight
+					end
 
-	if (nBuildings>0) then
-		local lst,longer = {},false;
-		for i,v in pairs(buildings) do
-			if (v) then
-				timeleft,timeleftAll = nil,nil;
-				if (v.creationTime) and (v.creationTime>0) then
-					timeleft =     ns.DurationOrExpireDate( (v.creationTime + v.duration) - now );
-					timeleftAll =  ns.DurationOrExpireDate( (v.creationTime + (v.duration * (v.shipmentsTotal - v.shipmentsReady) ) ) - now );
-				end
-				if ((v.shipmentsTotal - v.shipmentsReady)>1) then
-					longer = true;
-				end
-				tinsert(lst,{
-					(building):format(
-						v.texture,
-						v.rank,
-						((v.canUpgrade) and "|T"..ns.media.."GarrUpgrade:12:12:0:0:32:32:4:24:4:24|t") or  "", 
-						v.name .. ((v.canActivate) and C("orange"," ("..L["Upgrade finished"]..")") or "")
-					),
-					((v.follower) and C(v.follower.class,v.follower.name) .. C(qualities[v.follower.quality], " ("..v.follower.level..")")) or ((jobslots[v.buildingID]~=nil) and C("gray","< "..L["free job"].." >")) or "",
-					(v.shipmentCapacity) and v.shipmentCapacity or "",
-					(v.shipmentCapacity and v.shipmentsReady>0) and v.shipmentsReady or "",
-					(v.shipmentCapacity and v.shipmentsTotal>0) and (v.shipmentsTotal - v.shipmentsReady) or "",
-					(v.shipmentCapacity and timeleft) and timeleft or "",
-					(v.shipmentCapacity and timeleftAll and longer) and timeleftAll or ""
-				});
-			end
-		end
-
-		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(C("ltblue",L["Name"]),C("ltblue","Follower"),C("ltblue",L["Max."]),C("ltblue",L["Ready"]),C("ltblue",L["In|nprogress"]),C("ltblue",L[title]),(longer) and C("ltblue",L[title2]) or "");
-		tt:AddSeparator();
-		for i=1, #lst do
-			tt:AddLine(unpack(lst[i]));
-		end
-		none = false;
-	end
-
-	-- cunstruction list
-	if (Broker_EverythingDB[name].showConstruct) and (nConstruct>0) then
-		if (not none) then tt:AddSeparator(4,0,0,0,0); end
-		local _,title = ns.DurationOrExpireDate(0,false,"Duration","Expire date");
-		local l,c = tt:AddLine(C("ltblue",L["Under construction"]));
-		tt:SetCell(l, 7, C("ltblue",L[title]), "RIGHT");
-		tt:AddSeparator();
-		for i,v in ipairs(construct) do
-			local l, c = tt:AddLine(C("ltyellow",v.name))
-			tt:SetCell(l, 7, ns.DurationOrExpireDate(v.duration), "RIGHT");
-		end
-
-		none = false;
-	end
-
-	-- blueprints
-	if (Broker_EverythingDB[name].showBlueprints) and (#blueprints3>0) then
-		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(C("ltblue",L["Available blueprints level 3"]));
-		tt:AddSeparator();
-		for i,v in ipairs(blueprints3) do
-			if (v.iicon) and (v.iname) then
-				local l = tt:AddLine(("|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltyellow","%s")):format(v.icon,v.name));
-				tt:SetCell(l,2, ("|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltyellow","%s")):format(v.iicon,v.iname), nil,nil,5);
-			end
-		end
-	end
-
-	-- achievements
-	if (Broker_EverythingDB[name].showAchievements) and (#achievements3>0) then
-		displayAchievements = true;
-		tt:AddSeparator(4,0,0,0,0);
-		local l,c = tt:AddLine();
-		tt:SetCell(l,1,C("ltblue",L["Necessary achievements for blueprints level 3"]),nil,nil,3);
-		tt:AddSeparator();
-		for i,v in ipairs(achievements3) do
-			local l = tt:AddLine(
-				("|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltyellow","%s")):format(v.bicon,v.bname),
-				("|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltyellow","%s")):format(v.icon,v.name)
-			);
-			tt:SetCell(l,3, v.need, nil,"LEFT",5);
-			tt:SetLineScript(l,"OnMouseUp", function(self)
-				print("?")
-				if ( not AchievementFrame ) then
-					AchievementFrame_LoadUI();
-				end
-				
-				if ( not AchievementFrame:IsShown() ) then
-					AchievementFrame_ToggleAchievementFrame();
-					AchievementFrame_SelectAchievement(v.id);
-				else
-					if ( AchievementFrameAchievements.selection ~= v.id ) then
-						AchievementFrame_SelectAchievement(v.id);
+					if(IsShiftKeyDown())then
 					else
-						AchievementFrame_ToggleAchievementFrame();
+					end
+					if(name_realm==ns.player.name_realm)then
+						tt:SetLineColor(l, 0.1, 0.3, 0.6);
 					end
 				end
-			end);
-			tt:SetLineScript(l,"OnEnter", function(self)
-				AchievementTooltip(self,GetAchievementLink(v.id));
-			end);
-			tt:SetLineScript(l,"OnLeave", function()
-				AchievementTooltip(false)
-			end);
+			end
+		end
+
+		if (nBuildings>0) then
+			local lst,longer = {},false;
+			for i,v in pairs(buildings) do
+				if (v) then
+					timeleft,timeleftAll = nil,nil;
+					if (v.creationTime) and (v.creationTime>0) then
+						timeleft =     ns.DurationOrExpireDate( (v.creationTime + v.duration) - now );
+						timeleftAll =  ns.DurationOrExpireDate( (v.creationTime + (v.duration * (v.shipmentsTotal - v.shipmentsReady) ) ) - now );
+					end
+					if ((v.shipmentsTotal - v.shipmentsReady)>1) then
+						longer = true;
+					end
+					tinsert(lst,{
+						(building):format(
+							v.texture,
+							v.rank,
+							((v.canUpgrade) and "|T"..ns.media.."GarrUpgrade:12:12:0:0:32:32:4:24:4:24|t") or  "", 
+							v.name .. ((v.canActivate) and C("orange"," ("..L["Upgrade finished"]..")") or "")
+						),
+						((v.follower) and C(v.follower.class,v.follower.name) .. C(qualities[v.follower.quality], " ("..v.follower.level..")")) or ((jobslots[v.buildingID]~=nil) and C("gray","< "..L["free job"].." >")) or "",
+						(v.shipmentCapacity) and v.shipmentCapacity or "",
+						(v.shipmentCapacity and v.shipmentsReady>0) and v.shipmentsReady or "",
+						(v.shipmentCapacity and v.shipmentsTotal>0) and (v.shipmentsTotal - v.shipmentsReady) or "",
+						(v.shipmentCapacity and timeleft) and timeleft or "",
+						(v.shipmentCapacity and timeleftAll and longer) and timeleftAll or ""
+					});
+				end
+			end
+
+			tt:AddSeparator(4,0,0,0,0);
+			tt:AddLine(C("ltblue",L["Name"]),C("ltblue","Follower"),C("ltblue",L["Max."]),C("ltblue",L["Ready"]),C("ltblue",L["In|nprogress"]),C("ltblue",L[title]),(longer) and C("ltblue",L[title2]) or "");
+			tt:AddSeparator();
+			for i=1, #lst do
+				tt:AddLine(unpack(lst[i]));
+			end
+			none = false;
+		end
+
+		-- cunstruction list
+		if (Broker_EverythingDB[name].showConstruct) and (nConstruct>0) then
+			if (not none) then tt:AddSeparator(4,0,0,0,0); end
+			local _,title = ns.DurationOrExpireDate(0,false,"Duration","Expire date");
+			local l,c = tt:AddLine(C("ltblue",L["Under construction"]));
+			tt:SetCell(l, 7, C("ltblue",L[title]), "RIGHT");
+			tt:AddSeparator();
+			for i,v in ipairs(construct) do
+				local l, c = tt:AddLine(C("ltyellow",v.name))
+				tt:SetCell(l, 7, ns.DurationOrExpireDate(v.duration), "RIGHT");
+			end
+
+			none = false;
+		end
+
+		-- blueprints
+		if (Broker_EverythingDB[name].showBlueprints) and (#blueprints3>0) then
+			tt:AddSeparator(4,0,0,0,0);
+			tt:AddLine(C("ltblue",L["Available blueprints level 3"]));
+			tt:AddSeparator();
+			for i,v in ipairs(blueprints3) do
+				if (v.iicon) and (v.iname) then
+					local l = tt:AddLine(("|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltyellow","%s")):format(v.icon,v.name));
+					tt:SetCell(l,2, ("|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltyellow","%s")):format(v.iicon,v.iname), nil,nil,5);
+				end
+			end
+		end
+
+		-- achievements
+		if (Broker_EverythingDB[name].showAchievements) and (#achievements3>0) then
+			displayAchievements = true;
+			tt:AddSeparator(4,0,0,0,0);
+			local l,c = tt:AddLine();
+			tt:SetCell(l,1,C("ltblue",L["Necessary achievements for blueprints level 3"]),nil,nil,3);
+			tt:AddSeparator();
+			for i,v in ipairs(achievements3) do
+				local l = tt:AddLine(
+					("|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltyellow","%s")):format(v.bicon,v.bname),
+					("|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltyellow","%s")):format(v.icon,v.name)
+				);
+				tt:SetCell(l,3, v.need, nil,"LEFT",5);
+				tt:SetLineScript(l,"OnMouseUp", function(self)
+					print("?")
+					if ( not AchievementFrame ) then
+						AchievementFrame_LoadUI();
+					end
+					
+					if ( not AchievementFrame:IsShown() ) then
+						AchievementFrame_ToggleAchievementFrame();
+						AchievementFrame_SelectAchievement(v.id);
+					else
+						if ( AchievementFrameAchievements.selection ~= v.id ) then
+							AchievementFrame_SelectAchievement(v.id);
+						else
+							AchievementFrame_ToggleAchievementFrame();
+						end
+					end
+				end);
+				tt:SetLineScript(l,"OnEnter", function(self)
+					AchievementTooltip(self,GetAchievementLink(v.id));
+				end);
+				tt:SetLineScript(l,"OnLeave", function()
+					AchievementTooltip(false)
+				end);
+			end
 		end
 	end
 
@@ -344,7 +345,6 @@ local function makeTooltip(tt)
 		end
 		none=false;
 	end
-
 
 	if (none) then
 		tt:AddLine(L["No data to display..."]);
