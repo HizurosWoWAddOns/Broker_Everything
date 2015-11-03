@@ -177,6 +177,9 @@ f:SetScript("OnEvent",function(self,event,addonName)
 			end
 			for realm, chars in pairs(be_xp_db)do
 				for name, data in pairs(chars)do
+					if(not be_character_cache[name.."-"..realm])then
+						be_character_cache[name.."-"..realm] = {};
+					end
 					for i,v in pairs(data.xpBonus)do
 						v.name=nil;
 						v.percent = v.percent or nil;
@@ -190,7 +193,7 @@ f:SetScript("OnEvent",function(self,event,addonName)
 						rest = data.xpRest,
 						restStr = data.xpRestStr,
 						bonus = data.xpBonus,
-						bonusSum = data.xpBonusSum,
+						bonusSum = data.xpBonusSum
 					};
 					be_character_cache[name.."-"..realm].level = data.level;
 				end

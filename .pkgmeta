@@ -26,5 +26,4 @@ externals:
 enable-nolib-creation: no
 
 ignore:
-	- .pkgmeta
 	- changelog.txt
