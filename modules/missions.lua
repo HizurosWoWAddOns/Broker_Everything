@@ -43,7 +43,9 @@ ns.modules[name] = {
 		showAvailable = true,
 		showActive = true,
 		showReady = true,
-		showChars = true
+		showChars = true,
+		showAllRealms = false,
+		showAllFactions = true
 	},
 	config_allowed = {},
 	config = {
@@ -53,6 +55,8 @@ ns.modules[name] = {
 		{ type="toggle", name="showReady",     label=L["Show ready missions"],      tooltip=L["Show ready missions in tooltip"] },
 		{ type="toggle", name="showActive",    label=L["Show active missions"],     tooltip=L["Show active missions in tooltip"] },
 		{ type="toggle", name="showAvailable", label=L["Show available missions"],  tooltip=L["Show available missions in tooltip"] },
+		{ type="toggle", name="showAllRealms", label=L["Show all realms"], tooltip=L["Show characters from all realms in tooltip."] },
+		{ type="toggle", name="showAllFactions", label=L["Show all factions"], tooltip=L["Show characters from all factions in tooltip."] },
 	},
 	clickOptions = {
 		["1_open_garrison_report"] = {
@@ -113,8 +117,10 @@ local function makeTooltip(tt)
 		for i=1, #be_character_cache.order do
 			local name_realm = be_character_cache.order[i];
 			local v = be_character_cache[name_realm];
-			if(v.missions)then
-				local charName,realm=strsplit("-",name_realm);          
+			local charName,realm=strsplit("-",name_realm);
+			if (Broker_EverythingDB[name].showAllRealms~=true and realm~=ns.realm) or (Broker_EverythingDB[name].showAllFactions~=true and v.faction~=ns.player.faction) or (v.garrison[1]==nil) or (v.garrison[1]==0) then
+				-- do nothing
+			elseif(v.missions)then
 				local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 				realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or "";
 				local l=tt:AddLine(C(v.class,ns.scm(charName)) .. realm .. faction );
