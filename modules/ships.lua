@@ -40,13 +40,17 @@ ns.modules[name] = {
 	updateinterval = 30,
 	config_defaults = {
 		bgColoredStatus = true,
-		showChars = true
+		showChars = true,
+		showAllRealms = false,
+		showAllFactions = true
 	},
 	config_allowed = {},
 	config = {
 		{ type="header", label=L[name], align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="toggle", name="showChars",       label=L["Show characters"],          tooltip=L["Show a list of your characters with count of chilling, working and ships on missions in tooltip"] },
+		{ type="toggle", name="showAllRealms",   label=L["Show all realms"],          tooltip=L["Show characters from all realms in tooltip."] },
+		{ type="toggle", name="showAllFactions", label=L["Show all factions"],        tooltip=L["Show characters from all factions in tooltip."] },
 		{ type="toggle", name="bgColoredStatus", label=L["Background colored row for status"], tooltip=L["Use background colored row for follower status instead to split in separate tables"], event=true },
 	},
 	clickOptions = {
@@ -157,8 +161,10 @@ local function makeTooltip(tt)
 		for i=1, #be_character_cache.order do
 			local name_realm = be_character_cache.order[i];
 			local v = be_character_cache[name_realm];
-			if(v.ships and v.ships.level)then
-				local charName,realm=strsplit("-",name_realm);
+			local charName,realm=strsplit("-",name_realm);
+			if (Broker_EverythingDB[name].showAllRealms~=true and realm~=ns.realm) or (Broker_EverythingDB[name].showAllFactions~=true and v.faction~=ns.player.faction) or (v.garrison[1]==nil) or (v.garrison[1]==0) then
+				-- do nothing
+			elseif(v.ships and v.ships.level)then
 				local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 				realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or "";
 				local l=tt:AddLine(C(v.class,ns.scm(charName)) .. realm .. faction );
