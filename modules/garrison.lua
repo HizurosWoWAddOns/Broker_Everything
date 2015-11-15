@@ -59,6 +59,8 @@ ns.modules[name] = {
 		showCacheForcast = true,
 		showCacheForcastInBroker = true,
 		showRealms = true,
+		showAllRealms = false,
+		showAllFactions = true
 	},
 	config_allowed = {},
 	config = {
@@ -70,7 +72,9 @@ ns.modules[name] = {
 		{ type="toggle", name="showAchievements",         label=L["Show archievements"],          tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
 		{ type="toggle", name="showCacheForcast",         label=L["Show cache forcast"],          tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
 		{ type="toggle", name="showCacheForcastInBroker", label=L["Show cache forcast in title"], tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
-		--{ type="toggle", name="showRealms",     label=L["Show cache forcast in title"], tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+		--{ type="toggle", name="showRealms",             label=L["Show cache forcast in title"], tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+		{ type="toggle", name="showAllRealms",            label=L["Show all realms"],             tooltip=L["Show characters from all realms in tooltip."] },
+		{ type="toggle", name="showAllFactions",          label=L["Show all factions"],           tooltip=L["Show characters from all factions in tooltip."] },
 	},
 	clickOptions = {
 		["1_open_garrison_report"] = {
@@ -175,8 +179,10 @@ local function makeTooltip(tt)
 			for i=1, #be_character_cache.order do
 				local name_realm = be_character_cache.order[i];
 				local v = be_character_cache[name_realm];
-				if(v.missions)then
-					local charName,realm=strsplit("-",name_realm);          
+				local charName,realm=strsplit("-",name_realm);
+				if (Broker_EverythingDB[name].showAllRealms~=true and realm~=ns.realm) or (Broker_EverythingDB[name].showAllFactions~=true and v.faction~=ns.player.faction) then
+					-- do nothing
+				elseif(v.missions)then
 					local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 					realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or "";
 					local l=tt:AddLine(C(v.class,ns.scm(charName)) .. realm .. faction );
@@ -335,7 +341,10 @@ local function makeTooltip(tt)
 		tt:AddSeparator();
 		for i=1, #be_character_cache.order do
 			local v = be_character_cache[be_character_cache.order[i]];
-			if (v.garrison_cache and v.garrison_cache[1]) then
+			local c,r = strsplit("-",be_character_cache.order[i]);
+			if (Broker_EverythingDB[name].showAllRealms~=true and r~=ns.realm) or (Broker_EverythingDB[name].showAllFactions~=true and v.faction~=ns.player.faction) or (v.garrison[1]==nil) or (v.garrison[1]==0) then
+				-- do nothing
+			elseif (v.garrison_cache and v.garrison_cache[1]) then
 				_(be_character_cache.order[i],v);
 				None=false;
 			end
