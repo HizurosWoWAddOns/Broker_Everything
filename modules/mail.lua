@@ -56,7 +56,9 @@ ns.modules[name] = {
 	config_defaults = {
 		playsound = false,
 		showDaysLeft = true,
-		hideMinimapMail = false
+		hideMinimapMail = false,
+		showAllRealms = false,
+		showAllFactions = true
 	},
 	config_allowed = {
 	},
@@ -73,7 +75,9 @@ ns.modules[name] = {
 				end
 				return false;
 			end
-		}
+		},
+		{ type="toggle", name="showAllRealms", label=L["Show all realms"], tooltip=L["Show characters from all realms in tooltip."] },
+		{ type="toggle", name="showAllFactions", label=L["Show all factions"], tooltip=L["Show characters from all factions in tooltip."] }
 	}
 }
 
@@ -158,11 +162,13 @@ local function getTooltip(tt)
 		tt:AddHeader(C("dkyellow",L["Left in mailbox"]))
 		tt:AddSeparator()
 
-		local n,x,t = nil,false,nil
+		local x,t = false,nil
 		for i=1, #be_character_cache.order do
 			local v = be_character_cache[be_character_cache.order[i]];
-			if (v.mail and #v.mail.next3>0) then
-				n = {strsplit("-",be_character_cache.order[i])}
+			local n = {strsplit("-",be_character_cache.order[i])}
+			if (Broker_EverythingDB[name].showAllRealms~=true and n[2]~=ns.realm) or (Broker_EverythingDB[name].showAllFactions~=true and v.faction~=ns.player.faction) then
+				-- do nothing
+			elseif (v.mail and #v.mail.next3>0) then
 				tt:AddLine(("%s (%s)"):format(C(v.class,ns.scm(n[1])),C("dkyellow",ns.scm(n[2]))),((v.mail.count>3) and "3 "..L["of"].." " or "")..v.mail.count.." "..L["mails"])
 				for I,V in ipairs(v.mail.next3) do
 					t = V.returns~=nil and V.returns-(time()-V.last) or 30*86400
