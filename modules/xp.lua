@@ -249,11 +249,11 @@ local function getTooltip(tt)
 				Realm = allRealms and " "..C("dkyellow","- "..ns.scm(Realm)) or "";
 				local l = tt:AddLine(
 					("(%d) %s %s"):format(v.level,C(v.class,ns.scm(Name))..Realm, v.faction and "|TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or ""),
-					("%s "..C("cyan","%s")):format(v.xp.percent,v.xp.restStr or "> ?%"),
+					("%s "..C("cyan","%s")):format(v.xp.percent or 0,v.xp.restStr or "> ?%"),
 					("(%d/%d)"):format(v.xp.cur,v.xp.max)
 				);
 				tt:SetLineScript(l,"OnMouseUp",function(self,button) be_character_cache[name_realm].xp = nil; getTooltip(tt); end);
-				if (#v.xp.bonus>0) then
+				if (v.xp.bonus and #v.xp.bonus>0) then
 					tt:SetLineScript(l,"OnEnter",function(self) getTooltip2(self,v.xp) end);
 					tt:SetLineScript(l,"OnLeave",function(self) ns.hideTooltip(tt2,ttName2,true) end);
 				end
