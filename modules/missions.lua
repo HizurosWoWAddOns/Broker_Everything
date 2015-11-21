@@ -259,6 +259,11 @@ local function update()
 
 	local _time,_ = time();
 
+	-- fix error for user with disabled garrison module.
+	if(be_character_cache[ns.player.name_realm].garrison==nil)then
+		be_character_cache[ns.player.name_realm].garrison={C_Garrison.GetGarrisonInfo(),0,{0,0},{}};
+	end
+
 	be_character_cache[ns.player.name_realm].missions={}; -- wipe
 	local mCache=be_character_cache[ns.player.name_realm].missions;
 
