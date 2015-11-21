@@ -107,6 +107,11 @@ local function getShips()
 		end
 	end
 
+	-- fix error for user with disabled garrison module.
+	if(be_character_cache[ns.player.name_realm].garrison==nil)then
+		be_character_cache[ns.player.name_realm].garrison={C_Garrison.GetGarrisonInfo(),0,{0,0},{}};
+	end
+
 	be_character_cache[ns.player.name_realm].ships={level=syLevel}; -- wipe
 	local cache=be_character_cache[ns.player.name_realm].ships;
 
@@ -162,7 +167,12 @@ local function makeTooltip(tt)
 			local name_realm = be_character_cache.order[i];
 			local v = be_character_cache[name_realm];
 			local charName,realm=strsplit("-",name_realm);
-			if (Broker_EverythingDB[name].showAllRealms~=true and realm~=ns.realm) or (Broker_EverythingDB[name].showAllFactions~=true and v.faction~=ns.player.faction) or (v.garrison[1]==nil) or (v.garrison[1]==0) then
+			if (Broker_EverythingDB[name].showAllRealms~=true and realm~=ns.realm)
+				or (Broker_EverythingDB[name].showAllFactions~=true
+				and v.faction~=ns.player.faction)
+				or (v.garrison[1]==nil)
+				or (v.garrison[1]==0)
+			then
 				-- do nothing
 			elseif(v.ships and v.ships.level)then
 				local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
@@ -291,7 +301,6 @@ local function makeTooltip(tt)
 		tt:AddSeparator(4,0,0,0,0);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-
 end
 
 
