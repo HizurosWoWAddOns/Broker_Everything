@@ -154,7 +154,7 @@ local function makeTooltip(tt)
 		tt:AddSeparator(4,0,0,0,0)
 		local l=tt:AddLine( C("ltblue", L["Characters"]) ); -- 1
 		if(IsShiftKeyDown())then
-			tt:SetCell(l, 2, C("ltblue",L["Back from missions"]).."|n"..L["next"].." / "..L["all"], nil, "RIGHT", 3);
+			tt:SetCell(l, 2, C("ltblue",L["Back from missions"]).."|n"..L["next"].." / "..L["all"], nil, "RIGHT", 2);
 		else
 			tt:SetCell(l, 2, C("ltblue",L["On missions"]) .."|n".. C("green",L["Completed"]) .." / ".. C("yellow",L["In progress"]), nil, "RIGHT", 2);
 		end
@@ -204,7 +204,7 @@ local function makeTooltip(tt)
 					end
 				end
 				if IsShiftKeyDown() then
-					tt:SetCell(l, 2, SecondsToTime(n-t) .. " / " .. SecondsToTime(a-t), nil, "RIGHT", 3);
+					tt:SetCell(l, 2, SecondsToTime(n-t) .. " / " .. SecondsToTime(a-t), nil, "RIGHT", 2);
 				else
 					tt:SetCell(l, 2, (c.aftermission==0 and "−" or C("green",c.aftermission)) .." / ".. (c.onmission==0 and "−" or C("yellow",c.onmission)), nil, "RIGHT", 2);
 				end
