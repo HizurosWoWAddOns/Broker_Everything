@@ -104,6 +104,11 @@ local function getFollowers()
 	local tmp = C_Garrison.GetFollowers(LE_FOLLOWER_TYPE_GARRISON_6_0);
 	followers = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
 
+	-- fix error for user with disabled garrison module.
+	if(be_character_cache[ns.player.name_realm].garrison==nil)then
+		be_character_cache[ns.player.name_realm].garrison={C_Garrison.GetGarrisonInfo(),0,{0,0},{}};
+	end
+
 	be_character_cache[ns.player.name_realm].followers={}; -- wipe
 	local cache=be_character_cache[ns.player.name_realm].followers;
 
