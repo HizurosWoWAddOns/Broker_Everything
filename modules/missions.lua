@@ -31,7 +31,6 @@ I[name.."Ship"]     = {iconfile="Interface\\Garrison\\GarrisonShipMapIcons", coo
 ns.modules[name] = {
 	desc = L["Broker to show active and available missions for your followers."],
 	--icon_suffix = "_Neutral",
-	enabled = false,
 	events = {
 		"PLAYER_ENTERING_WORLD",
 		"GARRISON_MISSION_LIST_UPDATE",
