@@ -279,6 +279,12 @@ ns.modules[name].init = function(self)
 	if self then
 		updateTitle()
 	end
+	local dummyEventFunc = function()
+		if UPDATE_LOCK or (TokenFrame:IsShown() and TokenFrame:IsVisible()) then return; end
+		ns.modules[name].onevent(nil,"BE_DUMMY_EVENT");
+	end;
+	_G["TokenFramePopupInactiveCheckBox"]:HookScript("OnClick",dummyEventFunc);
+	hooksecurefunc("ExpandCurrencyList",dummyEventFunc);
 end
 
 ns.modules[name].onevent = function(self,event,msg)
@@ -408,15 +414,6 @@ end
 
 ns.modules[name].onleave = function(self)
 	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
-end
-
-do
-	local dummyEventFunc = function()
-		if (UPDATE_LOCK) then return; end
-		ns.modules[name].onevent(nil,"BE_DUMMY_EVENT");
-	end;
-	_G["TokenFramePopupInactiveCheckBox"]:HookScript("OnClick",dummyEventFunc);
-	hooksecurefunc("ExpandCurrencyList",dummyEventFunc);
 end
 
 -- ns.modules[name].onclick = function(self,button) end
