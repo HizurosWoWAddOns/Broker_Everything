@@ -4,7 +4,7 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-be_wowtoken_db = {}
+
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
@@ -60,6 +60,9 @@ end
 
 ns.modules[name].onevent = function(self,event,msg)
 	if(event=="ADDON_LOADED" and msg==addon)then
+		if(bw_wowtoken_db==nil)then
+			bw_wowtoken_db={};
+		end
 		if(#be_wowtoken_db>0 and be_wowtoken_db[1].last<time()-(60*30))then
 			wipe(bw_wowtoken_db);
 		end

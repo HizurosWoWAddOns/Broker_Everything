@@ -1,8 +1,4 @@
 
--- saved variables
-goldDB = nil; --- deprecated
-be_gold_db = nil; --- deprecated
-
 ----------------------------------
 -- module independent variables --
 ----------------------------------

@@ -4,8 +4,6 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-mailDB = nil; --- deprecated
-be_mail_db = nil; --- deprecated
 
 
 -----------------------------------------------------------
@@ -105,7 +103,8 @@ local function UpdateStatus(event)
 				last    = time(),
 				returns = floor(dt-ht)
 			};
-			if not (wasReturned) then
+
+			if (not wasReturned) or (isGM) then -- GM mail are marked as wasReturned
 				if (tmp.returns < returns) then
 					returns = tmp.returns;
 				end
@@ -266,17 +265,3 @@ ns.modules[name].coexist = function()
 	end
 end
 
---[[
-
- -- DBR = Days Before Return
-Broker_EverythingDB[name].showRealmCharsMailCount
-Broker_EverythingDB[name].critDBR -- crit warn display in broker. in tooltip red
-Broker_EverythingDB[name].warnDBR -- display in tooltip orange.
-
-realm wide mail count with lowest days before return to sender
-warn on critical "days before return" (choosable)
-
-or realm independent? maybe... 
-Broker_EverythingDB[name].showAllRealms :) let the use choose.
-
-]]

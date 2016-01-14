@@ -4,8 +4,6 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-xpDB = nil; --- deprecated
-be_xp_db = nil; --- deprecated
 
 
 -----------------------------------------------------------

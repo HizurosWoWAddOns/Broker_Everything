@@ -17,7 +17,6 @@ local categoryIds,bars,count = {92, 96, 97, 95, 168, 169, 201, 15165, 155, 15117
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
---I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\LFG-Eye-Green", coords={0.5 , 0.625 , 0 , 0.25}}
 I[name] = {iconfile="interface\\achievementframe\\UI-Achievement-Progressive-Shield-NoPoints", coords={.15,.55,.15,.55}, size={64,64}};
 
 
@@ -27,10 +26,7 @@ I[name] = {iconfile="interface\\achievementframe\\UI-Achievement-Progressive-Shi
 ns.modules[name] = {
 	desc = L["Display a list of your running auctions"],
 	--icon_suffix = "",
-	events = {
-		"PLAYER_ENTERING_WORLD",
-		"ACHIEVEMENT_EARNED"
-	},
+	events = {},
 	updateinterval = false, -- 10
 	config_defaults = {
 		showLatest = true,
@@ -207,9 +203,7 @@ ns.modules[name].init = function(obj)
 	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name;
 end
 
-ns.modules[name].onevent = function(self,event,...)
-	-- updateCategories()
-end
+-- ns.modules[name].onevent = function(self,event,...) end
 -- ns.modules[name].onupdate = function(self,elapsed) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
@@ -251,42 +245,3 @@ end ]]
 
 -- ns.modules[name].ondblclick = function(self,button) end
 
-
-
---[[
-
-Achievements	[points]
-
-Last 4
------------------------
-*						
-*						
-*						
-*						
-
-On watch
------------------------
-*						
-*						
-*						
-*						
-
-Achievement summery
------------------------
-Gesammt					
-Allgemein				
-Quests					
-Erkundung				
-PvP						
-Dungeons & Raids		
-Berufe					
-Ruf						
-Szenarien				
-Weltereignisse			
-Haustierkämpfe			
-Sammlungen				
-Garnison				
-
-
-
-]]

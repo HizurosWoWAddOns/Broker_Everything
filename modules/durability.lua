@@ -4,8 +4,8 @@
 ----------------------------------
 local addon, ns = ...;
 local C, L, I = ns.LC.color, ns.L, ns.I;
-durabilityDB = {};
-be_durability_db = {};
+durabilityDB = nil; -- deprecated
+be_durability_db = nil; -- deprecated
 L.Durability = DURABILITY;
 
 
@@ -118,7 +118,7 @@ ns.modules[name] = {
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["Repair options"] },
 		{ type="separator" },
-		{ type="toggle", name="autorepair", label=L["Enable auto repair"], tooltip=L["Automaticly repair your equipment on opening a merchant with repair option."], event=true },
+		{ type="toggle", name="autorepair", label=L["Enable auto repair"], tooltip=L["Automatically repair your equipment on opening a merchant with repair option."], event=true },
 		{ type="toggle", name="autorepairbyguild", label=L["Use guild money"], tooltip=function() return L["Use guild money on auto repair if you can"].. ( (GetGuildInfoText():find("%[noautorepair%]")) and "|n"..C("red",L["Your guild leadership denied the use of guild money for auto repair."]) or ""); end, event=true, --[[disabled=function() return (GetGuildInfoText():find("%[noautorepair%]")); end]] },
 		{ type="toggle", name="chatRepairInfo", label=L["Repair info"], tooltip=L["Post repair actions in chatframe"] },
 		{ type="toggle", name="listCosts", label=L["List of repair costs"], tooltip=L["Display a list of the last repair costs in tooltip"] },
@@ -227,7 +227,7 @@ local function AutoRepairAll(costs)
 			RepairAllItems(true);
 			lastRepairs_add(costs,true,true);
 			if (chat) then
-				ns.print(L["Automaticly repaired with guild money"]..":" ,ns.GetCoinColorOrTextureString(name,costs));
+				ns.print(L["Automatically repaired with guild money"]..":" ,ns.GetCoinColorOrTextureString(name,costs));
 			end
 			return true;
 		elseif (chat) then
@@ -239,7 +239,7 @@ local function AutoRepairAll(costs)
 		RepairAllItems();
 		lastRepairs_add(costs,nil,true);
 		if (chat) then
-			ns.print(L["Automaticly repaired with player money"]..":", ns.GetCoinColorOrTextureString(name,costs));
+			ns.print(L["Automatically repaired with player money"]..":", ns.GetCoinColorOrTextureString(name,costs));
 		end
 		return nil;
 	end
@@ -382,6 +382,14 @@ ns.modules[name].init = function(obj)
 	if (Broker_EverythingDB[name].saveCosts) then
 		last_repairs = be_durability_db;
 	end
+
+	_G['MerchantRepairAllButton']:HookScript("OnClick",function(self,button)
+		ns.modules[name].onevent({},"BE_EVENT_REPAIRALL_PLAYER");
+	end);
+
+	_G['MerchantGuildBankRepairButton']:HookScript("OnClick",function(self,button)
+		ns.modules[name].onevent({},"BE_EVENT_REPAIRALL_GUILD");
+	end);
 end
 
 ns.modules[name].onevent = function(self,event,msg)
@@ -476,18 +484,6 @@ end
 ns.modules[name].onleave = function(self)
 	if (tt) then ns.hideTooltip(tt,ttName,true); end
 end
-
-
--- -------------------------------------------- --
--- Hooks of Blizzards ui elements and functions --
--- -------------------------------------------- --
-_G['MerchantRepairAllButton']:HookScript("OnClick",function(self,button)
-	ns.modules[name].onevent({},"BE_EVENT_REPAIRALL_PLAYER");
-end);
-
-_G['MerchantGuildBankRepairButton']:HookScript("OnClick",function(self,button)
-	ns.modules[name].onevent({},"BE_EVENT_REPAIRALL_GUILD");
-end);
 
 
 --[[

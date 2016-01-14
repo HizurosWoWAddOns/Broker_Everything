@@ -22,7 +22,7 @@ local ttColumns,createMenu;
 local gameIconPos = setmetatable({},{ __index = function(t,k) return format("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",DSw,DSh,ULx,ULy,LLx,LLy,URx,URy,LRx,LRy) end})
 local gameShortcut = setmetatable({ [BNET_CLIENT_WTCG] = "HS", [BNET_CLIENT_SC2] = "Sc2"},{ __index = function(t, k) return k end })
 local _BNet_GetClientTexture = BNet_GetClientTexture
-friendsDB = {}
+friendsDB = nil -- deprecated
 
 
 -------------------------------------------

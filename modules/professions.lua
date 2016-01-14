@@ -5,7 +5,6 @@
 ----------------------------------
 local addon, ns = ...;
 local C,L,I = ns.LC.color,ns.L,ns.I;
-be_professions_db = nil; --- deprecated
 
 
 -----------------------------------------------------------
