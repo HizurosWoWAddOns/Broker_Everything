@@ -29,7 +29,6 @@ local delay=true;
 ns.modules[name] = {
 	desc = L["Broker to show a list of your follower with level, quality, xp and more."],
 	--icon_suffix = "_Neutral",
-	enabled = false,
 	events = {
 		"PLAYER_ENTERING_WORLD",
 		"GARRISON_FOLLOWER_LIST_UPDATE",
