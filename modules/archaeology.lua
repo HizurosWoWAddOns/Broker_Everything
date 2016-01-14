@@ -13,7 +13,7 @@ local name = "Archaeology" -- L["Archaeology"]
 L[name] = GetArchaeologyInfo()
 L["Fragments"] = ARCHAEOLOGY_RUNE_STONES;
 L["Races"] = RACES;
-local ldbName, ttName, ttColumns, tt = name, name.."TT", 4, nil
+local ldbName, ttName, ttColumns, tt = name, name.."TT", 5, nil
 local skill,createMenu
 local races = {};
 local maxFragments = 200;
@@ -38,6 +38,20 @@ local race2currency = setmetatable({
 	return type(icon)=="string" and icon or "interface\\icons\\inv_misc_questionmark";
 end})
 
+local QuestStarterItems = {
+	-- MoP Archeology
+	89174,89169,89182,89183,85477,89184,89185,89172,
+	89178,89171,89179,89170,89181,89176,89175,89173,
+	89209,89180,85557,85558,89209,95385,95388,95387,
+	95390,95389,95386,95384,95383,
+	-- WoD Archeology
+	114142,114144,114146,114148,114150,114152,114154,114156,
+	114158,114160,114162,114164,114166,114168,114170,114172,
+	114174,114176,114178,114182,114184,114186,114188,114208,
+	114209,114210,114211,114212,114213,114215,114216,114217,
+	114218,114219,114220,114221,114222,114223,114224,
+};
+
 
 -------------------------------------------
 -- register icon names and default files --
@@ -57,6 +71,7 @@ ns.modules[name] = {
 		"ARTIFACT_UPDATE",
 		"ARTIFACT_COMPLETE",
 		"CURRENCY_DISPLAY_UPDATE",
+		"GET_ITEM_INFO_RECEIVED",
 		"CHAT_MSG_SKILL"
 	},
 	updateinterval = nil,
@@ -173,7 +188,7 @@ local function createTooltip()
 			tt:AddLine(C("ltblue",L["Races"]..i),C("ltblue",L["Keystones"]),C("ltblue",L["Fragments"]),C("ltblue",L["Artifacts"]));
 		else
 			local raceName, raceTexture, raceItemID, numFragmentsCollected, numFragmentsRequired, maxFragments = GetArchaeologyRaceInfo(i);
-			local _, _, _, artifactIcon, _, keystoneSlots = GetActiveArtifactByRace(i);
+			local artifactName, _, _, artifactIcon, _, keystoneSlots = GetActiveArtifactByRace(i);
 			local keystoneCount,keystoneIcon,keystoneSum,Artifact = "","",0,{numFragmentsCollected, "/", numFragmentsRequired};
 			local raceCurrencyIcon = race2currency(select(3,strsplit("-",raceTexture)));
 			local solve,l=false;
@@ -192,7 +207,8 @@ local function createTooltip()
 					icon2:format(raceTexture) .. " "..C(solve==true and "green" or "ltyellow",raceName),
 					keystoneCount.." "..keystoneIcon,
 					numFragmentsCollected.." / "..maxFragments.." "..icon:format(raceCurrencyIcon),
-					C(solve==true and "green" or "white",numFragmentsRequired).." "..icon:format(artifactIcon or "")
+					C(solve==true and "green" or "white",numFragmentsRequired).." "..icon:format(artifactIcon or ""),
+					QuestStarterItems[artifactName] and "|TInterface\\OptionsFrame\\UI-OptionsFrame-NewFeatureIcon:0:0:0:-1|t" or " "
 				);
 				if(raceItemID~=0)then
 					tt:SetLineScript(l,"OnEnter", function(self) ItemTooltipShow(self,"item:"..raceItemID) end);
@@ -229,33 +245,57 @@ ns.modules[name].init = function(self)
 end
 
 ns.modules[name].onevent = function(self,event,...)
-
-	local obj = ns.LDB:GetDataObjectByName(ldbName);
-	local countSolveable,nameSolveable = 0,"";
-	for i=1, GetNumArchaeologyRaces() do
-		local raceName, _, raceItemID, numFragmentsCollected, numFragmentsRequired = GetArchaeologyRaceInfo(i);
-		local _, _, _, _, _, keystoneSlots = GetActiveArtifactByRace(i);
-		local keystoneCount, keystoneIcon, keystoneSum = "","",0
-
-		if (keystoneSlots~=nil)then
-			if(raceItemID~=0) then
-				keystoneCount = GetItemCount(raceItemID,true,true);
-				if(keystoneSlots>0)then
-					keystoneSum = (keystoneCount<=keystoneSlots and keystoneCount or keystoneSlots) * 20;
+	if event=="GET_ITEM_INFO_RECEIVED" then
+		local id = ...;
+		local item={GetItemInfo(id)};
+		if(item)then
+			QuestStarterItems[item[1]]=id;
+			QuestStarterItems[id]=item;
+		end
+	else
+		if event=="PLAYER_ENTERING_WORLD" then
+			C_Timer.After(11, function()
+				local item
+				for i=1, #QuestStarterItems do
+					if QuestStarterItems[i] then
+						item={GetItemInfo(QuestStarterItems[i])};
+						if(#item>0)then
+							QuestStarterItems[item[1]]=QuestStarterItems[i];
+							QuestStarterItems[QuestStarterItems[i]]=item;
+						end
+					end
 				end
-				if(numFragmentsCollected+keystoneSum>=numFragmentsRequired)then
-					countSolveable,nameSolveable=countSolveable+1,raceName;
+			end);
+			self:UnregisterEvent(event);
+		end
+		
+		local obj = ns.LDB:GetDataObjectByName(ldbName);
+		local countSolveable,nameSolveable = 0,"";
+		for i=1, GetNumArchaeologyRaces() do
+			local raceName, _, raceItemID, numFragmentsCollected, numFragmentsRequired = GetArchaeologyRaceInfo(i);
+			local _, _, _, _, _, keystoneSlots = GetActiveArtifactByRace(i);
+			local keystoneCount, keystoneIcon, keystoneSum = "","",0
+
+			if (keystoneSlots~=nil)then
+				if(raceItemID~=0) then
+					keystoneCount = GetItemCount(raceItemID,true,true);
+					if(keystoneSlots>0)then
+						keystoneSum = (keystoneCount<=keystoneSlots and keystoneCount or keystoneSlots) * 20;
+					end
+					if(numFragmentsCollected+keystoneSum>=numFragmentsRequired)then
+						countSolveable,nameSolveable=countSolveable+1,raceName;
+					end
 				end
 			end
 		end
-	end
 
-	if(countSolveable==1)then
-		obj.text = C("green",nameSolveable);
-	elseif(countSolveable>1)then
-		obj.text = C("green",countSolveable.." "..strlower(READY));
-	else
-		obj.text = L[name];
+		if(countSolveable==1)then
+			obj.text = C("green",nameSolveable);
+		elseif(countSolveable>1)then
+			obj.text = C("green",countSolveable.." "..strlower(READY));
+		else
+			obj.text = L[name];
+		end
 	end
 end
 
@@ -269,7 +309,7 @@ end
 -- module functions for LDB registration --
 -------------------------------------------
 ns.modules[name].onenter = function(self)
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "CENTER", "RIGHT", "RIGHT")
+	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "CENTER", "RIGHT", "RIGHT","LEFT")
 	createTooltip()
 	ns.createTooltip(self,tt)
 end
