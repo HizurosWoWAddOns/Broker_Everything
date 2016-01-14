@@ -18,6 +18,7 @@ local founds,counter,items = {},{},{
 	[44717] = {ITEM_DURATION, "tooltipLine4"}, -- Disgusting Jar
 	[94295] = {ITEM_DURATION, "tooltipLine4"}, -- Primal Egg
 	[118705] = {ITEM_DURATION, "tooltipLine4"}, -- Warm Goren Egg
+	[127396] = {ITEM_DURATION, "tooltipLine4"}, -- Strange Green Fruit
 	-- 2 items with cooldown time
 	[19462] = {ITEM_COOLDOWN, "duration"}, -- Unhatched Jubling Egg
 	-- 3 lootable items
@@ -25,7 +26,8 @@ local founds,counter,items = {},{},{
 	[39883] = {ITEM_LOOTABLE}, -- Cracked Egg (prev.: Mysterious Egg)
 	[44718] = {ITEM_LOOTABLE}, -- Ripe Disgusting Jar (prev.: Disgusting Jar)
 	[94296] = {ITEM_LOOTABLE}, -- Cracked Primal Egg (prev.: Primal Egg)
-	[118706] = {ITEM_LOOTABLE} -- Cracked Goren Egg
+	[118706] = {ITEM_LOOTABLE}, -- Cracked Goren Egg
+	[127395] = {ITEM_LOOTABLE} -- Ripened Strange Fruit
 }
 
 
@@ -53,62 +55,58 @@ ns.modules[name] = {
 --------------------------
 -- some local functions --
 --------------------------
---[[
-local function foundFunc(item_id,bag,slot)
-	founds[item_id] = ns.GetItemData(item_id,bag,slot)
-	counter[items[item_id][1]]-- = (counter[items[item_id][1]] or 0) + 1
-	--counter['sum'] = (counter['sum'] or 0) + 1
---end
-
-
 local function resetFunc() -- clear founds table
-	wipe(founds); wipe(counter);
+	wipe(founds);
+	counter = {sum=0,lootable=0,progress=0};
 end
 
 local function updateFunc() -- update broker
-	for i,v in pairs(items)do
-		local d = ns.items.exist(i);
-		if(d)then
-			for I,V in ipairs(d.bag)do
-				founds[i] = ns.GetItemData(i,V[1],V[2]);
+	local item,status;
+	for id,v in pairs(items)do
+		item = ns.items.exist(id);
+		if(item)then
+			for I,V in ipairs(item)do
+				if(V.bag and V.slot)then
+					tinsert(founds,ns.GetItemData(id,V.bag,V.slot));
+					counter.sum = counter.sum+1;
+					status = v[1]==ITEM_LOOTABLE and "lootable" or "progress";
+					counter[status] = counter[status]+1;
+				end
 			end
 		end
 	end
-
 	local obj = ns.LDB:GetDataObjectByName(ldbName)
-	if counter.sum==nil then counter.sum = 0 end
 	if counter.sum>0 then
-		obj.text = ((counter[ITEM_LOOTABLE] and C("green",counter[ITEM_LOOTABLE])) or 0) .. "/" .. counter.sum
+		obj.text = ((counter.lootable and C("green",counter.lootable)) or C("ltgray",0)) .. "/" .. counter.sum;
 	else
-		obj.text = "0/0"
-	end
-end
-
-local function updateFunc()
-	founds,counter = {},{};
-	for i,v in pairs(items)do
-		local tmp = ns.items.exist(i);
-		
+		obj.text = C("ltgray",0).."/0";
 	end
 end
 
 local function getTooltip(tt)
 	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
 
-	local e,l,c = 0,nil,nil
 	tt:AddHeader(C("dkyellow",L[name]))
-	tt:AddSeparator()
+	tt:AddSeparator(4,0,0,0,0)
 
-	for i,v in pairs(founds) do
-		l,c = tt:AddLine()
-		tt:SetCell(l,1,v.itemName)
-		tt:SetCell(l,2,C("dkyellow","||"))
-		tt:SetCell(l,3, (type(items[i][2])=="function" and items[i][2]()) or (type(items[i][2])=="string" and founds[i][items[i][2]]) or (items[i][1]==ITEM_LOOTABLE and L["(finished)"]) or L["(Unknown)"] )
-		e = e+1
-	end
-	if e==0 then
+	if #founds>0 then
+		tt:AddLine(C("ltblue",L["Items"]));
+		tt:AddSeparator();
+		for _,item in ipairs(founds) do
+			tt:AddLine(
+				("|T%s:12:12:0:-1:64:64:4:56:4:56|t |C%s%s|r"):format(item.itemTexture,C("quality"..item.itemRarity),item.itemName),
+				C("dkyellow","||"),
+				(type(items[item.id][2])=="function" and items[item.id][2]())
+				or (type(items[item.id][2])=="string" and item.data[items[item.id][2]])
+				or (items[item.id][1]==ITEM_LOOTABLE and L["(finished)"])
+				or L["(Unknown)"]
+			);
+		end
+	else
 		tt:AddLine(L["No item found."])
 	end
+
+--	if(Broker_EverythingDB[name].showChars)then end
 end
 
 ------------------------------------
@@ -137,7 +135,7 @@ end
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "LEFT", "RIGHT")
+	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT", "RIGHT")
 	getTooltip(tt)
 	ns.createTooltip(self,tt)
 end
