@@ -53,6 +53,7 @@ ns.LC.colorset({
   ---------------------------------------
 ns.realm = GetRealmName();
 ns.media = "Interface\\AddOns\\"..addon.."\\media\\";
+ns.locale = GetLocale();
 
 
   ---------------------------------------
@@ -347,6 +348,13 @@ ns.createTooltip = function(frame, tooltip, SetOnLeave)
 			ns.hideTooltip(self,self.key,true);
 		end
 	end);
+
+	-- Tiptac Support for LibQTip Tooltips
+	if _G.TipTac and _G.TipTac.AddModifiedTip then
+		-- Pass true as second parameter because hooking OnHide causes C stack overflows
+		_G.TipTac:AddModifiedTip(tooltip, true)
+	end
+
 	tooltip:UpdateScrolling(GetScreenHeight() * (Broker_EverythingDB.maxTooltipHeight/100));
 	tooltip:Show()
 end
@@ -614,40 +622,45 @@ do
 		elapsed = 0,
 		update = true
 	}
+
 	local function scanner()
 		local items = {};
 		local callbacks = {};
-		for i,v in pairs(d.preScanCallbacks)do
-			if(type(i)=="function")then
-				v("preScan");
-			end
-		end
+
 		-- get all itemIds from all items in the bags
 		for bag=0, NUM_BAG_SLOTS do
 			for slot=1, GetContainerNumSlots(bag) do
 				local id,_,count,rarity,price = GetContainerItemID(bag,slot);
 				if (id) then
 					if(items[id]==nil)then items[id]={}; end
-					if(items[id]["bag"]==nil) then items[id]["bag"]={}; end
-					_, count = GetContainerItemInfo(bag, slot);
-					_, _, rarity, _, _, _, _, _, _, _, price = GetItemInfo(id);
-					tinsert(items[id]["bag"],{bag=bag, slot=slot, count=count, rarity=rarity, price=price});
+					local obj = {bag=bag, slot=slot};
+					_, obj.count = GetContainerItemInfo(bag, slot);
+					_, _, obj.rarity, _, _, _, _, _, _, _, obj.price = GetItemInfo(id);
+					tinsert(items[id],obj);
 					if(d.callbacks[id])then
 						for i,v in pairs(d.callbacks[id]) do
-							callbacks[i] = v;
+							if(type(v)=="function")then
+								callbacks[i] = v;
+							end
 						end
 					end
 				end
 			end
 		end
+
 		-- get all itemIds from equipped items
 		local slots = {"Back","Chest","Feet","Finger0","Finger1","Hands","Head","Legs","MainHand","Neck","SecondaryHand","Shirt","Shoulder","Tabard","Trinket0","Trinket1","Waist","Wrist"};
-		for i,v in ipairs(slots) do
-			local id = GetInventoryItemID("player",v.."Slot");
+		for _,slot in ipairs(slots) do
+			local id = GetInventoryItemID("player",slot.."Slot");
 			if (id) then
 				if(items[id]==nil)then items[id]={}; end
-				if(items[id]["inv"]==nil) then items[id]["inv"]={}; end
-				tinsert(items[id]["inv"],v);
+				local obj = {inv=slot,durability={}};
+				obj.slotId, obj.icon = GetInventorySlotInfo(slot.."Slot");
+				obj.isBroken = GetInventoryItemBroken("player",slot.."Slot");
+				obj.rarity = GetInventoryItemQuality("player",slot.."Slot");
+				obj.gems = {GetInventoryItemGems(obj.slotId)};
+				obj.durability.current, obj.durability.max = GetInventoryItemDurability(obj.slotId);
+				tinsert(items[id],obj);
 				if(d.callbacks[id])then
 					for i,v in pairs(d.callbacks[id]) do
 						if(type(v)=="function")then
@@ -657,16 +670,27 @@ do
 				end
 			end
 		end
+
 		d.ids = items;
-		for i,v in ipairs(callbacks) do
-			if(type(v)=="function")then
-				v();
+
+		-- execute callback functions by itemId
+		for module,func in pairs(callbacks) do
+			if d.preScanCallbacks[module] then
+				d.preScanCallbacks[module]("preScan");
+			end
+			if(type(func)=="function")then
+				func("update");
 			end
 		end
+
+		-- execute callback.any functions for any update
 		if(d.callbacks.any~=nil)then
-			for i,v in ipairs(d.callbacks.any)do
-				if(type(v)=="function")then
-					v();
+			for module,func in pairs(d.callbacks.any)do
+				if d.preScanCallbacks[module] then
+					d.preScanCallbacks[module]("preScan");
+				end
+				if(type(func)=="function")then
+					func("update.any");
 				end
 			end
 		end
@@ -700,7 +724,9 @@ do
 		if (d.callbacks[itemId]==nil) then
 			d.callbacks[itemId] = {};
 		end
-		d.callbacks[itemId][modName] = func;
+		if (d.callbacks[itemId][modName]==nil)then
+			d.callbacks[itemId][modName] = func;
+		end
 		d.callbacks.active = true;
 	end;
 	ns.items.RegisterCallBackForAnyItem = function(modName,func)
@@ -837,8 +863,10 @@ do
 	-- ------------------------------------------- --
 	function ns.GetItemData(id,bag,slot)
 		assert(type(id)=="number","argument #1 (id) must be a number, got "..type(id))
-		local data,line,reg,_ = {},1
-		data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = GetItemInfo(id)
+		local data,line,_ = {},0
+		data.id,data.tooltip = id,{};
+		data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = GetItemInfo(id);
+		scanTooltip:ClearLines();
 		scanTooltip:Show();
 		scanTooltip:SetOwner(UIParent,"LEFT",0,0);
 		if (bag~=nil) and (slot~=nil) then
@@ -849,11 +877,9 @@ do
 		else
 			scanTooltip:SetHyperlink("item:"..id);
 		end
-		reg = {scanTooltip:GetRegions()};
-		for _,v in pairs(reg) do
+		for _,v in ipairs({scanTooltip:GetRegions()}) do
 			if (v~=nil) and (v:GetObjectType()=="FontString") and (v:GetText()~=nil) then
-				data["tooltipLine"..line] = v:GetText();
-				line = line + 1;
+				tinsert(data.tooltip,v:GetText());
 			end
 		end
 		scanTooltip:ClearLines();
@@ -862,20 +888,18 @@ do
 	end
 	function ns.GetLinkData(link)
 		assert(type(link)=="string","argument #1 must be a string, got "..type(link));
-		local data,line,reg,_ = {},1
+		local data,line,_ = {},0
 		scanTooltip:Show();
 		scanTooltip:SetOwner(UIParent,"LEFT",0,0);
 		scanTooltip:SetHyperlink(link);
-		reg = {scanTooltip:GetRegions()};
-		for _,v in pairs(reg) do
+		for _,v in ipairs({scanTooltip:GetRegions()}) do
 			if (v~=nil) and (v:GetObjectType()=="FontString") and (v:GetText()~=nil) then
-				data["tooltipLine"..line]=v:GetText();
-				line=line+1;
+				tinsert(data,v:GetText());
 			end
 		end
 		scanTooltip:ClearLines();
 		scanTooltip:Hide();
-		return data;
+		return data, #data;
 	end
 end
 
@@ -1117,7 +1141,7 @@ do
 			return;
 
 		elseif (D.childs) then -- child elements
-			local parent = self.addEntry({ label=D.label, arrow=true },P);
+			local parent = self.addEntry({ label=D.label, arrow=true, disabled=D.disabled },P);
 			for i,v in ipairs(D.childs) do
 				self.addEntry(v,parent);
 			end
@@ -1129,7 +1153,7 @@ do
 			else
 				wipe(self.controlGroups[D.groupName])
 			end
-			local parent = self.addEntry({ label=D.label, arrow=true },P);
+			local parent = self.addEntry({ label=D.label, arrow=true, disabled=D.disabled },P);
 			parent.controlGroup=self.controlGroups[D.groupName];
 			for i,v in ipairs(D.optionGroup) do
 				tinsert(self.controlGroups[D.groupName],self.addEntry(v,parent));
