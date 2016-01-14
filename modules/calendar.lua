@@ -108,7 +108,6 @@ end
 ns.modules[name].init = function(obj)
 	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
 end
-EXXX={};
 ns.modules[name].onevent = function(self,event,msg)
 	self.obj = self.obj or ns.LDB:GetDataObjectByName(ldbName);
 	local num = CalendarGetNumPendingInvites();
