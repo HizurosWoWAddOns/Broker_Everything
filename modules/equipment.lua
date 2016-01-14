@@ -348,8 +348,8 @@ ns.modules[name].ontooltip = function(tt)
 				if(tSetItems[itemId])then
 					tSetItem=C("yellow"," T"..tSetItems[itemId]);
 				end
-				if(v[objTooltip]~=nil and type(v[objTooltip].tooltipLine2)=="string" and v[objTooltip].tooltipLine2:find("\124"))then
-					greenline = " "..v[objTooltip].tooltipLine2;
+				if(v[objTooltip]~=nil and type(v[objTooltip][2])=="string" and v[objTooltip][2]:find("\124"))then
+					greenline = " "..v[objTooltip][2];
 				end
 				local l = tt:AddLine(
 					C("ltyellow",_G[slots[i].."SLOT"]),
@@ -373,33 +373,6 @@ ns.modules[name].ontooltip = function(tt)
 			ns.AddSpannedLine(tt,C("red","#")..": "..C("ltgray",L["Item is not enchanted."]),ttColumns);
 		end
 	end
-
-	--[=[
-	if (Broker_EverythingDB[name].showEnchants) then
-		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(
-			C("ltblue",TRADESKILL_FILTER_SLOTS),
-			C("ltblue",NAME)
-		);
-		tt:AddSeparator();
-		local none = true;
-		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do
-			local v = inventory[i];
-			if (enchantSlots[i]~=nil) and (v) and ( (v[objInfo][itemLevel]>=600 and enchantSlots[i]>=0) or (v[objInfo][itemLevel]<600 and enchantSlots[i]<=0) ) then
-				none=false;
-				local color,label="red",L["Not enchanted!"];
-				if (tonumber(v[objData][itemEnchant])>0) then
-					color,label = "white",v[objData][itemEnchant];
-				end
-				local l = tt:AddLine( C("ltyellow",_G[slots[i].."SLOT"]), C(color,label) );
-				if (tonumber(v[objData][itemEnchant])>0) then
-					--tt:SetLineScript(l,"OnEnter",function(self) InventoryTooltip(self,false,v[objData][itemEnchant]) end);
-					--tt:SetLineScript(l,"OnLeave",function(self) InventoryTooltip(false) end);
-				end
-			end
-		end
-	end
-	--]=]
 
 	line, column = nil, nil
 	if (Broker_EverythingDB.showHints) then
