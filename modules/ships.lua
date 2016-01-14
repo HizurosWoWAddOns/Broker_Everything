@@ -14,9 +14,8 @@ local name = "Ships"; --L["Ships"]
 --L.Ships = GARRISON_FOLLOWERS;
 local ldbName, ttName, ttColumns, tt, createMenu = name, name.."TT" ,5
 local ships = {available={}, onmission={}, onwork={}, onresting={}, unknown={},num=0};
-local delay=true;
 local syLevel = false; -- shipyard level
-
+local Lvl3QuestID,Lvl3QuestInQuestlog = (ns.player.faction=="Alliance") and 39068 or 39246, false;
 
 -------------------------------------------
 -- register icon names and default files --
@@ -30,12 +29,12 @@ I[name]  = {iconfile="Interface\\Icons\\Achievement_GarrisonFolLower_Rare", coor
 ns.modules[name] = {
 	desc = L["Broker to show a list of your naval ships with level, quality, xp and more."],
 	--icon_suffix = "_Neutral",
-	enabled = true,
 	events = {
 		"PLAYER_ENTERING_WORLD",
 		"GARRISON_FOLLOWER_LIST_UPDATE",
 		"GARRISON_FOLLOWER_XP_CHANGED",
-		"GARRISON_FOLLOWER_REMOVED"
+		"GARRISON_FOLLOWER_REMOVED",
+		"QUEST_LOG_UPDATE"
 	},
 	updateinterval = 30,
 	config_defaults = {
@@ -312,17 +311,25 @@ ns.modules[name].init = function(self)
 end
 
 ns.modules[name].onevent = function(self,event,msg)
-
+	local update = false;
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],Broker_EverythingDB[name]);
-	else
-
-		if (delay==true) then
-			delay = false
-			C_Timer.After(10,ns.modules[name].onevent)
-			return;
+	elseif(event=="PLAYER_ENTERING_WORLD")then
+		C_Timer.After(10,function() ns.modules[name].onevent(self,"BE_DUMMY_EVENT"); end);
+	elseif(event=="QUEST_LOG_UPDATE" and Lvl3QuestInQuestlog==true and IsQuestFlaggedCompleted(Lvl3QuestID)) or (event=="BE_DUMMY_EVENT")then
+		if(Lvl3QuestInQuestlog==false)then
+			for i=1, GetNumQuestLogEntries() do
+				local _,_,_,_,_,_,_,id=GetQuestLogTitle(i);
+				if(id == Lvl3QuestID)then
+					Lvl3QuestInQuestlog = true;
+				end
+			end
 		end
-
+		update = true;
+	else
+		update = true;
+	end
+	if(update)then
 		getShips();
 		local obj = ns.LDB:GetDataObjectByName(ldbName)
 		obj.text = ("%s/%s/%s/%s"):format(C("ltblue",ships.onresting_num),C("yellow",ships.onmission_num+ships.onwork_num),C("green",ships.available_num),ships.num);
