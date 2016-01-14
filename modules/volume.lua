@@ -29,7 +29,7 @@ local vol = {
 	{inset=2,locale="ENABLE_MUSIC_LOOPING",		toggle="Sound_ZoneMusicNoDelay",			depend={1,6}	},
 	{inset=2,locale="ENABLE_PET_BATTLE_MUSIC",	toggle="Sound_EnablePetBattleMusic",		depend={1,6}	},
 	{inset=1,locale="ENABLE_AMBIENCE",			toggle="Sound_EnableAmbience",				depend={1},		percent="Sound_AmbienceVolume"},
-	{inset=1,locale="DIALOG_VOLUME",			toggle="no-toggle",							depend={1},		percent="Sound_DialogVolume", hide=(select(4,GetBuildInfo())<60000)},
+	{inset=1,locale="DIALOG_VOLUME",			toggle="Sound_EnableDialog",				depend={1},		percent="Sound_DialogVolume", hide=(select(4,GetBuildInfo())<60000)},
 	{inset=1,locale="ENABLE_BGSOUND",			toggle="Sound_EnableSoundWhenGameIsInBG",	depend={1}		},
 	{inset=1,locale="ENABLE_SOUND_AT_CHARACTER",toggle="Sound_ListenerAtCharacter",			depend={1}		},
 	{inset=1,locale="ENABLE_REVERB",			toggle="Sound_EnableReverb",				depend={1}		},
@@ -127,12 +127,12 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
-function updateBrokerButton(self)
+function updateBrokerButton()
 	volume.master = tonumber(GetCVar("Sound_MasterVolume"))
-	local obj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
-	local suffix = "100"
+	local obj = ns.LDB:GetDataObjectByName(ldbName);
+	local suffix,color = "100","green"
 	if volume.master < .1 then
-		suffix = "0"
+		suffix,color = "0","gray"
 	elseif volume.master < .3 then
 		suffix = "33"
 	elseif volume.master < .6 then
@@ -141,7 +141,11 @@ function updateBrokerButton(self)
 	local icon = I(name.."_"..(suffix or "100"))
 	obj.iconCoords = icon.coords or {0,1,0,1}
 	obj.icon = icon.iconfile
-	obj.text = ceil(volume.master*100).."%"
+	if GetCVar("Sound_EnableAllSound")=="1" then
+		obj.text = ceil(volume.master*100).."%";
+	else
+		obj.text = C("gray",ceil(volume.master*100).."%");
+	end
 end
 
 local function volTooltip(tt)
@@ -181,7 +185,11 @@ local function volTooltip(tt)
 					disabled = v.now==1 and "white" or "gray"
 				end
 
-				tt:SetLineScript(l,"OnMouseUp",function(self, button) ns.SetCVar(v.toggle,tostring(v.inv),v.toggle) volTooltip(tt) end);
+				tt:SetLineScript(l,"OnMouseUp",function(self, button)
+					ns.SetCVar(v.toggle,tostring(v.inv),v.toggle);
+					updateBrokerButton();
+					volTooltip(tt);
+				end);
 			else
 				if v.depend~=nil and ( (v.depend[1]~=nil and vol[v.depend[1]].now==0) or (v.depend[2]~=nil and vol[v.depend[2]].now==0) ) then
 					color = "gray";
