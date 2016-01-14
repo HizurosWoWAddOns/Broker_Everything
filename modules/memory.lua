@@ -10,14 +10,10 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Memory" -- L["Memory"]
-local ldbName = name
-local tt
-local ttName = name.."TT"
+local ldbName,ttName,ttColumns,tt = name,name.."TT",3;
 local GetNumAddOns,GetAddOnMemoryUsage,GetAddOnInfo = GetNumAddOns,GetAddOnMemoryUsage,GetAddOnInfo
-local ttColumns = 3
-local data = {}
-local memHistory = {};
-local loginUpdateLock=true;
+local data,memHistory = {},{};
+local loginUpdateLock,updateTimer=true,0;
 
 local addonpanels = {};
 local addonpanels_select = {["none"]=L["None (disable right click)"]};
@@ -31,6 +27,7 @@ do
 	addonpanels["Ampere"] = function(chk) if (chk) then return (IsAddOnLoaded("Ampere")); end InterfaceOptionsFrame_OpenToCategory("Ampere"); InterfaceOptionsFrame_OpenToCategory("Ampere"); end
 	addonpanels["OptionHouse"] = function(chk) if (chk) then return (IsAddOnLoaded("OptionHouse")); end OptionHouse:Open(1) end
 	addonpanels["stAddonManager"] = function(chk) if (chk) then return (IsAddOnLoaded("stAddonManager")); end stAddonManager:LoadWindow() end
+	--addonpanels["BetterAddonList"] = function(chk) if (chk) then return (IsAddOnLoaded("BetterAddonList")); end end
 	local panelstates,d,s = {};
 	local addonname,title,notes,loadable,reason,security,newVersion = 1,2,3,4,5,6,7;
 	for i=1, GetNumAddOns() do
@@ -63,7 +60,8 @@ ns.modules[name] = {
 	config_defaults = {
 		mem_max_addons = -1,
 		addonpanel = "none",
-		updateInCombat = true
+		updateInCombat = true,
+		updateInterval = 5
 	},
 	config_allowed = {
 	},
@@ -79,7 +77,28 @@ ns.modules[name] = {
 			rep = {[-1]=L["All"]}
 		},
 		{ type="select", name="addonpanel", label=L["Addon panel"], tooltip=L["Choose your addon panel that opens if you rightclick on memory broker or disable the right click option."], default = "none", values = addonpanels_select },
-		{ type="toggle", name="updateInCombat", label=L["Update while in combat"], tooltip=L["The 'Script ran too long' error has multible factors. This module can produce this error if you have to much addons and you are in combat. Uncheck it to stop updating in combat."] },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Memory usage"], align="center" },
+		{ type="separator" },
+		{ type="select", name="updateInterval", label=L["Update interval"], tooltip=L["Change the update interval or disable it."],
+			default = 5,
+			values = {
+				[0] = L["Disable"],
+				[1] = L["One time per minute"],
+				[5] = L["All 5 minutes"],
+				[10] = L["All 10 minutes"],
+				[20] = L["All 20 minutes"],
+				[40] = L["All 40 minutes"],
+				[60] = L["One time per hour"]
+			}
+		},
+		{ type="toggle", name="updateInCombat", label=L["Update while in combat"], tooltip=L["Does update memory usage while you are in combat."]},
+		{ type="desc", text="|n"..table.concat({
+				C("orange",L["Any update of the addon memory usage can cause results in fps drops and 'Script ran too long' error messages!"]),
+				C("white",L["The necessary time to collect memory usage of all addons depends on CPU speed, CPU usage, the number of running addons and other factors."]),
+				C("yellow",L["If you have more than one addon to display memory usage it is recommented to disable the update interval of this addon."])
+			},"|n|n")
+		},
 	}
 }
 
@@ -88,22 +107,33 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 local function updateMemoryData(sumOnly)
-	if (InCombatLockdown()==true) and (not Broker_EverythingDB[name].updateInCombat) then return false; end
+	if (InCombatLockdown()) and (not Broker_EverythingDB[name].updateInCombat) then return false; end
 
-	local total, all = 0, {}
-	UpdateAddOnMemoryUsage()
-	for i = 1, GetNumAddOns() do
-		local u = GetAddOnMemoryUsage(i)
-		total = total + u
-		if not sumOnly then
-			local n = select (1, GetAddOnInfo(i))
-			all[i] = {name = n, mem = floor(u * 100) / 100}
+	if sumOnly then
+		local doUpdate,inv = false,tonumber(Broker_EverythingDB[name].updateInterval);
+		if inv and inv>0 then
+			updateTimer=updateTimer+10;
+			if updateTimer>=(inv*60) then
+				updateTimer = 0;
+				doUpdate = true;
+			end
+		end
+		if doUpdate then
+			UpdateAddOnMemoryUsage();
 		end
 	end
-	if (sumOnly) then
-		data.total=total;
-	else
-		data = {total=total,all=all};
+
+	local num,total,all = GetNumAddOns(),0,{};
+	for i=1, num do
+		local u = GetAddOnMemoryUsage(i);
+		total = total+u;
+		if not sumOnly then
+			all[i] = {name=GetAddOnInfo(i), mem=floor(u*100)/100};
+		end
+	end
+	data.total = total;
+	if not sumOnly then
+		data.all = all;
 	end
 	return true;
 end
@@ -121,7 +151,10 @@ end
 
 ns.modules[name].onevent = function(self,event,msg)
 	if (event=="PLAYER_ENTERING_WORLD") then
-		C_Timer.After(15, function() loginUpdateLock=false; end); -- unlock updater 15 seconds after entering world.
+		C_Timer.After(15, function() -- unlock updater 15 seconds after entering world.
+			UpdateAddOnMemoryUsage();
+			loginUpdateLock=false;
+		end);
 	end
 end
 
@@ -143,7 +176,7 @@ ns.modules[name].onupdate = function(self)
 	end
 
 	local obj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
-	obj.text = string.format ("%.2f", total) .. ns.suffixColour(unit)
+	obj.text = string.format("%.2f", total) .. ns.suffixColour(unit)
 end
 
 -- ns.modules[name].optionspanel = function(panel) end
