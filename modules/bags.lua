@@ -40,6 +40,7 @@ local G = {}
 for i=0, 7 do G["ITEM_QUALITY"..i.."_DESC"] = _G["ITEM_QUALITY"..i.."_DESC"] end
 G.ITEM_QUALITY99_DESC = L["Unknown"];
 
+
 -- ------------------------------------- --
 -- register icon names and default files --
 -- ------------------------------------- --
@@ -155,19 +156,16 @@ local function BagsFreeUsed()
 end
 
 local function itemQuality()
-	local price, sum, _ = {["0"]=0,["1"]=0,["2"]=0,["3"]=0,["4"]=0,["5"]=0,["6"]=0,["7"]=0,["99"]=0},{["0"]=0,["1"]=0,["2"]=0,["3"]=0,["4"]=0,["5"]=0,["6"]=0,["7"]=0,["99"]=0}
-	local items = ns.items.GetItemlist();
-
-	for itemId, objs in pairs(items) do
-		if(objs.bag)then
-			for _,entry in pairs(objs.bag) do
-				entry.rarity=tostring(entry.rarity or 99);
+	local price, sum, _ = {[0]=0,0,0,0,0,0,0,0,[99]=0},{[0]=0,0,0,0,0,0,0,0,[99]=0};
+	for _, entries in pairs(ns.items.GetItemlist()) do
+		for _,entry in ipairs(entries) do
+			if entry.bag then
+				entry.rarity = (sum[entry.rarity]~=nil) and entry.rarity or 99;
 				sum[entry.rarity] = sum[entry.rarity] + entry.count;
 				price[entry.rarity] = price[entry.rarity] + (entry.price*entry.count);
 			end
 		end
 	end
-
 	return price, sum;
 end
 
@@ -221,44 +219,34 @@ end
 ns.modules[name].ontooltip = function(tt)
 	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
 	local f, total = BagsFreeUsed()
-	local l, c, n
 
-	tt:AddHeader(C("dkyellow",L[name]))
-	tt:AddSeparator(1)
-
-	l,c = tt:AddLine()
-	tt:SetCell(l,1,C("ltyellow",L["Free slots"] .. " :"))
-	tt:SetCell(l,3,C("white",f).." ")
-
-	l,c = tt:AddLine()
-	tt:SetCell(l,1,C("ltyellow",L["Total slots"] .. " :"))
-	tt:SetCell(l,3,C("white",total).." ")
+	tt:AddHeader(C("dkyellow",L[name]));
+	tt:AddSeparator(1);
+	tt:AddLine(C("ltyellow",L["Free slots"] .. " :"),"",C("white",f).." ");
+	tt:AddLine(C("ltyellow",L["Total slots"] .. " :"),"",C("white",total).." ");
 
 	if Broker_EverythingDB[name].showQuality then
-		local mode = qualityModes[Broker_EverythingDB[name].qualityMode]
-		local price, sum = itemQuality()
-		tt:AddSeparator(3,0,0,0,0)
-		l,c = tt:AddLine()
-		tt:SetCell(l,1,C("ltblue",L["Quality"]))
-		if mode.vendor then
-			tt:SetCell(l,2,C("ltblue",L["Vendor price"]))
-		end
-		tt:SetCell(l,3,C("ltblue",L["Count"]))
-		tt:AddSeparator(1)
-		for i,v in ns.pairsByKeys(sum) do
-			if (tonumber(i) <= mode.max or (i=="99" and v~=0)) and ((mode.empty==true and v>=0) or (mode.empty==false and v>0)) then
-				n = G["ITEM_QUALITY"..i.."_DESC"]
-				l,c = tt:AddLine()
-				tt:SetCell(l,1,C("quality"..i,n))
-				if price[i]>0 and mode.vendor then
-					tt:SetCell(l,2, ns.GetCoinColorOrTextureString(name,price[i]))
-				end
-				tt:SetCell(l,3,v.." ")
+		local mode=qualityModes[Broker_EverythingDB[name].qualityMode];
+		local price,sum=itemQuality();
+		tt:AddSeparator(3,0,0,0,0);
+		tt:AddLine(
+			C("ltblue",L["Quality"]),
+			mode.vendor and C("ltblue",L["Vendor price"]) or "",
+			C("ltblue",L["Count"])
+		);
+		tt:AddSeparator(1);
+		for i=0,#sum do
+			if (i<=mode.max) and ((mode.empty and sum[i]>=0) or sum[i]>0) then
+				tt:AddLine(
+					C("quality"..i,G["ITEM_QUALITY"..i.."_DESC"]),
+					(price[i]>0 and mode.vendor) and ns.GetCoinColorOrTextureString(name,price[i]) or "",
+					sum[i].." "
+				);
 			end
 		end
 	end
 	if Broker_EverythingDB.showHints then
-		tt:AddSeparator(3,0,0,0,0)
+		tt:AddSeparator(3,0,0,0,0);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
 end
