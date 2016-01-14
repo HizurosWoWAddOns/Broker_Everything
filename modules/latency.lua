@@ -93,50 +93,41 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name;
 end
 
 ns.modules[name].onevent = function(self,event,msg)
-	ns.modules[name].onupdate(self)
+	ns.modules[name].onupdate(self);
 end
 
 ns.modules[name].onupdate = function(self)
 	local _, _, lHome, lWorld = GetNetStats()
-	local text = ""
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
-	local suffix = ns.suffixColour(suffix)
-
-	latency.Home = lHome
-	latency.World = lWorld
+	local text = {};
+	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName);
+	local suffix = ns.suffixColour(suffix);
+	local showHome, showWorld = Broker_EverythingDB[name].showHome, Broker_EverythingDB[name].showWorld;
+	latency.Home,latency.World = lHome,lWorld;
 	
 	 -- Colour the latencies
 	for k, v in pairs(latency) do
 		if v <= 250 then 
-			latency[k] = C("green",v)
+			latency[k] = C("green",v);
 		elseif v > 250 and v <= 400 then
-			latency[k] = C("dkyellow",v)
+			latency[k] = C("dkyellow",v);
 		elseif v > 400 then
-			latency[k] = C("red",v)
-		end		
+			latency[k] = C("red",v);
+		end
 	end
 
-	local showHome, showWorld = Broker_EverythingDB[name].showHome, Broker_EverythingDB[name].showWorld;
-
 	if (showWorld) then
-		if (showHome) then
-			text=text..C("white","H:");
-		end
-		text = text .. string.format("%s%s", latency.World, suffix);
+		tinsert(text, (showHome and C("white"," W:") or "") .. latency.World .. suffix);
 	end
 
 	if (showHome) then
-		if (showWorld) then
-			text=text..C("white"," W:");
-		end
-		text = text .. string.format("%s%s", latency.Home, suffix);
+		tinsert(text, (showWorld and C("white"," H:") or "") .. latency.Home .. suffix);
 	end
 
-	dataobj.text = (text:len()>0) and text or L[name];
+	dataobj.text = (#text>0) and table.concat(text," ") or L[name];
 end
 
 -- ns.modules[name].optionspanel = function(panel) end
@@ -145,15 +136,15 @@ ns.modules[name].ontooltip = function(_tt)
 	tt=_tt;
 	if (ns.tooltipChkOnShowModifier(false)) then tt:Hide(); return; end
 
-	ns.tooltipScaling(tt)
-	tt:AddLine(L[name])
-	tt:AddLine(" ")
-	tt:AddDoubleLine(C("white",L["Home"] .. " :"), latency.Home .. suffix)
-	tt:AddDoubleLine(C("white",L["World"] .. " :"), latency.World .. suffix)
+	ns.tooltipScaling(tt);
+	tt:AddLine(L[name]);
+	tt:AddLine(" ");
+	tt:AddDoubleLine(C("white",L["Home"] .. " :"), latency.Home .. suffix);
+	tt:AddDoubleLine(C("white",L["World"] .. " :"), latency.World .. suffix);
 
 	if (Broker_EverythingDB.showHints) then
-		tt:AddLine(" ")
-		tt:AddLine(C("copper",L["Right-click"]).." || "..C("green",L["Open option menu"]))
+		tt:AddLine(" ");
+		tt:AddLine(C("copper",L["Right-click"]).." || "..C("green",L["Open option menu"]));
 	end
 end
 
