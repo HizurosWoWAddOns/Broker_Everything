@@ -116,7 +116,7 @@ ns.modules[name].ontooltip = function(tt)
 
 			tt:SetLineScript(line, "OnMouseUp", function(self,x,button)
 				if button == "RightButton" then
-					be_character_cache[charName.."-"..realm].gold = nil;
+					be_character_cache[name_realm].gold = nil;
 					tt:Clear();
 					ns.modules[name].ontooltip(tt);
 				end 
