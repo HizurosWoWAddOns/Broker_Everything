@@ -29,6 +29,7 @@ local desc = L["Show on broker button and in tooltip the current amount of gold 
 ns.modules[name] = {
 	desc = desc,
 	events = {
+		"ADDON_LOADED",
 		"PLAYER_ENTERING_WORLD",
 		"TOKEN_MARKET_PRICE_UPDATED"
 	},
