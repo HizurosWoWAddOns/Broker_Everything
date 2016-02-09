@@ -60,11 +60,11 @@ end
 
 ns.modules[name].onevent = function(self,event,msg)
 	if(event=="ADDON_LOADED" and msg==addon)then
-		if(bw_wowtoken_db==nil)then
-			bw_wowtoken_db={};
+		if(be_wowtoken_db==nil)then
+			be_wowtoken_db={};
 		end
 		if(#be_wowtoken_db>0 and be_wowtoken_db[1].last<time()-(60*30))then
-			wipe(bw_wowtoken_db);
+			wipe(be_wowtoken_db);
 		end
 	elseif(event=="PLAYER_ENTERING_WORLD")then
 		L[name] = GetItemInfo(122284);
