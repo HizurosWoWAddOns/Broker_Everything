@@ -22,7 +22,6 @@ local ttColumns,createMenu;
 local gameIconPos = setmetatable({},{ __index = function(t,k) return format("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",DSw,DSh,ULx,ULy,LLx,LLy,URx,URy,LRx,LRy) end})
 local gameShortcut = setmetatable({ [BNET_CLIENT_WTCG] = "HS", [BNET_CLIENT_SC2] = "Sc2"},{ __index = function(t, k) return k end })
 local _BNet_GetClientTexture = BNet_GetClientTexture
-friendsDB = nil -- deprecated
 
 
 -------------------------------------------
@@ -185,7 +184,7 @@ local function createTooltip(tt)
 	tt:AddSeparator()
 
 	local presenceName,battleTag,isBattleTagPresence,isOnline,isAFK,isDND,noteText = 2,3,4,8,10,11,13; -- BNGetFriendInfo
-	local toonName,client,realmName,faction,class,zoneName,level,gameText,broadcastText,broadcastTime,toonID = 2,3,4,6,8,10,11,12,13,14,16; -- BNGetFriendToonInfo
+	local toonName,client,realmName,faction,class,zoneName,level,gameText,broadcastText,broadcastTime,toonID = 2,3,4,6,8,10,11,12,13,14,16; -- BNGetFriendToonInfo (WoD 6.2.3) / BNGetNumFriendGameAccounts (WoD 6.2.4)
 	local fi,nt,ti,l,c;
 	if (friendsOnline>0) then
 		for i=1, numFriends do
@@ -196,7 +195,12 @@ local function createTooltip(tt)
 					if (Broker_EverythingDB[name].showBattleTags) then
 						bnName = bnName .. " ("..fi[battleTag]..")";
 					end
-					local ti = {BNGetFriendToonInfo(i, I)};
+					local ti = {};
+					if BNGetNumFriendGameAccounts then
+						ti = {BNGetNumFriendGameAccounts(i, I)}; -- WoD 6.2.4
+					else
+						ti = {BNGetFriendToonInfo(i, I)}; -- WoD 6.2.3
+					end
 					if (nt>1 and ti[client]~="App") or nt==1 then
 						if (not ti[toonName]) or (ti[client]=="Hero") then
 							ti[toonName] = strsplit("#",fi[battleTag]);
