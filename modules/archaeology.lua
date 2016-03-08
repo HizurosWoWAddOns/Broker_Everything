@@ -4,6 +4,7 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
+local type,GetItemInfo=type,GetItemInfo;
 
 
 -----------------------------------------------------------
@@ -247,17 +248,19 @@ end
 ns.modules[name].onevent = function(self,event,...)
 	if event=="GET_ITEM_INFO_RECEIVED" then
 		local id = ...;
-		local item={GetItemInfo(id)};
-		if(item)then
-			QuestStarterItems[item[1]]=id;
-			QuestStarterItems[id]=item;
+		if(type(id)=="number")then
+			local item={GetItemInfo(id)};
+			if(#item>0)then
+				QuestStarterItems[item[1]]=id;
+				QuestStarterItems[id]=item;
+			end
 		end
 	else
 		if event=="PLAYER_ENTERING_WORLD" then
 			C_Timer.After(11, function()
-				local item
+				local item;
 				for i=1, #QuestStarterItems do
-					if QuestStarterItems[i] then
+					if(type(QuestStarterItems[i])=="number")then
 						item={GetItemInfo(QuestStarterItems[i])};
 						if(#item>0)then
 							QuestStarterItems[item[1]]=QuestStarterItems[i];
