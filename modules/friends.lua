@@ -184,11 +184,16 @@ local function createTooltip(tt)
 	tt:AddSeparator()
 
 	local presenceName,battleTag,isBattleTagPresence,isOnline,isAFK,isDND,noteText = 2,3,4,8,10,11,13; -- BNGetFriendInfo
-	local toonName,client,realmName,faction,class,zoneName,level,gameText,broadcastText,broadcastTime,toonID = 2,3,4,6,8,10,11,12,13,14,16; -- BNGetFriendToonInfo (WoD 6.2.3) / BNGetNumFriendGameAccounts (WoD 6.2.4)
+	local toonName,client,realmName,faction,class,zoneName,level,gameText,broadcastText,broadcastTime,toonID = 2,3,4,6,8,10,11,12,13,14,16; -- BNGetFriendToonInfo (WoD 6.2.3) / BNGetFriendGameAccountInfo (WoD 6.2.4)
 	local fi,nt,ti,l,c;
 	if (friendsOnline>0) then
 		for i=1, numFriends do
-			nt,fi = BNGetNumFriendToons(i),{BNGetFriendInfo(i)};
+			if BNGetNumFriendGameAccounts then
+				nt = BNGetNumFriendGameAccounts(i); -- WoD 6.2.4
+			else
+				nt = BNGetNumFriendToons(i); -- WoD 6.2.3
+			end
+			fi = {BNGetFriendInfo(i)};
 			if (fi[isOnline]) then
 				for I=1, nt do
 					local bnName = fi[presenceName];
@@ -196,8 +201,8 @@ local function createTooltip(tt)
 						bnName = bnName .. " ("..fi[battleTag]..")";
 					end
 					local ti = {};
-					if BNGetNumFriendGameAccounts then
-						ti = {BNGetNumFriendGameAccounts(i, I)}; -- WoD 6.2.4
+					if BNGetFriendGameAccountInfo then
+						ti = {BNGetFriendGameAccountInfo(i, I)}; -- WoD 6.2.4
 					else
 						ti = {BNGetFriendToonInfo(i, I)}; -- WoD 6.2.3
 					end
