@@ -166,7 +166,7 @@ local function questTooltip(tt)
 	tt:Clear()
 	l,c = tt:AddLine()
 	tt:SetCell(l,1,C("dkyellow",name),tt:GetHeaderFont(),nil,ttColumns)
-	GroupQuestCount=0;
+	local GroupQuestCount=0;
 
 	if #quests["fail"]~=0 then
 		tt:AddSeparator(4,0,0,0,0)

@@ -27,7 +27,7 @@ do
 	addonpanels["Ampere"] = function(chk) if (chk) then return (IsAddOnLoaded("Ampere")); end InterfaceOptionsFrame_OpenToCategory("Ampere"); InterfaceOptionsFrame_OpenToCategory("Ampere"); end
 	addonpanels["OptionHouse"] = function(chk) if (chk) then return (IsAddOnLoaded("OptionHouse")); end OptionHouse:Open(1) end
 	addonpanels["stAddonManager"] = function(chk) if (chk) then return (IsAddOnLoaded("stAddonManager")); end stAddonManager:LoadWindow() end
-	--addonpanels["BetterAddonList"] = function(chk) if (chk) then return (IsAddOnLoaded("BetterAddonList")); end end
+	addonpanels["BetterAddonList"] = function(chk) if (chk) then return (IsAddOnLoaded("BetterAddonList")); end end
 	local panelstates,d,s = {};
 	local addonname,title,notes,loadable,reason,security,newVersion = 1,2,3,4,5,6,7;
 	for i=1, GetNumAddOns() do
@@ -207,7 +207,7 @@ ns.modules[name].ontooltip = function(tt)
 
 	table.sort(all, function (x, y) return x.mem > y.mem end)
 
-	line, column = tt:AddLine()
+	local line, column = tt:AddLine()
 	tt:SetCell(line,1,C("ltgreen",L["Addon"]),nil,nil,1)
 	tt:SetCell(line,2,C("ltgreen",L["Memory Usage"]),nil,nil,2)
 	tt:AddSeparator()

@@ -4,8 +4,6 @@
 ----------------------------------
 local addon, ns = ...;
 local C, L, I = ns.LC.color, ns.L, ns.I;
-durabilityDB = nil; -- deprecated
-be_durability_db = nil; -- deprecated
 L.Durability = DURABILITY;
 
 
@@ -33,7 +31,6 @@ local date_formats = {
 	["%d/%m/%Y %H:%M"]    = "28/07/2099 16:23",
 	["%d/%m/%Y %I:%M %p"] = "28/07/2099 04:23 pm"
 };
-
 local colorSets = setmetatable({values={}},{
 	__newindex = function(t,k,v)
 		local tb,n = {},0;
@@ -157,7 +154,7 @@ end
 -- some local functions --
 --------------------------
 local function scanAll()
-	local equipped,bags,cost,per,current,maximum,_ = 0,0,0,1;
+	local equipped,bags,cost,per,current,maximum,total,_ = 0,0,0,1;
 	local _curr,_max,_per,_perSlot,_AvPercent = 0,0,1,nil,1;
 
 	for slot=1, 18 do
@@ -246,7 +243,7 @@ local function AutoRepairAll(costs)
 	return false;
 end
 
-function durabilityTooltip(tt)
+local function durabilityTooltip(tt)
 	if (not tt.key) or (tt.key~=ttName) then return; end -- don't override other LibQTip tooltips...
 
 	tt:Clear()

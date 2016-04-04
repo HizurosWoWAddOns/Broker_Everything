@@ -20,7 +20,7 @@ local delay=true;
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
-	I[name]  = {iconfile="Interface\\Icons\\Achievement_GarrisonFolLower_Rare", coords={0.1,0.9,0.1,0.9} }; --IconName::Follower--
+I[name]  = {iconfile="Interface\\Icons\\Achievement_GarrisonFolLower_Rare", coords={0.1,0.9,0.1,0.9} }; --IconName::Follower--
 
 
 ---------------------------------------

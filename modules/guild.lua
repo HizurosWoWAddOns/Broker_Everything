@@ -245,7 +245,7 @@ local function guildTooltip()
 		return;
 	end
 
-	local currentXP, nextLevelXP, dailyXP, maxDailyXP, unitWeeklyXP, unitTotalXP, maxXP, line, column, factionStandingtext, guildName, guildLevel, gMOTD, description, standingID, barMin, barMax, barValue,guildRealm, showGuildRealm
+	local currentXP, nextLevelXP, dailyXP, maxDailyXP, unitWeeklyXP, unitTotalXP, maxXP, line, column, factionStandingtext, guildName, guildLevel, gMOTD, description, standingID, barMin, barMax, barValue,guildRealm, showGuildRealm, _
 
 	guildName, description, standingID, barMin, barMax, barValue = GetGuildFactionInfo();
 	factionStandingtext = GetText("FACTION_STANDING_LABEL"..standingID);

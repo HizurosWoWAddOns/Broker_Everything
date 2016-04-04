@@ -273,6 +273,7 @@ local function makeTooltip(tt)
 					for _,at in ipairs(v.AbilitiesAndTraits) do
 						a = a .. " |T"..at.icon..":14:14:0:0:64:64:4:56:4:56|t";
 					end
+					local l,c;
 					if v["levelXP"]~=0 then
 						l,c = tt:AddLine( C(class,v["name"]), v["className"].." ", ("%1.1f"):format(v.xp / v.levelXP * 100).."%", v.iLevel, a );
 					else

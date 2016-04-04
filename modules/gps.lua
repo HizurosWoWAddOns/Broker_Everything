@@ -657,7 +657,7 @@ ns.modules[name0].onupdate = function(self)
 		end
 	end
 
-	obj = ns.LDB:GetDataObjectByName(ldbName1);
+	local obj = ns.LDB:GetDataObjectByName(ldbName1);
 	if (obj) then
 		obj.text = C(gpsLoc.color,gpsLoc.zone1.." (")..C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos)..C(gpsLoc.color,")");
 	end
