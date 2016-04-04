@@ -4,7 +4,7 @@
 ## Author: Hizuro, Ekaterina, Hungtar
 ## Version: @project-version@
 ## OptionalDeps: LibStub, CallbackHandler-1.0, LibSharedMedia-3.0, LibSimpleOptions-1.0-be_mod, LibDataBroker-1.1, LibDBIcon-1.0, LibQTip-1.0, LibColors-1.0
-## SavedVariables: Broker_EverythingGlobalDB, be_twink_db, be_professions_db, be_gold_db, be_calendar_db, be_xp_db, be_mail_db, be_garrison_db, be_wowtoken_db, goldDB, calendarDB, xpDB, mailDB, be_character_cache
-## SavedVariablesPerCharacter: Broker_EverythingDB, be_durability_db, durabilityDB
+## SavedVariables: Broker_EverythingGlobalDB, be_wowtoken_db, be_character_cache
+## SavedVariablesPerCharacter: Broker_EverythingDB, be_durability_db
 
 Broker_Everything.xml
