@@ -642,7 +642,7 @@ ns.optionpanel = function()
 
 	function f:ModList_Update()
 		local scroll = f.Modules.List;
-		local button, index, offset, nButtons;
+		local button, index, offset, nButtons, nModules;
 
 		if (not scroll.buttons) then
 			f.Modules.List.update=f.ModList_Update;
@@ -931,7 +931,7 @@ ns.datapanel = function()
 	
 	function CharList_Update()
 		local scroll = f.CharList;
-		local button, index, offset, nButtons;
+		local button, index, offset, nButtons, nEntries;
 
 		if (not scroll.buttons) then
 			f.CharList.update=CharList_Update;
