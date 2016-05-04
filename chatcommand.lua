@@ -16,8 +16,8 @@ ns.commands = {
 			InterfaceOptionsFrame_OpenToCategory(ns.be_option_panel);
 		end,
 	},
-	broker = "options", -- alias
-	config = "options", -- alias
+	broker = "options",
+	config = "options",
 	max_addons  = {
 		desc = L["Change number of displayed addons in module memory."],
 		func = function(arg)
@@ -111,6 +111,12 @@ ns.commands = {
 				end
 			end
 		end
+	},
+	version = {
+		desc = L["Display current version of Broker_Everything"],
+		func = function()
+			ns.print(GAME_VERSION_LABEL,GetAddOnMetadata(addon,"Version"));
+		end
 	}
 }
 
@@ -120,7 +126,11 @@ SlashCmdList["BROKER_EVERYTHING"] = function(cmd)
 
 	if cmd=="" then
 		ns.print(L["Info"], L["Chat command list for /be & /broker_everything"])
-		for name,obj in pairs(ns.commands) do
+		local cmds = {};
+		for i,v in pairs(ns.commands)do tinsert(cmds,i); end
+		table.sort(cmds);
+		for _,name in pairs(cmds) do
+			local obj = ns.commands[name];
 			if type(obj)=="string" then
 				ns.print(L["Info"], ("%s - alias of %s"):format(C("yellow",name),C("yellow",obj)))
 			else
@@ -131,11 +141,11 @@ SlashCmdList["BROKER_EVERYTHING"] = function(cmd)
 	end
 
 	if ns.commands[cmd]~=nil and type(ns.commands[cmd])=="string" then
-		cmd = ns.commands[cmd]
+		cmd = ns.commands[cmd].alias;
 	end
 
 	if ns.commands[cmd]~=nil and type(ns.commands[cmd].func)=="function" then
-		ns.commands[cmd].func(arg)
+		ns.commands[cmd].func(arg);
 	end
 
 	cmd = cmd:gsub("^%l", string.upper)
