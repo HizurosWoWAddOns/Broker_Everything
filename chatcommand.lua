@@ -141,7 +141,7 @@ SlashCmdList["BROKER_EVERYTHING"] = function(cmd)
 	end
 
 	if ns.commands[cmd]~=nil and type(ns.commands[cmd])=="string" then
-		cmd = ns.commands[cmd].alias;
+		cmd = ns.commands[cmd];
 	end
 
 	if ns.commands[cmd]~=nil and type(ns.commands[cmd].func)=="function" then

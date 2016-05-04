@@ -228,7 +228,7 @@ local build = {
 			self:SetChecked(not not self:GetChecked());
 			panel:change(data.modName,data.name,not not self:GetChecked());
 		end);
-		parent[Index]:SetHeight(e:GetHeight());
+		parent[Index]:SetHeight(e:GetHeight()+6);
 	end,
 
 	slider = function(parent,index,data)
@@ -307,25 +307,61 @@ local build = {
 		e.Label:SetText(data.label);
 		e.value=current;
 
-		UIDropDownMenu_SetWidth(e, 140);
-		UIDropDownMenu_Initialize(e, function()
+		e.Text:SetText(L[data.values[current]]);
+
+		--[[
+		local btn=_G[e:GetName().."Button"];
+		--btn:SetHitRectInsets(-(e:GetWidth()-(btn:GetWidth()*2)),-3,-3,-3)
+		btn:SetScript("OnClick",function(self,button)
+			local parent = self:GetParent();
+			local data = parent.data;
+
+			ns.EasyMenu.InitializeMenu();
 			for v,t in ns.pairsByKeys(data.values) do
-				local info = UIDropDownMenu_CreateInfo();
-				info.value,info.text,info.arg1,info.arg2=v,t,e,v;
-				info.func = function(self,frame,value)
-					UIDropDownMenu_SetSelectedValue(frame, value);
-					panel:change(data.modName,data.name,value);
-				end
-				UIDropDownMenu_AddButton(info);
+				ns.EasyMenu.addEntry({
+					label = L[t],
+					radio = v,
+					--keepShown = false,
+					checked = function()
+						return (current==v);
+					end,
+					func = function(self)
+						--Broker_EverythingDB[data.modName][data.name] = v;
+						--ns.modules[modName].onevent({},"BE_UPDATE_CLICKOPTIONS");
+						parent.Label:SetText(t);
+						panel:change(data.modName,data.name,value);
+					end
+				});
 			end
+			ns.EasyMenu.ShowMenu(self);
+			PlaySound("igMainMenuOptionCheckBoxOn");
+		end);
+		]]
+
+		e:SetScript("OnClick",function(self,button)
+			local data = self.data;
+
+			ns.EasyMenu.InitializeMenu();
+			for v,t in ns.pairsByKeys(data.values) do
+				ns.EasyMenu.addEntry({
+					label = L[t],
+					radio = v,
+					checked = function()
+						return (current==v);
+					end,
+					func = function(self)
+						self.Text:SetText(L[data.values[value]]);
+						panel:change(data.modName,data.name,value);
+						current = value;
+					end
+				});
+			end
+			ns.EasyMenu.ShowMenu(self);
+			PlaySound("igMainMenuOptionCheckBoxOn");
 		end);
 
-		UIDropDownMenu_SetSelectedValue(e, current);
-
-		local btn=_G[e:GetName().."Button"];
-		btn:SetHitRectInsets(-(e:GetWidth()-(btn:GetWidth()*2)),-3,-3,-3)
-
-		parent[Index]:SetHeight(e:GetHeight()+e.Label:GetHeight()+6);
+		e:SetHitRectInsets(-3,-e.Label:GetWidth(),-3,-3)
+		parent[Index]:SetHeight(e:GetHeight()+12);
 	end,
 
 	color = function(parent,index,data)
@@ -511,7 +547,9 @@ ns.optionpanel = function()
 					v:SetValue(cur);
 				elseif (v.data.type=="select") then
 					v.selectedValue=cur;
-					_G[v:GetName().."Text"]:SetText(v.data.values[cur]);
+					if _G[v:GetName().."Text"] and v.data and v.data.values and v.data.values[cur] then
+						_G[v:GetName().."Text"]:SetText(v.data.values[cur]);
+					end
 				elseif (v.data.type=="color") then
 					r,g,b,a=unpack(cur);
 					v.Color:SetVertexColor(r,g,b,a);

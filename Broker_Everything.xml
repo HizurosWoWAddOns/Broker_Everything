@@ -287,15 +287,122 @@
 					</Layer>
 				</Layers>
 			</Slider>
-			<Frame parentKey="__select" name="$parentDropDown" inherits="UIDropDownMenuTemplate" hidden="true">
+			<Button parentKey="__select" name="$parentDropDown" hidden="true">
+				<Size x="24" y="24"/>
 				<Anchors>
-					<Anchor point="LEFT" y="-6" />
+					<Anchor point="LEFT" x="9" y="0"/>
 				</Anchors>
+				<NormalTexture name="$parentNormalTexture" file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up">
+					<Size x="24" y="24"/>
+					<Anchors>
+						<Anchor point="RIGHT"/>
+					</Anchors>
+				</NormalTexture>
+				<PushedTexture name="$parentPushedTexture" file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Down">
+					<Size x="24" y="24"/>
+					<Anchors>
+						<Anchor point="RIGHT"/>
+					</Anchors>
+				</PushedTexture>
+				<DisabledTexture name="$parentDisabledTexture" file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Disabled">
+					<Size x="24" y="24"/>
+					<Anchors>
+						<Anchor point="RIGHT"/>
+					</Anchors>
+				</DisabledTexture>
+				<HighlightTexture name="$parentHighlightTexture" file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD">
+					<Size x="24" y="24"/>
+					<Anchors>
+						<Anchor point="RIGHT"/>
+					</Anchors>
+				</HighlightTexture>
 				<Layers>
 					<Layer level="ARTWORK">
-						<FontString parentKey="Label" inherits="GameFontNormal">
+						<FontString parentKey="Label" inherits="GameFontNormal" wordwrap="false" justifyH="LEFT">
 							<Anchors>
-								<Anchor point="BOTTOMLEFT" relativePoint="TOPLEFT" x="24" y="2" />
+								<Anchor point="LEFT" relativeTo="$parent" relativePoint="RIGHT" x="4" y="7"/>
+								<Anchor point="RIGHT" relativeKey="$parent.$parent" relativePoint="RIGHT" />
+							</Anchors>
+						</FontString>
+						<FontString parentKey="Text" inherits="GameFontHighlightSmall" wordwrap="false" justifyH="LEFT">
+							<Anchors>
+								<Anchor point="LEFT" relativeTo="$parent" relativePoint="RIGHT" x="4" y="-7"/>
+								<Anchor point="RIGHT" relativeKey="$parent.$parent" relativePoint="RIGHT" />
+							</Anchors>
+						</FontString>
+					</Layer>
+				</Layers>
+			</Button>
+			<Frame parentKey="__select2" name="$parentDropDown" hidden="true">
+				<Size y="32"/>
+				<Anchors>
+					<Anchor point="LEFT" />
+					<Anchor point="RIGHT" />
+				</Anchors>
+				<Frames>
+					<Button name="$parentButton"  motionScriptsWhileDisabled="true" >
+						<Size x="24" y="24"/>
+						<Anchors>
+							<Anchor point="LEFT" x="9" y="0"/>
+						</Anchors>
+						<Scripts>
+							<!--OnEnter>
+								local parent = self:GetParent();
+								local myscript = parent:GetScript("OnEnter");
+								if(myscript ~= nil) then
+									myscript(parent);
+								end
+							</OnEnter-->
+							<!--OnLeave>
+								local parent = self:GetParent();
+								local myscript = parent:GetScript("OnLeave");
+								if(myscript ~= nil) then
+									myscript(parent);
+								end
+							</OnLeave-->
+							<!--OnClick>
+								ToggleDropDownMenu(nil, nil, self:GetParent());
+								PlaySound("igMainMenuOptionCheckBoxOn");
+							</OnClick-->
+						</Scripts>
+						<NormalTexture name="$parentNormalTexture" file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Up">
+							<Size x="24" y="24"/>
+							<Anchors>
+								<Anchor point="RIGHT"/>
+							</Anchors>
+						</NormalTexture>
+						<PushedTexture name="$parentPushedTexture" file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Down">
+							<Size x="24" y="24"/>
+							<Anchors>
+								<Anchor point="RIGHT"/>
+							</Anchors>
+						</PushedTexture>
+						<DisabledTexture name="$parentDisabledTexture" file="Interface\ChatFrame\UI-ChatIcon-ScrollDown-Disabled">
+							<Size x="24" y="24"/>
+							<Anchors>
+								<Anchor point="RIGHT"/>
+							</Anchors>
+						</DisabledTexture>
+						<HighlightTexture name="$parentHighlightTexture" file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD">
+							<Size x="24" y="24"/>
+							<Anchors>
+								<Anchor point="RIGHT"/>
+							</Anchors>
+						</HighlightTexture>
+					</Button>
+				</Frames>
+				<Layers>
+					<Layer level="ARTWORK">
+						<FontString parentKey="Label" inherits="GameFontNormal" wordwrap="false" justifyH="LEFT">
+							<Anchors>
+								<Anchor point="LEFT" relativeTo="$parentButton" relativePoint="RIGHT" x="4" y="7"/>
+								<Anchor point="RIGHT" />
+							</Anchors>
+						</FontString>
+						<FontString parentKey="Text" inherits="GameFontHighlightSmall" wordwrap="false" justifyH="LEFT">
+							<Anchors>
+								<Anchor point="LEFT" relativeTo="$parentButton" relativePoint="RIGHT" x="4" y="-7"/>
+								<Anchor point="RIGHT" />
 							</Anchors>
 						</FontString>
 					</Layer>
