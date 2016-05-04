@@ -170,7 +170,6 @@ ns.modules[name1] = {
 			end
 		}
 	}
-
 }
 
 ns.modules[name2] = {
@@ -373,14 +372,24 @@ local function zone(byName)
 	local subZone = GetSubZoneText() or ""
 	local zone = GetRealZoneText() or ""
 	local types = {"%s: %s","%s (%s)"}
+	local mode = "2";
 
-	if Broker_EverythingDB[byName].bothZones=="2" and subZone~="" then
+	if Broker_EverythingDB[byName]==nil then
+		Broker_EverythingDB[byName]={};
+	end
+	if Broker_EverythingDB[byName].bothZones==nil then
+		Broker_EverythingDB[byName].bothZones = mode;
+	else
+		mode = Broker_EverythingDB[byName].bothZones;
+	end
+
+	if mode=="2" and subZone~="" then
 		return subZone
-	elseif Broker_EverythingDB[byName].bothZones=="3" and subZone~="" then
+	elseif mode=="3" and subZone~="" then
 		return subZone and types[1]:format(zone,subZone or "")
-	elseif Broker_EverythingDB[byName].bothZones=="4" and subZone~="" then
+	elseif mode=="4" and subZone~="" then
 		return subZone and types[2]:format(zone,subZone)
-	elseif Broker_EverythingDB[byName].bothZones=="5" and subZone~="" then
+	elseif mode=="5" and subZone~="" then
 		return subZone and types[2]:format(subZone,zone)
 	end
 
