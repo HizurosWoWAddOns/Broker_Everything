@@ -364,10 +364,6 @@ ns.modules[name].init = function(obj)
 	if (be_durability_db) then
 		for i,v in pairs(be_durability_db) do empty=false; end
 	end
-	if (durabilityDB~=nil) and (empty) then
-		be_durability_db = durabilityDB;
-		durabilityDB = nil;
-	end
 
 	hiddenTooltip = CreateFrame("GameTooltip", "BE_Durability_ScanTip", nil, "GameTooltipTemplate")
 	hiddenTooltip:SetOwner(UIParent, "ANCHOR_NONE")
