@@ -49,6 +49,12 @@ local ids = ns.player.faction=="Alliance" and {
 	[39511]=5,[39509]=5,[39510]=5,[39512]=5,[39526]=5,[39514]=5,[39513]=5,-- npc 96014
 	[39565]=6-- npc 92805
 };
+local zone2hidden = {
+	[38585]=38587,[38441]=37970,[37891]=37865,[38250]=37938,
+	[38045]=38043,[38046]=38051,[37968]=37966,[38586]=38588,
+	[38440]=38439,[37940]=37866,[38252]=38009,[38044]=38040,
+	[38047]=38054,[38449]=38020,
+};
 local numIDTypes = {
 	4, -- bosses
 	1, -- random zone daily
@@ -60,7 +66,7 @@ local numIDTypes = {
 local colorIDTypes = {
 	"ltblue",
 	"green",
-	false,
+	"red",
 	"yellow",
 	"orange",
 	"violet",
@@ -149,8 +155,45 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
+local function updateResetTimes()
+	if dailiesReset>0 then return end
+
+	dailiesReset = time() + GetQuestResetTime() - 86400;
+	local wday,reset = tonumber(date("%w"));
+	
+	if(wday==0)then
+		reset = 4*86400;
+	elseif(wday>3)then
+		reset = wday*86400;
+	elseif(wday<3)then
+		reset = (3+wday)*86400;
+	end
+	weekliesReset = dailiesReset - wday;
+end
+
 local function updateLocaleNames()
 	local failed,tmp,c = false,{},0;
+	local locale=GetLocale();
+
+	if Broker_EverythingDB[name].localeFaction==nil then
+		Broker_EverythingDB[name].localeFaction={};
+	end
+
+	if Broker_EverythingDB[name].locale~=locale then
+		Broker_EverythingDB[name].localeNames=nil;
+		Broker_EverythingDB[name].localeFaction={};
+	end
+
+	if Broker_EverythingDB[name].localeNames then
+		if Broker_EverythingDB[name].localeFaction[ns.player.faction]==true then
+			names = Broker_EverythingDB[name].localeNames;
+			namesCount = 1;
+			return;
+		else
+			tmp = Broker_EverythingDB[name].localeNames;
+		end
+	end
+
 	-- collect locale quest titles
 	for id,v in pairs(ids)do
 		if v~=1 then
@@ -183,8 +226,12 @@ local function updateLocaleNames()
 	end
 
 	if not failed then
+		Broker_EverythingDB[name].locale=locale;
+		Broker_EverythingDB[name].localeNames = tmp;
+		Broker_EverythingDB[name].localeFaction[ns.player.faction]=true;
 		names = tmp;
 		namesCount = c;
+		Broker_EverythingDB[name].names=nil;
 		return
 	end
 end
@@ -201,7 +248,7 @@ local function updateQuestStatus()
 			nC[v]=0;
 		end
 		local index = GetQuestLogIndexByID(id) or 0;
-		if IsQuestFlaggedCompleted(id) then
+		if IsQuestFlaggedCompleted(id)==true then
 			c[id]=t;
 			nC[v]=nC[v]+1;
 			cQ=cQ+1;
@@ -212,7 +259,7 @@ local function updateQuestStatus()
 	if cQ<Q then
 		completed,numCompleted=c,nC;
 		be_character_cache[ns.player.name_realm].tanaanjungle.completed = c;
-		be_character_cache[ns.player.name_realm].tanaanjungle.questlog = questlog;
+		be_character_cache[ns.player.name_realm].tanaanjungle.questlog = questlog; --?
 
 		local bbt = {}; -- broker button text
 		for _,i in ipairs(typeOrder) do
@@ -237,12 +284,18 @@ local function listQuests(TT,questlog,completed,numCompleted)
 		for id,qType in pairs(ids)do
 			if qType==i then
 				local color,state = false,false;
-				if completed[id]>dailiesReset then
+				if completed[id]~=nil and completed[id]>dailiesReset then
 					color,state = "green",L["Completed"];
 				elseif questlog[id]==true then
 					color,state = "yellow",L["In Questlog"];
+					if (i>=2 and i<=4) then
+						state = format("%s |cff00ccff(%d%%)|r",state,GetQuestProgressBarPercent(zone2hidden[id] or id));
+					end
 				elseif qType==1 or qType==4 or qType==6 then
 					color,state = "white",L["Available"];
+					if (i>=2 and i<=4) then
+						state = format("%s |cff00ccff(%d%%)|r",state,GetQuestProgressBarPercent(zone2hidden[id] or id));
+					end
 				end
 				if color then
 					TT:AddLine((showIDs and C("gray",id).." " or "") .. C("ltyellow",names[id]),C(color,state));
@@ -252,7 +305,7 @@ local function listQuests(TT,questlog,completed,numCompleted)
 		end
 		if num==0 then
 			local l = TT:AddLine();
-			TT:SetCell(l,1,C("ltgray",L["No quests completed or in your quest log..."]),nil,nil,TTColumns);
+			TT:SetCell(l,1,C("ltgray",L["No quests completed or in your quest log..."]),nil,nil,ttColumns);
 		end
 	end
 end
@@ -275,6 +328,8 @@ end
 
 local function getTooltip()
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+
+	updateResetTimes();
 	tt:Clear();
 	local l = tt:AddHeader();
 	tt:SetCell(l,1,C("dkyellow",L[name]) .." ".. C("orange",L["(Experimental)"]),nil,nil,ttColumns);
@@ -292,9 +347,15 @@ local function getTooltip()
 			if v.level>=100 and v.tanaanjungle then
 				local bbt = {}; -- broker button text
 				for _,i in ipairs(typeOrder) do
-					tinsert(bbt,C(colorIDTypes[i], numCompleted[i]) .. "/" .. C(colorIDTypes[i], numIDTypes[i]));
+					local num = 0;
+					for I,v in pairs(v.tanaanjungle.completed)do
+						if ids[I]==numIDTypes[i] and v>dailiesReset then
+							num=num+1;
+						end
+					end
+					tinsert(bbt,C(colorIDTypes[i], num) .. "/" .. C(colorIDTypes[i], numIDTypes[i]));
 				end
-				local l=tt:AddLine(C(v.class,ns.scm(c)),table.concat(bbt,", "));
+				tt:AddLine(C(v.class,ns.scm(c)),table.concat(bbt,", "));
 				--[[
 				tt:SetLineScript(l,"OnEnter",function(self)
 					tt2 = ns.LQT:Acquire(ttName2, ttColumns2, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT");
@@ -316,7 +377,7 @@ local function getTooltip()
 		tt:AddSeparator(3,0,0,0,0)
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 		local l=tt:AddLine();
-		tt:SetCell(l,1,C("copper",L["Hold shift"]).." || "..C("green",L["Show your other chars"]));
+		tt:SetCell(l,1,C("copper",L["Hold shift"]).." || "..C("green",L["Show your other chars"]),nil,nil,ttColumns);
 	end
 end
 
@@ -330,17 +391,7 @@ end
 
 ns.modules[name].onevent = function(self,event,...)
 	if event=="PLAYER_ENTERING_WORLD" then
-		dailiesReset = time() + GetQuestResetTime() - 86400;
-		local wday,reset = tonumber(date("%w"));
-		
-		if(wday==0)then
-			reset = 4*86400;
-		elseif(wday>3)then
-			reset = wday*86400;
-		elseif(wday<3)then
-			reset = (3+wday)*86400;
-		end
-		weekliesReset = dailiesReset - wday;
+		updateResetTimes();
 
 		if be_character_cache[ns.player.name_realm]==nil then
 			be_character_cache[ns.player.name_realm]={};
@@ -352,9 +403,9 @@ ns.modules[name].onevent = function(self,event,...)
 			be_character_cache[ns.player.name_realm].tanaanjungle={};
 		end
 
-		C_Timer.After(12, updateLocaleNames);
+		C_Timer.After(3, updateLocaleNames);
 	elseif event=="PLAYER_REGEN_ENABLED" then
-		C_Timer.After(15, function()
+		C_Timer.After(3, function()
 			elapse,update=0,true;
 		end);
 	elseif event=="QUEST_LOG_UPDATE" then
@@ -394,96 +445,3 @@ end
 
 
 
-
-
-
-
-
---[=[
-
-1. könnte das modul zum allgemeinen quest tracker umwandeln.
-	1.1. wenn ja, könnte man neben vordefinierten quests auch selber welche eintragen.
-
-2. täglich gemachten quests der charaktere speichern und auf den andern chars als verfügbar anzeigen wo es random quests gibt.
-
-3. einen zweiten tooltip anzeigen, mit welchen chars man den schon gemacht hat.
-
-4. einen indikator für das vorhandensein eines zweiten tooltips... arrow? oder ein schräges i
-
---]=]
-
-
-
-
-
--- hide
-	--/run local x;print("faction dailies");for k,v in pairs({Kiljaedens_Thron={38585,38586},Daemonenschmiede={38441,38440},Eisenfausthafen={37891,37940},Ruinen_von_Kranak={38250,38252},Das_Blutende_Auge={38045,38044},Eisernen_Front={38046,38047},Temple_von_Shanar={37968,38449}}) do x=nil for i,id in ipairs(v)do if IsQuestFlaggedCompleted(id) then x=1 end end print(format("%s: \124cFF%s00\124|r", k, x and "FF00Completed" or "00FFNot completed yet")) end
-
-	--/run local x;print("hidden quests");for k,v in pairs({Kiljaedens_Thron={38587,38588},Daemonenschmiede={37970,38439},Eisenfausthafen={37865,37866},Ruinen_von_Kranak={37938,38009},Das_Blutende_Auge={38043,38040},Eisernen_Front={38051,38054},Temple_von_Shanar={37966,38020}}) do x=nil for i,id in ipairs(v)do if IsQuestFlaggedCompleted(id) then x=1 end end print(format("%s: \124cFF%s00\124|r", k, x and "FF00Completed" or "00FFNot completed yet")) end
-
-	--/run local x;print("bonus dailies");for k,v in pairs({Kiljaedens_Thron={39453,39454},Daemonenschmiede={39445,39446},Eisenfausthafen={39451,39452},Ruinen_von_Kranak={39447,39448},Das_Blutende_Auge={39441,39442},Eisernen_Front={39443,39444},Temple_von_Shanar={39450,39449}}) do x=nil for i,id in ipairs(v)do if IsQuestFlaggedCompleted(id) then x=1 end end print(format("%s: \124cFF%s00\124|r", k, x and "FF00Completed" or "00FFNot completed yet")) end
-
-	--[[
-	-- Assault in the Throne of Kil'jaeden
-	38585,38586 -- faction dailies
-	38587,38588 -- hidden quests
-	39453,39454 -- bonus dailies
-
-	-- Assault on the Fel Forge
-	38441,38440 -- faction dailies
-	37970,38439 -- hidden quests
-	39445,39446 -- bonus dailies
-
-	-- Assault on Ironhold Harbor
-	37891,37940 -- faction dailies
-	37865,37866 -- hidden quests
-	39451,39452 -- bonus dailies
-
-	-- Assault on the Ruins of Kra'nak
-	38250,38252 -- faction dailies
-	37938,38009 -- hidden quests
-	39447,39448 -- bonus dailies
-
-	-- Bleeding the Bleeding Hollow
-	38045,38044 -- faction dailies
-	38043,38040 -- hidden quests
-	39441,39442 -- bonus dailies
-
-	-- Battle at the Iron Front
-	38046,38047 -- faction dailies
-	38051,38054 -- hidden quests
-	39443,39444 -- bonus dailies
-
-	-- Assault on the Temple of Sha'naar
-	37968,38449 -- faction dailies
-	37966,38020 -- hidden quests
-	39450,39449 -- bonus dailies
-
-	/run local x;
-	for k,v in pairs({
-	Kiljaedens_Thron={38585,39453,39454,38586},
-	Daemonenschmiede={39445,39446,38440,38441},
-	Eisenfausthafen={39451,39452,37891,37940},
-	Ruinen_von_Kranak={39447,39448,38250,38252},
-	Das_Blutende_Auge={39441,38044,38045,39442},
-	Eisernen_Front={39443,39444,38046,38047},
-	Temple_von_Shanar={37968,37966,38020,39449,39450,38449}
-	}) do
-	x=false for i,id in ipairs(v)do if IsQuestFlaggedCompleted(id) then x=true end end print(format("%s: %s", k, x and "\124cFFFF0000Completed\124r" or "\124cFF00FF00Not completed yet\124r"))
-	end
-	]]
-
-	--[[
-	/run for k,v in pairs({Daemonenschmiede=38440,Eisenfausthafen=37891,Ruinen_von_Kranak=38250,Temple_von_Shanar=37968,Kiljaedens_Thron=38585,Schlacht_an_der_Eisernen_Front=38046,Lasst_das_Blutende_Auge_bluten=38045}) do print(format("%s: %s", k, IsQuestFlaggedCompleted(v) and "\124cFFFF0000Completed\124r" or "\124cFF00FF00Not completed yet\124r")) end
-	--]]
-
-	--[[
-	Kiljaedens_Thron={38585,38587,38588,39453,39454,38586},
-	Daemonenschmiede={37970,38439,39445,39446,38440,38441},
-	Eisenfausthafen={37865,37866,39451,39452,37891,37940},
-	Ruinen_von_Kranak={37938,38009,39447,39448,38250,38252},
-	Das_Blutende_Auge={39441,38043,38044,38045,38040,39442},
-	Eisernen_Front={38051,38054,39443,39444,38046,38047},
-	Temple_von_Shanar={37968,37966,38020,39449,39450,38449
-	format("%s: %s", k, x and "\124cFFFF0000Completed\124r" or "\124cFF00FF00Not completed yet\124r"))
-	--]]
