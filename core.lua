@@ -2,6 +2,7 @@
 -- saved variables
 Broker_EverythingDB = {};
 Broker_EverythingGlobalDB = {};
+be_character_cache = {};
 
 -- some usefull namespace to locals
 local addon, ns = ...;
@@ -126,7 +127,7 @@ Broker_Everything:SetScript("OnUpdate",function(self,elapsed)
 end)
 
 function ns.resetAllSavedVariables()
-	local sv={"Broker_EverythingGlobalDB","Broker_EverythingDB","be_twink_db","be_professions_db","be_gold_db","be_calendar_db","be_xp_db","be_mail_db","be_durability_db","goldDB","calendarDB","xpDB","mailDB","durabilityDB"};
+	local sv={"Broker_EverythingGlobalDB","Broker_EverythingDB","be_durability_db"};
 	for i,v in ipairs(sv) do
 		if (type(_G[v])=="table") then
 			wipe(_G[v]);
@@ -141,13 +142,11 @@ end
 
 Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 	if event == "ADDON_LOADED" and addonName == addon then
-
 		if (Broker_EverythingDB.reset==true) then
 			ns.resetAllSavedVariables();
 			Broker_EverythingDB["reset"] = false;
 			ns.Print(L["Warning"], L["saved variables have been reset."]);
 		end
-
 		if (Broker_EverythingGlobalDB.global==true) then
 			Broker_EverythingDB = Broker_EverythingGlobalDB;
 		end
@@ -163,12 +162,34 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 			Broker_EverythingDB.maxTooltipHeight = test*100;
 		end
 
+		-- character cache
+		if(be_character_cache==nil)then
+			be_character_cache={order={}};
+		end
+		if(be_character_cache.order==nil)then
+			be_character_cache.order={};
+		end
+
+		local baseData={"name","class","faction","race"};
+
+		if(not be_character_cache[ns.player.name_realm])then
+			tinsert(be_character_cache.order,ns.player.name_realm);
+			be_character_cache[ns.player.name_realm] = {orderId=#be_character_cache.order};
+		end
+
+		for i,v in ipairs(baseData)do
+			if(ns.player[v] and be_character_cache[ns.player.name_realm][v]~=ns.player[v])then
+				be_character_cache[ns.player.name_realm][v] = ns.player[v];
+			end
+		end
+
+		be_character_cache[ns.player.name_realm].level = UnitLevel("player");
+
 		-- modules
 		ns.moduleInit();
 
 		self:UnregisterEvent("ADDON_LOADED");
-	end
-	if (event=="PLAYER_ENTERING_WORLD") then
+	elseif (event=="PLAYER_ENTERING_WORLD") then
 
 		-- iconset
 		ns.I(true);
@@ -189,14 +210,19 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 		ns.moduleCoexist();
 
 		self:UnregisterEvent("PLAYER_ENTERING_WORLD");
-	end
-	if (event=="NEUTRAL_FACTION_SELECT_RESULT") then
-		ns.player.faction,ns.player.factionL  = UnitFactionGroup("player");
+	elseif(event=="PLAYER_LEVEL_UP")then
+		be_character_cache[ns.player.name_realm].level = UnitLevel("player");
+
+	elseif (event=="NEUTRAL_FACTION_SELECT_RESULT") then
+		ns.player.faction, ns.player.factionL  = UnitFactionGroup("player");
 		L[ns.player.faction] = ns.player.factionL;
+
+		be_character_cache[ns.player.name_realm].faction = ns.player.faction;
 	end
 end)
 
 Broker_Everything:RegisterEvent("ADDON_LOADED");
 Broker_Everything:RegisterEvent("PLAYER_ENTERING_WORLD");
+Broker_Everything:RegisterEvent("PLAYER_LEVEL_UP");
 Broker_Everything:RegisterEvent("NEUTRAL_FACTION_SELECT_RESULT");
 

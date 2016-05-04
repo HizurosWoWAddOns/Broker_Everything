@@ -72,168 +72,6 @@ ns.player.raceLocale,ns.player.race = UnitRace("player");
 ns.LC.colorset("suffix",ns.LC.colorset[ns.player.class:lower()]);
 
 
-  ---------------------------------------
---- global character data cache         ---
---- and migration from old structure    ---
-  ---------------------------------------
-be_twink_db = nil; -- deprecated
-be_character_cache = nil;
-local f = CreateFrame("Frame");
-f:SetScript("OnEvent",function(self,event,addonName)
-	if(event=="ADDON_LOADED" and addon==addonName)then
-
-		if(not be_character_cache)then be_character_cache={order={}}; end
-		if(not be_character_cache.order)then be_character_cache.order={}; end
-		local baseData={"name","class","faction","race"};
-
-		--- =========================================== ---
-		--- Start of migration section                  ---
-		--- =========================================== ---
-
-		if(not be_character_cache.migration)then be_character_cache.migration={}; end
-
-		--- be_twink_db migration
-		if(be_character_cache.migration.twink_db~=true and be_twink_db~=nil)then
-			for i,v in pairs(be_twink_db)do
-				local realm, name = strsplit("-",i); realm,name = strtrim(realm),strtrim(name);
-				local name_realm = name.."-"..realm;
-				tinsert(be_character_cache.order, name_realm);
-				be_character_cache[name_realm] = {orderId=#be_character_cache.order};
-				for _,V in ipairs(baseData)do
-					if(ns.player[V] and be_character_cache[name_realm][V]~=ns.player[V])then
-						be_character_cache[name_realm][V] = v[V];
-					end
-				end
-			end
-			be_twink_db=nil;
-			be_character_cache.migration.twink_db=true;
-		end
-
-		--- be_mail_db migration
-		if(be_character_cache.migration.mail_db~=true and be_mail_db~=nil)then
-			local empty=true;
-			for i,v in pairs(be_mail_db) do empty=false; break; end
-			if (mailDB~=nil) and (empty) then
-				be_mail_db = mailDB;
-				mailDB = nil;
-			end
-			for i,v in pairs(be_mail_db)do
-				local realm,name = strsplit("/",i);
-				be_character_cache[name.."-"..realm].mail = { count=v.count, next3=v.mails };
-			end
-			be_mail_db=nil;
-			be_character_cache.migration.mail_db=true;
-		end
-
-		--- be_professions_db migration
-		if(be_character_cache.migration.professions_db~=true and be_professions_db~=nil)then
-			for realm, chars in pairs(be_professions_db)do
-				for name, data in pairs(chars)do
-					be_character_cache[name.."-"..realm].professions = data;
-				end
-			end
-			be_professions_db=nil;
-			be_character_cache.migration.professions_db=true;
-		end
-
-		--- be_gold_db migration
-		if(be_character_cache.migration.gold_db~=true and be_gold_db~=nil)then
-			local empty=true;
-			for i,v in pairs(be_gold_db) do empty=false; break; end
-			if (goldDB~=nil) and (empty) then
-				be_gold_db = goldDB;
-				goldDB = nil;
-			end
-			for _, realms in pairs(be_gold_db)do
-				for realmName, chars in pairs(realms)do
-					for charName, data in pairs(chars)do
-						if(be_character_cache[charName.."-"..realmName])then
-							be_character_cache[charName.."-"..realmName].gold = data[1];
-						end
-					end
-				end
-			end
-			be_gold_db=nil;
-			be_character_cache.migration.gold_db=true;
-		end
-
-		--- be_garrison_db migration
-		if(be_character_cache.migration.garrison_db~=true and be_garrison_db~=nil)then
-			for name_realm, data in pairs(be_garrison_db)do
-				data.class=nil;
-				be_character_cache[name_realm].garrison = data;
-			end
-			be_garrison_db=nil;
-			be_character_cache.migration.garrison_db=true;
-		end
-
-		--- be_xp_db migration
-		if(be_character_cache.migration.xp_db~=true and be_xp_db~=nil)then
-			--- include prev. migration from xpDB to be_xp_db
-			local empty=true;
-			for i,v in pairs(be_xp_db) do empty=false; break; end
-			if (xpDB~=nil) and (empty) then
-				be_xp_db = xpDB;
-				xpDB = nil;
-			end
-			for realm, chars in pairs(be_xp_db)do
-				for name, data in pairs(chars)do
-					if(not be_character_cache[name.."-"..realm])then
-						be_character_cache[name.."-"..realm] = {};
-					end
-					for i,v in pairs(data.xpBonus)do
-						v.name=nil;
-						v.percent = v.percent or nil;
-						v.outOfLevel = v.outOfLevel or nil;
-					end 
-					be_character_cache[name.."-"..realm].xp = {
-						cur = data.xp,
-						need = data.xpNeed,
-						max = data.xpMax,
-						percent = data.xpPercent,
-						rest = data.xpRest,
-						restStr = data.xpRestStr,
-						bonus = data.xpBonus,
-						bonusSum = data.xpBonusSum
-					};
-					be_character_cache[name.."-"..realm].level = data.level;
-				end
-			end
-			be_xp_db = nil;
-			be_character_cache.migration.xp_db=true;
-		end
-
-		--- =========================================== ---
-		--- End of migration section                    ---
-		--- =========================================== ---
-
-		if(not be_character_cache[ns.player.name_realm])then
-			tinsert(be_character_cache.order,ns.player.name_realm);
-			be_character_cache[ns.player.name_realm] = {orderId=#be_character_cache.order};
-		end
-
-		for i,v in ipairs(baseData)do
-			if(ns.player[v] and be_character_cache[ns.player.name_realm][v]~=ns.player[v])then
-				be_character_cache[ns.player.name_realm][v] = ns.player[v];
-			end
-		end
-		be_character_cache[ns.player.name_realm].level = UnitLevel("player");
-
-	elseif(event=="PLAYER_LEVEL_UP")then
-		be_character_cache[ns.player.name_realm].level = UnitLevel("player");
-
-	elseif(event=="NEUTRAL_FACTION_SELECT_RESULT")then
-		ns.player.faction, ns.player.factionL  = UnitFactionGroup("player");
-		L[ns.player.faction] = ns.player.factionL;
-
-		be_character_cache[ns.player.name_realm].faction = ns.player.faction;
-	end
-end)
-f:RegisterEvent("ADDON_LOADED");
-f:RegisterEvent("PLAYER_LEVEL_UP");
-f:RegisterEvent("NEUTRAL_FACTION_SELECT_RESULT");
-
-
   -----------------------------------------
 --- SetCVar hook                          ---
 --- Thanks at blizzard for blacklisting   ---
@@ -245,14 +83,14 @@ do
 		local cvar = ...
 		if ns.build>=54800000 and InCombatLockdown() and blacklist[cvar]==true then
 			local msg
-			-- usefull blacklisted cvars..
+			-- usefull blacklisted cvars...
 			if cvar=="uiScale" or cvar=="useUiScale" then
 				msg = "Changing UI scaling while combat nether an good idea."
 			else
 			-- useless blacklisted cvars...
 				msg = "Sorry, CVar "..cvar.." are no longer changeable while combat. Thanks @ Blizzard."
 			end
-			print("|cffff8800"..addon..": "..msg.."|r")
+			print("|cffff6600"..addon..": "..msg.."|r")
 		else
 			SetCVar(...)
 		end
@@ -365,21 +203,21 @@ ns.RegisterMouseWheel = function(self,func)
 end
 
 ns.tooltipModifiers = {
-	SHIFT      = {l=L["Shift"],       f=IsShiftKeyDown},
-	LEFTSHIFT  = {l=L["Left shift"],  f=IsLeftShiftKeyDown},
-	RIGHTSHIFT = {l=L["Right shift"], f=IsRightShiftKeyDown},
-	ALT        = {l=L["Alt"],         f=IsAltKeyDown},
-	LEFTALT    = {l=L["Left alt"],    f=IsLeftAltKeyDown},
-	RIGHTALT   = {l=L["Right alt"],   f=IsRightAltKeyDown},
-	CTRL       = {l=L["Ctrl"],        f=IsControlKeyDown},
-	LEFTCTRL   = {l=L["Left ctrl"],   f=IsLeftControlKeyDown},
-	RIGHTCTRL  = {l=L["Right ctrl"],  f=IsRightControlKeyDown}
+	SHIFT      = {l=L["Shift"],       f="Shift"},
+	LEFTSHIFT  = {l=L["Left shift"],  f="LeftShift"},
+	RIGHTSHIFT = {l=L["Right shift"], f="RightShift"},
+	ALT        = {l=L["Alt"],         f="Alt"},
+	LEFTALT    = {l=L["Left alt"],    f="LeftAlt"},
+	RIGHTALT   = {l=L["Right alt"],   f="RightAlt"},
+	CTRL       = {l=L["Ctrl"],        f="Control"},
+	LEFTCTRL   = {l=L["Left ctrl"],   f="LeftControl"},
+	RIGHTCTRL  = {l=L["Right ctrl"],  f="RightControl"}
 }
 
 ns.tooltipChkOnShowModifier = function(bool)
 	local modifier = Broker_EverythingDB.ttModifierKey1;
 	if (modifier~="NONE") then
-		modifier = (ns.tooltipModifiers[modifier]) and ns.tooltipModifiers[modifier].f();
+		modifier = (ns.tooltipModifiers[modifier]) and _g["Is"..ns.tooltipModifiers[modifier].f.."KeyDown"]();
 		if (bool) then
 			return modifier;
 		else
@@ -423,15 +261,18 @@ end
 --- nice little print function          ---
   ---------------------------------------
 ns.print = function (...)
-	local colors,t = {"red","green","ltblue","yellow","orange","violet"},{}
-	for i,v in ipairs({addon..":",...}) do
-		if type(v)=="string" and v:match("||c") then
-			tinsert(t,v)
-		else
-			tinsert(t,ns.LC.color(colors[i] or "white",tostring(v)))
+	local colors,t,c = {"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"},{},1;
+	for i,v in ipairs({...}) do
+		v = tostring(v);
+		if i==1 and v~="" then
+			tinsert(t,"|cff0099ff"..addon.."|r:"); c=2;
 		end
+		if not v:match("||c") then
+			v,c = "|cff"..colors[c]..v.."|r", c<#colors and c+1 or 1;
+		end
+		tinsert(t,v);
 	end
-	print(unpack(t))
+	print(unpack(t));
 end
 ns.Print = ns.print
 
@@ -1317,6 +1158,13 @@ do
 
 		UIDropDownMenu_Initialize(self.frame, EasyMenu_Initialize, displayMode, nil, self.menu);
 		ToggleDropDownMenu(1, nil, self.frame, anchor, x, y, self.menu, nil, nil);
+	end
+
+	self.ShowDropDown = function(parent)
+		local displaymode = nil;
+
+		UIDropDownMenu_Initialize(self.frame, EasyMenu_Initialize);
+		ToggleDropDownMenu(nil, nil, self.frame);
 	end
 end
 
