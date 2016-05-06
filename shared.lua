@@ -217,7 +217,7 @@ ns.tooltipModifiers = {
 ns.tooltipChkOnShowModifier = function(bool)
 	local modifier = Broker_EverythingDB.ttModifierKey1;
 	if (modifier~="NONE") then
-		modifier = (ns.tooltipModifiers[modifier]) and _g["Is"..ns.tooltipModifiers[modifier].f.."KeyDown"]();
+		modifier = (ns.tooltipModifiers[modifier]) and _G["Is"..ns.tooltipModifiers[modifier].f.."KeyDown"]();
 		if (bool) then
 			return modifier;
 		else
