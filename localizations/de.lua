@@ -82,7 +82,7 @@ if LOCALE_deDE then
 	L["Broker to show count of quests in your questlog and quest titles in tooltip."] = "Broker zur Anzeige der Anzahl an Quests im Questlog und von Questtiteln im Tooltip.";
 	L["Broker to show durability of your gear and estimated repair costs."] = "Broker zur Anzeige der Haltbarkeit deiner Ausrüstung und voraussichtlichen Reparaturkosten.";
 	L["Broker to show filled, total and free count of blag slots"] = "Broker zur Anzeige von vollen und leeren Taschenplätzen und der gesamten Taschenplätze";
-	L["Broker to show gold information. Shows gold amounts for characters on the same ns.realm and faction and the amount made or lost for the session."] = "Broker zur Anzeige von Goldinformationen. Zeigt die Goldmenge von Charakteren desselben Realms und Fraktion und die Einkünfte oder Verluste, die in dieser Sitzung gemacht wurden";
+	L["Broker to show gold information. Shows gold amounts for characters on the same realm and faction and the amount made or lost for the session."] = "Broker zur Anzeige von Goldinformationen. Zeigt die Goldmenge von Charakteren desselben Realms und Fraktion und die Einkünfte oder Verluste, die in dieser Sitzung gemacht wurden";
 	L["Broker to show guild information. Guild members currently online, MOTD, guild xp etc."] = "Broker zur Anzeige von Gildeninformationen, Gildenmitgliedern, die momentan online sind, Gildennachricht des Tages, Gildenerfahrung etc.";
 	L["Broker to show how much memory are consumed through your addons."] = "Broker zur Anzeige wie viel Speicher durch deine Addons verbraucht wird.";
 	L["Broker to show invitations"] = "Broker zur Anzeige von Einladungen";

@@ -51,9 +51,9 @@ if LOCALE_zhTW then
 	-- L["Automatic"] = "";
 	-- L["Automatic crap/junk selling on opening a mergant frame."] = "";
 	-- L["Automatic repair failed. Not enough money..."] = "";
-	-- L["Automaticly repair your equipment on opening a merchant with repair option."] = "";
-	-- L["Automaticly repaired with guild money"] = "";
-	-- L["Automaticly repaired with player money"] = "";
+	-- L["Automatically repair your equipment on opening a merchant with repair option."] = "";
+	-- L["Automatically repaired with guild money"] = "";
+	-- L["Automatically repaired with player money"] = "";
 	-- L["Available"] = "";
 	-- L["Available Sets:"] = "";
 	-- L["Available blueprints level 3"] = "";
@@ -82,7 +82,7 @@ if LOCALE_zhTW then
 	-- L["Broker to show count of quests in your questlog and quest titles in tooltip."] = "";
 	-- L["Broker to show durability of your gear and estimated repair costs."] = "";
 	-- L["Broker to show filled, total and free count of blag slots"] = "";
-	-- L["Broker to show gold information. Shows gold amounts for characters on the same ns.realm and faction and the amount made or lost for the session."] = "";
+	-- L["Broker to show gold information. Shows gold amounts for characters on the same realm and faction and the amount made or lost for the session."] = "";
 	-- L["Broker to show guild information. Guild members currently online, MOTD, guild xp etc."] = "";
 	-- L["Broker to show how much memory are consumed through your addons."] = "";
 	-- L["Broker to show invitations"] = "";
