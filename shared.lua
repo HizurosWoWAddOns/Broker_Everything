@@ -821,7 +821,7 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 
 	if(not opts)then opts={}; end
 	if(not opts.sep)then
-		if BrokerEverythingDB.separateThousands and LARGE_NUMBER_SEPERATOR=="." then
+		if Broker_EverythingDB.separateThousands and LARGE_NUMBER_SEPERATOR=="." then
 			opts.sep=" ";
 		else
 			opts.sep=".";
@@ -867,7 +867,7 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 		end
 
 		if(gold>0)then
-			if BrokerEverythingDB.separateThousands then
+			if Broker_EverythingDB.separateThousands then
 				gold = FormatLargeNumber(gold);
 			end
 			tinsert(t,1,ns.LC.color("gold",gold));
