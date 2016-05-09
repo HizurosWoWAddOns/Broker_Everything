@@ -91,6 +91,7 @@ ns.modules[name] = {
 		showSets = true,
 		showInventory = true,
 		showItemLevel = true,
+		showCurrentSet = true,
 	},
 	config_allowed = nil,
 	config = {
@@ -98,7 +99,8 @@ ns.modules[name] = {
 		{ type="separator" },
 		{ type="toggle", name="showSets",            label=L["Show Equipment sets"],            tooltip=L["Display a list of your equipment sets."]},
 		{ type="toggle", name="showInventory" ,      label=L["Show inventory"],                 tooltip=L["Display a list of currently equipped items."]},
-		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],        tooltip=L["Display your average item level on broker button"]},
+		{ type="toggle", name="showCurrentSet",      label=L["Show current set"],               tooltip=L["Display your current equipment set on broker button"], event="BE_DUMMY_EVENT"},
+		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],        tooltip=L["Display your average item level on broker button"], event="BE_DUMMY_EVENT"},
 	},
 	clickOptions = {
 		["1_open_character_info"] = {
@@ -240,24 +242,28 @@ ns.modules[name].onevent = function(self,event,arg1,...)
 	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName);
 	local icon,iconCoords,text = I[name].iconfile,{0,1,0,1},{};
 
-	local numEquipSets = GetNumEquipmentSets()
+	if Broker_EverythingDB[name].showCurrentSet then
+		local numEquipSets = GetNumEquipmentSets()
 
-	if numEquipSets >= 1 then 
-		for i = 1, GetNumEquipmentSets() do 
-			local equipName, iconFile, _, isEquipped, _, _, _, numMissing = GetEquipmentSetInfo(i)
-			local pending = (equipPending~=nil and C("orange",equipPending)) or false
-			if isEquipped then 
-				iconCoords = {0.05,0.95,0.05,0.95}
-				icon = iconFile;
-				tinsert(text,pending~=false and pending or equipName);
+		if numEquipSets >= 1 then 
+			for i = 1, GetNumEquipmentSets() do 
+				local equipName, iconFile, _, isEquipped, _, _, _, numMissing = GetEquipmentSetInfo(i)
+				local pending = (equipPending~=nil and C("orange",equipPending)) or false
+				if isEquipped then 
+					iconCoords = {0.05,0.95,0.05,0.95}
+					icon = iconFile;
+					tinsert(text,pending~=false and pending or equipName);
+				end
 			end
+			if(#text==0)then
+				--dataobj.icon = I(name).iconfile
+				tinsert(text,pending~=false and pending or C("red",L["Unknown Set"]));
+			end
+		else
+			tinsert(text,L["No sets found"]);
 		end
-		if(#text==0)then
-			--dataobj.icon = I(name).iconfile
-			tinsert(text,pending~=false and pending or C("red",L["Unknown Set"]));
-		end
-	else
-		tinsert(text,L["No sets found"]);
+	elseif pending~=false then
+		tinsert(text,pending);
 	end
 
 	if(Broker_EverythingDB[name].showItemLevel)then
@@ -266,7 +272,7 @@ ns.modules[name].onevent = function(self,event,arg1,...)
 
 	dataobj.iconCoords = iconCoords;
 	dataobj.icon = icon;
-	dataobj.text = table.concat(text,", ");
+	dataobj.text = #text>0 and table.concat(text,", ") or L[name];
 
 end
 
