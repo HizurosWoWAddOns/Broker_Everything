@@ -340,7 +340,6 @@ local build = {
 
 		e:SetScript("OnClick",function(self,button)
 			local data = self.data;
-
 			ns.EasyMenu.InitializeMenu();
 			for v,t in ns.pairsByKeys(data.values) do
 				ns.EasyMenu.addEntry({
@@ -350,9 +349,10 @@ local build = {
 						return (current==v);
 					end,
 					func = function(self)
-						self.Text:SetText(L[data.values[value]]);
-						panel:change(data.modName,data.name,value);
-						current = value;
+						e.Text:SetText(L[data.values[v]]);
+						panel:change(data.modName,data.name,v);
+						current = v;
+						ns.EasyMenu.RefreshAll(menu);
 					end
 				});
 			end
