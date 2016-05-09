@@ -14,7 +14,7 @@ local ldbName = name
 local ttName = name.."TT"
 L[name] = QUEST_LOG
 local tt = nil
-local ttColumns = 3
+local ttColumns = 4
 local quests,sum,url
 local urls = {
 	WoWHead = function(id)
@@ -129,6 +129,8 @@ local function questTooltip(tt)
 
 		tt:SetCell(l,cell,C(color,obj.levelStr)) cell=cell+1
 		tt:SetCell(l,cell,C(color,obj.title2 or obj.title)) cell=cell+1
+		tt:SetCell(l,cell,C(color,obj.type)) cell=cell+1
+
 		if obj.nolink~=true then
 			tt:SetLineScript(l,"OnMouseUp",function(self)
 				securecall("QuestMapFrame_OpenToQuestDetails",select(8, GetQuestLogTitle(obj.index)));
@@ -170,7 +172,7 @@ local function questTooltip(tt)
 
 	if #quests["fail"]~=0 then
 		tt:AddSeparator(4,0,0,0,0)
-		addLine({levelStr=C("red",L["Level"]),title=C("red",L["Failed quests"]),questId=C("red",L["QuestId"]),share=false,nolink=true})
+		addLine({levelStr=C("red",L["Level"]),title=C("red",L["Failed quests"]),type=C("red",L["Quest type"]),questId=C("red",L["QuestId"]),share=false,nolink=true})
 		tt:AddSeparator()
 		for i,v in ipairs(quests["fail"]) do
 			GroupQuestCount=GroupQuestCount+addLine(v)
@@ -179,7 +181,7 @@ local function questTooltip(tt)
 
 	if #quests["active"]~=0 then
 		tt:AddSeparator(4,0,0,0,0)
-		addLine({levelStr=C("ltyellow",L["Level"]),title=C("ltyellow",L["Active quests"]),questId=C("ltyellow",L["QuestId"]),share=false,nolink=true})
+		addLine({levelStr=C("ltyellow",L["Level"]),title=C("ltyellow",L["Active quests"]),type=C("ltyellow",L["Quest type"]),questId=C("ltyellow",L["QuestId"]),share=false,nolink=true})
 		tt:AddSeparator()
 		for i,v in ipairs(quests["active"]) do
 			GroupQuestCount=GroupQuestCount+addLine(v)
@@ -188,7 +190,7 @@ local function questTooltip(tt)
 
 	if #quests["complete"]~=0 then
 		tt:AddSeparator(4,0,0,0,0)
-		addLine({levelStr=C("ltblue",L["Level"]),title=C("ltblue",L["Completed quests"]),questId=C("ltblue",L["QuestId"]),share=false,nolink=true})
+		addLine({levelStr=C("ltblue",L["Level"]),title=C("ltblue",L["Completed quests"]),type=C("ltblue",L["Quest type"]),questId=C("ltblue",L["QuestId"]),share=false,nolink=true})
 		tt:AddSeparator()
 		for i,v in ipairs(quests["complete"]) do
 			GroupQuestCount=GroupQuestCount+addLine(v)
@@ -226,11 +228,13 @@ ns.modules[name].onevent = function(self,event,msg)
 				if (not isHeader) then
 					local diff = GetQuestDifficultyColor(level)
 					local s = (isComplete==-1 and "fail") or (isComplete==1 and "complete") or "active"
+					local _, qType = GetQuestTagInfo(questID)
 					table.insert(quests[s],{
 						level = level,
 						levelStr = level.." "..(shortTags[questTag] or "")..(questTag==GROUP and suggestedGroup>0 and suggestedGroup or "")..(isDaily~=nil and "*" or ""),
 						title = questTitle,
 						share = GetQuestLogPushable(index),
+						type = qType or " ",
 						questId = questID,
 						index = index,
 						color = diff
@@ -244,11 +248,13 @@ ns.modules[name].onevent = function(self,event,msg)
 				if (not isHeader) then
 					local diff = GetQuestDifficultyColor(level)
 					local s = (isComplete==-1 and "fail") or (isComplete==1 and "complete") or "active"
+					local _, qType = GetQuestTagInfo(questID)
 					table.insert(quests[s],{
 						level = level,
 						levelStr = level.." "..(shortTags[questTag] or "")..(suggestedGroup>0 and suggestedGroup or "")..(isDaily==true and "*" or ""),
 						title = questTitle,
 						share = GetQuestLogPushable(index),
+						type = qType or " ",
 						questId = questID,
 						index = index,
 						color = diff
@@ -276,7 +282,7 @@ ns.modules[name].onenter = function(self)
 		ttColumns = 4
 	end
 
-	tt = ns.LQT:Acquire(ttName, ttColumns,"LEFT","LEFT","RIGHT","RIGHT")
+	tt = ns.LQT:Acquire(ttName, ttColumns,"LEFT","LEFT","LEFT","CENTER")
 	questTooltip(tt)
 	ns.createTooltip(self,tt);
 end
