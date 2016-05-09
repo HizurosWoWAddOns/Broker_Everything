@@ -1166,6 +1166,14 @@ do
 		UIDropDownMenu_Initialize(self.frame, EasyMenu_Initialize);
 		ToggleDropDownMenu(nil, nil, self.frame);
 	end
+
+	self.Refresh = function(level)
+		UIDropDownMenu_Refresh(self.frame,nil,level);
+	end
+
+	self.RefreshAll = function()
+		UIDropDownMenu_RefreshAll(self.frame);
+	end
 end
 
 
