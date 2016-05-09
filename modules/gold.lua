@@ -26,7 +26,7 @@ I[name] = {iconfile="Interface\\Minimap\\TRACKING\\Auctioneer",coords={0.05,0.95
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["Broker to show gold information. Shows gold amounts for characters on the same ns.realm and faction and the amount made or lost for the session."]
+local desc = L["Broker to show gold information. Shows gold amounts for characters on the same realm and faction and the amount made or lost for the session."]
 ns.modules[name] = {
 	desc = desc,
 	events = {
