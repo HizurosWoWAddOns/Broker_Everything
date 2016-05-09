@@ -40,7 +40,7 @@ ns.modules[name] = {
 	config_defaults = {
 		goldColor = nil,
 		showAllRealms = true,
-		showAllFactions = true
+		showAllFactions = true,
 	},
 	config_allowed = {},
 	config = {

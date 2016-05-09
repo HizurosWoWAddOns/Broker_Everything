@@ -195,7 +195,14 @@ local function getTooltip(tt)
 
 	if (UnitLevel("player")<MAX_PLAYER_LEVEL) then
 		tt:AddSeparator();
-		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE),"",C("white",("(%d/%d)"):format(data.cur,data.max)));
+
+		local c,m = data.cur,data.max;
+		if(Broker_EverythingDB.separateThousands)then
+			c = FormatLargeNumber(c);
+			m = FormatLargeNumber(m);
+		end
+
+		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE),"",C("white",("(%s/%s)"):format(c,m)));
 		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE.." ("..L["Percent"]..")"), "",data.percent);
 		tt:AddLine(C("ltyellow",GARRISON_FOLLOWER_XP_STRING),"",C("white",data.need));
 		if (data.restStr) then
@@ -245,10 +252,15 @@ local function getTooltip(tt)
 			if( (name_realm:match(ns.realm) or allRealms) and (name_realm~=ns.player.name_realm) and v.xp~=nil and not (Broker_EverythingDB[name].showNonMaxLevelOnly and v.level==MAX_PLAYER_LEVEL) )then
 				local Name,Realm = strsplit("-",name_realm);
 				Realm = allRealms and " "..C("dkyellow","- "..ns.scm(Realm)) or "";
+				local c,m = v.xp.cur,v.xp.max;
+				if(Broker_EverythingDB.separateThousands)then
+					c = FormatLargeNumber(c);
+					m = FormatLargeNumber(m);
+				end
 				local l = tt:AddLine(
 					("(%d) %s %s"):format(v.level,C(v.class,ns.scm(Name))..Realm, v.faction and "|TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or ""),
 					("%s "..C("cyan","%s")):format(v.xp.percent or 0,v.xp.restStr or "> ?%"),
-					("(%d/%d)"):format(v.xp.cur,v.xp.max)
+					("(%s/%s)"):format(c,m)
 				);
 				tt:SetLineScript(l,"OnMouseUp",function(self,button) be_character_cache[name_realm].xp = nil; getTooltip(tt); end);
 				if (v.xp.bonus and #v.xp.bonus>0) then
@@ -351,7 +363,12 @@ ns.modules[name].onevent = function(self,event,msg)
 	elseif Broker_EverythingDB[name].display == "1" then
 		dataobj.text = data.percent;
 	elseif Broker_EverythingDB[name].display == "2" then
-		dataobj.text = data.cur.."/"..data.max;
+		local c,m = data.cur,data.max;
+		if(Broker_EverythingDB.separateThousands)then
+			c = FormatLargeNumber(c);
+			m = FormatLargeNumber(m);
+		end
+		dataobj.text = c.."/"..m;
 	elseif Broker_EverythingDB[name].display == "3" then
 		dataobj.text = data.need;
 	elseif Broker_EverythingDB[name].display == "4" then

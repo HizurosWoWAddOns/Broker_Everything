@@ -111,6 +111,10 @@ local function createTooltip()
 
 	for i,v in ipairs(channels) do
 		local channel, header, collapsed, channelNumber, count, active, category = unpack(v);
+		if(Broker_EverythingDB.separateThousands)then
+			count = FormatLargeNumber(count);
+		end
+
 		if(header)then
 			tt:AddSeparator(4,0,0,0,0);
 			local l=tt:AddLine(C("ltblue",channel));
@@ -185,6 +189,9 @@ ns.modules[name].onupdate = function(self,elapsed)
 				local color = {.5,.5,.5};
 				if(v.color and v[6])then
 					color = v.color;
+				end
+				if(Broker_EverythingDB.separateThousands)then
+					v[5] = FormatLargeNumber(v[5]);
 				end
 				tinsert(txt,C(color,v[5] or 0));
 			end

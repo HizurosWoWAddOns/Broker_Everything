@@ -90,7 +90,7 @@ ns.modules[name] = {
 		dateFormat = "%Y-%m-%d %H:%M",
 		showDiscount = true,
 		lowestItem = true,
-		chatRepairInfo = false
+		chatRepairInfo = false,
 	},
 	config_allowed = {
 		inBroker = {["percent"]=true,["costs"]=true,["costs/percent"]=true,["percent/costs"]=true},

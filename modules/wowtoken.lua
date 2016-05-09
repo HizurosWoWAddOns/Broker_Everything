@@ -36,7 +36,7 @@ ns.modules[name] = {
 	updateinterval = 120, -- false or integer
 	config_defaults = {
 		diff=true,
-		history=true
+		history=true,
 	},
 	config_allowed = {},
 	config = {

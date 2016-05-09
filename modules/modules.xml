@@ -36,6 +36,7 @@
 	<Script file="speed.lua"/>
 	<Script file="stuff.lua"/>
 	<Script file="surprise.lua"/>
+	<Script file="tanaanjungle.lua"/>
 	<Script file="tracking.lua"/>
 	<Script file="volume.lua"/>
 	<Script file="wowtoken.lua"/>

@@ -649,6 +649,8 @@ end
 -- ns.modules[name3].onmousewheel = function(self,direction) end
 
 ns.modules[name0].onupdate = function(self)
+	if not (Broker_EverythingDB[name1].enabled or Broker_EverythingDB[name2].enabled or Broker_EverythingDB[name3].enabled) then return end
+
 	gpsLoc.zone1 = zone(name1)
 	gpsLoc.zone3 = zone(name3)
 	gpsLoc.pvp, gpsLoc.color = zoneColor()
