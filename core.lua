@@ -44,6 +44,7 @@ ns.coreOptionDefaults = {
 	goldHideCopper = false,
 	goldHideSilver = false,
 	goldHideLowerZeros = false,
+	separateThousands = true
 };
 
 ns.coreOptions = { -- option panel builder table
@@ -66,6 +67,7 @@ ns.coreOptions = { -- option panel builder table
 	{type="toggle", name="goldHideCopper",     label=L["Hide copper"], tooltip=L["Hide copper values of your money"]},
 	{type="toggle", name="goldHideSilver",     label=L["Hide silver"], tooltip=L["Hide copper and silver values of your money"]},
 	{type="toggle", name="goldHideLowerZeros", label=L["Hide lower zeros"], tooltip=L["Hide lower zero values of your money"]},
+	{type="toggle", name="separateThousands",  label=L["Separate thousands"], tooltip=L["Separate thousands on displayed gold and other numeric values"]},
 
 	{type="separator", alpha=0 },
 
