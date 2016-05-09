@@ -52,7 +52,8 @@ ns.modules[name] = {
 		subTTposition = "AUTO",
 		currenciesInTitle = {false,false,false,false},
 		favCurrencies = {},
-		favMode=false
+		favMode=false,
+		spacer=0,
 	},
 	config_allowed = {
 		subTTposition = {["AUTO"]=true,["TOP"]=true,["LEFT"]=true,["RIGHT"]=true,["BOTTOM"]=true}
@@ -71,7 +72,14 @@ ns.modules[name] = {
 			},
 			default = "BOTTOM"
 		},
-		{ type="toggle", name="favMode", label=L["Favorite mode"], tooltip=L["Display as favorite selected currencies only."], disabled=true }
+		{ type="toggle", name="favMode", label=L["Favorite mode"], tooltip=L["Display as favorite selected currencies only."], disabled=true },
+		{ type="slider", name="spacer",  label=L["Space between currencies"], tooltip=L["Add more space between displayed currencies on broker button"],
+			min			= 0,
+			max			= 10,
+			default		= 0,
+			format		= "%d",
+			event = "BE_DUMMY_EVENT"
+		},
 	},
 	clickOptions = {
 		["1_open_character_info"] = {
@@ -141,11 +149,15 @@ local function collectData() -- collect currency data
 			isUnused = isUnused,
 			isExpanded = expanded,
 			count = count,
+			countStr = count,
 			maxCount = currencyId~=nil and currency.total[currencyId] or false,
 			maxWeekly = currencyId~=nil and currency.weekly[currencyId] or false,
 			icon = icon
 		}
 
+		if (Broker_EverythingDB.separateThousands) then
+			currencies[i].countStr = FormatLargeNumber(count);
+		end
 		if (itemname) then
 			currenciesName2Id[itemname] = i
 		end
@@ -174,7 +186,7 @@ local function updateTitle()
 		if (v) and (currenciesName2Id[v]~=nil) and (currencies[currenciesName2Id[v]]~=nil) then
 			local d = currencies[currenciesName2Id[v]]
 			if (not d.isUnused) and (d.icon) then
-				table.insert(title, d.count .. "|T" .. d.icon .. ":0|t")
+				table.insert(title, d.countStr .. "|T" .. d.icon .. ":0|t")
 			end
 		end
 	end
@@ -182,7 +194,11 @@ local function updateTitle()
 	if #title==0 then
 		obj.text = L[name]
 	else
-		obj.text = table.concat(title," ")
+		local space = " ";
+		if Broker_EverythingDB[name].spacer>0 then
+			space = strrep(" ",Broker_EverythingDB[name].spacer);
+		end
+		obj.text = table.concat(title,space)
 	end
 end
 
@@ -355,7 +371,7 @@ ns.modules[name].ontooltip = function(tt)
 					end
 				end
 			elseif (v.isExpanded) then
-				local line, column = tt:AddLine(C("ltyellow",v.name),v.count.."  |T"..v.icon..":14:14:0:0:64:64:4:56:4:56|t")
+				local line, column = tt:AddLine(C("ltyellow",v.name),v.countStr.."  |T"..v.icon..":14:14:0:0:64:64:4:56:4:56|t")
 				local lineObj = tt.lines[line]
 				lineObj.currencyIndex = i
 
