@@ -14,7 +14,7 @@ local ldbName = name
 local ttName = name.."TT"
 L[name] = QUEST_LOG
 local tt = nil
-local ttColumns = 4
+local ttColumns = 5
 local quests,sum,url
 local urls = {
 	WoWHead = function(id)
@@ -278,11 +278,7 @@ end
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 
-	if Broker_EverythingDB[name].showQuestIds then
-		ttColumns = 4
-	end
-
-	tt = ns.LQT:Acquire(ttName, ttColumns,"LEFT","LEFT","LEFT","CENTER")
+	tt = ns.LQT:Acquire(ttName, ttColumns,"LEFT","LEFT","LEFT","CENTER","LEFT")
 	questTooltip(tt)
 	ns.createTooltip(self,tt);
 end
