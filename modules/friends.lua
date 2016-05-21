@@ -33,9 +33,8 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\friends"}; --IconNam
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["Broker to show you which friends are online."]
 ns.modules[name] = {
-	desc = desc,
+	desc = L["Broker to show you which friends are online."],
 	events = {
 		"BATTLETAG_INVITE_SHOW",
 		"BN_BLOCK_LIST_UPDATED",
@@ -186,6 +185,7 @@ local function createTooltip(tt)
 	local presenceName,battleTag,isBattleTagPresence,isOnline,isAFK,isDND,noteText = 2,3,4,8,10,11,13; -- BNGetFriendInfo
 	local toonName,client,realmName,faction,class,zoneName,level,gameText,broadcastText,broadcastTime,toonID = 2,3,4,6,8,10,11,12,13,14,16; -- BNGetFriendToonInfo (WoD 6.2.3) / BNGetFriendGameAccountInfo (WoD 6.2.4)
 	local fi,nt,ti,l,c;
+	local visible = {};
 	if (friendsOnline>0) then
 		for i=1, numFriends do
 			if BNGetNumFriendGameAccounts then
@@ -206,7 +206,10 @@ local function createTooltip(tt)
 					else
 						ti = {BNGetFriendToonInfo(i, I)}; -- WoD 6.2.3
 					end
-					if (nt>1 and ti[client]~="App") or nt==1 then
+					if visible[bnName..ti[client]..ti[zoneName]] then
+						-- filter it...
+					elseif (nt>1 and ti[client]~="App") or nt==1 then
+						visible[bnName..ti[client]..ti[zoneName]] = true;
 						if (not ti[toonName]) or (ti[client]=="Hero") then
 							ti[toonName] = strsplit("#",fi[battleTag]);
 						end 
@@ -280,7 +283,10 @@ local function createTooltip(tt)
 		local l,c,v,s,n,_;
 		for i=1, numChars do
 			v = {GetFriendInfo(i)};
-			if (v[charName]) and (v[connected]) then
+			if visible[ns.realm..v[charName]..v[area]] then
+				-- filter it...
+			elseif (v[charName]) and (v[connected]) then
+				visible[ns.realm..v[charName]..v[area]] = true;
 				s = ns.realm;
 				if (v[charName]:find("-")) then
 					n,s = strsplit("-",v[charName]);
