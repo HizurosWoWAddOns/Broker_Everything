@@ -19,7 +19,7 @@ local guild, player, members, membersName2Index, mobile, tradeskills, applicants
 local doMembersUpdate, doTradeskillsUpdate, doApplicantsUpdate, doUpdateTooltip = false,false,false,false;
 local gName, gDesc, gRealm, gRealmNoSpacer, gMotD, gNumMembers, gNumMembersOnline, gNumMobile, gNumApplicants = 1,2,3,4,5,6,7,8,9;
 local pStanding, pStandingText, pStandingMin, pStandingMax, pStandingValue = 1,2,3,4,5;
-local mFullName, mName, mRealm, mRank, mRankIndex, mLevel, mClassLocale, mZone, mNote, mOfficerNote, mOnline, mIsAway, mClassFile, mAchievementPoints, mAchievementRank, mIsMobile, mCanSoR, mStanding, mStandingText = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19;
+local mFullName, mName, mRealm, mRank, mRankIndex, mLevel, mClassLocale, mZone, mNote, mOfficerNote, mOnline, mIsAway, mClassFile, mAchievementPoints, mAchievementRank, mIsMobile, mCanSoR, mStanding, mStandingText,mIsMobileClosed = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20;
 local tsName, tsIcon, tsValue, tsID = 1,2,3,4;
 local app_index, app_name, app_realm, app_level, app_class, app_bQuest, app_bDungeon, app_bRaid, app_bPvP, app_bRP, app_bWeekdays, app_bWeekends, app_bTank, app_bHealer, app_bDamage, app_comment, app_timeSince, app_timeLeft = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18; -- applicants table entry indexes
 
@@ -136,6 +136,9 @@ local function updateGuild()
 	tmp[gNumMembers], _, tmp[gNumMembersOnline] = GetNumGuildMembers();
 	tmp[gNumApplicants] = GetNumGuildApplicants();
 	tmp[gNumMobile] = 0;
+	if tmp[gNumApplicants]>0 then
+		doApplicantsUpdate = true;
+	end
 	if guild[gNumMembers]~=tmp[gNumMembers] then
 		doTradeskillsUpdate = true;
 	end
@@ -153,6 +156,10 @@ local function updateMembers()
 		m[mName], m[mRealm] = strsplit("-",m[mFullName]);
 		m[mStandingText] = _G["FACTION_STANDING_LABEL"..m[mStanding]];
 		if m[mIsMobile] then
+			if not m[mOnline] then
+				m[mIsMobileClosed]=true;
+			end
+			m[mOnline] = true;
 			mobile[m[mName]] = true;
 			guild[gNumMobile] = guild[gNumMobile]+1;
 		end
@@ -269,6 +276,7 @@ end
 
 local function tooltipAddLine(v,me)
 	if not (tt and tt.key and tt.key==ttName) then return end
+
 	local status = ( (v[mIsAway]==1) and C("gold","[AFK] ") ) or ( (v[mIsAway]==2) and C("ltred","[DND] ") ) or "";
 	local realm = "";
 	if guild[gRealmNoSpacer]~=v[mRealm] then
@@ -295,7 +303,7 @@ local function tooltipAddLine(v,me)
 	local l=tt:AddLine(
 		v[mLevel],
 		C(v[mClassFile],ns.scm(v[mName]) .. realm),
-		(db.showZone) and v[mZone] or "", -- [3]
+		(db.showZone) and v[mIsMobile] and C("cyan",L["MobileChat"])..(v[mIsMobileClosed] and " "..C("orange",L["(App closed)"]) or "") or v[mZone] or "", -- [3]
 		(db.showNotes) and ns.scm(v[mNote]) or "", -- [4]
 		(db.showONotes) and ns.scm(v[mOfficerNote]) or "", -- [5]
 		(db.showRank) and ns.scm(v[mRank]) or "", -- [6]
@@ -377,9 +385,9 @@ local function createTooltip(self, tt)
 	end
 
 	if (db.showApplicants) and (guild[gNumApplicants]>0) then
+
 		local line,column = tt:AddLine(C("orange",LEVEL),C("orange",L["Applicant"]),C("orange",L["Roles"]),C("orange",RAID_INSTANCE_EXPIRES_EXPIRED),C("orange",COMMENT));
 		tt:AddSeparator();
-
 
 		for i, a in ipairs(applicants) do
 			if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
@@ -444,13 +452,14 @@ local function createTooltip(self, tt)
 	-- table.sort(members,function() end); -- idea for later maybe ^_^
 	for i,v in ipairs(members)do
 		if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
-		if (v[mOnline] and (not v[mIsMobile]) or (db.showMobileChatter and v[mIsMobile] and not db.splitTables)) then
+		if v[mOnline] and ((not v[mIsMobile]) or (db.showMobileChatter and v[mIsMobile] and not db.splitTables)) then
 			tooltipAddLine(v);
 		end
 	end
 
-	if db.showMobileChatter and guild[gNumMobile]>0 then
-		tt:AddSeparator(4,0,0,0,0);
+	if db.showMobileChatter and db.splitTables and guild[gNumMobile]>0 then
+		--tt:AddSeparator(4,0,0,0,0);
+		tt:AddSeparator();
 		for i,v in ipairs(members)do
 			if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
 			if v[mOnline] and v[mIsMobile] then
@@ -548,7 +557,6 @@ ns.modules[name].onevent = function(self,event,msg,...)
 	elseif event=="GUILD_ROSTER_UPDATE" or event=="LF_GUILD_RECRUITS_UPDATED" or event=="BE_DUMMY_EVENT" or (event=="CHAT_MSG_SYSTEM" and (msg:find(off) or msg:find(on))) then
 		doGuildUpdate = true;
 		doMembersUpdate = true;
-		doApplicantsUpdate = false;
 	elseif event=="GUILD_TRADESKILL_UPDATE" then
 		doTradeskillsUpdate = true;
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
