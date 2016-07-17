@@ -10,11 +10,11 @@ local _G = _G
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Volume" -- L["Volume"]
+local name = "Volume" -- VOLUME
 local ldbName = name
 local tt,createMenu,updateBrokerButton
 local ttName = name.."TT"
-local ttColumns = 2
+local ttColumns,ttParent = 2
 local icon = "Interface\\AddOns\\"..addon.."\\media\\volume_"
 local VIDEO_VOLUME_TITLE = L["Video Volume"];
 local getSoundHardware,setSoundHardware
@@ -52,9 +52,8 @@ I[name..'_100']  = {iconfile=icon.."100"}	--IconName::Volume_100--
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["Change Volumes and toggle some audio options."]
 ns.modules[name] = {
-	desc = desc,
+	desc = L["Broker to show current volume and in tooltip all changable audio options"],
 	icon_suffix = "_100",
 	events = {
 		"ADDON_LOADED"
@@ -76,36 +75,36 @@ ns.modules[name] = {
 	},
 	clickOptions = {
 		["1_louder"] = {
-			cfg_label = "Louter",
-			cfg_desc = "make volume louter",
+			cfg_label = "Louter", -- L["Louter"]
+			cfg_desc = "make volume louter", -- L["make volume louter"]
 			cfg_default = "_LEFT",
 			hint = "Louder",
 			func = function(self,button)
 				local _mod=name;
 				if volume.master == 1 then return end
-				volume.master = volume.master + (Broker_EverythingDB[name].steps / 100)
+				volume.master = volume.master + (ns.profile[name].steps / 100)
 				if volume.master > 1 then volume.master = 1 elseif volume.master < 0 then volume.master = 0 end
 				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master)
 				updateBrokerButton(self)
 			end
 		},
 		["2_quieter"] = {
-			cfg_label = "Quieter",
-			cfg_desc = "make volume quieter",
+			cfg_label = "Quieter", -- L["Quieter"]
+			cfg_desc = "make volume quieter", -- L["make volume quieter"]
 			cfg_default = "_RIGHT",
 			hint = "Quieter",
 			func = function(self,button)
 				local _mod=name;
 				if volume.master == 0 then return end
-				volume.master = volume.master - (Broker_EverythingDB[name].steps / 100)
+				volume.master = volume.master - (ns.profile[name].steps / 100)
 				if volume.master > 1 then volume.master = 1 elseif volume.master < 0 then volume.master = 0 end
 				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master)
 				updateBrokerButton(self)
 			end
 		},
 		["3_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
 			cfg_default = "__NONE",
 			hint = "Open option menu",
 			func = function(self,button)
@@ -148,7 +147,7 @@ function updateBrokerButton()
 	end
 end
 
-local function volTooltip(tt)
+local function createTooltip(self, tt)
 	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
 	local l,c
 	tt:Clear()
@@ -157,10 +156,10 @@ local function volTooltip(tt)
 
 	local function percent(self,cvar,now,direction)
 		if (direction==-1 and now==0) or (direction==1 and now==1) then return end
-		local new = now + ((direction * Broker_EverythingDB[name].steps) / 100)
+		local new = now + ((direction * ns.profile[name].steps) / 100)
 		new = (new>1 and 1) or (new<0 and 0) or new
 		ns.SetCVar(cvar,new,cvar)
-		volTooltip(tt)
+		createTooltip(ttParent, tt)
 		updateBrokerButton(self)
 	end
 
@@ -188,7 +187,7 @@ local function volTooltip(tt)
 				tt:SetLineScript(l,"OnMouseUp",function(self, button)
 					ns.SetCVar(v.toggle,tostring(v.inv),v.toggle);
 					updateBrokerButton();
-					volTooltip(tt);
+					createTooltip(ttParent,tt);
 				end);
 			else
 				if v.depend~=nil and ( (v.depend[1]~=nil and vol[v.depend[1]].now==0) or (v.depend[2]~=nil and vol[v.depend[2]].now==0) ) then
@@ -198,7 +197,7 @@ local function volTooltip(tt)
 					color = "dkyellow"
 					disabled = "white";
 				end
-				tt:SetLineScript(l,"OnMouseUp",function(self, button) volTooltip(tt) end);
+				tt:SetLineScript(l,"OnMouseUp",function(self, button) createTooltip(ttParent,tt) end);
 			end
 
 			tt:SetCell(l,1,strrep(" ",3 * v.inset)..C(color,_G[v.locale]));
@@ -220,7 +219,7 @@ local function volTooltip(tt)
 			else
 				tt:SetCell(l,ttColumns,"           ")
 			end
-		elseif (v.special=="hardware") and (Broker_EverythingDB[name].listHardware) then
+		elseif (v.special=="hardware") and (ns.profile[name].listHardware) then
 			tt:AddSeparator(3,0,0,0,0)
 			tt:AddHeader(C("dkyellow",_G[v.locale])..(InCombatLockdown() and C("orange"," (disabled in combat)") or ""))
 			tt:AddSeparator()
@@ -243,7 +242,7 @@ local function volTooltip(tt)
 							ns.print("("..L[name]..")",L["Sorry, In combat lockdown."])
 						else
 							setSoundHardware(I)
-							volTooltip(tt)
+							createTooltip(ttParent,tt)
 							AudioOptionsFrame_AudioRestart()
 						end
 					end)
@@ -258,12 +257,13 @@ local function volTooltip(tt)
 		end
 	end
 
-	if Broker_EverythingDB.showHints then
+	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(5,0,0,0,0)
 		tt:AddLine(C("ltblue",L["Click"])..      " || "..C("green",L["On/Off"]));
 		tt:AddLine(C("ltblue",L["Mousewheel"]).. " || "..C("green",L["Louder"].."/"..L["Quieter"]));
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
+	ns.roundupTooltip(self,tt)
 end
 
 do
@@ -295,7 +295,7 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(self)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 	if self then
 		updateBrokerButton(self)
 	end
@@ -303,7 +303,7 @@ end
 
 ns.modules[name].onevent = function(self,event,msg)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],Broker_EverythingDB[name]);
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 end
 
@@ -314,10 +314,10 @@ end
 -- ns.modules[name].optionspanel = function(panel) end
 
 ns.modules[name].onmousewheel = function(self,direction)
-	if not Broker_EverythingDB[name].useWheel then return end
+	if not ns.profile[name].useWheel then return end
 	if (direction==-1 and volume.master == 0) or (direction==1 and volume.master == 1) then return end
 
-	volume.master = volume.master + (direction * Broker_EverythingDB[name].steps / 100)
+	volume.master = volume.master + (direction * ns.profile[name].steps / 100)
 	if volume.master > 1 then
 		volume.master = 1
 	elseif volume.master < 0 then
@@ -325,8 +325,10 @@ ns.modules[name].onmousewheel = function(self,direction)
 	end
 	local cvar = "Sound_MasterVolume"
 	ns.SetCVar(cvar,volume.master,cvar)
-	--BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master)
-	updateBrokerButton(self)
+	updateBrokerButton(self);
+	if tt and tt.key==ttName and tt:IsShown() then
+		createTooltip(false,tt);
+	end
 end
 
 
@@ -337,9 +339,9 @@ ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 
 	tt = ns.LQT:Acquire(ttName, 2, "LEFT", "RIGHT")
-	volTooltip(tt)
-	ns.createTooltip(self,tt)
 	ns.RegisterMouseWheel(self,ns.modules[name].onmousewheel)
+	ttParent = self
+	createTooltip(self, tt)
 end
 
 ns.modules[name].onleave = function(self)

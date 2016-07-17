@@ -10,9 +10,9 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Tanaan Jungle Dailies"; -- L["Tanaan Jungle Dailies"]
-local ldbName, ttName, ttColumns, tt, createMenu = name, name.."TT", 2;
+local ldbName, ttName, ttName2, ttColumns, ttColumns2, tt, tt2, createMenu = name, name.."TT",name.."TT2", 2, 2;
 --local ttName2, ttColumns2, tt2 = name.."TT2", 2;
-local try,dailiesReset,weekliesReset,namesCount,completed,numCompleted,names,questlog,numQuestlog = 6,0,0,0,{},{},{},{},{};
+local try,dailiesReset,weekliesReset,namesCount,namesNeed,completed,numCompleted,names,questlog,numQuestlog = 6,0,0,0,0,{},{},{},{},{};
 local dubs,elapse,update,updateTimeout = {},0,false,10;
 -- [<questId>] = <number> ( 1=bosses, 2=zone dailies, 3=hidden zone dailies, 4=bonus zone dailies, 5=random dailies, 6=weeklies )
 --[=[
@@ -100,16 +100,19 @@ I[name] = {iconfile="interface\\icons\\Achievement_Zone_Tanaanjungle", coords={.
 -- module variables for registration --
 ---------------------------------------
 ns.modules[name] = {
-	desc = L["Display a list of solved tanaan jungle bosses and dailys."],
+	desc = L["Broker to show a list of solved/solvable tanaan jungle bosses, dailys, weeklys and bonus zones"],
 	--icon_suffix = "",
 	events = {
 		"PLAYER_ENTERING_WORLD",
 		"PLAYER_REGEN_ENABLED",
-		"QUEST_LOG_UPDATE",
+		"QUEST_LOG_UPDATE"
 	},
 	updateinterval = false, -- 10
 	config_defaults = {
 		showQuestIDs = false,
+		showChars = true,
+		showAllRealms = true,
+		showAllFactions = true,
 		--showLatest = true,
 		--showCategory = true,
 		--showWatchlist = true,
@@ -120,7 +123,10 @@ ns.modules[name] = {
 	config = {
 		{ type="header", label=L[name], align="left", icon=true },
 		{ type="separator" },
-		{ type="toggle", name="showQuestIDs", label=L["Show QuestIDs"], tooltip=L["Show/Hide QuestIDs in tooltip"] }
+		{ type="toggle", name="showQuestIDs", label=L["Show QuestIDs"],   tooltip=L["Show/Hide QuestIDs in tooltip"] },
+		{ type="toggle", name="showChars",    label=L["Show characters"], tooltip=L["Show a list of your characters with count of ready and available targets in tooltip"] },
+		{ type="toggle", name="showAllRealms", label=L["Show all realms"], tooltip=L["Show characters from all realms in tooltip."] },
+		{ type="toggle", name="showAllFactions", label=L["Show all factions"], tooltip=L["Show characters from all factions in tooltip."] },
 	},
 	clickOptions = {
 		["1_open_questlog"] = {
@@ -171,95 +177,73 @@ local function updateResetTimes()
 	weekliesReset = dailiesReset - wday;
 end
 
+local function callbackLocaleNames(data)
+	if data.type=="quest" or data.type=="unit" then 
+		if type(data.lines[1])=="string" and strlen(data.lines[1])>0 then
+			if data.type=="unit" then
+				names[data.id2] = data.lines[1];
+			else
+				names[data.id] = data.lines[1];
+			end
+			namesCount = namesCount + 1;
+		end
+	end
+end
+
 local function updateLocaleNames()
 	local failed,tmp,c = false,{},0;
 	local locale=GetLocale();
 
-	if Broker_EverythingDB[name].localeFaction==nil then
-		Broker_EverythingDB[name].localeFaction={};
+	if Broker_Everything_DataDB.locale~=locale then
+		Broker_Everything_DataDB.locale=locale;
+		Broker_Everything_DataDB.localeNames={};
 	end
 
-	if Broker_EverythingDB[name].locale~=locale then
-		Broker_EverythingDB[name].localeNames=nil;
-		Broker_EverythingDB[name].localeFaction={};
-	end
-
-	if Broker_EverythingDB[name].localeNames then
-		if Broker_EverythingDB[name].localeFaction[ns.player.faction]==true then
-			names = Broker_EverythingDB[name].localeNames;
-			namesCount = 1;
-			return;
-		else
-			tmp = Broker_EverythingDB[name].localeNames;
-		end
-	end
+	names = Broker_Everything_DataDB.localeNames;
 
 	-- collect locale quest titles
 	for id,v in pairs(ids)do
-		if v~=1 then
-			local data,count = ns.GetLinkData("quest:"..id);
-			if count>0 and type(data[1])=="string" and strlen(data[1])>0 then
-				tmp[id] = data[1];
-				c=c+1;
+		if v~=1 and v~=3 then
+			if names[id]==nil then
+				ns.ScanTT.query({type="quest",id=id,level=100,callback=callbackLocaleNames});
 			else
-				failed=true;
+				namesCount = namesCount + 1;
 			end
+			namesNeed = namesNeed + 1;
 		end
 	end
 
 	-- collect locale npc names
 	for nID,qID in pairs(npcs)do
-		local data, count = ns.GetLinkData("unit:Creature-0-0-0-0-"..nID.."-0");
-		if count>0 and type(data[1])=="string" and strlen(data[1])>0 then
-			tmp[qID] = data[1];
-			c=c+1;
+		if names[qID]==nil then
+			ns.ScanTT.query({type="unit",id=nID,id2=qID,callback=callbackLocaleNames});
 		else
-			failed=true;
+			namesCount = namesCount + 1;
 		end
-	end
-
-	-- for slow connections
-	if failed and try>0 then
-		C_Timer.After(2,updateLocaleNames);
-		try = try - 1;
-		return
-	end
-
-	if not failed then
-		Broker_EverythingDB[name].locale=locale;
-		Broker_EverythingDB[name].localeNames = tmp;
-		Broker_EverythingDB[name].localeFaction[ns.player.faction]=true;
-		names = tmp;
-		namesCount = c;
-		Broker_EverythingDB[name].names=nil;
-		return
+		namesNeed = namesNeed + 1;
 	end
 end
 
 local function updateQuestStatus()
 	local t,c,nC,Q,cQ = time(),{},{},0,0;
-	--wipe(completed); wipe(numCompleted);
 	for id,v in pairs(ids)do
 		Q=Q+1;
-		if c[id]==nil then
-			c[id]=0;
-		end
-		if nC[v]==nil then
-			nC[v]=0;
-		end
+		if c[id]==nil then c[id]=0; end
+		if nC[v]==nil then nC[v]=0; end
 		local index = GetQuestLogIndexByID(id) or 0;
 		if IsQuestFlaggedCompleted(id)==true then
-			c[id]=t;
-			nC[v]=nC[v]+1;
-			cQ=cQ+1;
+			c[id]=t; nC[v]=nC[v]+1; cQ=cQ+1;
 		elseif index>0 then
 			questlog[id]=true;
 		end
 	end
 	if cQ<Q then
 		completed,numCompleted=c,nC;
-		be_character_cache[ns.player.name_realm].tanaanjungle.completed = c;
-		be_character_cache[ns.player.name_realm].tanaanjungle.questlog = questlog; --?
+		if Broker_Everything_CharacterDB[ns.player.name_realm].tanaanjungle==nil then
+			Broker_Everything_CharacterDB[ns.player.name_realm].tanaanjungle={};
+		end
+		Broker_Everything_CharacterDB[ns.player.name_realm].tanaanjungle.completed = c;
+		Broker_Everything_CharacterDB[ns.player.name_realm].tanaanjungle.questlog = questlog; --?
 
 		local bbt = {}; -- broker button text
 		for _,i in ipairs(typeOrder) do
@@ -274,7 +258,6 @@ local function updateQuestStatus()
 end
 
 local function listQuests(TT,questlog,completed,numCompleted)
-	local showIDs = Broker_EverythingDB[name].showQuestIDs;
 	for _,i in ipairs(typeOrder) do
 		local num=0;
 		TT:AddSeparator(4,0,0,0,0);
@@ -292,13 +275,13 @@ local function listQuests(TT,questlog,completed,numCompleted)
 						state = format("%s |cff00ccff(%d%%)|r",state,GetQuestProgressBarPercent(zone2hidden[id] or id));
 					end
 				elseif qType==1 or qType==4 or qType==6 then
-					color,state = "white",L["Available"];
+					color,state = "white",AVAILABLE;
 					if (i>=2 and i<=4) then
 						state = format("%s |cff00ccff(%d%%)|r",state,GetQuestProgressBarPercent(zone2hidden[id] or id));
 					end
 				end
 				if color then
-					TT:AddLine((showIDs and C("gray",id).." " or "") .. C("ltyellow",names[id]),C(color,state));
+					TT:AddLine((ns.profile[name].showQuestIDs and C("gray",id).." " or "") .. C("ltyellow",names[id]),C(color,state));
 					num=num+1;
 				end
 			end
@@ -310,57 +293,64 @@ local function listQuests(TT,questlog,completed,numCompleted)
 	end
 end
 
---[[
-local function getTooltip2(Class,Name,Realm,Data)
+local function createTooltip2(self,tt2,Class,Name,Realm,Data)
 	if (tt2) and (tt2.key) and (tt2.key~=ttName2) then return end -- don't override other LibQTip tooltips...
 	tt:Clear();
+	--[[
 	local l = tt:AddHeader();
 	tt:SetCell(l,1,C("dkyellow",L[name]) .." ".. C("orange",L["(Experimental)"]),nil,nil,ttColumns);
-
-	if(namesCount==0)then
-		tt:AddLine(L["Oops, i try to collect localized names.|nPlease try again later... :)"]);
-		return;
-	end
-
+	--]]
 	listQuests(tt2,{},Data.completed,Data.numCompleted);
 end
---]]
 
-local function getTooltip()
+local function createTooltip(self,tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
-	updateResetTimes();
 	tt:Clear();
 	local l = tt:AddHeader();
-	tt:SetCell(l,1,C("dkyellow",L[name]) .." ".. C("orange",L["(Experimental)"]),nil,nil,ttColumns);
+	tt:SetCell(l,1,C("dkyellow",L[name]),nil,nil,ttColumns);
 
-	if(namesCount==0)then
-		tt:AddLine(L["Oops, i try to collect localized names.|nPlease try again later... :)"]);
+	if(namesCount~=namesNeed)then
+		local l=tt:AddLine();
+		tt:SetCell(l,1,L["This module is waiting for some localized names."],nil,nil,2);
+		tt:AddLine(L["Count of data to collect:"],namesCount.." / "..namesNeed);
+		ns.roundupTooltip(self,tt);
 		return;
 	end
 
-	if IsShiftKeyDown() then
+	updateResetTimes();
+	updateQuestStatus();
+
+	if ns.profile[name].showChars then
 		tt:AddSeparator(4,0,0,0,0);
-		for i=1, #be_character_cache.order do
-			local v = be_character_cache[be_character_cache.order[i]];
-			local c,r = strsplit("-",be_character_cache.order[i]);
-			if v.level>=100 and v.tanaanjungle then
+		local l=tt:AddLine( C("ltblue", L["Characters"]) ); -- 1
+		tt:AddSeparator();
+		for i=1, #Broker_Everything_CharacterDB.order do
+			local name_realm = Broker_Everything_CharacterDB.order[i];
+			local v = Broker_Everything_CharacterDB[name_realm];
+			local c,r = strsplit("-",name_realm);
+			if (v.level>=100 and v.tanaanjungle) and not ((ns.profile[name].showAllRealms~=true and realm~=ns.realm) or (ns.profile[name].showAllFactions~=true and v.faction~=ns.player.faction)) then
 				local bbt = {}; -- broker button text
 				for _,i in ipairs(typeOrder) do
 					local num = 0;
-					for I,v in pairs(v.tanaanjungle.completed)do
-						if ids[I]==numIDTypes[i] and v>dailiesReset then
-							num=num+1;
+					if v.tanaanjungle.completed then
+						for I,v in pairs(v.tanaanjungle.completed)do
+							if ids[I]==numIDTypes[i] and v>dailiesReset then
+								num=num+1;
+							end
 						end
 					end
 					tinsert(bbt,C(colorIDTypes[i], num) .. "/" .. C(colorIDTypes[i], numIDTypes[i]));
 				end
-				tt:AddLine(C(v.class,ns.scm(c)),table.concat(bbt,", "));
+				local l=tt:AddLine(C(v.class,ns.scm(c)),table.concat(bbt,", "));
+				if(name_realm==ns.player.name_realm)then
+					tt:SetLineColor(l, 0.1, 0.3, 0.6);
+				end
 				--[[
 				tt:SetLineScript(l,"OnEnter",function(self)
 					tt2 = ns.LQT:Acquire(ttName2, ttColumns2, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT");
-					getTooltip2(v.class,c,r,v.tanaanjungle);
-					ns.createTooltip(self,tt2)
+					createTooltip2(self, tt2, v.class, c, r, v.tanaanjungle);
+					ns.roundupTooltip(self,tt2,nil,tt);
 				end);
 				tt:SetLineScript(l,"OnLeave",function(self)
 					if(tt2)then ns.hideTooltip(tt2,ttName2,true,true); end
@@ -368,17 +358,17 @@ local function getTooltip()
 				--]]
 			end
 		end
-	else
-		updateQuestStatus();
-		listQuests(tt,questlog,completed,numCompleted);
 	end
 
-	if Broker_EverythingDB.showHints then
+	listQuests(tt,questlog,completed,numCompleted);
+
+	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(3,0,0,0,0)
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 		local l=tt:AddLine();
 		tt:SetCell(l,1,C("copper",L["Hold shift"]).." || "..C("green",L["Show your other chars"]),nil,nil,ttColumns);
 	end
+	ns.roundupTooltip(self,tt);
 end
 
 
@@ -386,24 +376,25 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name;
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 end
 
 ns.modules[name].onevent = function(self,event,...)
 	if event=="PLAYER_ENTERING_WORLD" then
 		updateResetTimes();
 
-		if be_character_cache[ns.player.name_realm]==nil then
-			be_character_cache[ns.player.name_realm]={};
+		if Broker_Everything_CharacterDB[ns.player.name_realm]==nil then
+			Broker_Everything_CharacterDB[ns.player.name_realm]={};
 		end
 
-		be_character_cache[ns.player.name_realm].tanaanjungle = nil;
+		Broker_Everything_CharacterDB[ns.player.name_realm].tanaanjungle = nil;
 
-		if be_character_cache[ns.player.name_realm].tanaanjungle==nil then
-			be_character_cache[ns.player.name_realm].tanaanjungle={};
+		if Broker_Everything_CharacterDB[ns.player.name_realm].tanaanjungle==nil then
+			Broker_Everything_CharacterDB[ns.player.name_realm].tanaanjungle={};
 		end
 
 		C_Timer.After(3, updateLocaleNames);
+		self:UnregisterEvent(event);
 	elseif event=="PLAYER_REGEN_ENABLED" then
 		C_Timer.After(3, function()
 			elapse,update=0,true;
@@ -433,8 +424,7 @@ end
 
 ns.modules[name].onenter = function(self)
 	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT");
-	getTooltip(self,tt)
-	ns.createTooltip(self,tt)
+	createTooltip(self,tt);
 end
 
 ns.modules[name].onleave = function(self)

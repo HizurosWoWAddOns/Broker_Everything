@@ -57,7 +57,7 @@ local diffName = {
 I[name] = {iconfile=[[interface\icons\inv_misc_pocketwatch_02]],coords={0.05,0.95,0.05,0.95}} --IconName::IDs--
 
 ns.modules[name] = {
-	desc = L["Broker to show raid, dungeon and other lockout id's. (+World bosses)"],
+	desc = L["Broker to show locked raids, dungeons and world bosses"],
 	events = {},
 	updateinterval = nil, --10,
 	timeout = nil, --20,
@@ -72,7 +72,7 @@ ns.modules[name] = {
 --------------------------
 -- some local functions --
 --------------------------
-local function createTooltip()
+local function createTooltip(self, tt)
 	if not (tt~=nil and tt.key~=nil and tt.key==ttName) then return; end
 	local nothing = true;
 	local _,title = ns.DurationOrExpireDate(0,false,"Duration","Expire date");
@@ -122,7 +122,7 @@ local function createTooltip()
 				if (#data>0) then
 					local header = (diffName[diff]) and diffName[diff] or "Unknown type";
 					tt:AddSeparator(3,0,0,0,0);
-					tt:AddLine(C("ltblue",L[header]), C("ltblue",L["Type"]),C("ltblue",L["Bosses"]),C("ltblue",L[title]));
+					tt:AddLine(C("ltblue",L[header]), C("ltblue",TYPE),C("ltblue",L["Bosses"]),C("ltblue",L[title]));
 					tt:AddSeparator();
 					for i,v in ipairs(data) do
 						tt:AddLine(
@@ -141,7 +141,7 @@ local function createTooltip()
 		end
 		if nothing==true then
 			tt:AddLine("No IDs found...")
-		elseif (Broker_EverythingDB.showHints) then
+		elseif (ns.profile.GeneralOptions.showHints) then
 			tt:AddSeparator(3,0,0,0,0);
 			local l,c = tt:AddLine()
 			local _,_,mod = ns.DurationOrExpireDate();
@@ -149,6 +149,7 @@ local function createTooltip()
 			l,c = nil,nil;
 		end
 	end
+	ns.roundupTooltip(self, tt)
 end
 
 
@@ -156,7 +157,7 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(self)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 	if (self) then
 		local obj = ns.LDB:GetDataObjectByName(ldbName);
 		obj.text = L[name];
@@ -175,8 +176,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	tt = ns.LQT:Acquire(ttName, 4, "LEFT", "LEFT", "LEFT", "RIGHT")
-	createTooltip(tt)
-	ns.createTooltip(self, tt)
+	createTooltip(self, tt)
 end
 
 ns.modules[name].onleave = function(self)

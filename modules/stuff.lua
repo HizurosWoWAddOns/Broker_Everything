@@ -64,7 +64,7 @@ local function pushedTooltip(parent,id,msg)
 	if (tt) and (tt.key) and (tt.key==ttName) then ns.hideTooltip(tt,ttName,true); end
 	if (not tt2) or ((tt2) and (tt2.key) and (tt2.key~=tt2Name)) then
 		tt2 = ns.LQT:Acquire(tt2Name, 1, "LEFT");
-		ns.createTooltip(parent,tt2);
+		ns.roundupTooltip(parent,tt2);
 	end
 
 	tt2:Clear();
@@ -85,7 +85,7 @@ local function pushedTooltip(parent,id,msg)
 	end
 end
 
-local function createTooltip(tt)
+local function createTooltip(self, tt)
 	if (not tt.key) or (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local line, column
@@ -107,7 +107,7 @@ local function createTooltip(tt)
 	tt:SetLineScript(line, "OnEnter", function(self) tt:SetLineColor(line, 1,192/255, 90/255, 0.3) end )
 	tt:SetLineScript(line, "OnLeave", function(self) tt:SetLineColor(line, 0,0,0,0) end)
 	
-	line, column = tt:AddLine(L["Logout"])
+	line, column = tt:AddLine(LOGOUT)
 	tt:SetLineScript(line, "OnMouseUp", function(self) Logout() end)			
 	tt:SetLineScript(line, "OnEnter", function(self) tt:SetLineColor(line, 1,192/255, 90/255, 0.3) end )
 	tt:SetLineScript(line, "OnLeave", function(self) tt:SetLineColor(line, 0,0,0,0) end)
@@ -117,19 +117,20 @@ local function createTooltip(tt)
 	tt:SetLineScript(line, "OnEnter", function(self) tt:SetLineColor(line, 1,192/255, 90/255, 0.3) end )
 	tt:SetLineScript(line, "OnLeave", function(self) tt:SetLineColor(line, 0,0,0,0) end)
 	
-	if Broker_EverythingDB.showHints then
+	if ns.profile.GeneralOptions.showHints then
 		tt:AddLine(" ")
 		line, column = nil, nil
 		tt:AddLine(
-			C("copper",L["Left-click"]).." || "..C("green",L["Logout"])
+			C("copper",L["Left-click"]).." || "..C("green",LOGOUT)
 			.."|n"..
 			C("copper",L["Right-click"]).." || "..C("green",L["Quit game"])
---			.."|n"..
---			C("copper",L["Shift+Left-click"]).." || "..C("green",L["Switch window/fullscreen mode"])
+			--.."|n"..
+			--C("copper",L["Shift+Left-click"]).." || "..C("green",L["Switch window/fullscreen mode"])
 			.."|n"..
 			C("copper",L["Shift+Left-click"]).." || "..C("green",L["Reload UI"])
 		)
 	end
+	ns.roundupTooltip(self,tt);
 end
 
 ------------------------------------
@@ -137,7 +138,7 @@ end
 ------------------------------------
 
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 	if not obj then return end
 	obj = obj.obj or ns.LDB:GetDataObjectByName(ldbName)
 end
@@ -155,8 +156,7 @@ end
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.LQT:Acquire(ttName, 1, "LEFT");
-	createTooltip(tt)
-	ns.createTooltip(self,tt);
+	createTooltip(self, tt)
 end
 
 ns.modules[name].onleave = function(self)
@@ -167,7 +167,7 @@ ns.modules[name].onleave = function(self)
 end
 
 ns.modules[name].onclick = function(self,button)
-	if Broker_EverythingDB[name].disableOnClick then return end
+	if ns.profile[name].disableOnClick then return end
 	local shift = IsShiftKeyDown()
 
 	local _= function(id)

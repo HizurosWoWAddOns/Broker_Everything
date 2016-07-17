@@ -9,7 +9,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Tracking" -- L["Tracking"]
+local name = "Tracking" -- TRACKING
 local ldbName = name
 local tt = nil
 local GetNumTrackingTypes,GetTrackingInfo = GetNumTrackingTypes,GetTrackingInfo
@@ -38,9 +38,8 @@ I[name] = {iconfile="Interface\\minimap\\tracking\\none"}; --IconName::Tracking-
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["Broker to show what you are currently tracking. You can also change the tracking types from this broker."]
 ns.modules[name] = {
-	desc = desc,
+	desc = L["Broker to show current tracking list with option to change it"],
 	events = {
 		"MINIMAP_UPDATE_TRACKING",
 		"PLAYER_LOGIN",
@@ -91,7 +90,7 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
 ns.modules[name].onevent = function(self,event,msg)
@@ -99,7 +98,7 @@ ns.modules[name].onevent = function(self,event,msg)
 	local n = L[name]
 	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
 
-	if Broker_EverythingDB[name].displaySelection then
+	if ns.profile[name].displaySelection then
 		if numActive == 0 then 
 			n = "None"
 		else
@@ -110,7 +109,7 @@ ns.modules[name].onevent = function(self,event,msg)
 	end
 
 	if event == "BE_HIDE_TRACKING" then -- custom event on config changed
-		if Broker_EverythingDB[name].hideMinimapButton then
+		if ns.profile[name].hideMinimapButton then
 			ns.hideFrame("MiniMapTracking")
 		else
 			ns.unhideFrame("MiniMapTracking")
@@ -141,7 +140,7 @@ ns.modules[name].ontooltip = function(tt)
 		end
 	end
 
-	if Broker_EverythingDB.showHints then
+	if ns.profile.GeneralOptions.showHints then
 		tt:AddLine(" ")
 		tt:AddLine(C("copper",L["Click"]).." || "..C("green",L["Open tracking menu"]))
 	end
@@ -161,7 +160,7 @@ end
 -- ns.modules[name].ondblclick = function(self,button) end
 
 ns.modules[name].coexist = function()
-	if (not ns.coexist.found) and (Broker_EverythingDB[name].hideMinimapButton) then
+	if (not ns.coexist.found) and (ns.profile[name].hideMinimapButton) then
 		ns.hideFrame("MiniMapTracking");
 	end
 end

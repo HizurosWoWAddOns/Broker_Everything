@@ -10,48 +10,98 @@ local type,GetItemInfo=type,GetItemInfo;
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Archaeology" -- L["Archaeology"]
-L[name] = GetArchaeologyInfo()
-L["Fragments"] = ARCHAEOLOGY_RUNE_STONES;
-L["Races"] = RACES;
+local name = "Archaeology";
 local ldbName, ttName, ttColumns, tt = name, name.."TT", 5, nil
 local skill,createMenu
-local races = {};
+local tradeskill = {};
 local maxFragments = 200;
 local maxFragments250 = {[109585]=1,[108439]=1,[109584]=1};
-
-local race2currency = setmetatable({
-	-- added 4.0
-	Dwarf=384,		Troll=385,		Fossil=393,
-	NightElf=394,	Orc=397,		Draenei=398,
-	Vrykul=399,		Nerubian=400,	Tolvir=401,
-
-	-- added 5.0
-	Pandaren=676,	Mogu=677,		Mantid=754,
-
-	-- added 6.0
-	DraenorOrc=821,	Ogre=828,		Arakkoa=829,
-},{__call=function(t,a)
-	local icon,_=false;
-	if(t[a]~=nil)then
-		_,_,icon = GetCurrencyInfo(t[a]);
-	end
-	return type(icon)=="string" and icon or "interface\\icons\\inv_misc_questionmark";
-end})
-
-local QuestStarterItems = {
-	-- MoP Archeology
-	89174,89169,89182,89183,85477,89184,89185,89172,
-	89178,89171,89179,89170,89181,89176,89175,89173,
-	89209,89180,85557,85558,89209,95385,95388,95387,
-	95390,95389,95386,95384,95383,
-	-- WoD Archeology
-	114142,114144,114146,114148,114150,114152,114154,114156,
-	114158,114160,114162,114164,114166,114168,114170,114172,
-	114174,114176,114178,114182,114184,114186,114188,114208,
-	114209,114210,114211,114212,114213,114215,114216,114217,
-	114218,114219,114220,114221,114222,114223,114224,
+local raceIndex,raceCurrencyId,raceName,raceTexture,raceKeystoneItemID = 1,2,3,4,5;
+local raceFragmentsCollected,raceNumFragmentsRequired,raceFragmentsMax,raceArtifactName,raceArtifactIcon,raceKeystoneSlots = 6,7,8,9,10,11;
+local raceKeystoneIcon,raceKeystoneCount,raceKeystoneFragmentsValue,raceArtifactSolvable,raceFragmentsIcon = 12,13,14,15,16;
+local races = {
+	Azeroth		= {nil, true},
+	Dwarf		= {nil, 384},
+	Troll		= {nil, 385},
+	Fossil		= {nil, 393},
+	NightElf	= {nil, 394},
+	Tolvir		= {nil, 401},
+	Outland		= {nil, true},
+	Draenei		= {nil, 398},
+	Orc			= {nil, 397},
+	Northend	= {nil, true},
+	Vrykul		= {nil, 399},
+	Nerubian	= {nil, 400}, 
 };
+local racesOrder = {
+	"Azeroth", -- continent header
+	"Dwarf","Troll","Fossil","NightElf","Tolvir",
+	"Outland", -- continent header
+	"Draenei","Orc",
+	"Northend", -- continent header
+	"Vrykul","Nerubian"
+};
+local keystoneItem2race = {};
+--[[
+local QuestStarterItems,QuestStarterItemIds = {},{
+	[ 79872]=1,[ 79873]=1,[ 79874]=1,[ 79875]=1,[ 79876]=1,[ 79877]=1,[ 79878]=1,[ 79879]=1,[ 79880]=1,[ 79881]=1,[ 79882]=1,[ 79883]=1,
+	[ 79884]=1,[ 79885]=1,[ 79886]=1,[ 79887]=1,[ 79888]=1,[ 79889]=1,[ 79890]=1,[ 79891]=1,[ 79892]=1,[ 79893]=1,[ 85453]=1,[ 85477]=1,
+	[ 85533]=1,[ 85534]=1,[ 85557]=1,[ 85558]=1,[ 89145]=1,[ 89146]=1,[ 89147]=1,[ 89148]=1,[ 89149]=1,[ 89150]=1,[ 89151]=1,[ 89152]=1,
+	[ 89154]=1,[ 89155]=1,[ 89156]=1,[ 89157]=1,[ 89158]=1,[ 89159]=1,[ 89160]=1,[ 89161]=1,[ 89169]=1,[ 89170]=1,[ 89171]=1,[ 89172]=1,
+	[ 89173]=1,[ 89174]=1,[ 89175]=1,[ 89176]=1,[ 89178]=1,[ 89179]=1,[ 89180]=1,[ 89181]=1,[ 89182]=1,[ 89183]=1,[ 89184]=1,[ 89185]=1,
+	[ 89209]=1,[ 89587]=1,[ 89590]=1,[ 89660]=1,[ 89661]=1,[ 95351]=1,[ 95352]=1,[ 95353]=1,[ 95354]=1,[ 95355]=1,[ 95356]=1,[ 95357]=1,
+	[ 95358]=1,[ 95359]=1,[ 95360]=1,[ 95361]=1,[ 95362]=1,[ 95363]=1,[ 95364]=1,[ 95365]=1,[ 95366]=1,[ 95367]=1,[ 95368]=1,[ 95383]=1,
+	[ 95384]=1,[ 95385]=1,[ 95386]=1,[ 95387]=1,[ 95388]=1,[ 95389]=1,[ 95390]=1,[114117]=1,[114118]=1,[114119]=1,[114120]=1,[114121]=1,
+	[114122]=1,[114123]=1,[114124]=1,[114125]=1,[114126]=1,[114127]=1,[114128]=1,[114129]=1,[114130]=1,[114131]=1,[114132]=1,[114133]=1,
+	[114134]=1,[114135]=1,[114136]=1,[114137]=1,[114138]=1,[114139]=1,[114140]=1,[114141]=1,[114142]=1,[114143]=1,[114144]=1,[114145]=1,
+	[114146]=1,[114147]=1,[114148]=1,[114149]=1,[114150]=1,[114151]=1,[114152]=1,[114153]=1,[114154]=1,[114156]=1,[114157]=1,[114158]=1,
+	[114159]=1,[114160]=1,[114161]=1,[114162]=1,[114163]=1,[114164]=1,[114165]=1,[114166]=1,[114167]=1,[114168]=1,[114169]=1,[114170]=1,
+	[114171]=1,[114172]=1,[114173]=1,[114174]=1,[114175]=1,[114176]=1,[114177]=1,[114178]=1,[114179]=1,[114180]=1,[114181]=1,[114182]=1,
+	[114183]=1,[114184]=1,[114185]=1,[114186]=1,[114187]=1,[114188]=1,[114189]=1,[114191]=1,[114192]=1,[114193]=1,[114194]=1,[114195]=1,
+	[114196]=1,[114197]=1,[114198]=1,[114199]=1,[114200]=1,[114208]=1,[114209]=1,[114210]=1,[114211]=1,[114212]=1,[114213]=1,[114215]=1,
+	[114216]=1,[114217]=1,[114218]=1,[114219]=1,[114220]=1,[114221]=1,[114222]=1,[114223]=1,[114224]=1,[130882]=1,[130883]=1,[130884]=1,
+	[130885]=1,[130886]=1,[130887]=1,[130888]=1,[130889]=1,[130890]=1,[130891]=1,[130892]=1,[130893]=1,[130894]=1,[130895]=1,[130896]=1,
+	[130897]=1,[130898]=1,[130899]=1,[130900]=1,[130901]=1,[130902]=1,[130903]=1,[130904]=1,[130905]=1,[130906]=1,[130907]=1,[130908]=1,
+	[130909]=1,[130910]=1,[130911]=1
+};
+--]]
+local solvables = {};
+
+if ns.build>50000000 then -- MoP
+	races.Pandaria	= {nil, true};
+	races.Pandaren	= {nil, 676};
+	races.Mogu		= {nil, 677};
+	races.Mantid	= {nil, 754};
+	tinsert(racesOrder,"Pandaria"); -- continent header
+	tinsert(racesOrder,"Pandaren");
+	tinsert(racesOrder,"Mogu");
+	tinsert(racesOrder,"Mantid");
+end
+
+if ns.build>60000000 then -- WoD
+	races.Draenor		= {nil, true};
+	races.DraenorOrc	= {nil, 821};
+	races.Ogre			= {nil, 828};
+	races.Arakkoa		= {nil, 829};
+	tinsert(racesOrder,"Draenor"); -- continent header
+	tinsert(racesOrder,"DraenorOrc");
+	tinsert(racesOrder,"Ogre");
+	tinsert(racesOrder,"Arakkoa");
+end
+
+if ns.build>70000000 then -- Legion
+	races.Legion				= {nil, true};
+	races.HighborneNightElves	= {nil, 1172};
+	races.HighmountainTauren	= {nil, 1173};
+	races.Demons				= {nil, 1174};
+	tinsert(racesOrder,"Legion"); -- continent header
+	tinsert(racesOrder,"HighborneNightElves");
+	tinsert(racesOrder,"HighmountainTauren");
+	tinsert(racesOrder,"Demons");
+end
+
+if ns.build>80000000 then -- ?
+end
 
 
 -------------------------------------------
@@ -64,7 +114,7 @@ I[name] = {iconfile="INTERFACE\\ICONS\\trade_archaeology",coords={0.05,0.95,0.05
 -- module variables for registration --
 ---------------------------------------
 ns.modules[name] = {
-	desc = L["Broker to show your archaeology artifacts."],
+	desc = L["Broker to show archaeology factions with fragments, keystones and necessary amount of fragments to solve artifacts"],
 	--icon_suffix = "_Neutral",
 	events = {
 		"PLAYER_ENTERING_WORLD",
@@ -84,14 +134,14 @@ ns.modules[name] = {
 		subTTposition = {["AUTO"]=true,["TOP"]=true,["LEFT"]=true,["RIGHT"]=true,["BOTTOM"]=true}
 	},
 	config = {
-		{ type="header", label=L[name], align="left", icon=true },
+		{ type="header", label=PROFESSIONS_ARCHAEOLOGY, align="left", icon=true },
 		{ type="separator" },
 		{ type="toggle", name="continentOrder", label=L["Order by continent"], tooltip=L["Order archaeology races by continent"] }
 	},
 	clickOptions = {
 		["1_open_archaeology_frame"] = {
 			cfg_label = "Open archaeology frame", -- L["Open archaeology frame"]
-			cfg_desc = "open your bags", -- L["open your archaeology frame"]
+			cfg_desc = "open your archaeology frame", -- L["open your archaeology frame"]
 			cfg_default = "_LEFT",
 			hint = "Open archaeology frame", -- L["Open archaeology frame"]
 			func = function(self,button)
@@ -132,6 +182,112 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
+local function updateBroker()
+	local obj = ns.LDB:GetDataObjectByName(ldbName);
+	if(#solvables==1)then
+		obj.text = C("green",table.concat(solvables,", "));
+	elseif(#solvables>1)then
+		obj.text = C("green",solvables[1].." " ..L["and %d more"]:format(#solvables-1));
+	else
+		obj.text = PROFESSIONS_ARCHAEOLOGY;
+	end
+end
+
+local function updateRaceArtifact(t,...)
+	local ArtifactName,_,_,ArtifactIcon,_,KeystoneSlots = ...;
+	local icon = "|T%s:14:14:0:0:64:64:4:56:4:56|t";
+
+	if t[raceArtifactName]==nil and ArtifactName~=nil then
+		t[raceArtifactName],t[raceArtifactIcon],t[raceKeystoneSlots] = ArtifactName,ArtifactIcon,KeystoneSlots;
+		t[raceArtifactIcon] = icon:format(t[raceArtifactIcon]);
+
+		--[=[
+		local item = {GetItemInfo(t[raceArtifactName])};
+		if item[1] then
+			local id = tonumber(item[2]:match("item:(%d+)"));
+			if id~=nil then
+				QuestStarterItems[item[1]] = id;
+			end
+		end
+		--]=]
+
+		if(type(t[raceKeystoneItemID])=="number" and t[raceKeystoneItemID]>0) then
+			keystoneItem2race[t[raceKeystoneItemID]] = k;
+			t[raceKeystoneIcon] = icon:format(GetItemIcon(t[raceKeystoneItemID]) or "interface\\icons\\inv_misc_questionmark");
+			t[raceKeystoneCount] = GetItemCount(t[raceKeystoneItemID],true,true);
+		end
+
+		if(t[raceKeystoneSlots]>0)then
+			t[raceKeystoneFragmentsValue] = (t[raceKeystoneCount]<=t[raceKeystoneSlots] and t[raceKeystoneCount] or t[raceKeystoneSlots]) * 20;
+		end
+
+		if(t[raceFragmentsCollected]+t[raceKeystoneFragmentsValue]>=t[raceNumFragmentsRequired])then
+			t[raceArtifactSolvable]=true
+			tinsert(solvables,t[raceName]);
+		end
+	elseif ArtifactName~=nil then
+		t[raceKeystoneSlots] = KeystoneSlots;
+
+		t[raceKeystoneCount] = 0;
+		if(type(t[raceKeystoneItemID])=="number" and t[raceKeystoneItemID]>0) then
+			t[raceKeystoneCount] = GetItemCount(t[raceKeystoneItemID],true,true);
+		end
+
+		if(t[raceKeystoneSlots]>0)then
+			t[raceKeystoneFragmentsValue] = (t[raceKeystoneCount]<t[raceKeystoneSlots] and t[raceKeystoneCount] or t[raceKeystoneSlots]) * 20;
+		end
+
+		if(t[raceFragmentsCollected]+t[raceKeystoneFragmentsValue]>=t[raceNumFragmentsRequired])then
+			t[raceArtifactSolvable]=true
+			tinsert(solvables,t[raceName]);
+		end
+	end
+end
+
+local function updateRaces(firstUpdate)
+	wipe(solvables);
+	if firstUpdate then
+		local num = GetNumArchaeologyRaces();
+		local icon = "|T%s:14:14:0:0:64:64:4:56:4:56|t";
+		local icon2="|T%s:14:14:0:0:128:128:3:70:8:75|t";
+		local unknownHeader = true;
+		for i=1, num do
+			local info,iconFile,_ = {GetArchaeologyRaceInfo(i)};
+			local k=select(3,strsplit("-",info[2]));
+			local t = races[k];
+			if t==nil then
+				if unknownHeader then
+					tinsert(racesOrder,UNKNOWN);
+					races[UNKNOWN] = {nil, true};
+					unknownHeader = false;
+				end
+				tinsert(racesOrder,k);
+				races[k] = {nil, 0};
+				t=races[k];
+			end
+			t[raceIndex],t[raceKeystoneCount],t[raceKeystoneFragmentsValue],t[raceArtifactSolvable] = i,0,0,false;
+			t[raceName],t[raceTexture],t[raceKeystoneItemID],t[raceFragmentsCollected],t[raceNumFragmentsRequired],t[raceFragmentsMax] = unpack(info);
+			t[raceTexture] = icon2:format(t[raceTexture]);
+
+			
+			if t[raceCurrencyId]~=0 then
+				_,_,iconFile = GetCurrencyInfo(t[raceCurrencyId]);
+			end
+			t[raceFragmentsIcon] = icon:format(iconFile or "interface\\icons\\inv_misc_questionmark");
+
+			updateRaceArtifact(t,GetActiveArtifactByRace(i));
+		end
+	else
+		for k, t in pairs(races)do
+			local _;
+			t[raceKeystoneFragmentsValue] = 0;
+			_, _, _, t[raceFragmentsCollected], t[raceNumFragmentsRequired] = GetArchaeologyRaceInfo(t[raceIndex]);
+			updateRaceArtifact(t,GetActiveArtifactByRace(i));
+		end
+	end
+	updateBroker();
+end
+
 local function ItemTooltipShow(self,link)
 	if (self) then
 		GameTooltip:SetOwner(self,"ANCHOR_NONE");
@@ -156,148 +312,111 @@ local function ItemTooltipHide(self)
 	GameTooltip:Hide();
 end
 
-local function createTooltip()
-	local l;
+local function createTooltip(self, tt)
 	tt:Clear()
-	tt:AddHeader(C("dkyellow",L[name]))
+	local ts,l = C("gray",L["Not learned"]),tt:AddHeader(C("dkyellow",PROFESSIONS_ARCHAEOLOGY))
+	if tradeskill.maxSkill>0 then
+		ts = tradeskill.skill.." / "..tradeskill.maxSkill;
+	end
+	tt:SetCell(l,ttColumns-2, ts, nil, "RIGHT", 3);
 
-	local n=GetNumArchaeologyRaces();
-	local order = {};
-	local icon="|T%s:14:14:0:0:64:64:4:56:4:56|t";
-	local icon2="|T%s:14:14:0:0:128:128:3:70:8:75|t";
-
-	if(n==15 and Broker_EverythingDB[name].continentOrder)then
-		order = {
-			false,	L["Azeroth"],	true,	1,3,4,7,8,
-			false,	L["Outland"],	true,	2,6,
-			false,	L["Northend"],	true,	5,9,
-			false,	L["Pandaria"],	true,	10,11,12,
-			false,	L["Draenor"],	true,	13,14,15
-		}
-	else
-		order = {false,"",true};
-		for i=1,n do tinsert(order,i); end
+	if not ns.profile[name].continentOrder then
+		tt:AddSeparator(4,0,0,0,0);
+		tt:AddLine(C("ltblue",RACES),C("ltblue",L["Keystones"]),C("ltblue",ARCHAEOLOGY_RUNE_STONES),C("ltblue",L["Artifacts"]));
+		tt:AddSeparator();
 	end
 
-	for _,i in ipairs(order) do
-		if(i==true)then
-			tt:AddSeparator();
-		elseif(i==false)then
-			tt:AddSeparator(4,0,0,0,0);
-		elseif(type(i)=="string")then
-			if(i~="")then i=" ("..i..")"; end
-			tt:AddLine(C("ltblue",L["Races"]..i),C("ltblue",L["Keystones"]),C("ltblue",L["Fragments"]),C("ltblue",L["Artifacts"]));
-		else
-			local raceName, raceTexture, raceItemID, numFragmentsCollected, numFragmentsRequired, maxFragments = GetArchaeologyRaceInfo(i);
-			local artifactName, _, _, artifactIcon, _, keystoneSlots = GetActiveArtifactByRace(i);
-			local keystoneCount,keystoneIcon,keystoneSum,Artifact = "","",0,{numFragmentsCollected, "/", numFragmentsRequired};
-			local raceCurrencyIcon = race2currency(select(3,strsplit("-",raceTexture)));
-			local solve,l=false;
-			if (keystoneSlots~=nil)then
-				if(raceItemID~=0) then
-					keystoneCount = GetItemCount(raceItemID,true,true);
-					keystoneIcon = icon:format(GetItemIcon(raceItemID));
-					if(keystoneSlots>0)then
-						keystoneSum = (keystoneCount<=keystoneSlots and keystoneCount or keystoneSlots) * 20;
-					end
-					if(numFragmentsCollected+keystoneSum>=numFragmentsRequired)then
-						solve=true
-					end
-				end
-				l=tt:AddLine(
-					icon2:format(raceTexture) .. " "..C(solve==true and "green" or "ltyellow",raceName),
-					keystoneCount.." "..keystoneIcon,
-					numFragmentsCollected.." / "..maxFragments.." "..icon:format(raceCurrencyIcon),
-					C(solve==true and "green" or "white",numFragmentsRequired).." "..icon:format(artifactIcon or ""),
-					QuestStarterItems[artifactName] and "|TInterface\\OptionsFrame\\UI-OptionsFrame-NewFeatureIcon:0:0:0:-1|t" or " "
-				);
-				if(raceItemID~=0)then
-					tt:SetLineScript(l,"OnEnter", function(self) ItemTooltipShow(self,"item:"..raceItemID) end);
-					tt:SetLineScript(l,"OnLeave", function(self) ItemTooltipHide(self) end);
-					--tt:SetCellScript(l,2,"OnEnter", function(self) ItemTooltipShow(self,"item:"..raceItemID) end);
-					--tt:SetCellScript(l,2,"OnLeave", function(self) ItemTooltipHide(self) end);
-					--tt:SetLineScript(l,"OnMouseUp", function(self) --[[ open frame ]] end);
-				end
-				l=nil;
-			else
-				if(not maxFragments)then
-
-				end
-				tt:AddLine(
-					icon2:format(raceTexture) .. " " ..C("gray",raceName),
-					"",
-					C("gray",numFragmentsCollected.." / "..maxFragments)
-				);
+	for i, k in ipairs(racesOrder)do
+		local v = races[k];
+		if v[raceCurrencyId]==true then
+			if ns.profile[name].continentOrder then
+				tt:AddSeparator(4,0,0,0,0);
+				tt:AddLine(C("ltblue",RACES.." ("..L[k]..")"),C("ltblue",L["Keystones"]),C("ltblue",ARCHAEOLOGY_RUNE_STONES),C("ltblue",L["Artifacts"]));
+				tt:AddSeparator();
 			end
+		elseif v[raceName] and v[raceArtifactName] then
+			local l=tt:AddLine(
+				v[raceTexture].." "..C(v[raceArtifactSolvable]==true and "green" or "ltyellow",v[raceName]),
+				v[raceKeystoneIcon]~=nil and v[raceKeystoneCount].." "..v[raceKeystoneIcon] or "",
+				v[raceFragmentsCollected].." / "..v[raceFragmentsMax].." "..v[raceFragmentsIcon],
+				C(v[raceArtifactSolvable]==true and "green" or "white",v[raceNumFragmentsRequired].." "..v[raceArtifactIcon]),
+				--[[QuestStarterItems[raceArtifactName] and "|TInterface\\OptionsFrame\\UI-OptionsFrame-NewFeatureIcon:0:0:0:-1|t" or]] " "
+			);
+			if(v[raceKeystoneItemID]~=0)then
+				tt:SetLineScript(l,"OnEnter", function(self) ItemTooltipShow(self,"item:"..v[raceKeystoneItemID]); end);
+				tt:SetLineScript(l,"OnLeave", ItemTooltipHide);
+			end
+			tt:SetLineScript(l,"OnMouseUp", function(self)
+				if ( not ArchaeologyFrame ) then
+					securecall("ArchaeologyFrame_LoadUI");
+				end
+				if ( ArchaeologyFrame ) then
+					if not ArchaeologyFrame:IsShown() then
+						securecall("ArchaeologyFrame_Show");
+					end
+					securecall("ArchaeologyFrame_OnTabClick",ArchaeologyFrame.tab1);
+					securecall("ArchaeologyFrame_ShowArtifact",v[raceIndex]);
+				end
+			end);
+			--[=[
+			if QuestStarterItems[v[raceArtifactName]] then
+				tt:SetCellScript(l,4,"OnEnter", function(self) ItemTooltipShow(self,"item:"..QuestStarterItems[v[raceArtifactName]]); end);
+				tt:SetCellScript(l,4,"OnLeave", ItemTooltipHide);
+			end
+			--]=]
+		elseif v[raceName] then
+			local l=tt:AddLine(
+				v[raceTexture].." "..C("gray",v[raceName]),
+				" ",
+				C("gray",v[raceFragmentsCollected].." / "..v[raceFragmentsMax]),
+				" ",
+				" "
+			);
 		end
 	end
 
-	if Broker_EverythingDB.showHints then
-		tt:AddSeparator(3,0,0,0,0)
+	if ns.profile.GeneralOptions.showHints then
+		tt:AddSeparator(4,0,0,0,0)
+		ns.AddSpannedLine(tt,C("ltblue",L["Click"]).." || "..C("green",L["Open archaeology frame with choosen faction"]),ttColumns);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
+	ns.roundupTooltip(self,tt)
 end
 
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(self)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
 ns.modules[name].onevent = function(self,event,...)
 	if event=="GET_ITEM_INFO_RECEIVED" then
+		--[[
 		local id = ...;
 		if(type(id)=="number")then
-			local item={GetItemInfo(id)};
-			if(#item>0)then
-				QuestStarterItems[item[1]]=id;
-				QuestStarterItems[id]=item;
+			local item=GetItemInfo(id);
+			if item~=nil then
+				QuestStarterItems[item]=id;
 			end
 		end
+		--]]
 	else
 		if event=="PLAYER_ENTERING_WORLD" then
-			C_Timer.After(11, function()
-				local item;
-				for i=1, #QuestStarterItems do
-					if(type(QuestStarterItems[i])=="number")then
-						item={GetItemInfo(QuestStarterItems[i])};
-						if(#item>0)then
-							QuestStarterItems[item[1]]=QuestStarterItems[i];
-							QuestStarterItems[QuestStarterItems[i]]=item;
-						end
-					end
-				end
-			end);
-			self:UnregisterEvent(event);
-		end
-		
-		local obj = ns.LDB:GetDataObjectByName(ldbName);
-		local countSolveable,nameSolveable = 0,"";
-		for i=1, GetNumArchaeologyRaces() do
-			local raceName, _, raceItemID, numFragmentsCollected, numFragmentsRequired = GetArchaeologyRaceInfo(i);
-			local _, _, _, _, _, keystoneSlots = GetActiveArtifactByRace(i);
-			local keystoneCount, keystoneIcon, keystoneSum = "","",0
+			updateRaces(true);
 
-			if (keystoneSlots~=nil)then
-				if(raceItemID~=0) then
-					keystoneCount = GetItemCount(raceItemID,true,true);
-					if(keystoneSlots>0)then
-						keystoneSum = (keystoneCount<=keystoneSlots and keystoneCount or keystoneSlots) * 20;
-					end
-					if(numFragmentsCollected+keystoneSum>=numFragmentsRequired)then
-						countSolveable,nameSolveable=countSolveable+1,raceName;
-					end
-				end
+			local _;
+			_,_,tradeskill.id = GetProfessions();
+			if tradeskill.id then
+				tradeskill.name,tradeskill.icon,tradeskill.skill,tradeskill.maxSkill = GetProfessionInfo(tradeskill.id);
+			else
+				tradeskill.name,_,tradeskill.icon = GetSpellInfo(78670);
+				tradeskill.skill, tradeskill.maxSkill = 0,0;
 			end
-		end
 
-		if(countSolveable==1)then
-			obj.text = C("green",nameSolveable);
-		elseif(countSolveable>1)then
-			obj.text = C("green",countSolveable.." "..strlower(READY));
+			self:UnregisterEvent(event);
 		else
-			obj.text = L[name];
+			updateRaces(true);
 		end
 	end
 end
@@ -312,9 +431,8 @@ end
 -- module functions for LDB registration --
 -------------------------------------------
 ns.modules[name].onenter = function(self)
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "CENTER", "RIGHT", "RIGHT","LEFT")
-	createTooltip()
-	ns.createTooltip(self,tt)
+	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "CENTER", "RIGHT", "RIGHT","RIGHT");
+	createTooltip(self,tt)
 end
 
 ns.modules[name].onleave = function(self)

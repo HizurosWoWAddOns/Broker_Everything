@@ -4,7 +4,6 @@
 ----------------------------------
 local addon, ns = ...;
 local C, L, I = ns.LC.color, ns.L, ns.I;
-L.Durability = DURABILITY;
 
 
 -----------------------------------------------------------
@@ -43,7 +42,7 @@ local colorSets = setmetatable({values={}},{
 	end,
 	__call = function(t,d)
 		local c,n = nil,0
-		local set = t[Broker_EverythingDB[name].colorSet]
+		local set = t[ns.profile[name].colorSet]
 		for i,v in ns.pairsByKeys(set) do if d>=n and d<=i then c,n = v,i+1 end end
 		return c
 	end
@@ -64,9 +63,8 @@ I[name] = {iconfile="Interface\\Minimap\\TRACKING\\Repair",coords={0.05,0.95,0.0
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["Broker to show durability of your gear and estimated repair costs."]
 ns.modules[name] = {
-	desc = desc,
+	desc = L["Broker to show durability of your gear and estimated repair costs"],
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_DEAD",
@@ -98,7 +96,7 @@ ns.modules[name] = {
 		dateFormat = {["%d.%m. %H:%M"] = true,["%d.%m. %I:%M %p"] = true,["%Y-%m-%d %H:%M"] = true,["%Y-%m-%d %I:%M %p"] = true,["%d/%m/%Y %H:%M"] = true,["%d/%m/%Y %I:%M %p"] = true}
 	},
 	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="header", label=DURABILITY, align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="toggle", name="lowestItem", label=L["Lowest durability"], tooltip=L["Display the lowest item durability in broker."], event=true },
 		{ type="toggle", name="showDiscount", label=L["Show discount"], tooltip=L["Show list of reputation discounts in tooltip"] },
@@ -211,14 +209,14 @@ local function lastRepairs_add(cost,fund,repairType)
 		if (#t<50) then table.insert(t,v); end
 	end
 	last_repairs = t;
-	if (Broker_EverythingDB[name].saveCosts) then
-		be_durability_db = t;
+	if (ns.profile[name].saveCosts) then
+		Broker_Everything_CharacterDB[ns.player.name_realm][name] = t;
 	end
 end
 
 local function AutoRepairAll(costs)
-	local chat = Broker_EverythingDB[name].chatRepairInfo;
-	if (Broker_EverythingDB[name].autorepairbyguild==true) and (IsInGuild()==true) and (CanGuildBankRepair()==true) and (costs < GetGuildBankWithdrawMoney()) then
+	local chat = ns.profile[name].chatRepairInfo;
+	if (ns.profile[name].autorepairbyguild==true) and (IsInGuild()==true) and (CanGuildBankRepair()==true) and (costs < GetGuildBankWithdrawMoney()) then
 		if (not GetGuildInfoText():find("%[noautorepair%]")) then -- auto repair with guild fund allowed by guild leader?
 			merchant = {repair=false,costs=0,diff=0,single=0}; -- must be changed befor Repair all items
 			RepairAllItems(true);
@@ -243,7 +241,7 @@ local function AutoRepairAll(costs)
 	return false;
 end
 
-local function durabilityTooltip(tt)
+local function createTooltip(self, tt)
 	if (not tt.key) or (tt.key~=ttName) then return; end -- don't override other LibQTip tooltips...
 
 	tt:Clear()
@@ -256,38 +254,38 @@ local function durabilityTooltip(tt)
 	durabilityA = floor(durabilityA);
 	durabilityL = floor(durabilityL);
 
-	local a,g,d = Broker_EverythingDB[name].autorepair, Broker_EverythingDB[name].autorepairbyguild;
+	local a,g,d = ns.profile[name].autorepair, ns.profile[name].autorepairbyguild;
 	local lst = setmetatable({},{__call = function(t,a) rawset(t,#t+1,a) end});
 
 	lst({sep={3,0,0,0,0}});
 	lst({c1=C("ltblue",gsub(REPAIR_COST,":","")),c2=ns.GetCoinColorOrTextureString(name,repairCost)});
 	lst({sep={1}});
-	lst({c1=L["Character"],c2=ns.GetCoinColorOrTextureString(name,equipCost)});
+	lst({c1=CHARACTER,c2=ns.GetCoinColorOrTextureString(name,equipCost)});
 	lst({c1=L["Bags"],c2=ns.GetCoinColorOrTextureString(name,bagCost)});
 
-	if Broker_EverythingDB[name].showDiscount then
+	if ns.profile[name].showDiscount then
 		lst({sep={3,0,0,0,0}});
 		lst({c0=C("ltblue",L["Reputation discounts"])});
 		lst({sep={1}});
-		lst({c1=C("white",L["Neutral"]),  c2=ns.GetCoinColorOrTextureString(name,repairCostN)});
-		lst({c1=C("white",L["Friendly"]), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[5]))});
-		lst({c1=C("white",L["Honoured"]), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[6]))});
-		lst({c1=C("white",L["Revered"]),  c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[7]))});
-		lst({c1=C("white",L["Exalted"]),  c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[8]))});
+		lst({c1=C("white",FACTION_STANDING_LABEL4),  c2=ns.GetCoinColorOrTextureString(name,repairCostN)});
+		lst({c1=C("white",FACTION_STANDING_LABEL5), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[5]))});
+		lst({c1=C("white",FACTION_STANDING_LABEL6), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[6]))});
+		lst({c1=C("white",FACTION_STANDING_LABEL7),  c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[7]))});
+		lst({c1=C("white",FACTION_STANDING_LABEL8),  c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[8]))});
 	end
 
-	if (Broker_EverythingDB[name].listCosts) then
+	if (ns.profile[name].listCosts) then
 		lst({sep={3,0,0,0,0}});
-		if (Broker_EverythingDB[name].saveCosts) then
-			lst({c0=C("ltblue",L["Last %d repair costs"]:format(Broker_EverythingDB[name].maxCosts))});
+		if (ns.profile[name].saveCosts) then
+			lst({c0=C("ltblue",L["Last %d repair costs"]:format(ns.profile[name].maxCosts))});
 		else
-			lst({c1=C("ltblue",L["Last %d repair costs"]:format(Broker_EverythingDB[name].maxCosts)),c2=C("ltblue",L["(session only)"])});
+			lst({c1=C("ltblue",L["Last %d repair costs"]:format(ns.profile[name].maxCosts)),c2=C("ltblue",L["(session only)"])});
 		end
 		lst({sep={1}});
 		if (#last_repairs>0) then
 			local indicator = "";
 			for i,v in ipairs(last_repairs) do
-				if (i<=tonumber(Broker_EverythingDB[name].maxCosts)) then
+				if (i<=tonumber(ns.profile[name].maxCosts)) then
 					indicator = ((v[4]) and "a" or "") .. ((v[3]) and "G" or "P");
 					lst({c1=date(date_format,v[1]) .. (strlen(indicator)>0 and " "..indicator or ""), c2=ns.GetCoinColorOrTextureString(name,ceil(v[2]))});
 				end
@@ -298,7 +296,7 @@ local function durabilityTooltip(tt)
 	end
 
 
-	tt:AddHeader(C("dkyellow",L[name]));
+	tt:AddHeader(C("dkyellow",DURABILITY));
 	tt:AddSeparator();
 	local slotName = "";
 	if (durabilityLslot) and (durabilityLslot~=0) then
@@ -325,10 +323,11 @@ local function durabilityTooltip(tt)
 			tt:SetCell(l,2,v.c2);
 		end
 	end
-	if (Broker_EverythingDB.showHints) then
+	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
+	ns.roundupTooltip(self,tt);
 end
 
 function createMenu(self)
@@ -345,7 +344,7 @@ function createMenu(self)
 		colorName = "yellow",
 		func  = function()
 			wipe(last_repairs);
-			wipe(be_durability_db);
+			wipe(Broker_Everything_CharacterDB[ns.player.name_realm][name]);
 		end,
 		disabled = (false)
 	});
@@ -358,22 +357,23 @@ end
 ------------------------------------
 
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name;
-
-	local empty=true;
-	if (be_durability_db) then
-		for i,v in pairs(be_durability_db) do empty=false; end
-	end
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 
 	hiddenTooltip = CreateFrame("GameTooltip", "BE_Durability_ScanTip", nil, "GameTooltipTemplate")
 	hiddenTooltip:SetOwner(UIParent, "ANCHOR_NONE")
 
-	date_format = Broker_EverythingDB[name].dateFormat;
-	if (be_durability_db==nil) then
-		be_durability_db = {};
+	date_format = ns.profile[name].dateFormat;
+
+	if be_durability_db~=nil then
+		Broker_Everything_CharacterDB[ns.player.name_realm][name] = be_durability_db;
+		be_durability_db = nil;
 	end
-	if (Broker_EverythingDB[name].saveCosts) then
-		last_repairs = be_durability_db;
+
+	if (Broker_Everything_CharacterDB[ns.player.name_realm][name]==nil) then
+		Broker_Everything_CharacterDB[ns.player.name_realm][name] = {};
+	end
+	if (ns.profile[name].saveCosts) then
+		last_repairs = Broker_Everything_CharacterDB[ns.player.name_realm][name];
 	end
 
 	_G['MerchantRepairAllButton']:HookScript("OnClick",function(self,button)
@@ -391,8 +391,8 @@ ns.modules[name].onevent = function(self,event,msg)
 		if (costs>0) and (canRepair) then
 			merchant.repair=true;
 			merchant.costs=costs;
-			if (Broker_EverythingDB[name].autorepair) then
-				if (AutoRepairAll(costs)==false) and (Broker_EverythingDB[name].chatRepairInfo) then
+			if (ns.profile[name].autorepair) then
+				if (AutoRepairAll(costs)==false) and (ns.profile[name].chatRepairInfo) then
 					ns.print(L["AutoRepair"], L["Automatic repair failed. Not enough money..."]);
 				end
 				return;
@@ -401,19 +401,19 @@ ns.modules[name].onevent = function(self,event,msg)
 	end
 
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],Broker_EverythingDB[name]);
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 
 	-- RepairAll - ButtonHooks - custom events
 	if (event=="BE_EVENT_REPAIRALL_GUILD") then
 		lastRepairs_add(merchant.costs,true);
-		if (Broker_EverythingDB[name].chatRepairInfo) then
+		if (ns.profile[name].chatRepairInfo) then
 			ns.print(L["RepairAll"],L["by guild fund"]..":",ns.GetCoinColorOrTextureString(name,merchant.costs));
 		end
 		merchant.costs=0;
 	elseif (event=="BE_EVENT_REPAIRALL_PLAYER") then
 		lastRepairs_add(merchant.costs);
-		if (Broker_EverythingDB[name].chatRepairInfo) then
+		if (ns.profile[name].chatRepairInfo) then
 			ns.print(L["RepairAll"],L["by player money"]..":",ns.GetCoinColorOrTextureString(name,merchant.costs));
 		end
 		merchant.costs=0;
@@ -432,7 +432,7 @@ ns.modules[name].onevent = function(self,event,msg)
 		if (event=="MERCHANT_CLOSED") then
 			if (merchant.single>0) then -- single item repair mode, step 2
 				lastRepairs_add(merchant.single, nil, false);
-				if (Broker_EverythingDB[name].chatRepairInfo) then
+				if (ns.profile[name].chatRepairInfo) then
 					ns.print(L["SingleRepairSummary"]..":",ns.GetCoinColorOrTextureString(name,merchant.single));
 				end
 			end
@@ -443,20 +443,20 @@ ns.modules[name].onevent = function(self,event,msg)
 	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName) 
 	local repairCosts, equipCost, bagCost, dA, dL, dLSlot, d = scanAll();
 
-	if (Broker_EverythingDB[name].inBroker=="costs") then
+	if (ns.profile[name].inBroker=="costs") then
 		dataobj.text = ns.GetCoinColorOrTextureString(name,repairCosts)
 	else
-		d = floor((Broker_EverythingDB[name].lowestItem) and dL or dA);
-		if (Broker_EverythingDB[name].inBroker=="percent") then
+		d = floor((ns.profile[name].lowestItem) and dL or dA);
+		if (ns.profile[name].inBroker=="percent") then
 			dataobj.text = C(colorSets(d)or "blue",d.."%");
-		elseif (Broker_EverythingDB[name].inBroker=="percent/costs") then
+		elseif (ns.profile[name].inBroker=="percent/costs") then
 			dataobj.text = C(colorSets(d)or "blue",d.."%")..", "..ns.GetCoinColorOrTextureString(name,repairCosts);
-		elseif (Broker_EverythingDB[name].inBroker=="costs/percent") then
+		elseif (ns.profile[name].inBroker=="costs/percent") then
 			dataobj.text = ns.GetCoinColorOrTextureString(name,repairCosts)..", "..C(colorSets(d) or "blue",d.."%");
 		end
 	end
 
-	date_format = Broker_EverythingDB[name].dateFormat;
+	date_format = ns.profile[name].dateFormat;
 end
 
 -- ns.modules[name].onclick = function(self,button) end
@@ -470,8 +470,7 @@ ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 
 	tt = ns.LQT:Acquire(ttName, 2, "LEFT", "RIGHT");
-	durabilityTooltip(tt);
-	ns.createTooltip(self,tt);
+	createTooltip(self, tt);
 end
 
 ns.modules[name].onleave = function(self)

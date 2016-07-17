@@ -162,7 +162,7 @@
 				</Texture>
 			</Layer>
 			<Layer level="ARTWORK" textureSubLevel="0">
-				<FontString parentKey="name" inherits="GameFontNormal" justifyH="LEFT">
+				<FontString parentKey="name" inherits="GameFontNormal" maxLines="1" justifyH="LEFT">
 					<Anchors>
 						<Anchor point="LEFT" x="10" />
 						<Anchor point="RIGHT" x="-10" />
@@ -318,15 +318,16 @@
 				</HighlightTexture>
 				<Layers>
 					<Layer level="ARTWORK">
-						<FontString parentKey="Label" inherits="GameFontNormal" wordwrap="false" justifyH="LEFT">
+						<FontString parentKey="Text" inherits="GameFontHighlightSmall" wordwrap="true" maxLines="2" justifyH="LEFT">
 							<Anchors>
-								<Anchor point="LEFT" relativeTo="$parent" relativePoint="RIGHT" x="4" y="7"/>
+								<Anchor point="LEFT" relativeTo="$parent" relativePoint="RIGHT" x="4" y="-8"/>
 								<Anchor point="RIGHT" relativeKey="$parent.$parent" relativePoint="RIGHT" />
 							</Anchors>
 						</FontString>
-						<FontString parentKey="Text" inherits="GameFontHighlightSmall" wordwrap="false" justifyH="LEFT">
+						<FontString parentKey="Label" inherits="GameFontNormal" wordwrap="false" justifyH="LEFT">
 							<Anchors>
-								<Anchor point="LEFT" relativeTo="$parent" relativePoint="RIGHT" x="4" y="-7"/>
+								<Anchor point="BOTTOM" relativeKey="$parent.Text" relativePoint="TOP" y="3" />
+								<Anchor point="LEFT" relativeTo="$parent" relativePoint="RIGHT" x="4"/>
 								<Anchor point="RIGHT" relativeKey="$parent.$parent" relativePoint="RIGHT" />
 							</Anchors>
 						</FontString>

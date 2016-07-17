@@ -50,9 +50,8 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\memory"}; --IconName
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["Broker to show how much memory are consumed through your addons."]
 ns.modules[name] = {
-	desc = desc,
+	desc = L["Broker to show memory usage summary and single addons usage"],
 	events = {
 		"PLAYER_ENTERING_WORLD"
 	},
@@ -69,12 +68,12 @@ ns.modules[name] = {
 		{ type="header", label=L[name], align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="slider", name="mem_max_addons", label=L["Show addons in tooltip"], tooltip=L["Select the maximum number of addons to display, otherwise drag to 'All'."],
-			minText = L["All"],
+			minText = ACHIEVEMENTFRAME_FILTER_ALL,
 			default = -1,
 			min = -1,
 			max = 100,
 			format = "%d",
-			rep = {[-1]=L["All"]}
+			rep = {[-1]=ACHIEVEMENTFRAME_FILTER_ALL}
 		},
 		{ type="select", name="addonpanel", label=L["Addon panel"], tooltip=L["Choose your addon panel that opens if you rightclick on memory broker or disable the right click option."], default = "none", values = addonpanels_select },
 		{ type="separator", alpha=0 },
@@ -83,7 +82,7 @@ ns.modules[name] = {
 		{ type="select", name="updateInterval", label=L["Update interval"], tooltip=L["Change the update interval or disable it."],
 			default = 5,
 			values = {
-				[0] = L["Disable"],
+				[0] = DISABLE,
 				[1] = L["One time per minute"],
 				[5] = L["All 5 minutes"],
 				[10] = L["All 10 minutes"],
@@ -107,10 +106,10 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 local function updateMemoryData(sumOnly)
-	if (InCombatLockdown()) and (not Broker_EverythingDB[name].updateInCombat) then return false; end
+	if (InCombatLockdown()) and (not ns.profile[name].updateInCombat) then return false; end
 
 	if sumOnly then
-		local doUpdate,inv = false,tonumber(Broker_EverythingDB[name].updateInterval);
+		local doUpdate,inv = false,tonumber(ns.profile[name].updateInterval);
 		if inv and inv>0 then
 			updateTimer=updateTimer+10;
 			if updateTimer>=(inv*60) then
@@ -119,7 +118,7 @@ local function updateMemoryData(sumOnly)
 			end
 		end
 		if doUpdate then
-			UpdateAddOnMemoryUsage();
+			--UpdateAddOnMemoryUsage();
 		end
 	end
 
@@ -138,61 +137,17 @@ local function updateMemoryData(sumOnly)
 	return true;
 end
 
-
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules[name].init = function(self)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
-	if (self) then
-		ns.LDB:GetDataObjectByName(ldbName).text = L[name];
-	end
-end
-
-ns.modules[name].onevent = function(self,event,msg)
-	if (event=="PLAYER_ENTERING_WORLD") then
-		C_Timer.After(15, function() -- unlock updater 15 seconds after entering world.
-			UpdateAddOnMemoryUsage();
-			loginUpdateLock=false;
-		end);
-	end
-end
-
-ns.modules[name].onupdate = function(self)
-	if (loginUpdateLock) then return end
-
-	updateMemoryData(true)
-
-	local unit,total = "kb",data.total
-	if (total > 1000) then
-		total = total / 1000;
-		unit = "mb";
-	end
-
-	tinsert(memHistory,1,total);
-	if(#memHistory==51)then tremove(memHistory,51); end
-	if(tt and tt.key and tt.key==ttName)then
-		--ns.graphTT.Update(tt,memHistory);
-	end
-
-	local obj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
-	obj.text = string.format("%.2f", total) .. ns.suffixColour(unit)
-end
-
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
-
-ns.modules[name].ontooltip = function(tt)
+local function createTooltip(self, tt)
 	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
 
 	local updated = updateMemoryData(false);
 	local total, all, unit = data.total,data.all;
-	local cnt = tonumber(Broker_EverythingDB[name].mem_max_addons)
+	local cnt = tonumber(ns.profile[name].mem_max_addons)
 
 	tt:Clear()
 
 	if cnt > 0 then
-		tt:AddHeader(string.format("%s ( %s %d )", C("dkyellow",L[name]), "Top", Broker_EverythingDB[name].mem_max_addons))
+		tt:AddHeader(string.format("%s ( %s %d )", C("dkyellow",L[name]), "Top", ns.profile[name].mem_max_addons))
 	else
 		tt:AddHeader(C("dkyellow",L[name]))
 		cnt = 1000
@@ -220,7 +175,7 @@ ns.modules[name].ontooltip = function(tt)
 			end
 
 			line, column = tt:AddLine()
-			tt:SetCell(line,1,v.name,nil,nil,2)
+			tt:SetCell(line,1,ns.strCut(v.name,32),nil,nil,2)
 			tt:SetCell(line,3,("%.2f %s"):format(v.mem,ns.suffixColour(unit)),nil,nil,1)
 			cnt = cnt - 1
 
@@ -242,13 +197,13 @@ ns.modules[name].ontooltip = function(tt)
 	tt:SetCell(line,1,L["Total Memory usage"]..":",nil,nil,2)
 	tt:SetCell(line,3,("%.2f %s"):format(total, unit),nil,nil,1)
 
-	if Broker_EverythingDB.showHints then
-		tt:AddSeparator(2,0,0,0)
+	if ns.profile.GeneralOptions.showHints then
+		tt:AddSeparator(4,0,0,0,0)
 
 		line, column = tt:AddLine()
 		tt:SetCell(line, 1, C("copper",L["Left-click"]).." || "..C("green",L["Open interface options"]),nil, nil, ttColumns)
 
-		local ap = Broker_EverythingDB[name].addonpanel;
+		local ap = ns.profile[name].addonpanel;
 		if (ap) and (ap~="none") then
 			if (addonpanels[ap]) and (addonpanels[ap](true)) then
 				ap = addonpanels_select[ap];
@@ -271,8 +226,55 @@ ns.modules[name].ontooltip = function(tt)
 	if(#memHistory>0)then
 		--ns.graphTT.Update(tt,memHistory);
 	end
+	ns.roundupTooltip(self,tt)
 end
 
+
+------------------------------------
+-- module (BE internal) functions --
+------------------------------------
+ns.modules[name].init = function(self)
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
+	if (self) then
+		ns.LDB:GetDataObjectByName(ldbName).text = L[name];
+	end
+end
+
+ns.modules[name].onevent = function(self,event,msg)
+	if (event=="PLAYER_ENTERING_WORLD") then
+		C_Timer.After(15, function() -- unlock updater 15 seconds after entering world.
+			--UpdateAddOnMemoryUsage();
+			loginUpdateLock=false;
+		end);
+		hooksecurefunc("UpdateAddOnMemoryUsage",function(...) ns.debug("UpdateAddOnMemoryUsage",...) end);
+		self:UnregisterEvent(event);
+	end
+end
+
+ns.modules[name].onupdate = function(self)
+	if (loginUpdateLock) then return end
+
+	updateMemoryData(true)
+
+	local unit,total = "kb",data.total
+	if (total > 1000) then
+		total = total / 1000;
+		unit = "mb";
+	end
+
+	tinsert(memHistory,1,total);
+	if(#memHistory==51)then tremove(memHistory,51); end
+	if(tt and tt.key and tt.key==ttName)then
+		--ns.graphTT.Update(tt,memHistory);
+	end
+
+	local obj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
+	obj.text = string.format("%.2f", total) .. ns.suffixColour(unit)
+end
+
+-- ns.modules[name].optionspanel = function(panel) end
+-- ns.modules[name].onmousewheel = function(self,direction) end
+-- ns.modules[name].ontooltip = function(tt) end
 
 -------------------------------------------
 -- module functions for LDB registration --
@@ -281,8 +283,7 @@ ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 
 	tt = ns.LQT:Acquire(ttName, 3, "LEFT","RIGHT", "RIGHT")
-	ns.modules[name].ontooltip(tt)
-	ns.createTooltip(self,tt)
+	createTooltip(self, tt)
 end
 
 ns.modules[name].onleave = function(self)
@@ -293,13 +294,13 @@ ns.modules[name].onclick = function(self,button)
 	local shift = IsShiftKeyDown()
 	
 	if button == "RightButton" and shift then
-		print(L["Collecting Garbage..."])
+		ns.print(L["Collecting Garbage..."])
 		collectgarbage("collect")
 	elseif button == "LeftButton" then
 		InterfaceOptionsFrame_OpenToCategory(ns.be_option_panel);
 		InterfaceOptionsFrame_OpenToCategory(ns.be_option_panel);
 	elseif button == "RightButton" and not shift then
-		local ap = Broker_EverythingDB[name].addonpanel;
+		local ap = ns.profile[name].addonpanel;
 		if (ap~="none") then
 			if (ap~="Blizzard's Addons Panel") then
 				if not IsAddOnLoaded(ap) then LoadAddOn(ap) end

@@ -4,19 +4,24 @@
 ----------------------------------
 local addon,ns = ...;
 local C,L,I=ns.LC.color,ns.L,ns.I;
+L["Guild"] = GUILD;
 
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Guild"; -- L["Guild"]
-local ldbName, ttName,ttName2 = name, name.."TT", name.."TT2";
-local tt,tt2,guildRealm,createMenu;
-local ttColumns,db;
-local guildUpdateFreq = 300;
-local displayProfessions, displayOfficerNotes = false, false;
+local name = "Guild";
+local ldbName, ttName, ttName2,ttColumns,ttColumns2 = name, name.."TT", name.."TT2",9,2;
+local tt,tt2,ttParent,createMenu;
 local off, on = strtrim(gsub(ERR_FRIEND_OFFLINE_S,"%%s","")), strtrim(gsub(ERR_FRIEND_ONLINE_SS,"\124Hplayer:%%s\124h%[%%s%]\124h",""));
-local Skills, SkillMembers, SkillsUpdateLock={},{},false;
+local tradeskillsLockUpdate,tradeskillsLastUpdate,tradeskillsUpdateTimeout = false,0,20;
+local guild, player, members, membersName2Index, mobile, tradeskills, applicants = {},{},{},{},{},{},{};
+local doMembersUpdate, doTradeskillsUpdate, doApplicantsUpdate, doUpdateTooltip = false,false,false,false;
+local gName, gDesc, gRealm, gRealmNoSpacer, gMotD, gNumMembers, gNumMembersOnline, gNumMobile, gNumApplicants = 1,2,3,4,5,6,7,8,9;
+local pStanding, pStandingText, pStandingMin, pStandingMax, pStandingValue = 1,2,3,4,5;
+local mFullName, mName, mRealm, mRank, mRankIndex, mLevel, mClassLocale, mZone, mNote, mOfficerNote, mOnline, mIsAway, mClassFile, mAchievementPoints, mAchievementRank, mIsMobile, mCanSoR, mStanding, mStandingText = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19;
+local tsName, tsIcon, tsValue, tsID = 1,2,3,4;
+local app_index, app_name, app_realm, app_level, app_class, app_bQuest, app_bDungeon, app_bRaid, app_bPvP, app_bRP, app_bWeekdays, app_bWeekends, app_bTank, app_bHealer, app_bDamage, app_comment, app_timeSince, app_timeLeft = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18; -- applicants table entry indexes
 
 
 -------------------------------------------
@@ -28,19 +33,13 @@ I[name] = {iconfile=GetItemIcon(5976),coords={0.05,0.95,0.05,0.95}} --IconName::
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["Broker to show guild information. Guild members currently online, MOTD, guild xp etc."];
 ns.modules[name] = {
-	desc = desc,
+	desc = L["Broker to show guild message of the day, your guild reputation, guild members, applicants and mobile app users"],
 	events = {
-		"PLAYER_LOGIN",
-		"GUILD_ROSTER_UPDATE",
 		"PLAYER_ENTERING_WORLD",
-		"CHAT_MSG_SYSTEM",
-		"LF_GUILD_RECRUITS_UPDATED",
-		"GUILD_TRADESKILL_UPDATE",
-		"GUILD_RECIPE_KNOWN_BY_MEMBERS"
+		"PLAYER_GUILD_UPDATE",
 	},
-	updateinterval = 30,
+	updateinterval = 1,
 	config_defaults = {
 		-- guild
 		showRep = true,
@@ -59,11 +58,12 @@ ns.modules[name] = {
 		showMobileChatter = true,
 		showMobileChatterBroker = true,
 		splitTables = false,
+		showMembersLevelUp = true
 	},
 	config_allowed = {
 	},
 	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="header", label=GUILD, align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="toggle", name="showRep",				label=L["Show guild reputation"],		tooltip=L["Enable/Disable the display of Guild Reputation in the Guild data broker tooltip."] },
 		{ type="toggle", name="showMOTD",				label=L["Show Guild MotD"],				tooltip=L["Show Guild Message of the Day in tooltip"] },
@@ -77,6 +77,7 @@ ns.modules[name] = {
 		{ type="toggle", name="showMobileChatter",		label=L["Show mobile chatter"],			tooltip=L["Show mobile chatter in tooltip (Armory App users)"] },
 		{ type="toggle", name="showMobileChatterBroker",label=L["Show mobile chatter in broker"], tooltip=L["Show count of mobile chatter in broker button"], event = true },
 		{ type="toggle", name="splitTables",			label=L["Separate mobile chatter"],		tooltip=L["Display mobile chatter with own table in tooltip"] },
+		{ type="toogle", name="showMembersLevelUp",		label=L["Show level ups"],				tooltip=L["Show guild member level up as info message general chat frame. (This is not a gratulation bot!)"]},
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["Secondary tooltip options"] },
 		{ type="separator" },
@@ -98,8 +99,8 @@ ns.modules[name] = {
 			end
 		},
 		["2_open_menu"] = {
-			cfg_label = "Open option menu", -- L[""]
-			cfg_desc = "open the option menu", -- L[""]
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
 			cfg_default = "_RIGHT",
 			hint = "Open option menu", -- L["Open option menu"]
 			func = function(self,button)
@@ -121,221 +122,291 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
-local function GetGuildChallengesState()
-	local numChallenges = GetNumGuildChallenges();
-	local names = {"dungeons","szenarios","challenge mode dungeons","raids","rated battlegrounds"}
-	local xp_overlimit = {120000,0,0,0,0,0}
-	local result = {}
-	for i = 1, numChallenges do
-		local index, current, max, xp = GetGuildChallengeInfo(i);
-		result[index] = {L[names[index]],max-current,xp,xp_overlimit[index]}
+local function updateGuild()
+	if not IsInGuild() then wipe(guild); return; end
+	local tmp,_={};
+	tmp[gName], tmp[gDesc], player[pStanding], player[pStandingMin], player[pStandingMax], player[pStandingValue] = GetGuildFactionInfo();
+	player[pStandingText] = _G["FACTION_STANDING_LABEL"..player[pStanding]];
+	_,_,_,tmp[gRealm] = GetGuildInfo("player");
+	if tmp[gRealm]==nil then
+		tmp[gRealm]=ns.realm;
 	end
-	return result
+	tmp[gRealmNoSpacer] = gsub(tmp[gRealm]," ","");
+	tmp[gMotD] = GetGuildRosterMOTD();
+	tmp[gNumMembers], _, tmp[gNumMembersOnline] = GetNumGuildMembers();
+	tmp[gNumApplicants] = GetNumGuildApplicants();
+	tmp[gNumMobile] = 0;
+	if guild[gNumMembers]~=tmp[gNumMembers] then
+		doTradeskillsUpdate = true;
+	end
+	guild = tmp;
 end
 
-local function Tradeskills_Collector()
-	if (SkillsUpdateLock) then return; end
+local function updateMembers()
+	if not IsInGuild() then wipe(members); wipe(membersName2Index); return; end
+	local tmp,tmpNames, _ = {},{};
+	guild[gNumMobile] = 0;
+	for i=1, guild[gNumMembers] do
+		local m,old = {};
+		m[mFullName], m[mRank], m[mRankIndex], m[mLevel], m[mClassLocale], m[mZone], m[mNote], m[mOfficerNote], m[mOnline], m[mIsAway], m[mClassFile], m[mAchievementPoints], m[mAchievementRank], m[mIsMobile], m[mCanSoR], m[mStanding] = GetGuildRosterInfo(i);
+		tmpNames[m[mFullName]]=i;
+		m[mName], m[mRealm] = strsplit("-",m[mFullName]);
+		m[mStandingText] = _G["FACTION_STANDING_LABEL"..m[mStanding]];
+		if m[mIsMobile] then
+			mobile[m[mName]] = true;
+			guild[gNumMobile] = guild[gNumMobile]+1;
+		end
+		if membersName2Index[m[mFullName]] and members[membersName2Index[m[mFullName]]] then
+			old = members[membersName2Index[m[mFullName]]];
+			if m[mZone]~=old[mZone] then
+				doUpdateTooltip = true;
+			end
+			if db.showMembersLevelUp and old[mLevel]~=nil and m[mLevel]~=old[mLevel] then
+				ns.print( C(m[mClassFile],m[mName]) .." ".. C("green",L["has reached Level %d."]:format(m[mLevel])) );
+				doUpdateTooltip = true;
+			end
+		end
+		tinsert(tmp,m);
+	end
+	members = tmp;
+	membersName2Index = tmpNames;
+end
+
+local function updateTradeSkills()
+	if not IsInGuild() then wipe(tradeskills); return; end
+	if (tradeSkillsLockUpdate) or (time()-tradeskillsLastUpdate<=tradeskillsUpdateTimeout) or (GuildRosterFrame~=nil and GuildRosterFrame:IsShown() and GetCVar("guildRosterView")=="tradeskill") then return; end
+	tradeskillsLockUpdate = true;
+	doTradeskillsUpdate = false;
+
 
 	local skillID,isCollapsed,iconTexture,headerName,numOnline,numVisible,numPlayers,playerName,playerFullName,class,online,zone,skill,classFileName,isMobile,isAway = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- GetGuildTradeSkillInfo
-	local collapsedIds,d={};
-
-	wipe(Skills);
-	wipe(SkillMembers);
+	local headers = {};
+	local header = {};
+	local collapsed = {};
 
 	-- 1. run...
-	for index=GetNumGuildTradeSkill(), 1, -1 do
+	local num = GetNumGuildTradeSkill();
+	for index=num, 1, -1 do
 		d = {GetGuildTradeSkillInfo(index)};
-		if (d[headerName]) then
-			Skills[d[skillID]] = {
-				icon     = d[iconTexture],
-				name     = d[headerName],
-				nOnline  = d[numOnline],
-				nVisible = d[numVisible],
-				nChars   = d[numPlayers]
-			};
-			if (d[isCollapsed]) then
-				tinsert(collapsedIds,d[skillID]);
-				ExpandGuildTradeSkillHeader(d[skillID]);
+		if d[headerName] and d[isCollapsed] then
+			if not header[d[headerName]] then
+				header[d[headerName]] = {d[iconTexture],d[skillID]};
 			end
+			tinsert(collapsed,d[skillID]);
+			ExpandGuildTradeSkillHeader(d[skillID]);
 		end
 	end
 
 	-- 2. run...
-	local skillName = "";
-	for index=1, GetNumGuildTradeSkill() do
+	local tmp,skillName = {},"";
+	local num = GetNumGuildTradeSkill();
+	for index=1, num do
 		d = {GetGuildTradeSkillInfo(index)};
 		if (d[headerName]) then
 			skillName = d[headerName];
 		elseif (d[playerFullName]) then
-			if (SkillMembers[d[playerFullName]]==nil) then
-				SkillMembers[d[playerFullName]]={};
+			if (tmp[d[playerFullName]]==nil) then
+				tmp[d[playerFullName]]={};
 			end
-			table.insert(SkillMembers[d[playerFullName]],{
-				id    = d[skillID],
-				icon  = Skills[d[skillID]].icon,
-				name  = skillName,
-				level = d[skill]
-			});
+			tinsert(
+				tmp[d[playerFullName]],
+				{
+					skillName,
+					header[skillName]~=nil and header[skillName][1] or "?",
+					d[skill],
+					d[skillID]
+				}
+			); -- a nil value?
 		end
 	end
+	tradeskills = tmp;
 
 	-- 3. run... collapse prev. expanded skills
-	for _,id in ipairs(collapsedIds) do
-		CollapseGuildTradeSkillHeader(id);
-	end
-
-	SkillsUpdateLock = true;
-end
-
-local function guildMemberTooltip(self)
-	if (self~=false) then
-		local fullName,rank,rankIndex,level,class,zone,note,officernote,online,isAway,classFileName,achievementPoints,achievementRank,isMobile,canSoR,repStanding = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- GetGuildRosterInfo
-		local tt2=GameTooltip;
-		tt2:SetOwner(self,"ANCHOR_NONE");
-		if (select(1,self:GetCenter()) > (select(1,UIParent:GetWidth()) / 2)) then
-			tt2:SetPoint("RIGHT",tt,"LEFT",-2,0);
-		else
-			tt2:SetPoint("LEFT",tt,"RIGHT",2,0);
-		end
-		tt2:SetPoint("TOP",self,"TOP", 0, 4);
-
-		tt2:ClearLines();
-		tt2:AddLine(strsplit("-",self.info[fullName])); -- name
-		if (db.showZoneInTT2) then
-			tt2:AddDoubleLine(C("ltblue",L["Zone"]),C("white",self.info[zone]));
-		end
-		if (db.showNotesInTT2) then
-			tt2:AddDoubleLine(C("ltblue",L["Notes"]),C("white",self.info[note]));
-		end
-		if (db.showONotesInTT2) and (displayOfficerNotes) then
-			local on = strtrim(self.info[officernote]);
-			if (strlen(on)==0) then
-				on=L["<<empty>>"];
-			end
-			tt2:AddDoubleLine(C("ltblue",L["Officer notes"]),C("white",on));
-		end
-		if (db.showRankInTT2) then
-			tt2:AddDoubleLine(C("ltblue",L["Rank"]),C("white",self.info[rank]));
-		end
-		if (db.showProfessionsInTT2) then
-			local profs={};
-			if (SkillMembers[self.info[fullName]]) and (#SkillMembers[self.info[fullName]]>0) then
-				for k,v in ipairs(SkillMembers[self.info[fullName]]) do
-					tt2:AddDoubleLine(C("ltblue",L["Professions"].." "..k),C("white",("|T%s:0|t %s (%d)"):format(v.icon,v.name,v.level)));
-				end
-			else
-				tt2:AddDoubleLine(C("ltblue",L["Professions"]),C("white",L["unlearned"]));
-			end
-		end
-		tt2:Show();
-	else
-		GameTooltip:Hide();
+	for i=1, #collapsed do
+		CollapseGuildTradeSkillHeader(collapsed[i]);
 	end
 	
+	tradeskillsLastUpdate = time();
+	tradeskillsLockUpdate = false;
 end
 
-local function guildTooltip()
+local function updateApplicants()
+	local temp = {};
+	guild[gNumApplicants] = GetNumGuildApplicants();
+	for index=1, guild[gNumApplicants] do
+		local applicant,Realm = {GetGuildApplicantInfo(index)};
+		tinsert(applicant,1,index);
+		applicant[app_name], Realm = strsplit("-",applicant[app_name]);
+		tinsert(applicant,app_realm,Realm or guild[gRealmNoSpacer]);
+		tinsert(temp,applicant);
+	end
+	applicants = temp;
+	if #temp~=guild[gNumApplicants] then
+		doApplicantsUpdate = true;
+	end
+end
+
+local function updateBroker()
+	local broker = ns.LDB:GetDataObjectByName(ldbName);
+	if guild[gName] then
+		local txt = {};
+		if (guild[gNumApplicants]>0) then
+			tinsert(txt, C("orange",guild[gNumApplicants]));
+		end
+		if (ns.profile[name].showMobileChatterBroker) then
+			tinsert(txt, C("ltblue",guild[gNumMobile]));
+		end
+		tinsert(txt,C("green",guild[gNumMembersOnline]));
+		tinsert(txt,C("green",guild[gNumMembers]));
+		broker.text = table.concat(txt,"/");
+	else
+		broker.text = L["No guild"];
+	end
+end
+
+local function createTooltip2()
+end
+
+local function tooltipAddLine(v,me)
+	if not (tt and tt.key and tt.key==ttName) then return end
+	local status = ( (v[mIsAway]==1) and C("gold","[AFK] ") ) or ( (v[mIsAway]==2) and C("ltred","[DND] ") ) or "";
+	local realm = "";
+	if guild[gRealmNoSpacer]~=v[mRealm] then
+		if (db.showRealmname) then
+			realm = C("white","-")..C("dkyellow", ns.scm(v[mRealm]));
+		else
+			realm = C("dkyellow","*");
+		end
+	end
+	local ts1, ts2, ts1script, ts2script = "","", false, false;
+	if db.showProfessions and tradeskills[v[mFullName]] then
+		if tradeskills[v[mFullName]][1] then
+			local t = tradeskills[v[mFullName]][1];
+			ts1 = "|T"..t[tsIcon]..":0|t "..t[tsValue];
+			ts1script = {"OnMouseUp", function(self, button) GetGuildMemberRecipes(v[mFullName],t[tsID]); end}
+		end
+		if tradeskills[v[mFullName]][2] then
+			local t = tradeskills[v[mFullName]][2];
+			ts2 = "|T"..t[tsIcon]..":0|t "..t[tsValue];
+			ts2script = {"OnMouseUp", function(self, button) GetGuildMemberRecipes(v[mFullName],t[tsID]); end}
+		end
+	end
+
+	local l=tt:AddLine(
+		v[mLevel],
+		C(v[mClassFile],ns.scm(v[mName]) .. realm),
+		(db.showZone) and v[mZone] or "", -- [3]
+		(db.showNotes) and ns.scm(v[mNote]) or "", -- [4]
+		(db.showONotes) and ns.scm(v[mOfficerNote]) or "", -- [5]
+		(db.showRank) and ns.scm(v[mRank]) or "", -- [6]
+		ts1, -- [7]
+		ts2 -- [8]
+	);
+
+	if ts1script then
+		tt:SetCellScript(l, 7, unpack(ts1script));
+	end
+
+	if ts2script then
+		tt:SetCellScript(l, 8, unpack(ts2script));
+	end
+
+	if v[mFullName]==ns.player.name_realm_short then
+		tt:SetLineColor(l, .5, .5, .5);
+	--elseif ns.friendlist then
+	--	if ns.friendlist[v[mFullName]]==1 then
+	--		tt:SetLineColor(l, .1, .5, .1);
+	--	elseif ns.friendlist[v[mFullName]]==2 then
+	--		tt:SetLineColor(l, .1, .3, .7);
+	--	end
+	end
+
+	-- tt.lines[line].info = {v[mFullName],v[mIsMobile]};
+	tt:SetLineScript(l, "OnMouseUp", function(self)
+		if (IsAltKeyDown()) then
+			if (not v[mIsMobile]) then
+				InviteUnit(v[mFullName]);
+			end
+		else
+			SetItemRef("player:"..v[mFullName], ("|Hplayer:%1$s|h[%1$s]|h"):format(v[mFullName]), "LeftButton");
+		end
+	end);
+end
+
+local function createTooltip(self, tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	tt:Clear()
 
 	if (not IsInGuild()) then
-		tt:AddHeader(L[name]);
+		tt:AddHeader(GUILD);
 		tt:AddSeparator();
 		tt:AddLine(L["No Guild"]);
 		return;
 	end
 
-	local currentXP, nextLevelXP, dailyXP, maxDailyXP, unitWeeklyXP, unitTotalXP, maxXP, line, column, factionStandingtext, guildName, guildLevel, gMOTD, description, standingID, barMin, barMax, barValue,guildRealm, showGuildRealm, _
+	local realm = "";
 
-	guildName, description, standingID, barMin, barMax, barValue = GetGuildFactionInfo();
-	factionStandingtext = GetText("FACTION_STANDING_LABEL"..standingID);
-	guildName,_,_,guildRealm = GetGuildInfo("player");
-	if (not guildRealm) then
-		showGuildRealm = "";
-		guildRealm = gsub(ns.realm," ","");
+	if ns.realm~=guild[gRealm] then
 		if (db.showRealmname) then
-			showGuildRealm = C("gray"," - ")..C("dkyellow", ns.scm(guildRealm));
+			realm = C("gray"," - ")..C("dkyellow",ns.scm(guild[gRealm]));
+		else
+			realm = C("dkyellow","*");
 		end
-	elseif (db.showRealmname) then
-		showGuildRealm = C("gray"," - ")..C("dkyellow",ns.scm(guildRealm) or "*");
-	else
-		showGuildRealm = C("dkyellow","*");
 	end
 
-	line, column = tt:AddHeader();
-	if (ns.build<60000000) then
-		guildLevel = GetGuildLevel();
-		currentXP, nextLevelXP, dailyXP, maxDailyXP, unitWeeklyXP, unitTotalXP = UnitGetGuildXP("player");
-		maxXP = currentXP + nextLevelXP;
-		tt:SetCell(line,1,C("dkyellow",L[name]) .. "  " .. C("green",("%s / Lvl: %d / XP: %.2f%%"):format(ns.scm(guildName) .. showGuildRealm ,guildLevel,(currentXP / (maxXP / 100) ))),nil,"LEFT",ttColumns)
-	else
-		tt:SetCell(line,1,C("dkyellow",L[name]) .. "  " .. C("green",ns.scm(guildName)) .. showGuildRealm, nil,"LEFT",ttColumns)
-	end
+	local l = tt:AddHeader();
+	tt:SetCell(l,1,C("dkyellow",GUILD) .. "  " .. C("green",ns.scm(guild[gName])) .. realm, nil,"LEFT",ttColumns);
 
 	tt:AddSeparator(4,0,0,0,0);
 
 	local sep=false;
 	if (db.showMOTD) then
-		gMOTD = GetGuildRosterMOTD();
-		if (gMOTD:len() > 100) then
-			gMOTD = ns.splitTextToHalf(gMOTD," ");
-		end
-
-		line, column = tt:AddLine(C("ltblue",L["MotD:"]));
-		tt:SetCell(line, 2, C("ltgreen",ns.scm(gMOTD,true)), nil, nil, ttColumns-1)
-		sep = true;
-	end
-
-	if (ns.build<60000000) and (db.showXP) then
-		line, column = tt:AddLine(("%s: "):format(C("ltblue",L["XP"])));
-		if (guildLevel<25) then
-			tt:SetCell(line, 2, ("%s/%s (%s)"):format(currentXP, maxXP,nextLevelXP),nil, nil, ttColumns - 1);
-		else
-			tt:SetCell(line, 2, ("%s/%s"):format(currentXP, maxXP),nil, nil, ttColumns - 1);
-		end
+		local l = tt:AddLine(C("ltblue",MOTD_COLON));
+		tt:SetCell(l, 2, C("ltgreen",ns.scm(ns.strWrap(guild[gMotD],56),true)), nil, nil, ttColumns-1)
 		sep = true;
 	end
 
 	if (db.showRep) then
-		line, column = tt:AddLine(("%s: "):format(C("ltblue",L["Rep"])));
-		tt:SetCell(line, 2, ("%s: (%d/%d)"):format(factionStandingtext, barValue-barMin, barMax-barMin), nil, nil, ttColumns - 1);
+		local l = tt:AddLine(("%s: "):format(C("ltblue",REPUTATION_ABBR)));
+		tt:SetCell(l,2,("%s: (%d/%d)"):format(player[pStandingText], player[pStandingValue]-player[pStandingMin], player[pStandingMax]-player[pStandingMin]), nil, nil, ttColumns - 1);
 		sep=true;
 	end
-
 
 	if (sep) then
 		tt:AddSeparator(4,0,0,0,0);
 	end
 
-	-- applicants
-	local numApplicants = GetNumGuildApplicants()
-	if (db.showApplicants) and (numApplicants>0) then
-		line,column = tt:AddLine(C("orange",L["Level"]),C("orange",L["Applicant"]),C("orange",L["Roles"]),C("orange",L["Expired"]),C("orange",L["Comment"]));
-		tt:AddSeparator()
+	if (db.showApplicants) and (guild[gNumApplicants]>0) then
+		local line,column = tt:AddLine(C("orange",LEVEL),C("orange",L["Applicant"]),C("orange",L["Roles"]),C("orange",RAID_INSTANCE_EXPIRES_EXPIRED),C("orange",COMMENT));
+		tt:AddSeparator();
 
-		for index=1, numApplicants do
-			local aName, level, class, bQuest, bDungeon, bRaid, bPvP, bRP, bWeekdays, bWeekends, bTank, bHealer, bDamage, comment, timeSince, timeLeft = GetGuildApplicantInfo(index);
-			local roles = {}
 
-			local realm,cross = "",false;
-			if (aName:find("-")) then
-				aName, realm = strsplit("-",aName);
-				cross=true;
-			end
-			if (db.showRealmname) then
-				realm = C("gray"," - ")..C("dkyellow", (realm:len()>0) and realm or gsub(ns.realm," ",""));
-			elseif (cross) then
-				realm = C("dkyellow","*");
+		for i, a in ipairs(applicants) do
+			if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
+			local realm = "";
+			if guild[gRealmNoSpacer]~=a[app_realm] then
+				if (db.showRealmname) then
+					realm = C("white","-")..C("dkyellow", ns.scm(a[app_realm]));
+				else
+					realm = C("dkyellow","*");
+				end
 			end
 
-			if (bTank) then table.insert(roles,L["Tank"]); end
-			if (bHealer) then table.insert(roles,L["Healer"]); end
-			if (bDamage) then table.insert(roles,L["Damage"]); end
-			line,column=tt:AddLine(level, C(class,aName) .. realm, table.concat(roles,", "), date("%Y-%m-%d",time()+timeLeft));
-			tt:SetCell(line,5,(strlen(comment)>0 and ns.strLimit(comment,60) or L["No Text"]),nil,nil,ttColumns-4);
+			local roles = {};
+			if a[app_bTank] then table.insert(roles,TANK); end
+			if a[app_bHealer] then table.insert(roles,HEALER); end
+			if a[app_bDamage] then table.insert(roles,DAMAGER); end
 
-			tt.lines[line].appIndex=index;
-			tt:SetLineScript(line,"OnMouseUp",function(self)
+			local l = tt:AddLine(
+				a[app_level],
+				C(a[app_class], ns.scm(a[app_name])) .. realm,
+				table.concat(roles,", "),
+				date("%Y-%m-%d",time()+a[app_timeLeft])
+			);
+			tt:SetCell(l,5,(strlen(a[app_comment])>0 and ns.scm(ns.strCut(a[app_comment],60)) or L["No Text"]),nil,nil,ttColumns-4);
+
+			tt.lines[l].appIndex=a[app_index];
+			tt:SetLineScript(l,"OnMouseUp",function(self)
 				if (IsInGuild()) then
 					if (not GuildFrame) then
 						GuildFrame_LoadUI();
@@ -352,155 +423,58 @@ local function guildTooltip()
 				end
 			end)
 		end
-
 		tt:AddSeparator(4,0,0,0,0);
 	end
 
-	-- roster title
-	local cells = {
-		C("ltyellow",L["Level"]),
-		C("ltyellow",L["Character"]),
-	};
-	if (db.showZone) then
-		tinsert(cells,C("ltyellow",L["Zone"]));
-	end
-	if (db.showNotes) then
-		tinsert(cells,C("ltyellow",L["Notes"]));
-	end
-	if (displayOfficerNotes) and (db.showONotes) then 
-		tinsert(cells,C("ltyellow",L["Officer notes"]));
-	end
-	if (db.showRank) then
-		tinsert(cells,C("ltyellow",L["Rank"]));
-	end
-	local l,c = tt:AddLine(unpack(cells));
-	if (db.showProfessions) then
-		tt:SetCell(l, #cells+1, C("ltyellow",L["Professions"]), nil, nil, 2);
+	local l=tt:AddLine(
+		C("ltyellow",LEVEL), -- [1]
+		C("ltyellow",CHARACTER), -- [2]
+		(db.showZone) and C("ltyellow",ZONE) or "", -- [3]
+		(db.showNotes) and C("ltyellow",L["Notes"]) or "", -- [4]
+		(displayOfficerNotes and db.showONotes) and C("ltyellow",OFFICER_NOTE_COLON) or "", -- [5]
+		(db.showRank) and C("ltyellow",RANK) or "" -- [6]
+	);
+
+	if db.showProfessions then
+		tt:SetCell(l, 7,C("ltyellow",TRADE_SKILLS), nil,nil,2); -- [7,8]
 	end
 
-	tt:AddSeparator()
+	tt:AddSeparator();
 
-	Tradeskills_Collector();
+	-- table.sort(members,function() end); -- idea for later maybe ^_^
+	for i,v in ipairs(members)do
+		if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
+		if (v[mOnline] and (not v[mIsMobile]) or (db.showMobileChatter and v[mIsMobile] and not db.splitTables)) then
+			tooltipAddLine(v);
+		end
+	end
 
-	local fullName,rank,rankIndex,level,class,zone,note,officernote,online,isAway,classFileName,achievementPoints,achievementRank,isMobile,canSoR,repStanding = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- GetGuildRosterInfo
-
-	local add = function(info)
-		local charname,realm = strsplit("-",info[fullName]);
-		local status = ((info[isAway]==1) and C("gold","[AFK] ")) or ((info[isAway]==2) and C("ltred","[DND] ")) or "";
-		local cellScripts = {};
-
-		if (db.showRealmname) then
-			realm = C("gray"," - ")..C("dkyellow",ns.scm(realm));
-		else
-			if (realm~=guildRealm) then
-				realm = C("dkyellow","*");
-			else
-				realm = "";
+	if db.showMobileChatter and guild[gNumMobile]>0 then
+		tt:AddSeparator(4,0,0,0,0);
+		for i,v in ipairs(members)do
+			if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
+			if v[mOnline] and v[mIsMobile] then
+				tooltipAddLine(v);
 			end
 		end
-
-		local cells = {
-			info[level],	-- level
-			status .. C(info[classFileName],ns.scm(charname)) .. realm,				-- name
-		};
-
-		if (db.showZone) then
-			tinsert(cells,((info[isMobile]) and C("ltblue",L["MobileChat"])) or info[zone] or ""); -- zone
-		end
-
-		if (db.showNotes) then
-			local _note = "";
-			if (info[note]) then _note = ns.scm(info[note],true); end
-			tinsert(cells,_note);	-- notes
-		end
-
-		if (displayOfficerNotes) and (db.showONotes) then
-			local _onote = "";
-			if (info[officernote]) then _onote = ns.scm(info[officernote]); end
-			tinsert(cells,_onote); -- officernotes
-		end
-
-		if (db.showRank) then
-			local rankColor = "white";
-			if (ns.player.name==charname) then  rankColor = "gray"; end
-			tinsert(cells,C(rankColor,ns.scm(info[rank],true))); -- rank
-		end
-
-		if (db.showProfessions) then -- professions
-			if (SkillMembers[info[fullName]]) then
-				for k,v in ipairs(SkillMembers[info[fullName]]) do
-					tinsert(cells,"|T"..v.icon..":0|t "..v.level);
-					cellScripts[#cells] = {"OnMouseUp", function(self, button) GetGuildMemberRecipes(info[fullName],v.id); end};
-					cellScripts.set=true;
-				end
-			end
-		end
-
-		local line, column = tt:AddLine(unpack(cells));
-		tt.lines[line].info=info;
-
-		if (cellScripts.set) then
-			for i,v in pairs(cellScripts) do
-				if (i~="set") then
-					tt:SetCellScript(line,i,unpack(v));
-				end
-			end
-		end
-
-		if (db.showZoneInTT2) or (db.showNotesInTT2) or (db.showONotesInTT2 and displayOfficerNotes) or (db.showRankInTT2) or (db.showProfessionsInTT2) then
-			tt:SetLineScript(line,"OnEnter",function(self) guildMemberTooltip(self) end);
-			tt:SetLineScript(line,"OnLeave",function(self) guildMemberTooltip(false) end);
-		end
-
-		tt:SetLineScript(line, "OnMouseUp", function(self)
-			if (IsAltKeyDown()) then
-				if (self.info[isMobile]) then return; end
-				InviteUnit(info[fullName]);
-			else
-				SetItemRef("player:"..info[fullName], "|Hplayer:"..info[fullName].."|h["..info[fullName].."|h", "LeftButton");
-			end
-		end);
 	end
 
-	local Armory = {};
-	for i=1, GetNumGuildMembers(true) do
-		local d = {GetGuildRosterInfo(i)};
-		if (d[online]) and (not d[isMobile]) then
-			add(d);
-		elseif (d[isMobile]) then
-			tinsert(Armory,d);
-		end
-	end
-
-	if (db.showMobileChatter) and (#Armory>0) then
-		if (db.splitTables) then
-			tt:AddSeparator(3,0,0,0,0);
-			line,column = tt:AddLine();
-			tt:SetCell(line, 1, C("ltyellow",L["MobileChat"]), nil, "LEFT", ttColumns)
-			tt:AddSeparator()
-		end
-
-		for i,v in ipairs(Armory) do
-			add(v);
-		end
-	end
-
-	if (Broker_EverythingDB.showHints) then
+	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0);
 
-		if (db.showApplicants) and (numApplicants>0) then
-			line, column = tt:AddLine();
-			tt:SetCell(line,1,C("orange",L["Click"]).." || "..C("green","Open guild applications"),nil,"LEFT",ttColumns);
+		if (db.showApplicants) and (guild[gNumApplicants]>0) then
+			local l = tt:AddLine();
+			tt:SetCell(l,1,C("orange",L["Click"]).." || "..C("green","Open guild applications"),nil,"LEFT",ttColumns);
 		end
 
 		if (ttColumns>4) then
-			line, column = tt:AddLine();
-			tt:SetCell(line,1,C("ltblue",L["Click"]).." || "..C("green",L["Whisper with a member"]) .." - ".. C("ltblue",L["Alt+Click"]).." || "..C("green",L["Invite a member"]),nil,"LEFT",ttColumns);
+			local l = tt:AddLine();
+			tt:SetCell(l,1,C("ltblue",L["Click"]).." || "..C("green",L["Whisper with a member"]) .." - ".. C("ltblue",L["Alt+Click"]).." || "..C("green",L["Invite a member"]),nil,"LEFT",ttColumns);
 		else
-			line, column = tt:AddLine();
-			tt:SetCell(line,1,C("ltblue",L["Click"]).." || "..C("green",L["Whisper with a member"]),nil,"LEFT",ttColumns);
-			line, column = tt:AddLine();
-			tt:SetCell(line,1,C("ltblue",L["Alt+Click"]).." || "..C("green",L["Invite a member"]),nil,"LEFT",ttColumns);
+			local l = tt:AddLine();
+			tt:SetCell(l,1,C("ltblue",L["Click"]).." || "..C("green",L["Whisper with a member"]),nil,"LEFT",ttColumns);
+			local l = tt:AddLine();
+			tt:SetCell(l,1,C("ltblue",L["Alt+Click"]).." || "..C("green",L["Invite a member"]),nil,"LEFT",ttColumns);
 		end
 
 		if (ns.modules[name].clickHints) then
@@ -528,84 +502,85 @@ local function guildTooltip()
 	end
 
 	tt:AddSeparator(1,0,0,0,0);
-	tt:UpdateScrolling(GetScreenHeight() * (Broker_EverythingDB.maxTooltipHeight/100));
+	--tt:UpdateScrolling(GetScreenHeight() * (ns.profile.GeneralOptions.maxTooltipHeight/100));
+	ns.roundupTooltip(self, tt);
 end
-
 
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
-	db = Broker_EverythingDB[name];
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
+	db = ns.profile[name];
 end
 
-ns.modules[name].onevent = function(self,event,msg)
-	local dataobj = (self) and self.obj or ns.LDB:GetDataObjectByName(ldbName);
-
-	if (not IsInGuild()) then
-		dataobj.text = L["No Guild"];
-		return;
+ns.modules[name].onevent = function(self,event,msg,...)
+	if event=="PLAYER_ENTERING_WORLD" or event=="LF_GUILD_RECRUIT_LIST_CHANGED" then
+		RequestGuildApplicantsList();
 	end
-
-	if (event=="PLAYER_LOGIN") or (event=="PLAYER_ENTERING_WORLD") then
-		ns.modules[name].onupdate();
-	end
-
-	if (event=="GUILD_ROSTER_UPDATE") or (event=="LF_GUILD_RECRUITS_UPDATED") or (event=="BE_DUMMY_EVENT") or (event=="CHAT_MSG_SYSTEM" and (msg:find(off) or msg:find(on))) then
-		local totalGuildMembers, membersOnline = GetNumGuildMembers();
-		local numApplicants = (Broker_EverythingDB[name].showApplicants) and GetNumGuildApplicants() or 0;
-
-		local currentXP, nextLevelXP, dailyXP, maxDailyXP, unitWeeklyXP, unitTotalXP, maxXP, guildLevel;
-		local txt,txt2 = {},{};
-
-		if (numApplicants>0) then
-			tinsert(txt2, C("orange",numApplicants));
+	if event=="PLAYER_ENTERING_WORLD" or event=="PLAYER_GUILD_UPDATE" then
+		if not IsInGuild() then
+			wipe(guild);
+			wipe(tradeskills);
+			wipe(applicants);
+			wipe(player);
+			wipe(members);
+			self:UnregisterEvent("GUILD_RANKS_UPDATE");
+			self:UnregisterEvent("GUILD_MOTD");
+			self:UnregisterEvent("GUILD_ROSTER_UPDATE");
+			self:UnregisterEvent("GUILD_TRADESKILL_UPDATE");
+			self:UnregisterEvent("LF_GUILD_RECRUIT_LIST_CHANGED");
+			self:UnregisterEvent("LF_GUILD_RECRUITS_UPDATED");
+			self:UnregisterEvent("CHAT_MSG_SYSTEM");
+		else
+			self:RegisterEvent("GUILD_RANKS_UPDATE");
+			self:RegisterEvent("GUILD_MOTD");
+			self:RegisterEvent("GUILD_ROSTER_UPDATE");
+			self:RegisterEvent("GUILD_TRADESKILL_UPDATE");
+			self:RegisterEvent("LF_GUILD_RECRUIT_LIST_CHANGED");
+			self:RegisterEvent("LF_GUILD_RECRUITS_UPDATED");
+			self:RegisterEvent("CHAT_MSG_SYSTEM");
+			doGuildUpdate     = true;
+			doMembersUpdate    = true;
+			doApplicantsUpdate = true;
 		end
-		if (Broker_EverythingDB[name].showMobileChatterBroker) then
-			local numMobile = 0;
-			for i=1, GetNumGuildMembers(true) do
-				local d = {GetGuildRosterInfo(i)};
-				if (d[14]) then
-					numMobile = numMobile + 1;
-				end
-			end
-			tinsert(txt2, C("ltblue",numMobile));
-		end
-		tinsert(txt2,C("green",membersOnline));
-		tinsert(txt2,C("green",totalGuildMembers));
-		tinsert(txt,table.concat(txt2,"/"));
-
-		if not (ns.build>=60000000) and (Broker_EverythingDB[name].showLvlXPbroker) then
-			currentXP, nextLevelXP, dailyXP, maxDailyXP, unitWeeklyXP, unitTotalXP = UnitGetGuildXP("player");
-			maxXP = currentXP + nextLevelXP
-			guildLevel = GetGuildLevel()
-			if (guildLevel<25) then
-				tinsert(C("green",GetGuildLevel()) .. "/" .. C("green",("%.2f%%"):format( currentXP/(maxXP/100) )));
-			end
-		end
-		dataobj.text = table.concat(txt," ");
-	end
-
-	if (event=="GUILD_TRADESKILL_UPDATE") or (event=="GUILD_RECIPE_KNOWN_BY_MEMBERS") then
-		SkillsUpdateLock = false;
-	elseif (tt) and (tt.key) and (tt.key==ttName) and (tt:IsShown()) then
-		guildTooltip();
-	end
-
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],Broker_EverythingDB[name]);
+		self:UnregisterEvent("PLAYER_ENTERING_WORLD");
+	elseif event=="GUILD_ROSTER_UPDATE" or event=="LF_GUILD_RECRUITS_UPDATED" or event=="BE_DUMMY_EVENT" or (event=="CHAT_MSG_SYSTEM" and (msg:find(off) or msg:find(on))) then
+		doGuildUpdate = true;
+		doMembersUpdate = true;
+		doApplicantsUpdate = false;
+	elseif event=="GUILD_TRADESKILL_UPDATE" then
+		doTradeskillsUpdate = true;
+	elseif event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 end
 
 ns.modules[name].onupdate = function(self)
-	if (IsInGuild()) then 
-		RequestGuildApplicantsList();
-		GuildRoster();
-		if (ns.build<60000000) then
-			QueryGuildXP();
-		end
+	if doGuildUpdate then
+		doGuildUpdate = false;
+		updateGuild();
 	end
+	if doMembersUpdate then
+		doMembersUpdate = false;
+		updateMembers();
+	end
+	if doTradeskillsUpdate then
+		updateTradeSkills();
+	end
+	if doApplicantsUpdate then
+		doApplicantsUpdate = false;
+		updateApplicants();
+	end
+	updateBroker();
+	if doUpdateTooltip and tt and tt.key and tt.key==ttName and tt:IsShown() then
+		doUpdateTooltip = false;
+		createTooltip(ttParent, tt);
+	end
+--	if (IsInGuild()) then 
+--		RequestGuildApplicantsList();
+--		GuildRoster();
+--	end
 end
 
 -- ns.modules[name].onmousewheel = function(self,direction) end
@@ -622,28 +597,28 @@ ns.modules[name].onenter = function(self)
 		"RIGHT", -- level
 		"LEFT" -- name
 	};
-	if (Broker_EverythingDB[name].showZone) then
+	--if (ns.profile[name].showZone) then
 		tinsert(ttData,"CENTER"); -- zone
-	end
-	if (Broker_EverythingDB[name].showNotes) then
+	--end
+	--if (ns.profile[name].showNotes) then
 		tinsert(ttData,"LEFT"); -- notes
-	end
-	if (displayOfficerNotes) and (Broker_EverythingDB[name].showONotes) then
+	--end
+	--if (displayOfficerNotes) and (ns.profile[name].showONotes) then
 		tinsert(ttData,"LEFT"); -- onotes
-	end
-	if (Broker_EverythingDB[name].showRank) then
+	--end
+	--if (ns.profile[name].showRank) then
 		tinsert(ttData,"LEFT"); -- rank
-	end
-	if (Broker_EverythingDB[name].showProfessions) then
+	--end
+	--if (ns.profile[name].showProfessions) then
 		tinsert(ttData,"LEFT"); -- professions 1
 		tinsert(ttData,"LEFT"); -- professions 2
-	end
+	--end
 
 	ttColumns = #ttData;
 
 	tt = ns.LQT:Acquire(ttName, ttColumns,unpack(ttData));
-	ns.createTooltip(self,tt);
-	guildTooltip(self);
+	ttParent = self;
+	createTooltip(self, tt);
 end
 
 ns.modules[name].onleave = function(self)

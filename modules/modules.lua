@@ -8,10 +8,10 @@ local L = ns.L;
 ns.modules = {};
 ns.updateList = {};
 ns.timeoutList = {};
+local counters = {};
 
 local function moduleInit(name)
-
-	local ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name;
+	local ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 	local data = ns.modules[name];
 
 	-- module load on demand like
@@ -20,19 +20,19 @@ local function moduleInit(name)
 	end
 
 	-- check if savedvariables for module present?
-	if (Broker_EverythingDB[name]==nil) then
-		Broker_EverythingDB[name] = {enabled = data.enabled};
-	elseif (type(Broker_EverythingDB[name].enabled)~="boolean") then
-		Broker_EverythingDB[name].enabled = data.enabled;
+	if (ns.profile[name]==nil) then
+		ns.profile[name] = {enabled = data.enabled};
+	elseif (type(ns.profile[name].enabled)~="boolean") then
+		ns.profile[name].enabled = data.enabled;
 	end
 
 	if (data.config_defaults) then
 		for i,v in pairs(data.config_defaults) do
-			if (Broker_EverythingDB[name][i]==nil) then
-				Broker_EverythingDB[name][i] = v;
+			if (ns.profile[name][i]==nil) then
+				ns.profile[name][i] = v;
 			elseif (data.config_allowed~=nil) and (data.config_allowed[i]~=nil) then
-				if (data.config_allowed[i][Broker_EverythingDB[name][i]]~=true) then
-					Broker_EverythingDB[name][i] = v;
+				if (data.config_allowed[i][ns.profile[name][i]]~=true) then
+					ns.profile[name][i] = v;
 				end
 			end
 		end
@@ -41,10 +41,10 @@ local function moduleInit(name)
 	-- force enabled status of non Broker modules.
 	if (data.noBroker) then
 		data.enabled = true;
-		Broker_EverythingDB[name].enabled = true;
+		ns.profile[name].enabled = true;
 	end
 
-	if (Broker_EverythingDB[name].enabled==true) then
+	if (ns.profile[name].enabled==true) then
 		local onclick;
 
 		-- pre LDB init
@@ -54,7 +54,7 @@ local function moduleInit(name)
 
 		-- new clickOptions system
 		if (type(data.clickOptions)=="table") then
-			local active = ns.clickOptions.update(data,Broker_EverythingDB[name]);
+			local active = ns.clickOptions.update(data,ns.profile[name]);
 			if (active) then
 				onclick = function(self,button) ns.clickOptions.func(name,self,button); end;
 			end
@@ -69,7 +69,7 @@ local function moduleInit(name)
 			end
 
 			local icon = ns.I(name .. (data.icon_suffix or ""));
-			local iColor = Broker_EverythingDB.iconcolor;
+			local iColor = ns.profile.GeneralOptions.iconcolor;
 			data.obj = ns.LDB:NewDataObject(ldbName, {
 
 				-- button data
@@ -89,11 +89,11 @@ local function moduleInit(name)
 
 			ns.updateIconColor(name);
 
-			if (Broker_EverythingDB.libdbicon) then
-				if (Broker_EverythingDB[name].dbi==nil) then
-					Broker_EverythingDB[name].dbi = {};
+			if (ns.profile.GeneralOptions.libdbicon) then
+				if (ns.profile[name].dbi==nil) then
+					ns.profile[name].dbi = {};
 				end
-				data.dbi = ns.LDBI:Register(ldbName,data.obj,Broker_EverythingDB[name].dbi);
+				data.dbi = ns.LDBI:Register(ldbName,data.obj,ns.profile[name].dbi);
 			end
 		end
 
@@ -114,15 +114,20 @@ local function moduleInit(name)
 			end
 
 			if (type(data.onupdate)=="function") and (data.updateinterval~=nil) then
+				counters[name]=false;
 				data.eventFrame:SetScript("OnUpdate",function(self,elapse)
 					if (self.elapsed==nil) then
 						self.elapsed=0;
 					end
-
+					if (counters[name]==false) then
+						counters[name]=0;
+					end
 					if (data.updateinterval == false) then
+						counters[name]=counters[name]+1;
 						data.onupdate(self,elapse);
 					elseif (self.elapsed>=data.updateinterval) then
 						self.elapsed = 0;
+						counters[name]=counters[name]+1;
 						data.onupdate(self,elapse);
 					else
 						self.elapsed = self.elapsed + elapse;
@@ -178,3 +183,13 @@ ns.moduleCoexist = function()
 		end
 	end
 end
+
+--[[
+function PrintCounters()
+	local x = {};
+	for i, v in pairs(counters)do
+		tinsert(x,("[%s:%s]"):format(i,tostring(v)));
+	end
+	ns.print("counters",table.concat(x,", "));
+end
+--]]

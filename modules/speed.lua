@@ -9,7 +9,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Speed" -- L["Speed"]
+local name = "Speed" -- SPEED
 local ldbName, ttName, ttColumns, tt = name, name.."TT", 2
 local string,GetUnitSpeed,UnitInVehicle = string,GetUnitSpeed,UnitInVehicle
 local riding_skills = { -- <spellid>, <skill>, <minLevel>, <air speed increase>, <ground speed increase>
@@ -20,6 +20,7 @@ local riding_skills = { -- <spellid>, <skill>, <minLevel>, <air speed increase>,
 	{33388, 20,  60},
 };
 local licences = { -- <spellid>, <minLevel>, <mapIds>
+	{"Legion flight licence?"},
 	{"a10018", 90, { --[[ draenor map ids? ]] }},
 	{115913,   85, {[862]=1,[858]=1,[929]=1,[928]=1,[857]=1,[809]=1,[905]=1,[903]=1,[806]=1,[873]=1,[808]=1,[951]=1,[810]=1,[811]=1,[807]=1}},
 	{54197,    68, {[485]=1,[486]=1,[510]=1,[504]=1,[488]=1,[490]=1,[491]=1,[541]=1,[492]=1,[493]=1,[495]=1,[501]=1,[496]=1}},
@@ -52,9 +53,8 @@ I[name] = {iconfile="Interface\\Icons\\Ability_Rogue_Sprint",coords={0.05,0.95,0
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["How fast are you swimming, walking, riding or flying."]
 ns.modules[name] = {
-	desc = desc,
+	desc = L["Broker to show swimming, walking, riding and flying speed in broker button, a list of riding skills and currently active speed bonuses"],
 	events = {},
 	updateinterval = 0.1, -- false or integer
 	config_defaults = {
@@ -73,7 +73,7 @@ ns.modules[name] = {
 --------------------------
 -- some local functions --
 --------------------------
-local function createTooltip(tt)
+local function createTooltip(self, tt)
 	local _=function(d) return ("+%d%%"):format(d); end;
 	local lvl = UnitLevel("player");
 	tt:Clear();
@@ -182,7 +182,9 @@ local function createTooltip(tt)
 		tt:AddSeparator();
 		for i,v in ipairs(licences) do
 			local Name, rank, icon, castTime, minRange, maxRange, completed, wasEarnedByMe, ready, _;
-			if(type(v[1])=="string")then
+			if v[2]==nil then
+				Name = v[1];
+			elseif(type(v[1])=="string")then
 				local id = tonumber(v[1]:match("a(%d+)"));
 				if(id)then
 					_, Name, _, completed, _, _, _, _, _, _, _, _, wasEarnedByMe = GetAchievementInfo(id);
@@ -193,8 +195,9 @@ local function createTooltip(tt)
 				ready = IsSpellKnown(v[1]);
 			end
 			if(Name)then
-
-				if(ready and lvl<v[2])then
+				if v[2]==nil then
+					tt:AddLine(C("ltgray",Name));
+				elseif(ready and lvl<v[2])then
 					tt:AddLine(C("yellow",Name),C("ltgray",L["Need level"].." "..v[2]));
 				elseif(ready) then
 					tt:AddLine(C("green",Name));
@@ -207,14 +210,15 @@ local function createTooltip(tt)
 			end
 		end
 	end
-
+	ns.roundupTooltip(self,tt);
 end
+
 
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
 -- ns.modules[name].onevent = function(self,event,msg) end
@@ -225,7 +229,7 @@ ns.modules[name].onupdate = function(self)
 	local unit = "player"
 	if UnitInVehicle("player") then unit = "vehicle" end
 
-	local speed = ("%."..Broker_EverythingDB[name].precision.."f"):format(GetUnitSpeed(unit) / 7 * 100 ) .. "%"
+	local speed = ("%."..ns.profile[name].precision.."f"):format(GetUnitSpeed(unit) / 7 * 100 ) .. "%"
 
 	obj.text = speed
 end
@@ -240,8 +244,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT","RIGHT", "RIGHT", "CENTER", "LEFT", "LEFT", "LEFT", "LEFT" );
-	createTooltip(tt);
-	ns.createTooltip(self,tt);
+	createTooltip(self, tt);
 end -- tt prevention (currently not on all broker panels...)
 
 ns.modules[name].onleave = function(self)

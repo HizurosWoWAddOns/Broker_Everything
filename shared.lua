@@ -8,32 +8,38 @@ local GetPlayerMapPosition,GetRealZoneText,GetSubZoneText = GetPlayerMapPosition
 local GetZonePVPInfo,GetBindLocation = GetZonePVPInfo,GetBindLocation
 local L = ns.L
 local _
+ns.debug = function() end
 ns.build = tonumber(gsub(({GetBuildInfo()})[1],"[|.]","")..({GetBuildInfo()})[2])
 
-ns.LDB = LibStub("LibDataBroker-1.1")
-ns.LQT = LibStub("LibQTip-1.0")
-ns.LDBI = LibStub("LibDBIcon-1.0")
-ns.LSM = LibStub("LibSharedMedia-3.0")
-
-ns.LT = LibStub("LibTime-1.0")
-ns.LC = LibStub("LibColors-1.0")
+ns.LDB = LibStub("LibDataBroker-1.1");
+ns.LQT = LibStub("LibQTip-1.0");
+ns.LDBI = LibStub("LibDBIcon-1.0");
+ns.LSM = LibStub("LibSharedMedia-3.0");
+ns.LT = LibStub("LibTime-1.0");
+ns.LC = LibStub("LibColors-1.0");
 
 -- broker_everything colors
 ns.LC.colorset({
 	["ltyellow"]	= "fff569",
 	["dkyellow"]	= "ffcc00",
+
 	["ltorange"]	= "ff9d6a",
 	["dkorange"]	= "905d0a",
-	["dkred"]		= "c41f3b",
+
+	--["dkred"]		= "c41f3b",
 	["ltred"]		= "ff8080",
 	["dkred"]		= "800000",
+
 	["violet"]		= "f000f0",
 	["ltviolet"]	= "f060f0",
 	["dkviolet"]	= "800080",
+
 	["ltblue"]		= "69ccf0",
 	["dkblue"]		= "000088",
+
 	["ltcyan"]		= "80ffff",
 	["dkcyan"]		= "008080",
+
 	["ltgreen"]		= "80ff80",
 	["dkgreen"]		= "00aa00",
 
@@ -64,12 +70,39 @@ ns.player = {
 	female = UnitSex("player")==3,
 };
 ns.player.name_realm = ns.player.name.."-"..ns.realm;
+ns.player.name_realm_short = gsub(ns.player.name_realm," ","");
 _, ns.player.class,ns.player.classId = UnitClass("player");
 ns.player.faction,ns.player.factionL  = UnitFactionGroup("player");
 L[ns.player.faction] = ns.player.factionL;
 ns.player.classLocale = ns.player.female and _G.LOCALIZED_CLASS_NAMES_FEMALE[ns.player.class] or _G.LOCALIZED_CLASS_NAMES_MALE[ns.player.class];
 ns.player.raceLocale,ns.player.race = UnitRace("player");
 ns.LC.colorset("suffix",ns.LC.colorset[ns.player.class:lower()]);
+
+
+  ---------------------------------------
+--- nice little print function          ---
+  ---------------------------------------
+ns.print = function (...)
+	local colors,t,c = {"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"},{},1;
+	for i,v in ipairs({...}) do
+		v = tostring(v);
+		if i==1 and v~="" then
+			tinsert(t,"|cff0099ff"..addon.."|r:"); c=2;
+		end
+		if not v:match("||c") then
+			v,c = "|cff"..colors[c]..v.."|r", c<#colors and c+1 or 1;
+		end
+		tinsert(t,v);
+	end
+	print(unpack(t));
+end
+
+if GetAddOnMetadata(addon,"Version")=="@project-version@" then
+	ns.debug = function(...)
+		ns.print("debug",...);
+	end
+	BrokerEverything = ns;
+end
 
 
   -----------------------------------------
@@ -90,7 +123,7 @@ do
 			-- useless blacklisted cvars...
 				msg = "Sorry, CVar "..cvar.." are no longer changeable while combat. Thanks @ Blizzard."
 			end
-			print("|cffff6600"..addon..": "..msg.."|r")
+			ns.print(ns.LC.color("ltorange",msg));
 		else
 			SetCVar(...)
 		end
@@ -108,10 +141,7 @@ ns.GetTipAnchor = function(frame, menu)
 	local hhalf = (x > UIParent:GetWidth() * 2 / 3) and "RIGHT" or (x < UIParent:GetWidth() / 3) and "LEFT" or ""
 	local vhalf = (y > UIParent:GetHeight() / 2) and "TOP" or "BOTTOM"
 
-	local X = (hhalf=="LEFT") and -3 or 3
-	local Y = (vhalf=="BOTTOM") and -3 or 3
-
-	return vhalf .. hhalf, frame, (vhalf == "TOP" and "BOTTOM" or "TOP") .. hhalf, X,Y
+	return vhalf .. hhalf, frame, (vhalf == "TOP" and "BOTTOM" or "TOP") .. hhalf, 0, 0
 end
 
 local function SmartAnchorTo(self,frame)
@@ -124,13 +154,13 @@ local function SmartAnchorTo(self,frame)
 end
 
 ns.tooltipScaling = function(tooltip)
-	if Broker_EverythingDB.tooltipScale == true then
+	if ns.profile.GeneralOptions.tooltipScale == true then
 		tooltip:SetScale(tonumber(GetCVar("uiScale")))
 	end
 end
 
 ns.hideTooltip = function(tooltip,ttName,ttForce,ttSetOnLeave)
-	local modifier=Broker_EverythingDB.ttModifierKey2;
+	local modifier=ns.profile.GeneralOptions.ttModifierKey2;
 	ttForce = not not ttForce;
 	if (tooltip) then
 		if (not ttForce) and (modifier~="NONE") and (ns.tooltipChkOnShowModifier(modifier,false)) then
@@ -166,14 +196,16 @@ ns.hideTooltip = function(tooltip,ttName,ttForce,ttSetOnLeave)
 	end
 end
 
-ns.createTooltip = function(frame, tooltip, SetOnLeave)
+ns.roundupTooltip = function(frame, tooltip, SetOnLeave, parentTooltip)
 	local eclipsed = 0;
-	if (Broker_EverythingDB.tooltipScale==true) then
+	if (ns.profile.GeneralOptions.tooltipScale==true) then
 		tooltip:SetScale(tonumber(GetCVar("uiScale")))
 	end
-	if (frame) then
-		SmartAnchorTo(tooltip,frame)
+	if frame==false then
+		frame = tooltip.parent;
 	end
+	tooltip.parent = frame;
+	SmartAnchorTo(tooltip,frame);
 	if (SetOnLeave) then
 		tooltip:SetScript("OnLeave", function(self)
 			ns.hideTooltip(self,self.key);
@@ -186,20 +218,19 @@ ns.createTooltip = function(frame, tooltip, SetOnLeave)
 			ns.hideTooltip(self,self.key,true);
 		end
 	end);
-
 	-- Tiptac Support for LibQTip Tooltips
 	if _G.TipTac and _G.TipTac.AddModifiedTip then
 		-- Pass true as second parameter because hooking OnHide causes C stack overflows
-		_G.TipTac:AddModifiedTip(tooltip, true)
+		_G.TipTac:AddModifiedTip(tooltip, true);
 	end
-
-	tooltip:UpdateScrolling(GetScreenHeight() * (Broker_EverythingDB.maxTooltipHeight/100));
-	tooltip:Show()
+	tooltip:AddSeparator(1,0,0,0,0);
+	tooltip:UpdateScrolling(GetScreenHeight() * (ns.profile.GeneralOptions.maxTooltipHeight/100));
+	tooltip:Show();
 end
 
 ns.RegisterMouseWheel = function(self,func)
-	self:EnableMouseWheel(1) 
-	self:SetScript("OnMouseWheel", func)
+	self:EnableMouseWheel(1);
+	self:SetScript("OnMouseWheel", func);
 end
 
 ns.tooltipModifiers = {
@@ -215,7 +246,7 @@ ns.tooltipModifiers = {
 }
 
 ns.tooltipChkOnShowModifier = function(bool)
-	local modifier = Broker_EverythingDB.ttModifierKey1;
+	local modifier = ns.profile.GeneralOptions.ttModifierKey1;
 	if (modifier~="NONE") then
 		modifier = (ns.tooltipModifiers[modifier]) and _G["Is"..ns.tooltipModifiers[modifier].f.."KeyDown"]();
 		if (bool) then
@@ -245,7 +276,7 @@ do
 			local obj = objs[n] or ns.LDB:GetDataObjectByName(n)
 			objs[n] = obj
 			if obj==nil then return false end
-			obj.iconR,obj.iconG,obj.iconB,obj.iconA = unpack(Broker_EverythingDB.iconcolor or ns.LC.color("white","colortable"))
+			obj.iconR,obj.iconG,obj.iconB,obj.iconA = unpack(ns.profile.GeneralOptions.iconcolor or ns.LC.color("white","colortable"))
 			return true
 		end
 		if name==true then
@@ -258,41 +289,10 @@ end
 
 
   ---------------------------------------
---- nice little print function          ---
-  ---------------------------------------
-ns.print = function (...)
-	local colors,t,c = {"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"},{},1;
-	for i,v in ipairs({...}) do
-		v = tostring(v);
-		if i==1 and v~="" then
-			tinsert(t,"|cff0099ff"..addon.."|r:"); c=2;
-		end
-		if not v:match("||c") then
-			v,c = "|cff"..colors[c]..v.."|r", c<#colors and c+1 or 1;
-		end
-		tinsert(t,v);
-	end
-	print(unpack(t));
-end
-ns.Print = ns.print
-
-ns.print_r = function(title,obj)
-	assert(type(title)=="string","argument 1# must be a string ("..type(title).." given).")
-	assert(type(obj)=="table","argument 2# must be a table ("..type(obj).." given)")
-	for k,v in pairs(obj) do
-		if type(v) ~= "string" and type(v)~="number" then v = "<"..type(v)..">" end
-		ns.print(title,k,"=",v)
-	end
-end
-
-ns.print_t = ns.print_r
-
-
-  ---------------------------------------
 --- suffix colour function              ---
   ---------------------------------------
 ns.suffixColour = function(str)
-	if (Broker_EverythingDB.suffixColour) then
+	if (ns.profile.GeneralOptions.suffixColour) then
 		str = ns.LC.color("suffix",str);
 	end
 	return str;
@@ -314,8 +314,8 @@ do
 		end,
 		__call = function(t,a)
 			if a==true then
-				if Broker_EverythingDB.iconset~="NONE" then
-					iconset = ns.LSM:Fetch((addon.."_Iconsets"):lower(),Broker_EverythingDB.iconset) or iconset
+				if ns.profile.GeneralOptions.iconset~="NONE" then
+					iconset = ns.LSM:Fetch((addon.."_Iconsets"):lower(),ns.profile.GeneralOptions.iconset) or iconset
 				end
 				return
 			end
@@ -336,7 +336,7 @@ do
 	local function updateIconColor(name)
 		local obj = ns.LDB:GetDataObjectByName(name);
 		if (obj==nil) then return false end
-		obj.iconR,obj.iconG,obj.iconB,obj.iconA = unpack(Broker_EverythingDB.iconcolor or ns.LC.color("white","colortable"))
+		obj.iconR,obj.iconG,obj.iconB,obj.iconA = unpack(ns.profile.GeneralOptions.iconcolor or ns.LC.color("white","colortable"))
 		return true
 	end
 	ns.updateIconColor = function(name)
@@ -392,207 +392,58 @@ ns.reversePairsByKeys = function(t,f)
 end
 
 
--- -------------------------------------------------------------- --
--- Function to split a string                                     --
--- http://stackoverflow.com/questions/1426954/split-string-in-lua --
--- Because mucking around with strings makes my head hurt.        --
--- -------------------------------------------------------------- --
-ns.splitText = function(inputstr, sep)
-	if sep == nil then
-		sep = "%s"
+-- ----------------------------- --
+-- Separate thousands function   --
+-- ----------------------------- --
+ns.FormatLargeNumber = function(value)
+	value = tonumber(value) or 0;
+	if ns.profile.GeneralOptions.separateThousands then
+		value = FormatLargeNumber(value);
 	end
-	local t={}
-	local i = 1
-	for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
-		t[i] = strtrim(str) .. sep
-		i=i+1
-	end
-	return table.concat(t, "|n")
+	return value;
 end
 
-ns.splitTextToHalf = function(inputstr, sep)
-	local t = {}
-	local i = 1
-	for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
-		t[i] =strtrim(str) .. " "
-		i=i+1
+-- --------------------- --
+-- Some string  function --
+-- --------------------- --
+ns.strWrap = function(text, limit, insetCount, insetChr, insetLastChr)
+	if strlen(text)<=limit then return text; end
+	local i,result,inset = 1,{},"";
+	if type(insetCount)=="number" then
+		inset = strrep(insetChr or " ",insetCount - (strlen(insetLastChr or ""))).. (insetLastChr or "");
 	end
-	local h,a,b = ceil(i/2),"",""
-	for i, v in pairs(t) do
-		if i < h then a = a .. v else b = b .. v end
+	for str in string.gmatch(text, "([^ \n]+)") do
+		local tmp = (result[i] and result[i].." " or "")..strtrim(str);
+		if strlen(tmp)<=limit then
+			result[i]=tmp;
+		else
+			i=i+1;
+			result[i]=str;
+		end
 	end
-	return a.."|n"..b
-end
-
-ns.split = function(iStr,splitBy,opts)
-	-- escapes sollten temporär ersetzt werden...
-	if splitBy=="length" then
-		assert(type(opts.length)=="number","opts.length must be a number, "..type(opts.length).."given.")
-	elseif splitBy=="half" then
-	elseif splitBy=="sepcount" then
-		assert(type(opts.count)=="number","opts.count must be a number, "..type(opts.count).."given.")
-	elseif splitBy=="sep" then
-		
-	end
+	return table.concat(result,"|n"..inset)
 end
 
 ns.getBorderPositions = function(f)
-	local us = UIParent:GetEffectiveScale()
-	local uw,uh = UIParent:GetWidth(), UIParent:GetHeight()
-	local fx,fy = f:GetCenter()
-	local fw,fh = f:GetWidth()/2, f:GetHeight()/2
+	local us = UIParent:GetEffectiveScale();
+	local uw,uh = UIParent:GetWidth(), UIParent:GetHeight();
+	local fx,fy = f:GetCenter();
+	local fw,fh = f:GetWidth()/2, f:GetHeight()/2;
 	-- LEFT, RIGHT, TOP, BOTTOM
-	return fx-fw, uw-(fx+fw), uh-(fy+fh),fy-fh
+	return fx-fw, uw-(fx+fw), uh-(fy+fh),fy-fh;
 end
 
-ns.strLimit = function(str,limit)
-	if strlen(str)>limit then str = strsub(str,1,limit).."..." end
+ns.strCut = function(str,limit)
+	if strlen(str)>limit-3 then str = strsub(str,1,limit-3).."..." end
 	return str
 end
 
-
--- -------------------------------------------------------------- --
--- module independent bags and inventory scanner                  --
--- event driven with delayed execution                            --
--- -------------------------------------------------------------- --
-do
-	--- local elements
-	local d = {
-		ids = {}, callbacks = {}, preScanCallbacks={}, links={},
-		delay = 1.75,
-		elapsed = 0,
-		update = true
-	}
-
-	local function scanner()
-		local items = {};
-		local callbacks = {};
-
-		-- get all itemIds from all items in the bags
-		for bag=0, NUM_BAG_SLOTS do
-			for slot=1, GetContainerNumSlots(bag) do
-				local id,_,count,rarity,price = GetContainerItemID(bag,slot);
-				if (id) then
-					if(items[id]==nil)then items[id]={}; end
-					local obj = {bag=bag, slot=slot};
-					_, obj.count = GetContainerItemInfo(bag, slot);
-					_, _, obj.rarity, _, _, _, _, _, _, _, obj.price = GetItemInfo(id);
-					tinsert(items[id],obj);
-					if(d.callbacks[id])then
-						for i,v in pairs(d.callbacks[id]) do
-							if(type(v)=="function")then
-								callbacks[i] = v;
-							end
-						end
-					end
-				end
-			end
-		end
-
-		-- get all itemIds from equipped items
-		local slots = {"Back","Chest","Feet","Finger0","Finger1","Hands","Head","Legs","MainHand","Neck","SecondaryHand","Shirt","Shoulder","Tabard","Trinket0","Trinket1","Waist","Wrist"};
-		for _,slot in ipairs(slots) do
-			local id = GetInventoryItemID("player",slot.."Slot");
-			if (id) then
-				if(items[id]==nil)then items[id]={}; end
-				local obj = {inv=slot,durability={}};
-				obj.slotId, obj.icon = GetInventorySlotInfo(slot.."Slot");
-				obj.isBroken = GetInventoryItemBroken("player",slot.."Slot");
-				obj.rarity = GetInventoryItemQuality("player",slot.."Slot");
-				obj.gems = {GetInventoryItemGems(obj.slotId)};
-				obj.durability.current, obj.durability.max = GetInventoryItemDurability(obj.slotId);
-				tinsert(items[id],obj);
-				if(d.callbacks[id])then
-					for i,v in pairs(d.callbacks[id]) do
-						if(type(v)=="function")then
-							callbacks[i] = v;
-						end
-					end
-				end
-			end
-		end
-
-		d.ids = items;
-
-		-- execute callback functions by itemId
-		for module,func in pairs(callbacks) do
-			if d.preScanCallbacks[module] then
-				d.preScanCallbacks[module]("preScan");
-			end
-			if(type(func)=="function")then
-				func("update");
-			end
-		end
-
-		-- execute callback.any functions for any update
-		if(d.callbacks.any~=nil)then
-			for module,func in pairs(d.callbacks.any)do
-				if d.preScanCallbacks[module] then
-					d.preScanCallbacks[module]("preScan");
-				end
-				if(type(func)=="function")then
-					func("update.any");
-				end
-			end
-		end
-	end
-
-	--- event and update frame
-	local f = CreateFrame("Frame");
-	f:SetScript("OnUpdate",function(self,elapse)
-		if(d.update)then
-			d.elapsed=d.elapsed+elapse;
-			if(d.elapsed>=d.delay)then
-				d.elapsed=0;
-				d.update=false;
-				scanner();
-			end
-		end
-	end);
-	f:SetScript("OnEvent",function(self,event,...)
-		d.update=true;
-	end);
-	f:RegisterEvent("BAG_UPDATE_DELAYED");
-	f:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
-	f:RegisterEvent("PLAYER_ENTERING_WORLD");
-
-	--- namespace functions
-	ns.items = {};
-	ns.items.RegisterCallBack = function(modName,itemId,func)
-		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
-		assert(type(itemId)=="number","argument #2 (itemId) must be a number, got "..type(itemId));
-		assert(type(func)=="function","argument #3 (function) must be a function, got "..type(func));
-		if (d.callbacks[itemId]==nil) then
-			d.callbacks[itemId] = {};
-		end
-		if (d.callbacks[itemId][modName]==nil)then
-			d.callbacks[itemId][modName] = func;
-		end
-		d.callbacks.active = true;
-	end;
-	ns.items.RegisterCallBackForAnyItem = function(modName,func)
-		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
-		assert(type(func)=="function","argument #3 (function) must be a function, got "..type(func));
-		if (d.callbacks.any==nil) then
-			d.callbacks.any = {};
-		end
-		d.callbacks.any[modName] = func;
-		d.callbacks.active = true;
-	end;
-	ns.items.RegisterPreScanCallBack  = function(modName,func)
-		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
-		assert(type(func)=="function","argument #3 (function) must be a function, got "..type(func));
-		if(d.preScanCallbacks==nil)then
-			d.preScanCallbacks={};
-		end
-		d.preScanCallbacks[modName]=func;
-	end;
-	ns.items.exist = function(itemId)
-		return d.ids[itemId] or false;
-	end;
-	ns.items.GetItemlist = function()
-		return d.ids;
-	end;
+ns.strFill = function(str,pat,count,append)
+	local l = (count or 1) - strlen(str);
+	if l<=0 then return str; end
+	local p = strrep(pat or " ", l);
+	if append then return str..p; end
+	return p..str;
 end
 
 
@@ -618,7 +469,6 @@ end
 --			{ ... }
 --		}
 -- ----------------------------------------
--- [=[
 do
 	local sbf = nil -- change to array
 	ns.secureButton = function(self,obj)
@@ -642,13 +492,17 @@ do
 		sbf:SetHeight(self:GetHeight())
 		sbf:SetHighlightTexture([[interface\friendsframe\ui-friendsframe-highlightbar-blue]],true)
 
-		for i,v in pairs(obj) do
+		for i,v in ipairs(obj) do
 			if type(v.typeName)=="string" and type(v.typeValue)=="string" then
 				sbf:SetAttribute(v.typeName,v.typeValue)
 			end
 			if type(v.attrName)=="string" and v.attrValue~=nil then
 				sbf:SetAttribute(v.attrName,v.attrValue)
 			end
+		end
+
+		if type(obj.hookOnClick)=="function" then
+			sbf:HookScript("OnClick",obj.hookOnClick);
 		end
 
 		sbf:Show()
@@ -686,61 +540,392 @@ do
 		end
 	end
 end
---]=]
+
+
+-- -------------------------------------------------------------- --
+-- module independent bags and inventory scanner                  --
+-- event driven with delayed execution                            --
+-- -------------------------------------------------------------- --
+do
+	--- local elements
+	local d,_ = {
+		ids={}, seen={}, bags={},inv={},item={}, callbacks={any={},bags={},inv={},item={}}, preScanCallbacks={}, links={},
+		elapsed = 0, update = true, invMin = 0, invMax = 0
+	}
+
+	local function scanner()
+		local items,seen,bags,inv,callbacks_item = {},{},{},{},{};
+		local inv_changed,bags_changed=false,false;
+		local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d+)");
+		local _UPGRADES = gsub(ITEM_UPGRADE_TOOLTIP_FORMAT,": %%d/%%d","");
+
+		-- get all itemIds from all items in the bags
+		for bag=0, NUM_BAG_SLOTS do
+			for slot=1, GetContainerNumSlots(bag) do
+				local id = GetContainerItemID(bag,slot);
+				if (id) then
+					if(items[id]==nil)then items[id]={}; end
+					local obj = {type="bag", bag=bag, slot=slot, id=id};
+					_, obj.count, obj.locked, _, obj.readable, obj.lootable = GetContainerItemInfo(bag, slot);
+					obj.name, obj.link, obj.rarity, obj.level, _, obj.type, obj.subType, obj.stackCount, _, obj.icon, obj.price = GetItemInfo(id);
+					tinsert(items[id],obj);
+					seen[id]=true;
+					bags[bag..":"..slot]=id;
+					if d.bags[bag..":"..slot]~=id and d.callbacks.item[id] then
+						for i,v in pairs(d.callbacks.item[id]) do
+							if(type(v)=="function")then
+								callbacks_item[i] = v;
+							end
+						end
+					end
+				end
+				if d.bags[bag..":"..slot]~=id then
+					bags_changed = true;
+				end
+			end
+		end
+
+		-- get all itemIds from equipped items
+		local slotNames,_ = {"Head","Neck","Shoulder","Shirt","Chest","Waist","Legs","Feet","Wrist","Hands","Finger0","Finger1","Trinket0","Trinket1","Back","MainHand","SecondaryHand","Range","Tabard"};
+		for slotIndex=1, 19 do
+			local id, unknown1 = GetInventoryItemID("player",slotIndex);
+			if type(id)=="number" then
+				if(items[id]==nil)then items[id]={}; end
+				local obj = {type="inv",slotName=slotNames[slotIndex],slotIndex=slotIndex,durability={},id=id,unknown1=unknown1};
+				obj.link = GetInventoryItemLink("player",slotIndex);
+				obj.name, _, obj.rarity, obj.level, _, obj.itemType, obj.subType, _, _, obj.icon, obj.price = GetItemInfo(obj.link);
+				local _,_,_,_,_,data = obj.link:find("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
+				local dataKeys = {"enchantId", "gemId1", "gemId2", "gemId3", "gemId4", "suffix", "unique", "linkLvl", "reforging"};
+				for i,v in pairs({strsplit(":",data)})do
+					local k,v="unnamed_"..i,tonumber(v) or 0;
+					if dataKeys[i] then k=dataKeys[i]; end
+					obj[k] = v;
+				end
+				local data,lvl,upgrades = ns.ScanTT.query({type="link",link=obj.link},true);
+				if data and data.lines then
+					obj.tooltip,lvl = data.lines,nil;
+					for i=2, _G.min(#data.lines,5) do
+						lvl = tonumber(data.lines[i]:match(_ITEM_LEVEL));
+						if lvl then
+							obj.level=lvl;
+						elseif data.lines[i]:match(_UPGRADES) then
+							_,obj.upgrades = strsplit(" ",data.lines[i]);
+						end
+					end
+				end
+				obj.isBroken = GetInventoryItemBroken("player",slotIndex);
+				obj.gems = {GetInventoryItemGems~=nil and GetInventoryItemGems(slotIndex) or nil};
+				obj.durability.current, obj.durability.max = GetInventoryItemDurability(slotIndex);
+				tinsert(items[id],obj);
+				seen[id]=true;
+				inv[slotIndex]=id;
+				if d.inv[slotIndex]~=id and d.callbacks.item[id] then
+					for i,v in pairs(d.callbacks.item[id]) do
+						if(type(v)=="function")then
+							callbacks_item[i] = v;
+						end
+					end
+				end
+				if d.inv[slotIndex]~=id then
+					inv_changed = true;
+				end
+			end
+		end
+		d.ids = items;
+
+		-- for any items seen on previous update but not now...
+		for id,_ in pairs(d.seen)do
+			if not seen[id] then
+				if(d.callbacks.item[id])then
+					for i,v in pairs(d.callbacks.item[id]) do
+						if(type(v)=="function")then
+							callbacks_item[i] = v;
+						end
+					end
+				end
+			end
+		end
+		d.seen = seen;
+		d.bags = bags;
+		d.inv = inv;
+
+		-- execute callback functions for item id's
+		for module,func in pairs(callbacks_item) do
+			if d.preScanCallbacks[module] then
+				d.preScanCallbacks[module]("preScan");
+			end
+			if(type(func)=="function")then
+				func("update.item");
+			end
+		end
+
+		-- execute callback.bags
+		if bags_changed and d.callbacks.bags~=nil then
+			for module,func in pairs(d.callbacks.bags)do
+				if type(func)=="function" then
+					func("update.bags");
+				end
+			end
+		end
+
+		-- execute callback.inv
+		if inv_changed and d.callbacks.inv~=nil then
+			for module,func in pairs(d.callbacks.inv)do
+				if type(func)=="function" then
+					func("update.inv");
+				end
+			end
+		end
+
+		-- execute callback.any functions for any update
+		if(d.callbacks.any~=nil)then
+			for module,func in pairs(d.callbacks.any)do
+				if d.preScanCallbacks[module] then
+					d.preScanCallbacks[module]("preScan");
+				end
+				if(type(func)=="function")then
+					func("update.any");
+				end
+			end
+		end
+	end
+
+	--- event and update frame
+	local f = CreateFrame("Frame");
+	f:SetScript("OnEvent",function(self,event,...)
+		if event=="PLAYER_ENTERING_WORLD" then
+			if d.ticker==nil then
+				d.ticker=C_Timer.NewTicker(0.5,function()
+					if d.update then
+						d.update=false;
+						scanner();
+					end
+				end);
+			end
+			self:UnregisterEvent(event);
+		end
+		d.update=true;
+	end);
+	f:RegisterEvent("ITEM_UPGRADE_MASTER_UPDATE");
+	f:RegisterEvent("BAG_UPDATE_DELAYED");
+	f:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
+	f:RegisterEvent("PLAYER_ENTERING_WORLD");
+
+	--- namespace functions
+	ns.items = {};
+	ns.items.RegisterCallback = function(modName,func,mode,id)
+		mode = tostring(mode):lower();
+		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
+		assert(type(func)=="function","argument #2 (function) must be a function, got "..type(func));
+		assert(mode=="any" or mode=="inv" or mode=="bags" or mode=="item", "argument #3 must be 'any','inv', 'bags' or 'item'.");
+		if (d.callbacks[mode]==nil) then
+			d.callbacks[mode] = {};
+		end
+		if mode=="item" then
+			assert(type(id)=="number","argument #4 must be number, got "..type(id));
+			if (d.callbacks[mode][id]==nil) then
+				d.callbacks[mode][id] = {};
+			end
+			d.callbacks[mode][id][modName] = func;
+		else
+			d.callbacks[mode][modName] = func;
+		end
+		d.callbacks.active = true;
+	end;
+	ns.items.RegisterPreScanCallback  = function(modName,func)
+		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
+		assert(type(func)=="function","argument #3 (function) must be a function, got "..type(func));
+		if(d.preScanCallbacks==nil)then
+			d.preScanCallbacks={};
+		end
+		d.preScanCallbacks[modName]=func;
+	end;
+	ns.items.exist = function(itemId)
+		return d.ids[itemId] or false;
+	end;
+	ns.items.GetItemlist = function()
+		return d.ids;
+	end;
+	ns.items.UpdateNow = function()
+		d.update=true;
+	end
+	ns.items.GetBagItems = function()
+		local result = {};
+		for _,id in pairs(d.prev_bags)do
+			result[id]=d.ids[id];
+		end
+		return result;
+	end
+	ns.items.GetInventoryItems = function()
+		local result = {};
+		for _,id in pairs(d.inv)do
+			if d.ids[id] and #d.ids[id]>0 then
+				for i=1, #d.ids[id] do
+					if d.ids[id][i] and d.ids[id][i].type=="inv" then
+						result[id]=d.ids[id][1];
+					end
+				end
+			end
+		end
+		return result;
+	end
+	ns.items.GetInventoryItemBySlotIndex = function(index)
+		if d.inv[index]~=nil and d.ids[d.inv[index]] then
+			for i=1, #d.ids[d.inv[index]] do
+				if d.ids[d.inv[index]][i] then
+					return d.ids[d.inv[index]][i];
+				end
+			end
+		end
+	end
+	ns.items.GetInventoryItemLevelMinMax = function()
+		return d.invMin, d.invMax;
+	end
+end
 
 
 -- --------------------- --
 -- scanTooltip functions --
 -- --------------------- --
 do
-	local scanTooltip = CreateFrame("GameTooltip",addon.."_ScanTooltip",UIParent,"GameTooltipTemplate")
-	scanTooltip:SetScale(0.0001)
-	scanTooltip:Hide()
+	local scanTooltip = CreateFrame("GameTooltip",addon.."_ScanTooltip",UIParent,"GameTooltipTemplate");
+	local scanTooltip2 = CreateFrame("GameTooltip",addon.."_ScanTooltip2",UIParent,"GameTooltipTemplate");
+	scanTooltip:SetScale(0.0001);
+	scanTooltip:SetAlpha(0);
+	scanTooltip:Hide();
+	scanTooltip2:SetScale(0.0001);
+	scanTooltip2:SetAlpha(0);
+	scanTooltip2:Hide();
 
-	-- ------------------------------------------- --
-	-- GetItemData                                 --
-	-- a 2in1 function to fetch item informations  --
-	-- for use in other addons                     --
-	-- ------------------------------------------- --
-	function ns.GetItemData(id,bag,slot)
-		assert(type(id)=="number","argument #1 (id) must be a number, got "..type(id))
-		local data,line,_ = {},0
-		data.id,data.tooltip = id,{};
-		data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = GetItemInfo(id);
-		scanTooltip:ClearLines();
-		scanTooltip:Show();
-		scanTooltip:SetOwner(UIParent,"LEFT",0,0);
-		if (bag~=nil) and (slot~=nil) then
-			assert(type(bag)=="number","argument #2 (bag) must be a number, got "..type(bag));
-			assert(type(slot)=="number","argument #3 (slot) must be a number, got "..type(slot));
-			data.startTime, data.duration, data.isEnabled = GetContainerItemCooldown(bag,slot);
-			data.hasCooldown, data.repairCost = scanTooltip:SetBagItem(bag,slot);
+	ns.ScanTT = {};
+	local queries = {};
+	local ticker = nil;
+	local duration = 0.2;
+	local try = 0;
+
+	local function collect(tt,Data)
+		local data;
+		if not Data then
+			if #queries==0 then
+				if(ticker)then
+					ticker:Cancel();
+					ticker=nil;
+				end
+				tt:Hide();
+				return;
+			end
+			data = queries[1];
 		else
-			scanTooltip:SetHyperlink("item:"..id);
+			data = Data;
 		end
-		for _,v in ipairs({scanTooltip:GetRegions()}) do
-			if (v~=nil) and (v:GetObjectType()=="FontString") and (v:GetText()~=nil) then
-				tinsert(data.tooltip,v:GetText());
+
+		local success,num,regions = false,0;
+		tt:SetOwner(UIParent,"ANCHOR_LEFT");
+
+		if not data._type then
+			data._type=data.type;
+		end
+		if data.try==nil then
+			data.try=1;
+		else
+			data.try=data.try+1;
+		end
+		if data._type=="bag" then
+			if data.id then
+				data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = GetItemInfo(data.id);
+			end
+			data.startTime, data.duration, data.isEnabled = GetContainerItemCooldown(data.bag,data.slot);
+			data.hasCooldown, data.repairCost = tt:SetBagItem(data.bag,data.slot);
+			data.str = "bag"..data.bag..", slot"..data.slot;
+		elseif data._type=="item" then
+			data._type="link";
+			data.link="item:"..data.id;
+		elseif data._type=="unit" then
+			data._type="link";
+			data.link="unit:Creature-0-0-0-0-"..data.id.."-0";
+		elseif data._type=="quest" then
+			data._type="link";
+			data.link="quest:"..data.id..":"..data.level;
+			--if ns.build>70000000 then
+			--	data.link = data.link..":-1";
+			--end
+		--elseif data.type=="" then
+		end
+
+		if data._type=="link" then
+			data.str = data.link;
+			tt:SetHyperlink(data.link);
+		end
+
+		try = try + 1;
+		if try>3 then try=0; end
+
+		tt:Show();
+
+		regions = {tt:GetRegions()};
+
+		data.lines={};
+		for _,v in ipairs(regions) do
+			if (v~=nil) and (v:GetObjectType()=="FontString")then
+				local str = v:GetText();
+				if type(str)=="string" and strlen(str)>0 then
+					tinsert(data.lines,v:GetText());
+				end
 			end
 		end
-		scanTooltip:ClearLines();
-		scanTooltip:Hide();
-		return data;
+
+		tt:Hide();
+
+		if Data then
+			return data;
+		end
+
+		if(#data.lines>0)then
+			data.callback(data);
+			tremove(queries,1);
+		elseif data.try>5 then
+			tremove(queries,1);
+		end
 	end
-	function ns.GetLinkData(link)
-		assert(type(link)=="string","argument #1 must be a string, got "..type(link));
-		local data,line,_ = {},0
-		scanTooltip:Show();
-		scanTooltip:SetOwner(UIParent,"LEFT",0,0);
-		scanTooltip:SetHyperlink(link);
-		for _,v in ipairs({scanTooltip:GetRegions()}) do
-			if (v~=nil) and (v:GetObjectType()=="FontString") and (v:GetText()~=nil) then
-				tinsert(data,v:GetText());
+	--[[
+		ns.ScanTT.query({
+			type = "bag|link",
+			calllback = [func],
+
+			- if type bag
+				bag = <number>
+				slot = <number>
+
+			- if type item
+				id = <number>
+
+			- if type link
+				link = <string>
+		})
+	--]]
+	ns.ScanTT.query = function(data,instant) -- type, [link|id,bag,slot], callback
+		if data.type=="bag" then
+			assert(type(data.bag)=="number","bag must be a number, got "..type(data.bag));
+			assert(type(data.slot)=="number","slot must be a number, got "..type(data.slot));
+		elseif data.type=="item" or data.type=="quest" or data.type=="unit" then
+			assert(type(data.id)=="number","id must be a number, got "..type(data.id));
+		elseif data.type=="link" then
+			assert(type(data.link)=="string","link must be a string, got "..type(data.link));
+		elseif data.type=="unit" then
+			--assert(type(data.id)=="number","unit
+		end
+		if instant then
+			return collect(scanTooltip2,data);
+		else
+			tinsert(queries,data);
+			if(ticker==nil)then
+				C_Timer.After(0.5,function()
+					if ticker==nil then
+						ticker = C_Timer.NewTicker(duration,function() collect(scanTooltip); end);
+					end
+				end);
 			end
 		end
-		scanTooltip:ClearLines();
-		scanTooltip:Hide();
-		return data, #data;
 	end
 end
 
@@ -816,34 +1001,30 @@ end
 -- a per module and a addon wide toggle.                 --
 -- ----------------------------------------------------- --
 function ns.GetCoinColorOrTextureString(modName,amount,opts)
-	local zz="%02d";
+	local zz,tex="%02d","|TInterface\\MoneyFrame\\UI-%sIcon:14:14:2:0|t";
 	if(type(amount)~="number")then amount=0; end
 
 	if(not opts)then opts={}; end
 	if(not opts.sep)then
-		if Broker_EverythingDB.separateThousands and LARGE_NUMBER_SEPERATOR=="." then
-			opts.sep=" ";
-		else
-			opts.sep=".";
-		end
+		opts.sep=" ";
 	end
 	if(not opts.hideLowerZeros)then
 		opts.hideLowerZeros=false;
-		if (Broker_EverythingDB.goldHideLowerZeros==true)then
+		if (ns.profile.GeneralOptions.goldHideLowerZeros==true)then
 			opts.hideLowerZeros=true;
 		end
 	end
 
 	if(not opts.hideCopper)then
 		opts.hideCopper=false;
-		if(Broker_EverythingDB.goldHideCopper==true)then
+		if(ns.profile.GeneralOptions.goldHideCopper==true)then
 			opts.hideCopper=true;
 		end
 	end
 
 	if(not opts.hideSilver)then
 		opts.hideSilver=false;
-		if(Broker_EverythingDB.goldHideSilver==true)then
+		if(ns.profile.GeneralOptions.goldHideSilver==true)then
 			opts.hideSilver=true;
 		end
 	end
@@ -854,29 +1035,34 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 		amount = floor(amount/100)*100;
 	end
 
-	if (Broker_EverythingDB[modName].goldColor==true) or (Broker_EverythingDB.goldColor==true) then
+	local gold, silver, copper, t, i = floor(amount/10000), mod(floor(amount/100),100), mod(floor(amount),100), {}, 1
 
-		local gold, silver, copper, t, i = floor(amount/10000), mod(floor(amount/100),100), mod(floor(amount),100), {}, 1
-
-		if amount==0 or not (opts.hideCopper or (copper==0 and opts.hideLowerZeros))then
+	if amount==0 or not (opts.hideCopper or (copper==0 and opts.hideLowerZeros))then
+		if (ns.profile.GeneralOptions.goldColor==true) then
 			tinsert(t,ns.LC.color("copper",(silver>0 or gold>0) and zz:format(copper) or copper));
+		else
+			tinsert(t,copper .. tex:format("Copper"));
 		end
-
-		if amount>0 and not (opts.hideSilver or (copper==0 and silver==0 and opts.hideLowerZeros))then
-			tinsert(t,1,ns.LC.color("silver",gold>0 and zz:format(silver) or silver));
-		end
-
-		if(gold>0)then
-			if Broker_EverythingDB.separateThousands then
-				gold = FormatLargeNumber(gold);
-			end
-			tinsert(t,1,ns.LC.color("gold",gold));
-		end
-
-		return table.concat(t,opts.sep);
-	else
-		return GetCoinTextureString(amount)
 	end
+
+	if amount>0 and not (opts.hideSilver or (copper==0 and silver==0 and opts.hideLowerZeros))then
+		if (ns.profile.GeneralOptions.goldColor==true) then
+			tinsert(t,1,ns.LC.color("silver",gold>0 and zz:format(silver) or silver));
+		else
+			tinsert(t,1,silver .. tex:format("Silver"));
+		end
+	end
+
+	if(gold>0)then
+		gold = ns.FormatLargeNumber(gold);
+		if (ns.profile.GeneralOptions.goldColor==true) then
+			tinsert(t,1,ns.LC.color("gold",gold));
+		else
+			tinsert(t,1,gold .. tex:format("Gold"));
+		end
+	end
+
+	return table.concat(t,opts.sep);
 end
 
 
@@ -884,7 +1070,7 @@ end
 -- screen capture mode - string replacement function     --
 -- ----------------------------------------------------- --
 ns.scm = function(str,all)
-	if (type(str)=="string") and (strlen(str)>0) and (Broker_EverythingDB.scm==true) then
+	if (type(str)=="string") and (strlen(str)>0) and (ns.profile.GeneralOptions.scm==true) then
 		if (all) then
 			return strrep("*",(strlen(str)));
 		else
@@ -934,6 +1120,7 @@ do
 	local self = ns.EasyMenu;
 	self.menu = {};
 	self.controlGroups = {};
+	self.IsPrevSeparator = false;
 	local cvarTypeFunc = {
 		bool = function(D)
 			if (type(D.cvar)=="table") then
@@ -955,11 +1142,11 @@ do
 	local beTypeFunc = {
 		bool = function(d)
 			if (d.beModName) then
-				d.checked = function() return (Broker_EverythingDB[d.beModName][d.beKeyName]) end;
-				d.func = function() Broker_EverythingDB[d.beModName][d.beKeyName] = not Broker_EverythingDB[d.beModName][d.beKeyName]; end;
+				d.checked = function() return (ns.profile[d.beModName][d.beKeyName]) end;
+				d.func = function() ns.profile[d.beModName][d.beKeyName] = not ns.profile[d.beModName][d.beKeyName]; end;
 			else
-				d.checked = function() return (Broker_EverythingDB[d.beKeyName]) end;
-				d.func = function() Broker_EverythingDB[d.beKeyName] = not Broker_EverythingDB[d.beKeyName]; end;
+				d.checked = function() return (ns.profile.GeneralOptions[d.beKeyName]) end;
+				d.func = function() ns.profile.GeneralOptions[d.beKeyName] = not ns.profile.GeneralOptions[d.beKeyName]; end;
 			end
 		end,
 		slider = function(...)
@@ -985,12 +1172,14 @@ do
 		local entry= {};
 
 		if (type(D)=="table") and (#D>0) then -- numeric table = multible entries
+			self.IsPrevSeparator = false;
 			for i,v in ipairs(D) do
 				self.addEntry(v,parent);
 			end
 			return;
 
 		elseif (D.childs) then -- child elements
+			self.IsPrevSeparator = false;
 			local parent = self.addEntry({ label=D.label, arrow=true, disabled=D.disabled },P);
 			for i,v in ipairs(D.childs) do
 				self.addEntry(v,parent);
@@ -998,6 +1187,7 @@ do
 			return;
 
 		elseif (D.groupName) and (D.optionGroup) then -- similar to childs but with group control
+			self.IsPrevSeparator = false;
 			if (self.controlGroups[D.groupName]==nil) then
 				self.controlGroups[D.groupName] = {};
 			else
@@ -1011,16 +1201,25 @@ do
 			return;
 
 		elseif (D.separator) then -- separator line (decoration)
+			if self.IsPrevSeparator then
+				return;
+			end
+			self.IsPrevSeparator = true;
 			entry = { text = "", dist = 0, isTitle = true, notCheckable = true, isNotRadio = true, sUninteractable = true, iconOnly = true, icon = "Interface\\Common\\UI-TooltipDivider-Transparent", tCoordLeft = 0, tCoordRight = 1, tCoordTop = 0, tCoordBottom = 1, tFitDropDownSizeX = true, tSizeX = 0, tSizeY = 8 };
 			entry.iconInfo = entry; -- looks like stupid? is necessary to work. (thats blizzard)
 
 		else
+			self.IsPrevSeparator = false;
 			entry.isTitle          = D.title     or false;
 			entry.hasArrow         = D.arrow     or false;
 			entry.disabled         = D.disabled  or false;
 			entry.notClickable     = not not D.noclick;
 			entry.isNotRadio       = not D.radio;
-			entry.keepShownOnClick = (D.keepShown~=nil) and D.keepShown or nil;
+			entry.keepShownOnClick = true;
+
+			if (D.keepShown==false) then
+				entry.keepShownOnClick = false;
+			end
 
 			if (D.cvarType) and (D.cvar) and (type(D.cvarType)=="string") and (cvarTypeFunc[D.cvarType]) then
 				cvarTypeFunc[D.cvarType](D);
@@ -1033,7 +1232,7 @@ do
 			if (D.checked~=nil) then
 				entry.checked      = D.checked;
 				if (entry.keepShownOnClick==nil) then
-					entry.keepShownOnClick = 1;
+					entry.keepShownOnClick = false;
 				end
 			else
 				entry.notCheckable = true;
@@ -1095,12 +1294,13 @@ do
 
 	self.addEntries = self.addEntry;
 
-	self.addConfigElements = function(modName,separator)
+	self.addConfigElements = function(modName,separator,noTitle)
 		if (separator) then
 			self.addEntry({ separator = true });
 		end
-		self.addEntry({ label = L["Options"], title = true });
-		self.addEntry({ separator = true });
+		if not noTitle and ns.modules[modName].config[3].type~="header" then
+			self.addEntry({ label = OPTIONS, title = true });
+		end
 		for i,v in ipairs(ns.modules[modName].config) do
 
 			local disabled = v.disabled;
@@ -1110,7 +1310,7 @@ do
 
 			if (disabled) or (i==1) or (i==2) then
 				-- do nothing
-			elseif (v.type=="separator") then
+			elseif (v.type=="separator" and v.inMenuInvisible~=true) then
 				self.addEntry({ separator=true });
 			elseif (v.type=="header") then
 				self.addEntry({ label=v.label, title=true });
@@ -1121,10 +1321,10 @@ do
 				end
 				self.addEntry({
 					label = gsub(L[v.label],"|n"," "),
-					checked = function() return Broker_EverythingDB[modName][v.name]; end,
+					checked = function() return ns.profile[modName][v.name]; end,
 					func  = function()
-						Broker_EverythingDB[modName][v.name] = not Broker_EverythingDB[modName][v.name];
-						if (v.event) then ns.modules[modName].onevent({},"BE_DUMMY_EVENT"); end
+						ns.profile[modName][v.name] = not ns.profile[modName][v.name];
+						if (v.event and ns.modules[modName].onevent) then ns.modules[modName].onevent({},"BE_DUMMY_EVENT"); end
 					end,
 					tooltip = {v.label,tooltip},
 				});
@@ -1139,9 +1339,9 @@ do
 						label = L[valLabel],
 						radio = valKey,
 						keepShown = false,
-						checked = function() return (Broker_EverythingDB[modName][v.name]==valKey); end,
+						checked = function() return (ns.profile[modName][v.name]==valKey); end,
 						func = function(self)
-							Broker_EverythingDB[modName][v.name] = valKey;
+							ns.profile[modName][v.name] = valKey;
 							ns.modules[modName].onevent({},"BE_UPDATE_CLICKOPTIONS");
 							self:GetParent():Hide();
 						end
@@ -1163,7 +1363,7 @@ do
 		end
 
 		self.addEntry({separator=true});
-		self.addEntry({label=CANCEL.." / "..CLOSE, func=function() end});
+		self.addEntry({label=CANCEL, func=function() DropDownList1:Hide(); end});
 
 		UIDropDownMenu_Initialize(self.frame, EasyMenu_Initialize, displayMode, nil, self.menu);
 		ToggleDropDownMenu(1, nil, self.frame, anchor, x, y, self.menu, nil, nil);
@@ -1206,8 +1406,9 @@ end
 -- clickOptions System      --
 -- ------------------------ --
 do
+	L.Disabled = ADDON_DISABLED;
 	local values = {
-		["__NONE"]     = "Disabled",			-- L["Disabled"]
+		["__NONE"]     = "Disabled",			-- ADDON_DISABLED
 		["_CLICK"]     = "Click",				-- L["Click"]
 		["_LEFT"]      = "Left-click",			-- L["Left-click"]
 		["_RIGHT"]     = "Right-click",			-- L["Right-click"]
@@ -1265,15 +1466,15 @@ do
 				mod.clickOptionsConfigNum={};
 
 				tinsert(mod.config,{type="separator",alpha=0});
-				tinsert(mod.config,{type="header", label=L["Broker button options"]});
-				tinsert(mod.config,{type="separator"});
+				tinsert(mod.config,{type="header", label=L["Broker click options"]});
+				tinsert(mod.config,{type="separator", inMenuInvisible=true });
 
 				for cfgKey,clickOpts in ns.pairsByKeys(mod.clickOptions) do
 					local cfg_entry = {
 						type	= "select",
 						name	= "clickOptions::"..cfgKey,
 						label	= L[clickOpts.cfg_label],
-						tooltip	= L["Choose your fav. combination of modifier and mouse key to "]..L[clickOpts.cfg_desc],
+						tooltip	= L["Choose your fav. combination of modifier and mouse key to"].." "..L[clickOpts.cfg_desc],
 						values	= values,
 						default	= clickOpts.cfg_default or "__NONE",
 						event	= "BE_UPDATE_CLICKOPTIONS"

@@ -16,13 +16,13 @@ local unknownGameError = false;
 local DSw, DSh =  0,  0;
 local ULx, ULy =  0,  0;
 local LLx, LLy = 32, 32;
-local URx, URy =  9, 23;
-local LRx, LRy =  9, 23;
+local URx, URy =  5, 27;
+local LRx, LRy =  5, 27;
 local ttColumns,createMenu;
 local gameIconPos = setmetatable({},{ __index = function(t,k) return format("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",DSw,DSh,ULx,ULy,LLx,LLy,URx,URy,LRx,LRy) end})
 local gameShortcut = setmetatable({ [BNET_CLIENT_WTCG] = "HS", [BNET_CLIENT_SC2] = "Sc2"},{ __index = function(t, k) return k end })
 local _BNet_GetClientTexture = BNet_GetClientTexture
-
+ns.friendlist = {};
 
 -------------------------------------------
 -- register icon names and default files --
@@ -34,7 +34,7 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\friends"}; --IconNam
 -- module variables for registration --
 ---------------------------------------
 ns.modules[name] = {
-	desc = L["Broker to show you which friends are online."],
+	desc = L["Broker to show you which friends are online on realm and BattleNet"],
 	events = {
 		"BATTLETAG_INVITE_SHOW",
 		"BN_BLOCK_LIST_UPDATED",
@@ -69,14 +69,14 @@ ns.modules[name] = {
 		{ type="header", label=L[name], align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="toggle", name="disableGameIcons", label=L["Disable game icons"], tooltip=L["Disable displaying game icons and use game shortcut instead of"] },
-		{ type="toggle", name="splitFriends", label=L["Split friends|non Broker"], tooltip=L["Split Characters and BattleNet-Friends on Broker Button"], event=true },
-		{ type="toggle", name="splitFriendsTT", label=L["Split friends|nin Tooltip"], tooltip=L["Split Characters and BattleNet-Friends in Tooltip"], event=true },
+		{ type="toggle", name="splitFriends", label=L["Split friends on Broker"], tooltip=L["Split Characters and BattleNet-Friends on Broker Button"], event=true },
+		{ type="toggle", name="splitFriendsTT", label=L["Split friends in Tooltip"], tooltip=L["Split Characters and BattleNet-Friends in Tooltip"], event=true },
 		{ type="toggle", name="showBattleTags", label=L["Show BattleTags in tooltip"], tooltip=L["Show BattleTags in tooltip behind the realID"] }
 	},
 	clickOptions = {
 		["1_open_character_info"] = {
-			cfg_label = "Open friends roster",
-			cfg_desc = "open the friends roster",
+			cfg_label = "Open friends roster", -- L["Open friends roster"]
+			cfg_desc = "open the friends roster", -- L["open the friends roster"]
 			cfg_default = "_LEFT",
 			hint = "Open friends roster",
 			func = function(self,button)
@@ -101,8 +101,15 @@ ns.modules[name] = {
 --------------------------
 -- some local functions --
 --------------------------
+function createMenu(self)
+	if (tt~=nil) then ns.hideTooltip(tt,ttName,true); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);	
+end
+
 local function BNet_GetClientTexture(game)
-	if Broker_EverythingDB[name].disableGameIcons then
+	if ns.profile[name].disableGameIcons then
 		return gameShortcut[game]
 	else
 		local icon = _BNet_GetClientTexture(game)
@@ -138,10 +145,10 @@ local function broadcastTooltip(self)
 	end
 end
 
-local function createTooltip(tt)
-	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
+local function createTooltip(self, tt)
+	if tt and (not tt.key or tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
-	local columns,split,l,c=8,Broker_EverythingDB[name].splitFriendsTT;
+	local columns,split,l,c=8,ns.profile[name].splitFriendsTT;
 	local numChars, charsOnline = GetNumFriends();
 	local numFriends, friendsOnline = BNGetNumFriends();
 
@@ -161,7 +168,7 @@ local function createTooltip(tt)
 	if totalOnline == 0 then
 		tt:AddSeparator(4,0,0,0,0)
 		tt:AddLine(L["No friends online."])
-		if Broker_EverythingDB.showHints then
+		if ns.profile.GeneralOptions.showHints then
 			line, column = tt:AddLine()
 			tt:SetCell(line, 1, C("copper",L["Left-click"]).." "..C("green",L["Open friends roster"]), nil, nil, columns)
 		end
@@ -171,13 +178,13 @@ local function createTooltip(tt)
 	-- RealId	Status Character	Level	Zone	Game	Realm	Notes
 	tt:AddSeparator(4,0,0,0,0)
 	tt:AddLine(
-		(split==true and C("ltblue",  L["BattleNet"])) or C("ltyellow",L["Real ID"].."/"..L["BattleTag"]), -- 1
-		C("ltyellow",L["Level"]),		-- 2
-		C("ltyellow",L["Character"]),	-- 3
-		C("ltyellow",L["Game"]),		-- 4
-		C("ltyellow",L["Zone"]),		-- 5
+		(split==true and C("ltblue",  BATTLENET_OPTIONS_LABEL)) or C("ltyellow",L["Real ID"].."/"..BATTLETAG), -- 1
+		C("ltyellow",LEVEL),		-- 2
+		C("ltyellow",CHARACTER),	-- 3
+		C("ltyellow",GAME),		-- 4
+		C("ltyellow",ZONE),		-- 5
 		C("ltyellow",L["Realm"]),		-- 6
-		C("ltyellow",L["Faction"]),		-- 7
+		C("ltyellow",FACTION),		-- 7
 		C("ltyellow",L["Notes"])		-- 8
 	)
 	tt:AddSeparator()
@@ -197,7 +204,7 @@ local function createTooltip(tt)
 			if (fi[isOnline]) then
 				for I=1, nt do
 					local bnName = fi[presenceName];
-					if (Broker_EverythingDB[name].showBattleTags) then
+					if (ns.profile[name].showBattleTags) then
 						bnName = bnName .. " ("..fi[battleTag]..")";
 					end
 					local ti = {};
@@ -219,18 +226,19 @@ local function createTooltip(tt)
 								C("ltblue", ns.scm(bnName)) .. (ti[broadcastText]~="" and "|Tinterface\\chatframe\\ui-chatinput-focusicon:0|t" or ""), -- 1
 								C("white",ti[level]),		-- 2
 								_status(fi[isAFK],fi[isDND])..C(ti[class],ns.scm(ti[toonName])),	-- 3
-								C("white",BNet_GetClientTexture(ti[client])),	-- 4
+								C("white", BNet_GetClientTexture(ti[client]) ),	-- 4
 								C("white",ti[zoneName]~="" and ti[zoneName] or ti[gameText]),			-- 5
 								C("white",ti[realmName]),			-- 6
-								C("white",ti[faction]),		-- 7
+								C("white",_G["FACTION_"..ti[faction]:upper()] or ti[faction]),		-- 7
 								C("white",ns.scm(fi[noteText] or " ",true))	-- 8
 							);
+							ns.friendlist[ti[toonName].."-"..gsub(ti[realmName]," ","")] = 2;
 						else
 							l,c = tt:AddLine();
 							tt:SetCell(l,1,C("ltblue", ns.scm(bnName)) .. (ti[broadcastText]~="" and "|Tinterface\\chatframe\\ui-chatinput-focusicon:0|t" or ""));
 							tt:SetCell(l,2,C("white",ti[level]));
 							tt:SetCell(l,3,_status(fi[isAFK],fi[isDND])..C(ti[class],ns.scm(ti[toonName])));
-							tt:SetCell(l,4,C("white",BNet_GetClientTexture(ti[client])));
+							tt:SetCell(l,4,C("white", BNet_GetClientTexture(ti[client]) ));
 							tt:SetCell(l,5,C("white",C("white",ti[zoneName]~="" and ti[zoneName] or ti[gameText])),nil,nil,3); -- 5 6 7
 							tt:SetCell(l,8,C("white",C("white",ns.scm(fi[noteText] or " ",true))));
 						end
@@ -261,6 +269,8 @@ local function createTooltip(tt)
 				end
 			end
 		end
+	elseif BNConnected()==false then
+		tt:SetCell(tt:AddLine(),1,C("red",BATTLENET_UNAVAILABLE),nil,nil,ttColumns);
 	end
 
 	if (numChars > 0) then
@@ -268,12 +278,12 @@ local function createTooltip(tt)
 			tt:AddSeparator(4,0,0,0,0)
 			tt:AddLine(
 				C("yellow",  L["Characters"]),	-- 1
-				C("ltyellow",L["Level"]),		-- 2
-				C("ltyellow",L["Character"]),	-- 3
-				C("ltyellow",L["Game"]),		-- 4
-				C("ltyellow",L["Zone"]),		-- 5
+				C("ltyellow",LEVEL),		-- 2
+				C("ltyellow",CHARACTER),	-- 3
+				C("ltyellow",GAME),		-- 4
+				C("ltyellow",ZONE),		-- 5
 				C("ltyellow",L["Realm"]),		-- 6
-				C("ltyellow",L["Faction"]),		-- 7
+				C("ltyellow",FACTION),		-- 7
 				C("ltyellow",L["Notes"])		-- 8
 			)
 			tt:AddSeparator()
@@ -287,14 +297,18 @@ local function createTooltip(tt)
 				-- filter it...
 			elseif (v[charName]) and (v[connected]) then
 				visible[ns.realm..v[charName]..v[area]] = true;
+				n = v[charName];
 				s = ns.realm;
 				if (v[charName]:find("-")) then
 					n,s = strsplit("-",v[charName]);
+					ns.friendlist[v[charName]] = 1;
+				else
+					ns.friendlist[n.."-"..gsub(s," ","")] = 1;
 				end
 				l,c = tt:AddLine(
 					" ",
 					C("white",v[level]),
-					_status((status=="AFK"),(status=="DND")) .. C(v[class]:upper(),ns.scm(n or v[charName])),
+					_status((status=="AFK"),(status=="DND")) .. C(v[class]:upper(),ns.scm(n)),
 					C("white",BNet_GetClientTexture(BNET_CLIENT_WOW)),
 					C("white",v[area]),
 					C("white",s),
@@ -310,47 +324,45 @@ local function createTooltip(tt)
 		end
 	end
 
-	if (Broker_EverythingDB.showHints) then
-		tt:AddSeparator(3,0,0,0,0);
+	if friendsOnline==0 and numChars==0 then
+		tt:SetCell(tt:AddLine(),1,C("gray",L["Currently no friends online..."]),nil,nil,ttColumns);
+	end
 
-		line, column = tt:AddLine();
-		tt:SetCell(line, 1,C("ltblue",L["Click"]).." || "..C("green",L["Whisper with a friend"]) .." - ".. C("ltblue",L["Alt+Click"]).." || "..C("green",L["Invite a friend"]),nil,nil,columns);
+	if (ns.profile.GeneralOptions.showHints) then
+		tt:AddSeparator(3,0,0,0,0);
+		tt:SetCell(tt:AddLine(),1,C("ltblue",L["Click"]).." || "..C("green",L["Whisper with a friend"]) .." - ".. C("ltblue",L["Alt+Click"]).." || "..C("green",L["Invite a friend"]),nil,nil,columns);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns,2);
 	end
 
 	line, column = nil, nil
+	ns.roundupTooltip(self,tt);
 end
 
-function createMenu(self)
-	if (tt~=nil) then ns.hideTooltip(tt,ttName,true); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);	
-end
 
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(self)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
 ns.modules[name].onevent = function(self,event,msg)
 	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName);
-	local numBNFriends, numOnlineBNFriends = BNGetNumFriends();
+	local numBNFriends, numOnlineBNFriends = "?","?";
+	if BNConnected() then
+		numBNFriends, numOnlineBNFriends = BNGetNumFriends();
+	end
 	local numFriends, friendsOnline = GetNumFriends();
 	local broadcastText = select(4,BNGetInfo());
 
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],Broker_EverythingDB[name]);
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 
-	if (Broker_EverythingDB[name].splitFriends) then
-		dataobj.text = format("%s/%s "..C("ltblue","%s/%s"),friendsOnline, numFriends, numOnlineBNFriends, numBNFriends);
+	if (ns.profile[name].splitFriends) then
+		dataobj.text = format("%s/%s "..C(BNConnected() and "ltblue" or "red","%s/%s"),friendsOnline, numFriends, numOnlineBNFriends, numBNFriends);
 	else
-		local totalOnline = numOnlineBNFriends + friendsOnline;
-		local totalFriends = numBNFriends + numFriends;
-		dataobj.text = totalOnline .. "/" .. totalFriends;
+		dataobj.text = (numOnlineBNFriends + friendsOnline) .. "/" .. (numBNFriends + numFriends) .. (BNConnected()==false and "("..C("red","BNet Off")..")" or "");
 	end
 
 	if (broadcastText) and (strlen(broadcastText)>0) then
@@ -358,7 +370,7 @@ ns.modules[name].onevent = function(self,event,msg)
 	end
 
 	if (tt) and (tt.key) and (tt.key==ttName) and (tt:IsShown()) then
-		createTooltip(tt);
+		createTooltip(false, tt);
 	end
 end
 
@@ -375,8 +387,7 @@ ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	ttColumns=8;
 	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT","CENTER", "LEFT", "CENTER", "LEFT", "LEFT", "LEFT", "LEFT" );
-	createTooltip(tt);
-	ns.createTooltip(self,tt);
+	createTooltip(self, tt)
 end
 
 ns.modules[name].onleave = function(self)

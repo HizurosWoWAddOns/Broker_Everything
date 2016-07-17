@@ -4,13 +4,13 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-
+L.Achievements = ACHIEVEMENTS;
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Achievements"; L["Achievements"] = ACHIEVEMENTS;
-local ldbName, ttName, ttColumns, tt, createMenu = name, name.."TT", 2
+local name = "Achievements";
+local ldbName, ttName, ttColumns, tt, createMenu = name, name.."TT", 2;
 local categoryIds,bars,count = {92, 96, 97, 95, 168, 169, 201, 15165, 155, 15117, 15246, 15237},{},0;
 
 
@@ -24,7 +24,7 @@ I[name] = {iconfile="interface\\achievementframe\\UI-Achievement-Progressive-Shi
 -- module variables for registration --
 ---------------------------------------
 ns.modules[name] = {
-	desc = L["Display a list of your running auctions"],
+	desc = L["Broker to show earned achievements and the curent tracking list"],
 	--icon_suffix = "",
 	events = {},
 	updateinterval = false, -- 10
@@ -115,7 +115,7 @@ end
 
 local function progressBar(tt, l, low, high)
 	count=count+1;
-	if(not Broker_EverythingDB[name].showProgressBars)then
+	if(not ns.profile[name].showProgressBars)then
 		if(bars[count])then
 			bars[count]:Hide();
 		end
@@ -131,26 +131,26 @@ local function progressBar(tt, l, low, high)
 	bars[count]:Show();
 	bars[count].cur = low;
 	bars[count].all = high;
-	bars[count].percent = low / high;
+	bars[count].percent = low==0 and 0 or low / high;
 end
 
-local function getTooltip()
+local function createTooltip(self, tt)
 	tt:Clear();
 	tt:AddHeader(C("dkyellow",L[name]));
 	count=0;
 
-	if(Broker_EverythingDB[name].showLatest)then
+	if(ns.profile[name].showLatest)then
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",LATEST_UNLOCKED_ACHIEVEMENTS));
 		tt:AddSeparator();
 		local latest = {GetLatestCompletedAchievements()};
 		for i=1, #latest do
 			local id, Name, points, completed, month, day, year, description, flags, icon, rewardText, isGuild, wasEarnedByMe, earnedBy = GetAchievementInfo(latest[i]);
-			tt:AddLine("  "..C("ltyellow",Name), ("20%02d-%02d-%02d"):format(year,month,day));
+			tt:AddLine("  "..C("ltyellow",ns.strCut(Name,42)), ("20%02d-%02d-%02d"):format(year,month,day));
 		end
 	end
 
-	if(Broker_EverythingDB[name].showCategory)then
+	if(ns.profile[name].showCategory)then
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",ACHIEVEMENT_CATEGORY_PROGRESS));
 		tt:AddSeparator();
@@ -166,7 +166,7 @@ local function getTooltip()
 		end
 	end
 
-	if(Broker_EverythingDB[name].showWatchlist)then
+	if(ns.profile[name].showWatchlist)then
 		local ids = {GetTrackedAchievements()};
 		if(#ids>0)then
 			tt:AddSeparator(4,0,0,0,0);
@@ -174,25 +174,26 @@ local function getTooltip()
 			tt:AddSeparator();
 			for i=1, #ids do
 				local id, Name, points, completed, month, day, year, description, flags, icon, rewardText, isGuild, wasEarnedByMe, earnedBy = GetAchievementInfo(ids[i]);
-				local l = tt:AddLine(C("ltyellow",Name));
+				local l = tt:AddLine(C("ltyellow",ns.strCut(Name,56)));
 				local num = GetAchievementNumCriteria(id);
 				for i=1, num do
 					local criteriaString, criteriaType, criteriaCompleted, quantity, reqQuantity, charName, _flags, assetID, quantityString = GetAchievementCriteriaInfo(id, i);
 					if ( bit.band(_flags, EVALUATION_TREE_FLAG_PROGRESS_BAR) == EVALUATION_TREE_FLAG_PROGRESS_BAR ) then
-						local color          = (Broker_EverythingDB[name].showProgressBars) and "white" or "ltgray";
-						local colorCompleted = (not Broker_EverythingDB[name].showProgressBars) and "ltgreen" or "green";
+						local color          = (ns.profile[name].showProgressBars) and "white" or "ltgray";
+						local colorCompleted = (not ns.profile[name].showProgressBars) and "ltgreen" or "green";
 						local l=tt:AddLine("  " .. C(criteriaCompleted and colorCompleted or color,description),quantityString);
 						progressBar(tt,l,quantity,reqQuantity);
-					elseif( not criteriaCompleted or Broker_EverythingDB[name].showCompleted)then
-						tt:AddLine("  " .. C(criteriaCompleted and "green" or "ltgray",criteriaString));
+					elseif( not criteriaCompleted or ns.profile[name].showCompleted)then
+						tt:AddLine("  " .. C(criteriaCompleted and "green" or "ltgray",ns.strWrap(criteriaString,52,2)));
 					end
 				end
 				if num==0 then
-					tt:AddLine("  " ..  C(criteriaCompleted and "green" or "ltgray",description));
+					tt:AddLine("  " ..  C(criteriaCompleted and "green" or "ltgray",ns.strWrap(description,52,2)));
 				end
 			end
 		end
 	end
+	ns.roundupTooltip(self,tt)
 end
 
 
@@ -200,7 +201,7 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name;
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 end
 
 -- ns.modules[name].onevent = function(self,event,...) end
@@ -222,8 +223,7 @@ ns.modules[name].onenter = function(self)
 			bars[i]:Hide();
 		end
 	end);
-	getTooltip(self,tt)
-	ns.createTooltip(self,tt)
+	createTooltip(self, tt)
 	C_Timer.After(0.5,updateBars);
 end
 

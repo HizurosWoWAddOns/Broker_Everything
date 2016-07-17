@@ -9,9 +9,9 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "FPS" -- L["FPS"]
+local name = "FPS";
 local ldbName = name
-local tt,tt2,tt3 = nil,nil,nil
+local tt,tt2,tt3,ttParent
 local ttName, tt2Name, tt3Name = name.."TT", name.."TT2", name.."TT3"
 local GetFramerate = GetFramerate
 local _, playerClass = UnitClass("player")
@@ -29,21 +29,21 @@ local gameRestart = {}
 -------------------------------------------
 I[name..'_yellow'] = {iconfile="Interface\\Addons\\"..addon.."\\media\\fps_yellow"}	--IconName::FPS_yellow--
 I[name..'_red']    = {iconfile="Interface\\Addons\\"..addon.."\\media\\fps_red"}	--IconName::FPS_red--
-I[name..'_blue']   = {iconfile="Interface\\Addons\\"..addon.."\\media\\fps_blue"}	--IconName::FPS_blue--
-I[name..'_green']  = {iconfile="Interface\\Addons\\"..addon.."\\media\\fps_green"}	--IconName::FPS_green--
+I[name..'_blue']   = {iconfile="Interface\\Addons\\"..addon.."\\media\\fps_blue.png"}	--IconName::FPS_blue--
+I[name..'_green']  = {iconfile="Interface\\Addons\\"..addon.."\\media\\fps_green.png"}	--IconName::FPS_green--
 
 
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
 ns.modules[name] = {
-	desc = L["Broker to show your frames per second."],
+	desc = L["Broker to show your frames per second in broker button and current session min/max in tooltip"],
 	icon_suffix = "_blue",
 	events = {},
 	updateinterval = 1,
 	config_defaults = nil,
 	config_allowed = nil,
-	config = { { type="header", label=L[name], align="left", icon=I[name..'_blue'] } }
+	config = { { type="header", label=FPS_ABBR, align="left", icon=I[name..'_blue'] } }
 }
 
 
@@ -63,28 +63,29 @@ local function fps_color(f)
 	return c
 end
 
-local function fpsTooltip(tt)
+local function createTooltip(self, tt)
 	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
 
 	local l, c, cell
 	tt:Clear()
-	tt:AddHeader(C("dkyellow",L[name]))
+	tt:AddHeader(C("dkyellow",FPS_ABBR))
 	tt:AddSeparator()
-	tt:AddLine(L["Current"]..":",fps_color(fps)[3])
+	tt:AddLine(REFORGE_CURRENT..":",fps_color(fps)[3])
 	tt:AddSeparator(3,0,0,0,0)
 	tt:AddLine(L["Min."]..":",fps_color(_minmax[1])[3])
 	tt:AddLine(L["Max."]..":",fps_color(_minmax[2])[3])
 
-	--if Broker_EverythingDB.showHints then
+	--if ns.profile.GeneralOptions.showHints then
 	if false then
 		tt:AddLine(" ")
 		tt:AddLine(C("copper",L["Click"]).." ||",C("green",L["Open graphics set manager"]))
-		tt:AddLine(C("copper",L["Right-Click"]).." ||",C("green",L["Open graphics menu"]))
+		tt:AddLine(C("copper",HELPFRAME_REPORT_PLAYER_RIGHT_CLICK).." ||",C("green",L["Open graphics menu"]))
 	end
 
 	if(#fpsHistory>0)then
 		--ns.graphTT.Update(tt,fpsHistory);
 	end
+	ns.roundupTooltip(self,tt)
 end
 
 local function graphicsSetManager(_self)
@@ -92,7 +93,7 @@ local function graphicsSetManager(_self)
 
 	local l,c
 	tt2 = ns.LQT:Acquire(name.."TT2", 1, "LEFT")
-	ns.createTooltip(_self,tt2)
+	ns.roundupTooltip(_self,tt2)
 	tt2:SetScript('OnEnter', function()
 	end)
 	tt2:Clear()
@@ -101,7 +102,7 @@ local function graphicsSetManager(_self)
 	tt2:AddSeparator()
 	tt2:AddLine(L["No set found"])
 
-	if Broker_EverythingDB.showHints then
+	if ns.profile.GeneralOptions.showHints then
 		tt2:AddLine(" ")
 		line, column = tt:AddLine()
 		tt2:SetCell(line, 1,
@@ -162,7 +163,7 @@ local function graphicsMenuSelection(self,selName)
 		end
 	end
 
-	ns.createTooltip(self,tt3)
+	ns.roundupTooltip(self,tt3)
 	tt3:ClearAllPoints()
 	tt3:SetPoint("LEFT",tt2,"RIGHT",-15,0)
 	tt3:SetPoint("TOP",self,"TOP",0,5)
@@ -202,7 +203,7 @@ local function graphicsMenu(_self)
 		end
 	end
 
-	ns.createTooltip(_self,tt2)
+	ns.roundupTooltip(_self,tt2)
 	tt2:SetScript('OnLeave', function() ns.hideTooltip(tt2,ttName2) end)
 end
 
@@ -222,7 +223,7 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
 -- ns.modules[name].onevent = function(self,event,msg) end
@@ -247,7 +248,7 @@ ns.modules[name].onupdate = function(self)
 
 	--if tt then
 	if tt~=nil and tt.key~=nil and tt.key==ttName and tt:IsShown() then
-		fpsTooltip(tt)
+		createTooltip(ttParent, tt)
 	end
 end
 
@@ -264,8 +265,8 @@ ns.modules[name].onenter = function(self)
 	if tt2~=nil and tt2.key==tt2Name and tt2:IsShown() then return end
 
 	tt = ns.LQT:Acquire(ttName, 2, "LEFT", "RIGHT")
-	fpsTooltip(tt)
-	ns.createTooltip(self,tt)
+	ttParent = self
+	createTooltip(self, tt)
 end
 
 ns.modules[name].onleave = function(self)

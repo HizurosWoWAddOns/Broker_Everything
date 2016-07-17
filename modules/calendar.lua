@@ -37,9 +37,8 @@ I[name.."_pending"] = {iconfile="Interface\\Addons\\"..addon.."\\media\\calendar
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["Broker to show invitations"]
 ns.modules[name] = {
-	desc = desc,
+	desc = L["Broker to show calendar events and invitations"],
 	events = {
 		"CALENDAR_UPDATE_PENDING_INVITES",
 		"PLAYER_ENTERING_WORLD"
@@ -106,14 +105,15 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
+
 ns.modules[name].onevent = function(self,event,msg)
 	self.obj = self.obj or ns.LDB:GetDataObjectByName(ldbName);
 	local num = CalendarGetNumPendingInvites();
 
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],Broker_EverythingDB[name]);
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 
 	local icon = I(name..(num~=0 and "_pending" or ""))
@@ -122,7 +122,7 @@ ns.modules[name].onevent = function(self,event,msg)
 
 	-- %d |4Invite:Invites; ?
 	local inv = " "..L[ num==1 and "Invite" or "Invites" ]
-	if (Broker_EverythingDB[name].shortBroker) then
+	if (ns.profile[name].shortBroker) then
 		inv = ""
 	end
 
@@ -201,10 +201,10 @@ ns.modules[name].ontooltip = function(tooltip)
 	if(#holidays>0)then
 		local x,soon=nil,nil;
 		tt:AddLine(" ")
-		tt:AddLine(C("dkyellow",L["Events"]));
+		tt:AddLine(C("dkyellow",EVENTS_LABEL));
 		for i,v in ipairs(holidays)do
 			if(v.state>0)then
-				if(Broker_EverythingDB[name].shortEvents)then
+				if(ns.profile[name].shortEvents)then
 					tt:AddDoubleLine(
 						C("ltblue",v.title)
 						.." "..
@@ -226,7 +226,7 @@ ns.modules[name].ontooltip = function(tooltip)
 		end
 	end
 
-	if Broker_EverythingDB.showHints then
+	if ns.profile.GeneralOptions.showHints then
 		tt:AddLine(" ")
 		ns.clickOptions.ttAddHints(tt,name);
 	end
@@ -242,7 +242,7 @@ end
 -- ns.modules[name].ondblclick = function(self,button) end
 
 ns.modules[name].coexist = function()
-	if (not ns.coexist.found) and (Broker_EverythingDB[name].hideMinimapCalendar) then
+	if (not ns.coexist.found) and (ns.profile[name].hideMinimapCalendar) then
 		GameTimeFrame:Hide();
 		GameTimeFrame.Show = dummyFunc;
 	end

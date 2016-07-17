@@ -14,43 +14,35 @@ local _
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name0 = "GPS / Location / ZoneText" -- L["GPS / Location / ZoneText"]
-local name1 = "GPS" -- L["GPS"]
-local name2 = "Location" -- L["Location"]
-local name3 = "ZoneText" -- L["ZoneText"]
-local ldbName1, ldbName2, ldbName3 = name1, name2, name3
-local ttName1, ttName2, ttName3, ttName4 = name1.."TT", name2.."TT", name3.."TT", name1.."TT2"
-local ttColumns,onleave,gpsTooltip2,createMenu
-local tt1, tt2, tt3, tt4
+local name0 = "GPS / Location / ZoneText"; -- L["GPS / Location / ZoneText"]
+local name1 = "GPS"; -- L["GPS"]
+local name2 = "Location"; -- L["Location"]
+local name3 = "ZoneText"; -- L["ZoneText"]
+local ldbName1, ldbName2, ldbName3 = name1, name2, name3;
+local ttName1, ttName2, ttName3, ttName4 = name1.."TT", name2.."TT", name3.."TT", name1.."TT2";
+local ttColumns,onleave,createTooltip2,createMenu;
+local ns_items_registered=false;
+local tt1, tt2, tt3, tt4;
 local tt5positions = {
 	["LEFT"]   = {edgeSelf = "RIGHT",  edgeParent = "LEFT",   x = -2, y =  0},
 	["RIGHT"]  = {edgeSelf = "LEFT",   edgeParent = "RIGHT",  x =  2, y =  0},
 }
-
-local iStr16 = "|T%s:16:16:0:0|t"
-local iStr32 = "|T%s:32:32:0:0|t"
-local gpsLoc = {
-	zone = " ",
-	color = "white",
-	pvp = "contested",
-	pos = ""
-}
+local iStr16,iStr32 = "|T%s:16:16:0:0|t","|T%s:32:32:0:0|t";
+local gpsLoc = {zone=" ",color="white",pvp="contested",pos=""}
 local zoneDisplayValues = {
-	["1"] = L["Zone"],
+	["1"] = ZONE,
 	["2"] = L["Subzone"],
-	["3"] = L["Zone"]..": "..L["Subzone"],
-	["4"] = ("%s (%s)"):format(L["Zone"],L["Subzone"]),
-	["5"] = ("%s (%s)"):format(L["Subzone"],L["Zone"]),
+	["3"] = ZONE..": "..L["Subzone"],
+	["4"] = ("%s (%s)"):format(ZONE,L["Subzone"]),
+	["5"] = ("%s (%s)"):format(L["Subzone"],ZONE),
 }
-local teleports, portals, spells, items_for_menu, item_replacements = {},{},{},{},{}
+local foundItems, foundToys, teleports, portals, spells = {},{},{},{},{};
 local _classSpecialSpellIds = {50977,18960,556,126892,147420};
-local _teleportIds = {3561,3562,3563,3565,3566,3567,32271,32272,33690,35715,49358,49359,53140,88342,88344,120145,132621,132627,176248,176242};
+local _teleportIds = {3561,3562,3563,3565,3566,3567,32271,32272,33690,35715,49358,49359,53140,88342,88344,120145,132621,132627,176248,176242,193759,224869};
 local _portalIds = {10059,11416,11417,11418,11419,11420,32266,32267,33691,35717,49360,49361,53142,88345,88346,120146,132620,132626,176246,176244};
-local _itemIds = {18984,18986,21711,30542,30544,32757,35230,37863,40585,40586,43824,44934,44935,45688,45689,45690,45691,46874,48933,48954,48955,48956,48957,50287,51557,51558,51559,51560,52251,58487,63206,63207,63352,63353,63378,63379,64457,65274,65360,87215,95050,95051,95567,95568,110560,112059,128353,118662,118663};
+local _itemIds = {12585,14547,18984,19276,19278,19279,19280,19281,19282,19283,19284,21711,21739,22589,22630,22631,22632,24335,29796,30542,30853,32093,32696,32757,33637,33774,34420,34973,35230,36747,38685,40585,40586,40731,42014,42015,42016,42017,42018,43824,44934,44935,45688,45689,45690,45691,45705,46842,46874,48954,48955,48956,48957,51537,51557,51558,51559,51560,52251,52567,52576,56024,57138,58487,58964,60273,60374,60407,60478,60498,61379,61385,62057,62379,62394,62412,62495,62496,63206,63207,63352,63353,63378,63379,64457,64747,65274,65360,65572,66061,68808,68809,69212,70314,70469,70568,71008,71015,71016,71017,72459,73487,73660,82469,82470,87215,87548,91806,91850,91860,91861,91862,91863,91864,91865,91866,92056,92057,92058,92430,92431,92432,93124,93761,95050,95051,103678,104110,104113,107441,108595,108683,113217,116413,117016,117389,118662,118663,118907,118908,119183,128353,128502,128503,128941,129161,129276,130199,131735,132119,132120,132122,132517,132749,132750,133755,134058,134064,136849,138028,138029,138030,138031,138032,138448,139541,139590,139599,140192,140319,140493,141013,141014,141015,141016,141017,95567,37863,110560};
 local _itemReplacementIds = {64488,28585,6948,44315,44314,37118};
-local _itemMustBeEquipped = {32757};
-for _,v in ipairs(_itemIds) do items_for_menu[v] = true end
-for _,v in ipairs(_itemReplacementIds) do item_replacements[v] = true end
+local _itemMustBeEquipped = {[32757]=1,[40585]=1};
 
 
 -- ------------------------------------- --
@@ -64,10 +56,9 @@ I[name3] = {iconfile=GetItemIcon(11105),coords={0.05,0.95,0.05,0.95}}	--IconName
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["Some shared options for the modules GPS, Location and ZoneText"];
 ns.modules[name0] = {
 	noBroker = true,
-	desc = desc,
+	desc = L["Some shared options for the modules GPS, Location and ZoneText"],
 	events = {
 		"PLAYER_ENTERING_WORLD",
 		"LEARNED_SPELL_IN_TAB"
@@ -93,8 +84,8 @@ ns.modules[name0] = {
 		{ type="toggle", name="shortMenu", label=L["Short transport menu"], tooltip=L["Display the transport menu without names of spells and items behind the icons."]},
 		{ type="select",
 			name	= "coordsFormat",
-			label	= L["Co-ordination format"],
-			tooltip	= L["How would you like to view co-ordinations."],
+			label	= L["Coordination format"],
+			tooltip	= L["How would you like to view coordinations."],
 			values	= {
 				["%s, %s"]     = "10.3, 25.4",
 				["%s / %s"]    = "10.3 / 25.4",
@@ -117,7 +108,7 @@ ns.modules[name0] = {
 }
 
 ns.modules[name1] = {
-	desc = L["Broker to show the name of the current Zone and the co-ordinates."],
+	desc = L["Broker to show the name of the current zone and the coordinates"],
 	events = {},
 	updateinterval = nil,
 	config_defaults = {
@@ -131,8 +122,8 @@ ns.modules[name1] = {
 	},
 	clickOptions = {
 		["1_open_world_map"] = {
-			cfg_label = "Open World map",
-			cfg_desc = "open the World map",
+			cfg_label = "Open world map",
+			cfg_desc = "open the world map",
 			cfg_default = "_LEFT",
 			hint = "Open World map",
 			func = function(self,button)
@@ -150,13 +141,12 @@ ns.modules[name1] = {
 				if tt1 then onleave(self,tt1,ttName1) end
 
 				if (InCombatLockdown()) then return; end
-				if Broker_EverythingDB[name0].shortMenu then
+				if ns.profile[name0].shortMenu then
 					tt4 = ns.LQT:Acquire(ttName4, 4, "LEFT","LEFT","LEFT","LEFT")
 				else
 					tt4 = ns.LQT:Acquire(ttName4, 1, "LEFT")
 				end
-				gpsTooltip2(tt4);
-				ns.createTooltip(self,tt4);
+				createTooltip2(self, tt4);
 			end
 		},
 		["3_open_menu"] = {
@@ -173,7 +163,7 @@ ns.modules[name1] = {
 }
 
 ns.modules[name2] = {
-	desc = L["Broker to show your current co-ordinates within the zone."],
+	desc = L["Broker to show your current coordinates"],
 	enabled = false,
 	events = {},
 	updateinterval = nil,
@@ -184,8 +174,8 @@ ns.modules[name2] = {
 	},
 	clickOptions = {
 		["1_open_world_map"] = {
-			cfg_label = "Open World map",
-			cfg_desc = "open the World map",
+			cfg_label = "Open world map",
+			cfg_desc = "open the world map",
 			cfg_default = "_LEFT",
 			hint = "Open World map",
 			func = function(self,button)
@@ -203,13 +193,12 @@ ns.modules[name2] = {
 				if tt2 then onleave(self,tt2,ttName2) end
 
 				if (InCombatLockdown()) then return; end
-				if Broker_EverythingDB[name0].shortMenu then
+				if ns.profile[name0].shortMenu then
 					tt4 = ns.LQT:Acquire(ttName4, 4, "LEFT","LEFT","LEFT","LEFT")
 				else
 					tt4 = ns.LQT:Acquire(ttName4, 1, "LEFT")
 				end
-				gpsTooltip2(tt4);
-				ns.createTooltip(self,tt4);
+				createTooltip2(self, tt4);
 			end
 		},
 		["3_open_menu"] = {
@@ -226,7 +215,7 @@ ns.modules[name2] = {
 }
 
 ns.modules[name3] = {
-	desc = L["Broker to show the name of the current zone."],
+	desc = L["Broker to show the name of the current zone"],
 	enabled = false,
 	events = {},
 	updateinterval = nil,
@@ -241,8 +230,8 @@ ns.modules[name3] = {
 	},
 	clickOptions = {
 		["1_open_world_map"] = {
-			cfg_label = "Open World map",
-			cfg_desc = "open the World map",
+			cfg_label = "Open world map", -- L["Open world map"]
+			cfg_desc = "open the world map", -- L["open the world map"]
 			cfg_default = "_LEFT",
 			hint = "Open World map",
 			func = function(self,button)
@@ -251,8 +240,8 @@ ns.modules[name3] = {
 			end
 		},
 		["2_open_transport_menu"] = {
-			cfg_label = "Open transport menu",
-			cfg_desc = "open the transport menu",
+			cfg_label = "Open transport menu", -- L["Open transport menu"]
+			cfg_desc = "open the transport menu", -- L["open the transport menu"]
 			cfg_default = "_RIGHT",
 			hint = "Open transport menu",
 			func = function(self,button)
@@ -260,13 +249,12 @@ ns.modules[name3] = {
 				if tt3 then onleave(self,tt3,ttName3) end
 
 				if (InCombatLockdown()) then return; end
-				if Broker_EverythingDB[name0].shortMenu then
+				if ns.profile[name0].shortMenu then
 					tt4 = ns.LQT:Acquire(ttName4, 4, "LEFT","LEFT","LEFT","LEFT")
 				else
 					tt4 = ns.LQT:Acquire(ttName4, 1, "LEFT")
 				end
-				gpsTooltip2(tt4);
-				ns.createTooltip(self,tt4);
+				createTooltip2(self, tt4);
 			end
 		},
 		["3_open_menu"] = {
@@ -302,54 +290,67 @@ end
 local function setSpell(tb,id)
 	if (IsSpellKnown(id)) then
 		local sName, _, icon, _, _, _, _, _, _ = GetSpellInfo(id)
-		table.insert(tb,{id=id,icon32=iStr32:format(icon),icon16=iStr16:format(icon),name=sName,name2=sName});
+		table.insert(tb,{id=id,icon=icon,name=sName,name2=sName});
 	end
 end
 
-local function setItem(tb,id,nameReplacement)
-	local itemName, _, _, _, _, _, _, _, _, icon, _ = GetItemInfo(id)
-	table.insert(tb,{id=id,icon32=iStr32:format(icon),icon16=iStr16:format(icon),name=itemName,name2=(nameReplacement or itemName)});
-end
-
-local function chkInventory(ifExists)
-	local found, count = {},0
-
-	-- check bags
-	for bag = 0, NUM_BAG_SLOTS do
-		for slot = 1, GetContainerNumSlots(bag) do
-			local item_id = GetContainerItemID(bag,slot)
-			if item_id then
-				local itemName, _, _, _, _, _, _, _, _, icon, _ = GetItemInfo(item_id)
-				if type(ifExists)=="table" and ifExists[item_id] then
-					return itemName
-				elseif type(ifExists)=="number" and ifExists == item_id then
-					return itemName
-				elseif items_for_menu[item_id]==true then
-					setItem(found,item_id)
-					count = count + 1
-				elseif item_replacements[item_id]==true then
-					setItem(found,item_id,GetBindLocation())
-					count = count + 1
-				end
+local function updateItems()
+	foundItems, foundToys = {},{};
+	local items = ns.items.GetItemlist();
+	for i=1, #_itemIds do
+		local toyName,toyIcon,_;
+		if PlayerHasToy(_itemIds[i]) then
+			_, toyName, toyIcon = C_ToyBox.GetToyInfo(_itemIds[i]);
+		end
+		if toyName and toyIcon then
+			table.insert(foundToys,{
+				id = _itemIds[i],
+				icon = toyIcon,
+				name = toyName
+			});
+		else
+			local v=items[_itemIds[i]];
+			if v and v[1] then
+				table.insert(foundItems,{
+					id=_itemIds[i],
+					icon = v[1].icon,
+					name = v[1].name,
+					name2 = v[1].name,
+					mustBeEquipped = _itemMustBeEquipped[_itemIds[i]]==1,
+					equipped = v[1].type=="inv"
+				});
 			end
 		end
 	end
-
-	-- check character slots
-	--[[
-	local slots = {"ShirtSlot","Finger0Slot","Finger1Slot","Trinket0Slot","Trinket1Slot"};
-	for i,v in ipairs(slots) do
-		local id = GetInventoryItemID("player",v);
-		if(
+	local loc = " "..C("ltblue","("..GetBindLocation()..")");
+	for i=1, #_itemReplacementIds do
+		local toyName,toyIcon,_;
+		if PlayerHasToy(_itemReplacementIds[i]) then
+			_, toyName, toyIcon = C_ToyBox.GetToyInfo(_itemReplacementIds[i]);
+		end
+		if toyName and toyIcon then
+			table.insert(foundToys,{
+				id = _itemReplacementIds[i],
+				icon = toyIcon,
+				name = toyName,
+				name2 = toyName..loc
+			});
+		else
+			local v = items[_itemReplacementIds[i]];
+			if v and v[1] then
+				table.insert(foundItems,{
+					id=_itemReplacementIds[i],
+					icon = v[1].icon,
+					name = v[1].name,
+					name2 = v[1].name..loc
+				});
+			end
+		end
 	end
-	]]
-
-	return found, count
 end
 
-local XX=0;
 local function position()
-	local p,f = Broker_EverythingDB[name0].precision, Broker_EverythingDB[name0].coordsFormat
+	local p,f = ns.profile[name0].precision, ns.profile[name0].coordsFormat
 	if not p then p = 0 end
 	local precision_format = "%."..p.."f"
 	if not f then f = "%s, %s" end
@@ -374,13 +375,13 @@ local function zone(byName)
 	local types = {"%s: %s","%s (%s)"}
 	local mode = "2";
 
-	if Broker_EverythingDB[byName]==nil then
-		Broker_EverythingDB[byName]={};
+	if ns.profile[byName]==nil then
+		ns.profile[byName]={};
 	end
-	if Broker_EverythingDB[byName].bothZones==nil then
-		Broker_EverythingDB[byName].bothZones = mode;
+	if ns.profile[byName].bothZones==nil then
+		ns.profile[byName].bothZones = mode;
 	else
-		mode = Broker_EverythingDB[byName].bothZones;
+		mode = ns.profile[byName].bothZones;
 	end
 
 	if mode=="2" and subZone~="" then
@@ -413,16 +414,16 @@ local function zoneColor()
 	--[[
 		L["Contested"]
 		L["Sanctuary"]
-		L["Friendly"]
-		L["Combat"]
-		L["Arena"]
-		L["Hostile"]
+		FRIENDLY
+		COMBAT
+		ARENA
+		HOSTILE
 	]]
 	return p, color
 end
 
 -- shared tooltip for modules Location, GPS and ZoneText
-local function gpsTooltip(self,tt,ttName,modName)
+local function createTooltip(self,tt,ttName,modName)
 	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
 
 	local pvp, color = zoneColor()
@@ -438,10 +439,10 @@ local function gpsTooltip(self,tt,ttName,modName)
 	tt:AddSeparator()
 
 	local lst = {
-		{C("ltyellow",L["Zone"] .. ":"),GetRealZoneText()},
+		{C("ltyellow",ZONE .. ":"),GetRealZoneText()},
 		{C("ltyellow",L["Subzone"] .. ":"),GetSubZoneText()},
 		{C("ltyellow",L["Zone status"] .. ":"),C(color,L[pvp])},
-		{C("ltyellow",L["Co-ordinates"] .. ":"),position() or C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos)}
+		{C("ltyellow",L["Coordinates"] .. ":"),position() or C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos)}
 	}
 
 	for _, d in pairs(lst) do
@@ -461,16 +462,16 @@ local function gpsTooltip(self,tt,ttName,modName)
 	tt:SetCell(line,1,C("ltyellow",L["Inn"]..":"),nil,nil,1)
 	tt:SetCell(line,2,GetBindLocation(),nil,nil,2)
 
-	if Broker_EverythingDB.showHints then
+	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0)
 		ns.clickOptions.ttAddHints(tt,modName,ttColumns);
 	end
+	ns.roundupTooltip(self,tt);
 end
 
-function gpsTooltip2(tt)
+function createTooltip2(self, tt)
 	local pts,ipts,tls,itls = {},{},{},{}
 	local line, column,cellcount = nil,nil,5
-	local inv, inv_c = chkInventory()
 
 	local function add_title(title)
 		tt:AddSeparator(4,0,0,0,0)
@@ -483,21 +484,27 @@ function gpsTooltip2(tt)
 		if(t=="item")then
 			startTime, duration, enable = GetItemCooldown(v.id);
 		end
-		tt:SetCell(line, cellcount, v.icon32, nil, nil, 1)
-		tt:SetCellScript(line,cellcount,"OnEnter",function(self) ns.secureButton(self,{ {typeName="type", typeValue=t, attrName=t, attrValue=v.name} }) end)
+		tt:SetCell(line, cellcount, iStr32:format(v.icon), nil, nil, 1)
+		tt:SetCellScript(line,cellcount,"OnEnter",function(_self) ns.secureButton(_self,{ {typeName="type", typeValue=t, attrName=t, attrValue=v.name} }) end)
 	end
 
 	local function add_line(v,t)
 		local startTime, duration, enable
 		if(t=="item")then
 			startTime, duration, enable = GetItemCooldown(v.id);
+			
 		end
-		local line, column = tt:AddLine(v.icon16..(v.name2 or v.name), "1","2","3")
-		tt:SetLineScript(line,"OnEnter",function(self) ns.secureButton(self,{ {typeName="type", typeValue=t, attrName=t, attrValue=v.name} }) end)
+		local info,doUpdate = "";
+		if v.mustBeEquipped==true and v.equipped==false then
+			info = " "..C("orange","(click to equip)");
+			doUpdate=true
+		end
+		local line, column = tt:AddLine(iStr16:format(v.icon)..(v.name2 or v.name)..info, "1","2","3");
+		tt:SetLineScript(line,"OnEnter",function(_self) ns.secureButton(_self,{ {typeName="type", typeValue=t, attrName=t, attrValue=v.name}, hookOnClick=function() v.equipped=true; createTooltip2(self,tt); end }) end)
 	end
 
 	local function add_obj(v,t)
-		if Broker_EverythingDB[name0].shortMenu then
+		if ns.profile[name0].shortMenu then
 			if cellcount<4 then
 				cellcount = cellcount + 1
 			else
@@ -513,7 +520,7 @@ function gpsTooltip2(tt)
 	tt:Clear()
 
 	-- title
-	if not Broker_EverythingDB[name0].shortMenu then
+	if not ns.profile[name0].shortMenu then
 		tt:AddHeader(C("dkyellow","Choose your transport"))
 	end
 
@@ -521,45 +528,61 @@ function gpsTooltip2(tt)
 
 	if #teleports>0 or #portals>0 or #spells>0 then
 		-- class title
-		if not Broker_EverythingDB[name0].shortMenu then
+		if not ns.profile[name0].shortMenu then
 			add_title(ns.player.classLocale)
 		end
 		-- class spells
 		if ns.player.class=="MAGE" then
 			for i,v in ns.pairsByKeys(teleports) do
 				add_obj(v,"spell")
+				counter = counter+1;
 			end
-			if not Broker_EverythingDB[name0].shortMenu then
+			if not ns.profile[name0].shortMenu then
 				tt:AddSeparator()
 			end
 			for i,v in ns.pairsByKeys(portals) do
 				add_obj(v,"spell")
+				counter = counter+1;
 			end
 		else
 			for i,v in ns.pairsByKeys(spells) do
 				add_obj(v,"spell")
+				counter = counter+1;
 			end
 		end
 	end
 
-	if inv_c>0 then
+	if #foundItems>0 then
 		-- item title
-		if not Broker_EverythingDB[name0].shortMenu then
-			add_title(L["Items"])
+		if not ns.profile[name0].shortMenu then
+			add_title(ITEMS)
 		end
 		-- items
-		for i,v in ns.pairsByKeys(inv) do
+		for i,v in ns.pairsByKeys(foundItems) do
 			add_obj(v,"item")
 			counter = counter + 1
 		end
 	end
 	
+	if #foundToys>0 then
+		-- toy title
+		if not ns.profile[name0].shortMenu then
+			add_title(TOY_BOX);
+		end
+		-- toys
+		for i,v in ns.pairsByKeys(foundToys) do
+			add_obj(v,"item");
+			counter = counter + 1;
+		end
+	end
+
 	if counter==0 then
 		tt:AddSeparator(4,0,0,0,0)
 		tt:AddHeader(C("ltred",L["Sorry"].."!"))
 		tt:AddSeparator(1,1,.4,.4,1)
-		tt:AddLine(C("ltred",L["No spells or items found"].."."))
+		tt:AddLine(C("ltred",L["No spells, items or toys found"].."."))
 	end
+	ns.roundupTooltip(self,tt,true);
 end
 
 function onleave(self,tt,ttN)
@@ -590,13 +613,12 @@ local function onclick(self,button)
 		if tt3 then onleave(self,tt3,ttName3) end
 
 		if (InCombatLockdown()) then return; end
-		if Broker_EverythingDB[name0].shortMenu then
+		if ns.profile[name0].shortMenu then
 			tt4 = ns.LQT:Acquire(ttName4, 4, "LEFT","LEFT","LEFT","LEFT");
 		else
 			tt4 = ns.LQT:Acquire(ttName4, 4, "LEFT","RIGHT","CENTER","CENTER");
 		end
-		gpsTooltip2(tt4);
-		ns.createTooltip(self,tt4);
+		createTooltip2(self, tt4);
 	end
 end
 
@@ -606,9 +628,9 @@ end
 ------------------------------------
 
 ns.modules[name0].init = function(self)
-	ldbName1 = (Broker_EverythingDB.usePrefix and "BE.." or "")..name1
-	ldbName2 = (Broker_EverythingDB.usePrefix and "BE.." or "")..name2
-	ldbName3 = (Broker_EverythingDB.usePrefix and "BE.." or "")..name3
+	ldbName1 = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name1
+	ldbName2 = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name2
+	ldbName3 = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name3
 end
 
 -- ns.modules[name1].init = function(self) end
@@ -616,7 +638,11 @@ end
 -- ns.modules[name3].init = function(self) end
 
 ns.modules[name0].onevent = function(self,event,msg)
-	if (event=="LEARNED_SPELL_IN_TAB") or (event=="PLAYER_ENTERING_WORLD") then
+	if event=="PLAYER_ENTERING_WORLD" and ns_items_registered==false then
+		ns_items_registered=true;
+		ns.items.RegisterCallback(name0,updateItems,"any");
+	end
+	if event=="LEARNED_SPELL_IN_TAB" or event=="PLAYER_ENTERING_WORLD" then
 		wipe(teleports); wipe(portals); wipe(spells);
 		if (ns.player.class=="MAGE") then
 			for _,v in ipairs(_teleportIds) do setSpell(teleports,v) end
@@ -628,19 +654,19 @@ end
 
 ns.modules[name1].onevent = function(self,event,msg)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name1],Broker_EverythingDB[name1]);
+		ns.clickOptions.update(ns.modules[name1],ns.profile[name1]);
 	end
 end
 
 ns.modules[name2].onevent = function(self,event,msg)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name2],Broker_EverythingDB[name2]);
+		ns.clickOptions.update(ns.modules[name2],ns.profile[name2]);
 	end
 end
 
 ns.modules[name3].onevent = function(self,event,msg)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name3],Broker_EverythingDB[name3]);
+		ns.clickOptions.update(ns.modules[name3],ns.profile[name3]);
 	end
 end
 -- ns.modules[name0].onmousewheel = function(self,direction) end
@@ -649,7 +675,7 @@ end
 -- ns.modules[name3].onmousewheel = function(self,direction) end
 
 ns.modules[name0].onupdate = function(self)
-	if not (Broker_EverythingDB[name1].enabled or Broker_EverythingDB[name2].enabled or Broker_EverythingDB[name3].enabled) then return end
+	if not (ns.profile[name1].enabled or ns.profile[name2].enabled or ns.profile[name3].enabled) then return end
 
 	gpsLoc.zone1 = zone(name1)
 	gpsLoc.zone3 = zone(name3)
@@ -664,7 +690,7 @@ ns.modules[name0].onupdate = function(self)
 			gpsLoc.posLast=time()
 		elseif time()-gpsLoc.posLast>5 then
 			gpsLoc.posColor = "orange"
-			gpsLoc.posInfo = L["Co-ordinates indeterminable"]
+			gpsLoc.posInfo = L["Coordinates indeterminable"]
 		end
 	end
 
@@ -701,8 +727,7 @@ ns.modules[name1].onenter = function(self)
 
 	ttColumns = 3;
 	tt1 = ns.LQT:Acquire(ttName1, ttColumns, "LEFT", "RIGHT", "RIGHT");
-	gpsTooltip(self,tt1,ttName1,name1);
-	ns.createTooltip(self,tt1);
+	createTooltip(self,tt1,ttName1,name1);
 end
 
 ns.modules[name2].onenter = function(self)
@@ -710,8 +735,7 @@ ns.modules[name2].onenter = function(self)
 
 	ttColumns = 3;
 	tt2 = ns.LQT:Acquire(ttName2, ttColumns, "LEFT", "RIGHT", "RIGHT");
-	gpsTooltip(self,tt2,ttName2,name2);
-	ns.createTooltip(self,tt2);
+	createTooltip(self,tt2,ttName2,name2);
 end
 
 ns.modules[name3].onenter = function(self)
@@ -719,8 +743,7 @@ ns.modules[name3].onenter = function(self)
 
 	ttColumns = 3;
 	tt3 = ns.LQT:Acquire(ttName3, ttColumns, "LEFT", "RIGHT", "RIGHT");
-	gpsTooltip(self,tt3,ttName3,name3);
-	ns.createTooltip(self,tt3);
+	createTooltip(self,tt3,ttName3,name3);
 end
 
 ns.modules[name1].onleave = function(self)

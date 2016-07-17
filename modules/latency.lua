@@ -28,9 +28,8 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\latency"}; --IconNam
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["Broker to show your current latency. Can be configured to show both Home and/or World latency."];
 ns.modules[name] = {
-	desc = desc,
+	desc = L["Broker to show current home and world latency"],
 	events = {
 		"PLAYER_ENTERING_WORLD"
 	},
@@ -59,7 +58,7 @@ local function createMenu(self)
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addEntries({
 		{
-			label = L["Options"],
+			label = OPTIONS,
 			title = true,
 		},
 		{ separator = true },
@@ -93,7 +92,7 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name;
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 end
 
 ns.modules[name].onevent = function(self,event,msg)
@@ -105,7 +104,7 @@ ns.modules[name].onupdate = function(self)
 	local text = {};
 	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName);
 	local suffix = ns.suffixColour(suffix);
-	local showHome, showWorld = Broker_EverythingDB[name].showHome, Broker_EverythingDB[name].showWorld;
+	local showHome, showWorld = ns.profile[name].showHome, ns.profile[name].showWorld;
 	latency.Home,latency.World = lHome,lWorld;
 	
 	 -- Colour the latencies
@@ -115,7 +114,7 @@ ns.modules[name].onupdate = function(self)
 		elseif v > 250 and v <= 400 then
 			latency[k] = C("dkyellow",v);
 		elseif v > 400 then
-			latency[k] = C("red",v);
+			latency[k] = C("red",ns.FormatLargeNumber(v));
 		end
 	end
 
@@ -142,7 +141,7 @@ ns.modules[name].ontooltip = function(_tt)
 	tt:AddDoubleLine(C("white",L["Home"] .. " :"), latency.Home .. suffix);
 	tt:AddDoubleLine(C("white",L["World"] .. " :"), latency.World .. suffix);
 
-	if (Broker_EverythingDB.showHints) then
+	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddLine(" ");
 		tt:AddLine(C("copper",L["Right-click"]).." || "..C("green",L["Open option menu"]));
 	end

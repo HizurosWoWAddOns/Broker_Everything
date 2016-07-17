@@ -27,7 +27,7 @@ local function setPoints(element, sibling, points, fir)
 end
 
 local function getIconSets()
-	local t = {NONE=L["None"]}
+	local t = {NONE=NONE}
 	local l = ns.LSM:List((addon.."_Iconsets"):lower())
 	if type(l)=="table" then
 		for i,v in pairs(l) do
@@ -73,8 +73,11 @@ local function init(parent, index, data)
 			if (n==data.type) then
 				v.data = data;
 				if (data.tooltip) then
-					if (type(data.tooltip)=="function") then
+					if type(data.tooltip)=="function" then
 						v.tooltip = {data.label,data.tooltip()};
+					elseif type(data.tooltip)=="table" then
+						v.tooltip = data.tooltip;
+						tinsert(v.tooltip,1,data.label);
 					else
 						v.tooltip = {data.label,data.tooltip};
 					end
@@ -88,8 +91,8 @@ local function init(parent, index, data)
 							o=ns.modules[data.modName].config_defaults[data.name];
 						end
 					else
-						if(ns.coreOptionDefaults[data.name]~=nil)then
-							o=ns.coreOptionDefaults[data.name];
+						if(ns.defaultGeneralOptions[data.name]~=nil)then
+							o=ns.defaultGeneralOptions[data.name];
 						elseif(data.name=="global")then
 							o=false;
 						end
@@ -121,7 +124,7 @@ local function init(parent, index, data)
 					o:Show();
 					v:Disable();
 				end
-				if (n~="header") and (n~="desc") and (n~="separator") and (n~="icon") then
+				if (n~="header") and (n~="desc") and (n~="separator") and (n~="icon") and (data.name) then
 					local n = data.name;
 					if (data.modName) then n=data.modName.."::"..n; end
 					panel.controls[n] = v;
@@ -215,18 +218,27 @@ local build = {
 	toggle = function(parent,index,data)
 		local Index,cur = init(parent,index,data);
 		local e = parent[Index].__toggle;
-		if (data.modName) then
-			e:SetChecked(not not Broker_EverythingDB[data.modName][data.name]);
+		if data.get then
+			e:SetChecked(data.get());
 		else
-			e:SetChecked(not not Broker_EverythingDB[data.name]);
+			if data.modName then
+				e:SetChecked(not not ns.profile[data.modName][data.name]);
+			else
+				e:SetChecked(not not ns.profile.GeneralOptions[data.name]);
+			end
 		end
 		e.data=data;
 		e.Text:SetWidth(160);
 		e.Text:SetText(data.label);
 		e:SetHitRectInsets(0, -e.Text:GetWidth() - 1, 0, 0);
 		e:SetScript("OnClick",function(self,button)
-			self:SetChecked(not not self:GetChecked());
-			panel:change(data.modName,data.name,not not self:GetChecked());
+			local v = not not self:GetChecked();
+			self:SetChecked(v);
+			if data.set then
+				data.set(v);
+			else
+				panel:change(data.modName,data.name,v);
+			end
 		end);
 		parent[Index]:SetHeight(e:GetHeight()+6);
 	end,
@@ -235,10 +247,14 @@ local build = {
 		local Index,cur = init(parent,index,data);
 		local e = parent[Index].__slider;
 
-		if (data.modName) then
-			cur = Broker_EverythingDB[data.modName][data.name];
+		if data.get then
+			cur = data.get();
 		else
-			cur = Broker_EverythingDB[data.name];
+			if (data.modName) then
+				cur = ns.profile[data.modName][data.name];
+			else
+				cur = ns.profile.GeneralOptions[data.name];
+			end
 		end
 
 		e.data=data;
@@ -255,35 +271,41 @@ local build = {
 		if(data.step)then
 			e:SetValueStep(data.step);
 		end
+
 		e.value = cur;
 		e:SetValue(e.value);
 
-		do
-			local m,M,c = data.min,data.max,cur;
-			if (data.rep) then
-				if (data.rep[data.min]) then
-					m = data.rep[m];
-				end
-				if (data.rep[data.max]) then
-					M = data.rep[M];
-				end
-				if (data.rep[cur]) then
-					c = data.rep[c];
-				end
+		local m,M,c = data.min,data.max,cur;
+		if (data.rep) then
+			if (data.rep[data.min]) then
+				m = data.rep[m];
 			end
-
-			e.Low:SetText(m);
-			e.High:SetText(M);
-			e.Current:SetText(c);
+			if (data.rep[data.max]) then
+				M = data.rep[M];
+			end
+			if (data.rep[cur]) then
+				c = data.rep[c];
+			end
 		end
+
+		e.Low:SetText(m);
+		e.High:SetText(M);
+		e.Current:SetText(c);
 
 		e:SetScript("OnValueChanged",function(self)
 			local value = self:GetValue();
 			if (data.format) then
 				value = tonumber(data.format:format(value));
 			end
-			self:SetValue(value)
-			panel:change(data.modName,data.name,value);
+			if data.step then
+				value = floor(value/data.step)*data.step;
+			end
+			self:SetValue(value);
+			if data.set then
+				data.set(value);
+			else
+				panel:change(data.modName,data.name,value);
+			end
 			if (data.rep) and (data.rep[value]) then
 				value = data.rep[value];
 			end
@@ -296,81 +318,107 @@ local build = {
 		local Index = init(parent,index,data);
 		local e = parent[Index].__select;
 
-		local current;
-		if (data.modName) then
-			current = Broker_EverythingDB[data.modName][data.name];
+		local current,values,alternative={},"","";
+		if (data.get) then
+			current, values, alternative = data.get();
 		else
-			current = Broker_EverythingDB[data.name];
+			if (data.modName) then
+				current = ns.profile[data.modName][data.name];
+			else
+				current = ns.profile.GeneralOptions[data.name];
+			end
+			values = data.values;
+			alternative = NONE;
 		end
 
 		e.data=data;
 		e.Label:SetText(data.label);
 		e.value=current;
 
-		e.Text:SetText(L[data.values[current]]);
+		local numValues = 0;
+		for i in pairs(values)do
+			numValues=numValues+1;
+		end
 
-		--[[
-		local btn=_G[e:GetName().."Button"];
-		--btn:SetHitRectInsets(-(e:GetWidth()-(btn:GetWidth()*2)),-3,-3,-3)
-		btn:SetScript("OnClick",function(self,button)
-			local parent = self:GetParent();
-			local data = parent.data;
-
-			ns.EasyMenu.InitializeMenu();
-			for v,t in ns.pairsByKeys(data.values) do
-				ns.EasyMenu.addEntry({
-					label = L[t],
-					radio = v,
-					--keepShown = false,
-					checked = function()
-						return (current==v);
-					end,
-					func = function(self)
-						--Broker_EverythingDB[data.modName][data.name] = v;
-						--ns.modules[modName].onevent({},"BE_UPDATE_CLICKOPTIONS");
-						parent.Label:SetText(t);
-						panel:change(data.modName,data.name,value);
-					end
-				});
+		if numValues>0 then
+			if current and values[current] then
+				if type(values[current])=="table" then
+					e.Text:SetText(L[values[current].label]);
+				else
+					e.Text:SetText(L[values[current]]);
+				end
+			else
+				e.Text:SetText(alternative);
 			end
-			ns.EasyMenu.ShowMenu(self);
-			PlaySound("igMainMenuOptionCheckBoxOn");
-		end);
-		]]
 
-		e:SetScript("OnClick",function(self,button)
-			local data = self.data;
-			ns.EasyMenu.InitializeMenu();
-			for v,t in ns.pairsByKeys(data.values) do
-				ns.EasyMenu.addEntry({
-					label = L[t],
-					radio = v,
-					checked = function()
-						return (current==v);
-					end,
-					func = function(self)
-						e.Text:SetText(L[data.values[v]]);
-						panel:change(data.modName,data.name,v);
-						current = v;
-						ns.EasyMenu.RefreshAll(menu);
+			e:SetScript("OnClick",function(self,button)
+				local data, values, _ = self.data;
+				values = data.values;
+
+				if(data.get)then
+					_, values = data.get();
+				end
+
+				ns.EasyMenu.InitializeMenu();
+
+				for k,d in ns.pairsByKeys(values) do
+					local add = true;
+					local entry={
+						radio = k,
+						keepShown = data.keepShown,
+						checked = function() return (current==k); end,
+						func = function(self)
+							if type(values[k])=="table" then
+								e.Text:SetText(L[values[k].label]);
+							else
+								e.Text:SetText(L[values[k]]);
+							end
+							if(data.set)then
+								data.set(k);
+							else
+								panel:change(data.modName,data.name,k);
+							end
+							current = k;
+							ns.EasyMenu.RefreshAll(menu);
+						end
+					};
+					if type(d)=="table" then
+						entry.label=d.label;
+						if d.hide==true then
+							add=false;
+						elseif d.disabled==true then
+							entry.disabled = true;
+						elseif d.title==true then
+							entry.title = true;
+						end
+					else
+						entry.label=L[d];
 					end
-				});
-			end
-			ns.EasyMenu.ShowMenu(self);
-			PlaySound("igMainMenuOptionCheckBoxOn");
-		end);
+					if add then
+						ns.EasyMenu.addEntry(entry);
+					end
+				end
+				ns.EasyMenu.ShowMenu(self);
+				PlaySound("igMainMenuOptionCheckBoxOn");
+			end);
+			e:Enable();
+		else
+			e.Text:SetText(alternative);
+			e:Disable();
+		end
+
 
 		e:SetHitRectInsets(-3,-e.Label:GetWidth(),-3,-3)
-		parent[Index]:SetHeight(e:GetHeight()+12);
+		parent[Index]:SetHeight(e:GetHeight()+14);
 	end,
 
 	color = function(parent,index,data)
 		local Index,cur = init(parent,index,data);
 		local e = parent[Index].__color;
 		if (data.modName) then
-			cur = Broker_EverythingDB[data.modName][data.name];
+			cur = ns.profile[data.modName][data.name];
 		else
-			cur = Broker_EverythingDB[data.name];
+			cur = ns.profile.GeneralOptions[data.name];
 		end
 		e.data=data;
 		e.data.prev={r=cur[1],g=cur[2],b=cur[3],opacity=1-(cur[4] or 1)};
@@ -381,9 +429,9 @@ local build = {
 		e:SetScript("OnClick",function(self)
 			local cur;
 			if (data.modName) then
-				cur = Broker_EverythingDB[data.modName][data.name];
+				cur = ns.profile[data.modName][data.name];
 			else
-				cur = Broker_EverythingDB[data.name];
+				cur = ns.profile.GeneralOptions[data.name];
 			end
 			self.info = {
 				ignore=2,
@@ -424,10 +472,13 @@ local build = {
 	input = function(parent,index,data)
 		local Index,cur = init(parent,index,data);
 		local e = parent[Index].__input;
-		if (data.modName) then
-			cur = Broker_EverythingDB[data.modName][data.name];
+
+		if (data.get) then
+			cur = data.get();
+		elseif (data.modName) then
+			cur = ns.profile[data.modName][data.name];
 		else
-			cur = Broker_EverythingDB[data.name];
+			cur = ns.profile.GeneralOptions[data.name];
 		end
 		e.data=data;
 		e.prev=cur;
@@ -436,7 +487,11 @@ local build = {
 		e:SetText(cur);
 
 		local change = function()
-			panel:change(data.modName,data.name,e:GetText());
+			if(data.set)then
+				data.set(e:GetText());
+			else
+				panel:change(data.modName,data.name,e:GetText());
+			end
 			e:ClearFocus();
 			e.Ok:Hide();
 		end
@@ -466,11 +521,54 @@ ns.optionpanel = function()
 	f.name, f.controls,f.changes = addon, {},{};
 
 	function f:okay()
+		local action = "update";
 		local needs = false;
+		if BrokerEverythingOptionPanel.change_profile then
+			local pName,pAct = unpack(BrokerEverythingOptionPanel.change_profile);
+			action = "none";
+		
+			if pAct=="new" then
+				Broker_Everything_ProfileDB.profiles[pName] = {};
+				for i,v in pairs(ns.defaultGeneralOptions)do
+					Broker_Everything_ProfileDB.profiles[pName][i] = v;
+				end
+				for i,v in pairs(ns.modules)do
+					if(v.config_defaults)then
+						for I,V in pairs(v.config_defaults)do
+							if Broker_Everything_ProfileDB.profiles[pName][i]==nil then
+								Broker_Everything_ProfileDB.profiles[pName][i] = {};
+							end
+							Broker_Everything_ProfileDB.profiles[pName][i][I]=V;
+						end
+					end
+				end
+			elseif pAct=="copy" then
+				local dbNew = Broker_Everything_ProfileDB.profiles[pName];
+				for i,v in pairs(ns.defaultGeneralOptions)do
+					ns.be_option_panel:change(nil,i,dbNew[i]);
+				end
+				for i,v in pairs(ns.modules)do
+					if(v.config_defaults)then
+						for I,V in pairs(v.config_defaults)do
+							ns.be_option_panel:change(i,I,dbNew[i][I]);
+						end
+					end
+				end
+			end
+
+			ns.db = nil;
+			ns.db = Broker_Everything_ProfileDB.profiles[pName];
+			Broker_Everything_ProfileDB.use_profile[ns.player.name_realm] = pName;
+			BrokerEverythingOptionPanel.change_profile = nil;
+		end
 		for name1,value1 in pairs(f.changes) do
 			if (type(value1)=="table") and (name1~="iconcolor") then
 				for name2,value2 in pairs(value1) do
-					Broker_EverythingDB[name1][name2]=value2;
+					if action=="defaults" then
+						ns.profile[name1][name2] = ns.modules[name1].defaults[name2];
+					elseif action~="none" then
+						ns.profile[name1][name2] = value2;
+					end
 					if (mods.events[name1]) and (mods.events[name1][name2]) then
 						ns.modules[name1].onevent({}, (mods.events[name1][name2]==true) and "BE_DUMMY_EVENT" or mods.events[name1][name2]);
 					end
@@ -495,7 +593,11 @@ ns.optionpanel = function()
 					end
 				end
 			else
-				Broker_EverythingDB[name1]=value1;
+				if action=="defaults" then
+					ns.profile.GeneralOptions[name1] = ns.defaultGeneralOptions[name1];
+				elseif action~="none" then
+					ns.profile.GeneralOptions[name1] = value1;
+				end
 				if (name1=="iconcolor") then
 					ns.updateIconColor(true);
 				end
@@ -519,6 +621,7 @@ ns.optionpanel = function()
 	function f:default()
 		wipe(Broker_EverythingDB);
 		wipe(Broker_EverythingGlobalDB);
+		wipe(Broker_Everything_ProfileDB);
 		wipe(f.changes);
 		f.Apply:Disable();
 	end
@@ -530,13 +633,13 @@ ns.optionpanel = function()
 				if (f.changes[v.data.modName]) and (f.changes[v.data.modName][v.data.name]~=nil) then
 					cur = f.changes[v.data.modName][v.data.name];
 				else
-					cur = Broker_EverythingDB[v.data.modName][v.data.name];
+					cur = ns.profile[v.data.modName][v.data.name];
 				end
 			else
 				if (f.changes[v.data.name]~=nil) then
 					cur = f.changes[v.data.name];
 				else
-					cur = Broker_EverythingDB[v.data.name];
+					cur = ns.profile.GeneralOptions[v.data.name];
 				end
 			end
 
@@ -596,12 +699,12 @@ ns.optionpanel = function()
 		local changed=false;
 		if (name) then
 			if (not f.changes[name]) then f.changes[name]={}; end
-			if (hasChanged(Broker_EverythingDB[name][key],value)) then
+			if (hasChanged(ns.profile[name][key],value)) then
 				f.changes[name][key] = value;
 				changed=true;
 			end
 		else
-			if (hasChanged(Broker_EverythingDB[key],value)) then
+			if (hasChanged(ns.profile.GeneralOptions[key],value)) then
 				f.changes[key] = value;
 				changed=true;
 			end
@@ -686,6 +789,12 @@ ns.optionpanel = function()
 			f.Modules.List.update=f.ModList_Update;
 			HybridScrollFrame_CreateButtons(f.Modules.List, "BEConfigPanel_ModuleButtonTemplate", 0, 0, nil, nil, 0, -mods.entryOffset);
 			mods.entryHeight = f.Modules.List.buttons[1]:GetHeight();
+			if ns.build>=70000000 then
+				for i=1, #scroll.buttons do
+					scroll.buttons[i].StyleN:SetTexCoord(0,0.294921875,0.654296875,0.701171875);
+					scroll.buttons[i].StyleP:SetTexCoord(0,0.294921875,0.607421875,0.654296875);
+				end
+			end
 		end
 
 		offset = HybridScrollFrame_GetOffset(scroll);
@@ -706,11 +815,11 @@ ns.optionpanel = function()
 					button.StyleN:Hide();
 					button:Disable();
 				elseif (ns.modules[name]) then
-					local d,e = ns.modules[name],Broker_EverythingDB[name].enabled;
+					local d,e = ns.modules[name],ns.profile[name].enabled;
 					if (f.changes[name]) and (f.changes[name].enabled~=nil) then
 						e = f.changes[name].enabled;
 					end
-					button.data = {name=name,db=Broker_EverythingDB[name]};
+					button.data = {name=name,db=ns.profile[name]};
 					button.name:SetText(L[name]);
 
 					button.Bg:Show()
@@ -737,7 +846,7 @@ ns.optionpanel = function()
 								mods.pointer=nil;
 							end
 						elseif (button=="RightButton") then
-							local val = not Broker_EverythingDB[name].enabled;
+							local val = not ns.profile[name].enabled;
 							if (f.changes[name]) and (f.changes[name].enabled~=nil) then
 								val = not f.changes[name].enabled;
 							end
@@ -754,7 +863,7 @@ ns.optionpanel = function()
 					}
 					if (not d.noBroker) then
 						tinsert(button.tooltip,C("copper",L["Right-click"]).." || "..C("green",(e) and L["Disable this module"] or L["Enable this module"]));
-						button.tooltip[1] = button.tooltip[1].. " ("..C((e) and "green" or "red",(e) and L["Enabled"] or L["Disabled"])..")";
+						button.tooltip[1] = button.tooltip[1].. " ("..C((e) and "green" or "red",(e) and VIDEO_OPTIONS_ENABLED or ADDON_DISABLED)..")";
 					end
 					button:SetScript("OnEnter",tooltipOnEnter);
 					button:SetScript("OnLeave",tooltipOnLeave);
@@ -772,7 +881,7 @@ ns.optionpanel = function()
 	end
 
 	f:SetScript("OnShow", function()
-		f.title:SetText(addon.." - "..L["Options"]);
+		f.title:SetText(addon.." - "..OPTIONS);
 		f.subTitle:SetText(L["Allows you to adjust the display options."]);
 
 		f.Reset.tooltip = {RESET,L["Opens a little menu with 3 reset options"]};
@@ -823,11 +932,8 @@ ns.optionpanel = function()
 		f.Generals:SetHitRectInsets(3,12,3,4)
 		f.Generals.scrollBar:SetScale(0.725);
 		local i = 1;
-		for _,v in ipairs(ns.coreOptions) do
+		for _,v in ipairs(ns.coreOptions) do -- see core.lua
 			if (build[v.type]) then
-				if (v.set) and (v.get) then
-					v.modName=false;
-				end
 				build[v.type](f.Generals.child, i, v, nil);
 				i=i+1;
 			end
@@ -840,12 +946,12 @@ ns.optionpanel = function()
 		f.Modules.Title2:SetPoint("LEFT", f.Modules.List.split, "LEFT", 10,0);
 
 		local tmp1,tmp2,d={},{};
-		for k, v in pairs(ns.modules) do tmp1[L[k]] = k; end -- tmp1 to order modules by localized names
+		for k, v in pairs(ns.modules) do if not v.noOptions then tmp1[L[k]] = k; end end -- tmp1 to order modules by localized names
 
 		tinsert(mods.list,1);
 		for k, v in ns.pairsByKeys(tmp1) do -- mods.list as order list with names and boolean. the booleans indicates the header "With options" and "Without options"
 			if(ns.modules[v].clickOptions)then
-				ns.clickOptions.update(ns.modules[v],Broker_EverythingDB[v]);
+				ns.clickOptions.update(ns.modules[v],ns.profile[v]);
 			end
 			if (type(ns.modules[v].config)=="table") and (#ns.modules[v].config>1) then
 				tinsert(mods.list,v);
@@ -929,7 +1035,7 @@ ns.datapanel = function()
 	f.name, f.parent, f.controls, f.tmpCharCache = L["Character data"], addon, {},false;
 
 	function f:okay()
-		be_character_cache = CopyTable(f.tmpCharCache);
+		Broker_Everything_CharacterDB = CopyTable(f.tmpCharCache);
 		f.tmpCharCache = false;
 	end
 	function f:cancel()
@@ -943,13 +1049,13 @@ ns.datapanel = function()
 	end
 	function f:reset()
 		f.tmpCharCache = false;
-		be_character_cache = {order={ns.player.name_realm}};
+		Broker_Everything_CharacterDB = {order={ns.player.name_realm}};
 		for i,v in ipairs({"name","class","faction","race"})do
-			if(ns.player[v] and be_character_cache[ns.player.name_realm][v]~=ns.player[v])then
-				be_character_cache[ns.player.name_realm][v] = ns.player[v];
+			if(ns.player[v] and Broker_Everything_CharacterDB[ns.player.name_realm][v]~=ns.player[v])then
+				Broker_Everything_CharacterDB[ns.player.name_realm][v] = ns.player[v];
 			end
 		end
-		be_character_cache[ns.player.name_realm].level = UnitLevel("player");
+		Broker_Everything_CharacterDB[ns.player.name_realm].level = UnitLevel("player");
 	end
 
 	local function CharList_OrderUp(name)
@@ -977,7 +1083,7 @@ ns.datapanel = function()
 		end
 
 		if(f.tmpCharCache==false)then
-			f.tmpCharCache = CopyTable(be_character_cache);
+			f.tmpCharCache = CopyTable(Broker_Everything_CharacterDB);
 		end
 
 		offset = HybridScrollFrame_GetOffset(scroll);
@@ -1052,36 +1158,6 @@ ns.datapanel = function()
 
 	InterfaceOptions_AddCategory(f);
 	datapanel = f;
-	return f;
-end
-
-ns.profilepanel = function()
-	local f = CreateFrame("Frame", "BrokerEverythingProfilePanel", InterfaceOptionsFramePanelContainer); --, "BrokerEverythingOptionPanelTemplate");
-	f.name, f.parent, f.controls, f.changes = L["Profiles"], addon, {},{};
-
-	f:SetScript("OnShow",function()
-		--f.title:SetText(addon.." - "..L["Options"]);
-		--f.subTitle:SetText(L["Allows you to adjust the display options."]);
-		f:SetScript("OnShow",nil --[[f.refresh]]);
-	end);
-
-	--InterfaceOptions_AddCategory(f);
-	profilepanel = f;
-	return f;
-end
-
-ns.infopanel = function()
-	local f = CreateFrame("Frame", "BrokerEverythingInfoPanel", InterfaceOptionsFramePanelContainer); --, "BrokerEverythingOptionPanelTemplate");
-	f.name, f.parent, f.controls, f.changes = L["Informations"], addon, {},{};
-	
-	f:SetScript("OnShow",function()
-		--f.title:SetText(addon.." - "..L["Options"]);
-		--f.subTitle:SetText(L["Allows you to adjust the display options."]);
-		f:SetScript("OnShow",nil --[[f.refresh]]);
-	end);
-
-	--InterfaceOptions_AddCategory(f);
-	infopanel = f;
 	return f;
 end
 

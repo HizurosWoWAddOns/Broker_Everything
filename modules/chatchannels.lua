@@ -10,8 +10,8 @@ local channels_last =1;
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "ChatChannels" -- L["ChatChannels"]
-local ldbName,ttName,ttColumns,tt = name,name.."TT",3
+local name = "ChatChannels";
+local ldbName,ttName,ttColumns,tt,createMenu = name,name.."TT",2
 
 
 -------------------------------------------
@@ -24,16 +24,11 @@ I[name] = {iconfile="Interface\\chatframe\\ui-chatwhispericon"}
 -- module variables for registration --
 ---------------------------------------
 ns.modules[name] = {
-	desc = L["Display chat channels with count of users."],
+	desc = L["Broker to show count of users of all chat channels"],
 	--icon_suffix = '',
 	events = {
 		"PLAYER_ENTERING_WORLD",
-
-		-- party join
-		-- party leave
 		"PARTY_LEADER_CHANGED",
-
-		-- ?
 		"GROUP_ROSTER_UPDATE",
 		"CHANNEL_UI_UPDATE",
 		"CHANNEL_COUNT_UPDATE",
@@ -44,13 +39,43 @@ ns.modules[name] = {
 		inTitle = {}
 	},
 	config_allowed = {},
-	config = { { type="header", label=L[name], align="left", icon=I[name] } }
+	config = {
+		{ type="header", label=CHAT_CHANNELS, align="left", icon=I[name] },
+	},
+	clickOptions = {
+		["1_open_chats"] = {
+			cfg_label = "Open chat channels window", -- L["Open chat channels window"]
+			cfg_desc = "open the chat channels tab on the contact window", -- L["open the chat channels tab on the contact window"]
+			cfg_default = "_LEFT",
+			hint = "Open chat channels window",
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleFriendsFrame",3);
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
+			cfg_default = "_RIGHT",
+			hint = "Open option menu", -- L["Open option menu"]
+			func = function(self,button)
+				local _mod=name; -- for error tracking
+				createMenu(self);
+			end
+		}
+	}
 }
 
 
 --------------------------
 -- some local functions --
 --------------------------
+function createMenu(self)
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 local function updateChannels(id,num)
 	channels[id][5]=num;
@@ -102,18 +127,15 @@ local function update()
 	updateRoster(id)
 end
 
-local function createTooltip()
+local function createTooltip(self,tt)
 	if (tt==nil) or ((tt) and (tt.key) and (tt.key~=ttName)) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear();
 
-	tt:AddHeader(C("dkyellow",L[name]));
+	tt:AddHeader(C("dkyellow",CHAT_CHANNELS));
 
 	for i,v in ipairs(channels) do
 		local channel, header, collapsed, channelNumber, count, active, category = unpack(v);
-		if(Broker_EverythingDB.separateThousands)then
-			count = FormatLargeNumber(count);
-		end
 
 		if(header)then
 			tt:AddSeparator(4,0,0,0,0);
@@ -133,11 +155,16 @@ local function createTooltip()
 			if(v.color)then
 				color = ("ff%02x%02x%02x"):format(v.color[1]*255,v.color[2]*255,v.color[3]*255);
 			end
-			tt:AddLine(C(color,(channelNumber~=nil and channelNumber..". " or "") ..channel), count);
+			tt:AddLine(C(color,(channelNumber~=nil and channelNumber..". " or "") ..channel), ns.FormatLargeNumber(count));
 		else
 			tt:AddLine(C("gray",(channelNumber~=nil and channelNumber..". " or "") ..channel), C("gray",FACTION_INACTIVE));
 		end
 	end
+	if ns.profile.GeneralOptions.showHints then
+		tt:AddSeparator(3,0,0,0,0);
+		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+	end
+	ns.roundupTooltip(self,tt)
 end
 
 
@@ -145,7 +172,7 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
 ns.modules[name].onevent = function(self,event,...)
@@ -158,7 +185,7 @@ ns.modules[name].onevent = function(self,event,...)
 	--elseif event=="CHANNEL_FLAGS_UPDATED" then
 	--elseif event=="CHANNEL_VOICE_UPDATE" then
 	elseif event=="CHANNEL_COUNT_UPDATE" then
-		updateChannels(arg1,arg2)
+		updateChannels(arg1,arg2 or 0)
 	elseif event=="d" then
 		update()
 	elseif ({MUTELIST_UPDATE=1,IGNORELIST_UPDATE=1})[event]==1 then
@@ -175,7 +202,7 @@ ns.modules[name].onupdate = function(self,elapsed)
 				if(ChannelFrame and ChannelFrame:IsShown()) then return end
 				SetSelectedDisplayChannel(i);
 				if(tt and tt.key and tt.key==ttName)then
-					createTooltip()
+					createTooltip(false, tt)
 				end
 			end);
 		end
@@ -186,20 +213,18 @@ ns.modules[name].onupdate = function(self,elapsed)
 		local txt={};
 		for i,v in pairs(channels)do
 			if(not v[2])then
-				local color = {.5,.5,.5};
+				local color,count = {.5,.5,.5},v[5] or 0;
 				if(v.color and v[6])then
 					color = v.color;
 				end
-				if(Broker_EverythingDB.separateThousands)then
-					v[5] = FormatLargeNumber(v[5]);
-				end
-				tinsert(txt,C(color,v[5] or 0));
+
+				tinsert(txt,C(color,ns.FormatLargeNumber(count)));
 			end
 		end
 		if(#txt>0)then
 			obj.text = table.concat(txt,"/");
 		else
-			obj.text = L[name];
+			obj.text = CHAT_CHANNELS;
 		end
 	end);
 end
@@ -213,8 +238,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT","RIGHT")
-	createTooltip();
-	ns.createTooltip(self,tt)
+	createTooltip(self, tt);
 end
 
 ns.modules[name].onleave = function(self)

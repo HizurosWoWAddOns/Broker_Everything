@@ -14,8 +14,8 @@ local ldbName = name
 local tt,ttColumns,createMenu;
 local ttName = name.."TT"
 local type2locale = {
-	["invite"]	= C("cyan",L["Invited"]),
-	["join"]	= C("green",L["Joined"]),
+	["invite"]	= C("cyan",CALENDAR_STATUS_INVITED),
+	["join"]	= C("green",LFG_LIST_APP_INVITE_ACCEPTED),
 	["promote"]	= C("yellow",L["Promoted"]),
 	["demote"]	= C("orange",L["Demoted"]),
 	["remove"]	= C("red",L["Removed"]),
@@ -34,7 +34,7 @@ I[name] = {iconfile="Interface\\icons\\inv_misc_note_05",coords={0.05,0.95,0.05,
 -- module variables for registration --
 ---------------------------------------
 ns.modules[name] = {
-	desc = L["a broker to show the last entries of the guild log"],
+	desc = L["Broker to show last entries of the guild log"],
 	events = {
 		"PLAYER_ENTERING_WORLD",
 		"GUILD_ROSTER_UPDATE",
@@ -67,13 +67,13 @@ ns.modules[name] = {
 		{ type="separator" },
 		{ type="toggle", name="showRealm",  label=L["Show realm names"], tooltip=L["Show realm names after character names from other realms (connected realms)."] },
 		{ type="slider", name="max_entries", label=L["Show max. entries"], tooltip=L["Select the maximum number of entries from the guild log, otherwise drag to 'All'."],
-			minText = L["All"],
+			minText = ACHIEVEMENTFRAME_FILTER_ALL,
 			default = 0,
 			min = 0,
 			max = 100,
 			format = "%d",
 			step = 1,
-			rep = {[0]=L["All"]}
+			rep = {[0]=ACHIEVEMENTFRAME_FILTER_ALL}
 		},
 		{ type="select", name="displayMode", label=L["Display mode"], tooltip=L["Change the list style."],
 			values	= {
@@ -112,31 +112,38 @@ ns.modules[name] = {
 --------------------------
 -- some local functions --
 --------------------------
+function createMenu(parent)
+	if (tt~=nil) and (tt:IsShown()) then tt:Hide(); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(parent);
+end
+
 local function showRealm(Char)
 	local Name, Realm = strsplit("-", Char);
-	if (Broker_EverythingDB[name].showRealm) then
+	if (ns.profile[name].showRealm) then
 		return Name..(Realm and C("ltgray","-")..C("dkyellow",Realm) or "");
 	end
 	return Name..(Realm and C("dkyellow","*") or "");
 end
 
-local function createTooltip()
+local function createTooltip(self, tt)
 	local doHide = {
-		["join"] = Broker_EverythingDB[name].hideJoin==true,
-		["quit"] = Broker_EverythingDB[name].hideLeave==true,
-		["invite"] = Broker_EverythingDB[name].hideInvite==true,
-		["promote"] = Broker_EverythingDB[name].hidePromote==true,
-		["demote"] = Broker_EverythingDB[name].hideDemote==true,
-		["remove"] = Broker_EverythingDB[name].hideRemove==true
+		["join"] = ns.profile[name].hideJoin==true,
+		["quit"] = ns.profile[name].hideLeave==true,
+		["invite"] = ns.profile[name].hideInvite==true,
+		["promote"] = ns.profile[name].hidePromote==true,
+		["demote"] = ns.profile[name].hideDemote==true,
+		["remove"] = ns.profile[name].hideRemove==true
 	}
 
-	local limit,nolimit,tLimit = tonumber(Broker_EverythingDB[name].max_entries),false;
+	local limit,nolimit,tLimit = tonumber(ns.profile[name].max_entries),false;
 	tLimit = limit;
 	if (limit==0) then limit = #logs; nolimit=true; end
 	if (limit > #logs) then limit = #logs; end
 
 	tt:Clear();
-	if (Broker_EverythingDB[name].displayMode=="NORMAL") then
+	if (ns.profile[name].displayMode=="NORMAL") then
 
 		local l=tt:AddHeader(C("dkyellow",L[name]));
 		if(not nolimit)then
@@ -147,7 +154,7 @@ local function createTooltip()
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(
 			C("ltblue",L["Action"]),
-			C("ltblue",L["Character"]),
+			C("ltblue",CHARACTER),
 			C("ltblue",L["By"]),
 			C("ltblue",L["Recently"])
 		);
@@ -168,7 +175,7 @@ local function createTooltip()
 				);
 			end
 		end
-	elseif (Broker_EverythingDB[name].displayMode=="SPLIT") then
+	elseif (ns.profile[name].displayMode=="SPLIT") then
 		local actions,_ = {"invite","join","promote","demote","remove","quit"};
 		tt:AddHeader(C("dkyellow",L[name]));
 
@@ -178,14 +185,14 @@ local function createTooltip()
 				tt:AddHeader(type2locale[action] .. ((not nolimit) and " ("..L["latest %d entries"]:format(tLimit)..")" or ""));
 				if (action=="demote") or (action=="promote") then
 					tt:AddLine(
-						C("ltblue",L["Character"]),
+						C("ltblue",CHARACTER),
 						C("ltblue",L["By"]),
 						C("ltblue",L["New rank"]),
 						C("ltblue",L["Recently"])
 					);
 				else
 					tt:AddLine(
-						C("ltblue",L["Character"]),
+						C("ltblue",CHARACTER),
 						(action~="quit" and action~="join") and C("ltblue",L["By"]) or "",
 						"",
 						C("ltblue",L["Recently"])
@@ -196,7 +203,7 @@ local function createTooltip()
 				for num=1, #logs do
 					if (logs[num].type==action) and (c<limit) then
 						local ch,r = strsplit("-",logs[num].char);
-						if (Broker_EverythingDB[name].showRealm) then
+						if (ns.profile[name].showRealm) then
 							ch = ch..(r and C("dkyellow","*") or "");
 						else
 							ch = ch..(r and C("gray","-")..C("dkyellow",r) or "");
@@ -218,31 +225,26 @@ local function createTooltip()
 		end
 	end
 
-	if (Broker_EverythingDB.showHints) then
+	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0)
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
+	ns.roundupTooltip(self,tt);
 end
 
-function createMenu(parent)
-	if (tt~=nil) and (tt:IsShown()) then tt:Hide(); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(parent);
-end
 
 
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 ns.modules[name].onevent = function(self,event,msg)
 	if (event=="PLAYER_ENTERING_WORLD") or (event=="GUILD_ROSTER_UPDATE") then
 		QueryGuildEventLog();
 	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],Broker_EverythingDB[name]);
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	elseif (event=="GUILD_EVENT_LOG_UPDATE") then
 		wipe(logs);
 		local numEvents = GetNumGuildEvents();
@@ -284,8 +286,7 @@ ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	ttColumns=4;
 	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "LEFT", "LEFT", "RIGHT");
-	createTooltip();
-	ns.createTooltip(self,tt);
+	createTooltip(self, tt);
 end
 
 ns.modules[name].onleave = function(self)

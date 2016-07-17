@@ -185,9 +185,8 @@ I[name] = {iconfile="Interface\\Icons\\INV_Misc_Book_09.png",coords={0.05,0.95,0
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["Display a list of your professions"]
 ns.modules[name] = {
-	desc = desc,
+	desc = L["Broker to show your profession skills and cooldowns"],
 	events = {
 		"ADDON_LOADED",
 		"PLAYER_ENTERING_WORLD",
@@ -202,8 +201,6 @@ ns.modules[name] = {
 		"SKILL_LINES_CHANGED",
 		"BAG_UPDATE_DELAYED",
 		"GET_ITEM_INFO_RECEIVED",
-
-
 	},
 	updateinterval = nil, -- 10
 	config_defaults = {
@@ -221,8 +218,8 @@ ns.modules[name] = {
 	},
 	clickOptions = {
 		["1_open_character_info"] = {
-			cfg_label = "Open profession menu",
-			cfg_desc = "open the profession menu",
+			cfg_label = "Open profession menu", -- L["Open profession menu"]
+			cfg_desc = "open the profession menu", -- L["open the profession menu"]
 			cfg_default = "_LEFT",
 			hint = "Open profession menu",
 			func = function(self,button)
@@ -250,7 +247,7 @@ ns.modules[name] = {
 --------------------------
 
 local function Title_Update()
-	local inTitle,db,v = {},Broker_EverythingDB[name].inTitle;
+	local inTitle,db,v = {},ns.profile[name].inTitle;
 
 	for i=1, 4 do
 		v = db[i];
@@ -264,7 +261,7 @@ local function Title_Update()
 end
 
 local function Title_Set(place,obj)
-	local db = Broker_EverythingDB[name].inTitle;
+	local db = ns.profile[name].inTitle;
 	db[place] = (db[place]~=obj) and obj or false;
 	Title_Update();
 end
@@ -297,7 +294,7 @@ profs.build=function()
 	end
 end
 
-local function createTooltip(tt)
+local function createTooltip(self, tt)
 	local iconnameLocale = "|T%s:12:12:0:0:64:64:2:62:4:62|t %s";
 	local function item_icon(name,icon) return select(10,GetItemInfo(name)) or icon or icon_placeholder; end
 
@@ -306,19 +303,23 @@ local function createTooltip(tt)
 
 	tt:AddLine(C("ltblue","Name"),C("ltblue","Skill"),C("ltblue","Abilities"));
 	tt:AddSeparator();
-	for i,v in ipairs(professions) do
-		if (v[maxSkill]==v[skill]) then
-			local c1,c2,s,m="ltyellow","ltgray",v[skill] or 0,v[maxSkill] or 0;
-			if (m==0) then
-				c1,c2,s,m = "gray","gray","-","-";
+	if #professions>0 then
+		for i,v in ipairs(professions) do
+			if (v[maxSkill]==v[skill]) then
+				local c1,c2,s,m="ltyellow","ltgray",v[skill] or 0,v[maxSkill] or 0;
+				if (m==0) then
+					c1,c2,s,m = "gray","gray","-","-";
+				end
+				tt:AddLine((iconnameLocale):format(v[icon],C(c1,v[nameLocale])),C(c2,s.."/"..m));
+			else
+				tt:AddLine((iconnameLocale):format(v[icon] or icon_placeholder,C("ltyellow",v[nameLocale] or "?")),("%d/%d"):format(v[skill] or 0,v[maxSkill] or 0));
 			end
-			tt:AddLine((iconnameLocale):format(v[icon],C(c1,v[nameLocale])),C(c2,s.."/"..m));
-		else
-			tt:AddLine((iconnameLocale):format(v[icon] or icon_placeholder,C("ltyellow",v[nameLocale] or "?")),("%d/%d"):format(v[skill] or 0,v[maxSkill] or 0));
 		end
+	else
+		tt:AddLine(C("gray",L["No professions learned..."]));
 	end
 
-	if (Broker_EverythingDB[name].showCooldowns) then
+	if (ns.profile[name].showCooldowns) then
 		local lst,lst = {},{};
 		local sep,cd1=false,0;
 		local _, durationHeader = ns.DurationOrExpireDate(0,false,"Duration","Expire date");
@@ -335,9 +336,9 @@ local function createTooltip(tt)
 			end
 		end
 
-		for i=1, #be_character_cache.order do
-			local charName,charRealm = strsplit("-",be_character_cache.order[i]);
-			local charData = be_character_cache[be_character_cache.order[i]];
+		for i=1, #Broker_Everything_CharacterDB.order do
+			local charName,charRealm = strsplit("-",Broker_Everything_CharacterDB.order[i]);
+			local charData = Broker_Everything_CharacterDB[Broker_Everything_CharacterDB.order[i]];
 			local char_header=false;
 			if (not (charRealm==ns.realm and charName==ns.player.name)) and (charData.professions) and (charData.professions.cooldowns) and (charData.professions.hasCooldowns==true) then
 				local outdated = true;
@@ -377,13 +378,14 @@ local function createTooltip(tt)
 		end -- / #lst>0
 	end -- / .showCooldowns
 
-	if (Broker_EverythingDB.showHints) then
+	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(3,0,0,0,0)
 		local l,c = tt:AddLine()
 		local _,_,mod = ns.DurationOrExpireDate();
 		tt:SetCell(l,1,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]),nil,nil,2);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
+	ns.roundupTooltip(self,tt);
 end
 
 function createMenu(self,menu)
@@ -417,12 +419,12 @@ function createMenu(self,menu)
 		end
 
 		for I=1, 3 do
-			local d,e,p = Broker_EverythingDB[name].inTitle;
+			local d,e,p = ns.profile[name].inTitle;
 			if (d[I]) and (professions[d[I]]) then
 				e=professions[d[I]];
 				p=ns.EasyMenu.addEntry({ label = (C("dkyellow","%s%d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"], I, e[icon], C("ltblue",e[nameLocale])), arrow = true, disabled=(numLearned==0) });
 				ns.EasyMenu.addEntry({
-					label = (C("ltred","%s").." |T%s:20:20:0:0|t %s"):format(L["Remove"],e[icon],C("ltblue",e[nameLocale])),
+					label = (C("ltred","%s").." |T%s:20:20:0:0|t %s"):format(CALENDAR_VIEW_EVENT_REMOVE,e[icon],C("ltblue",e[nameLocale])),
 					func = function()
 						Title_Set(I,nil);
 					end
@@ -455,11 +457,11 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
-	if(be_character_cache[ns.player.name_realm].professions==nil)then
-		be_character_cache[ns.player.name_realm].professions = {cooldowns={},hasCooldowns=false};
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
+	if(Broker_Everything_CharacterDB[ns.player.name_realm].professions==nil)then
+		Broker_Everything_CharacterDB[ns.player.name_realm].professions = {cooldowns={},hasCooldowns=false};
 	end
-	db = be_character_cache[ns.player.name_realm].professions;
+	db = Broker_Everything_CharacterDB[ns.player.name_realm].professions;
 	if (db.cooldowns==nil) then
 		db.cooldowns = {};
 	end
@@ -471,7 +473,7 @@ end
 
 ns.modules[name].onevent = function(self,event,arg1)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],Broker_EverythingDB[name]);
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 
 	local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset = 1,2,3,4,5,6,7,8,9,10; -- GetProfessionInfo
@@ -578,8 +580,7 @@ ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 
 	tt = ns.LQT:Acquire(ttName, 2, "LEFT", "RIGHT");
-	createTooltip(tt);
-	ns.createTooltip(self,tt);
+	createTooltip(self, tt);
 end
 
 ns.modules[name].onleave = function(self)

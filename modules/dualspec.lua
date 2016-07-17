@@ -4,6 +4,7 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
+if ns.build>70000000 then return end
 
 
 -----------------------------------------------------------
@@ -52,7 +53,7 @@ ns.modules[name] = {
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
 ns.modules[name].onevent = function(self,event,msg)
@@ -71,7 +72,7 @@ ns.modules[name].onevent = function(self,event,msg)
 	dataobj.icon = icon.iconfile
 
 	if unspent~=0 then
-		dataobj.text = C("ltred",string.format(L["Unspent talents: %d"],unspent))
+		dataobj.text = C("ltred",UNSPENT_TALENT_POINTS:format(unspent))
 	else
 		dataobj.text = specName
 	end
@@ -86,10 +87,10 @@ ns.modules[name].ontooltip = function(tt)
 	if (ns.tooltipChkOnShowModifier(false)) then tt:Hide(); return; end
 
 	ns.tooltipScaling(tt)
-	tt:AddLine(L["Talents"])
+	tt:AddLine(TALENTS)
 
 	local activeSpec = GetSpecialization()
-	local numberSpecs = GetNumSpecGroups()
+	local numberSpecs = GetNumSpecializations()
 	local specs = { }
 		
 	for i=1, numberSpecs do
@@ -116,7 +117,7 @@ ns.modules[name].ontooltip = function(tt)
 		tt:AddLine(C("ltred",string.format(unspent==1 and L["%d unspent talent"] or L["%d unspent talents"],unspent)))
 	end
 
-	if Broker_EverythingDB.showHints then
+	if ns.profile.GeneralOptions.showHints then
 		tt:AddLine(" ")
 		tt:AddLine(C("copper",L["Left-click"]).." || "..C("green",L["Open talents pane"]))
 		tt:AddLine(C("copper",L["Right-click"]).." || "..C("green",L["Switch spec."]))

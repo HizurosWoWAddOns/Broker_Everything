@@ -9,13 +9,13 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "XP" -- L["XP"]
+local name = "XP" -- XP
 local ldbName, ttName, ttName2 = name, name.."TT", name.."TT2";
 local string = string
 local tt,tooltip,tt2,createMenu,ttColumns
 local data = {};
 local sessionStartLevel = UnitLevel("player");
-local slots = {  [1]=L["Head"], [3]=L["Shoulder"], [5]=L["Chest"], [7]=L["Legs"], [15]=L["Back"], [11]=L["Ring1"], [12]=L["Ring2"], [998]=L["Guild perk"], [999]=L["Recruite a Friend"]}
+local slots = {  [1]=HEADSLOT, [3]=SHOULDERSLOT, [5]=CHESTSLOT, [7]=LEGSSLOT, [15]=BACKSLOT, [11]=FINGER0SLOT, [12]=FINGER1SLOT, [998]=L["Guild perk"], [999]=L["Recruite a Friend"]}
 local items = { -- Heirlooms with {<percent>,<maxLevel>}
 	-- SoO Weapons
 	[104399] = {0,100}, [104400] = {0,100}, [104401] = {0,100}, [104402] = {0,100}, [104403] = {0,100}, [104404] = {0,100}, [104405] = {0,100},
@@ -68,9 +68,8 @@ I[name] = {iconfile="interface\\icons\\ability_dualwield",coords={0.05,0.95,0.05
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["Broker to show your xp. Can be shown either as a percentage, or as values."]
 ns.modules[name] = {
-	desc = desc,
+	desc = L["Broker to show experience from all chars in tooltip and the current character in broker button"],
 	events = {
 		"PLAYER_XP_UPDATE",
 		"PLAYER_LOGIN",
@@ -107,21 +106,15 @@ ns.modules[name] = {
 	},
 	clickOptions = {
 		["1_switch_mode"] = {
-			cfg_label = "Switch mode",
-			cfg_desc = " switch displayed xp data for characters under the level cap",
+			cfg_label = "Switch mode", -- L["Switch mode"]
+			cfg_desc = "switch displayed xp data for characters under the level cap", -- L["switch displayed xp data for characters under the level cap"]
 			cfg_default = "_RIGHT",
 			hint = "Switch mode",
 			func = function(self,button)
 				local _mod=name;
-				if (Broker_EverythingDB[name].display=="1") then
-					Broker_EverythingDB[name].display = "2"
-				elseif (Broker_EverythingDB[name].display=="2") then
-					Broker_EverythingDB[name].display = "3"
-				elseif (Broker_EverythingDB[name].display=="3") then
-					Broker_EverythingDB[name].display = "4"
-				elseif (Broker_EverythingDB[name].display=="4") then
-					Broker_EverythingDB[name].display = "1"
-				end
+				local cur = tonumber(ns.profile[name].display);
+				local new = cur==4 and 1 or cur+1;
+				ns.profile[name].display = tostring(new);
 				ns.modules[name].onevent(self)
 			end
 		},
@@ -159,18 +152,18 @@ local function getTooltip2(parentLine,data)
 	for slotId,slotName in ns.pairsByKeys(slots) do
 		local v=data.bonus[slotId] or {};
 		if(slotId==998)then
-			tt2:AddLine(C("ltyellow",slotName),(v.percent) and v.percent.."%" or C("ltgray",L["Not in a guild"]));
+			tt2:AddLine(C("ltyellow",slotName),(v.percent) and v.percent.."%" or C("ltgray",ERR_GUILD_PLAYER_NOT_IN_GUILD));
 		elseif(slotId==999)then
 			-- ignore refer-a-friend
 		else
 			tt2:AddLine(
 				C("ltyellow",slotName),
-				(v.percent==nil and C("ltgray",L["not equipped"])) or (v.outOfLevel==true and C("red",L["Out of Level"])) or v.percent.."%"
+				(v.percent==nil and C("ltgray",L["Not equipped"])) or (v.outOfLevel==true and C("red",L["Out of level"])) or v.percent.."%"
 			);
 		end
 	end
 
-	ns.createTooltip(parentLine, tt2);
+	ns.roundupTooltip(parentLine, tt2);
 	tt2:ClearAllPoints();
 	tt2:SetPoint("TOP",parentLine,"TOP",0,0);
 
@@ -183,7 +176,7 @@ local function getTooltip2(parentLine,data)
 	end
 end
 
-local function getTooltip(tt)
+local function createTooltip(self, tt)
 	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear();
@@ -195,14 +188,7 @@ local function getTooltip(tt)
 
 	if (UnitLevel("player")<MAX_PLAYER_LEVEL) then
 		tt:AddSeparator();
-
-		local c,m = data.cur,data.max;
-		if(Broker_EverythingDB.separateThousands)then
-			c = FormatLargeNumber(c);
-			m = FormatLargeNumber(m);
-		end
-
-		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE),"",C("white",("(%s/%s)"):format(c,m)));
+		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE),"",C("white",("(%s/%s)"):format(ns.FormatLargeNumber(data.cur),ns.FormatLargeNumber(data.max))));
 		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE.." ("..L["Percent"]..")"), "",data.percent);
 		tt:AddLine(C("ltyellow",GARRISON_FOLLOWER_XP_STRING),"",C("white",data.need));
 		if (data.restStr) then
@@ -232,16 +218,16 @@ local function getTooltip(tt)
 		end
 	end
 
-	if Broker_EverythingDB[name].showMyOtherChars then
-		local allRealms = (Broker_EverythingDB[name].showAllRealms==true);
+	if ns.profile[name].showMyOtherChars then
+		local allRealms = (ns.profile[name].showAllRealms==true);
 		tt:AddSeparator(4,0,0,0,0);
 		local l = tt:AddLine();
 		tt:SetCell(l,1,C("ltblue",L["Your other chars (%s)"]:format(allRealms and L["all realms"] or ns.realm)),nil,nil,3);
 		tt:AddSeparator();
 		local count = 0;
-		for i=1, #be_character_cache.order do
-			local name_realm = be_character_cache.order[i];
-			local v = be_character_cache[name_realm];
+		for i=1, #Broker_Everything_CharacterDB.order do
+			local name_realm = Broker_Everything_CharacterDB.order[i];
+			local v = Broker_Everything_CharacterDB[name_realm];
 			if(v.xp and v.xp.bonus)then --- little cleanup outdated boolean usage
 				for slotId, slot in pairs(v.xp.bonus)do
 					if( slot.percent==nil or slot.percent==false )then
@@ -249,20 +235,15 @@ local function getTooltip(tt)
 					end
 				end
 			end
-			if( (name_realm:match(ns.realm) or allRealms) and (name_realm~=ns.player.name_realm) and v.xp~=nil and not (Broker_EverythingDB[name].showNonMaxLevelOnly and v.level==MAX_PLAYER_LEVEL) )then
+			if( (name_realm:match(ns.realm) or allRealms) and (name_realm~=ns.player.name_realm) and v.xp~=nil and not (ns.profile[name].showNonMaxLevelOnly and v.level==MAX_PLAYER_LEVEL) )then
 				local Name,Realm = strsplit("-",name_realm);
 				Realm = allRealms and " "..C("dkyellow","- "..ns.scm(Realm)) or "";
-				local c,m = v.xp.cur,v.xp.max;
-				if(Broker_EverythingDB.separateThousands)then
-					c = FormatLargeNumber(c);
-					m = FormatLargeNumber(m);
-				end
 				local l = tt:AddLine(
 					("(%d) %s %s"):format(v.level,C(v.class,ns.scm(Name))..Realm, v.faction and "|TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or ""),
 					("%s "..C("cyan","%s")):format(v.xp.percent or 0,v.xp.restStr or "> ?%"),
-					("(%s/%s)"):format(c,m)
+					("(%s/%s)"):format(ns.FormatLargeNumber(v.xp.cur),ns.FormatLargeNumber(v.xp.max))
 				);
-				tt:SetLineScript(l,"OnMouseUp",function(self,button) be_character_cache[name_realm].xp = nil; getTooltip(tt); end);
+				tt:SetLineScript(l,"OnMouseUp",function(_,button) Broker_Everything_CharacterDB[name_realm].xp = nil; createTooltip(self, tt); end);
 				if (v.xp.bonus and #v.xp.bonus>0) then
 					tt:SetLineScript(l,"OnEnter",function(self) getTooltip2(self,v.xp) end);
 					tt:SetLineScript(l,"OnLeave",function(self) ns.hideTooltip(tt2,ttName2,true) end);
@@ -276,14 +257,15 @@ local function getTooltip(tt)
 		end
 	end
 
-	if Broker_EverythingDB.showHints then
+	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0);
-		if (Broker_EverythingDB[name].showMyOtherChars) then
+		if (ns.profile[name].showMyOtherChars) then
 			local l = tt:AddLine();
 			tt:SetCell(l,1,C("ltblue",L["Click"]).."||"..C("green",L["Delete a character from the list"]),nil,nil,ttColumns);
 		end
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
+	ns.roundupTooltip(self,tt)
 end
 
 
@@ -291,15 +273,15 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
-	if(be_character_cache[ns.player.name_realm].xp==nil)then
-		be_character_cache[ns.player.name_realm].xp={};
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
+	if(Broker_Everything_CharacterDB[ns.player.name_realm].xp==nil)then
+		Broker_Everything_CharacterDB[ns.player.name_realm].xp={};
 	end
 end
 
 ns.modules[name].onevent = function(self,event,msg)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],Broker_EverythingDB[name]);
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 
 	if (event=="UNIT_INVENTORY_CHANGED") and (msg~="player") then return end
@@ -354,24 +336,19 @@ ns.modules[name].onevent = function(self,event,msg)
 		end
 	end
 
-	be_character_cache[ns.player.name_realm].xp = data;
+	Broker_Everything_CharacterDB[ns.player.name_realm].xp = data;
 
 	if (MAX_PLAYER_LEVEL~=sessionStartLevel) and (MAX_PLAYER_LEVEL==UnitLevel("player")) then
 		dataobj.text = C("ltblue",L["Max. Level reached"]);
 	elseif IsXPUserDisabled() then
 		dataobj.text = C("orange",L["XP gain disabled"])
-	elseif Broker_EverythingDB[name].display == "1" then
+	elseif ns.profile[name].display == "1" then
 		dataobj.text = data.percent;
-	elseif Broker_EverythingDB[name].display == "2" then
-		local c,m = data.cur,data.max;
-		if(Broker_EverythingDB.separateThousands)then
-			c = FormatLargeNumber(c);
-			m = FormatLargeNumber(m);
-		end
-		dataobj.text = c.."/"..m;
-	elseif Broker_EverythingDB[name].display == "3" then
+	elseif ns.profile[name].display == "2" then
+		dataobj.text = ns.FormatLargeNumber(data.cur).."/"..ns.FormatLargeNumber(data.max);
+	elseif ns.profile[name].display == "3" then
 		dataobj.text = data.need;
-	elseif Broker_EverythingDB[name].display == "4" then
+	elseif ns.profile[name].display == "4" then
 		dataobj.text = data.percent.." ("..data.restStr..")";
 	end
 end
@@ -389,8 +366,7 @@ ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	ttColumns = 3
 	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT", "RIGHT")
-	getTooltip(tt)
-	ns.createTooltip(self,tt)
+	createTooltip(self, tt)
 end
 
 ns.modules[name].onleave = function(self)
@@ -399,19 +375,19 @@ end
 
 ns.modules[name].onclick = function(self,button)
 	if (button=="RightButton") then
-		if type(Broker_EverythingDB[name].display)=="boolean" then
-			Broker_EverythingDB[name].display = "1"
+		if type(ns.profile[name].display)=="boolean" then
+			ns.profile[name].display = "1"
 		end
 
 		if (UnitLevel("player")<MAX_PLAYER_LEVEL) then
-			if (Broker_EverythingDB[name].display=="1") then
-				Broker_EverythingDB[name].display = "2"
-			elseif (Broker_EverythingDB[name].display=="2") then
-				Broker_EverythingDB[name].display = "3"
-			elseif (Broker_EverythingDB[name].display=="3") then
-				Broker_EverythingDB[name].display = "4"
-			elseif (Broker_EverythingDB[name].display=="4") then
-				Broker_EverythingDB[name].display = "1"
+			if (ns.profile[name].display=="1") then
+				ns.profile[name].display = "2"
+			elseif (ns.profile[name].display=="2") then
+				ns.profile[name].display = "3"
+			elseif (ns.profile[name].display=="3") then
+				ns.profile[name].display = "4"
+			elseif (ns.profile[name].display=="4") then
+				ns.profile[name].display = "1"
 			end
 			ns.modules[name].onevent(self)
 		end

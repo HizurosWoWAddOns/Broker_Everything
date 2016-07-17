@@ -17,7 +17,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Reputation"; -- L["Reputation"]
+local name = "Reputation"; -- REPUTATION
 local ldbName, ttName, ttColumns, tt, createMenu = name, name.."TT", 5;
 local Name,description,standingID,barMin,barMax,barValue,atWarWith,canToggleAtWar,isHeader,isCollapsed,hasRep,isWatched,isChild,factionID,hasBonusRepGain,canBeLFGBonus,factionStandingText=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17;
 
@@ -38,7 +38,7 @@ I[name] = {iconfile="Interface\\Icons\\Achievement_Reputation_01", coords={0.1,0
 -- module variables for registration --
 ---------------------------------------
 ns.modules[name] = {
-	desc = L["Display informations about faction standing of your character"],
+	desc = L["Broker to show faction standing of your character"],
 	--icon_suffix = "",
 	events = {
 		"PLAYER_ENTERING_WORLD",
@@ -83,8 +83,8 @@ ns.modules[name] = {
 	},
 	clickOptions = {
 		["1_open_reputation"] = {
-			cfg_label = "Open reputation pane",
-			cfg_desc = "open the reputation pane",
+			cfg_label = "Open reputation pane", -- L["Open reputation pane"]
+			cfg_desc = "open the reputation pane", -- L["open the reputation pane"]
 			cfg_default = "_LEFT",
 			hint = "Open reputation pane",
 			func = function(self,button)
@@ -129,10 +129,10 @@ local function updateBars()
 				bgWidth=v.Bg:GetWidth();
 			end
 
-			if(Broker_EverythingDB[name].bgBars=="single")then
+			if(ns.profile[name].bgBars=="single")then
 				v.BarSingle:SetWidth(bgWidth*v.percent);
 				v.BarSingle:Show();
-			elseif(Broker_EverythingDB[name].bgBars=="allinone")then
+			elseif(ns.profile[name].bgBars=="allinone")then
 				if(v.bodyguard)then
 					local totalPercent = (v.data[barValue] / allinone_bodyguard);
 					if v.data[barMax]==1 then totalPercent = 1; end
@@ -164,11 +164,11 @@ local function ttAddLine(tt,mode,data,count)
 
 	tinsert(line,
 		strrep("   ",inset)..
-		C(data[isHeader] and "ltblue" or "ltyellow",data[Name])..
+		C(data[isHeader] and "ltblue" or "ltyellow",ns.strCut(data[Name],38))..
 		(data[atWarWith] and " |TInterface\\buttons\\UI-Checkbox-SwordCheck:12:12:0:-1:32:32:0:18:0:18|t" or "")
 	);
 
-	if(Broker_EverythingDB[name].standingText)then
+	if(ns.profile[name].standingText)then
 		tinsert(line,data[factionStandingText]);
 	end
 
@@ -188,7 +188,7 @@ local function ttAddLine(tt,mode,data,count)
 
 	local l=tt:AddLine(unpack(line));
 
-	if(Broker_EverythingDB[name].bgBars=="single") or (Broker_EverythingDB[name].bgBars=="allinone")then
+	if(ns.profile[name].bgBars=="single") or (ns.profile[name].bgBars=="allinone")then
 		if(not bars[count])then
 			bars[count] = CreateFrame("Frame","BERepurationBar"..count,nil,"BEReputationBarTemplate");
 		end
@@ -209,15 +209,15 @@ local function ttAddLine(tt,mode,data,count)
 	end
 
 	local darker = 0.6;
-	if(Broker_EverythingDB[name].bgBars=="single")then
+	if(ns.profile[name].bgBars=="single")then
 		local color = FACTION_BAR_COLORS[data[standingID]];
 		bars[count].BarSingle:SetVertexColor(color.r*darker,color.g*darker,color.b*darker,1);
 		bars[count].BarSingle:Show();
-	--elseif(Broker_EverythingDB[name].bgBars=="allinone")then
+	--elseif(ns.profile[name].bgBars=="allinone")then
 	end
 end
 
-local function createTooltip()
+local function createTooltip(self, tt)
 	if not (tt and tt.key and tt.key==ttName)then return end
 
 	tt:AddHeader(C("dkyellow",L[name]));
@@ -242,7 +242,7 @@ local function createTooltip()
 			tt:AddSeparator(4,0,0,0,0);
 			if(data[hasRep])then
 				count=count+1;
-				ttAddLine(tt,Broker_EverythingDB[name].numbers,data,count);
+				ttAddLine(tt,ns.profile[name].numbers,data,count);
 			else
 				tt:AddLine(strrep("   ",data[isChild] and 1 or 0)..C("ltblue",data[Name]));
 			end
@@ -251,15 +251,16 @@ local function createTooltip()
 			end
 		else
 			count=count+1;
-			ttAddLine(tt,Broker_EverythingDB[name].numbers,data,count);
+			ttAddLine(tt,ns.profile[name].numbers,data,count);
 		end
 	end
 	wasShown=true;
 
-	if (Broker_EverythingDB.showHints) then
+	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0)
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
+	ns.roundupTooltip(self,tt)
 end
 
 
@@ -267,7 +268,7 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
 ns.modules[name].onevent = function(self,event,...)
@@ -327,8 +328,7 @@ ns.modules[name].onenter = function(self)
 			bars[i]:Hide();
 		end
 	end);
-	createTooltip()
-	ns.createTooltip(self,tt)
+	createTooltip(self, tt)
 	C_Timer.After(0.5,updateBars);
 end
 

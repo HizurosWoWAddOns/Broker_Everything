@@ -4,13 +4,13 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
+L.Clock = TIMEMANAGER_TITLE;
 
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Clock";
-L.Clock = TIMEMANAGER_TITLE;
 local ldbName,ttName = name,name.."TT"
 local GetGameTime = GetGameTime
 local tt,GetGameTime2,createMenu
@@ -27,9 +27,8 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\clock"}; --IconName:
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["Broker to show realm or local time"]
 ns.modules[name] = {
-	desc = desc,
+	desc = L["Broker to show local and/or realm time"],
 	events = {"TIME_PLAYED_MSG"},
 	updateinterval = 1,
 	timeout = 30,
@@ -42,10 +41,10 @@ ns.modules[name] = {
 	config_allowed = {
 	},
 	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="header", label=TIMEMANAGER_TITLE, align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="toggle",name="format24", label=TIMEMANAGER_24HOURMODE, tooltip=L["Switch between time format 24 hours and 12 hours with AM/PM"] },
-		{ type="toggle", name="timeLocal", label=L["Local or server time"], tooltip=L["Switch between local and server time in broker button"] },
+		{ type="toggle", name="timeLocal", label=L["Local or realm time"], tooltip=L["Switch between local and realm time in broker button"] },
 		{ type="toggle", name="showSeconds", label=L["Show seconds"], tooltip=L["Display the time with seconds in broker button and tooltip"] }
 	},
 	clickOptions = {
@@ -60,19 +59,19 @@ ns.modules[name] = {
 			end
 		},
 		["2_toggle_time"] = {
-			cfg_label = "Local or server time",
-			cfg_desc = "switch between local and server time",
+			cfg_label = "Local or realm time", -- L["Local or realm time"]
+			cfg_desc = "switch between local and realm time", -- L["switch between local and realm time"]
 			cfg_default = "_RIGHT",
-			hint = "Local or server time",
+			hint = "Local or realm time",
 			func = function(self,button)
 				local _mod=name;
-				Broker_EverythingDB[name].timeLocal = not Broker_EverythingDB[name].timeLocal;
+				ns.profile[name].timeLocal = not ns.profile[name].timeLocal;
 				ns.modules[name].onupdate(self)
 			end
 		},
 		["3_calendar"] = {
-			cfg_label = "Open calendar",
-			cfg_desc = "open the calendar",
+			cfg_label = "Open calendar", -- L["Open calendar"]
+			cfg_desc = "open the calendar", -- L["open the calendar"]
 			cfg_default = "SHIFTRIGHT",
 			hint = "Open calendar",
 			func = function(self,button)
@@ -81,13 +80,13 @@ ns.modules[name] = {
 			end
 		},
 		["4_hours_mode"] = {
-			cfg_label = "12 / 24 hours mode",
-			cfg_desc = "switch between 12 and 24 time format",
+			cfg_label = "12 / 24 hours mode", -- L["12 / 24 hours mode"]
+			cfg_desc = "switch between 12 and 24 time format", -- L["switch between 12 and 24 time format"]
 			cfg_default = "SHIFTLEFT",
 			hint = "12 / 24 hours mode",
 			func = function(self,button)
 				local _mod=name;
-				Broker_EverythingDB[name].format24 = not Broker_EverythingDB[name].format24;
+				ns.profile[name].format24 = not ns.profile[name].format24;
 				ns.modules[name].onupdate(self)
 			end
 		},
@@ -116,32 +115,32 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
-local function generateTooltip(tt)
-	local h24 = Broker_EverythingDB[name].format24
-	local dSec = Broker_EverythingDB[name].showSeconds
+local function createTooltip(self, tt)
+	local h24 = ns.profile[name].format24
+	local dSec = ns.profile[name].showSeconds
 	local pT,pL,pS = ns.LT.GetPlayedTime()
 
 	tt:Clear()
-	tt:AddHeader(C("dkyellow",L[name]))
+	tt:AddHeader(C("dkyellow",TIMEMANAGER_TITLE))
 	tt:AddSeparator()
 
-	tt:AddLine(C("ltyellow",L["Local Time"]),	C("white",ns.LT.GetTimeString("GetLocalTime",h24,dSec)))
-	tt:AddLine(C("ltyellow",L["Server Time"]),	C("white",ns.LT.GetTimeString("GetGameTime",h24,dSec)))
-	tt:AddLine(C("ltyellow",L["UTC Time"]),		C("white",ns.LT.GetTimeString("GetUTCTime",h24,dSec)))
+	tt:AddLine(C("ltyellow",L["Local time"]),	C("white",ns.LT.GetTimeString("GetLocalTime",h24,dSec)))
+	tt:AddLine(C("ltyellow",L["Realm time"]),	C("white",ns.LT.GetTimeString("GetGameTime",h24,dSec)))
+	tt:AddLine(C("ltyellow",L["UTC time"]),		C("white",ns.LT.GetTimeString("GetUTCTime",h24,dSec)))
 
 	tt:AddSeparator(3,0,0,0,0)
 
 	tt:AddLine(C("ltblue",L["Playtime"]))
 	tt:AddSeparator()
-	tt:AddLine(C("ltyellow",L["Total"]),C("white",SecondsToTime(pT)))
-	tt:AddLine(C("ltyellow",L["Level"]),C("white",SecondsToTime(pL)))
+	tt:AddLine(C("ltyellow",TOTAL),C("white",SecondsToTime(pT)))
+	tt:AddLine(C("ltyellow",LEVEL),C("white",SecondsToTime(pL)))
 	tt:AddLine(C("ltyellow",L["Session"]),C("white",SecondsToTime(pS)))
 
-	if Broker_EverythingDB.showHints then
+	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(3,0,0,0,0)
 		ns.clickOptions.ttAddHints(tt,name);
 	end
-
+	ns.roundupTooltip(self,tt)
 end
 
 
@@ -149,7 +148,7 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
 ns.modules[name].onevent = function(self,event,...)
@@ -157,7 +156,7 @@ ns.modules[name].onevent = function(self,event,...)
 		played = true
 	end
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],Broker_EverythingDB[name]);
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 end
 
@@ -168,13 +167,13 @@ ns.modules[name].onupdate = function(self)
 	if not self then self = {} end
 	self.obj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
 
-	local h24 = Broker_EverythingDB[name].format24
-	local dSec = Broker_EverythingDB[name].showSeconds
+	local h24 = ns.profile[name].format24
+	local dSec = ns.profile[name].showSeconds
 
-	self.obj.text = Broker_EverythingDB[name].timeLocal and ns.LT.GetTimeString("GetLocalTime",h24,dSec) or ns.LT.GetTimeString("GetGameTime",h24,dSec)
+	self.obj.text = ns.profile[name].timeLocal and ns.LT.GetTimeString("GetLocalTime",h24,dSec) or ns.LT.GetTimeString("GetGameTime",h24,dSec)
 
 	if tt~=nil and tt.key==name.."TT" and tt:IsShown() then
-		generateTooltip(tt)
+		createTooltip(false, tt)
 	end
 end
 
@@ -187,17 +186,17 @@ end
 ns.modules[name].ontooltip = function(tt)
 	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
 	ns.tooltipScaling(tt)
-	local h24 = Broker_EverythingDB[name].format24
-	local dSec = Broker_EverythingDB[name].showSeconds
+	local h24 = ns.profile[name].format24
+	local dSec = ns.profile[name].showSeconds
 	tt:ClearLines()
 
-	tt:AddLine(L[name])
+	tt:AddLine(TIMEMANAGER_TITLE)
 	tt:AddLine(" ")
 
-	tt:AddDoubleLine(C("white",L["Local Time"]), C("white",ns.LT.GetTimeString("GetLocalTime",h24,dSec)))
-	tt:AddDoubleLine(C("white",L["Server Time"]), C("white",ns.LT.GetTimeString("GetGameTime",h24,dSec)))
+	tt:AddDoubleLine(C("white",L["Local time"]), C("white",ns.LT.GetTimeString("GetLocalTime",h24,dSec)))
+	tt:AddDoubleLine(C("white",L["Realm time"]), C("white",ns.LT.GetTimeString("GetGameTime",h24,dSec)))
 
-	if Broker_EverythingDB.showHints then
+	if ns.profile.GeneralOptions.showHints then
 		tt:AddLine(" ")
 		ns.clickOptions.ttAddHints(tt,name);
 	end
@@ -209,15 +208,13 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-
 	tt = ns.LQT:Acquire(ttName, 2 , "LEFT", "RIGHT" )
-	generateTooltip(tt)
-	ns.createTooltip(self,tt)
+	createTooltip(self, tt)
 end
 
 ns.modules[name].onleave = function(self)
 	if (tt) then ns.hideTooltip(tt,ttName,true); end
-	if (tt2) then ns.hideTooltip(tt2,ttName2,true); end --?
+	if (tt2) then ns.hideTooltip(tt2,ttName2,true); end
 end
 
 -- ns.modules[name].ondblclick = function(self,button) end

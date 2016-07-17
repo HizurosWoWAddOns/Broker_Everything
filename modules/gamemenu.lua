@@ -9,7 +9,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Game Menu" -- L["Game Menu"]
+local name = "Game Menu";
 local ldbName = name
 local tt,tt2 = nil
 local ttName,tt2Name = name.."TT",name.."TT2"
@@ -18,7 +18,7 @@ local iconCoords = "16:16:0:-1:64:64:4:56:4:56" --"16:16:0:-1:64:64:3:58:3:58"
 local link = "|T%s:%s|t %s"
 local link_disabled = "|T%s:%s:66:66:66|t "..C("gray", "%s")
 local gmticket = {}
-local customTitle = L[name]
+local customTitle = MAINMENU_BUTTON
 local clickActions = {
 	{"Do you really want to logout from this character?",function() securecall('Logout'); end}, -- L["Do you really want to logout from this character?"]
 	{"Do you really want to left the game?",function() securecall('Quit'); end}, -- L["Do you really want to left the game?"]
@@ -27,6 +27,7 @@ local clickActions = {
 }
 local timeout=5;
 local timeout_counter=0;
+local IsBlizzCon = IsBlizzCon or function() return false; end -- Legion Fix
 
 local menu = { --section 1
 	{name=CHARACTER_BUTTON,		iconName="Character-{class}",	func=function() securecall("ToggleCharacter", "PaperDollFrame") end },
@@ -160,9 +161,8 @@ I["gm_Challenges"]        = {iconfile="Interface\\Icons\\Achievement_ChallengeMo
 ---------------------------------------
 -- module variables for registration --
 ---------------------------------------
-local desc = L["A broker that merge blizzards game menu, microbutton bar and more into one tooltip with clickable elements. It is not recommented to use it in combat."]
 ns.modules[name] = {
-	desc = desc,
+	desc = L["Broker to show combined list of clickable elements from game menu, microbutton bar. It is not recommented to use it in combat."],
 	events = {
 		"UPDATE_WEB_TICKET"
 	},
@@ -178,7 +178,7 @@ ns.modules[name] = {
 	},
 	config_allowed = nil,
 	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="header", label=MAINMENU_BUTTON, align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="toggle", name="hideSection2", label=L["Hide section 2"], tooltip=L["Hide section 2 in tooltip"] },
 		{ type="toggle", name="hideSection3", label=L["Hide section 3"], tooltip=L["Hide section 3 in tooltip"] },
@@ -209,7 +209,7 @@ StaticPopupDialogs["CONFIRM"] = {
 
 local function updateGMTicket()
 	local obj = ns.LDB:GetDataObjectByName(ldbName)
-	if Broker_EverythingDB[name].showGMTicket and gmticket.hasTicket and gmticket.ticketStatus~=LE_TICKET_STATUS_OPEN then
+	if ns.profile[name].showGMTicket and gmticket.hasTicket and gmticket.ticketStatus~=LE_TICKET_STATUS_OPEN then
 		local icon = I("gm_gmticket")
 		obj.text = C("cyan",(gmticket.waitTime) and SecondsToTime(gmticket.waitTime*60) or L["Open GM Ticket"]) .. link:format(icon.iconfile,(icon.coordsStr or iconCoords),"")
 	else
@@ -221,7 +221,7 @@ end
 local function pushedTooltip(parent,id,msg)
 	if (tt) and (tt.key) and (tt.key==ttName) then ns.hideTooltip(tt,ttName,true); end
 	tt2 = ns.LQT:Acquire(tt2Name, 1, "LEFT");
-	ns.createTooltip(parent,tt2);
+	ns.roundupTooltip(parent,tt2);
 
 	tt2:Clear();
 	tt2:AddLine(C("orange",L[msg]));
@@ -241,66 +241,31 @@ local function pushedTooltip(parent,id,msg)
 	end
 end
 
-
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
-
-ns.modules[name].init = function()
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
-	local obj = ns.LDB:GetDataObjectByName(ldbName)
-	if Broker_EverythingDB[name].customTitle~="" and type(Broker_EverythingDB[name].customTitle)=="string" then
-		customTitle = Broker_EverythingDB[name].customTitle
-	end
-	if obj~=nil then
-		obj.text = customTitle
-	end
-end
-
-ns.modules[name].onevent = function(self, ...)
-	local event, _ = ...
-
-	if event == "UPDATE_WEB_TICKET" then
-		_, gmticket.hasTicket, gmticket.numTickets, gmticket.ticketStatus, gmticket.caseIndex, gmticket.waitTime, gmticket.waitMsg = ...
-		updateGMTicket()
-	elseif event == "BE_DUMMY_EVENT" then
-		local obj = ns.LDB:GetDataObjectByName(ldbName)
-		customTitle = Broker_EverythingDB[name].customTitle~="" and type(Broker_EverythingDB[name].customTitle)=="string" and Broker_EverythingDB[name].customTitle or L[name]
-		if obj~=nil then
-			obj.text = customTitle
-		end
-	end
-end
-
--- ns.modules[name].onupdate = function(self) end
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self, direction) end
-
-ns.modules[name].ontooltip = function(tt)
+local function createTooltip(self, tt)
 	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
 
 	local line, column
 	local section, secHide = 1, false
-	local oneCell = Broker_EverythingDB[name].hideSection2 and Broker_EverythingDB[name].hideSection3
+	local oneCell = ns.profile[name].hideSection2 and ns.profile[name].hideSection3
 	local cell = 1
 
 	tt.secureButtons = {}
 
 	tt:Clear()
 
-	if Broker_EverythingDB[name].customTooltipTitle then
+	if ns.profile[name].customTooltipTitle then
 		tt:AddHeader(C("dkyellow", customTitle))
 	else
-		tt:AddHeader(C("dkyellow", L[name]))
+		tt:AddHeader(C("dkyellow", MAINMENU_BUTTON))
 	end
 	tt:AddSeparator()
 
 	for i, v in ipairs(menu) do
-		if (v.taint) and (not Broker_EverythingDB[name].showTaintingEntries) then
+		if (v.taint) and (not ns.profile[name].showTaintingEntries) then
 			-- nothing
 		elseif v.sep==true then
 			section = section + 1
-			secHide = (section==2 and Broker_EverythingDB[name].hideSection2) or (section==3 and Broker_EverythingDB[name].hideSection3)
+			secHide = (section==2 and ns.profile[name].hideSection2) or (section==3 and ns.profile[name].hideSection3)
 
 			if not secHide then
 				tt:AddSeparator()
@@ -357,7 +322,7 @@ ns.modules[name].ontooltip = function(tt)
 	end
 
 	-- Open GM Ticket info Area
-	if Broker_EverythingDB[name].showGMTicket and gmticket.hasTicket and (gmticket.ticketStatus~=LE_TICKET_STATUS_RESPONSE or gmticket.ticketStatus~=LE_TICKET_STATUS_SURVEY) then
+	if ns.profile[name].showGMTicket and gmticket.hasTicket and (gmticket.ticketStatus~=LE_TICKET_STATUS_RESPONSE or gmticket.ticketStatus~=LE_TICKET_STATUS_SURVEY) then
 		waitTime, waitMsg, ticketStatus = gmticket.waitTime,gmticket.waitMsg,gmticket.ticketStatus
 		tt:AddSeparator(5,0,0,0,0)
 		line, column = tt:AddLine()
@@ -402,19 +367,55 @@ ns.modules[name].ontooltip = function(tt)
 	end
 	--
 
-	if Broker_EverythingDB[name].disableOnClick or (not Broker_EverythingDB.showHints) then return end
+	if ns.profile[name].disableOnClick or (not ns.profile.GeneralOptions.showHints) then return end
 
 	tt:AddSeparator(4, 0, 0, 0, 0)
 	line, column = tt:AddLine()
 	tt:SetCell(line, 1,
-		C("copper", L["Left-click"]).." || "..C("green", L["Logout"])
+		C("copper", L["Left-click"]).." || "..C("green", LOGOUT)
 		.."|n"..
-		C("copper", L["Right-click"]).." || "..C("green", L["Quit game"])
+		C("copper", L["Right-click"]).." || "..C("green", EXIT_GAME)
 		.."|n"..
 		C("copper", L["Shift+Left-click"]).." || "..C("green", L["Reload UI"])
 	, nil, nil, 2)
-
+	ns.roundupTooltip(self, tt)
 end
+
+
+------------------------------------
+-- module (BE internal) functions --
+------------------------------------
+
+ns.modules[name].init = function()
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
+	local obj = ns.LDB:GetDataObjectByName(ldbName)
+	if ns.profile[name].customTitle~="" and type(ns.profile[name].customTitle)=="string" then
+		customTitle = ns.profile[name].customTitle
+	end
+	if obj~=nil then
+		obj.text = customTitle
+	end
+end
+
+ns.modules[name].onevent = function(self, ...)
+	local event, _ = ...
+
+	if event == "UPDATE_WEB_TICKET" then
+		_, gmticket.hasTicket, gmticket.numTickets, gmticket.ticketStatus, gmticket.caseIndex, gmticket.waitTime, gmticket.waitMsg = ...
+		updateGMTicket()
+	elseif event == "BE_DUMMY_EVENT" then
+		local obj = ns.LDB:GetDataObjectByName(ldbName)
+		customTitle = ns.profile[name].customTitle~="" and type(ns.profile[name].customTitle)=="string" and ns.profile[name].customTitle or MAINMENU_BUTTON
+		if obj~=nil then
+			obj.text = customTitle
+		end
+	end
+end
+
+-- ns.modules[name].onupdate = function(self) end
+-- ns.modules[name].optionspanel = function(panel) end
+-- ns.modules[name].onmousewheel = function(self, direction) end
+-- ns.modules[name].ontooltip = function(tt) end
 
 
 -------------------------------------------
@@ -424,8 +425,7 @@ ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 
 	tt = ns.LQT:Acquire(ttName, 2, "LEFT", "LEFT")
-	ns.modules[name].ontooltip(tt)
-	ns.createTooltip(self, tt)
+	createTooltip(self, tt)
 end
 
 ns.modules[name].onleave = function(self)
@@ -433,7 +433,7 @@ ns.modules[name].onleave = function(self)
 end
 
 ns.modules[name].onclick = function(self, button)
-	if Broker_EverythingDB[name].disableOnClick then return end
+	if ns.profile[name].disableOnClick then return end
 
 	local shift = IsShiftKeyDown()
 

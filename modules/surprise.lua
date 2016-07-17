@@ -55,27 +55,8 @@ ns.modules[name] = {
 --------------------------
 -- some local functions --
 --------------------------
-local function resetFunc() -- clear founds table
-	wipe(founds);
-	counter = {sum=0,lootable=0,progress=0};
-end
-
-local function updateFunc() -- update broker
-	local item,status;
-	for id,v in pairs(items)do
-		item = ns.items.exist(id);
-		if(item)then
-			for I,V in ipairs(item)do
-				if(V.bag and V.slot)then
-					tinsert(founds,ns.GetItemData(id,V.bag,V.slot));
-					counter.sum = counter.sum+1;
-					status = v[1]==ITEM_LOOTABLE and "lootable" or "progress";
-					counter[status] = counter[status]+1;
-				end
-			end
-		end
-	end
-	local obj = ns.LDB:GetDataObjectByName(ldbName)
+local function updateBroker()
+	local obj = ns.LDB:GetDataObjectByName(ldbName);
 	if counter.sum>0 then
 		obj.text = ((counter.lootable and C("green",counter.lootable)) or C("ltgray",0)) .. "/" .. counter.sum;
 	else
@@ -83,14 +64,45 @@ local function updateFunc() -- update broker
 	end
 end
 
-local function getTooltip(tt)
+local function resetFunc() -- clear founds table
+	wipe(founds);
+	counter = {sum=0,lootable=0,progress=0};
+	updateBroker();
+end
+
+local function callbackFunc(Type,Data)
+	local status;
+	tinsert(founds,data);
+	counter.sum = counter.sum+1;
+	status = v[1]==ITEM_LOOTABLE and "lootable" or "progress";
+	counter[status] = counter[status]+1;
+	updateBroker();
+end
+
+local function updateFunc() -- update broker
+	local item;
+	for id,v in pairs(items)do
+		item = ns.items.exist(id);
+		if(item)then
+			for I,V in ipairs(item)do
+				if(V.type=="bag")then
+					local t = CopyTable(V);
+					t.callback = callbackFunc;
+					ns.ScanTT.query(t);
+				end
+			end
+		end
+	end
+end
+
+local function createTooltip(self, tt)
 	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
 
 	tt:AddHeader(C("dkyellow",L[name]))
 	tt:AddSeparator(4,0,0,0,0)
 
 	if #founds>0 then
-		tt:AddLine(C("ltblue",L["Items"]));
+		tt:AddLine(C("ltblue",ITEMS));
 		tt:AddSeparator();
 		for _,item in ipairs(founds) do
 			tt:AddLine(
@@ -106,20 +118,21 @@ local function getTooltip(tt)
 		tt:AddLine(L["No item found."])
 	end
 
---	if(Broker_EverythingDB[name].showChars)then end
+--	if(ns.profile[name].showChars)then end
+	ns.roundupTooltip(self,tt)
 end
 
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (Broker_EverythingDB.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
 ns.modules[name].onevent = function(self,event,...)
-	ns.items.RegisterPreScanCallBack(name,resetFunc);
+	ns.items.RegisterPreScanCallback(name,resetFunc);
 	for i,v in pairs(items)do
-		ns.items.RegisterCallBack(name,i,updateFunc);
+		ns.items.RegisterCallback(name,updateFunc,"item",i);
 	end
 end
 
@@ -136,8 +149,7 @@ ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 
 	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT", "RIGHT")
-	getTooltip(tt)
-	ns.createTooltip(self,tt)
+	createTooltip(self, tt)
 end
 
 ns.modules[name].onleave = function(self)
