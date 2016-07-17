@@ -124,8 +124,8 @@ local function UpdateStatus(event)
 	else
 		local names = {};
 		if #charDB_mail.stored>0 then
-			 for i=1, #charDB.mail.stored do
-				local n = strsplit("-",charDB.mail.stored[i].sender);
+			 for i=1, #charDB_mail.stored do
+				local n = strsplit("-",charDB_mail.stored[i].sender);
 				names[n]=true;
 			 end
 		end
