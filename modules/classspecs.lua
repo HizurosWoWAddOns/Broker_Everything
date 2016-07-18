@@ -177,6 +177,7 @@ local function createTooltip(self, tt)
 		-- pet spec
 	end
 
+	-- PVE Talents
 	local talentGroup = GetActiveSpecGroup(false);
 	if ns.profile[name].showTalents then
 		tt:AddSeparator(4,0,0,0,0);
@@ -207,6 +208,7 @@ local function createTooltip(self, tt)
 		end
 	end
 
+	-- PVP Talents
 	if ns.profile[name].showPvPTalents then
 		tt:AddSeparator(4,0,0,0,0);
 		local l=tt:AddLine(C("ltblue",PVP.." "..LEVEL_ABBR));
@@ -218,13 +220,15 @@ local function createTooltip(self, tt)
 		for row=1, MAX_PVP_TALENT_TIERS do
 			local selected,isUnlocked = false,false;
 			local l=tt:AddLine(C("ltyellow",tierLevels[row]));
-			for col=1, MAX_PVP_TALENT_COLUMNS do 
-				local tmp={GetPvpTalentInfo(row, col, talentGroup)};
-				if tmp[Selected]==true then
-					selected = tmp;
-					break;
-				elseif Unlocked then
-					isUnlocked = true;
+			if UnitLevel("player") == MAX_PLAYER_LEVEL_TABLE[LE_EXPANSION_LEVEL_CURRENT] then
+				for col=1, MAX_PVP_TALENT_COLUMNS do 
+					local tmp={GetPvpTalentInfo(row, col, talentGroup)};
+					if tmp[Selected]==true then
+						selected = tmp;
+						break;
+					elseif tmp[Unlocked] then
+						isUnlocked = true;
+					end
 				end
 			end
 			if selected then
