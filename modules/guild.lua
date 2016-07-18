@@ -22,6 +22,8 @@ local pStanding, pStandingText, pStandingMin, pStandingMax, pStandingValue = 1,2
 local mFullName, mName, mRealm, mRank, mRankIndex, mLevel, mClassLocale, mZone, mNote, mOfficerNote, mOnline, mIsAway, mClassFile, mAchievementPoints, mAchievementRank, mIsMobile, mCanSoR, mStanding, mStandingText,mIsMobileClosed = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20;
 local tsName, tsIcon, tsValue, tsID = 1,2,3,4;
 local app_index, app_name, app_realm, app_level, app_class, app_bQuest, app_bDungeon, app_bRaid, app_bPvP, app_bRP, app_bWeekdays, app_bWeekends, app_bTank, app_bHealer, app_bDamage, app_comment, app_timeSince, app_timeLeft = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18; -- applicants table entry indexes
+local MOBILE_BUSY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-BusyMobile:14:14:0:0:16:16:0:16:0:16|t";
+local MOBILE_AWAY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-AwayMobile:14:14:0:0:16:16:0:16:0:16|t";
 
 
 -------------------------------------------
@@ -300,10 +302,24 @@ local function tooltipAddLine(v,me)
 		end
 	end
 
+	local MobIcon, Zone = "",v[mZone];
+	if v[mIsMobile] and not v[mOnline] then
+		Zone=C("cyan",REMOTE_CHAT);
+	end
+	if v[mIsMobile] then
+		if v[mIsAway]==2 then
+			MobIcon = MOBILE_BUSY_ICON.." ";
+		elseif v[mIsAway]==1 then
+			MobIcon = MOBILE_AWAY_ICON.." "
+		else
+			MobIcon = ChatFrame_GetMobileEmbeddedTexture(73/255, 177/255, 73/255).." ";
+		end
+	end
+
 	local l=tt:AddLine(
 		v[mLevel],
-		C(v[mClassFile],ns.scm(v[mName]) .. realm),
-		(db.showZone) and v[mIsMobile] and C("cyan",L["MobileChat"])..(v[mIsMobileClosed] and " "..C("orange",L["(App closed)"]) or "") or v[mZone] or "", -- [3]
+		C(v[mClassFile],MobIcon .. ns.scm(v[mName]) .. realm),
+		(db.showZone) and Zone or "", -- [3]
 		(db.showNotes) and ns.scm(v[mNote]) or "", -- [4]
 		(db.showONotes) and ns.scm(v[mOfficerNote]) or "", -- [5]
 		(db.showRank) and ns.scm(v[mRank]) or "", -- [6]
@@ -346,9 +362,10 @@ local function createTooltip(self, tt)
 	tt:Clear()
 
 	if (not IsInGuild()) then
-		tt:AddHeader(GUILD);
+		tt:AddHeader(C("dkyellow",GUILD));
 		tt:AddSeparator();
-		tt:AddLine(L["No Guild"]);
+		tt:AddLine(C("ltgray",ERR_GUILD_PLAYER_NOT_IN_GUILD));
+		ns.roundupTooltip(self, tt);
 		return;
 	end
 
@@ -600,31 +617,34 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	displayOfficerNotes = CanViewOfficerNote();
-	local ttData = {
-		"RIGHT", -- level
-		"LEFT" -- name
-	};
-	--if (ns.profile[name].showZone) then
-		tinsert(ttData,"CENTER"); -- zone
-	--end
-	--if (ns.profile[name].showNotes) then
-		tinsert(ttData,"LEFT"); -- notes
-	--end
-	--if (displayOfficerNotes) and (ns.profile[name].showONotes) then
-		tinsert(ttData,"LEFT"); -- onotes
-	--end
-	--if (ns.profile[name].showRank) then
-		tinsert(ttData,"LEFT"); -- rank
-	--end
-	--if (ns.profile[name].showProfessions) then
-		tinsert(ttData,"LEFT"); -- professions 1
-		tinsert(ttData,"LEFT"); -- professions 2
-	--end
+	local ttAlignings = {"LEFT"};
+	if IsInGuild() then
+		displayOfficerNotes = CanViewOfficerNote();
+		ttAlignings = {
+			"RIGHT", -- level
+			"LEFT" -- name
+		};
+		--if (ns.profile[name].showZone) then
+			tinsert(ttAlignings,"CENTER"); -- zone
+		--end
+		--if (ns.profile[name].showNotes) then
+			tinsert(ttAlignings,"LEFT"); -- notes
+		--end
+		--if (displayOfficerNotes) and (ns.profile[name].showONotes) then
+			tinsert(ttAlignings,"LEFT"); -- onotes
+		--end
+		--if (ns.profile[name].showRank) then
+			tinsert(ttAlignings,"LEFT"); -- rank
+		--end
+		--if (ns.profile[name].showProfessions) then
+			tinsert(ttAlignings,"LEFT"); -- professions 1
+			tinsert(ttAlignings,"LEFT"); -- professions 2
+		--end
+	end
 
-	ttColumns = #ttData;
+	ttColumns = #ttAlignings;
 
-	tt = ns.LQT:Acquire(ttName, ttColumns,unpack(ttData));
+	tt = ns.LQT:Acquire(ttName, ttColumns,unpack(ttAlignings));
 	ttParent = self;
 	createTooltip(self, tt);
 end
