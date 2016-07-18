@@ -183,7 +183,7 @@ end
 
 local function UpdateInventory()
 	local lst,data = {iLevelMin=0,iLevelMax=0},ns.items.GetInventoryItems();
-	for id, d in pairs(data) do
+	for _, d in pairs(data) do
 		if d and d.slotIndex and (d.itemType==ARMOR or d.itemType==WEAPON) and d.slotIndex~=4 and d.slotIndex~=19 then
 		--	local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice=1,2,3,4,5,6,7,8,9,10,11;
 			lst[d.slotIndex] = d;

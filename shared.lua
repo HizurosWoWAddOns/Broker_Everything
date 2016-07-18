@@ -569,8 +569,7 @@ do
 					_, obj.count, obj.locked, _, obj.readable, obj.lootable = GetContainerItemInfo(bag, slot);
 					obj.name, obj.link, obj.rarity, obj.level, _, obj.type, obj.subType, obj.stackCount, _, obj.icon, obj.price = GetItemInfo(id);
 					tinsert(items[id],obj);
-					seen[id]=true;
-					bags[bag..":"..slot]=id;
+					seen[id]=true; bags[bag..":"..slot]=id;
 					if d.bags[bag..":"..slot]~=id and d.callbacks.item[id] then
 						for i,v in pairs(d.callbacks.item[id]) do
 							if(type(v)=="function")then
@@ -618,15 +617,15 @@ do
 				obj.durability.current, obj.durability.max = GetInventoryItemDurability(slotIndex);
 				tinsert(items[id],obj);
 				seen[id]=true;
-				inv[slotIndex]=id;
-				if d.inv[slotIndex]~=id and d.callbacks.item[id] then
+				inv[slotIndex]=obj;
+				if d.callbacks.item[id] and d.inv[slotIndex].link~=obj.link then
 					for i,v in pairs(d.callbacks.item[id]) do
 						if(type(v)=="function")then
 							callbacks_item[i] = v;
 						end
 					end
 				end
-				if d.inv[slotIndex]~=id then
+				if (not d.inv[slotIndex])~=(not inv[slotIndex]) or (d.inv[slotIndex] and d.inv[slotIndex].link~=obj.link) then
 					inv_changed = true;
 				end
 			end
@@ -757,8 +756,10 @@ do
 		return result;
 	end
 	ns.items.GetInventoryItems = function()
+		return d.inv;
+		--[[
 		local result = {};
-		for _,id in pairs(d.inv)do
+		for _,id in pairs(d.bags)do
 			if d.ids[id] and #d.ids[id]>0 then
 				for i=1, #d.ids[id] do
 					if d.ids[id][i] and d.ids[id][i].type=="inv" then
@@ -768,6 +769,7 @@ do
 			end
 		end
 		return result;
+		]]
 	end
 	ns.items.GetInventoryItemBySlotIndex = function(index)
 		if d.inv[index]~=nil and d.ids[d.inv[index]] then

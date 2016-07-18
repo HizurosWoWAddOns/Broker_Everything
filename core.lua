@@ -352,7 +352,11 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 		ns.moduleInit();
 
 		ns.print(L["AddOn loaded..."]);
-		self:UnregisterEvent("ADDON_LOADED");
+
+		--self:UnregisterEvent("ADDON_LOADED");
+	elseif event == "ADDON_LOADED" and addonName == "Blizzard_ItemUpgradeUI" then
+		ItemUpgradeFrameUpgradeButton:HookScript("OnClick",ns.items.UpdateNow);
+		hooksecurefunc(_G,"ItemUpgradeFrame_UpgradeClick",ns.items.UpdateNow);
 	elseif (event=="PLAYER_ENTERING_WORLD") then
 		-- iconset
 		ns.I(true);
@@ -369,6 +373,7 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 			end
 		end
 		ns.moduleCoexist();
+
 		self:UnregisterEvent(event);
 	elseif(event=="PLAYER_LEVEL_UP")then
 		Broker_Everything_CharacterDB[ns.player.name_realm].level = UnitLevel("player");
