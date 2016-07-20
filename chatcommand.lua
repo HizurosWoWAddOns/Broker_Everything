@@ -56,12 +56,10 @@ ns.commands = {
 		desc = L["List of available modules with his status"],
 		func = function()
 			ns.print(L["Cfg"], L["Data modules:"])
-			for k, v in pairs(ns.db) do
-				if ns.modules[k]~=nil and ns.modules[k].noBroker==true then
-					-- do nothing ^^
-				elseif not (v == true or v == false or v == 1 or v == 0) then
+			for k, v in ns.pairsByKeys(ns.modules) do
+				if v and v.noBroker~=true and ns.profile[k] then
 					local stat = {"red","Off"}
-					if ns.profile[k].enabled == true then
+					if ns.profile[k].enabled==true then
 						stat = {"green","On"}
 					end
 					ns.print(L["Cfg"], (k==L[k] and "%s | %s" or "%s | %s - ( %s )"):format(C(stat[1],stat[2]),C("ltyellow",k),L[k]))
@@ -151,7 +149,7 @@ SlashCmdList["BROKER_EVERYTHING"] = function(cmd)
 	end
 
 	cmd = cmd:gsub("^%l", string.upper)
-	for k, v in pairs(ns.db) do
+	for k, v in pairs(ns.profile) do
 		if k == cmd then
 			local x = ns.profile[cmd].enabled
 			print(tostring(x))
