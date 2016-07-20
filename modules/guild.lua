@@ -12,14 +12,14 @@ L["Guild"] = GUILD;
 -----------------------------------------------------------
 local name = "Guild";
 local ldbName, ttName, ttName2,ttColumns,ttColumns2 = name, name.."TT", name.."TT2",9,2;
-local tt,tt2,ttParent,createMenu;
+local tt,tt2,createMenu,db;
 local off, on = strtrim(gsub(ERR_FRIEND_OFFLINE_S,"%%s","")), strtrim(gsub(ERR_FRIEND_ONLINE_SS,"\124Hplayer:%%s\124h%[%%s%]\124h",""));
 local tradeskillsLockUpdate,tradeskillsLastUpdate,tradeskillsUpdateTimeout = false,0,20;
 local guild, player, members, membersName2Index, mobile, tradeskills, applicants = {},{},{},{},{},{},{};
 local doMembersUpdate, doTradeskillsUpdate, doApplicantsUpdate, doUpdateTooltip = false,false,false,false;
 local gName, gDesc, gRealm, gRealmNoSpacer, gMotD, gNumMembers, gNumMembersOnline, gNumMobile, gNumApplicants = 1,2,3,4,5,6,7,8,9;
 local pStanding, pStandingText, pStandingMin, pStandingMax, pStandingValue = 1,2,3,4,5;
-local mFullName, mName, mRealm, mRank, mRankIndex, mLevel, mClassLocale, mZone, mNote, mOfficerNote, mOnline, mIsAway, mClassFile, mAchievementPoints, mAchievementRank, mIsMobile, mCanSoR, mStanding, mStandingText,mIsMobileClosed = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20;
+local mFullName, mName, mRealm, mRank, mRankIndex, mLevel, mClassLocale, mZone, mNote, mOfficerNote, mOnline, mIsAway, mClassFile, mAchievementPoints, mAchievementRank, mIsMobile, mCanSoR, mStanding, mStandingText = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19;
 local tsName, tsIcon, tsValue, tsID = 1,2,3,4;
 local app_index, app_name, app_realm, app_level, app_class, app_bQuest, app_bDungeon, app_bRaid, app_bPvP, app_bRP, app_bWeekdays, app_bWeekends, app_bTank, app_bHealer, app_bDamage, app_comment, app_timeSince, app_timeLeft = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18; -- applicants table entry indexes
 local MOBILE_BUSY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-BusyMobile:14:14:0:0:16:16:0:16:0:16|t";
@@ -158,11 +158,6 @@ local function updateMembers()
 		m[mName], m[mRealm] = strsplit("-",m[mFullName]);
 		m[mStandingText] = _G["FACTION_STANDING_LABEL"..m[mStanding]];
 		if m[mIsMobile] then
-			if not m[mOnline] then
-				m[mIsMobileClosed]=true;
-			end
-			m[mOnline] = true;
-			mobile[m[mName]] = true;
 			guild[gNumMobile] = guild[gNumMobile]+1;
 		end
 		if membersName2Index[m[mFullName]] and members[membersName2Index[m[mFullName]]] then
@@ -600,7 +595,7 @@ ns.modules[name].onupdate = function(self)
 	updateBroker();
 	if doUpdateTooltip and tt and tt.key and tt.key==ttName and tt:IsShown() then
 		doUpdateTooltip = false;
-		createTooltip(ttParent, tt);
+		createTooltip(false, tt);
 	end
 --	if (IsInGuild()) then 
 --		RequestGuildApplicantsList();
@@ -618,6 +613,7 @@ end
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	local ttAlignings = {"LEFT"};
+
 	if IsInGuild() then
 		displayOfficerNotes = CanViewOfficerNote();
 		ttAlignings = {
@@ -645,7 +641,6 @@ ns.modules[name].onenter = function(self)
 	ttColumns = #ttAlignings;
 
 	tt = ns.LQT:Acquire(ttName, ttColumns,unpack(ttAlignings));
-	ttParent = self;
 	createTooltip(self, tt);
 end
 
