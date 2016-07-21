@@ -195,12 +195,11 @@ local function createTooltip(self, tt)
 				tt:SetCell(l,2,C("orange","Unlocked, not selected"),nil,nil,2);
 			else
 				local talentID, Name, iconTexture, Selected, Available, spellId, u1, u2, u3, u4 = GetTalentInfo(row, selectedTalent, talentGroup);
-				local link = GetSpellLink(spellId);
 				tt:SetCell(l,2,str:format(iconTexture,C("ltyellow",Name)),nil,nil,2);
 				tt:SetLineScript(l,"OnEnter",function(_self)
 					GameTooltip:SetOwner(tt,"ANCHOR_NONE");
 					GameTooltip:SetPoint(ns.GetTipAnchor(tt));
-					GameTooltip:SetHyperlink(link);
+					GameTooltip:SetHyperlink("spell:"..spellId);
 					GameTooltip:Show();
 				end);
 				tt:SetLineScript(l,"OnLeave",function() GameTooltip:ClearLines(); GameTooltip:Hide(); end);
@@ -232,12 +231,11 @@ local function createTooltip(self, tt)
 				end
 			end
 			if selected then
-				local link = GetSpellLink(selected[spellId]);
 				tt:SetCell(l,2,str:format(selected[Icon],C("ltyellow",selected[Name])),nil,nil,2);
 				tt:SetLineScript(l,"OnEnter",function(_self)
 					GameTooltip:SetOwner(tt,"ANCHOR_NONE");
 					GameTooltip:SetPoint(ns.GetTipAnchor(tt));
-					GameTooltip:SetHyperlink(link);
+					GameTooltip:SetHyperlink("spell:"..selected[spellId]);
 					GameTooltip:Show();
 				end);
 				tt:SetLineScript(l,"OnLeave",function()
