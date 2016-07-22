@@ -19,6 +19,7 @@ local objLink,objColor,objType,objId,objData,objName,objInfo,objTooltip=1,2,3,4,
 local itemEnchant,itemGem1,itemGem2,itemGem3,itemGem4=1,2,3,4,5;
 local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice=1,2,3,4,5,6,7,8,9,10,11;
 local slots = {"HEAD","NECK","SHOULDER","SHIRT","CHEST","WAIST","LEGS","FEET","WRIST","HANDS","FINGER0","FINGER1","TRINKET0","TRINKET1","BACK","MAINHAND","SECONDARYHAND","RANGED"};
+local fallbackIcon = "interface\\icons\\inv_misc_questionmark";
 local enchantSlots = {}; -- -1 = [iLevel<600], 0 = both, 1 = [iLevel=>600]
 if ns.build<6000000 then
 	enchantSlots = {
@@ -267,7 +268,7 @@ local function createTooltip(self, tt)
 					local color = (equipPending==eName and "orange") or (numMissing>0 and "red") or (isEquipped and "ltyellow") or false
 					local formatName = color~=false and C(color,eName) or eName
 
-					local line = ns.AddSpannedLine(tt, "|T"..icon..":0|t "..formatName, ttColumns);
+					local line = ns.AddSpannedLine(tt, "|T"..(icon or fallbackIcon)..":0|t "..formatName, ttColumns);
 					tt:SetLineScript(line, "OnMouseUp", function(self) 
 						if (IsShiftKeyDown()) then 
 							if (tt) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
