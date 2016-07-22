@@ -308,9 +308,9 @@ local function updateItems()
 				icon = toyIcon,
 				name = toyName
 			});
-		else
+		elseif items[_itemIds[i]] then
 			local v=items[_itemIds[i]];
-			if v and v[1] then
+			if v[1] and v[1].name then
 				table.insert(foundItems,{
 					id=_itemIds[i],
 					icon = v[1].icon,
