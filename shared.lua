@@ -552,11 +552,13 @@ do
 		ids={}, seen={}, bags={},inv={},item={}, callbacks={any={},bags={},inv={},item={}}, preScanCallbacks={}, links={},
 		elapsed = 0, update = true, invMin = 0, invMax = 0
 	}
+	local GetItemInfoFailed = false;
 
 	local function scanner()
 		local items,seen,bags,inv,callbacks_item = {},{},{},{},{};
 		local inv_changed,bags_changed=false,false;
 		local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d+)");
+		local _GetItemInfoFailed=GetItemInfoFailed;
 		local _UPGRADES = gsub(ITEM_UPGRADE_TOOLTIP_FORMAT,": %%d/%%d","");
 
 		-- get all itemIds from all items in the bags
@@ -568,13 +570,21 @@ do
 					local obj = {type="bag", bag=bag, slot=slot, id=id};
 					_, obj.count, obj.locked, _, obj.readable, obj.lootable = GetContainerItemInfo(bag, slot);
 					obj.name, obj.link, obj.rarity, obj.level, _, obj.type, obj.subType, obj.stackCount, _, obj.icon, obj.price = GetItemInfo(id);
-					tinsert(items[id],obj);
-					seen[id]=true; bags[bag..":"..slot]=id;
-					if d.bags[bag..":"..slot]~=id and d.callbacks.item[id] then
-						for i,v in pairs(d.callbacks.item[id]) do
-							if(type(v)=="function")then
-								callbacks_item[i] = v;
+					if obj.name then
+						tinsert(items[id],obj);
+						seen[id]=true; bags[bag..":"..slot]=id;
+						if d.bags[bag..":"..slot]~=id and d.callbacks.item[id] then
+							for i,v in pairs(d.callbacks.item[id]) do
+								if(type(v)=="function")then
+									callbacks_item[i] = v;
+								end
 							end
+						end
+					else
+						if GetItemInfoFailed~=false then
+							GetItemInfoFailed = GetItemInfoFailed + 1;
+						else
+							GetItemInfoFailed = 0;
 						end
 					end
 				end
@@ -686,6 +696,16 @@ do
 					func("update.any");
 				end
 			end
+		end
+
+		if GetItemInfoFailed~=false then
+			if GetItemInfoFailed>4 then
+				GetItemInfoFailed=false;
+			else
+				d.update=true;
+			end
+		elseif GetItemInfoFailed==_GetItemInfoFailed then
+			GetItemInfoFailed = false;
 		end
 	end
 
