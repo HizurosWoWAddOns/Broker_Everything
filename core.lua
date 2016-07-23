@@ -276,30 +276,47 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 				profiles={[DEFAULT]={}},
 				use_profile={}
 			};
-			if(Broker_EverythingGlobalDB.global==true)then
+			if(type(Broker_EverythingGlobalDB)=="table" and Broker_EverythingGlobalDB.global==true)then
 				Broker_Everything_ProfileDB.use_default_profile=true;
 				Broker_Everything_ProfileDB.profiles[Broker_Everything_ProfileDB.default_profile] = CopyTable(Broker_EverythingGlobalDB);
 				Broker_Everything_ProfileDB.use_profile[ns.player.name_realm] = DEFAULT;
-			else
-				Broker_Everything_ProfileDB.profiles[ns.player.name_realm] = CopyTable(Broker_EverythingDB);
+
+			elseif Broker_Everything_ProfileDB.profiles[ns.player.name_realm]==nil then
+				if type(Broker_EverythingDB)=="table" then
+					Broker_Everything_ProfileDB.profiles[ns.player.name_realm] = CopyTable(Broker_EverythingDB);
+				else
+					Broker_Everything_ProfileDB.profiles[ns.player.name_realm] = {};
+				end
 				Broker_Everything_ProfileDB.use_profile[ns.player.name_realm] = ns.player.name_realm;
 			end
 		end
 
-		if(Broker_Everything_ProfileDB.use_profile[ns.player.name_realm]==nil)then
-			Broker_Everything_ProfileDB.use_profile[ns.player.name_realm] = DEFAULT;
+		if Broker_Everything_ProfileDB.use_default_profile then
+			if Broker_Everything_ProfileDB.use_profile[ns.player.name_realm]==nil then
+				Broker_Everything_ProfileDB.use_profile[ns.player.name_realm] = DEFAULT;
+			end
+		else
+			if Broker_Everything_ProfileDB.use_profile[ns.player.name_realm]==nil then
+				if Broker_Everything_ProfileDB.profiles[ns.player.name_realm]==nil then
+					Broker_Everything_ProfileDB.profiles[ns.player.name_realm] = {};
+				end
+				Broker_Everything_ProfileDB.use_profile[ns.player.name_realm] = ns.player.name_realm;
+			end
 		end
+
 		if Broker_EverythingDB~=nil then
 			Broker_EverythingDB=nil;
 		end
 		if Broker_EverythingGlobalDB~=nil then
 			Broker_EverythingGlobalDB=nil;
 		end
+
 		ns.profile = Broker_Everything_ProfileDB.profiles[Broker_Everything_ProfileDB.use_profile[ns.player.name_realm]];
 
 		if ns.profile.GeneralOptions==nil then
 			ns.profile.GeneralOptions = {};
 		end
+
 		for i,v in pairs(ns.defaultGeneralOptions) do
 			if ns.profile.GeneralOptions[i]==nil then
 				if ns.profile[i]~=nil then
