@@ -257,41 +257,43 @@ local function charSummary(lst,c,v,t,a)
 	local n,a = 0,0;
 	for _,x in ipairs(lst)do
 		local l,label = unpack(x);
-		for _,data in ipairs(v[l])do
-			if type(data)=="table" then
-				if data.id then -- new table
-					if data.status == 1 then
-						c[l].chilling=c[l].chilling+1;
-					elseif data.status == 2 then
-						c[l].working=c[l].working+1;
-					elseif data.status == 3 then
-						c[l].disabled=c[l].disabled+1;
-					elseif data.missionEnd>t then
-						c[l].onmission=c[l].onmission+1;
-					elseif data.missionEnd>0 then
-						c[l].aftermission=c[l].aftermission+1;
-					else
-						c[l].chilling=c[l].chilling+1;
+		if type(v[l])=="table" then
+			for _,data in ipairs(v[l])do
+				if type(data)=="table" then
+					if data.id then -- new table
+						if data.status == 1 then
+							c[l].chilling=c[l].chilling+1;
+						elseif data.status == 2 then
+							c[l].working=c[l].working+1;
+						elseif data.status == 3 then
+							c[l].disabled=c[l].disabled+1;
+						elseif data.missionEnd>t then
+							c[l].onmission=c[l].onmission+1;
+						elseif data.missionEnd>0 then
+							c[l].aftermission=c[l].aftermission+1;
+						else
+							c[l].chilling=c[l].chilling+1;
+						end
+						if data.missionEnd>t and ((n==0) or (n~=0 and data.missionEnd<n)) then n=data.missionEnd; end
+						if data.missionEnd>a then a=data.missionEnd; end
+					elseif #data>0 then -- old table
+						-- TODO: Delete in next version
+						if data[1] == 1 then
+							c[l].chilling=c[l].chilling+1;
+						elseif data[1] == 2 then
+							c[l].working=c[l].working+1;
+						elseif data[1] == 3 then
+							c[l].disabled=c[l].disabled+1;
+						elseif data[2]>t then
+							c[l].onmission=c[l].onmission+1;
+						elseif data[2]>0 then
+							c[l].aftermission=c[l].aftermission+1;
+						else
+							c[l].chilling=c[l].chilling+1;
+						end
+						if data[2]>t and ((n==0) or (n~=0 and data[2]<n)) then n=data[2]; end
+						if data[2]>a then a=data[2]; end
 					end
-					if data.missionEnd>t and ((n==0) or (n~=0 and data.missionEnd<n)) then n=data.missionEnd; end
-					if data.missionEnd>a then a=data.missionEnd; end
-				elseif #data>0 then -- old table
-					-- TODO: Delete in next version
-					if data[1] == 1 then
-						c[l].chilling=c[l].chilling+1;
-					elseif data[1] == 2 then
-						c[l].working=c[l].working+1;
-					elseif data[1] == 3 then
-						c[l].disabled=c[l].disabled+1;
-					elseif data[2]>t then
-						c[l].onmission=c[l].onmission+1;
-					elseif data[2]>0 then
-						c[l].aftermission=c[l].aftermission+1;
-					else
-						c[l].chilling=c[l].chilling+1;
-					end
-					if data[2]>t and ((n==0) or (n~=0 and data[2]<n)) then n=data[2]; end
-					if data[2]>a then a=data[2]; end
 				end
 			end
 		end
