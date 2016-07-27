@@ -148,6 +148,17 @@ ns.modules[name] = {
 				securecall("ToggleCharacter","PaperDollFrame");
 			end
 		},
+		["3_open_equipment_sets_tab"] = {
+			cfg_label = "Open equipment manager tab", -- L["Open equipment manager tab"]
+			cfg_desc = "open the equipment manager tab on character info", -- L["open the equipment manager tab on character info"]
+			cfg_default = "__NONE",
+			hint = "Open equipment manager tab", -- L["Open equipment manager tab"]
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleCharacter","PaperDollFrame");
+				securecall("PaperDollFrame_SetSidebar",nil,3);
+			end
+		},
 		["2_open_menu"] = {
 			cfg_label = "Open option menu", -- L["Open option menu"]
 			cfg_desc = "open the option menu", -- L["open the option menu"]
