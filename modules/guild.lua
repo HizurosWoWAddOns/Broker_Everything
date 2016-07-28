@@ -136,7 +136,7 @@ local function updateGuild()
 	end
 	tmp[gRealmNoSpacer] = gsub(tmp[gRealm]," ","");
 	tmp[gMotD] = GetGuildRosterMOTD();
-	tmp[gNumMembers], _, tmp[gNumMembersOnline] = GetNumGuildMembers();
+	tmp[gNumMembers], tmp[gNumMembersOnline] = GetNumGuildMembers();
 	tmp[gNumApplicants] = GetNumGuildApplicants();
 	tmp[gNumMobile] = 0;
 	if tmp[gNumApplicants]>0 then
@@ -155,23 +155,27 @@ local function updateMembers()
 	for i=1, guild[gNumMembers] do
 		local m,old = {};
 		m[mFullName], m[mRank], m[mRankIndex], m[mLevel], m[mClassLocale], m[mZone], m[mNote], m[mOfficerNote], m[mOnline], m[mIsAway], m[mClassFile], m[mAchievementPoints], m[mAchievementRank], m[mIsMobile], m[mCanSoR], m[mStanding] = GetGuildRosterInfo(i);
-		tmpNames[m[mFullName]]=i;
-		m[mName], m[mRealm] = strsplit("-",m[mFullName]);
-		m[mStandingText] = _G["FACTION_STANDING_LABEL"..m[mStanding]];
-		if m[mIsMobile] then
-			guild[gNumMobile] = guild[gNumMobile]+1;
-		end
-		if membersName2Index[m[mFullName]] and members[membersName2Index[m[mFullName]]] then
-			old = members[membersName2Index[m[mFullName]]];
-			if m[mZone]~=old[mZone] then
-				doUpdateTooltip = true;
+		if m[mOnline] then
+			tmpNames[m[mFullName]]=i;
+			m[mName], m[mRealm] = strsplit("-",m[mFullName]);
+			m[mStandingText] = _G["FACTION_STANDING_LABEL"..m[mStanding]];
+			if m[mIsMobile] then
+				guild[gNumMobile] = guild[gNumMobile]+1;
 			end
-			if db.showMembersLevelUp and old[mLevel]~=nil and m[mLevel]~=old[mLevel] then
-				ns.print( C(m[mClassFile],m[mName]) .." ".. C("green",L["has reached Level %d."]:format(m[mLevel])) );
-				doUpdateTooltip = true;
+			if membersName2Index[m[mFullName]] and members[membersName2Index[m[mFullName]]] then
+				old = members[membersName2Index[m[mFullName]]];
+				if m[mZone]~=old[mZone] then
+					doUpdateTooltip = true;
+				end
+				if db.showMembersLevelUp and old[mLevel]~=nil and m[mLevel]~=old[mLevel] then
+					ns.print( C(m[mClassFile],m[mName]) .." ".. C("green",L["has reached Level %d."]:format(m[mLevel])) );
+					doUpdateTooltip = true;
+				end
 			end
+			tinsert(tmp,m);
+		elseif not m[mOnline] and m[mIsMobile] then
+			
 		end
-		tinsert(tmp,m);
 	end
 	members = tmp;
 	membersName2Index = tmpNames;
@@ -403,7 +407,7 @@ local function createTooltip(self, tt)
 		tt:AddSeparator();
 
 		for i, a in ipairs(applicants) do
-			if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
+			if not (tt and tt.key and tt.key==ttName) then ns.debug(name,"tooltip","applicants","tooltip really closed?"); return end -- interupt processing on close tooltip
 			local realm = "";
 			if guild[gRealmNoSpacer]~=a[app_realm] then
 				if (db.showRealmname) then
@@ -471,7 +475,6 @@ local function createTooltip(self, tt)
 	end
 
 	if db.showMobileChatter and db.splitTables and guild[gNumMobile]>0 then
-		--tt:AddSeparator(4,0,0,0,0);
 		tt:AddSeparator();
 		for i,v in ipairs(members)do
 			if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
@@ -524,7 +527,6 @@ local function createTooltip(self, tt)
 	end
 
 	tt:AddSeparator(1,0,0,0,0);
-	--tt:UpdateScrolling(GetScreenHeight() * (ns.profile.GeneralOptions.maxTooltipHeight/100));
 	ns.roundupTooltip(self, tt);
 end
 
@@ -598,10 +600,6 @@ ns.modules[name].onupdate = function(self)
 		doUpdateTooltip = false;
 		createTooltip(false, tt);
 	end
---	if (IsInGuild()) then 
---		RequestGuildApplicantsList();
---		GuildRoster();
---	end
 end
 
 -- ns.modules[name].onmousewheel = function(self,direction) end
