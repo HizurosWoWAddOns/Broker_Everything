@@ -570,7 +570,7 @@ ns.optionpanel = function()
 						ns.profile[name1][name2] = value2;
 					end
 					if (mods.events[name1]) and (mods.events[name1][name2]) then
-						ns.modules[name1].onevent({}, (mods.events[name1][name2]==true) and "BE_DUMMY_EVENT" or mods.events[name1][name2]);
+						ns.modules[name1].onevent(ns.modules[name1].eventFrame, type(mods.events[name1][name2])=="string" and mods.events[name1][name2] or "BE_DUMMY_EVENT");
 					end
 					if (mods.needs[name1]) and (mods.needs[name1][name2]~=nil) then
 						if (type(value2)~="boolean") then
