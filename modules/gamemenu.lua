@@ -289,21 +289,16 @@ local function createTooltip(self, tt)
 				end
 				local icon = I("gm_"..v.iconName)
 				tt:SetCell(line, cell, (v.disabled and link_disabled or link):format((icon.iconfile or "interface\\icons\\inv_misc_questionmark"), (icon.coordsStr or iconCoords), v.name), nil, nil, oneCell and 2 or 1)
-				if (not v.disabled) or not (InCombatLockdown() and (v.secure or v.click or v.macro)) then
+				if (not v.disabled) or not (InCombatLockdown() and (v.click or v.macro)) then
 					local e, f
-					if v.secure~=nil then
+					if v.click~=nil then
 						e, f = "OnEnter", function(self)
-							ns.secureButton(self, { {typeName="type", typeValue="click", attrName="clickbutton", attrValue=""}, {typeName="type", typeValue="onmouseup", attrName="_onmouseup", attrValue=v.secure} }, v.name)
-							tinsert(tt.secureButtons,v.name)
-						end
-					elseif v.click~=nil then
-						e, f = "OnEnter", function(self)
-							ns.secureButton(self, { {typeName="type", typeValue="click", attrName="clickbutton", attrValue=_G[v.click]} }, v.name)
+							ns.secureButton(self, { attributes={type="click", clickbutton=_G[v.click]} }, v.name)
 							tinsert(tt.secureButtons,v.name)
 						end
 					elseif v.macro~=nil then
 						e, f = "OnEnter", function(self)
-							ns.secureButton(self, { {typeName="type", typeValue="macro", attrName="macrotext", attrValue=v.macro} }, v.name)
+							ns.secureButton(self, { attributes={type="macro", macrotext=v.macro} }, v.name)
 							tinsert(tt.secureButtons,v.name)
 						end
 					else
