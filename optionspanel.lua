@@ -365,7 +365,7 @@ local build = {
 					local add = true;
 					local entry={
 						radio = k,
-						keepShown = data.keepShown,
+						keepShown = data.keepShown~=nil and data.keepShown or false,
 						checked = function() return (current==k); end,
 						func = function(self)
 							if type(values[k])=="table" then
