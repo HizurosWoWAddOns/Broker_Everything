@@ -88,6 +88,7 @@ ns.modules[name] = {
 		{ type="toggle", name="showZoneInTT2",			label=L["Show zone"],					tooltip=L["Show current zone from guild member"]},
 		{ type="toggle", name="showNotesInTT2",			label=L["Show notes"],					tooltip=L["Show notes from guild member"]},
 		{ type="toggle", name="showONotesInTT2",		label=L["Show officer notes"],			tooltip=L["Show officer notes from guild member"]},
+		{ type="toggle", name="showRankInTT2",			label=L["Show rank"],					tooltip=L["Show rank from guild member"]},
 		{ type="toggle", name="showProfessionsInTT2",	label=L["Show professions"],			tooltip=L["Show professions from guild member"]}
 	},
 	clickOptions = {
@@ -155,27 +156,23 @@ local function updateMembers()
 	for i=1, guild[gNumMembers] do
 		local m,old = {};
 		m[mFullName], m[mRank], m[mRankIndex], m[mLevel], m[mClassLocale], m[mZone], m[mNote], m[mOfficerNote], m[mOnline], m[mIsAway], m[mClassFile], m[mAchievementPoints], m[mAchievementRank], m[mIsMobile], m[mCanSoR], m[mStanding] = GetGuildRosterInfo(i);
-		if m[mOnline] then
-			tmpNames[m[mFullName]]=i;
-			m[mName], m[mRealm] = strsplit("-",m[mFullName]);
-			m[mStandingText] = _G["FACTION_STANDING_LABEL"..m[mStanding]];
-			if m[mIsMobile] then
-				guild[gNumMobile] = guild[gNumMobile]+1;
-			end
-			if membersName2Index[m[mFullName]] and members[membersName2Index[m[mFullName]]] then
-				old = members[membersName2Index[m[mFullName]]];
-				if m[mZone]~=old[mZone] then
-					doUpdateTooltip = true;
-				end
-				if db.showMembersLevelUp and old[mLevel]~=nil and m[mLevel]~=old[mLevel] then
-					ns.print( C(m[mClassFile],m[mName]) .." ".. C("green",L["has reached Level %d."]:format(m[mLevel])) );
-					doUpdateTooltip = true;
-				end
-			end
-			tinsert(tmp,m);
-		elseif not m[mOnline] and m[mIsMobile] then
-			
+		tmpNames[m[mFullName]]=i;
+		m[mName], m[mRealm] = strsplit("-",m[mFullName]);
+		m[mStandingText] = _G["FACTION_STANDING_LABEL"..m[mStanding]];
+		if m[mIsMobile] and m[mOnline] then
+			guild[gNumMobile] = guild[gNumMobile]+1;
 		end
+		if membersName2Index[m[mFullName]] and members[membersName2Index[m[mFullName]]] then
+			old = members[membersName2Index[m[mFullName]]];
+			if m[mZone]~=old[mZone] then
+				doUpdateTooltip = true;
+			end
+			if db.showMembersLevelUp and old[mLevel]~=nil and m[mLevel]~=old[mLevel] then
+				ns.print( C(m[mClassFile],m[mName]) .." ".. C("green",L["has reached Level %d."]:format(m[mLevel])) );
+				doUpdateTooltip = true;
+			end
+		end
+		tinsert(tmp,m);
 	end
 	members = tmp;
 	membersName2Index = tmpNames;
@@ -187,7 +184,6 @@ local function updateTradeSkills()
 	tradeskillsLockUpdate = true;
 	doTradeskillsUpdate = false;
 
-
 	local skillID,isCollapsed,iconTexture,headerName,numOnline,numVisible,numPlayers,playerName,playerFullName,class,online,zone,skill,classFileName,isMobile,isAway = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- GetGuildTradeSkillInfo
 	local headers = {};
 	local header = {};
@@ -198,21 +194,18 @@ local function updateTradeSkills()
 	for index=num, 1, -1 do
 		d = {GetGuildTradeSkillInfo(index)};
 		if d[headerName] and d[isCollapsed] then
-			if not header[d[headerName]] then
-				header[d[headerName]] = {d[iconTexture],d[skillID]};
-			end
 			tinsert(collapsed,d[skillID]);
 			ExpandGuildTradeSkillHeader(d[skillID]);
 		end
 	end
 
 	-- 2. run...
-	local tmp,skillName = {},"";
+	local tmp,skillHeader = {},{};
 	local num = GetNumGuildTradeSkill();
 	for index=1, num do
 		d = {GetGuildTradeSkillInfo(index)};
 		if (d[headerName]) then
-			skillName = d[headerName];
+			skillHeader = {d[headerName],d[iconTexture],d[skillID]};
 		elseif (d[playerFullName]) then
 			if (tmp[d[playerFullName]]==nil) then
 				tmp[d[playerFullName]]={};
@@ -220,10 +213,10 @@ local function updateTradeSkills()
 			tinsert(
 				tmp[d[playerFullName]],
 				{
-					skillName,
-					header[skillName]~=nil and header[skillName][1] or "?",
+					skillHeader[1],
+					skillHeader[2] or "interface\\icons\\inv_misc_questionmark",
 					d[skill],
-					d[skillID]
+					skillHeader[3] or d[skillID]
 				}
 			); -- a nil value?
 		end
@@ -273,7 +266,39 @@ local function updateBroker()
 	end
 end
 
-local function createTooltip2()
+local function createTooltip2(self, tt2, v)
+	if not (tt2 and tt2.key and tt2.key==ttName2) then return end
+	local s,t="";
+	tt2:Clear();
+	tt2:AddHeader(C("dkyellow",NAME), C(v[mClassFile],ns.scm(v[mName])));
+	tt2:AddSeparator();
+	tt2:AddLine(C("ltblue",L["Realm"]),C("dkyellow",ns.scm(v[mRealm])));
+	if ns.profile[name].showZoneInTT2 then
+		tt2:AddLine(C("ltblue",ZONE),v[mZone]);
+	end
+	if ns.profile[name].showNotesInTT2 then
+		tt2:AddLine(C("ltblue",LABEL_NOTE),ns.scm(v[mNote]));
+	end
+	if ns.profile[name].showONotesInTT2 then
+		if v[mOfficerNote]=="" then
+			tt2:AddLine(C("ltblue",OFFICER_NOTE_COLON),C("gray","<"..EMPTY..">"));
+		else
+			tt2:AddLine(C("ltblue",OFFICER_NOTE_COLON),ns.scm(v[mOfficerNote]));
+		end
+	end
+	if ns.profile[name].showRankInTT2 then
+		tt2:AddLine(C("ltblue",RANK),ns.scm(v[mRank]));
+	end
+	if ns.profile[name].showProfessionsInTT2 and tradeskills[v[mFullName]] then
+		t=tradeskills[v[mFullName]][1];
+		tt2:AddLine(C("ltblue",TRADE_SKILLS),t[tsName].." |T"..t[tsIcon]..":0|t ["..t[tsValue].."]");
+		if tradeskills[v[mFullName]][2] then
+			t=tradeskills[v[mFullName]][2];
+			tt2:AddLine(" ", t[tsName].." |T"..t[tsIcon]..":0|t ["..t[tsValue].."]");
+		end
+	end
+	tt2:AddSeparator(1,0,0,0,0);
+	ns.roundupTooltip(self, tt2, nil, "horizontal", tt);
 end
 
 local function tooltipAddLine(v,me)
@@ -337,15 +362,8 @@ local function tooltipAddLine(v,me)
 
 	if v[mFullName]==ns.player.name_realm_short then
 		tt:SetLineColor(l, .5, .5, .5);
-	--elseif ns.friendlist then
-	--	if ns.friendlist[v[mFullName]]==1 then
-	--		tt:SetLineColor(l, .1, .5, .1);
-	--	elseif ns.friendlist[v[mFullName]]==2 then
-	--		tt:SetLineColor(l, .1, .3, .7);
-	--	end
 	end
 
-	-- tt.lines[line].info = {v[mFullName],v[mIsMobile]};
 	tt:SetLineScript(l, "OnMouseUp", function(self)
 		if (IsAltKeyDown()) then
 			if (not v[mIsMobile]) then
@@ -355,6 +373,16 @@ local function tooltipAddLine(v,me)
 			SetItemRef("player:"..v[mFullName], ("|Hplayer:%1$s|h[%1$s]|h"):format(v[mFullName]), "LeftButton");
 		end
 	end);
+
+	if ns.profile[name].showZoneInTT2 or ns.profile[name].showNotesInTT2 or ns.profile[name].showONotesInTT2 or ns.profile[name].showRankInTT2 or ns.profile[name].showProfessionsInTT2 then
+		tt:SetLineScript(l,"OnEnter",function(parent)
+			tt2 = ns.LQT:Acquire(ttName2, ttColumns2, "LEFT","RIGHT");
+			createTooltip2(parent, tt2, v);
+		end);
+		tt:SetLineScript(l,"OnLeave",function()
+			if (tt2) then ns.hideTooltip(tt2,ttName2,false,true); end
+		end);
+	end
 end
 
 local function createTooltip(self, tt)
@@ -402,12 +430,10 @@ local function createTooltip(self, tt)
 	end
 
 	if (db.showApplicants) and (guild[gNumApplicants]>0) then
-
 		local line,column = tt:AddLine(C("orange",LEVEL),C("orange",L["Applicant"]),C("orange",L["Roles"]),C("orange",RAID_INSTANCE_EXPIRES_EXPIRED),C("orange",COMMENT));
 		tt:AddSeparator();
-
 		for i, a in ipairs(applicants) do
-			if not (tt and tt.key and tt.key==ttName) then ns.debug(name,"tooltip","applicants","tooltip really closed?"); return end -- interupt processing on close tooltip
+			if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
 			local realm = "";
 			if guild[gRealmNoSpacer]~=a[app_realm] then
 				if (db.showRealmname) then
@@ -455,7 +481,7 @@ local function createTooltip(self, tt)
 		C("ltyellow",LEVEL), -- [1]
 		C("ltyellow",CHARACTER), -- [2]
 		(db.showZone) and C("ltyellow",ZONE) or "", -- [3]
-		(db.showNotes) and C("ltyellow",L["Notes"]) or "", -- [4]
+		(db.showNotes) and C("ltyellow",LABEL_NOTE) or "", -- [4]
 		(displayOfficerNotes and db.showONotes) and C("ltyellow",OFFICER_NOTE_COLON) or "", -- [5]
 		(db.showRank) and C("ltyellow",RANK) or "" -- [6]
 	);
@@ -466,7 +492,6 @@ local function createTooltip(self, tt)
 
 	tt:AddSeparator();
 
-	-- table.sort(members,function() end); -- idea for later maybe ^_^
 	for i,v in ipairs(members)do
 		if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
 		if v[mOnline] and ((not v[mIsMobile]) or (db.showMobileChatter and v[mIsMobile] and not db.splitTables)) then
@@ -619,22 +644,12 @@ ns.modules[name].onenter = function(self)
 			"RIGHT", -- level
 			"LEFT" -- name
 		};
-		--if (ns.profile[name].showZone) then
-			tinsert(ttAlignings,"CENTER"); -- zone
-		--end
-		--if (ns.profile[name].showNotes) then
-			tinsert(ttAlignings,"LEFT"); -- notes
-		--end
-		--if (displayOfficerNotes) and (ns.profile[name].showONotes) then
-			tinsert(ttAlignings,"LEFT"); -- onotes
-		--end
-		--if (ns.profile[name].showRank) then
-			tinsert(ttAlignings,"LEFT"); -- rank
-		--end
-		--if (ns.profile[name].showProfessions) then
-			tinsert(ttAlignings,"LEFT"); -- professions 1
-			tinsert(ttAlignings,"LEFT"); -- professions 2
-		--end
+		tinsert(ttAlignings,"CENTER"); -- zone
+		tinsert(ttAlignings,"LEFT"); -- notes
+		tinsert(ttAlignings,"LEFT"); -- onotes
+		tinsert(ttAlignings,"LEFT"); -- rank
+		tinsert(ttAlignings,"LEFT"); -- professions 1
+		tinsert(ttAlignings,"LEFT"); -- professions 2
 	end
 
 	ttColumns = #ttAlignings;
