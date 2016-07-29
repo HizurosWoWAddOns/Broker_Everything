@@ -188,9 +188,6 @@ ns.hideTooltip = function(tooltip,ttName,ttForce,ttSetOnLeave)
 			return;
 		end
 		if type(tooltip.secureButtons)=="table" then
-			for i,v in ipairs(tooltip.secureButtons)do
-				ns.secureButton2Hide(v)
-			end
 			ns.secureButton(false);
 		end
 		tooltip:SetScript("OnUpdate",nil);
@@ -487,74 +484,50 @@ end
 --		}
 -- ----------------------------------------
 do
-	local sbf = nil -- change to array
+	local sbf,sbf_hookOnClick
 	ns.secureButton = function(self,obj)
-		if self==nil or  InCombatLockdown() then return end
+		if self==nil or InCombatLockdown() then
+			return;
+		end
 
 		if sbf~=nil and self==false then
-			sbf:SetParent(UIParent)
-			sbf:ClearAllPoints()
-			sbf:Hide()
-			return 
+			sbf:SetParent(UIParent);
+			sbf:ClearAllPoints();
+			sbf:Hide();
+			return;
 		end
 
 		if type(obj)~="table" then
-			return
+			return;
 		end
 
-		sbf = sbf or CreateFrame("Button",addon.."_SecureButton",UIParent,"SecureActionButtonTemplate")
-		sbf:SetParent(self)
-		sbf:SetPoint("CENTER")
-		sbf:SetWidth(self:GetWidth())
-		sbf:SetHeight(self:GetHeight())
-		sbf:SetHighlightTexture([[interface\friendsframe\ui-friendsframe-highlightbar-blue]],true)
+		sbf = sbf or CreateFrame("Button",addon.."_SecureButton",UIParent,"SecureActionButtonTemplate");
+		sbf:SetParent(self);
+		sbf:SetPoint("CENTER");
+		sbf:SetWidth(self:GetWidth());
+		sbf:SetHeight(self:GetHeight());
+		sbf:SetHighlightTexture([[interface\friendsframe\ui-friendsframe-highlightbar-blue]],true);
 
-		for i,v in ipairs(obj) do
-			if type(v.typeName)=="string" and type(v.typeValue)=="string" then
-				sbf:SetAttribute(v.typeName,v.typeValue)
-			end
-			if type(v.attrName)=="string" and v.attrValue~=nil then
-				sbf:SetAttribute(v.attrName,v.attrValue)
-			end
+		if sbf_hookOnClick==nil then
+			sbf:HookScript("OnClick",function()
+				if type(sbf_hookOnClick)=="function" then
+					sbf_hookOnClick();
+				end
+			end);
 		end
+		sbf_hookOnClick = false;
 
 		if type(obj.hookOnClick)=="function" then
-			sbf:HookScript("OnClick",obj.hookOnClick);
+			sbf_hookOnClick = obj.hookOnClick;
 		end
 
-		sbf:Show()
-	end
-
-	local sb = {}
-	local sbFrame = CreateFrame("frame")
-	ns.secureButton2 = function(self,obj,name)
-		if type(obj)~="table" then return end
-		local sbf = nil
-
-		if sb[name]==nil then
-			--sb[name] = CreateFrame("Button",nil,self,"BE_SecureWrapper")
-			sb[name] = CreateFrame("Frame","BE_SF_"..name,sbFrame,"BE_SecureFrame")
-		end
-
-		sb[name]:SetPoint("TOPLEFT",self,"TOPLEFT",0,0)
-		sb[name]:SetPoint("BOTTOMRIGHT",self,"BOTTOMRIGHT",0,0)
-
-		for i,v in pairs(obj) do
-			if type(v.typeName)=="string" and type(v.typeValue)=="string" then
-				sb[name].button:SetAttribute(v.typeName,v.typeValue)
-			end
-			if type(v.attrName)=="string" and v.attrValue~=nil then
-				sb[name].button:SetAttribute(v.attrName,v.attrValue)
+		for k,v in pairs(obj.attributes) do
+			if type(k)=="string" and v~=nil then
+				sbf:SetAttribute(k,v);
 			end
 		end
 
-		sb[name]:Show()
-	end
-	ns.secureButton2Hide = function(name)
-		if sb[name]~=nil and sb[name]:IsShown() then
-			sb[name]:ClearAllPoints()
-			sb[name]:Hide()
-		end
+		sbf:Show();
 	end
 end
 
