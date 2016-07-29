@@ -11,7 +11,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Quest Log" -- QUESTLOG_BUTTON
 L[name] = QUESTLOG_BUTTON;
-local ldbName,ttName,ttColumns,tt,createMenu = name,name.."TT",6;
+local ldbName,ttName,ttName2,ttColumns,ttColumns2,tt,tt2,createMenu = name,name.."TT",name.."TT2",6,2;
 local quests,numQuestStatus,sum,url
 local urls = {
 	WoWHead = function(id)
@@ -27,7 +27,7 @@ local urls = {
 	end
 	-- 
 }
-local Level, LevelPrefix, Title, Header, Color, Status, Type, QuestId, Index, Title2 = 1,2,3,4,5,6,7,8,9,10;
+local Level, LevelPrefix, Title, Header, Color, Status, Type, QuestId, Index, Title2, Text = 1,2,3,4,5,6,7,8,9,10,11;
 
 StaticPopupDialogs["BE_URL_DIALOG"] = {
 	text = "URL",
@@ -140,6 +140,14 @@ local function updateBroker()
 	obj.text = (fail>0 and C("red",fail).."/" or "")..(complete>0 and C("ltblue",complete).."/" or "")..sum.."/"..MAX_QUESTS
 end
 
+local function createTooltip2(self, tt2, v)
+	tt2:AddHeader(C("dkyellow",v[Title]));
+	tt2:AddSeparator(4,0,0,0,0);
+	local l=tt2:AddLine();
+	tt2:SetCell(l,1,ns.strWrap(v[Text],40),nil,"LEFT",2);
+	ns.roundupTooltip(self,tt2,nil,"horizontal",tt);
+end
+
 local function createTooltip(self, tt)
 	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
 	local UnitNames={};
@@ -224,6 +232,15 @@ local function createTooltip(self, tt)
 				end
 			end
 		end
+
+		tt:SetLineScript(l,"OnEnter",function(parent)
+			tt2 = ns.LQT:Acquire(ttName2,ttColumns2,"LEFT","RIGHT");
+			createTooltip2(self,tt2,obj);
+		end);
+		tt:SetLineScript(l,"OnLeave",function()
+			if (tt2) then ns.hideTooltip(tt2,ttName2,false,true); end
+		end);
+
 		return #GroupQuest;
 	end
 	local header = false;
@@ -304,7 +321,7 @@ ns.modules[name].onevent = function(self,event,msg)
 	if event == "PLAYER_ENTERING_WORLD" or event == "QUEST_LOG_UPDATE" then
 		local numEntries, numQuests = GetNumQuestLogEntries()
 		local header, status, isBounty, _ = false;
-		local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory = 1,2,3,4,5,6,7,8,9,10,11,12,13,14; -- GetQuestLogTitle(index)
+		local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, qText = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15; -- GetQuestLogTitle(index)
 		sum,quests,numQuestStatus = numQuests,{},{fail=0,complete=0,active=0};
 		--if ns.build>70000000 then
 		--	isBounty, isStory = 14,15; -- legion change
@@ -312,6 +329,7 @@ ns.modules[name].onevent = function(self,event,msg)
 
 		for index=1, numEntries do
 			local q = {GetQuestLogTitle(index)};
+			q[qText] = GetQuestLogQuestText(index);
 			if q[isHeader]==true then
 				header = q[title];
 			elseif header then
@@ -334,7 +352,18 @@ ns.modules[name].onevent = function(self,event,msg)
 					tinsert(tags," ");
 				end
 				status = (q[isComplete]==-1 and "fail") or (q[isComplete==1] and "complete") or "active";
-				table.insert(quests,{q[level]," ",q[title],header,GetQuestDifficultyColor(q[level]),status,table.concat(tags,", "),q[questID],index});
+				table.insert(quests,{
+					q[level],
+					" ",
+					q[title],
+					header,GetQuestDifficultyColor(q[level]),
+					status,
+					table.concat(tags,", "),
+					q[questID],
+					index,
+					nil,
+					q[qText]
+				});
 				numQuestStatus[status]=numQuestStatus[status]+1;
 			end
 		end
