@@ -485,7 +485,7 @@ function createTooltip2(self, tt)
 			startTime, duration, enable = GetItemCooldown(v.id);
 		end
 		tt:SetCell(line, cellcount, iStr32:format(v.icon), nil, nil, 1)
-		tt:SetCellScript(line,cellcount,"OnEnter",function(_self) ns.secureButton(_self,{ {typeName="type", typeValue=t, attrName=t, attrValue=v.name} }) end)
+		tt:SetCellScript(line,cellcount,"OnEnter",function(_self) ns.secureButton(_self, { attributes={ type=t, [t]=v.name } } ) end);
 	end
 
 	local function add_line(v,t)
@@ -500,7 +500,7 @@ function createTooltip2(self, tt)
 			doUpdate=true
 		end
 		local line, column = tt:AddLine(iStr16:format(v.icon)..(v.name2 or v.name)..info, "1","2","3");
-		tt:SetLineScript(line,"OnEnter",function(_self) ns.secureButton(_self,{ {typeName="type", typeValue=t, attrName=t, attrValue=v.name}, hookOnClick=function() v.equipped=true; createTooltip2(self,tt); end }) end)
+		tt:SetLineScript(line,"OnEnter",function(_self) ns.secureButton(_self,{ attributes={ type=t, [t]=v.name }, hookOnClick=function() v.equipped=true; createTooltip2(self,tt); end }) end)
 	end
 
 	local function add_obj(v,t)
