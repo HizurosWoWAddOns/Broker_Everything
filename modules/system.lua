@@ -529,7 +529,8 @@ local function createTooltip(self, tt, name)
 		tt:AddSeparator()
 
 		table.sort(memory.list,function(a,b) return a.cur>b.cur; end);
-		local num = _G.min(#memory.list, ns.profile[name].mem_max_addons>0 and ns.profile[name].mem_max_addons or 1000);
+		local maxAddons = tonumber(ns.profile[name].mem_max_addons) or 0;
+		local num = _G.min(#memory.list, maxAddons>0 and maxAddons or 1000);
 		for i=1, num do
 			local l = tt:AddLine()
 			tt:SetCell(l,1,ns.strCut(memory.list[i].name,32),nil,nil,2);
