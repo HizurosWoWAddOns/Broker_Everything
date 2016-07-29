@@ -416,6 +416,14 @@ end
 -- Some string  function --
 -- --------------------- --
 ns.strWrap = function(text, limit, insetCount, insetChr, insetLastChr)
+	if text:match("\n") or text:match("%|n") then
+		local txt = gsub(text,"%|n","\n");
+		local strings,tmp = {strsplit("\n",txt)},{};
+		for i=1, #strings do
+			tinsert(tmp,ns.strWrap(strings[i], limit, insetCount, insetChr, insetLastChr));
+		end
+		return table.concat(tmp,"\n");
+	end
 	if strlen(text)<=limit then return text; end
 	local i,result,inset = 1,{},"";
 	if type(insetCount)=="number" then
