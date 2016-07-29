@@ -134,23 +134,27 @@ end
   ---------------------------------------
 --- Helpful function for extra tooltips ---
   ---------------------------------------
-ns.GetTipAnchor = function(frame, menu)
-	local x, y = frame:GetCenter()
-	if (not x) or (not y) then return "TOPLEFT", "BOTTOMLEFT"; end
-
-	local hhalf = (x > UIParent:GetWidth() * 2 / 3) and "RIGHT" or (x < UIParent:GetWidth() / 3) and "LEFT" or ""
-	local vhalf = (y > UIParent:GetHeight() / 2) and "TOP" or "BOTTOM"
-
-	return vhalf .. hhalf, frame, (vhalf == "TOP" and "BOTTOM" or "TOP") .. hhalf, 0, 0
-end
-
-local function SmartAnchorTo(self,frame)
-	if not frame then
-		error("Invalid frame provided.", 2)
+ns.GetTipAnchor = function(frame, direction, parentTT)
+	local f,u,H,h,v = {frame:GetCenter()},{UIParent:GetWidth(),UIParent:GetCenter()};
+	h = (f[1]>u[2] and "RIGHT") or "LEFT"; v = (f[2]>u[3] and "TOP") or "BOTTOM";
+	u[4]=u[2]/4;u[5]=u[3]/4;u[6]=(u[2]*2)-u[4];u[7]=(u[3]*2)-u[5];
+	H = (f[1]>u[6] and "RIGHT") or (f[1]<u[4] and "LEFT") or "";
+	V = (f[2]>u[7] and "TOP") or (f[2]<u[5] and "BOTTOM") or "";
+	if parentTT then
+		local p,ph,pv,pH,pV = {parentTT:GetCenter()};
+		ph,pv = (p[1]>u[2] and "RIGHT") or "LEFT", (p[2]>u[3] and "TOP") or "BOTTOM";
+		pH = (p[1]>u[6] and "RIGHT") or (p[1]<u[4] and "LEFT") or "";
+		pV = (p[2]>u[7] and "TOP") or (p[2]<u[5] and "BOTTOM") or "";
+		if direction=="horizontal" then
+			return {{pV..ph, parentTT, pV..(ph=="LEFT" and "RIGHT" or "LEFT"), 0, 0}};
+		end
+		return {{pv..pH, parentTT, (pv=="TOP" and "BOTTOM" or "TOP")..pH, 0, 0}};
+	else
+		if direction=="horizontal" then
+			return {{V..h, frame, V..(h=="LEFT" and "RIGHT" or "LEFT"), 0, 0}};
+		end
+		return {{v..H, frame, (v=="TOP" and "BOTTOM" or "TOP")..H, 0, 0}};
 	end
-	self:ClearAllPoints()
-	self:SetClampedToScreen(true)
-	self:SetPoint(ns.GetTipAnchor(frame))
 end
 
 ns.tooltipScaling = function(tooltip)
@@ -196,7 +200,8 @@ ns.hideTooltip = function(tooltip,ttName,ttForce,ttSetOnLeave)
 	end
 end
 
-ns.roundupTooltip = function(frame, tooltip, SetOnLeave, parentTooltip)
+ns.roundupTooltip = function(frame, tooltip, SetOnLeave, direction, parentTooltip)
+	ns.print("roundupTooltip",type(direction),type(parentTooltip))
 	local eclipsed = 0;
 	if (ns.profile.GeneralOptions.tooltipScale==true) then
 		tooltip:SetScale(tonumber(GetCVar("uiScale")))
@@ -205,7 +210,12 @@ ns.roundupTooltip = function(frame, tooltip, SetOnLeave, parentTooltip)
 		frame = tooltip.parent;
 	end
 	tooltip.parent = frame;
-	SmartAnchorTo(tooltip,frame);
+	tooltip:SetClampedToScreen(true);
+	tooltip:ClearAllPoints();
+	local points = ns.GetTipAnchor(frame,direction,parentTooltip);
+	for i=1, #points do
+		tooltip:SetPoint(unpack(points[i]));
+	end
 	if (SetOnLeave) then
 		tooltip:SetScript("OnLeave", function(self)
 			ns.hideTooltip(self,self.key);
