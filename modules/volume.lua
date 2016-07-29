@@ -127,7 +127,7 @@ function createMenu(self)
 end
 
 function updateBrokerButton()
-	volume.master = tonumber(GetCVar("Sound_MasterVolume"))
+	volume.master = tonumber(("%.2f"):format(GetCVar("Sound_MasterVolume")))
 	local obj = ns.LDB:GetDataObjectByName(ldbName);
 	local suffix,color = "100","green"
 	if volume.master < .1 then
@@ -203,7 +203,7 @@ local function createTooltip(self, tt)
 			tt:SetCell(l,1,strrep(" ",3 * v.inset)..C(color,_G[v.locale]));
 
 			if v.percent~=nil then
-				v.pnow = tonumber(GetCVar(v.percent))
+				v.pnow = tonumber(("%.2f"):format(GetCVar(v.percent)));
 
 				tt.lines[l]:EnableMouseWheel(1)
 				tt.lines[l]:SetScript("OnMouseWheel",function(self,direction)
