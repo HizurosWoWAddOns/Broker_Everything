@@ -201,7 +201,6 @@ ns.hideTooltip = function(tooltip,ttName,ttForce,ttSetOnLeave)
 end
 
 ns.roundupTooltip = function(frame, tooltip, SetOnLeave, direction, parentTooltip)
-	ns.print("roundupTooltip",type(direction),type(parentTooltip))
 	local eclipsed = 0;
 	if (ns.profile.GeneralOptions.tooltipScale==true) then
 		tooltip:SetScale(tonumber(GetCVar("uiScale")))
