@@ -198,7 +198,10 @@ local function createTooltip(self, tt)
 				tt:SetCell(l,2,str:format(iconTexture,C("ltyellow",Name)),nil,nil,2);
 				tt:SetLineScript(l,"OnEnter",function(_self)
 					GameTooltip:SetOwner(tt,"ANCHOR_NONE");
-					GameTooltip:SetPoint(ns.GetTipAnchor(tt));
+					local points=ns.GetTipAnchor(tt,"horizontal");
+					for i=1, #points do
+						GameTooltip:SetPoint(unpack(points[i]));
+					end
 					GameTooltip:SetHyperlink("spell:"..spellId);
 					GameTooltip:Show();
 				end);
