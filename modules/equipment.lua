@@ -127,15 +127,17 @@ ns.modules[name] = {
 		showInventory = true,
 		showItemLevel = true,
 		showCurrentSet = true,
+		fullyUpgraded = true
 	},
 	config_allowed = nil,
 	config = {
 		{ type="header", label=BAG_FILTER_EQUIPMENT, align="left", icon=I[name] },
 		{ type="separator" },
-		{ type="toggle", name="showSets",            label=L["Show equipment sets"],            tooltip=L["Display a list of your equipment sets"]},
-		{ type="toggle", name="showInventory" ,      label=L["Show inventory"],                 tooltip=L["Display a list of currently equipped items"]},
-		{ type="toggle", name="showCurrentSet",      label=L["Show current set"],               tooltip=L["Display your current equipment set on broker button"], event="BE_DUMMY_EVENT"},
-		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],        tooltip=L["Display your average item level on broker button"], event="BE_DUMMY_EVENT"},
+		{ type="toggle", name="showSets",            label=L["Show equipment sets"],               tooltip=L["Display a list of your equipment sets"]},
+		{ type="toggle", name="showInventory" ,      label=L["Show inventory"],                    tooltip=L["Display a list of currently equipped items"]},
+		{ type="toggle", name="showCurrentSet",      label=L["Show current set"],                  tooltip=L["Display your current equipment set on broker button"], event="BE_DUMMY_EVENT"},
+		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],           tooltip=L["Display your average item level on broker button"], event="BE_DUMMY_EVENT"},
+		{ type="toggle", name="fullyUpgraded",       label=L["Darker blue for fully upgraded"],    tooltip=L["Display upgrade counter in darker blue on fully upgraded items"]}
 	},
 	clickOptions = {
 		["1_open_character_info"] = {
@@ -330,7 +332,11 @@ local function createTooltip(self, tt)
 					greenline = " "..inventory[i].tooltip[2];
 				end
 				if(inventory[i].upgrades)then
-					upgrades = " "..C("mage",inventory[i].upgrades);
+					local col,cur,max = "ltblue",strsplit("/",inventory[i].upgrades);
+					if ns.profile[name].fullyUpgraded and cur==max then
+						col="blue";
+					end
+					upgrades = " "..C(col,inventory[i].upgrades);
 				end
 				local l = tt:AddLine(
 					C("ltyellow",_G[slots[i].."SLOT"]),
