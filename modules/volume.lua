@@ -338,6 +338,11 @@ end
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 
+	if not self.mousewheelOn then
+		self:EnableMouseWheel(1);
+		self.mousewheelOn = true;
+	end
+
 	tt = ns.LQT:Acquire(ttName, 2, "LEFT", "RIGHT")
 	ns.RegisterMouseWheel(self,ns.modules[name].onmousewheel)
 	ttParent = self
