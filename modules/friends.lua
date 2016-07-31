@@ -152,30 +152,22 @@ local function createTooltip(self, tt)
 	local numChars, charsOnline = GetNumFriends();
 	local numFriends, friendsOnline = BNGetNumFriends();
 
-	tt:Clear()
-	tt:AddHeader(C("dkyellow",L[name]))
+	tt:Clear();
+	tt:AddHeader(C("dkyellow",L[name]));
 
-	local _, _, _, broadcastText = BNGetInfo()
+	local _, _, _, broadcastText = BNGetInfo();
 	if broadcastText~=nil and broadcastText~="" then
-		tt:AddSeparator(4,0,0,0,0)
-		line,column = tt:AddLine()
-		tt:SetCell(line,1,C("dkyellow",L["My current broadcast message"]),nil,nil,columns)
-		tt:AddSeparator()
-		line,column = tt:AddLine()
-		tt:SetCell(line,1,C("white",ns.scm(broadcastText,true)),nil,nil,columns)
+		tt:AddSeparator(4,0,0,0,0);
+		tt:SetCell(tt:AddLine(),1,C("dkyellow",L["My current broadcast message"]),nil,nil,columns);
+		tt:AddSeparator();
+		tt:SetCell(tt:AddLine(),1,C("white",ns.scm(broadcastText,true)),nil,nil,columns);
 	end
 
-	if totalOnline == 0 then
-		tt:AddSeparator(4,0,0,0,0)
-		tt:AddLine(L["No friends online."])
-		if ns.profile.GeneralOptions.showHints then
-			line, column = tt:AddLine()
-			tt:SetCell(line, 1, C("copper",L["Left-click"]).." "..C("green",L["Open friends roster"]), nil, nil, columns)
-		end
-		return
-	end
+	local presenceName,battleTag,isBattleTagPresence,isOnline,isAFK,isDND,noteText = 2,3,4,8,10,11,13; -- BNGetFriendInfo
+	local toonName,client,realmName,faction,class,zoneName,level,gameText,broadcastText,broadcastTime,toonID = 2,3,4,6,8,10,11,12,13,14,16; -- BNGetFriendToonInfo (WoD 6.2.3) / BNGetFriendGameAccountInfo (WoD 6.2.4)
+	local fi,nt,ti,l,c;
+	local visible = {};
 
-	-- RealId	Status Character	Level	Zone	Game	Realm	Notes
 	tt:AddSeparator(4,0,0,0,0)
 	tt:AddLine(
 		(split==true and C("ltblue",  BATTLENET_OPTIONS_LABEL)) or C("ltyellow",L["Real ID"].."/"..BATTLETAG), -- 1
@@ -187,13 +179,12 @@ local function createTooltip(self, tt)
 		C("ltyellow",FACTION),		-- 7
 		C("ltyellow",L["Notes"])		-- 8
 	)
-	tt:AddSeparator()
+	tt:AddSeparator();
 
-	local presenceName,battleTag,isBattleTagPresence,isOnline,isAFK,isDND,noteText = 2,3,4,8,10,11,13; -- BNGetFriendInfo
-	local toonName,client,realmName,faction,class,zoneName,level,gameText,broadcastText,broadcastTime,toonID = 2,3,4,6,8,10,11,12,13,14,16; -- BNGetFriendToonInfo (WoD 6.2.3) / BNGetFriendGameAccountInfo (WoD 6.2.4)
-	local fi,nt,ti,l,c;
-	local visible = {};
-	if (friendsOnline>0) then
+	if BNConnected()==false then
+		tt:SetCell(tt:AddLine(),1,C("red",BATTLENET_UNAVAILABLE),nil,nil,ttColumns);
+	elseif friendsOnline>0 then
+		-- RealId	Status Character	Level	Zone	Game	Realm	Notes
 		for i=1, numFriends do
 			if BNGetNumFriendGameAccounts then
 				nt = BNGetNumFriendGameAccounts(i); -- WoD 6.2.4
@@ -269,26 +260,26 @@ local function createTooltip(self, tt)
 				end
 			end
 		end
-	elseif BNConnected()==false then
-		tt:SetCell(tt:AddLine(),1,C("red",BATTLENET_UNAVAILABLE),nil,nil,ttColumns);
+	elseif split then
+		tt:SetCell(tt:AddLine(),1,C("gray",L["Currently no battle.net friends online..."]),nil,nil,ttColumns);
 	end
 
-	if (numChars > 0) then
-		if (split) then
-			tt:AddSeparator(4,0,0,0,0)
-			tt:AddLine(
-				C("yellow",  L["Characters"]),	-- 1
-				C("ltyellow",LEVEL),		-- 2
-				C("ltyellow",CHARACTER),	-- 3
-				C("ltyellow",GAME),		-- 4
-				C("ltyellow",ZONE),		-- 5
-				C("ltyellow",L["Realm"]),		-- 6
-				C("ltyellow",FACTION),		-- 7
-				C("ltyellow",L["Notes"])		-- 8
-			)
-			tt:AddSeparator()
-		end
+	if split then
+		tt:AddSeparator(4,0,0,0,0);
+		tt:AddLine(
+			C("yellow",  L["Characters"]),	-- 1
+			C("ltyellow",LEVEL),		-- 2
+			C("ltyellow",CHARACTER),	-- 3
+			C("ltyellow",GAME),		-- 4
+			C("ltyellow",ZONE),		-- 5
+			C("ltyellow",L["Realm"]),		-- 6
+			C("ltyellow",FACTION),		-- 7
+			C("ltyellow",L["Notes"])		-- 8
+		);
+		tt:AddSeparator();
+	end
 
+	if (charsOnline > 0) then
 		local charName,level,class,area,connected,status,note=1,2,3,4,5,6,7;
 		local l,c,v,s,n,_;
 		for i=1, numChars do
@@ -322,9 +313,11 @@ local function createTooltip(self, tt)
 				l,c=nil,nil;
 			end
 		end
+	elseif split then
+		tt:SetCell(tt:AddLine(),1,C("gray",L["Currently no realm friends online..."]),nil,nil,ttColumns);
 	end
 
-	if friendsOnline==0 and numChars==0 then
+	if not split and friendsOnline==0 and charsOnline==0 then
 		tt:SetCell(tt:AddLine(),1,C("gray",L["Currently no friends online..."]),nil,nil,ttColumns);
 	end
 
