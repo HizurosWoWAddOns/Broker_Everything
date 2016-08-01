@@ -105,6 +105,7 @@ ns.defaultGeneralOptions = {
 	goldHideSilver = false,
 	goldHideLowerZeros = false,
 	separateThousands = true,
+	showAddOnLoaded = true
 };
 
 ns.coreOptions = { -- option panel builder table
@@ -177,7 +178,8 @@ ns.coreOptions = { -- option panel builder table
 
 	{type="header",    label=L["Misc options"]},
 	{type="separator", alpha=1 },
-	{type="toggle",    name="suffixColour", label=L["Suffix coloring"], tooltip=L["Enable/Disable class coloring of the information display suffixes. (eg, ms, fps etc)"]},
+	{type="toggle",    name="suffixColour",   label=L["Suffix coloring"], tooltip=L["Enable/Disable class coloring of the information display suffixes. (eg, ms, fps etc)"]},
+	{type="toggle",    name="showAddOnLoaded",label=L["Show 'AddOn Loaded...'"], tooltip=L["Show 'AddOn Loaded...' message on logins and UI reloads"]},
 
 	{type="separator", alpha=0 },
 
@@ -368,7 +370,9 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 		-- modules
 		ns.moduleInit();
 
-		ns.print(L["AddOn loaded..."]);
+		if ns.profile.GeneralOptions.showAddOnLoaded then
+			ns.print(L["AddOn loaded..."]);
+		end
 
 		--self:UnregisterEvent("ADDON_LOADED");
 	elseif event == "ADDON_LOADED" and addonName == "Blizzard_ItemUpgradeUI" then
