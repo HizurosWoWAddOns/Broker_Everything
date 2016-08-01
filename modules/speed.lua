@@ -20,7 +20,7 @@ local riding_skills = { -- <spellid>, <skill>, <minLevel>, <air speed increase>,
 	{33388, 20,  60},
 };
 local licences = { -- <spellid>, <minLevel>, <mapIds>
-	{"Legion flight licence?"},
+	{"Legion flight licence (Placeholder)"},
 	{"a10018", 90, { --[[ draenor map ids? ]] }},
 	{115913,   85, {[862]=1,[858]=1,[929]=1,[928]=1,[857]=1,[809]=1,[905]=1,[903]=1,[806]=1,[873]=1,[808]=1,[951]=1,[810]=1,[811]=1,[807]=1}},
 	{54197,    68, {[485]=1,[486]=1,[510]=1,[504]=1,[488]=1,[490]=1,[491]=1,[541]=1,[492]=1,[493]=1,[495]=1,[501]=1,[496]=1}},
@@ -40,7 +40,8 @@ local bonus_spells = { -- <spellid>, <chkActive[bool]>, <type>, <typeValue>, <cu
 	-- glyphes
 
 	-- misc
-	{ 78633, false,    nil,        nil, true, 10} -- guild perk
+	{ 78633, false,    nil,        nil, true, 10}, -- guild perk
+	{ 220510, true,    nil,        nil, false, UNKNOWN} -- Bloodtotem Saddle Blanket (Tailoring 800)
 }
 
 
@@ -74,7 +75,7 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 local function createTooltip(self, tt)
-	local _=function(d) return ("+%d%%"):format(d); end;
+	local _=function(d) if tonumber(d) then return ("+%d%%"):format(d); end return d; end;
 	local lvl = UnitLevel("player");
 	tt:Clear();
 
@@ -86,7 +87,7 @@ local function createTooltip(self, tt)
 	local learned = nil;
 	for i,v in ipairs(riding_skills) do
 		local Name, rank, icon, castTime, minRange, maxRange, spellId = GetSpellInfo(v[1]);
-		if(IsSpellKnown(v[1]))then
+		if(learned==nil and IsSpellKnown(v[1]))then
 			learned = true;
 		end
 		if (learned==nil) then
