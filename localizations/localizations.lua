@@ -82,4 +82,11 @@ do
 		ns.L["Officer notes"] = gsub(OFFICER_NOTE_COLON,":","");
 	end
 
+	if not (LOCALE_enUS or LOCALE_enGB) then
+		ns.L["Home"], ns.L["World"] = MAINMENUBAR_LATENCY_LABEL:match("%((.*)%).*%((.*)%)");
+	end
+
+	ns.L["FOLLOWERS_ABBREV"] = "F";
+	ns.L["SHIPS_ABBREV"] = "S";
+	ns.L["CHAMPIONS_ABBREV"] = "C";
 end
