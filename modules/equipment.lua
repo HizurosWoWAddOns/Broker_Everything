@@ -11,16 +11,13 @@ local ttColumns;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Equipment";
-local ldbName = name
-local ttName = name.."TT"
-local tt,createMenu,equipPending
-local inventory = {};
+local ldbName, ttName, ttColums, tt,createMenu, equipPending = name, name.."TT", 3;
 local objLink,objColor,objType,objId,objData,objName,objInfo,objTooltip=1,2,3,4,6,5,7,8;
 local itemEnchant,itemGem1,itemGem2,itemGem3,itemGem4=1,2,3,4,5;
 local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice=1,2,3,4,5,6,7,8,9,10,11;
 local slots = {"HEAD","NECK","SHOULDER","SHIRT","CHEST","WAIST","LEGS","FEET","WRIST","HANDS","FINGER0","FINGER1","TRINKET0","TRINKET1","BACK","MAINHAND","SECONDARYHAND","RANGED"};
 local fallbackIcon = "interface\\icons\\inv_misc_questionmark";
-local enchantSlots = {}; -- -1 = [iLevel<600], 0 = both, 1 = [iLevel=>600]
+local inventory,enchantSlots = {},{}; -- (enchantSlots) -1 = [iLevel<600], 0 = both, 1 = [iLevel=>600]
 if ns.build<6000000 then
 	enchantSlots = {
 		[1]=1,[5]=1,[6]=1,[8]=1,[9]=1,[10]=1,[11]=1,[12]=1,[15]=1,[16]=1,[17]=1, -- enchanters
@@ -193,6 +190,42 @@ ns.toggleEquipment = function(eName)
 		securecall("UseEquipmentSet",eName);
 	end
 	ns.hideTooltip(tt,ttName,true);
+end
+
+local function updateBroker()
+	local obj = ns.LDB:GetDataObjectByName(ldbName);
+	local icon,iconCoords,text = I[name].iconfile,{0,1,0,1},{};
+
+	if ns.profile[name].showCurrentSet then
+		local numEquipSets = GetNumEquipmentSets()
+
+		if numEquipSets >= 1 then 
+			for i = 1, GetNumEquipmentSets() do 
+				local equipName, iconFile, _, isEquipped, _, _, _, numMissing = GetEquipmentSetInfo(i)
+				local pending = (equipPending~=nil and C("orange",equipPending)) or false
+				if isEquipped then 
+					iconCoords = {0.05,0.95,0.05,0.95}
+					icon = iconFile;
+					tinsert(text,pending~=false and pending or equipName);
+				end
+			end
+			if(#text==0)then
+				tinsert(text,pending~=false and pending or C("red",L["Unknown set"]));
+			end
+		else
+			tinsert(text,L["No sets found"]);
+		end
+	elseif pending~=false then
+		tinsert(text,pending);
+	end
+
+	if(ns.profile[name].showItemLevel)then
+		tinsert(text,("%1.1f"):format(select(2,GetAverageItemLevel()) or 0));
+	end
+
+	obj.iconCoords = iconCoords;
+	obj.icon = icon;
+	obj.text = #text>0 and table.concat(text,", ") or BAG_FILTER_EQUIPMENT;
 end
 
 local function UpdateInventory()
@@ -374,63 +407,24 @@ end
 ------------------------------------
 ns.modules[name].init = function(obj)
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
+	hooksecurefunc("UpgradeItem",updateBroker);
 end
 
 ns.modules[name].onevent = function(self,event,arg1,...)
 	if (event=="PLAYER_ENTERING_WORLD") then
 		ns.items.RegisterCallback(name,UpdateInventory,"inv");
 		self:UnregisterEvent(event);
-	end
-
-	if (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and (equipPending~=nil) then
+	elseif (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and (equipPending~=nil) then
 		UseEquipmentSet(equipPending)
 		equipPending = nil
-	end
-
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
+	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 		return
-	end
-
-	if (event=="UNIT_INVENTORY_CHANGED") and (arg1~="player") then
+	elseif (event=="UNIT_INVENTORY_CHANGED") and (arg1~="player") then
 		return
 	end
 
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName);
-	local icon,iconCoords,text = I[name].iconfile,{0,1,0,1},{};
-
-	if ns.profile[name].showCurrentSet then
-		local numEquipSets = GetNumEquipmentSets()
-
-		if numEquipSets >= 1 then 
-			for i = 1, GetNumEquipmentSets() do 
-				local equipName, iconFile, _, isEquipped, _, _, _, numMissing = GetEquipmentSetInfo(i)
-				local pending = (equipPending~=nil and C("orange",equipPending)) or false
-				if isEquipped then 
-					iconCoords = {0.05,0.95,0.05,0.95}
-					icon = iconFile;
-					tinsert(text,pending~=false and pending or equipName);
-				end
-			end
-			if(#text==0)then
-				--dataobj.icon = I(name).iconfile
-				tinsert(text,pending~=false and pending or C("red",L["Unknown set"]));
-			end
-		else
-			tinsert(text,L["No sets found"]);
-		end
-	elseif pending~=false then
-		tinsert(text,pending);
-	end
-
-	if(ns.profile[name].showItemLevel)then
-		tinsert(text,("%1.1f"):format(select(2,GetAverageItemLevel()) or 0));
-	end
-
-	dataobj.iconCoords = iconCoords;
-	dataobj.icon = icon;
-	dataobj.text = #text>0 and table.concat(text,", ") or BAG_FILTER_EQUIPMENT;
-
+	updateBroker();
 end
 
 -- ns.modules[name].onupdate = function(self) end
@@ -445,8 +439,8 @@ end
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	ttColumns=3;
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "LEFT", "RIGHT")
-	createTooltip(self, tt)
+	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "LEFT", "RIGHT");
+	createTooltip(self, tt);
 end
 
 ns.modules[name].onleave = function(self)
