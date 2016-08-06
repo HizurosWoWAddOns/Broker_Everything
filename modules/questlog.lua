@@ -107,7 +107,7 @@ ns.modules[name] = {
 			hint = "Open quest log", -- L["Open quest log"]
 			func = function(self,button)
 				local _mod=name;
-				securecall("ToggleCalendar");
+				securecall("ToggleQuestLog");
 			end
 		},
 		["2_open_menu"] = {
