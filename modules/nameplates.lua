@@ -189,6 +189,7 @@ local function createTooltip(self, tt)
 				if v.txt and v.txt:find("\124") then
 					v.txt=gsub(v.txt,"\124T.+\124t","");
 				end
+				v.txt = gsub(v.txt,"\n"," ");
 				if v.cvar then
 					local state,dstate;
 					if type(v.cvar)=="string" then
