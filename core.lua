@@ -395,6 +395,8 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 		end
 		ns.moduleCoexist();
 
+		ns.pastPEW = true;
+
 		self:UnregisterEvent(event);
 	elseif(event=="PLAYER_LEVEL_UP")then
 		Broker_Everything_CharacterDB[ns.player.name_realm].level = UnitLevel("player");
