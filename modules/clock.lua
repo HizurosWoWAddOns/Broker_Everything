@@ -11,12 +11,14 @@ L.Clock = TIMEMANAGER_TITLE;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Clock";
-local ldbName,ttName = name,name.."TT"
+local ldbName, ttName,ttColumns, tt, createMenu = name, name.."TT", 2;
 local GetGameTime = GetGameTime
-local tt,GetGameTime2,createMenu
 local countries = {}
 local played = false
 local clock_diff = nil
+local initialized=false;
+local month_short = {}
+
 
 -------------------------------------------
 -- register icon names and default files --
@@ -36,16 +38,34 @@ ns.modules[name] = {
 	config_defaults = {
 		format24 = true,
 		timeLocal = true,
-		showSeconds = false
+		showSeconds = false,
+		showDate = true,
+		dateFormat = "%Y-%m-%d"
 	},
 	config_allowed = {
 	},
 	config = {
 		{ type="header", label=TIMEMANAGER_TITLE, align="left", icon=I[name] },
 		{ type="separator" },
-		{ type="toggle",name="format24", label=TIMEMANAGER_24HOURMODE, tooltip=L["Switch between time format 24 hours and 12 hours with AM/PM"] },
-		{ type="toggle", name="timeLocal", label=L["Local or realm time"], tooltip=L["Switch between local and realm time in broker button"] },
-		{ type="toggle", name="showSeconds", label=L["Show seconds"], tooltip=L["Display the time with seconds in broker button and tooltip"] }
+		{ type="toggle", name="format24",    label=TIMEMANAGER_24HOURMODE, tooltip=L["Switch between time format 24 hours and 12 hours with AM/PM"] },
+		{ type="toggle", name="timeLocal",   label=L["Local or realm time"], tooltip=L["Switch between local and realm time in broker button"] },
+		{ type="toggle", name="showSeconds", label=L["Show seconds"], tooltip=L["Display the time with seconds in broker button and tooltip"] },
+		{ type="toggle", name="showDate",    label=L["Show date"], tooltip=L["Display date in tooltip"] },
+		{ type="select", name="dateFormat",  label=L["Date format"], tooltip=L["Choose your favorite date format"],
+			values = {
+				["%Y-%m-%d"] = "yyyy-mm-dd",
+				["%Y.%m.%d"] = "yyyy.mm.dd",
+				["%Y.%d.%m"] = "yyyy.dd.mm",
+				["%d.%m.%Y"] = "dd.mm.yyyy",
+				["%d/%m/%Y"] = "dd/mm/yyyy",
+				["%m/%d/%Y"] = "mm/dd/yyyy",
+				["%d. _mm_ %Y"] = "dd. mmmm yyyy",
+				["%d. _mm_ %y"] = "dd. mmmm yy",
+				["%d. _m_ %Y"] = "dd. mmm yyyy",
+				["%Y _mm_ %d."] = "yyyy mm dd.",
+			}
+		},
+		--{ type="listing", name="timezones", label=L["Time zones"], tooltip=L["Add time zones to display in tooltip"] }
 	},
 	clickOptions = {
 		["1_timemanager"] = {
@@ -115,30 +135,49 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
+local function date(dateStr)
+	local m = tonumber(_G.date("%m"));
+	local M = _G["MONTH_".._G.date("%B"):upper()];
+	if dateStr:find("_mm_") then
+		dateStr = gsub(dateStr,"_mm_",M);
+	end
+	if dateStr:find("_m_") then
+		dateStr = gsub(dateStr,"_m_",_G.date("%b."));
+	end
+	return _G.date(dateStr);
+end
+
 local function createTooltip(self, tt)
-	local h24 = ns.profile[name].format24
-	local dSec = ns.profile[name].showSeconds
-	local pT,pL,pS = ns.LT.GetPlayedTime()
+	local h24 = ns.profile[name].format24;
+	local dSec = ns.profile[name].showSeconds;
+	local pT,pL,pS = ns.LT.GetPlayedTime();
 
-	tt:Clear()
-	tt:AddHeader(C("dkyellow",TIMEMANAGER_TITLE))
-	tt:AddSeparator()
+	tt:Clear();
+	tt:AddHeader(C("dkyellow",TIMEMANAGER_TITLE));
+	tt:AddSeparator();
+	
+	if ns.profile[name].showDate then
+		tt:AddLine(C("ltyellow",L["Date"]),		C("white",date(ns.profile[name].dateFormat)));
+	end
+	tt:AddLine(C("ltyellow",L["Local time"]),	C("white",ns.LT.GetTimeString("GetLocalTime",h24,dSec)));
+	tt:AddLine(C("ltyellow",L["Realm time"]),	C("white",ns.LT.GetTimeString("GetGameTime",h24,dSec)));
+	tt:AddLine(C("ltyellow",L["UTC time"]),		C("white",ns.LT.GetTimeString("GetUTCTime",h24,dSec)));
 
-	tt:AddLine(C("ltyellow",L["Local time"]),	C("white",ns.LT.GetTimeString("GetLocalTime",h24,dSec)))
-	tt:AddLine(C("ltyellow",L["Realm time"]),	C("white",ns.LT.GetTimeString("GetGameTime",h24,dSec)))
-	tt:AddLine(C("ltyellow",L["UTC time"]),		C("white",ns.LT.GetTimeString("GetUTCTime",h24,dSec)))
+	--tt:AddSeparator(3,0,0,0,0);
+	--tt:AddLine(C("ltblue",L["Additional time zones"]));
+	--tt:AddSeparator();
+	--tt:AddLine(C("gray","coming soon"));
 
-	tt:AddSeparator(3,0,0,0,0)
-
-	tt:AddLine(C("ltblue",L["Playtime"]))
-	tt:AddSeparator()
-	tt:AddLine(C("ltyellow",TOTAL),C("white",SecondsToTime(pT)))
-	tt:AddLine(C("ltyellow",LEVEL),C("white",SecondsToTime(pL)))
-	tt:AddLine(C("ltyellow",L["Session"]),C("white",SecondsToTime(pS)))
+	tt:AddSeparator(3,0,0,0,0);
+	tt:AddLine(C("ltblue",L["Playtime"]));
+	tt:AddSeparator();
+	tt:AddLine(C("ltyellow",TOTAL),C("white",SecondsToTime(pT)));
+	tt:AddLine(C("ltyellow",LEVEL),C("white",SecondsToTime(pL)));
+	tt:AddLine(C("ltyellow",L["Session"]),C("white",SecondsToTime(pS)));
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(3,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
 	ns.roundupTooltip(self,tt)
 end
@@ -148,7 +187,13 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function(obj)
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
+	if not initialized then
+		for i,v in pairs(ns.modules[name].config[7].values)do
+			ns.modules[name].config[7].values[i] = date(i)..C("gray","("..v..")");
+		end
+		initialized = true;
+	end
 end
 
 ns.modules[name].onevent = function(self,event,...)
@@ -183,24 +228,7 @@ ns.modules[name].ontimeout = function(self)
 	end
 end
 
-ns.modules[name].ontooltip = function(tt)
-	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
-	ns.tooltipScaling(tt)
-	local h24 = ns.profile[name].format24
-	local dSec = ns.profile[name].showSeconds
-	tt:ClearLines()
-
-	tt:AddLine(TIMEMANAGER_TITLE)
-	tt:AddLine(" ")
-
-	tt:AddDoubleLine(C("white",L["Local time"]), C("white",ns.LT.GetTimeString("GetLocalTime",h24,dSec)))
-	tt:AddDoubleLine(C("white",L["Realm time"]), C("white",ns.LT.GetTimeString("GetGameTime",h24,dSec)))
-
-	if ns.profile.GeneralOptions.showHints then
-		tt:AddLine(" ")
-		ns.clickOptions.ttAddHints(tt,name);
-	end
-end
+-- ns.modules[name].ontooltip = function(tt) end
 
 
 -------------------------------------------
@@ -208,7 +236,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.LQT:Acquire(ttName, 2 , "LEFT", "RIGHT" )
+	tt = ns.LQT:Acquire(ttName, ttColumns , "LEFT", "RIGHT" )
 	createTooltip(self, tt)
 end
 
