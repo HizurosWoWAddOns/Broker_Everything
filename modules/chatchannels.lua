@@ -12,6 +12,24 @@ local channels_last =1;
 -----------------------------------------------------------
 local name = "ChatChannels";
 local ldbName,ttName,ttColumns,tt,createMenu = name,name.."TT",2
+local iName, iHeader, iCollapsed, iChannelNumber, iCount, iActive, iCategory, iVoiceEnabled, iVoiceActive = 1,2,3,4,5,6,7,8,9;
+local WD_Locale = {
+	enUS="WorldDefense",
+	enBG="WorldDefense",
+	enCN="WorldDefense",
+	enTW="WorldDefense",
+	deDE="WeltVerteidigung",
+	esES="DefensaGeneral",
+	frFR="DéfenseUniverselle",
+	itIT="DifesaMondiale",
+	koKR="전쟁",
+	ptBR="DefesaGlobal",
+	ptPT="DefesaGlobal",
+	ruRU="ОборонаГлобальный",
+	zhCN="世界防务",
+	zhTW="世界防務",
+};
+local wd = WD_Locale[ns.locale];
 
 
 -------------------------------------------
@@ -82,49 +100,43 @@ local function updateChannels(id,num)
 	channels[id].lastUpdate=time();
 end
 
+--local iName, iHeader, iCollapsed, iChannelNumber, iCount, iActive, iCategory, iVoiceEnabled, iVoiceActive = 1,2,3,4,5,6,7,8,9;
 local function updateList()
 	wipe(channels);
 	local n = GetNumDisplayChannels();
 	for i=1, n do
-		channels[i] = {GetChannelDisplayInfo(i)};
-		channels[i].lastUpdate=0;
-
+		local data = {GetChannelDisplayInfo(i)};
 		local chatTypeName = "SYSTEM";
-		if(type(channels[i][4])=="number")then
-			chatTypeName = "CHANNEL"..channels[i][4];
-		elseif(channels[i][1]==GROUP)then
+		if(type(data[iChannelNumber])=="number")then
+			chatTypeName = "CHANNEL"..data[iChannelNumber];
+		elseif(data[iName]==GROUP)then
 			chatTypeName = "PARTY";
 			if(not IsInGroup())then
-				channels[i][6]=false;
+				data[iActive]=false;
 			end
-		elseif(channels[i][1]==RAID)then
+		elseif(data[iName]==RAID)then
 			chatTypeName = "RAID";
 			if(not IsInRaid())then
-				channels[i][6]=false;
+				data[iActive]=false;
 			end
-		elseif(channels[i][1]==INSTANCE_CHAT)then
+		elseif(data[iName]==INSTANCE_CHAT)then
 			chatTypeName = "INSTANCE_CHAT";
 			if(not IsInInstance())then
-				channels[i][6]=false;
+				data[iActive]=false;
 			end
 		end
-
+		if(data[iName]==wd)then
+			data.noUpdate = true;
+		end
 		local r,g,b = GetMessageTypeColor(chatTypeName);
-		channels[i].color = {r or 0.6, g or 0.6, b or 0.6};
+		data.color = {r or 0.6, g or 0.6, b or 0.6};
+		data.lastUpdate=0;
+		tinsert(channels,data);
 	end
 end
 
 local function updateRoster(chan)
 	--ns.print(name,chan)
-end
-
-local function update()
-	--local n = GetNumDisplayChannels();
-	--for i=1, n do
-		--local id = GetSelectedDisplayChannel()
-	--end
-	updateList()
-	updateRoster(id)
 end
 
 local function createTooltip(self,tt)
@@ -178,7 +190,7 @@ end
 ns.modules[name].onevent = function(self,event,...)
 	local arg1, arg2, arg3 = ...
 	if ({PLAYER_ENTERING_WORLD=1,CHANNEL_UI_UPDATE=1,PARTY_LEADER_CHANGED=1,GROUP_ROSTER_UPDATE=1,CHANNEL_ROSTER_UPDATE=1})[event]==1 then
-		update()
+		updateList()
 		if(event=="PLAYER_ENTERING_WORLD")then
 			C_Timer.After(5,ns.modules[name].onupdate);
 		end
@@ -187,17 +199,17 @@ ns.modules[name].onevent = function(self,event,...)
 	elseif event=="CHANNEL_COUNT_UPDATE" then
 		updateChannels(arg1,arg2 or 0)
 	elseif event=="d" then
-		update()
+		updateList()
 	elseif ({MUTELIST_UPDATE=1,IGNORELIST_UPDATE=1})[event]==1 then
-		updateRoster(GetSelectedDisplayChannel())
+		--updateRoster(GetSelectedDisplayChannel())
 	end
 end
 
 ns.modules[name].onupdate = function(self,elapsed)
 	if(ChannelFrame and ChannelFrame:IsShown()) then return end
 	local I=0;
-	for i,v in pairs(channels)do
-		if(not v[2] and v[6])then
+	for i,v in ipairs(channels)do
+		if not v.noUpdate and not v[iHeader] and v[iActive] then
 			C_Timer.After(i*1.2,function()
 				if(ChannelFrame and ChannelFrame:IsShown()) then return end
 				SetSelectedDisplayChannel(i);
@@ -211,13 +223,12 @@ ns.modules[name].onupdate = function(self,elapsed)
 	C_Timer.After(I*1.2,function()
 		local obj = ns.LDB:GetDataObjectByName(ldbName);
 		local txt={};
-		for i,v in pairs(channels)do
-			if(not v[2])then
-				local color,count = {.5,.5,.5},v[5] or 0;
-				if(v.color and v[6])then
+		for i,v in ipairs(channels)do
+			if not v[iHeader] then
+				local color,count = {.5,.5,.5},v[iCount] or 0;
+				if(v.color and v[iActive])then
 					color = v.color;
 				end
-
 				tinsert(txt,C(color,ns.FormatLargeNumber(count)));
 			end
 		end
