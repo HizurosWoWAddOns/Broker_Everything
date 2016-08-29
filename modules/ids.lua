@@ -10,9 +10,8 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "IDs";
-local ldbName,ttName = name,name.."TT";
+local ldbName,ttName,ttColumns,tt,createMenu = name, name.."TT", 4;
 local scanTooltip = CreateFrame("GameTooltip",addon.."_"..name.."_ScanTooltip",UIParent,"GameTooltipTemplate"); scanTooltip:SetScale(0.0001); scanTooltip:Hide();
-local tt;
 
 local diffTypes = setmetatable({ -- http://wowpedia.org/API_GetDifficultyInfo
 	[1] = 1,	--  1 =  5 Regular
@@ -63,18 +62,67 @@ ns.modules[name] = {
 	timeout = nil, --20,
 	timeout_used = false,
 	timeout_args = nil,
-	config_defaults = {},
+	config_defaults = {
+		-- show types
+		showBosses = true,
+		showDungeons = true,
+		showChallenges = true,
+		showSzenarios = true,
+		showRaidsClassic = true,
+		showRaidsLFR = true,
+		showRaidsFlex = true,
+		showRaids = true,
+		showEvents = true,
+
+		-- show expired types
+		showExpiredRaidsClassic = true,
+		showExpiredRaids = true,
+	},
 	config_allowed = {},
-	config = { { type="header", label=L[name], align="left", icon=I[name] } }
+	config = {
+		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="separator", alpha=0 },
+		{ type="toggle", name="showBosses",              label=L["Show world bosses"],          tooltip=L["Display list of world boss IDs in tooltip"] },
+		{ type="toggle", name="showDungeons",            label=L["Show dungeons"],              tooltip=L["Display list of dungeon IDs in tooltip"] },
+		{ type="toggle", name="showChallenges",          label=L["Show challenges"],            tooltip=L["Display list of challenge IDs in tooltip"] },
+		{ type="toggle", name="showSzenarios",           label=L["Show szenarios"],             tooltip=L["Display list of szenario IDs in tooltip"] },
+		{ type="toggle", name="showRaidsClassic",        label=L["Show classic raids"],         tooltip=L["Display list of classic raid IDs in tooltip"] },
+		{ type="toggle", name="showRaidsLFR",            label=L["Show lfr"],                   tooltip=L["Display list of lfr IDs in tooltip"] },
+		{ type="toggle", name="showRaidsFlex",           label=L["Show flex raids"],            tooltip=L["Display list of flex raid IDs in tooltip"] },
+		{ type="toggle", name="showRaids",               label=L["Show raids"],                 tooltip=L["Display list of raid IDs in tooltip"] },
+		{ type="toggle", name="showEvents",              label=L["Show events"],                tooltip=L["Display list of event IDs in tooltip"] },
+		{ type="separator" },
+		{ type="toggle", name="showExpiredRaidsClassic", label=L["Show expired classic raids"], tooltip=L["Display expired classic raids in tooltip"] },
+		{ type="toggle", name="showExpiredRaids",        label=L["Show expired raids"],         tooltip=L["Display expired raids in tooltip"] },
+	},
+	clickOptions = {
+		["5_open_menu"] = {
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
+			cfg_default = "_RIGHT",
+			hint = "Open option menu", -- L["Open option menu"]
+			func = function(self,button)
+				local _mod=name; -- for error tracking
+				createMenu(self)
+			end
+		}
+	}
 }
 
 
 --------------------------
 -- some local functions --
 --------------------------
+function createMenu(self)
+	if (tt) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
+
 local function createTooltip(self, tt)
 	if not (tt~=nil and tt.key~=nil and tt.key==ttName) then return; end
-	local nothing = true;
+	local allNothing,iniNothing = true,true;
 	local _,title = ns.DurationOrExpireDate(0,false,"Duration","Expire date");
 	local timer = function(num)
 		return (IsShiftKeyDown()) and ( (num==true) and "Expire date" or date("%Y-%m-%d %H:%M",time()+num) ) or ( (num==true) and "Duration" or SecondsToTime(num) );
@@ -83,72 +131,125 @@ local function createTooltip(self, tt)
 	tt:Clear();
 	tt:AddHeader(C("dkyellow",L[name]));
 
-	local num = GetNumSavedWorldBosses();
-	if (num>0) then
-		local lst,data = {};
-		for i=1, num do
-			local n,id,r = GetSavedWorldBossInfo(i);
-			if (n) and (type(r)=="number") and (r>0) then
-				tinsert(lst,{name=n,id=id,reset=r,bonus=false});
+	if ns.profile[name].showBosses then
+		tt:AddSeparator(3,0,0,0,0)
+		tt:AddLine(C("ltblue",L["World bosses"]),"","",C("ltblue",L[title]))
+		tt:AddSeparator()
+		local num = GetNumSavedWorldBosses();
+		if (num>0) then
+			local lst,data = {};
+			for i=1, num do
+				local n,id,r = GetSavedWorldBossInfo(i);
+				if (n) and (type(r)=="number") and (r>0) then
+					tinsert(lst,{name=n,id=id,reset=r,bonus=false});
+				end
 			end
-		end
-		if (#lst>0) then
-			tt:AddSeparator(3,0,0,0,0)
-			tt:AddLine(C("ltblue",L["World bosses"]),"","",C("ltblue",L[title]))
-			tt:AddSeparator()
-			for i,v in ipairs(lst) do
-				tt:AddLine(C("ltyellow",v.name),"","",ns.DurationOrExpireDate(v.reset))
+			if (#lst>0) then
+				for i,v in ipairs(lst) do
+					tt:AddLine(C("ltyellow",v.name),"","",ns.DurationOrExpireDate(v.reset))
+				end
+				allNothing = false
 			end
-			nothing = false
+		else
+			tt:AddLine(C("gray",L["No boss IDs found..."]));
 		end
 	end
 
 	local instanceName, instanceID, instanceReset, instanceDifficulty, locked, extended, instanceIDMostSig, isRaid, maxPlayers, difficultyName, numEncounters, encounterProgress=1,2,3,4,5,6,7,8,9,10,11,12;
-	local num = GetNumSavedInstances();
+	tt:AddSeparator(3,0,0,0,0);
+	tt:AddLine(C("ltblue",L["Instances"]), C("ltblue",TYPE),C("ltblue",L["Bosses"]),C("ltblue",L[title]));
+	tt:AddSeparator();
+	local empty,num = true,GetNumSavedInstances();
+	local diffCounter = {};
 	if (num>0) then
 		local lst,count,data = {},0;
 		for i=1, num do
 			data={GetSavedInstanceInfo(i)};
-			if (data[instanceName]) and (data[instanceReset]>0) and (data[instanceDifficulty]) then
-				if (not lst[diffTypes[data[instanceDifficulty]]]) then
-					lst[diffTypes[data[instanceDifficulty]]]={};
+			data.index = i;
+			if (data[instanceName]) and (data[instanceDifficulty]) then
+				local diff = diffTypes[data[instanceDifficulty]];
+				if not lst[diff] then
+					lst[diff]={};
 				end
-				tinsert(lst[diffTypes[data[instanceDifficulty]]],data);
+				if not diffCounter[diff] then
+					diffCounter[diff] = {0,0};
+				end
+				diffCounter[diff][1]=diffCounter[diff][1]+1;
+				if data[instanceReset]>0 then
+					diffCounter[diff][2]=diffCounter[diff][2]+1;
+				end
+				tinsert(lst[diff],data);
 				count=count+1;
 			end
 		end
 		if (count>0) then
+			local showDiff = { -- show difficulty
+				{ns.profile[name].showDungeons,    false},										--"Dungeons", -- [1]
+				{ns.profile[name].showChallenges,  false},										--"Challenges", -- [2]
+				{ns.profile[name].showSzenarios,   false},										--"Szenarios", -- [3]
+				{ns.profile[name].showRaidsClassic,ns.profile[name].showExpiredRaidsClassic},	--"Raids (Classic)", -- [4]
+				{ns.profile[name].showRaidsLFR,    false},										--"Raids (LFR)", -- [5]
+				{ns.profile[name].showRaidsFlex,   false},										--"Raids (Flex)", -- [6]
+				{ns.profile[name].showRaids,       ns.profile[name].showExpiredRaids},			--"Raids", -- [7]
+				{ns.profile[name].showEvents,      false},										--"Events" -- [8]
+			};
 			for diff, data in ns.pairsByKeys(lst) do
-				if (#data>0) then
-					local header = (diffName[diff]) and diffName[diff] or "Unknown type";
-					tt:AddSeparator(3,0,0,0,0);
-					tt:AddLine(C("ltblue",L[header]), C("ltblue",TYPE),C("ltblue",L["Bosses"]),C("ltblue",L[title]));
-					tt:AddSeparator();
+				if showDiff[diff][1] and (diffCounter[diff][2]>0 or (diffCounter[diff][1]>0 and showDiff[diff][2])) then
+					local header,doExtend = (diffName[diff]) and diffName[diff] or "Unknown type",false;
+					tt:AddLine(C("gray",header));
 					for i,v in ipairs(data) do
-						tt:AddLine(
-							C("ltyellow",v[instanceName]),
+						local duration,color = false,"ltgray";
+						if v[instanceReset]>0 then
+							duration = ns.DurationOrExpireDate(v[instanceReset])
+							color = "ltyellow";
+						elseif v[encounterProgress]>0 and v[numEncounters]>0 and v[encounterProgress]<v[numEncounters] then
+							if v[extended] then
+								doExtend = false;
+								duration = L["Unextend ID"];
+							else
+								doExtend = true;
+								if v[locked] then
+									duration = L["Extend ID"];
+								else
+									duration = L["Reactivate ID"];
+								end
+							end
+							duration = C("ltgray",duration);
+						else
+							duration = C("gray",RAID_INSTANCE_EXPIRES_EXPIRED);
+						end
+						local l=tt:AddLine(
+							C(color,"    "..v[instanceName]),
 							v[difficultyName].. (not diffName[diff] and " ("..v[instanceDifficulty]..")" or ""),
 							("%s/%s"):format(
 								(v[encounterProgress]>0) and v[encounterProgress] or "?",
 								(v[numEncounters]>0) and v[numEncounters] or "?"
 							),
-							ns.DurationOrExpireDate(v[instanceReset])
+							duration or ""
 						);
+						if not duration then
+							tt:SetCellScript(l,4,"OnMouseUp",function()
+								securecall("SetSavedInstanceExtend", v.index, doExtend);
+								securecall("RequestRaidInfo");
+							end);
+						end
 					end
-					nothing = false;
+					allNothing = false;
+					iniNothing = false;
 				end
 			end
 		end
-		if nothing==true then
-			tt:AddLine("No IDs found...")
-		elseif (ns.profile.GeneralOptions.showHints) then
-			tt:AddSeparator(3,0,0,0,0);
-			local l,c = tt:AddLine()
-			local _,_,mod = ns.DurationOrExpireDate();
-			tt:SetCell(l,1,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]),nil,nil,4);
-			l,c = nil,nil;
-		end
 	end
+	if iniNothing then
+		tt:AddLine(C("gray",L["No instance IDs found..."]));
+	end
+
+	if allNothing==false and ns.profile.GeneralOptions.showHints then
+		tt:AddSeparator(3,0,0,0,0);
+		local _,_,mod = ns.DurationOrExpireDate();
+		tt:SetCell(tt:AddLine(),1,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]),nil,nil,ttColumns);
+	end
+
 	ns.roundupTooltip(self, tt)
 end
 
@@ -164,7 +265,11 @@ ns.modules[name].init = function(self)
 	end
 end
 
--- ns.modules[name].onevent = function(self,event,...) end
+ns.modules[name].onevent = function(self,event,...)
+	if (event=="BE_UPDATE_CLICKOPTIONS") then
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+	end
+end
 -- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
@@ -175,16 +280,13 @@ end
 -- module functions for LDB registration --
 -------------------------------------------
 ns.modules[name].onenter = function(self)
-	tt = ns.LQT:Acquire(ttName, 4, "LEFT", "LEFT", "LEFT", "RIGHT")
-	createTooltip(self, tt)
+	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "LEFT", "RIGHT", "RIGHT", "RIGHT");
+	createTooltip(self, tt);
 end
 
 ns.modules[name].onleave = function(self)
-	if tt then
-		ns.hideTooltip(tt,name)
-	end
+	if tt then ns.hideTooltip(tt,ttName,false,true) end
 end
 
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-
