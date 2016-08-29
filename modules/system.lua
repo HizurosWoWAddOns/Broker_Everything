@@ -202,9 +202,22 @@ ns.modules[name_fps] = {
 	icon_suffix = "_blue",
 	events = {},
 	updateinterval = nil,
-	config_defaults = nil,
+	config_defaults = {
+		fillCharacter = "0none",
+	},
 	config_allowed = nil,
-	config = { { type="header", label=FPS_ABBR, align="left", icon=I[name_fps..'_blue'] } }
+	config = {
+		{ type="header", label=FPS_ABBR, align="left", icon=I[name_fps..'_blue'] },
+		{ type="separator", alpha=0 },
+		{ type="select", name="fillCharacter", label=L["Prepend character"], tooltip=L["Prepend a character to fill displayed fps up to 3 character."],
+			values = {
+				["0none"] = NONE.."/"..ADDON_DISABLED,
+				["1zero"] = L["0 (zero) > [060 fps]"],
+				["2blank"] = L["blank > [ 60 fps]"],
+				["3undercore"] = L["_ (undercore) > [_60 fps]"]
+			}
+		}
+	}
 };
 
 ns.modules[name_lat] = {
@@ -326,7 +339,16 @@ local function formatBytes(bytes, precision)
 end
 
 local function fpsStr(k)
-	fps[k.."Str"] = C( (fps[k]<18 and "red") or (fps[k]<24 and "orange") or (fps[k]<30 and "dkyellow") or (fps[k]<100 and "green") or (fps[k]<160 and "ltblue") or (fps[k]<200 and "ltviolet") or "violet", fps[k] ) .. ns.suffixColour("fps");
+	local num = fps[k];
+	if ns.profile[name_fps].fillCharacter~="0none" then
+		local chr = {
+			["1zero"] = "0",
+			["2blank"] = " ",
+			["3undercore"] = "_"
+		}
+		num = strrep(chr[ns.profile[name_fps].fillCharacter],3-strlen(num))..num;
+	end
+	fps[k.."Str"] = C( (fps[k]<18 and "red") or (fps[k]<24 and "orange") or (fps[k]<30 and "dkyellow") or (fps[k]<100 and "green") or (fps[k]<160 and "ltblue") or (fps[k]<200 and "ltviolet") or "violet", num ) .. ns.suffixColour("fps");
 end
 
 local function latencyStr(a,b)
@@ -621,6 +643,12 @@ ns.modules.system_core.onevent = function(self,event,msg)
 	end
 end
 
+ns.modules[name_sys].onevent = function(self,event,msg)
+	if (event=="BE_UPDATE_CLICKOPTIONS") then
+		ns.clickOptions.update(ns.modules[name_sys],ns.profile[name_sys]);
+	end
+end
+
 ns.modules.system_core.onupdate = function(self)
 	if not PEW then return; end
 
@@ -790,7 +818,7 @@ ns.modules[name_mem].onclick = function(self,button)
 	
 	if button == "RightButton" and shift then
 		ns.print(L["Collecting Garbage..."])
-		collectgarbage("collect")
+		collectgarbage("collect");
 	elseif button == "LeftButton" then
 		InterfaceOptionsFrame_OpenToCategory(ns.be_option_panel);
 		InterfaceOptionsFrame_OpenToCategory(ns.be_option_panel);
