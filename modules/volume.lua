@@ -74,10 +74,21 @@ ns.modules[name] = {
 		{ type="toggle", name="listHardware", label=L["List of hardware"], tooltip=L["Display in tooltip a list of your sound output hardware."] },
 	},
 	clickOptions = {
+		["0_mute"] = {
+			cfg_label = "Mute game sound", -- L["Mute game sound"]
+			cfg_desc = "mute gane sound", -- L["mute game sound"]
+			cfg_default = "_LEFT",
+			hint = "Mute game sound",
+			func = function(self,button)
+				local _mod=name;
+				BlizzardOptionsPanel_SetCVarSafe("Sound_EnableAllSound",BlizzardOptionsPanel_GetCVarSafe("Sound_EnableAllSound")==0 and 1 or 0);
+				updateBrokerButton(self)
+			end
+		},
 		["1_louder"] = {
 			cfg_label = "Louter", -- L["Louter"]
 			cfg_desc = "make volume louter", -- L["make volume louter"]
-			cfg_default = "_LEFT",
+			cfg_default = "__NONE",
 			hint = "Louder",
 			func = function(self,button)
 				local _mod=name;
@@ -91,7 +102,7 @@ ns.modules[name] = {
 		["2_quieter"] = {
 			cfg_label = "Quieter", -- L["Quieter"]
 			cfg_desc = "make volume quieter", -- L["make volume quieter"]
-			cfg_default = "_RIGHT",
+			cfg_default = "__NONE",
 			hint = "Quieter",
 			func = function(self,button)
 				local _mod=name;
@@ -105,7 +116,7 @@ ns.modules[name] = {
 		["3_open_menu"] = {
 			cfg_label = "Open option menu", -- L["Open option menu"]
 			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "__NONE",
+			cfg_default = "_RIGHT",
 			hint = "Open option menu",
 			func = function(self,button)
 				local _mod=name;
