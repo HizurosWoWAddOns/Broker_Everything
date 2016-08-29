@@ -73,7 +73,7 @@ if ns.build>70000000 then -- Legion
 		{
 			{txt=L["Nameplates"], colors="ltyellow" },
 			{txt=PLAYER,								cvar="nameplateShowFriends",		colors={"white","gray"} },
-			{txt=UNIT_NAMEPLATES_SHOW_FRIENDLY_MINIONS,cvar="nameplateShowFriendlyMinions",colors={"white","gray","gray","dkgray"},	cvar_depend="nameplateShowFriends" },
+			{txt=UNIT_NAMEPLATES_SHOW_FRIENDLY_MINIONS,	cvar="nameplateShowFriendlyMinions",colors={"white","gray","gray","dkgray"},	cvar_depend="nameplateShowFriends" },
 			{txt=PLAYER,								cvar="nameplateShowEnemies",		colors={"white","gray"} },
 			{txt=UNIT_NAMEPLATES_SHOW_ENEMY_MINIONS,	cvar="nameplateShowEnemyMinions",	colors={"white","gray","gray","dkgray"},		cvar_depend="nameplateShowEnemies" },
 			{txt=UNIT_NAMEPLATES_SHOW_ENEMY_MINUS,		cvar="nameplateShowEnemyMinus",		colors={"white","gray","gray","dkgray"},		cvar_depend="nameplateShowEnemies" },
@@ -84,8 +84,8 @@ if ns.build>70000000 then -- Legion
 		{{txt=UNIT_NAME_NPC,colors="ltblue"}, separator=1},
 		{
 			{txt=ALL,					cvar="UnitNameNPC" },
-			{txt=L["Interactive NPCs"],cvar="UnitNameInteractiveNPC",			colors={"dkgray","black","white","gray"},	cvar_depend="UnitNameNPC", rows=2},
-			{txt=L["Special NPCs"],	cvar="UnitNameFriendlySpecialNPCName",	colors={"dkgray","black","white","gray"},	cvar_depend="UnitNameNPC", rows=2},
+			{txt=L["Interactive NPCs"],	cvar="UnitNameInteractiveNPC",			colors={"dkgray","black","white","gray"},	cvar_depend="UnitNameNPC", rows=2},
+			{txt=L["Special NPCs"],		cvar="UnitNameFriendlySpecialNPCName",	colors={"dkgray","black","white","gray"},	cvar_depend="UnitNameNPC", rows=2},
 			{txt=L["Hostle NPCs"],		cvar="UnitNameHostleNPC",				colors={"dkgray","black","white","gray"},	cvar_depend="UnitNameNPC"},
 		},
 
@@ -101,15 +101,26 @@ if ns.build>70000000 then -- Legion
 
 		{{txt=L["More nameplate options"],	colors="ltblue" },separator=1},
 		{
-			{txt=L["Nameplates out of combat"],  cvar="nameplateShowAll", rows=1},
-			{txt=SHOW_NAMEPLATE_LOSE_AGGRO_FLASH,  cvar="ShowNamePlateLoseAggroFlash", rows=4},
+			{ txt=C("ltyellow",L["Nameplate size"]) },
+			{ txt=PLAYER_DIFFICULTY1,
+				rows=2,
+				onChange=function() NamePlateDriverFrame:UpdateNamePlateOptions() end,
+				cvar={NamePlateHorizontalScale="1",   NamePlateVerticalScale="1"}
+			},
+			{ txt=LARGE,
+				rows=2,
+				onChange=function() NamePlateDriverFrame:UpdateNamePlateOptions() end,
+				cvar={NamePlateHorizontalScale="1.4", NamePlateVerticalScale="2.7"}
+			},
+			{ txt=L["Larger"],
+				--rows=ttColumns,
+				onChange=function() NamePlateDriverFrame:UpdateNamePlateOptions() end,
+				cvar={NamePlateHorizontalScale="1.9", NamePlateVerticalScale="4.5"}
+			},
 		},
 		{
-			{ txt=UNIT_NAMEPLATES_MAKE_LARGER, rows=ttColumns,  onChange=function() NamePlateDriverFrame:UpdateNamePlateOptions() end, cvar={
-				[0]={NamePlateHorizontalScale="1",   NamePlateVerticalScale="1"   },
-				[1]={NamePlateHorizontalScale="1.4", NamePlateVerticalScale="2.7" }
-				--[1]={NamePlateHorizontalScale="1", NamePlateVerticalScale="4.5" }
-			} },
+			{txt=L["Nameplates out of combat"],  cvar="nameplateShowAll", rows=1},
+			{txt=SHOW_NAMEPLATE_LOSE_AGGRO_FLASH,  cvar="ShowNamePlateLoseAggroFlash", rows=4},
 		},
 
 		{separator=4},
