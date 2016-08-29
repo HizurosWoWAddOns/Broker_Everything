@@ -4,14 +4,13 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-local ttColumns;
 
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Equipment";
-local ldbName, ttName, ttColums, tt,createMenu, equipPending = name, name.."TT", 3;
+local ldbName, ttName, ttColumns, tt,createMenu, equipPending = name, name.."TT", 3;
 local objLink,objColor,objType,objId,objData,objName,objInfo,objTooltip=1,2,3,4,6,5,7,8;
 local itemEnchant,itemGem1,itemGem2,itemGem3,itemGem4=1,2,3,4,5;
 local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice=1,2,3,4,5,6,7,8,9,10,11;
@@ -438,7 +437,6 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttColumns=3;
 	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "LEFT", "RIGHT");
 	createTooltip(self, tt);
 end

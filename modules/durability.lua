@@ -112,7 +112,7 @@ ns.modules[name] = {
 		{ type="select", name="dateFormat", label=L["Date format"], tooltip=L["Choose the date format if used in the list of repair costs"], default="%Y-%m-%d %H:%M", values=date_formats, event=true },
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["Repair options"] },
-		{ type="separator" },
+		{ type="separator", inMenuInvisible=true },
 		{ type="toggle", name="autorepair", label=L["Enable auto repair"], tooltip=L["Automatically repair your equipment on opening a merchant with repair option."], event=true },
 		{ type="toggle", name="autorepairbyguild", label=L["Use guild money"], tooltip=function() return L["Use guild money on auto repair if you can"].. ( (GetGuildInfoText():find("%[noautorepair%]")) and "|n"..C("red",L["Your guild leadership denied the use of guild money for auto repair."]) or ""); end, event=true, --[[disabled=function() return (GetGuildInfoText():find("%[noautorepair%]")); end]] },
 		{ type="toggle", name="chatRepairInfo", label=L["Repair info"], tooltip=L["Post repair actions in chatframe"] },

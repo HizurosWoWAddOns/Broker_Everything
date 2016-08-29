@@ -409,7 +409,7 @@ function createMenu(self,menu)
 		end
 	elseif (menu=="options") then
 		ns.EasyMenu.addEntry({ label = L["In title"], title = true });
-		ns.EasyMenu.addEntry({ separator = true });
+		--ns.EasyMenu.addEntry({ separator = true });
 
 		local numProfs,numLearned = (ns.player.class=="ROGUE") and 7 or 6,0;
 		for i=1, numProfs do

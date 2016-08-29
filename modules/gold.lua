@@ -107,6 +107,8 @@ function createMenu(self)
 	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.addEntry({separator=true});
+	ns.EasyMenu.addEntry({ label = C("yellow",L["Reset session profit"]), func=function() ns.modules[name].onevent(nil,"PLAYER_LOGIN"); end, keepShown=false });
 	ns.EasyMenu.ShowMenu(self);
 end
 
@@ -160,7 +162,7 @@ local function createTooltip(self, tt)
 				if button == "RightButton" then
 					Broker_Everything_CharacterDB[name_realm].gold = nil;
 					tt:Clear();
-					ns.modules[name].ontooltip(tt);
+					createTooltip(false,tt);
 				end 
 			end)
 
