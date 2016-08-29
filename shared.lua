@@ -36,6 +36,7 @@ ns.LC.colorset({
 
 	["ltblue"]		= "69ccf0",
 	["dkblue"]		= "000088",
+	["dailyblue"]	= "00b3ff",
 
 	["ltcyan"]		= "80ffff",
 	["dkcyan"]		= "008080",
