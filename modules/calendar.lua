@@ -10,8 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Calendar" -- L["Calendar"]
-local ldbName = name
-local tt,createMenu
+local ldbName,ttName,ttColumns,tt,createMenu = name,name.."TT",2;
 local similar, own, unsave = "%s has a similar option to hide the minimap mail icon.","%s has its own mail icon.","%s found. It's unsave to hide the minimap mail icon without errors.";
 -- L["%s has a similar option to hide the minimap mail icon."] L["%s has its own mail icon."] L["%s found. It's unsave to hide the minimap mail icon without errors."]
 local coexist_tooltip = {
@@ -47,7 +46,9 @@ ns.modules[name] = {
 	config_defaults = {
 		hideMinimapCalendar = false,
 		shortBroker = false,
-		shortEvents = true
+		shortEvents = true,
+		showEvents = true,
+		singleLineEvents = false
 	},
 	config_allowed = {
 	},
@@ -63,7 +64,9 @@ ns.modules[name] = {
 			end
 		},
 		{ type="toggle", name="shortBroker", label=L["Shorter Broker"], tooltip=L["Reduce the broker text to a number without text"], event=true },
-		{ type="toggle", name="shortEvents", label=L["Shorter Events"], tooltip=L["Reduce event list height in tooltip"] }
+		{ type="toggle", name="showEvents",  label=L["Show events"], tooltip=L["Display a list of events in tooltip"]},
+		{ type="toggle", name="shortEvents", label=L["Shorter Events"], tooltip=L["Reduce event list height in tooltip"] },
+		{ type="toggle", name="singleLineEvents", label=L["One event per line"], tooltip=L["Display event title and start/end date in a single line in tooltip"]}
 	},
 	clickOptions = {
 		["1_open_character_info"] = {
@@ -100,6 +103,122 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
+local function createTooltip(self, tt)
+	if (not tt.key) or (tt.key~=ttName) then return; end -- don't override other LibQTip tooltips...
+
+	local _=function(y,m,d) return y*10000+m*100+d; end
+	if (ns.tooltipChkOnShowModifier(false)) then tooltip:Hide(); return; end
+
+	local numInvites = CalendarGetNumPendingInvites()
+	local weekday, month, day, year = CalendarGetDate();
+	local today=_(year,month,day);
+
+	tt:Clear()
+	tt:AddHeader(C("dkyellow",L[name]),C("ltgreen",(" %d-%02d-%02d"):format(year,month,day)));
+	tt:AddSeparator();
+
+	if numInvites == 0 then
+		tt:AddLine(C("ltgray",L["No invitations found"].."."));
+	else
+		tt:AddLine(C("white",numInvites.." "..(numInvites==1 and L["Invitation"] or L["Invitations"])));
+	end
+
+	if ns.profile[name].showEvents then
+		--- collect events of this month
+		local holidays = {};
+		local NameToIndex={};
+		local fDate = "%04d-%02d-%02d %02d:%02d";
+		for i,monthOffset in ipairs({-1,0,1})do
+			local month, year, numDays, firstWeekday = CalendarGetMonth(monthOffset);
+			for day=1, numDays do
+				local numEvents = CalendarGetNumDayEvents(monthOffset, day);
+				for eIndex=1, numEvents do
+					local title, hour, minute, calendarType, sequenceType, eventType, eventTexture = CalendarGetDayEvent(monthOffset, day, eIndex);
+					if(title)then
+						local u = eventTexture:match("calendar_weekend(.*)");
+						local unique = u and title..u or false;
+						if(sequenceType=="START")then
+							tinsert(holidays,{
+								title=title,
+								startStr=fDate:format(year,month,day,hour,minute),
+								startNum=_(year,month,day),
+								stopStr="",
+								stopNum=0,
+								state=4,
+								unique = unique
+							});
+							NameToIndex[unique or title]=#holidays;
+						end
+						if(sequenceType=="END" and NameToIndex[unique or title])then
+							local I = NameToIndex[unique or title];
+							holidays[I].stopStr=fDate:format(year,month,day,hour,minute);
+							holidays[I].stopNum=_(year,month,day);
+
+							if(today>holidays[I].stopNum)then
+								holidays[I].state=0; -- past
+							elseif(today>=holidays[I].startNum and today<=holidays[I].stopNum)then
+								holidays[I].state=1; -- current
+							else
+								holidays[I].state=2; -- future
+							end
+
+							NameToIndex[unique or title]=nil;
+						end
+					end
+				end
+			end
+		end
+
+		if #holidays>0 then
+			local separator,soon = false;
+			tt:AddSeparator(4,0,0,0,0);
+			tt:AddLine(C("dkyellow",EVENTS_LABEL));
+			tt:AddSeparator();
+			for i,v in ipairs(holidays)do
+				if(v.state>0)then
+					if(ns.profile[name].shortEvents)then
+						if ns.profile[name].singleLineEvents then
+							tt:AddLine(
+								C("ltblue",v.title).." "..( (v.state==1 and C("green",L["(current)"])) or (v.state==2 and not soon and C("yellow",L["(soon)"])) or " " ),
+								C("ltyellow",v.startStr.." "..L["to"].." "..v.stopStr)
+							);
+						else
+							if separator then
+								tt:AddSeparator(1,.64,.64,.64,1);
+							end
+							tt:SetCell(tt:AddLine(),1,C("ltblue",v.title).." "..( (v.state==1 and C("green",L["(current)"])) or (v.state==2 and not soon and C("yellow",L["(soon)"])) or " " ),nil,nil,ttColumns);
+							tt:AddLine(C("ltyellow",v.startStr),C("ltyellow",v.stopStr));
+						end
+					else
+						if ns.profile[name].singleLineEvents then
+							if separator then
+								tt:AddSeparator(4,0,0,0,0);
+							end
+							tt:AddLine(C("ltblue",v.title),C("ltyellow",v.startStr));
+							tt:AddLine( (v.state==1 and C("green",L["(current)"])) or (v.state==2 and not soon and C("yellow",L["(soon)"])) or " ",C("ltyellow",L["to"].." "..v.stopStr));
+						else
+							if separator then
+								tt:AddSeparator(1,.64,.64,.64,1);
+							end
+							tt:SetCell(tt:AddLine(),1,C("ltblue",v.title),nil,nil,ttColumns);
+							tt:AddLine(C("ltyellow",v.startStr),C("ltyellow",v.stopStr));
+						end
+					end
+					if(v.state==2)then
+						soon=1;
+					end
+					separator = true;
+				end
+			end
+		end
+	end
+
+	if ns.profile.GeneralOptions.showHints then
+		tt:AddSeparator(4,0,0,0,0);
+		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+	end
+	ns.roundupTooltip(self,tt);
+end
 
 ------------------------------------
 -- module (BE internal) functions --
@@ -137,107 +256,22 @@ end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 
-ns.modules[name].ontooltip = function(tooltip)
-	local _=function(y,m,d) return y*10000+m*100+d; end
-	if (ns.tooltipChkOnShowModifier(false)) then tooltip:Hide(); return; end
-	tt=tooltip;
-
-	local x = CalendarGetNumPendingInvites()
-	local weekday, month, day, year = CalendarGetDate();
-	local today=_(year,month,day);
-
-	ns.tooltipScaling(tt)
-	tt:AddDoubleLine(L[name],C("ltgray",(" %d-%02d-%02d"):format(year,month,day)))
-	tt:AddLine(" ")
-	if x == 0 then
-		tt:AddLine(C("white",L["No invitations found"].."."))
-	else
-		tt:AddLine(C("white",x.." "..(x==1 and L["Invitation"] or L["Invitations"]).."."))
-	end
-
-	--- collect events of this month
-	local holidays = {};
-	local NameToIndex={};
-	local fDate = "%04d-%02d-%02d %02d:%02d";
-	for i,monthOffset in ipairs({-1,0,1})do
-		--local monthOffset=1;
-		local month, year, numDays, firstWeekday = CalendarGetMonth(monthOffset);
-		for day=1, numDays do
-			local numEvents = CalendarGetNumDayEvents(monthOffset, day);
-			for eIndex=1, numEvents do
-				local title, hour, minute, calendarType, sequenceType = CalendarGetDayEvent(monthOffset, day, eIndex);
-				if(title)then
-					if(sequenceType=="START")then
-						tinsert(holidays,{
-							title=title,
-							startStr=fDate:format(year,month,day,hour,minute),
-							startNum=_(year,month,day),
-							stopStr="",
-							stopNum=0,
-							state=4
-						});
-						NameToIndex[title]=#holidays;
-					end
-					if(sequenceType=="END" and NameToIndex[title])then
-						local I = NameToIndex[title];
-						holidays[I].stopStr=fDate:format(year,month,day,hour,minute);
-						holidays[I].stopNum=_(year,month,day);
-
-						if(today>holidays[I].stopNum)then
-							holidays[I].state=0; -- past
-						elseif(today>=holidays[I].startNum and today<=holidays[I].stopNum)then
-							holidays[I].state=1; -- current
-						else
-							holidays[I].state=2; -- future
-						end
-
-						NameToIndex[title]=nil;
-					end
-				end
-			end
-		end
-	end
-
-	if(#holidays>0)then
-		local x,soon=nil,nil;
-		tt:AddLine(" ")
-		tt:AddLine(C("dkyellow",EVENTS_LABEL));
-		for i,v in ipairs(holidays)do
-			if(v.state>0)then
-				if(ns.profile[name].shortEvents)then
-					tt:AddDoubleLine(
-						C("ltblue",v.title)
-						.." "..
-						( (v.state==1 and C("green",L["(current)"])) or (v.state==2 and not soon and C("yellow",L["(soon)"])) or " " ),
-						C("ltyellow",v.startStr.." "..L["to"].." "..v.stopStr)
-					);
-				else
-					if(x)then
-						tt:AddLine(" ");
-					end
-					tt:AddDoubleLine(C("ltblue",v.title),C("ltyellow",v.startStr));
-					tt:AddDoubleLine( (v.state==1 and C("green",L["(current)"])) or (v.state==2 and not soon and C("yellow",L["(soon)"])) or " ",C("ltyellow",L["to"].." "..v.stopStr));
-				end
-				if(v.state==2)then
-					soon=1;
-				end
-				x=1;
-			end
-		end
-	end
-
-	if ns.profile.GeneralOptions.showHints then
-		tt:AddLine(" ")
-		ns.clickOptions.ttAddHints(tt,name);
-	end
-end
+-- ns.modules[name].ontooltip = function(tooltip) end
 
 
 -------------------------------------------
 -- module functions for LDB registration --
 -------------------------------------------
--- ns.modules[name].onenter = function(self) end
--- ns.modules[name].onleave = function(self) end
+ns.modules[name].onenter = function(self)
+	if (ns.tooltipChkOnShowModifier(false)) then return; end
+	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT");
+	createTooltip(self, tt);
+end
+
+ns.modules[name].onleave = function(self)
+	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
+end
+
 -- ns.modules[name].onclick = function(self) end
 -- ns.modules[name].ondblclick = function(self,button) end
 
