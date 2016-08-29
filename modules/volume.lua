@@ -86,8 +86,8 @@ ns.modules[name] = {
 			end
 		},
 		["1_louder"] = {
-			cfg_label = "Louter", -- L["Louter"]
-			cfg_desc = "make volume louter", -- L["make volume louter"]
+			cfg_label = "Louder", -- L["Louder"]
+			cfg_desc = "make volume louder", -- L["make volume louder"]
 			cfg_default = "__NONE",
 			hint = "Louder",
 			func = function(self,button)
