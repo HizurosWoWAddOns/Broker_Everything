@@ -105,11 +105,13 @@ local function moduleInit(name)
 			if (type(data.onevent)=="function") then
 				data.eventFrame:SetScript("OnEvent",data.onevent);
 				for _, e in pairs(data.events) do
-					if (e=="ADDON_LOADED") then
+					if e=="ADDON_LOADED" then
 						data.onevent(data.eventFrame,e,addon);
-					else
-						data.eventFrame:RegisterEvent(e);
 					end
+					if ns.pastPEW and e=="PLAYER_ENTERING_WORLD" then
+						data.onevent(data.eventFrame,e);
+					end
+					data.eventFrame:RegisterEvent(e);
 				end
 			end
 
