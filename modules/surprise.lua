@@ -42,9 +42,7 @@ I[name] = {iconfile="Interface\\Icons\\INV_misc_gift_01",coords={0.05,0.95,0.05,
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to have an eye on your suprise item. What is a suprise item? Anything thats needs some days to open it and thats lootable after the time. Can contain random objects like mounts, companions and more."],
-	events = {
-		"PLAYER_ENTERING_WORLD",
-	},
+	events = {},
 	updateinterval = nil,
 	config_defaults = nil,
 	config_allowed = nil,
@@ -96,8 +94,9 @@ local function updateFunc() -- update broker
 end
 
 local function createTooltip(self, tt)
-	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
+	tt:Clear();
 	tt:AddHeader(C("dkyellow",L[name]))
 	tt:AddSeparator(4,0,0,0,0)
 
@@ -125,18 +124,15 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
-
-ns.modules[name].onevent = function(self,event,...)
 	ns.items.RegisterPreScanCallback(name,resetFunc);
 	for i,v in pairs(items)do
 		ns.items.RegisterCallback(name,updateFunc,"item",i);
 	end
 end
 
--- ns.modules[name].onupdate = function(self) end
+-- ns.modules[name].onevent = function(self,event,...) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tt) end
@@ -147,8 +143,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT", "RIGHT")
+	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "RIGHT", "RIGHT")
 	createTooltip(self, tt)
 end
 
