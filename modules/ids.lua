@@ -121,7 +121,7 @@ function createMenu(self)
 end
 
 local function createTooltip(self, tt)
-	if not (tt~=nil and tt.key~=nil and tt.key==ttName) then return; end
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local allNothing,iniNothing = true,true;
 	local _,title = ns.DurationOrExpireDate(0,false,"Duration","Expire date");
 	local timer = function(num)
@@ -257,12 +257,8 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(self)
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-	if (self) then
-		local obj = ns.LDB:GetDataObjectByName(ldbName);
-		obj.text = L[name];
-	end
+ns.modules[name].init = function()
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 end
 
 ns.modules[name].onevent = function(self,event,...)
@@ -270,7 +266,7 @@ ns.modules[name].onevent = function(self,event,...)
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 end
--- ns.modules[name].onupdate = function(self) end
+
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tooltip) end
@@ -280,7 +276,8 @@ end
 -- module functions for LDB registration --
 -------------------------------------------
 ns.modules[name].onenter = function(self)
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "LEFT", "RIGHT", "RIGHT", "RIGHT");
+	if (ns.tooltipChkOnShowModifier(false)) then return; end
+	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "LEFT", "RIGHT", "RIGHT", "RIGHT");
 	createTooltip(self, tt);
 end
 

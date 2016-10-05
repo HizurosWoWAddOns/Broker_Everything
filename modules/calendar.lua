@@ -104,7 +104,7 @@ function createMenu(self)
 end
 
 local function createTooltip(self, tt)
-	if (not tt.key) or (tt.key~=ttName) then return; end -- don't override other LibQTip tooltips...
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local _=function(y,m,d) return y*10000+m*100+d; end
 	if (ns.tooltipChkOnShowModifier(false)) then tooltip:Hide(); return; end
@@ -223,7 +223,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
@@ -252,10 +252,8 @@ ns.modules[name].onevent = function(self,event,msg)
 	end
 end
 
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
-
 -- ns.modules[name].ontooltip = function(tooltip) end
 
 
@@ -264,7 +262,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT");
+	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "RIGHT");
 	createTooltip(self, tt);
 end
 

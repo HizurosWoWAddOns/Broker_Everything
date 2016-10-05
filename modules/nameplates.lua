@@ -181,7 +181,7 @@ local function getCVarSettings(cVarName)
 end
 
 local function createTooltip(self, tt)
-	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear()
 	local l = tt:AddHeader()
@@ -285,12 +285,12 @@ local function createTooltip(self, tt)
 				tt:AddSeparator(1,0,0,0,0) -- transparent
 				line = false
 			elseif type(v[1])=="string" and v[2]==nil then
-				line, column = tt:AddLine()
+				line = tt:AddLine()
 				tt:SetCell(line, 1, C("ltblue",v[1]), nil, nil, ttColumns)
 				tt:AddSeparator()
 				line = false
 			elseif v[2] == false then
-				line, column = tt:AddLine()
+				line = tt:AddLine()
 				tt:SetCell(line, 1, C("ltyellow",v[1]), nil, nil, 1)
 				cell = 2
 			elseif v[3]~=nil and type(v[3])=="number" then
@@ -300,7 +300,7 @@ local function createTooltip(self, tt)
 				end
 				if line == false then
 					cell = 1
-					line, column = tt:AddLine()
+					line = tt:AddLine()
 				end
 				tt:SetCell(line, cell, C(toggle==1 and "gray" or "white",v[1]), nil, nil, v[3])
 				tt:SetCellScript(line, cell, "OnEnter", function(self) tt:SetLineColor(line, 1,192/255, 90/255, 0.3) end )
@@ -321,7 +321,7 @@ local function createTooltip(self, tt)
 				end
 				if line == false then
 					cell = 1
-					line, column = tt:AddLine()
+					line = tt:AddLine()
 				end
 				if v[3]==true then
 					tt:SetCell(line, 1, C(toggle==1 and "gray" or "white",v[1]), nil, nil, 5)
@@ -352,12 +352,9 @@ local function createTooltip(self, tt)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddLine(" ")
-
-		line, column = tt:AddLine()
-		tt:SetCell(line, 1, C("ltblue",L["Click"]).." || "..C("green",L["Names/Nameplates on/off"]), nil, nil, ttColumns)
+		tt:SetCell(tt:AddLine(), 1, C("ltblue",L["Click"]).." || "..C("green",L["Names/Nameplates on/off"]), nil, nil, ttColumns)
 	end
-	line, column = nil, nil
-	ns.roundupTooltip(self,tt)
+	ns.roundupTooltip(self,tt);
 end
 
 ------------------------------------
@@ -365,8 +362,6 @@ end
 ------------------------------------
 ns.modules[name].init = function(obj)
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-	if not obj then return end
-	obj = obj.obj or ns.LDB:GetDataObjectByName(ldbName) 
 end
 
 ns.modules[name].onevent = function(self,event,msg,msg2)
@@ -385,7 +380,6 @@ ns.modules[name].onevent = function(self,event,msg,msg2)
 	end
 end
 
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tt) end
@@ -396,8 +390,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "LEFT","LEFT","LEFT","LEFT","LEFT")
+	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "LEFT","LEFT","LEFT","LEFT","LEFT")
 	createTooltip(self, tt)
 end
 

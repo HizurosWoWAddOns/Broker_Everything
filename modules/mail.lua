@@ -95,13 +95,13 @@ local function UpdateStatus(event)
 	local num,total = GetInboxNumItems(); num=num or 0; total=total or 0;
 	local returns,mailState,next1,next2,next3,tmp = (99*86400),0,nil,nil,nil,nil;
 
-	if Broker_Everything_CharacterDB[ns.player.name_realm].mail==nil then
-		Broker_Everything_CharacterDB[ns.player.name_realm].mail = { new={}, stored={} };
+	if ns.toon.mail==nil then
+		ns.toon.mail = { new={}, stored={} };
 	end
-	if Broker_Everything_CharacterDB[ns.player.name_realm].mail.count then
-		Broker_Everything_CharacterDB[ns.player.name_realm].mail = { new={}, stored={} };
+	if ns.toon.mail.count then
+		ns.toon.mail = { new={}, stored={} };
 	end
-	local charDB_mail = Broker_Everything_CharacterDB[ns.player.name_realm].mail;
+	local charDB_mail = ns.toon.mail;
 
 	if (_G.MailFrame:IsShown()) or (event=="MAIL_CLOSED") then
 		charDB_mail.stored={};
@@ -163,7 +163,7 @@ local function UpdateStatus(event)
 end
 
 local function createTooltip(self, tt)
-	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local newMails = {};
 	if HasNewMail() then
@@ -255,8 +255,8 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
+ns.modules[name].init = function()
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 end
 
 ns.modules[name].onevent = function(self,event,msg)
@@ -295,7 +295,6 @@ ns.modules[name].onevent = function(self,event,msg)
 	end
 end
 
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tooltip) end
@@ -307,7 +306,7 @@ end
 
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.LQT:Acquire(ttName, 2, "LEFT", "RIGHT")
+	tt = ns.acquireTooltip(ttName, 2, "LEFT", "RIGHT")
 	createTooltip(self,tt);
 end
 

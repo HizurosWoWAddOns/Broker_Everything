@@ -14,8 +14,7 @@ local name = "Garrison" -- GARRISON_LOCATION_TOOLTIP
 local ldbName,ttName,LName = name, name.."TT",GARRISON_LOCATION_TOOLTIP;
 local tt,createMenu,ttColumns
 local buildings,nBuildings,construct,nConstruct,blueprints3,achievements3 = {},0,{},0,{},{}
-local updater = false;
-local longer = false;
+local longer,ticker = false,false;
 local displayAchievements=false;
 local buildings2achievements = {[9]=9129,[25]=9565,[27]=9523,[35]=9703,[38]=9497,[41]=9429,[62]=9453,[66]=9526,[117]=9406,[119]=9406,[121]=9406,[123]=9406,[125]=9406,[127]=9406,[129]=9406,[131]=9406,[134]=9462,[136]=9454,[140]=9468,[142]=9487,[144]=9478,[160]=9495,[163]=9527,[167]=9463};
 local blueprintsL3 = {[9]=111967,[25]=111969,[27]=111971,[35]=109065,[38]=109063,[41]=109255,[62]=111996,[66]=112003,[117]=111991,[119]=111930,[121]=111989,[123]=109257,[125]=111973,[127]=111993,[129]=111979,[131]=111975,[134]=111928,[136]=111997,[140]=111977,[142]=111983,[144]=111987,[160]=111981,[163]=111985,[167]=111999};
@@ -66,15 +65,20 @@ ns.modules[name] = {
 	config_allowed = {},
 	config = {
 		{ type="header", label=L[name], align="left", icon=I[name] },
-		{ type="separator" },
-		{ type="toggle", name="showConstruct",            label=L["Show under construction"],     tooltip=L["Show of buildings there are under construction"] },
-		{ type="toggle", name="showBlueprints",           label=L["Show blueprints"],             tooltip=L["Show available blueprints"] },
-		{ type="toggle", name="showAchievements",         label=L["Show archievements"],          tooltip=L["Show necessary archievements to unlock blueprints"] },
-		{ type="toggle", name="showCacheForcast",         label=L["Show cache forcast"],          tooltip=L["Show garrison cache forecast for all your characters"] },
-		{ type="toggle", name="showCacheForcastInBroker", label=L["Show cache forcast in title"], tooltip=L["Show garrison cache forecast for your current char in broker button"] },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["In tooltip options"]},
+		{ type="separator", inMenuInvisible=true },
+		{ type="toggle", name="showConstruct",            label=L["Show under construction"],     tooltip=L["Show list of buildings there are under construction in tooltip"] },
+		{ type="toggle", name="showBlueprints",           label=L["Show blueprints"],             tooltip=L["Show available blueprints in tooltip"] },
+		{ type="toggle", name="showAchievements",         label=L["Show archievements"],          tooltip=L["Show necessary archievements to unlock blueprints in tooltip"] },
+		{ type="toggle", name="showCacheForcast",         label=L["Show cache forcast"],          tooltip=L["Show garrison cache forecast for all your characters in tooltip"] },
 		{ type="toggle", name="showChars",                label=L["Show characters"],             tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
 		{ type="toggle", name="showAllRealms",            label=L["Show all realms"],             tooltip=L["Show characters from all realms in tooltip."] },
 		{ type="toggle", name="showAllFactions",          label=L["Show all factions"],           tooltip=L["Show characters from all factions in tooltip."] },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["On broker button options"]},
+		{ type="separator", inMenuInvisible=true },
+		{ type="toggle", name="showCacheForcastInBroker", label=L["Show cache forcast in title"], tooltip=L["Show garrison cache forecast for your current char in broker button"] },
 	},
 	clickOptions = {
 		["1_open_garrison_report"] = {
@@ -139,6 +143,7 @@ local function AchievementTooltip(self,link)
 end
 
 local function createTooltip(self, tt)
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local now, timeleft, timeleftAll, shipmentsCurrent = time();
 	local none, qualities = true,{"white","ff1eaa00","ff0070dd","ffa335ee"};
 	local _,title = ns.DurationOrExpireDate(0,false,"Single|nduration","Single|nexpire date")
@@ -155,7 +160,11 @@ local function createTooltip(self, tt)
 	tt:Clear();
 	tt:AddHeader(C("dkyellow",LName));
 
-	if (garrLevel>0) then
+	if (ohLevel>0 and ns.profile[name].showOrderhall) then
+		
+	end
+
+	if (garrLevel>0 and ns.profile[name].showGarrison) then
 		if (ns.profile[name].showChars and false) then
 			tt:AddSeparator(4,0,0,0,0);
 			local l=tt:AddLine( C("ltblue", L["Characters"]) ); -- 1
@@ -393,17 +402,22 @@ local function updateBlueprints(Data)
 	end
 end
 
+local function updater()
+	C_Garrison.RequestLandingPageShipmentInfo(); -- stupid event triggering to get new data
+	C_Garrison.RequestShipmentInfo();
+end
+
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(self)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 end
 
 ns.modules[name].onevent = function(self,event,...)
 	if(event=="PLAYER_ENTERING_WORLD")then
 
-		if Broker_Everything_CharacterDB[ns.player.name_realm].garrison and Broker_Everything_CharacterDB[ns.player.name_realm].garrison.cache then
+		if ns.toon.garrison and ns.toon.garrison.cache then
 			for i=1, #Broker_Everything_CharacterDB.order do
 				local k = Broker_Everything_CharacterDB.order[i];
 				local v = Broker_Everything_CharacterDB[k];
@@ -417,34 +431,36 @@ ns.modules[name].onevent = function(self,event,...)
 			end
 		end
 
-		if not Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache then
-			Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache = {0,false};
-		elseif(Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache[1]==nil)then
-			Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache[1]=0;
+		if not ns.toon.garrison_cache then
+			ns.toon.garrison_cache = {0,false};
+		elseif(ns.toon.garrison_cache[1]==nil)then
+			ns.toon.garrison_cache[1]=0;
 		end
 
 		--- usage tracking for the trade agreement to set garrison cache limit up to 1000
-		if(not UseContainerItemHooked and UnitLevel("player")==MAX_PLAYER_LEVEL and not Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache[2])then
-			hooksecurefunc("UseContainerItem",function(bag,slot)
-				if((GetContainerItemLink(bag,slot) or ""):match("Hitem:128294:"))then
-					Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache[2]=true;
-					ns.modules[name].onevent(self,"BE_CUSTOM_EVENT");
-				end
+		if(not UseContainerItemHooked and UnitLevel("player")==MAX_PLAYER_LEVEL and not ns.toon.garrison_cache[2])then
+			ns.UseContainerItemHook.registerItemID(name,128294,function(bag,slot,itemId)
+				ns.toon.garrison_cache[2]=true;
+				ns.modules[name].onevent(self,"BE_CUSTOM_EVENT");
 			end);
 		end
 	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	else
 		local progress,ready=0,0;
-		local garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0);
+		local garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0;
 		local tmp, names, _, bName, texture, shipmentCapacity, shipmentsReady, shipmentsTotal, creationTime, duration, timeleftString, shipmentsCurrent = {}, {};
 
+		if not ticker and garrLevel>0 then
+			ticker = C_Timer.NewTicker(ns.modules[name].updateinterval,updater);
+		end
+
 		wipe(construct); wipe(blueprints3); wipe(achievements3);
-		updater,longer,nConstruct,nBuildings = true,false,0,0;
+		longer,nConstruct,nBuildings = false,0,0;
 
 		local cBuildings,cJobs,cShipments=2,3,4;
-		Broker_Everything_CharacterDB[ns.player.name_realm].garrison={garrLevel,0,{0,0},{}};
-		local cache=Broker_Everything_CharacterDB[ns.player.name_realm].garrison;
+		ns.toon.garrison={garrLevel,0,{0,0},{}};
+		local cache=ns.toon.garrison;
 
 		buildings = C_Garrison.GetBuildings(LE_GARRISON_TYPE_6_0) or {};
 
@@ -509,7 +525,7 @@ ns.modules[name].onevent = function(self,event,...)
 				end
 
 				if (not buildings[i].texture) then
-					buildings[i].texture = "interface\\icons\\inv_misc_questionmark";
+					buildings[i].texture = ns.icon_fallback;
 				end
 
 				nBuildings = nBuildings + 1;
@@ -585,38 +601,42 @@ ns.modules[name].onevent = function(self,event,...)
 		if (event=="SHOW_LOOT_TOAST") then
 			local typeIdentifier, _, quantity, _, _, isPersonal, lootSource = ...;
 			if (isPersonal==true) and (typeIdentifier=="currency") and (lootSource==10) then
-				if(Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache[1]~=nil and Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache[1]~=0)then
-					local forcast = floor((time()-Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache[1])/600);
+				if(ns.toon.garrison_cache[1]~=nil and ns.toon.garrison_cache[1]~=0)then
+					local forcast = floor((time()-ns.toon.garrison_cache[1])/600);
 					if(quantity>500)then
-						Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache[2]=true; -- Trade Agreement: Arakkoa Outcasts (128294)
+						ns.toon.garrison_cache[2]=true; -- Trade Agreement: Arakkoa Outcasts (128294)
 					elseif(forcast > quantity and quantity==500)then
-						Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache[2]=false; -- no Trade Agreement
+						ns.toon.garrison_cache[2]=false; -- no Trade Agreement
 					end
 				end
-				Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache[1]=time();
+				ns.toon.garrison_cache[1]=time();
 			end
 		end
+
+		local ohLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
+
+		
 
 		local obj = ns.LDB:GetDataObjectByName(ldbName);
 		local title = {};
 		tinsert(title, C("ltblue",ready) .."/".. C("orange",progress - ready) );
 
 		if (ns.profile[name].showCacheForcastInBroker) then
-			if(Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache[1]==nil or Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache[1]==0)then
+			if(ns.toon.garrison_cache[1]==nil or ns.toon.garrison_cache[1]==0)then
 				colCache = "orange";
 				colCap = "red";
 				tinsert(title, C("orange","n/a") );
 			else
 				local colCache,colCap,cap = "white","white",500;
-				local cache = floor((time()-Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache[1])/600);
+				local cache = floor((time()-ns.toon.garrison_cache[1])/600);
 
-				if(Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache[2])then
+				if(ns.toon.garrison_cache[2])then
 					cap = 1000;
 				end
 
 				if(cache>=cap)then
 					colCache = "gray";
-					if(Broker_Everything_CharacterDB[ns.player.name_realm].garrison_cache[2]==nil)then
+					if(ns.toon.garrison_cache[2]==nil)then
 						colCap = "dkyellow";
 					else
 						colCap = "red";
@@ -643,12 +663,6 @@ ns.modules[name].onevent = function(self,event,...)
 
 end
 
-ns.modules[name].onupdate = function(self)
-	if not updater then return end
-	C_Garrison.RequestLandingPageShipmentInfo(); -- stupid event triggering to get new data
-	C_Garrison.RequestShipmentInfo();
-end
-
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(self) end
@@ -659,9 +673,8 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-
 	ttColumns = 7;
-	tt = ns.LQT:Acquire(name.."TT", 7, "LEFT","LEFT", "CENTER", "CENTER", "CENTER", "RIGHT","RIGHT");
+	tt = ns.acquireTooltip(ttName, 7, "LEFT","LEFT", "CENTER", "CENTER", "CENTER", "RIGHT","RIGHT");
 	createTooltip(self, tt);
 end
 

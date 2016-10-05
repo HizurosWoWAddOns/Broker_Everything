@@ -86,7 +86,7 @@ local function pushedTooltip(parent,id,msg)
 end
 
 local function createTooltip(self, tt)
-	if (not tt.key) or (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local line, column
 	
@@ -137,14 +137,11 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-	if not obj then return end
-	obj = obj.obj or ns.LDB:GetDataObjectByName(ldbName)
 end
 
 -- ns.modules[name].onevent = function(self,event,msg) end
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tt) end
@@ -155,7 +152,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.LQT:Acquire(ttName, 1, "LEFT");
+	tt = ns.acquireTooltip(ttName, 1, "LEFT");
 	createTooltip(self, tt)
 end
 

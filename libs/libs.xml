@@ -8,4 +8,5 @@
 	<Script file="LibSharedMedia-3.0\LibSharedMedia-3.0.lua" />
 	<Include file="LibTime-1.0\LibTime-1.0.xml" />
 	<Include file="LibColors-1.0\LibColors-1.0.xml" />
+	<Include file="LibDropDownMenu\LibDropDownMenu.xml"/>
 </Ui>

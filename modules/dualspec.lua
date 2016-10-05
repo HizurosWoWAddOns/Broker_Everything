@@ -52,7 +52,7 @@ ns.modules[name] = {
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
@@ -79,7 +79,6 @@ ns.modules[name].onevent = function(self,event,msg)
 
 end
 
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].optionspanel = function(panel) end
 

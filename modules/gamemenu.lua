@@ -139,7 +139,7 @@ I["gm_Pets"]              = {iconfile="Interface\\ICONS\\inv_box_petcarrier_01"}
 I["gm_ToyBox"]            = {iconfile="Interface\\ICONS\\Trade_Archaeology_chestoftinyglassanimals"}														--IconName::gm_ToyBox--
 I["gm_EJ"]                = {iconfile="Interface\\buttons\\UI-MicroButton-EJ-Up", coordsStr="16:16:0:-1:64:64:8:54:32:59"}									--IconName::gm_EJ--
 I["gm_Store"]             = {iconfile="Interface\\ICONS\\WoW_Store"}																						--IconName::gm_Store--
-I["gm_Help"]              = {iconfile="Interface\\ICONS\\inv_misc_questionmark"}																			--IconName::gm_Help--
+I["gm_Help"]              = {iconfile=ns.icon_fallback}																										--IconName::gm_Help--
 I["gm_SysOpts"]           = {iconfile="Interface\\ICONS\\inv_gizmo_02"}																						--IconName::gm_SysOpts--
 I["gm_KeyBinds"]          = {iconfile="interface\\macroframe\\macroframe-icon"}																				--IconName::gm_KeyBinds--
 I["gm_UiOpts"]            = {iconfile="Interface\\ICONS\\inv_gizmo_02"}																						--IconName::gm_UiOpts--
@@ -164,6 +164,7 @@ I["gm_Challenges"]        = {iconfile="Interface\\Icons\\Achievement_ChallengeMo
 ns.modules[name] = {
 	desc = L["Broker to show combined list of clickable elements from game menu, microbutton bar. It is not recommented to use it in combat."],
 	events = {
+		"PLAYER_ENTERING_WORLD",
 		"UPDATE_WEB_TICKET"
 	},
 	updateinterval = nil, -- 10
@@ -242,7 +243,7 @@ local function pushedTooltip(parent,id,msg)
 end
 
 local function createTooltip(self, tt)
-	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local line, column
 	local section, secHide = 1, false
@@ -283,12 +284,12 @@ local function createTooltip(self, tt)
 				if m then
 					v.iconName = string.gsub(v.iconName, "%{"..m.."%}", ns.player[m]:lower())
 					local V = I("gm_"..v.iconName)
-					if m=="class" and I["gm_"..v.iconName].iconfile=="interface\\icons\\inv_misc_questionmark" then
+					if m=="class" and I["gm_"..v.iconName].iconfile==ns.icon_fallback then
 						v.iconName = "Character-neutral"
 					end
 				end
 				local icon = I("gm_"..v.iconName)
-				tt:SetCell(line, cell, (v.disabled and link_disabled or link):format((icon.iconfile or "interface\\icons\\inv_misc_questionmark"), (icon.coordsStr or iconCoords), v.name), nil, nil, oneCell and 2 or 1)
+				tt:SetCell(line, cell, (v.disabled and link_disabled or link):format((icon.iconfile or ns.icon_fallback), (icon.coordsStr or iconCoords), v.name), nil, nil, oneCell and 2 or 1)
 				if (not v.disabled) or not (InCombatLockdown() and (v.click or v.macro)) then
 					local e, f
 					if v.click~=nil then
@@ -362,18 +363,18 @@ local function createTooltip(self, tt)
 	end
 	--
 
-	if ns.profile[name].disableOnClick or (not ns.profile.GeneralOptions.showHints) then return end
-
-	tt:AddSeparator(4, 0, 0, 0, 0)
-	line, column = tt:AddLine()
-	tt:SetCell(line, 1,
-		C("copper", L["Left-click"]).." || "..C("green", LOGOUT)
-		.."|n"..
-		C("copper", L["Right-click"]).." || "..C("green", EXIT_GAME)
-		.."|n"..
-		C("copper", L["Shift+Left-click"]).." || "..C("green", L["Reload UI"])
-	, nil, nil, 2)
-	ns.roundupTooltip(self, tt)
+	if ns.profile.GeneralOptions.showHints and ns.profile[name].disableOnClick then
+		tt:AddSeparator(4, 0, 0, 0, 0)
+		line, column = tt:AddLine()
+		tt:SetCell(line, 1,
+			C("copper", L["Left-click"]).." || "..C("green", LOGOUT)
+			.."|n"..
+			C("copper", L["Right-click"]).." || "..C("green", EXIT_GAME)
+			.."|n"..
+			C("copper", L["Shift+Left-click"]).." || "..C("green", L["Reload UI"])
+		, nil, nil, 2);
+	end
+	ns.roundupTooltip(self, tt);
 end
 
 
@@ -382,32 +383,22 @@ end
 ------------------------------------
 
 ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-	local obj = ns.LDB:GetDataObjectByName(ldbName)
-	if ns.profile[name].customTitle~="" and type(ns.profile[name].customTitle)=="string" then
-		customTitle = ns.profile[name].customTitle
-	end
-	if obj~=nil then
-		obj.text = customTitle
-	end
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 end
 
-ns.modules[name].onevent = function(self, ...)
-	local event, _ = ...
-
-	if event == "UPDATE_WEB_TICKET" then
+ns.modules[name].onevent = function(self, event, arg1, ...)
+	if event=="PLAYER_ENTERING_WORLD" or event=="BE_DUMMY_EVENT" then
+		local label = MAINMENU_BUTTON;
+		if type(ns.profile[name].customTitle)=="string" and ns.profile[name].customTitle~="" then
+			label = ns.profile[name].customTitle;
+		end
+		ns.LDB:GetDataObjectByName(ldbName).text = label;
+	elseif event == "UPDATE_WEB_TICKET" then
 		_, gmticket.hasTicket, gmticket.numTickets, gmticket.ticketStatus, gmticket.caseIndex, gmticket.waitTime, gmticket.waitMsg = ...
 		updateGMTicket()
-	elseif event == "BE_DUMMY_EVENT" then
-		local obj = ns.LDB:GetDataObjectByName(ldbName)
-		customTitle = ns.profile[name].customTitle~="" and type(ns.profile[name].customTitle)=="string" and ns.profile[name].customTitle or MAINMENU_BUTTON
-		if obj~=nil then
-			obj.text = customTitle
-		end
 	end
 end
 
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self, direction) end
 -- ns.modules[name].ontooltip = function(tt) end
@@ -418,8 +409,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-
-	tt = ns.LQT:Acquire(ttName, 2, "LEFT", "LEFT")
+	tt = ns.acquireTooltip(ttName, 2, "LEFT", "LEFT")
 	createTooltip(self, tt)
 end
 

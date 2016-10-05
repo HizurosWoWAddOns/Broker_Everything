@@ -31,7 +31,7 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\clock"}; --IconName:
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show local and/or realm time"],
-	events = {"TIME_PLAYED_MSG"},
+	events = {"PLAYER_ENTERING_WORLD","TIME_PLAYED_MSG"},
 	updateinterval = 1,
 	timeout = 30,
 	timeoutAfterEvent = "PLAYER_ENTERING_WORLD",
@@ -86,7 +86,6 @@ ns.modules[name] = {
 			func = function(self,button)
 				local _mod=name;
 				ns.profile[name].timeLocal = not ns.profile[name].timeLocal;
-				ns.modules[name].onupdate(self)
 			end
 		},
 		["3_calendar"] = {
@@ -107,7 +106,6 @@ ns.modules[name] = {
 			func = function(self,button)
 				local _mod=name;
 				ns.profile[name].format24 = not ns.profile[name].format24;
-				ns.modules[name].onupdate(self)
 			end
 		},
 		["5_open_menu"] = {
@@ -148,6 +146,7 @@ local function date(dateStr)
 end
 
 local function createTooltip(self, tt)
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local h24 = ns.profile[name].format24;
 	local dSec = ns.profile[name].showSeconds;
 	local pT,pL,pS = ns.LT.GetPlayedTime();
@@ -182,11 +181,21 @@ local function createTooltip(self, tt)
 	ns.roundupTooltip(self,tt)
 end
 
+local function updater(self)
+	local obj = ns.LDB:GetDataObjectByName(ldbName);
+	local h24 = ns.profile[name].format24;
+	local dSec = ns.profile[name].showSeconds;
+	obj.text = ns.profile[name].timeLocal and ns.LT.GetTimeString("GetLocalTime",h24,dSec) or ns.LT.GetTimeString("GetGameTime",h24,dSec)
+	if tt~=nil and tt.key==name.."TT" and tt:IsShown() then
+		createTooltip(false, tt)
+	end
+end
+
 
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 	if not initialized then
 		for i,v in pairs(ns.modules[name].config[7].values)do
@@ -197,30 +206,18 @@ ns.modules[name].init = function(obj)
 end
 
 ns.modules[name].onevent = function(self,event,...)
-	if event=="TIME_PLAYED_MSG" then
+	if event=="PLAYER_ENTERING_WORLD" then
+		C_Timer.NewTicker(ns.modules[name].updateinterval,updater);
+		self:UnregisterEvent(event);
+	elseif event=="TIME_PLAYED_MSG" then
 		played = true
-	end
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
+	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 end
 
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
-
-ns.modules[name].onupdate = function(self)
-	if not self then self = {} end
-	self.obj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
-
-	local h24 = ns.profile[name].format24
-	local dSec = ns.profile[name].showSeconds
-
-	self.obj.text = ns.profile[name].timeLocal and ns.LT.GetTimeString("GetLocalTime",h24,dSec) or ns.LT.GetTimeString("GetGameTime",h24,dSec)
-
-	if tt~=nil and tt.key==name.."TT" and tt:IsShown() then
-		createTooltip(false, tt)
-	end
-end
 
 ns.modules[name].ontimeout = function(self)
 	if played==false then
@@ -236,7 +233,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.LQT:Acquire(ttName, ttColumns , "LEFT", "RIGHT" )
+	tt = ns.acquireTooltip(ttName, ttColumns , "LEFT", "RIGHT" )
 	createTooltip(self, tt)
 end
 

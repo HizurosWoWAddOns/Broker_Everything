@@ -127,7 +127,7 @@ local function getProfit()
 end
 
 local function createTooltip(self, tt)
-	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local sAR,sAF = ns.profile[name].showAllRealms==true,ns.profile[name].showAllFactions==true;
 	local totalGold = current_money;
@@ -194,8 +194,7 @@ local function createTooltip(self, tt)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(3,0,0,0,0);
-		line, column = tt:AddLine();
-		tt:SetCell(line, 1, C("ltblue",L["Right-click"]).." || "..C("green",L["Remove entry"]), nil, nil, 2);
+		tt:SetCell(tt:AddLine(), 1, C("ltblue",L["Right-click"]).." || "..C("green",L["Remove entry"]), nil, nil, 2);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
 	ns.roundupTooltip(self,tt)
@@ -205,16 +204,16 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-	if(Broker_Everything_CharacterDB[ns.player.name_realm].gold==nil)then
-		Broker_Everything_CharacterDB[ns.player.name_realm].gold = 0;
+	if(ns.toon.gold==nil)then
+		ns.toon.gold = 0;
 	end
 end
 
 ns.modules[name].onevent = function(self,event,msg)
 	current_money = GetMoney();
-	Broker_Everything_CharacterDB[ns.player.name_realm].gold = current_money;
+	ns.toon.gold = current_money;
 
 	if(event=="PLAYER_LOGIN")then
 		login_money = current_money;
@@ -237,7 +236,6 @@ ns.modules[name].onevent = function(self,event,msg)
 	ns.LDB:GetDataObjectByName(ldbName).text = table.concat(broker,", ");
 end
 
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tt) end
@@ -248,8 +246,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-
-	tt = ns.LQT:Acquire(ttName, 2, "LEFT", "RIGHT")
+	tt = ns.acquireTooltip(ttName, 2, "LEFT", "RIGHT")
 	createTooltip(self, tt);
 end
 

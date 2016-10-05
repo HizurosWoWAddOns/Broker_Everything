@@ -135,6 +135,7 @@ local function progressBar(tt, l, low, high)
 end
 
 local function createTooltip(self, tt)
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	tt:Clear();
 	tt:AddHeader(C("dkyellow",L[name]));
 	count=0;
@@ -200,12 +201,11 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 end
 
 -- ns.modules[name].onevent = function(self,event,...) end
--- ns.modules[name].onupdate = function(self,elapsed) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tooltip) end
@@ -215,7 +215,8 @@ end
 -- module functions for LDB registration --
 -------------------------------------------
 ns.modules[name].onenter = function(self)
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT");
+	if (ns.tooltipChkOnShowModifier(false)) then return; end
+	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT");
 	tt:SetScript("OnHide",function()
 		for i=1, #bars do
 			bars[i]:SetParent(nil);

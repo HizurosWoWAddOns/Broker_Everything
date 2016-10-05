@@ -11,8 +11,9 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Framenames" -- L["Framenames"]
 local ldbName,ttName,ldbObject = name,name.."TT"
-local string = string
-
+local string,GetMouseFocus,InCombatLockdown = string,GetMouseFocus,InCombatLockdown;
+local issecurevariable,UnitGUID,UnitName,IsShiftKeyDown = issecurevariable,UnitGUID,UnitName,IsShiftKeyDown;
+local lastFrame,lastMod,lastCombatState,ticker = false,false,false;
 
 -------------------------------------------
 -- register icon names and default files --
@@ -26,36 +27,43 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\equip"}; --IconName:
 ns.modules[name] = {
 	desc = L["Broker to show names of frames under the mouse"],
 	enabled = false,
-	events = {},
-	updateinterval = 0.05,
-	config_defaults = nil,
+	events = {"PLAYER_LOGIN"},
+	updateinterval = 1/12,
+	config_defaults = {
+		ownership = "shift",
+		creatureid = "shift",
+	},
 	config_allowed = nil,
-	config = { { type="header", label=L[name], align="left", icon=I[name] } }
+	config = {
+		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="separator" },
+		{ type="select", name="ownership", label=L["Show ownership"], tooltip=L["Display ownership on broker button"], values={none=ADDON_DISABLED, shift=L["On hold shift key"], always=ALWAYS }, default="shift" },
+		{ type="select", name="creatureid", label=L["Show ownership"], tooltip=L["Display creature id on broker button"], values={none=ADDON_DISABLED, shift=L["On hold shift key"], always=ALWAYS }, default="shift" },
+	}
 }
 
 
 --------------------------
 -- some local functions --
 --------------------------
-
-
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules[name].init = function(self)
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-	if self then
-		ldbObject = ldbObject or ns.LDB:GetDataObjectByName(ldbName);
-		ldbObject.text = L[name];
-	end
+local function ownership(p,f)
+	local secure, taint = issecurevariable(p,f);
+	return secure==true and "Blizzard" or taint;
 end
 
--- ns.modules[name].onevent = function(self,event,msg) end
-
-ns.modules[name].onupdate = function(self)
-	ldbObject = ldbObject or ns.LDB:GetDataObjectByName(ldbName);
-	local F,O,P,A = nil,"Blizzard","","" -- Frame, Owner, Prepend, Append
+local function updater()
 	local f = GetMouseFocus();
+	local mod = IsShiftKeyDown();
+	local combat = InCombatLockdown();
+
+	if f~=WorldFrame and f==lastFrame and mod==lastMod and combat==lastCombatState then
+		return
+	end
+
+	local F,O,P,A = nil,"?","","" -- Frame, Owner, Prepend, Append
+	local ldbObject = ns.LDB:GetDataObjectByName(ldbName);
+	lastFrame,lastMod,lastCombatState=f,mod,combat;
+
 	if (not f) then
 		if ldbObject.text~=UNKNOWN then
 			ldbObject.text = UNKNOWN
@@ -63,14 +71,13 @@ ns.modules[name].onupdate = function(self)
 	else
 		if f:IsForbidden() then
 			F = "<Forbidden Frame>";
-		elseif f:IsProtected() and InCombatLockdown() then
+		elseif f:IsProtected() and combat then
 			F = "<Protected Frame>";
 		else
 			F = f:GetName();
 
 			if F then
-				local secure, taint = issecurevariable(_G,F);
-				O = secure and "Blizzard" or taint;
+				O = ownership(_G,F);
 			end
 
 			if F=="WorldFrame" then
@@ -79,15 +86,15 @@ ns.modules[name].onupdate = function(self)
 				if guid and uName then
 					O = false;
 					P,_,_,_,_,id = strsplit("-",guid);
-					F = uName;
-					if IsShiftKeyDown() and P=="Creature" and id~=nil then
+					F = uName or "?";
+					if ((ns.profile[name].creatureid=="shift" and mod) or ns.profile[name].creatureid=="always") and P=="Creature" and id~=nil then
 						P = P.. ", id:"..id;
 					end
 				end
 			end
 
 			if F == nil and type(f.key)=="string" then -- LibQTip tooltips returns nil on GetName but f.key contains the current name
-				O = "?";
+				O = "LibQTip";
 				F = f.key;
 			end
 
@@ -97,8 +104,7 @@ ns.modules[name].onupdate = function(self)
 					if(v==f)then
 						P = "parentKey";
 						F = i;
-						local secure, taint = issecurevariable(f,i);
-						O = secure and "Blizzard" or taint;
+						O = ownership(f,i);
 						break;
 					end
 				end
@@ -115,11 +121,24 @@ ns.modules[name].onupdate = function(self)
 			str = str .. " ("..A..")";
 		end
 
-		if O~=false and IsShiftKeyDown() then
+		if O~=false and ((ns.profile[name].ownership=="shift" and mod) or ns.profile[name].ownership=="always") then
 			str = "["..O.."] "..str;
 		end
 
 		ldbObject.text = str;
+	end
+end
+
+------------------------------------
+-- module (BE internal) functions --
+------------------------------------
+ns.modules[name].init = function()
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
+end
+
+ns.modules[name].onevent = function(self,event,msg)
+	if not ticker and event=="PLAYER_LOGIN" then
+		ticker = C_Timer.NewTicker(ns.modules[name].updateinterval,updater);
 	end
 end
 

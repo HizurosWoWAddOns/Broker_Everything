@@ -337,10 +337,6 @@ function createTooltip(self, tt)
 				session[data[Name]] = {data[barValue],0};
 			end
 
-			if data[Name]=="" then
-				ns.debug("empty");
-			end
-
 			local friendID,friendRep,friendMaxRep,friendName,friendText,friendTexture,friendTextLevel,friendThreshold,nextFriendThreshold = GetFriendshipReputation(data[factionID]);
 			if friendID~=nil then
 				data[factionStandingText] = friendTextLevel;

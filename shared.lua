@@ -10,6 +10,7 @@ local L = ns.L
 local _
 ns.debug = function() end
 ns.build = tonumber(gsub(({GetBuildInfo()})[1],"[|.]","")..({GetBuildInfo()})[2])
+ns.icon_fallback = 134400; -- interface\\icons\\INV_MISC_QUESTIONMARK;
 
 ns.LDB = LibStub("LibDataBroker-1.1");
 ns.LQT = LibStub("LibQTip-1.0");
@@ -17,6 +18,7 @@ ns.LDBI = LibStub("LibDBIcon-1.0");
 ns.LSM = LibStub("LibSharedMedia-3.0");
 ns.LT = LibStub("LibTime-1.0");
 ns.LC = LibStub("LibColors-1.0");
+ns.LDDM = LibStub("LibDropDownMenu");
 
 -- broker_everything colors
 ns.LC.colorset({
@@ -45,6 +47,7 @@ ns.LC.colorset({
 	["dkgreen"]		= "00aa00",
 
 	["dkgray"]		= "404040",
+	["gray2"]		= "A0A0A0",
 	["ltgray"]		= "b0b0b0",
 
 	["gold"]		= "ffd700",
@@ -59,6 +62,7 @@ ns.LC.colorset({
 --- misc shared data                    ---
   ---------------------------------------
 ns.realm = GetRealmName();
+ns.realm_short = ns.realm:gsub(" ","");
 ns.media = "Interface\\AddOns\\"..addon.."\\media\\";
 ns.locale = GetLocale();
 
@@ -102,7 +106,7 @@ if GetAddOnMetadata(addon,"Version")=="@project-version@" then
 	ns.debug = function(...)
 		ns.print("debug",...);
 	end
-	BrokerEverything = ns;
+	--BrokerEverything = ns;
 end
 
 
@@ -135,10 +139,13 @@ end
   ---------------------------------------
 --- Helpful function for extra tooltips ---
   ---------------------------------------
+local openTooltip = nil;
 ns.GetTipAnchor = function(frame, direction, parentTT)
-	local f,u,H,h,v = {frame:GetCenter()},{UIParent:GetWidth(),UIParent:GetCenter()};
-	h = (f[1]>u[2] and "RIGHT") or "LEFT"; v = (f[2]>u[3] and "TOP") or "BOTTOM";
-	u[4]=u[2]/4;u[5]=u[3]/4;u[6]=(u[2]*2)-u[4];u[7]=(u[3]*2)-u[5];
+	if not frame then return end
+	local f,u,i,H,h,v,V = {frame:GetCenter()},{UIParent:GetWidth(),UIParent:GetCenter()},.5;
+	h = (f[1]>u[2] and "RIGHT") or "LEFT";
+	v = (f[2]>u[3] and "TOP") or "BOTTOM";
+	u[4]=u[2]/4; u[5]=u[3]/4; u[6]=(u[2]*2)-u[4]; u[7]=(u[3]*2)-u[5];
 	H = (f[1]>u[6] and "RIGHT") or (f[1]<u[4] and "LEFT") or "";
 	V = (f[2]>u[7] and "TOP") or (f[2]<u[5] and "BOTTOM") or "";
 	if parentTT then
@@ -147,14 +154,14 @@ ns.GetTipAnchor = function(frame, direction, parentTT)
 		pH = (p[1]>u[6] and "RIGHT") or (p[1]<u[4] and "LEFT") or "";
 		pV = (p[2]>u[7] and "TOP") or (p[2]<u[5] and "BOTTOM") or "";
 		if direction=="horizontal" then
-			return {{pV..ph, parentTT, pV..(ph=="LEFT" and "RIGHT" or "LEFT"), 0, 0}};
+			return pV..ph, parentTT, pV..(ph=="LEFT" and "RIGHT" or "LEFT"), ph=="LEFT" and i or -i, 0;
 		end
-		return {{pv..pH, parentTT, (pv=="TOP" and "BOTTOM" or "TOP")..pH, 0, 0}};
+		return pv..pH, parentTT, (pv=="TOP" and "BOTTOM" or "TOP")..pH, 0, pv=="TOP" and i or -i;
 	else
 		if direction=="horizontal" then
-			return {{V..h, frame, V..(h=="LEFT" and "RIGHT" or "LEFT"), 0, 0}};
+			return V..h, frame, V..(h=="LEFT" and "RIGHT" or "LEFT"), h=="LEFT" and i or -i, 0;
 		end
-		return {{v..H, frame, (v=="TOP" and "BOTTOM" or "TOP")..H, 0, 0}};
+		return v..H, frame, (v=="TOP" and "BOTTOM" or "TOP")..H, 0, v=="TOP" and i or -i;
 	end
 end
 
@@ -164,38 +171,54 @@ ns.tooltipScaling = function(tooltip)
 	end
 end
 
-ns.hideTooltip = function(tooltip,ttName,ttForce,ttSetOnLeave)
+ns.acquireTooltip = function(name,...)
+	if openTooltip then
+		ns.hideTooltip(openTooltip,name,true);
+	end
+	openTooltip = ns.LQT:Acquire(name,...);
+	return openTooltip;
+end
+
+ns.hideTooltip = function(tooltip,ttName,ttForce,ttSetOnLeave,ignoreMouseIsOverBroker,dontLoop)
+	if not tooltip then return end
 	local modifier=ns.profile.GeneralOptions.ttModifierKey2;
 	ttForce = not not ttForce;
-	if (tooltip) then
-		if (not ttForce) and (modifier~="NONE") and (ns.tooltipChkOnShowModifier(modifier,false)) then
-			ttForce=true;
-		end
-		if (not ttForce) then
-			if (tooltip.key) and (tooltip.key==ttName) and (MouseIsOver(tooltip)) then
-				if (ttSetOnLeave) then
-					tooltip:SetScript("OnLeave",function(self)
-						ns.hideTooltip(tooltip,ttName);
-					end);
+	if not ttForce and modifier~="NONE" and ns.tooltipChkOnShowModifier(modifier,false) then
+		ttForce=true;
+	end
+	if not ttForce and tooltip.key==ttName and ttSetOnLeave then
+		if MouseIsOver(tooltip) then
+			tooltip:SetScript("OnLeave",function(self)
+				if not MouseIsOver(tooltip) and not MouseIsOver(tooltip.parent) then
+					ns.hideTooltip(tooltip,ttName,true,false,false);
 				end
-				return;
-			end
-			local f = GetMouseFocus()
-			if (f) and (not f:IsForbidden()) and (not f:IsProtected() and InCombatLockdown()) and (type(f.key)=="string") and (type(ttName)=="string") and (f.key==ttName) then
-				return; -- why that? tooltip can't be closed in combat with securebuttons as child elements. results in addon_action_blocked... 
-			end
-		elseif (tooltip.slider) and (tooltip.slider:IsShown()) then
-			ns.hideTooltip(tooltip,ttName,false,true);
+			end);
 			return;
 		end
-		if type(tooltip.secureButtons)=="table" then
-			ns.secureButton(false);
+	elseif not dontLoop and tooltip.slider and tooltip.slider:IsShown() then
+		ns.hideTooltip(tooltip,tooltip.key,false,true,false,true);
+		return;
+	elseif not ignoreMouseIsOverBroker and tooltip.parent and MouseIsOver(tooltip.parent) then
+		if ttforce then
+			tooltip:SetScript("OnUpdate",function(self)
+				if not MouseIsOver(tooltip.parent) then
+					ns.hideTooltip(tooltip,ttName,ttforce,false,true);
+				end
+			end);
 		end
-		tooltip:SetScript("OnUpdate",nil);
-		ns.LQT:Release(tooltip)
-		tooltip.key=nil;
-		return true;
+		return;
 	end
+	if type(tooltip.secureButtons)=="table" then
+		local f = GetMouseFocus()
+		if f and not f:IsForbidden() and (not f:IsProtected() and InCombatLockdown()) and type(f.key)=="string" and type(ttName)=="string" and f.key==ttName then
+			return; -- why that? tooltip can't be closed in combat with securebuttons as child elements. results in addon_action_blocked... 
+		end
+		ns.secureButton(false);
+	end
+	tooltip:SetScript("OnUpdate",nil);
+	ns.LQT:Release(tooltip);
+	openTooltip = nil;
+	return true;
 end
 
 ns.roundupTooltip = function(frame, tooltip, SetOnLeave, direction, parentTooltip)
@@ -203,21 +226,27 @@ ns.roundupTooltip = function(frame, tooltip, SetOnLeave, direction, parentToolti
 	if (ns.profile.GeneralOptions.tooltipScale==true) then
 		tooltip:SetScale(tonumber(GetCVar("uiScale")))
 	end
-	if frame==false then
-		frame = tooltip.parent;
-	end
+	frame = frame or tooltip.parent;
 	tooltip.parent = frame;
-	tooltip:SetClampedToScreen(true);
-	tooltip:ClearAllPoints();
-	local points = ns.GetTipAnchor(frame,direction,parentTooltip);
-	for i=1, #points do
-		tooltip:SetPoint(unpack(points[i]));
-	end
+	if not frame then return end
+	tooltip:Show();
+	tooltip:SetPoint(ns.GetTipAnchor(frame,direction,parentTooltip));
+
 	if (SetOnLeave) then
-		tooltip:SetScript("OnLeave", function(self)
-			ns.hideTooltip(self,self.key);
-		end)
+		frame._OnLeave = frame:GetScript("OnLeave");
+		if frame._OnLeave~=nil then
+			frame:SetScript("OnLeave", nil);
+			tooltip:SetScript("OnLeave", function(self)
+				ns.hideTooltip(self,self.key);
+				if frame._OnLeave~=nil then
+					frame:SetScript("OnLeave",frame._OnLeave);
+					frame._OnLeave(frame);
+					frame._OnLeave = nil;
+				end
+			end)
+		end
 	end
+
 	tooltip:SetScript("OnUpdate", function(self,eclipse)
 		if (self.eclipsed==nil) then self.eclipsed=0; end
 		self.eclipsed = self.eclipsed + eclipse;
@@ -230,8 +259,9 @@ ns.roundupTooltip = function(frame, tooltip, SetOnLeave, direction, parentToolti
 		-- Pass true as second parameter because hooking OnHide causes C stack overflows
 		_G.TipTac:AddModifiedTip(tooltip, true);
 	end
-	tooltip:AddSeparator(1,0,0,0,0);
+	tooltip:AddSeparator(2,0,0,0,0);
 	tooltip:UpdateScrolling(GetScreenHeight() * (ns.profile.GeneralOptions.maxTooltipHeight/100));
+	tooltip:SetClampedToScreen(true);
 	tooltip:Show();
 end
 
@@ -315,7 +345,7 @@ do
 	local objs = {}
 	ns.I = setmetatable({},{
 		__index = function(t,k)
-			local v = {iconfile="interface\\icons\\inv_misc_questionmark",coords={0.05,0.95,0.05,0.95}}
+			local v = {iconfile=ns.icon_fallback,coords={0.05,0.95,0.05,0.95}}
 			rawset(t, k, v)
 			return v
 		end,
@@ -358,6 +388,14 @@ do
 end
 
 
+-- ------------------------------ --
+-- missing real found function    --
+-- ------------------------------ --
+ns.round = function(num,precision)
+	return tonumber(("%."..(tonumber(precision) or 0).."f"):format(num));
+end
+
+
 -- -------------------------------------------------- --
 -- Function to Sort a table by the keys               --
 -- Sort function fom http://www.lua.org/pil/19.3.html --
@@ -380,7 +418,7 @@ ns.pairsByKeys = function(t, f)
 	return iter
 end
 
-ns.reversePairsByKeys = function(t,f)
+ns.reversePairsByKeys = function(t, f)
 	local a = {}
 	for n in ipairs(t) do
 		table.insert(a,n)
@@ -414,6 +452,7 @@ end
 -- Some string  function --
 -- --------------------- --
 ns.strWrap = function(text, limit, insetCount, insetChr, insetLastChr)
+	if not text then return ""; end
 	if text:match("\n") or text:match("%|n") then
 		local txt = gsub(text,"%|n","\n");
 		local strings,tmp = {strsplit("\n",txt)},{};
@@ -485,15 +524,13 @@ end
 --		}
 -- ----------------------------------------
 do
-	local sbf,sbf_hookOnClick
+	local sbf_hooks,sbfObject,sbf,_sbf = false,{};
 	ns.secureButton = function(self,obj)
 		if self==nil or InCombatLockdown() then
 			return;
 		end
 
 		if sbf~=nil and self==false then
-			sbf:SetParent(UIParent);
-			sbf:ClearAllPoints();
 			sbf:Hide();
 			return;
 		end
@@ -502,31 +539,28 @@ do
 			return;
 		end
 
-		sbf = sbf or CreateFrame("Button",addon.."_SecureButton",UIParent,"SecureActionButtonTemplate");
+		sbfObject = obj;
+
+		if not sbf then
+			sbf = CreateFrame("Button",addon.."_SecureButton",UIParent,"SecureActionButtonTemplate, SecureHandlerEnterLeaveTemplate, SecureHandlerShowHideTemplate");
+			sbf:SetHighlightTexture([[interface\friendsframe\ui-friendsframe-highlightbar-blue]],true);
+			sbf:HookScript("OnClick",function(_,button) if type(sbfObject.OnClick)=="function" then sbfObject.OnClick(self,button,sbfObject); end end);
+			sbf:HookScript("OnEnter",function() if type(sbfObject.OnEnter)=="function" then sbfObject.OnEnter(self,sbfObject); end end);
+			sbf:HookScript("OnLeave",function() if type(sbfObject.OnLeave)=="function" then sbfObject.OnLeave(self,sbfObject); end end);
+		end
+
 		sbf:SetParent(self);
 		sbf:SetPoint("CENTER");
-		sbf:SetWidth(self:GetWidth());
-		sbf:SetHeight(self:GetHeight());
-		sbf:SetHighlightTexture([[interface\friendsframe\ui-friendsframe-highlightbar-blue]],true);
-
-		if sbf_hookOnClick==nil then
-			sbf:HookScript("OnClick",function()
-				if type(sbf_hookOnClick)=="function" then
-					sbf_hookOnClick();
-				end
-			end);
-		end
-		sbf_hookOnClick = false;
-
-		if type(obj.hookOnClick)=="function" then
-			sbf_hookOnClick = obj.hookOnClick;
-		end
+		sbf:SetSize(self:GetSize());
 
 		for k,v in pairs(obj.attributes) do
 			if type(k)=="string" and v~=nil then
 				sbf:SetAttribute(k,v);
 			end
 		end
+
+		sbf:SetAttribute("_onleave","self:Hide()");
+		sbf:SetAttribute("_onhide","self:SetParent(UIParent);self:ClearAllPoints();");
 
 		sbf:Show();
 	end
@@ -539,29 +573,114 @@ end
 -- -------------------------------------------------------------- --
 do
 	--- local elements
-	local d,_ = {
-		ids={}, seen={}, bags={},inv={},item={}, callbacks={any={},bags={},inv={},item={}}, preScanCallbacks={}, links={},
-		elapsed = 0, update = true, invMin = 0, invMax = 0
-	}
-	local GetItemInfoFailed = false;
+	local d,update,_ = {ids={}, seen={}, bags={},inv={},item={}, callbacks={any={},bags={},inv={},item={}}, preScanCallbacks={}, linkData={}, tooltipData={}, NeedTooltip={}};
+	local GetItemInfoFailed,IsEnabled = false,false;
+	local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d*)");
+	local _UPGRADES = gsub(ITEM_UPGRADE_TOOLTIP_FORMAT,": %%d/%%d","");
+
+	-- EMPTY_SOCKET_PRISMATIC and EMPTY_SOCKET_NO_COLOR are identical in some languages... Need only one of it.
+	local EMPTY_SOCKETS = {"RED","YELLOW","META","HYDRAULIC","BLUE","PRISMATIC","COGWHEEL","NO_COLOR"};
+	if EMPTY_SOCKET_PRISMATIC==EMPTY_SOCKET_NO_COLOR then
+		tremove(EMPTY_SOCKETS,8);
+	end
+
+	local function GetObjectLinkData(obj)
+		if not d.linkData[obj.link] then
+			local _,_,_,data = obj.link:match("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
+			d.linkData[obj.link] = {strsplit(":",data or "")};
+			local dataKeys = {"enchantId", "gems", "gems", "gems", "gems" , "suffix", "unique", "linkLvl", "reforging","spelleffect"};
+			for i=1, #d.linkData[obj.link] do
+				d.linkData[obj.link][i] = tonumber(d.linkData[obj.link][i]) or 0;
+				if dataKeys[i] then
+					if dataKeys[i]=="gems" then
+						tinsert(obj[dataKeys[i]],d.linkData[obj.link][i]);
+					else
+						obj[dataKeys[i]] = d.linkData[obj.link][i];
+					end
+				end
+			end
+		end
+		obj.linkData = d.linkData[obj.link];
+	end
+
+	local function GetObjectTooltipData(obj,query,instantMode)
+		if instantMode==true then
+			if not d.tooltipData[obj.link] then
+				local data = ns.ScanTT.query(query,true);
+				if #data.lines>0 then
+					d.tooltipData[obj.link] = CopyTable(data.lines);
+				end
+			end
+		else
+			local scanner;
+			if obj.obj then
+				scanner = obj;
+				obj = obj.obj;
+			end
+			if not d.tooltipData[obj.link] then
+				if not scanner then
+					ns.ScanTT.query({type="link",link=obj.link,obj=obj,callback=GetObjectTooltipData});
+					return;
+				end
+				if scanner.lines and #scanner.lines>0 then
+					d.tooltipData[obj.link] = CopyTable(scanner.lines);
+					-- change flag?
+				end
+			end
+		end
+		obj.tooltip = d.tooltipData[obj.link] or {};
+		if obj.itemType==ARMOR or obj.itemType==WEAPON then
+			for i=2, _G.min(#obj.tooltip,20) do
+				local lvl = tonumber(obj.tooltip[i]:match(_ITEM_LEVEL));
+				if lvl then
+					obj.level=lvl;
+				elseif obj.tooltip[i]:find(_UPGRADES) then
+					_,obj.upgrades = strsplit(" ",obj.tooltip[i]);
+				else
+					local socketCount,inLines = 0,{};
+					-- detect sockets in tooltip
+					for n=1, #EMPTY_SOCKETS do
+						if obj.tooltip[i]==_G["EMPTY_SOCKET_"..EMPTY_SOCKETS[n]] then
+							socketCount=socketCount+1;
+							tinsert(inLines,i);
+						end
+					end
+					-- check sockets
+					if socketCount>0 then
+						for i=1, #obj.gems do
+							if i>socketCount then
+								obj.gems[i]=false;
+							elseif obj.gems[i]==0 then
+								obj.empty_gem=true;
+							end
+						end
+					end
+				end
+			end
+		end
+	end
 
 	local function scanner()
+		if not IsEnabled then return end
+
 		local items,seen,bags,inv,callbacks_item = {},{},{},{},{};
 		local inv_changed,bags_changed=false,false;
-		local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d+)");
 		local _GetItemInfoFailed=GetItemInfoFailed;
-		local _UPGRADES = gsub(ITEM_UPGRADE_TOOLTIP_FORMAT,": %%d/%%d","");
-
 		-- get all itemIds from all items in the bags
 		for bag=0, NUM_BAG_SLOTS do
 			for slot=1, GetContainerNumSlots(bag) do
 				local id = GetContainerItemID(bag,slot);
 				if (id) then
 					if(items[id]==nil)then items[id]={}; end
-					local obj = {type="bag", bag=bag, slot=slot, id=id};
-					_, obj.count, obj.locked, _, obj.readable, obj.lootable = GetContainerItemInfo(bag, slot);
-					obj.name, obj.link, obj.rarity, obj.level, _, obj.type, obj.subType, obj.stackCount, _, obj.icon, obj.price = GetItemInfo(id);
+					local obj = {type="bag", bag=bag, slot=slot, id=id, gems={},empty_gem=false};
+					obj.icon, obj.count, obj.locked, _, obj.readable, obj.lootable, obj.link = GetContainerItemInfo(bag, slot);
+					obj.name, _, obj.rarity, obj.level, _, obj.itemType, obj.subType, obj.stackCount, _, _, obj.price = GetItemInfo(obj.link);
+					obj.durability,obj.durability_max = GetContainerItemDurability(bag, slot);
 					if obj.name then
+						GetObjectLinkData(obj);
+						if obj.itemType==ARMOR or obj.itemType==WEAPON or ns.artifactpower_items[id] or d.NeedTooltip[id] then
+							GetObjectTooltipData(obj,{type="bag",bag=bag,slot=slot--[[,link=obj.link]]} --[[, ns.artifactpower_items[id]~=nil or d.NeedTooltip[id]~=nil]]);
+						end
 						tinsert(items[id],obj);
 						seen[id]=true; bags[bag..":"..slot]=id;
 						if d.bags[bag..":"..slot]~=id and d.callbacks.item[id] then
@@ -591,31 +710,13 @@ do
 			local id, unknown1 = GetInventoryItemID("player",slotIndex);
 			if type(id)=="number" then
 				if(items[id]==nil)then items[id]={}; end
-				local obj = {type="inv",slotName=slotNames[slotIndex],slotIndex=slotIndex,durability={},id=id,unknown1=unknown1};
+				local obj,lvl = {type="inv",slotName=slotNames[slotIndex],slotIndex=slotIndex,durability={},id=id,unknown1=unknown1,gems={},empty_gem=false};
 				obj.link = GetInventoryItemLink("player",slotIndex);
 				obj.name, _, obj.rarity, obj.level, _, obj.itemType, obj.subType, _, _, obj.icon, obj.price = GetItemInfo(obj.link);
-				local _,_,_,_,_,data = obj.link:find("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
-				local dataKeys = {"enchantId", "gemId1", "gemId2", "gemId3", "gemId4", "suffix", "unique", "linkLvl", "reforging"};
-				for i,v in pairs({strsplit(":",data)})do
-					local k,v="unnamed_"..i,tonumber(v) or 0;
-					if dataKeys[i] then k=dataKeys[i]; end
-					obj[k] = v;
-				end
-				local data,lvl,upgrades = ns.ScanTT.query({type="link",link=obj.link},true);
-				if data and data.lines then
-					obj.tooltip,lvl = data.lines,nil;
-					for i=2, _G.min(#data.lines,5) do
-						lvl = tonumber(data.lines[i]:match(_ITEM_LEVEL));
-						if lvl then
-							obj.level=lvl;
-						elseif data.lines[i]:match(_UPGRADES) then
-							_,obj.upgrades = strsplit(" ",data.lines[i]);
-						end
-					end
-				end
 				obj.isBroken = GetInventoryItemBroken("player",slotIndex);
-				obj.gems = {GetInventoryItemGems~=nil and GetInventoryItemGems(slotIndex) or nil};
-				obj.durability.current, obj.durability.max = GetInventoryItemDurability(slotIndex);
+				obj.durability, obj.durability_max = GetInventoryItemDurability(slotIndex);
+				GetObjectLinkData(obj);
+				GetObjectTooltipData(obj,{type="inventory",slot=slotIndex,link=obj.link});
 				tinsert(items[id],obj);
 				seen[id]=true;
 				inv[slotIndex]=obj;
@@ -692,8 +793,8 @@ do
 		if GetItemInfoFailed~=false then
 			if GetItemInfoFailed>4 then
 				GetItemInfoFailed=false;
-			else
-				d.update=true;
+			elseif ns.pastPEW then
+				update();
 			end
 		elseif GetItemInfoFailed==_GetItemInfoFailed then
 			GetItemInfoFailed = false;
@@ -701,21 +802,25 @@ do
 	end
 
 	--- event and update frame
-	local f = CreateFrame("Frame");
-	f:SetScript("OnEvent",function(self,event,...)
+	local locked,delay,f = false,5,CreateFrame("Frame");
+	function update()
+		if locked then return end locked=true;
+		C_Timer.After(delay,function()
+			scanner();
+			locked=nil;
+		end);
+	end
+	f:SetScript("OnEvent",function(self,event)
 		if event=="PLAYER_ENTERING_WORLD" then
-			if d.ticker==nil then
-				d.ticker=C_Timer.NewTicker(0.5,function()
-					if d.update then
-						d.update=false;
-						scanner();
-					end
-				end);
-			end
+			update();
+			delay=0.7;
+			self.PEW=true;
 			self:UnregisterEvent(event);
+		elseif self.PEW then
+			update();
 		end
-		d.update=true;
 	end);
+	f:RegisterEvent("GET_ITEM_INFO_RECEIVED");
 	f:RegisterEvent("ITEM_UPGRADE_MASTER_UPDATE");
 	f:RegisterEvent("BAG_UPDATE_DELAYED");
 	f:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
@@ -741,6 +846,7 @@ do
 			d.callbacks[mode][modName] = func;
 		end
 		d.callbacks.active = true;
+		IsEnabled = true;
 	end;
 	ns.items.RegisterPreScanCallback  = function(modName,func)
 		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
@@ -749,6 +855,22 @@ do
 			d.preScanCallbacks={};
 		end
 		d.preScanCallbacks[modName]=func;
+		IsEnabled = true;
+	end;
+	ns.items.Enable = function()
+		IsEnabled = true;
+	end;
+	ns.items.RegisterNeedTooltip = function(id)
+		if type(id)=="table" then
+			for i=1, #id do
+				ns.items.RegisterNeedTooltip(id[i]);
+			end
+		else
+			local id = tonumber(id);
+			if id then
+				d.NeedTooltip[id]=true;
+			end
+		end
 	end;
 	ns.items.exist = function(itemId)
 		return d.ids[itemId] or false;
@@ -757,7 +879,8 @@ do
 		return d.ids;
 	end;
 	ns.items.UpdateNow = function()
-		d.update=true;
+		if not IsEnabled and ns.pastPEW then return end
+		update();
 	end
 	ns.items.GetBagItems = function()
 		local result = {};
@@ -768,19 +891,6 @@ do
 	end
 	ns.items.GetInventoryItems = function()
 		return d.inv;
-		--[[
-		local result = {};
-		for _,id in pairs(d.bags)do
-			if d.ids[id] and #d.ids[id]>0 then
-				for i=1, #d.ids[id] do
-					if d.ids[id][i] and d.ids[id][i].type=="inv" then
-						result[id]=d.ids[id][1];
-					end
-				end
-			end
-		end
-		return result;
-		]]
 	end
 	ns.items.GetInventoryItemBySlotIndex = function(index)
 		if d.inv[index]~=nil and d.ids[d.inv[index]] then
@@ -791,33 +901,60 @@ do
 			end
 		end
 	end
-	ns.items.GetInventoryItemLevelMinMax = function()
-		return d.invMin, d.invMax;
-	end
 end
 
+
+-- -------------------------------------------------------------- --
+-- UseContainerItem hook 
+-- -------------------------------------------------------------- --
+do
+	local callback = {};
+	hooksecurefunc("UseContainerItem",function(bag,slot)
+		if bag and slot then
+			local itemId = tonumber((GetContainerItemLink(bag,slot) or ""):match("Hitem:([0-9]+)"));
+			if itemid and callback[itemId] then
+				for i,v in pairs(callback[itemId])do
+					if type(v)=="function" then v(bag,slot,itemId); end
+				end
+			end
+		end
+	end);
+	ns.UseContainerItemHook = {
+		registerItemID = function(modName,itemId,callbackFunc)
+			if callback[itemId]==nil then
+				callback[itemId] = {};
+			end
+			callback[itemId][modName] = callbackFunc;
+		end
+	};
+end
 
 -- --------------------- --
 -- scanTooltip functions --
 -- --------------------- --
 do
-	local scanTooltip = CreateFrame("GameTooltip",addon.."_ScanTooltip",UIParent,"GameTooltipTemplate");
-	local scanTooltip2 = CreateFrame("GameTooltip",addon.."_ScanTooltip2",UIParent,"GameTooltipTemplate");
-	scanTooltip:SetScale(0.0001);
-	scanTooltip:SetAlpha(0);
-	scanTooltip:Hide();
-	scanTooltip2:SetScale(0.0001);
-	scanTooltip2:SetAlpha(0);
-	scanTooltip2:Hide();
+	local QueueModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip",UIParent,"GameTooltipTemplate");
+	local InstantModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip2",UIParent,"GameTooltipTemplate");
+	QueueModeScanTT:SetScale(0.0001);
+	InstantModeScanTT:SetScale(0.0001);
+	QueueModeScanTT:SetAlpha(0);
+	InstantModeScanTT:SetAlpha(0);
+	QueueModeScanTT:Hide();
+	InstantModeScanTT:Hide();
+	-- remove scripts from tooltip... prevents taint log spamming.
+	for _,v in ipairs({"OnLoad","OnHide","OnTooltipAddMoney","OnTooltipSetDefaultAnchor","OnTooltipCleared"})do
+		QueueModeScanTT:SetScript(v,nil);
+		InstantModeScanTT:SetScript(v,nil);
+	end
 
 	ns.ScanTT = {};
 	local queries = {};
 	local ticker = nil;
-	local duration = 0.2;
+	local duration = 0.05;
 	local try = 0;
 
 	local function collect(tt,Data)
-		local data;
+		local data,_;
 		if not Data then
 			if #queries==0 then
 				if(ticker)then
@@ -850,19 +987,19 @@ do
 			data.startTime, data.duration, data.isEnabled = GetContainerItemCooldown(data.bag,data.slot);
 			data.hasCooldown, data.repairCost = tt:SetBagItem(data.bag,data.slot);
 			data.str = "bag"..data.bag..", slot"..data.slot;
+		elseif data._type=="inventory" then
+			data._type="link";
+			_,data.hasCooldown, data.repairCost = tt:SetInventoryItem("player", data.slot); -- repair costs
+			data.link=data.link or "item:"..data.id;
 		elseif data._type=="item" then
 			data._type="link";
-			data.link="item:"..data.id;
+			data.link=data.link or "item:"..data.id;
 		elseif data._type=="unit" then
 			data._type="link";
-			data.link="unit:Creature-0-0-0-0-"..data.id.."-0";
+			data.link=data.link or "unit:Creature-0-0-0-0-"..data.id.."-0";
 		elseif data._type=="quest" then
 			data._type="link";
-			data.link="quest:"..data.id..":"..data.level;
-			--if ns.build>70000000 then
-			--	data.link = data.link..":-1";
-			--end
-		--elseif data.type=="" then
+			data.link=data.link or "quest:"..data.id..":"..data.level;
 		end
 
 		if data._type=="link" then
@@ -871,7 +1008,7 @@ do
 		end
 
 		try = try + 1;
-		if try>3 then try=0; end
+		if try>8 then try=0; end
 
 		tt:Show();
 
@@ -916,7 +1053,7 @@ do
 				link = <string>
 		})
 	--]]
-	ns.ScanTT.query = function(data,instant) -- type, [link|id,bag,slot], callback
+	ns.ScanTT.query = function(data,instant)
 		if data.type=="bag" then
 			assert(type(data.bag)=="number","bag must be a number, got "..type(data.bag));
 			assert(type(data.slot)=="number","slot must be a number, got "..type(data.slot));
@@ -928,85 +1065,15 @@ do
 			--assert(type(data.id)=="number","unit
 		end
 		if instant then
-			return collect(scanTooltip2,data);
+			return collect(InstantModeScanTT,data);
 		else
 			tinsert(queries,data);
-			if(ticker==nil)then
-				C_Timer.After(0.5,function()
-					if ticker==nil then
-						ticker = C_Timer.NewTicker(duration,function() collect(scanTooltip); end);
-					end
-				end);
+			if ticker==nil then
+				ticker = C_Timer.NewTicker(duration,function() collect(QueueModeScanTT); end);
 			end
 		end
 	end
 end
-
-
--- --------------------------------------- --
--- GetRealFaction2PlayerStanding           --
--- retrun standingID of a faction          --
--- if faction unknown or argument nil then --
--- returns this function the standingID 4  --
--- --------------------------------------- --
-do
-	function ns.GetFaction2PlayerStanding(faction) -- FactionID or FactionName
-		local collapsed, standing = {},4
-		if faction~=nil then
-			for i=GetNumFactions(), 1, -1 do -- 1. round: expand all collapsed headers
-				local name, _, _, _, _, _, _, _, isHeader, isCollapsed, _, _, _, _, _, _ = GetFactionInfo(i)
-				if isHeader and isCollapsed then
-					collaped[name] = true
-					ExpandFactionHeader(i)
-				end
-			end
-			for i=1, GetNumFactions() do -- 2. round: search faction and note his standing
-				local name, _, standingID, _, _, _, _, _, _, _, _, _, _, factionID, _, _ = GetFactionInfo(i)
-				if faction==name or faction==factionID then
-					standing = standingID
-				end
-			end
-			for i=GetNumFactions(), 1, -1 do -- 3. round: collapsed all by this function expanded headers. 
-				local name, _, _, _, _, _, _, _, isHeader, isCollapsed, _, _, _, _, _, _ = GetFactionInfo(i)
-				if isHeader and collapsed[name] then
-					CollapseFactionHeader(i)
-				end
-			end
-		end
-		return standing
-	end
-	-- TODO: need review. maybe performance increasements...
-	--[[
-		add a table for found factions.
-			if table not nil, use table instead recrawle through the faction list.
-		add an event-frame for faction update event.
-			if event triggered, wipe faaction table.
-		~ more memory usage vs. scanning faction list on any request of this function...
-	]]
-
-	-- ----------------
-	-- UnitFaction
-	-- ----------------
-	function ns.UnitFaction(unit)
-		scanTooltip:SetUnit(unit)
-		scanTooltip:Show()
-		local reg,_next,faction = {scanTooltip:GetRegions()},false,nil
-		scanTooltip:Hide()
-		for i,v in ipairs(reg) do
-			if v:GetObjectType()=="FontString" then
-				v = v:GetText() or ""
-				if _next==false and v:match("^"..TOOLTIP_UNIT_LEVEL) then
-					_next = true
-				elseif _next==true then
-					faction = v
-					_next = nil
-				end
-			end
-		end
-		return faction, ns.GetFaction2PlayerStanding(faction)
-	end
-end
-
 
 -- ----------------------------------------------------- --
 -- goldColor function to display amount of gold          --
@@ -1126,10 +1193,6 @@ end
 -- ---------------- --
 do
 	ns.EasyMenu = {};
-	local UIDropDownMenuDelegate = CreateFrame("FRAME");
-	local UIDROPDOWNMENU_MENU_LEVEL;
-	local UIDROPDOWNMENU_MENU_VALUE;
-	local UIDROPDOWNMENU_OPEN_MENU;
 	local self = ns.EasyMenu;
 	self.menu = {};
 	self.controlGroups = {};
@@ -1176,9 +1239,10 @@ do
 
 	self.InitializeMenu = function()
 		if (not self.frame) then
-			self.frame = CreateFrame("Frame", addon.."EasyMenu", UIParent, "UIDropDownMenuTemplate");
+			self.frame = CreateFrame("Frame", addon.."EasyMenu", UIParent, "LibDropDownMenuTemplate");
 		end
 		wipe(self.menu);
+		return self.frame;
 	end
 
 	self.addEntry = function(D,P)
@@ -1243,7 +1307,11 @@ do
 			end
 
 			if (D.checked~=nil) then
-				entry.checked      = D.checked;
+				--if type(D.checked)=="function" then
+				--	entry.checked = D.checked(D);
+				--else
+					entry.checked = D.checked;
+				--end
 				if (entry.keepShownOnClick==nil) then
 					entry.keepShownOnClick = false;
 				end
@@ -1337,7 +1405,9 @@ do
 					checked = function() return ns.profile[modName][v.name]; end,
 					func  = function()
 						ns.profile[modName][v.name] = not ns.profile[modName][v.name];
-						if (v.event and ns.modules[modName].onevent) then ns.modules[modName].onevent({},"BE_DUMMY_EVENT"); end
+						if v.event and ns.modules[modName].onevent then
+							ns.modules[modName].onevent(ns.modules[modName].eventFrame,v.event~=true and v.event or "BE_DUMMY_EVENT");
+						end
 					end,
 					tooltip = {v.label,tooltip},
 				});
@@ -1352,10 +1422,14 @@ do
 						label = L[valLabel],
 						radio = valKey,
 						keepShown = false,
-						checked = function() return (ns.profile[modName][v.name]==valKey); end,
+						checked = function()
+							return (ns.profile[modName][v.name]==valKey);
+						end,
 						func = function(self)
 							ns.profile[modName][v.name] = valKey;
-							ns.modules[modName].onevent({},"BE_UPDATE_CLICKOPTIONS");
+							if v.event and ns.modules[modName].onevent then
+								ns.modules[modName].onevent(ns.modules[modName].eventFrame,v.event~=true and v.event or "BE_DUMMY_EVENT");
+							end
 							self:GetParent():Hide();
 						end
 					},p);
@@ -1366,7 +1440,7 @@ do
 		end
 	end
 
-	self.ShowMenu = function(parent, parentX, parentY)
+	self.ShowMenu = function(parent, parentX, parentY, callbackOnClose)
 		local anchor, x, y, displayMode = "cursor", nil, nil, "MENU"
 
 		if (parent) then
@@ -1376,25 +1450,30 @@ do
 		end
 
 		self.addEntry({separator=true});
-		self.addEntry({label=CANCEL, func=function() DropDownList1:Hide(); end});
+		--self.addEntry({label=CANCEL, func=function() LibDropDownMenu_List1:Hide(); end});
+		self.addEntry({label=L["Close menu"], func=function() LibDropDownMenu_List1:Hide(); if callbackOnClose then callbackOnClose() end end});
 
-		UIDropDownMenu_Initialize(self.frame, EasyMenu_Initialize, displayMode, nil, self.menu);
-		ToggleDropDownMenu(1, nil, self.frame, anchor, x, y, self.menu, nil, nil);
+		if openTooltip then
+			ns.hideTooltip(openTooltip,openTooltip.key,true,false,true);
+		end
+
+		ns.LDDM.UIDropDownMenu_Initialize(self.frame, ns.LDDM.EasyMenu_Initialize, displayMode, nil, self.menu);
+		ns.LDDM.ToggleDropDownMenu(1, nil, self.frame, anchor, x, y, self.menu, nil, nil);
 	end
 
 	self.ShowDropDown = function(parent)
 		local displaymode = nil;
 
-		UIDropDownMenu_Initialize(self.frame, EasyMenu_Initialize);
-		ToggleDropDownMenu(nil, nil, self.frame);
+		ns.LDDM.UIDropDownMenu_Initialize(self.frame, ns.LDDM.EasyMenu_Initialize);
+		ns.LDDM.ToggleDropDownMenu(nil, nil, self.frame);
 	end
 
 	self.Refresh = function(level)
-		UIDropDownMenu_Refresh(self.frame,nil,level);
+		ns.LDDM.UIDropDownMenu_Refresh(self.frame,nil,level);
 	end
 
 	self.RefreshAll = function()
-		UIDropDownMenu_RefreshAll(self.frame);
+		ns.LDDM.UIDropDownMenu_RefreshAll(self.frame);
 	end
 end
 
@@ -1542,10 +1621,12 @@ do
 	};
 end
 
+
 -- ----------------
 -- tooltip graph (unstable)
 -- ----------------
 do
+	--[[
 	local width,height,space,count = 2,50,1,50;
 	local graphWidth=width*count+(space*count-1);
 
@@ -1627,4 +1708,87 @@ do
 	end
 
 	ns.graphTT = g;
+	--]]
+end
+
+
+-- --------------------------------------- --
+-- shared data for questlog & world quests --
+-- --------------------------------------- --
+do
+	ns.questTags = {
+		[QUEST_TAG_GROUP] = "g",
+		[QUEST_TAG_PVP] = {"pvp","violet"},
+		[QUEST_TAG_DUNGEON] = "d",
+		[QUEST_TAG_HEROIC] = "hc",
+		[QUEST_TAG_RAID] = "r",
+		[QUEST_TAG_RAID10] = "r10",
+		[QUEST_TAG_RAID25] = "r25",
+		[QUEST_TAG_SCENARIO] = "s",
+		[QUEST_TAG_ACCOUNT] = "a",
+		[QUEST_TAG_LEGENDARY] = {"leg","orange"},
+		TRADE_SKILLS = {"ts","green"}
+	};
+	local tradeskills_update;
+	local tradeskills_mt = {__call=function(t,k)
+		if value then return rawget(t,k); end
+		tradeskills_update();
+	end};
+	ns.tradeskills = setmetatable({},tradeskills_mt);
+	local ts_try=0;
+	function tradeskills_update()
+		if ns.data.tradeskills==nil then
+			ns.data.tradeskills = {};
+		end
+		if ns.data.tradeskills[ns.locale]==nil then
+			ns.data.tradeskills[ns.locale]={};
+		end
+		ns.tradeskills = setmetatable(ns.data.tradeskills[ns.locale],tradeskills_mt);
+		ts_try = ts_try+1;
+		local fail = false;
+		for spellId, spellName in pairs({
+			[1804] = "Lockpicking", [2018]  = "Blacksmithing", [2108]  = "Leatherworking", [2259]  = "Alchemy",     [2550]  = "Cooking",     [2575]   = "Mining",
+			[2656] = "Smelting",    [2366]  = "Herbalism",     [3273]  = "First Aid",      [3908]  = "Tailoring",   [4036]  = "Engineering", [7411]   = "Enchanting",
+			[8613] = "Skinning",    [25229] = "Jewelcrafting", [45357] = "Inscription",    [53428] = "Runeforging", [78670] = "Archaeology", [131474] = "Fishing",
+		}) do
+			if ns.tradeskills[spellId]==nil then
+				local spellLocaleName,_,spellIcon = GetSpellInfo(spellId);
+				if spellLocaleName then
+					ns.tradeskills[spellLocaleName] = true;
+					ns.tradeskills[spellId] = true;
+				else
+					fail = true;
+				end
+			end
+		end
+		if fail and ts_try<=3 then
+			C_Timer.After(0.5, function()
+				tradeskills_update()
+			end);
+		end
+	end
+end
+
+-- -----------------
+-- text bar
+-- ----------------
+-- num, {<max>,<cur>[,<rest>]},{<max>,<cur>[,<rest>]}
+ns.textBar = function(num,values,colors,Char)
+	local iMax,iMin,iRest = 1,2,3;
+	local bar,chars,Char = "",{},Char or "=";
+	values[iRest] = values[iRest] or 0;
+	if values[iMax]==1 then
+		values[iMax],values[iMin],values[iRest] = values[iMax]*100,values[iMin]*100,values[iRest]*100;
+	end
+	local ppc = values[iMax]/num; -- percent per character
+	tinsert(chars,{ns.round(values[iMin]/ppc),colors[iMin]});
+	tinsert(chars,{values[iMin]<100 and ns.round(values[iRest]/ppc) or 0,colors[iRest]});
+	local cur_rest = chars[1][1]+chars[2][1];
+	tinsert(chars,{cur_rest>=num and 0 or num-cur_rest,colors[iMax]});
+	for i,v in ipairs(chars)do
+		if v[1]>0 then
+			bar = bar..ns.LC.color(v[2] or "white",strrep(Char,v[1]));
+		end
+	end
+	return bar;
 end

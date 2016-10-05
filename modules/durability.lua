@@ -210,7 +210,7 @@ local function lastRepairs_add(cost,fund,repairType)
 	end
 	last_repairs = t;
 	if (ns.profile[name].saveCosts) then
-		Broker_Everything_CharacterDB[ns.player.name_realm][name] = t;
+		ns.toon[name] = t;
 	end
 end
 
@@ -242,7 +242,7 @@ local function AutoRepairAll(costs)
 end
 
 local function createTooltip(self, tt)
-	if (not tt.key) or (tt.key~=ttName) then return; end -- don't override other LibQTip tooltips...
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear()
 	local repairCost, equipCost, bagCost, durabilityA, durabilityL, durabilityLslot = scanAll();
@@ -344,7 +344,7 @@ function createMenu(self)
 		colorName = "yellow",
 		func  = function()
 			wipe(last_repairs);
-			wipe(Broker_Everything_CharacterDB[ns.player.name_realm][name]);
+			wipe(ns.toon[name]);
 		end,
 		disabled = (false)
 	});
@@ -356,31 +356,39 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 
-	hiddenTooltip = CreateFrame("GameTooltip", "BE_Durability_ScanTip", nil, "GameTooltipTemplate")
-	hiddenTooltip:SetOwner(UIParent, "ANCHOR_NONE")
+	ns.items.Enable();
+
+	if not hiddenTooltip then
+		hiddenTooltip = CreateFrame("GameTooltip", "BE_Durability_ScanTip", nil, "GameTooltipTemplate")
+		hiddenTooltip:SetOwner(UIParent, "ANCHOR_NONE")
+		for _,v in ipairs({"OnLoad","OnHide","OnTooltipAddMoney","OnTooltipSetDefaultAnchor","OnTooltipCleared"})do
+			hiddenTooltip:SetScript(v,nil);
+		end
+	end
 
 	date_format = ns.profile[name].dateFormat;
 
 	if be_durability_db~=nil then
-		Broker_Everything_CharacterDB[ns.player.name_realm][name] = be_durability_db;
+		ns.toon[name] = be_durability_db;
 		be_durability_db = nil;
 	end
 
-	if (Broker_Everything_CharacterDB[ns.player.name_realm][name]==nil) then
-		Broker_Everything_CharacterDB[ns.player.name_realm][name] = {};
-	end
-	if (ns.profile[name].saveCosts) then
-		last_repairs = Broker_Everything_CharacterDB[ns.player.name_realm][name];
+	if (ns.toon[name]==nil) then
+		ns.toon[name] = {};
 	end
 
-	_G['MerchantRepairAllButton']:HookScript("OnClick",function(self,button)
+	if (ns.profile[name].saveCosts) then
+		last_repairs = ns.toon[name];
+	end
+
+	MerchantRepairAllButton:HookScript("OnClick",function(self,button)
 		ns.modules[name].onevent({},"BE_EVENT_REPAIRALL_PLAYER");
 	end);
 
-	_G['MerchantGuildBankRepairButton']:HookScript("OnClick",function(self,button)
+	MerchantGuildBankRepairButton:HookScript("OnClick",function(self,button)
 		ns.modules[name].onevent({},"BE_EVENT_REPAIRALL_GUILD");
 	end);
 end
@@ -460,7 +468,6 @@ ns.modules[name].onevent = function(self,event,msg)
 end
 
 -- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].ontooltip = function(tt) end
@@ -468,24 +475,11 @@ end
 
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-
-	tt = ns.LQT:Acquire(ttName, 2, "LEFT", "RIGHT");
+	tt = ns.acquireTooltip(ttName, 2, "LEFT", "RIGHT");
 	createTooltip(self, tt);
 end
 
 ns.modules[name].onleave = function(self)
 	if (tt) then ns.hideTooltip(tt,ttName,true); end
 end
-
-
---[[
-
-untracked issue:
-	1. merchant open
-	2. enter single repair mode
-	3. use complete repair by own money and guild fund
-	4. Error message and 3 entries in repairlog with same costs...
-
-]]
-
 

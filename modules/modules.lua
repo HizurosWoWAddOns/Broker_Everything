@@ -6,8 +6,6 @@ local L = ns.L;
 -- ~Hizuro                         --
 -- ------------------------------- --
 ns.modules = {};
-ns.updateList = {};
-ns.timeoutList = {};
 local counters = {};
 
 local function moduleInit(name)
@@ -101,40 +99,17 @@ local function moduleInit(name)
 		if (data.onevent) or (data.onupdate) then
 			data.eventFrame=CreateFrame("Frame");
 			data.eventFrame.modName = name;
-
 			if (type(data.onevent)=="function") then
 				data.eventFrame:SetScript("OnEvent",data.onevent);
 				for _, e in pairs(data.events) do
 					if e=="ADDON_LOADED" then
 						data.onevent(data.eventFrame,e,addon);
-					end
-					if ns.pastPEW and e=="PLAYER_ENTERING_WORLD" then
+					elseif e=="PLAYER_ENTERING_WORLD" and ns.pastPEW then
 						data.onevent(data.eventFrame,e);
 					end
 					data.eventFrame:RegisterEvent(e);
+					-- TODO: performance issue?
 				end
-			end
-
-			if (type(data.onupdate)=="function") and (data.updateinterval~=nil) then
-				counters[name]=false;
-				data.eventFrame:SetScript("OnUpdate",function(self,elapse)
-					if (self.elapsed==nil) then
-						self.elapsed=0;
-					end
-					if (counters[name]==false) then
-						counters[name]=0;
-					end
-					if (data.updateinterval == false) then
-						counters[name]=counters[name]+1;
-						data.onupdate(self,elapse);
-					elseif (self.elapsed>=data.updateinterval) then
-						self.elapsed = 0;
-						counters[name]=counters[name]+1;
-						data.onupdate(self,elapse);
-					else
-						self.elapsed = self.elapsed + elapse;
-					end
-				end);
 			end
 		end
 
@@ -145,11 +120,6 @@ local function moduleInit(name)
 			else
 				C_Timer.After(data.timeout,data.ontimeout);
 			end
-		end
-
-		-- post LDB init
-		if (data.init) then
-			data.init(data);
 		end
 
 		-- chat command registration
@@ -186,12 +156,3 @@ ns.moduleCoexist = function()
 	end
 end
 
---[[
-function PrintCounters()
-	local x = {};
-	for i, v in pairs(counters)do
-		tinsert(x,("[%s:%s]"):format(i,tostring(v)));
-	end
-	ns.print("counters",table.concat(x,", "));
-end
---]]

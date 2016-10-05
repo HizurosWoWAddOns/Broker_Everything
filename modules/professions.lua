@@ -14,7 +14,6 @@ L.professions = TRADE_SKILLS;
 local ldbName,ttName,ttName2,tt,tt2 = name,name.."TT",name.."TT2";
 
 local GetSpellInfo,GetSpellCooldown,GetProfessionInfo,unpack = GetSpellInfo,GetSpellCooldown,GetProfessionInfo,unpack;
-local icon_placeholder = "interface\\icons\\INV_MISC_QUESTIONMARK";
 
 local professions,db,createMenu = {};
 local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset = 1,2,3,4,5,6,7,8,9,10; -- GetProfessionInfo
@@ -295,8 +294,9 @@ profs.build=function()
 end
 
 local function createTooltip(self, tt)
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local iconnameLocale = "|T%s:12:12:0:0:64:64:2:62:4:62|t %s";
-	local function item_icon(name,icon) return select(10,GetItemInfo(name)) or icon or icon_placeholder; end
+	local function item_icon(name,icon) return select(10,GetItemInfo(name)) or icon or ns.icon_fallback; end
 
 	tt:Clear();
 	tt:AddHeader(C("dkyellow",L[name]));
@@ -312,7 +312,7 @@ local function createTooltip(self, tt)
 				end
 				tt:AddLine((iconnameLocale):format(v[icon],C(c1,v[nameLocale])),C(c2,s.."/"..m));
 			else
-				tt:AddLine((iconnameLocale):format(v[icon] or icon_placeholder,C("ltyellow",v[nameLocale] or "?")),("%d/%d"):format(v[skill] or 0,v[maxSkill] or 0));
+				tt:AddLine((iconnameLocale):format(v[icon] or ns.icon_fallback,C("ltyellow",v[nameLocale] or "?")),("%d/%d"):format(v[skill] or 0,v[maxSkill] or 0));
 			end
 		end
 	else
@@ -456,12 +456,12 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-	if(Broker_Everything_CharacterDB[ns.player.name_realm].professions==nil)then
-		Broker_Everything_CharacterDB[ns.player.name_realm].professions = {cooldowns={},hasCooldowns=false};
+	if(ns.toon.professions==nil)then
+		ns.toon.professions = {cooldowns={},hasCooldowns=false};
 	end
-	db = Broker_Everything_CharacterDB[ns.player.name_realm].professions;
+	db = ns.toon.professions;
 	if (db.cooldowns==nil) then
 		db.cooldowns = {};
 	end
@@ -474,6 +474,7 @@ end
 ns.modules[name].onevent = function(self,event,arg1)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+		return;
 	end
 
 	local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset = 1,2,3,4,5,6,7,8,9,10; -- GetProfessionInfo
@@ -507,7 +508,7 @@ ns.modules[name].onevent = function(self,event,arg1)
 				end
 			elseif (n<=2) then
 				d[nameLocale] = (n==1) and PROFESSIONS_FIRST_PROFESSION or PROFESSIONS_SECOND_PROFESSION;
-				d[icon] = icon_placeholder;
+				d[icon] = ns.icon_fallback;
 				d[spellId] = false;
 			elseif (n>=3 and n<=6) then
 				d[spellId] = (n==3 and 78670) or (n==4 and 131474) or (n==5 and 2550) or (n==6 and 3273);
@@ -567,7 +568,7 @@ ns.modules[name].onevent = function(self,event,arg1)
 	end
 	Title_Update();
 end
--- ns.modules[name].onupdate = function(self) end
+
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tt) end
@@ -578,8 +579,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-
-	tt = ns.LQT:Acquire(ttName, 2, "LEFT", "RIGHT");
+	tt = ns.acquireTooltip(ttName, 2, "LEFT", "RIGHT");
 	createTooltip(self, tt);
 end
 

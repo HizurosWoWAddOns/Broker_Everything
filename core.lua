@@ -64,8 +64,6 @@ local function profile_change(name,action)
 				Broker_Everything_ProfileDB.use_profile[i]=name;
 			end
 		end
-	else
-		ns.debug("\\core.lua\\profile_change","Oops","action '"..action.."' not defined");
 	end
 end
 
@@ -224,31 +222,6 @@ ns.coreOptions = { -- option panel builder table
 ----------------------
 local Broker_Everything = CreateFrame("Frame");
 
-Broker_Everything:SetScript("OnUpdate",function(self,elapsed)
-	for name, data in pairs(ns.updateList) do
-		if data.interval~=nil then
-			if data.interval == false then
-				data.func(ns.modules[name],elapsed)
-			elseif data.elapsed>=data.interval then
-				data.elapsed = 0
-				data.func(ns.modules[name],elapsed)
-			else
-				data.elapsed = data.elapsed + elapsed
-			end
-		end
-	end
-	for name, data in pairs(ns.timeoutList) do
-		if data~=nil and (data.run) then
-			if data.elapsed>=data.timeout then
-				data.func(ns.modules[name])
-				ns.timeoutList[name] = nil
-			else
-				data.elapsed = data.elapsed + elapsed
-			end
-		end
-	end
-end)
-
 function ns.resetAllSavedVariables()
 	local sv={"Broker_EverythingGlobalDB","Broker_EverythingDB","Broker_Everything_ProfileDB","Broker_Everything_DataDB","be_durability_db"};
 	for i,v in ipairs(sv) do
@@ -357,6 +330,7 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 			end
 		end
 		Broker_Everything_CharacterDB[ns.player.name_realm].level = UnitLevel("player");
+		ns.toon = Broker_Everything_CharacterDB[ns.player.name_realm];
 
 		-- data cache
 		if Broker_Everything_DataDB==nil then
@@ -366,6 +340,7 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 			Broker_Everything_DataDB.realms={};
 		end
 		Broker_Everything_DataDB.realms[ns.realm] = gsub(ns.realm," ","");
+		ns.data = Broker_Everything_DataDB;
 
 		-- modules
 		ns.moduleInit();
@@ -374,7 +349,9 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 			ns.print(L["AddOn loaded..."]);
 		end
 
-		--self:UnregisterEvent("ADDON_LOADED");
+		ns.pastAL = true;
+
+		self:UnregisterEvent("ADDON_LOADED");
 	elseif event == "ADDON_LOADED" and addonName == "Blizzard_ItemUpgradeUI" then
 		ItemUpgradeFrameUpgradeButton:HookScript("OnClick",ns.items.UpdateNow);
 		hooksecurefunc(_G,"ItemUpgradeFrame_UpgradeClick",ns.items.UpdateNow);
@@ -399,13 +376,12 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 
 		self:UnregisterEvent(event);
 	elseif(event=="PLAYER_LEVEL_UP")then
-		Broker_Everything_CharacterDB[ns.player.name_realm].level = UnitLevel("player");
-
+		ns.toon.level = UnitLevel("player");
 	elseif (event=="NEUTRAL_FACTION_SELECT_RESULT") then
 		ns.player.faction, ns.player.factionL  = UnitFactionGroup("player");
 		L[ns.player.faction] = ns.player.factionL;
 
-		Broker_Everything_CharacterDB[ns.player.name_realm].faction = ns.player.faction;
+		ns.toon.faction = ns.player.faction;
 	end
 end)
 

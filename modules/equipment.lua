@@ -371,7 +371,6 @@ local function createTooltip(self, tt)
 		);
 		tt:AddSeparator();
 		local none,miss=true,false;
-		--WFEWERERE = inventory;
 		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do
 			if inventory[i] then
 				none=false;

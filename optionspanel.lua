@@ -1036,6 +1036,7 @@ ns.datapanel = function()
 
 	function f:okay()
 		Broker_Everything_CharacterDB = CopyTable(f.tmpCharCache);
+		ns.toon = Broker_Everything_CharacterDB[ns.player.name_realm];
 		f.tmpCharCache = false;
 	end
 	function f:cancel()
@@ -1050,12 +1051,13 @@ ns.datapanel = function()
 	function f:reset()
 		f.tmpCharCache = false;
 		Broker_Everything_CharacterDB = {order={ns.player.name_realm}};
+		ns.toon = Broker_Everything_CharacterDB[ns.player.name_realm];
 		for i,v in ipairs({"name","class","faction","race"})do
-			if(ns.player[v] and Broker_Everything_CharacterDB[ns.player.name_realm][v]~=ns.player[v])then
-				Broker_Everything_CharacterDB[ns.player.name_realm][v] = ns.player[v];
+			if(ns.player[v] and ns.toon[v]~=ns.player[v])then
+				ns.toon[v] = ns.player[v];
 			end
 		end
-		Broker_Everything_CharacterDB[ns.player.name_realm].level = UnitLevel("player");
+		ns.toon.level = UnitLevel("player");
 	end
 
 	local function CharList_OrderUp(name)

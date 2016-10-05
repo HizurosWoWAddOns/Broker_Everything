@@ -11,7 +11,7 @@ local channels_last =1;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "ChatChannels";
-local ldbName,ttName,ttColumns,tt,createMenu = name,name.."TT",2
+local ldbName,ttName,ttColumns,tt,createMenu,ticker = name,name.."TT",2
 local iName, iHeader, iCollapsed, iChannelNumber, iCount, iActive, iCategory, iVoiceEnabled, iVoiceActive = 1,2,3,4,5,6,7,8,9;
 local WD_Locale = {
 	enUS="WorldDefense",
@@ -30,7 +30,7 @@ local WD_Locale = {
 	zhTW="世界防務",
 };
 local wd = WD_Locale[ns.locale];
-
+local events={PLAYER_ENTERING_WORLD=1,CHANNEL_UI_UPDATE=1,PARTY_LEADER_CHANGED=1,GROUP_ROSTER_UPDATE=1,CHANNEL_ROSTER_UPDATE=1,MUTELIST_UPDATE=2,IGNORELIST_UPDATE=2}
 
 -------------------------------------------
 -- register icon names and default files --
@@ -135,15 +135,10 @@ local function updateList()
 	end
 end
 
-local function updateRoster(chan)
-	--ns.print(name,chan)
-end
-
 local function createTooltip(self,tt)
-	if (tt==nil) or ((tt) and (tt.key) and (tt.key~=ttName)) then return end -- don't override other LibQTip tooltips...
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear();
-
 	tt:AddHeader(C("dkyellow",CHAT_CHANNELS));
 
 	for i,v in ipairs(channels) do
@@ -179,33 +174,7 @@ local function createTooltip(self,tt)
 	ns.roundupTooltip(self,tt)
 end
 
-
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules[name].init = function(obj)
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
-
-ns.modules[name].onevent = function(self,event,...)
-	local arg1, arg2, arg3 = ...
-	if ({PLAYER_ENTERING_WORLD=1,CHANNEL_UI_UPDATE=1,PARTY_LEADER_CHANGED=1,GROUP_ROSTER_UPDATE=1,CHANNEL_ROSTER_UPDATE=1})[event]==1 then
-		updateList()
-		if(event=="PLAYER_ENTERING_WORLD")then
-			C_Timer.After(5,ns.modules[name].onupdate);
-		end
-	--elseif event=="CHANNEL_FLAGS_UPDATED" then
-	--elseif event=="CHANNEL_VOICE_UPDATE" then
-	elseif event=="CHANNEL_COUNT_UPDATE" then
-		updateChannels(arg1,arg2 or 0)
-	elseif event=="d" then
-		updateList()
-	elseif ({MUTELIST_UPDATE=1,IGNORELIST_UPDATE=1})[event]==1 then
-		--updateRoster(GetSelectedDisplayChannel())
-	end
-end
-
-ns.modules[name].onupdate = function(self,elapsed)
+local function updater()
 	if(ChannelFrame and ChannelFrame:IsShown()) then return end
 	local I=0;
 	for i,v in ipairs(channels)do
@@ -239,6 +208,31 @@ ns.modules[name].onupdate = function(self,elapsed)
 		end
 	end);
 end
+
+------------------------------------
+-- module (BE internal) functions --
+------------------------------------
+ns.modules[name].init = function()
+	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
+end
+
+ns.modules[name].onevent = function(self,event,arg1,arg2,...)
+	if events[event]==1 then
+		updateList()
+		if not ticker and event=="PLAYER_ENTERING_WORLD" then
+			C_Timer.After(5,updater);
+			ticker = C_Timer.NewTicker(ns.modules[name].updateinterval,updater);
+		end
+	--elseif event=="CHANNEL_FLAGS_UPDATED" then
+	--elseif event=="CHANNEL_VOICE_UPDATE" then
+	elseif event=="CHANNEL_COUNT_UPDATE" then
+		updateChannels(arg1,arg2 or 0)
+	elseif event=="d" then
+		updateList()
+	--elseif events[event]==2 then
+	end
+end
+
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tooltip) end
@@ -248,7 +242,8 @@ end
 -- module functions for LDB registration --
 -------------------------------------------
 ns.modules[name].onenter = function(self)
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT","RIGHT")
+	if (ns.tooltipChkOnShowModifier(false)) then return; end
+	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "RIGHT","RIGHT")
 	createTooltip(self, tt);
 end
 

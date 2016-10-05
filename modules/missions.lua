@@ -38,7 +38,7 @@ ns.modules[name] = {
 		"GARRISON_MISSION_STARTED",
 		"GARRISON_MISSION_FINISHED"
 	},
-	updateinterval = 30,
+	updateinterval = nil,
 	config_defaults = {
 		showAvailable = true,
 		showActive = true,
@@ -109,6 +109,7 @@ local function stripTime(str,tag)
 end
 
 local function createTooltip(self, tt)
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	tt:Clear()
 	local labels,colors,l,c = {"Missions completed","Missions in progress","Missions available"},{"ltblue","yellow","green"};
 	local pipe = C("gray","   ||   ");
@@ -313,7 +314,7 @@ local function update()
 		if followerType then
 			local _time,_ = time();
 			local tmp = C_Garrison.GetInProgressMissions(followerType) or {};
-			local charDB = Broker_Everything_CharacterDB[ns.player.name_realm];
+			local charDB = ns.toon;
 			if charDB.missions==nil or (charDB.missions~=nil and #charDB.missions>0) then
 				charDB.missions = {};
 			end
@@ -348,7 +349,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(self)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
@@ -358,10 +359,6 @@ ns.modules[name].onevent = function(self,event,msg)
 	else
 		update();
 	end
-end
-
-ns.modules[name].onupdate = function(self)
-	--update();
 end
 
 -- ns.modules[name].optionspanel = function(panel) end
@@ -379,7 +376,7 @@ ns.modules[name].onenter = function(self)
 	if not ns.profile[name].showMissionType then          ttColumns=ttColumns-1; end
 	if not ns.profile[name].showMissionItemLevel then     ttColumns=ttColumns-1; end
 	if not ns.profile[name].showMissionFollowerSlots then ttColumns=ttColumns-1; end
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT", "LEFT", "CENTER", "CENTER","RIGHT");
+	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "RIGHT", "LEFT", "CENTER", "CENTER","RIGHT");
 	createTooltip(self, tt);
 end
 
