@@ -12,6 +12,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Tracking" -- TRACKING
 local ldbName = name
 local tt = nil
+local menuOpened = false;
 local GetNumTrackingTypes,GetTrackingInfo = GetNumTrackingTypes,GetTrackingInfo
 
 local similar, own, unsave = "%s has a similar option to hide the minimap tracking icon.","%s has its own tracking icon.","%s found. It's unsave to hide the minimap tracking icon without errors.";
@@ -85,45 +86,49 @@ local function updateTracking()
 	return tActive, n
 end 
 
+local function menuClosed()
+	menuOpened=true;
+end
 
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
 ns.modules[name].onevent = function(self,event,msg)
-	local numActive, trackActive = updateTracking()
-	local n = L[name]
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
-
-	if ns.profile[name].displaySelection then
-		if numActive == 0 then 
-			n = "None"
-		else
-			for i = 1, numActive, 1 do
-				n = trackActive[i]["Name"]
-			end
-		end
-	end
-
-	if event == "BE_HIDE_TRACKING" then -- custom event on config changed
+	if event=="BE_HIDE_TRACKING" then -- custom event on config changed
 		if ns.profile[name].hideMinimapButton then
 			ns.hideFrame("MiniMapTracking")
 		else
 			ns.unhideFrame("MiniMapTracking")
 		end
+	elseif event=="MINIMAP_UPDATE_TRACKING" and menuOpened and LibDropDownMenu_List1:IsShown() then
+		ns.EasyMenu.Refresh(1);
 	end
 
-	dataobj.text = n
+	-- broker button text
+	local numActive, trackActive = updateTracking()
+	local n = L[name];
+	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
+	if ns.profile[name].displaySelection then
+		if numActive == 0 then
+			n = "None";
+		else
+			for i = 1, numActive, 1 do
+				n = trackActive[i]["Name"];
+			end
+		end
+	end
+	dataobj.text = n;
 end
 
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 
-ns.modules[name].ontooltip = function(tt)
+ns.modules[name].ontooltip = function(tooltip)
+	tt=tooltip;
 	if (ns.tooltipChkOnShowModifier(false)) then tt:Hide(); return; end
 
 	local numActive, trackActive = updateTracking()
@@ -154,7 +159,65 @@ end
 -- ns.modules[name].onleave = function(self) end
 
 ns.modules[name].onclick = function(self,button)
-	ToggleDropDownMenu(1, nil, MiniMapTrackingDropDown, self, 0, 0)
+	if tt then tt:Hide(); end
+	local Name, texture, active, category, nested, Type = 1,2,3,4,5,6;
+	local list,count = {},GetNumTrackingTypes();
+	local _, class = UnitClass("player");
+
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addEntries({label=L["Tracking options"], title=true});
+	ns.EasyMenu.addEntries({ label=MINIMAP_TRACKING_NONE, checked=MiniMapTrackingDropDown_IsNoTrackingActive, func=function() ClearAllTracking(); end });
+	ns.EasyMenu.addEntries({separator=true});
+
+	local numTracking,hunterHeader,townHeader = 0,false;
+	for id=1, count do
+		local tmp={GetTrackingInfo(id)};
+		local Name, texture, active, category, nested = unpack(tmp);
+		if nested~=HUNTER_TRACKING and nested~=TOWNSFOLK then
+			local entry={ label=Name, icon=texture, arg1=id, checked=MiniMapTrackingDropDownButton_IsActive, func=function() SetTracking(id,not select(3,GetTrackingInfo(id))); end };
+			if category=="spell" then
+				entry.tCoordLeft = 0.0625;
+				entry.tCoordRight = 0.9;
+				entry.tCoordTop = 0.0625;
+				entry.tCoordBottom = 0.9;
+			end
+			ns.EasyMenu.addEntries(entry);
+		end
+		tinsert(list,tmp);
+	end
+
+	for id=1, #list do
+		local Name, texture, active, category, nested = unpack(list[id]);
+		local entry;
+		if nested == HUNTER_TRACKING and class == "HUNTER" then
+			if not hunterHeader then
+				ns.EasyMenu.addEntries({separator=true});
+				ns.EasyMenu.addEntries({label=HUNTER_TRACKING_TEXT, title=true});
+				hunterHeader=true;
+			end
+			
+			entry = {label=Name,icon=texture, arg1=id, checked=MiniMapTrackingDropDownButton_IsActive, func=function() SetTracking(id,not select(3,GetTrackingInfo(id))); end};
+		elseif nested == TOWNSFOLK then
+			if not townHeader then
+				ns.EasyMenu.addEntries({separator=true});
+				ns.EasyMenu.addEntries({label=TOWNSFOLK_TRACKING_TEXT, title=true});
+				townHeader=true
+			end
+			entry = {label=Name,icon=texture, arg1=id, checked=MiniMapTrackingDropDownButton_IsActive, func=function() SetTracking(id,not select(3,GetTrackingInfo(id))); end};
+		end
+		if entry then
+			if category=="spell" then
+				entry.tCoordLeft = 0.0625;
+				entry.tCoordRight = 0.9;
+				entry.tCoordTop = 0.0625;
+				entry.tCoordBottom = 0.9;
+			end
+			ns.EasyMenu.addEntries(entry);
+		end
+	end
+
+	menuOpened=true;
+	ns.EasyMenu.ShowMenu(self,-20,nil,menuClosed);
 end
 
 -- ns.modules[name].ondblclick = function(self,button) end
