@@ -18,15 +18,22 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Reputation"; -- REPUTATION
-local ldbName, ttName, ttColumns, tt, createMenu = name, name.."TT", 5;
+local ldbName, ttName, ttColumns, tt, createMenu,createTooltip = name, name.."TT", 5;
 local Name,description,standingID,barMin,barMax,barValue,atWarWith,canToggleAtWar,isHeader,isCollapsed,hasRep,isWatched,isChild,factionID,hasBonusRepGain,canBeLFGBonus,factionStandingText=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17;
 
 local bars,wasShown = {},false;
 local allinone = 85000;
 local allinone_friend = 43000;
 local allinone_bodyguard = 31000;
-local bodyguards = {193,207,216,218,219};
-
+local session = {};
+local bodyguards,known_bodyguards = {193,207,216,218,219},{};
+local formats = {
+	["_NONE"]       = "None",
+	["Percent"]     = "25.4%",
+	["PercentNeed"] = "22.2% need",
+	["Number"]      = "1234/3000",
+	["NumberNeed"]  = "321 need",
+};
 
 -------------------------------------------
 -- register icon names and default files --
@@ -44,30 +51,32 @@ ns.modules[name] = {
 		"PLAYER_ENTERING_WORLD",
 		"UPDATE_FACTION"
 	},
-	updateinterval = 0.5, -- 10
+	updateinterval = nil, --0.5, -- 10
 	config_defaults = {
 		bgBars = true,
 		standingText = true,
-		numbers="Percent",
+		showSession = true,
+		numbers = "Percent",
+		watchedNameOnBroker = true,
+		watchedStandingOnBroker = true,
+		watchedSessionBroker = true,
+		watchedFormatOnBroker = "Percent"
 	},
 	config_allowed = {},
 	config = {
 		{ type="header", label=L[name], align="left", icon=true },
-		{ type="separator" },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Tooltip options"] },
+		{ type="separator", inMenuInvisible=true },
 		{ type="select",
 			name	= "numbers",
 			label	= L["Numeric format"],
 			tooltip	= L["How would you like to view numeric reputation format."],
-			values	= {
-				["_NONE"]       = "None",
-				["Percent"]     = "25.4%",
-				["PercentNeed"] = "22.2% need",
-				["Number"]      = "1234/3000",
-				["NumberNeed"]  = "321 need",
-			},
+			values	= formats,
 			default = "Percent",
 		},
 		{ type="toggle", name="standingText", label=L["Standing text"], tooltip=L["Show standing text in tooltip"]},
+		{ type="toggle", name="showSession", label=L["Show session earn/loss"], tooltip=L["Display session earned/loss reputation in tooltip"]},
 		{ type="select",
 			name	= "bgBars",
 			label	= L["Background reputation bar mode"],
@@ -78,6 +87,17 @@ ns.modules[name] = {
 				["allinone"] = "All standing level in one",
 			},
 			default = "single",
+		},
+		{ type="separator" },
+		{ type="header", label=L["Broker button options"]},
+		{ type="separator", inMenuInvisible=true },
+		{ type="toggle", name="watchedNameOnBroker", label=L["Name of watched faction"], tooltip=L["Display name of watched faction on broker button"], event="UPDATE_FACTION" },
+		{ type="toggle", name="watchedStandingOnBroker", label=L["Standing of watched faction"], tooltip=L["Display standing of watched faction on broker button"], event="UPDATE_FACTION" },
+		{ type="toggle", name="watchedSessionBroker", label=L["Earn/loss of watched faction"], tooltip=L["Display earn/loss reputation of watched faction on broker button"], event="UPDATE_FACTION" },
+		{ type="select", name="watchedFormatOnBroker", label=L["Format of watched faction"], tooltip=L["Choose display format of watched faction"],
+			values = formats,
+			default = "Percent",
+			event="UPDATE_FACTION"
 		},
 		--{ type="toggle", name="favsOnly", label=L["Favorites only"], tooltip=L["Show favorites only in tooltip"] }
 	},
@@ -116,6 +136,59 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
+local function GetSession(Name,current)
+	if not session[Name] then return ""; end
+	local col,str = "gray",false;
+	session[Name][2] = current-session[Name][1];
+	if session[Name][2]>0 then
+		col,str = "ltgreen","+"..session[Name][2];
+	elseif session[Name][2]<0 then
+		col,str = "ltred",session[Name][2];
+	end
+	if str then
+		return C(col,str);
+	end
+	return "";
+end
+
+local function updateBroker()
+	local txt,mode = L[name],ns.profile[name].watchedFormatOnBroker;
+	local Name, standingId, barMin, barMax, barValue = GetWatchedFactionInfo();
+	barMax = barMax - barMin;
+	local barValue2 = barValue - barMin;
+	barMin = 0;
+
+	if Name then
+		local tmp = {};
+		if ns.profile[name].watchedNameOnBroker then
+			tinsert(tmp,Name);
+		end
+		if(mode=="Percent")then
+			tinsert(tmp,("%1.1f%%"):format(barValue2/barMax*100));
+		elseif(mode=="PercentNeed")then
+			tinsert(tmp,("%1.1f%% "..L["need"]):format(100-(barValue2/barMax*100)));
+		elseif(mode=="Number")then
+			tinsert(tmp,ns.FormatLargeNumber(barValue2).."/"..ns.FormatLargeNumber(barMax));
+		elseif(mode=="NumberNeed")then
+			tinsert(tmp,ns.FormatLargeNumber(barMax-barValue2).." "..L["need"]);
+		end
+		if ns.profile[name].watchedStandingOnBroker then
+			tinsert(tmp,_G["FACTION_STANDING_LABEL"..standingId]);
+		end
+		if ns.profile[name].watchedSessionBroker then
+			local val = GetSession(Name,barValue);
+			if val~="" then
+				tinsert(tmp,val);
+			end
+		end
+		if #tmp>0 then
+			txt = table.concat(tmp,", ");
+		end
+	end
+
+	ns.LDB:GetDataObjectByName(ldbName).text = txt;
+end
+
 local function updateBars()
 	local bgWidth = false;
 	for i,v in ipairs(bars)do
@@ -130,7 +203,8 @@ local function updateBars()
 			end
 
 			if(ns.profile[name].bgBars=="single")then
-				v.BarSingle:SetWidth(bgWidth*v.percent);
+				local width = bgWidth*v.percent;
+				v.BarSingle:SetWidth(width>1 and width or 1);
 				v.BarSingle:Show();
 			elseif(ns.profile[name].bgBars=="allinone")then
 				if(v.bodyguard)then
@@ -156,15 +230,36 @@ local function updateBars()
 	end
 end
 
-local function ttAddLine(tt,mode,data,count)
+local function toggleHeader(self)
+	if (self.isCollapsed) then
+		ExpandFactionHeader(self.index);
+	else
+		CollapseFactionHeader(self.index);
+	end
+	ns.hideTooltip(tt,ttName,true);
+end
+
+local function ttAddLine(tt,mode,data,count,childLevel)
 	local inset,line,_barMax,_barValue = 0, {}, data[barMax]-data[barMin], data[barValue]-data[barMin];
 	if(data[standingID]==8)then _barMax=999; end
 	local percent = _barValue/_barMax;
-	if (data[isHeader] and data[hasRep] and data[isChild]) or (not data[isHeader]) then inset=1; end
+
+	if data[barValue] and data[Name] then
+		session[data[Name]][2] = data[barValue]-session[data[Name]][1];
+	end
+
+	local color,icon,inset = "ltyellow","",1+childLevel;
+	if data[isHeader] then
+		inset=inset-1;
+		color,icon = "ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t ";
+		if data[isCollapsed] then
+			color,icon = "ltyellow","|Tinterface\\buttons\\UI-PlusButton-Up:0|t ";
+		end
+	end
 
 	tinsert(line,
-		strrep("   ",inset)..
-		C(data[isHeader] and "ltblue" or "ltyellow",ns.strCut(data[Name],38))..
+		strrep("    ",inset)..icon..
+		C(color,ns.strCut(tostring(data[Name]),24))..
 		(data[atWarWith] and " |TInterface\\buttons\\UI-Checkbox-SwordCheck:12:12:0:-1:32:32:0:18:0:18|t" or "")
 	);
 
@@ -175,40 +270,46 @@ local function ttAddLine(tt,mode,data,count)
 	if(mode=="Percent")then
 		tinsert(line,("%1.1f%%"):format(_barValue/_barMax*100));
 	elseif(mode=="PercentNeed")then
-		tinsert(line,("%1.1f%% "..L["need"]):format(_barValue/_barMax*100));
+		tinsert(line,("%1.1f%% "..L["need"]):format(100-(_barValue/_barMax*100)));
 	elseif(mode=="Number")then
-		tinsert(line,_barValue.."/".._barMax);
+		tinsert(line,ns.FormatLargeNumber(_barValue).."/"..ns.FormatLargeNumber(_barMax));
 	elseif(mode=="NumberNeed")then
-		tinsert(line,(_barMax-_barValue).." "..L["need"]);
+		tinsert(line,ns.FormatLargeNumber(_barMax-_barValue).." "..L["need"]);
+	end
+
+	if ns.profile[name].showSession and data[barValue] and session[data[Name]] then
+		tinsert(line,GetSession(data[Name],data[barValue]));
 	end
 
 	for i=#line, ttColumns do
-		tinsert(line," ")
+		tinsert(line," ");
 	end
 
 	local l=tt:AddLine(unpack(line));
+
+	if data[isHeader] then
+		tt.lines[l].isCollapsed = data[isCollapsed];
+		tt.lines[l].index = data.index;
+		tt:SetLineScript(l,"OnMouseUp",toggleHeader);
+	end
 
 	if(ns.profile[name].bgBars=="single") or (ns.profile[name].bgBars=="allinone")then
 		if(not bars[count])then
 			bars[count] = CreateFrame("Frame","BERepurationBar"..count,nil,"BEReputationBarTemplate");
 		end
 		bars[count]:SetParent(tt.lines[l]);
-		if(true)then
-			bars[count]:SetPoint("TOPLEFT",tt.lines[l].cells[1],"TOPLEFT");
-			bars[count]:SetPoint("BOTTOMRIGHT",tt.lines[l].cells[ttColumns],"BOTTOMRIGHT");
-		else
-			bars[count]:SetPoint("TOPLEFT",tt.lines[l].cells[1],"BOTTOMLEFT",0,1);
-			bars[count]:SetPoint("BOTTOMRIGHT",tt.lines[l].cells[ttColumns],"BOTTOMRIGHT",0,-3);
-		end
+		bars[count]:SetPoint("TOPLEFT",tt.lines[l].cells[1],"TOPLEFT",0,1);
+		bars[count]:SetPoint("BOTTOMRIGHT",tt.lines[l].cells[#tt.lines[l].cells],"BOTTOMRIGHT",0,-1);
+		bars[count]:SetAlpha(0.6);
 		bars[count]:Show();
 		bars[count].data = data;
 		bars[count].standing = data[standingID];
 		bars[count].percent = (_barValue/_barMax);
-		bars[count].bodyguard = bodyguards[data[Name]] or false;
+		bars[count].bodyguard = known_bodyguards[data[Name]] or false;
 		bars[count].friend = data[factionStandingText]~=_G["FACTION_STANDING_LABEL"..data[standingID]];
 	end
 
-	local darker = 0.6;
+	local darker = 0.72;
 	if(ns.profile[name].bgBars=="single")then
 		local color = FACTION_BAR_COLORS[data[standingID]];
 		bars[count].BarSingle:SetVertexColor(color.r*darker,color.g*darker,color.b*darker,1);
@@ -217,41 +318,65 @@ local function ttAddLine(tt,mode,data,count)
 	end
 end
 
-local function createTooltip(self, tt)
-	if not (tt and tt.key and tt.key==ttName)then return end
+function createTooltip(self, tt)
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
+	tt:Clear();
 	tt:AddHeader(C("dkyellow",L[name]));
 
-	local count,inset,num = 0,0,GetNumFactions();
+	local count,inset,childLevel,num = 0,0,0,GetNumFactions();
 	for i=1, num do
 		local data = {GetFactionInfo(i)};
-		data[factionStandingText] = _G["FACTION_STANDING_LABEL"..data[standingID]];
-		local friendID,friendRep,friendMaxRep,friendName,friendText,friendTexture,friendTextLevel,friendThreshold,nextFriendThreshold = GetFriendshipReputation(data[factionID]);
+		data.index = i;
+		if data[Name] and data[barMax]>0 then
+			data[factionStandingText] = _G["FACTION_STANDING_LABEL"..data[standingID]];
 
-		if (friendID ~= nil) then
-			data[factionStandingText] = friendTextLevel;
-			data[standingID] = 5;
-			if ( nextFriendThreshold ) then
-				data[barMin], data[barMax], data[barValue] = friendThreshold, nextFriendThreshold, friendRep;
-			else
-				data[barMin], data[barMax], data[barValue] = 0, 1, 1;
+
+
+			if data[Name] and data[barValue] and session[data[Name]]==nil then
+				session[data[Name]] = {data[barValue],0};
 			end
-		end
 
-		if(data[isHeader])then
-			tt:AddSeparator(4,0,0,0,0);
-			if(data[hasRep])then
+			if data[Name]=="" then
+				ns.debug("empty");
+			end
+
+			local friendID,friendRep,friendMaxRep,friendName,friendText,friendTexture,friendTextLevel,friendThreshold,nextFriendThreshold = GetFriendshipReputation(data[factionID]);
+			if friendID~=nil then
+				data[factionStandingText] = friendTextLevel;
+				data[standingID] = 5;
+				if ( nextFriendThreshold ) then
+					data[barMin], data[barMax], data[barValue] = friendThreshold, nextFriendThreshold, friendRep;
+				else
+					data[barMin], data[barMax], data[barValue] = 0, 1, 1;
+				end
+			end
+
+			if data[isHeader] then
+				tt:AddSeparator(4,0,0,0,0);
+				childLevel = data[isChild] and 1 or 0;
+				if data[hasRep] then
+					count=count+1;
+					ttAddLine(tt,ns.profile[name].numbers,data,count,childLevel);
+				else
+					local color,icon,prefix = "ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t ",strrep("    ",childLevel);
+					if data[isCollapsed] then
+						color,icon = "gray","|Tinterface\\buttons\\UI-PlusButton-Up:0|t ";
+					end
+					local l=tt:AddLine(C(color,prefix..icon..data[Name]));
+					if data[isHeader] then
+						tt.lines[l].isCollapsed = data[isCollapsed];
+						tt.lines[l].index = data.index;
+						tt:SetLineScript(l,"OnMouseUp",toggleHeader);
+					end
+				end
+				if --[[not data[isChild] and]] not data[isCollapsed] then
+					tt:AddSeparator();
+				end
+			else
 				count=count+1;
-				ttAddLine(tt,ns.profile[name].numbers,data,count);
-			else
-				tt:AddLine(strrep("   ",data[isChild] and 1 or 0)..C("ltblue",data[Name]));
+				ttAddLine(tt,ns.profile[name].numbers,data,count,childLevel);
 			end
-			if not data[isChild] then
-				tt:AddSeparator();
-			end
-		else
-			count=count+1;
-			ttAddLine(tt,ns.profile[name].numbers,data,count);
 		end
 	end
 	wasShown=true;
@@ -260,57 +385,53 @@ local function createTooltip(self, tt)
 		tt:AddSeparator(4,0,0,0,0)
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt)
+	ns.roundupTooltip(self,tt);
+	
+	if #bars>0 then
+		tt:SetScript("OnHide",function(self)
+			for i,v in ipairs(bars)do
+				v:SetParent(nil);
+				v:ClearAllPoints();
+				v:Hide();
+			end
+			self:SetScript("OnHide",nil);
+		end);
+	end
 end
 
 
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
 ns.modules[name].onevent = function(self,event,...)
-	if(event=="PLAYER_ENTERING_WORLD" and UnitLevel("player")>=90)then
-		local id = ns.player.faction:lower();
-		for i=1,#bodyguards do
-			local data = C_Garrison.GetFollowerInfo(bodyguards[i]);
-			if(data and data.name)then
-				bodyguards[data.name]=true;
+	if not self.loadedBodyguards then
+		local glvl = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0);
+		if UnitLevel("player")>=90 and glvl then
+			for i=1,#bodyguards do
+				local data = C_Garrison.GetFollowerInfo(bodyguards[i]);
+				if(data and data.name)then
+					known_bodyguards[data.name]=true;
+				end
 			end
-			bodyguards[i]=nil;
+			self.loadedBodyguards=true;
 		end
 	end
-
-	if(event=="PLAYER_ENTERING_WORLD") and (event=="UPDATE_FACTION")then
-		-- name, description, standingID, barMin, barMax, barValue, atWarWith, canToggleAtWar, isHeader, isCollapsed, hasRep, isWatched, isChild, factionID, hasBonusRepGain, canBeLFGBonus
-
-		local obj = ns.LDB:GetDataObjectByName(ldbName);
-		local name, standingId, barMin, barMax, barValue = GetWatchedFactionInfo();
-		if(name)then
-			local min,max = barValue-barMin, barMax-barMin;
-			obj.text = ("%s, %1.1f%%"):format(name,min/max*100);
-		else
-			obj.text = L[name];
-		end
-	end
-end
-ns.modules[name].onupdate = function(self,elapse)
-	if(#bars==0)then return end -- no bars no actions...
-
-	if not (tt and tt.key==ttName)then
-		if(wasShown)then
-			for i,v in ipairs(bars)do
-				v:SetParent(nil);
-				v:ClearAllPoints();
-				v:Hide();
-				wasShown=false;
+	if not self.loadedSession then
+		for i=1, GetNumFactions() do
+			local Name,_,_,_,_,barValue = GetFactionInfo(i);
+			if Name and barValue and session[Name]==nil then
+				session[Name] = {barValue,0};
 			end
 		end
-		return
+		self.loadedSession=true;
 	end
+	updateBroker();
 end
+
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tooltip) end
@@ -320,7 +441,8 @@ end
 -- module functions for LDB registration --
 -------------------------------------------
 ns.modules[name].onenter = function(self)
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "LEFT", "RIGHT", "CENTER", "LEFT")
+	if (ns.tooltipChkOnShowModifier(false)) then return; end
+	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "LEFT", "RIGHT", "CENTER", "LEFT")
 	tt:SetScript("OnHide",function()
 		for i=1, #bars do
 			bars[i]:SetParent(nil);
@@ -328,8 +450,8 @@ ns.modules[name].onenter = function(self)
 			bars[i]:Hide();
 		end
 	end);
-	createTooltip(self, tt)
-	C_Timer.After(0.5,updateBars);
+	createTooltip(self, tt);
+	C_Timer.After(0.12,updateBars);
 end
 
 ns.modules[name].onleave = function(self)
@@ -338,11 +460,6 @@ ns.modules[name].onleave = function(self)
 	end
 end
 
---ns.modules[name].onclick = function(self,button)
---	if button=="LeftButton" then
---	elseif button=="RightButton" then
---	end
---end
-
+-- ns.modules[name].onclick = function(self,button)m end
 -- ns.modules[name].ondblclick = function(self,button) end
 
