@@ -16,22 +16,22 @@ local skill,createMenu
 local tradeskill = {};
 local maxFragments = 200;
 local maxFragments250 = {[109585]=1,[108439]=1,[109584]=1};
-local raceIndex,raceCurrencyId,raceName,raceTexture,raceKeystoneItemID = 1,2,3,4,5;
-local raceFragmentsCollected,raceNumFragmentsRequired,raceFragmentsMax,raceArtifactName,raceArtifactIcon,raceKeystoneSlots = 6,7,8,9,10,11;
-local raceKeystoneIcon,raceKeystoneCount,raceKeystoneFragmentsValue,raceArtifactSolvable,raceFragmentsIcon = 12,13,14,15,16;
-local races = {
+local raceIndex,raceCurrencyId,raceKeystone2Fragments,raceName,raceTexture,raceKeystoneItemID = 1,2,3,4,5,6;
+local raceFragmentsCollected,raceNumFragmentsRequired,raceFragmentsMax,raceArtifactName,raceArtifactIcon,raceKeystoneSlots = 7,8,9,10,11,12;
+local raceKeystoneIcon,raceKeystoneCount,raceKeystoneFragmentsValue,raceArtifactSolvable,raceFragmentsIcon = 13,14,15,16,17;
+local races = { -- <raceIndex>, <currencyId>, <raceKeystone2FragmentsCount>
 	Azeroth		= {nil, true},
-	Dwarf		= {nil, 384},
-	Troll		= {nil, 385},
-	Fossil		= {nil, 393},
-	NightElf	= {nil, 394},
-	Tolvir		= {nil, 401},
+	Dwarf		= {nil, 384, 20},
+	Troll		= {nil, 385, 20},
+	Fossil		= {nil, 393, 20},
+	NightElf	= {nil, 394, 20},
+	Tolvir		= {nil, 401, 20},
 	Outland		= {nil, true},
-	Draenei		= {nil, 398},
-	Orc			= {nil, 397},
+	Draenei		= {nil, 398, 20},
+	Orc			= {nil, 397, 20},
 	Northend	= {nil, true},
-	Vrykul		= {nil, 399},
-	Nerubian	= {nil, 400}, 
+	Vrykul		= {nil, 399, 20},
+	Nerubian	= {nil, 400, 20}, 
 };
 local racesOrder = {
 	"Azeroth", -- continent header
@@ -65,13 +65,13 @@ local QuestStarterItems,QuestStarterItemIds = {},{
 	[130909]=1,[130910]=1,[130911]=1
 };
 --]]
-local solvables = {};
+local solvables,limitWarning = {},{};
 
 if ns.build>50000000 then -- MoP
 	races.Pandaria	= {nil, true};
-	races.Pandaren	= {nil, 676};
-	races.Mogu		= {nil, 677};
-	races.Mantid	= {nil, 754};
+	races.Pandaren	= {nil, 676, 20};
+	races.Mogu		= {nil, 677, 20};
+	races.Mantid	= {nil, 754, 20};
 	tinsert(racesOrder,"Pandaria"); -- continent header
 	tinsert(racesOrder,"Pandaren");
 	tinsert(racesOrder,"Mogu");
@@ -80,9 +80,9 @@ end
 
 if ns.build>60000000 then -- WoD
 	races.Draenor		= {nil, true};
-	races.DraenorOrc	= {nil, 821};
-	races.Ogre			= {nil, 828};
-	races.Arakkoa		= {nil, 829};
+	races.DraenorOrc	= {nil, 821, 20};
+	races.Ogre			= {nil, 828, 20};
+	races.Arakkoa		= {nil, 829, 20};
 	tinsert(racesOrder,"Draenor"); -- continent header
 	tinsert(racesOrder,"DraenorOrc");
 	tinsert(racesOrder,"Ogre");
@@ -91,9 +91,9 @@ end
 
 if ns.build>70000000 then -- Legion
 	races.Legion				= {nil, true};
-	races.HighborneNightElves	= {nil, 1172};
-	races.HighmountainTauren	= {nil, 1173};
-	races.Demons				= {nil, 1174};
+	races.HighborneNightElves	= {nil, 1172, 12};
+	races.HighmountainTauren	= {nil, 1173, 12};
+	races.Demons				= {nil, 1174, 12};
 	tinsert(racesOrder,"Legion"); -- continent header
 	tinsert(racesOrder,"HighborneNightElves");
 	tinsert(racesOrder,"HighmountainTauren");
@@ -182,15 +182,23 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
+local function limitColors(numFree,default)
+	return (numFree<=10 and "red") or (numFree<=30 and "orange") or (numFree<=50 and "yellow") or default;
+end
+
+
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(ldbName);
-	if(#solvables==1)then
-		obj.text = C("green",table.concat(solvables,", "));
-	elseif(#solvables>1)then
-		obj.text = C("green",solvables[1].." " ..L["and %d more"]:format(#solvables-1));
-	else
-		obj.text = PROFESSIONS_ARCHAEOLOGY;
+	local text = {};
+	if #limitWarning>0 then
+		table.sort(limitWarning,function(a,b) return a.free < b.free; end);
+		local _,v = pairs(limitWarning);
+		tinsert(text,C(limitColors(v.free,"white"),v.name .. (#limitWarning>1 and " "..L["and %d more"]:format(#limitWarning-1) or "")));
 	end
+	if #solvables>0 then
+		tinsert(text,C("green",solvables[1] .. (#solvables>1 and " " ..L["and %d more"]:format(#solvables-1) or "")));
+	end
+	obj.text = #text>0 and table.concat(text,", ") or PROFESSIONS_ARCHAEOLOGY;
 end
 
 local function updateRaceArtifact(t,...)
@@ -213,12 +221,12 @@ local function updateRaceArtifact(t,...)
 
 		if(type(t[raceKeystoneItemID])=="number" and t[raceKeystoneItemID]>0) then
 			keystoneItem2race[t[raceKeystoneItemID]] = k;
-			t[raceKeystoneIcon] = icon:format(GetItemIcon(t[raceKeystoneItemID]) or "interface\\icons\\inv_misc_questionmark");
+			t[raceKeystoneIcon] = icon:format(GetItemIcon(t[raceKeystoneItemID]) or ns.icon_fallback);
 			t[raceKeystoneCount] = GetItemCount(t[raceKeystoneItemID],true,true);
 		end
 
 		if(t[raceKeystoneSlots]>0)then
-			t[raceKeystoneFragmentsValue] = (t[raceKeystoneCount]<=t[raceKeystoneSlots] and t[raceKeystoneCount] or t[raceKeystoneSlots]) * 20;
+			t[raceKeystoneFragmentsValue] = (t[raceKeystoneCount]<=t[raceKeystoneSlots] and t[raceKeystoneCount] or t[raceKeystoneSlots]) * t[raceKeystone2Fragments]; -- 20;
 		end
 
 		if(t[raceFragmentsCollected]+t[raceKeystoneFragmentsValue]>=t[raceNumFragmentsRequired])then
@@ -234,7 +242,7 @@ local function updateRaceArtifact(t,...)
 		end
 
 		if(t[raceKeystoneSlots]>0)then
-			t[raceKeystoneFragmentsValue] = (t[raceKeystoneCount]<t[raceKeystoneSlots] and t[raceKeystoneCount] or t[raceKeystoneSlots]) * 20;
+			t[raceKeystoneFragmentsValue] = (t[raceKeystoneCount]<t[raceKeystoneSlots] and t[raceKeystoneCount] or t[raceKeystoneSlots]) * t[raceKeystone2Fragments]; -- 20;
 		end
 
 		if(t[raceFragmentsCollected]+t[raceKeystoneFragmentsValue]>=t[raceNumFragmentsRequired])then
@@ -262,7 +270,7 @@ local function updateRaces(firstUpdate)
 					unknownHeader = false;
 				end
 				tinsert(racesOrder,k);
-				races[k] = {nil, 0};
+				races[k] = {nil, 0, 0};
 				t=races[k];
 			end
 			t[raceIndex],t[raceKeystoneCount],t[raceKeystoneFragmentsValue],t[raceArtifactSolvable] = i,0,0,false;
@@ -273,7 +281,7 @@ local function updateRaces(firstUpdate)
 			if t[raceCurrencyId]~=0 then
 				_,_,iconFile = GetCurrencyInfo(t[raceCurrencyId]);
 			end
-			t[raceFragmentsIcon] = icon:format(iconFile or "interface\\icons\\inv_misc_questionmark");
+			t[raceFragmentsIcon] = icon:format(iconFile or ns.icon_fallback);
 
 			updateRaceArtifact(t,GetActiveArtifactByRace(i));
 		end
@@ -313,6 +321,7 @@ local function ItemTooltipHide(self)
 end
 
 local function createTooltip(self, tt)
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	tt:Clear()
 	local ts,l = C("gray",L["Not learned"]),tt:AddHeader(C("dkyellow",PROFESSIONS_ARCHAEOLOGY))
 	if tradeskill.maxSkill>0 then
@@ -338,7 +347,7 @@ local function createTooltip(self, tt)
 			local l=tt:AddLine(
 				v[raceTexture].." "..C(v[raceArtifactSolvable]==true and "green" or "ltyellow",v[raceName]),
 				v[raceKeystoneIcon]~=nil and v[raceKeystoneCount].." "..v[raceKeystoneIcon] or "",
-				v[raceFragmentsCollected].." / "..v[raceFragmentsMax].." "..v[raceFragmentsIcon],
+				C(limitColors(v[raceFragmentsMax]-v[raceFragmentsCollected],"white"),v[raceFragmentsCollected].." / "..v[raceFragmentsMax]).." "..v[raceFragmentsIcon],
 				C(v[raceArtifactSolvable]==true and "green" or "white",v[raceNumFragmentsRequired].." "..v[raceArtifactIcon]),
 				--[[QuestStarterItems[raceArtifactName] and "|TInterface\\OptionsFrame\\UI-OptionsFrame-NewFeatureIcon:0:0:0:-1|t" or]] " "
 			);
@@ -386,7 +395,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(self)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
@@ -401,6 +410,8 @@ ns.modules[name].onevent = function(self,event,...)
 			end
 		end
 		--]]
+	elseif event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	else
 		if event=="PLAYER_ENTERING_WORLD" then
 			updateRaces(true);
@@ -421,7 +432,6 @@ ns.modules[name].onevent = function(self,event,...)
 	end
 end
 
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tt) end
@@ -431,7 +441,8 @@ end
 -- module functions for LDB registration --
 -------------------------------------------
 ns.modules[name].onenter = function(self)
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "CENTER", "RIGHT", "RIGHT","RIGHT");
+	if (ns.tooltipChkOnShowModifier(false)) then return; end
+	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "CENTER", "RIGHT", "RIGHT","RIGHT");
 	createTooltip(self,tt)
 end
 
