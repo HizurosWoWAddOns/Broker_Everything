@@ -11,7 +11,7 @@ if ns.build<70000000 then return end
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "ClassSpecs" -- L["ClassSpecs"]
-local ldbName, ttName, ttColumns, tt, createMenu, createTalentMenu = name, name.."TT", 3;
+local ldbName, ttName, ttColumns, tt, createMenu, createTalentMenu = name, name.."TT", 4;
 
 
 -------------------------------------------
@@ -32,6 +32,8 @@ ns.modules[name] = {
 		"SKILL_LINES_CHANGED",
 		"CHARACTER_POINTS_CHANGED",
 		"PLAYER_TALENT_UPDATE",
+		"PLAYER_SPECIALIZATION_CHANGED",
+		"CHAT_MSG_SYSTEM" -- for loot spec changes -.-
 	},
 	updateinterval = nil, -- 10
 	config_defaults = {
@@ -131,50 +133,116 @@ function createTalentMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
-local function createTooltip(self, tt)
-	if (not tt.key) or (tt.key~=ttName) then return; end -- don't override other LibQTip tooltips...
-	tt:Clear()
+local function createSecTooltip(...)
+	if select('#',...)==0 then return end
+	GameTooltip:SetOwner(tt,"ANCHOR_NONE");
+	GameTooltip:SetPoint(ns.GetTipAnchor(tt,"horizontal"));
+	for i,v in ipairs({...}) do
+		GameTooltip:AddLine(unpack(v));
+	end
+	GameTooltip:Show();
+end
 
+local function createTooltip(self, tt)
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+
+	tt:Clear()
 	tt:SetCell(tt:AddLine(),1,C("dkyellow",SPECIALIZATION.." & "..TALENTS),tt:GetHeaderFont(),"LEFT",ttColumns);
 
-	local active = GetSpecialization();
-	local activeName,activeIcon
+	local spec,active = {},{index=GetSpecialization(),id=nil,name=nil,icon=nil};
+	local lootSpecID = GetLootSpecialization();
 	local num = GetNumSpecializations();
-	local iconStr,str = "|T%s:0|t","|T%s:0|t %s";
+	local iconStr,str,_ = "|T%s:0|t","|T%s:0|t %s";
 
 	local l=tt:AddLine();
 	tt:SetCell(l,1,C("ltblue",SPECIALIZATION),nil,"LEFT",2);
 	tt:SetCell(l,3,C("ltblue",ROLE));
+	tt:SetCell(l,4,C("ltblue",LOOT));
 
 	tt:AddSeparator();
 	for i=1, num do
-		local specId, specName, _, icon, _, specRole, specPrimStat = GetSpecializationInfo(i);
-		if i==active then activeName,activeIcon = specName,icon; end
+		spec[i]={};
+		spec[i].id, spec[i].name, spec[i].desc, spec[i].icon, _, spec[i].role = GetSpecializationInfo(i);
+		if active.index==i then
+			active.id,active.name,active.icon = spec[i].id,spec[i].name,spec[i].icon;
+		end
+	end
+	for i=1, num do
 		local l=tt:AddLine(
-			iconStr:format(icon),
-			C(ns.player.class,specName) .. (i==active and C("green","("..ACTIVE_PETS..")") or ""),
-			C( (specRole=="TANK" and "ltblue") or (specRole=="HEALER" and "ltgreen") or "ltred", _G[specRole] )
+			iconStr:format(spec[i].icon),
+			C(ns.player.class,spec[i].name) .. (i==active.index and C("green","("..ACTIVE_PETS..")") or ""),
+			C( (spec[i].role=="TANK" and "ltblue") or (spec[i].role=="HEALER" and "ltgreen") or "ltred", _G[spec[i].role] ),
+			lootSpecID==spec[i].id and C("green",ACTIVE_PETS) or C( "gray", L["Set"])
 		);
-		tt:SetLineScript(l,"OnMouseUp",function(_self)
-			if not InCombatLockdown() then
-				SetSpecialization(i);
-			end
+		if lootSpecID~=spec[i].id then
+			tt:SetCellScript(l,4,"OnMouseUp",function()
+				SetLootSpecialization(spec[i].id);
+				C_Timer.After(.7,function() createTooltip(false, tt) end);
+			end);
+			tt:SetCellScript(l,4,"OnEnter",function(self) createSecTooltip({L["Click to change your loot specialization"]}); end);
+			tt:SetCellScript(l,4,"OnLeave",function() GameTooltip:Hide(); end);
+		end
+		if i~=active then
+			tt:SetLineScript(l,"OnMouseUp",function()
+				if not InCombatLockdown() then
+					SetSpecialization(i);
+				end
+			end);
+		end
+		tt:SetLineScript(l,"OnEnter",function() createSecTooltip({("|T%s:32:32|t %s"):format(spec[i].icon,spec[i].name)},{spec[i].desc,1,1,1,true}); end);
+		tt:SetLineScript(l,"OnLeave",function() GameTooltip:Hide(); end);
+	end
+
+	local l=tt:AddLine();
+	tt:SetCell(l,1,C("dkyellow",LOOT_SPECIALIZATION_DEFAULT:gsub(" %( %%s %)",":")),nil,"RIGHT",3);
+	tt:SetCell(l,4,lootSpecID==0 and C("green",ACTIVE_PETS) or C( "gray", L["Set"]));
+	if lootSpecID~=0 then
+		tt:SetCellScript(l,4,"OnMouseUp",function()
+			SetLootSpecialization(0);
+			C_Timer.After(.7,function() createTooltip(false, tt) end);
 		end);
-		--[[
-		tt:SetCellScript(l,4,"OnEnter",function(_self)
-			GameTooltip:SetOwner(tt,"ANCHOR_NONE");
-			GameTooltip:SetPoint(ns.GetTipAnchor(tt));
-			GameTooltip:SetHyperlink(spellLink);
-			GameTooltip:Show();
-		end);
-		tt:SetCellScript(l,4,"OnLeave",function(_self)
-			GameTooltip:Hide();
-		end);
-		--]]
-	end 
+		tt:SetCellScript(l,4,"OnEnter",function() createSecTooltip({L["Click to change your loot specialization"]}); end);
+		tt:SetCellScript(l,4,"OnLeave",function() GameTooltip:Hide(); end);
+	end
 
 	if ns.player.class:lower()=="hunter" then
+		tt:AddSeparator(4,0,0,0,0);
+
 		-- pet spec
+		local spec,active = {},{index=GetSpecialization(nil,true),id=nil,name=nil,icon=nil};
+		local num = GetNumSpecializations(nil,true);
+		local iconStr = "|T%s:0|t";
+
+		local l=tt:AddLine();
+		tt:SetCell(l,1,C("ltblue",SPECIALIZATION.." ("..PET..")"),nil,"LEFT",2);
+		tt:SetCell(l,3,C("ltblue",ROLE));
+
+		tt:AddSeparator();
+		if HasPetUI() then
+			for i=1, num do
+				spec[i]={};
+				spec[i].id, spec[i].name, spec[i].desc, spec[i].icon, _, spec[i].role = GetSpecializationInfo(i,nil,true);
+				if active.index==i then
+					active.id,active.name,active.icon = spec[i].id,spec[i].name,spec[i].icon;
+				end
+			end
+			for i=1, num do
+				local l=tt:AddLine(
+					iconStr:format(spec[i].icon),
+					C(ns.player.class,spec[i].name) .. (i==active.index and " "..C("green","("..ACTIVE_PETS..")") or ""),
+					C( (spec[i].role=="TANK" and "ltblue") or (spec[i].role=="HEALER" and "ltgreen") or "ltred", _G[spec[i].role] )
+				);
+				if i~=active then
+					tt:SetLineScript(l,"OnMouseUp",function(_self)
+						if not InCombatLockdown() then
+							SetSpecialization(i,true);
+						end
+					end);
+				end
+			end
+		else
+			tt:SetCell(tt:AddLine(),1,C("gray",SPELL_FAILED_NO_PET),nil,"CENTER",0);
+		end
 	end
 
 	-- PVE Talents
@@ -198,10 +266,7 @@ local function createTooltip(self, tt)
 				tt:SetCell(l,2,str:format(iconTexture,C("ltyellow",Name)),nil,nil,2);
 				tt:SetLineScript(l,"OnEnter",function(_self)
 					GameTooltip:SetOwner(tt,"ANCHOR_NONE");
-					local points=ns.GetTipAnchor(tt,"horizontal");
-					for i=1, #points do
-						GameTooltip:SetPoint(unpack(points[i]));
-					end
+					GameTooltip:SetPoint(ns.GetTipAnchor(tt,"horizontal"));
 					GameTooltip:SetHyperlink("spell:"..spellId);
 					GameTooltip:Show();
 				end);
@@ -213,15 +278,13 @@ local function createTooltip(self, tt)
 	-- PVP Talents
 	if ns.profile[name].showPvPTalents then
 		tt:AddSeparator(4,0,0,0,0);
-		local l=tt:AddLine(C("ltblue",PVP.." "..LEVEL_ABBR));
-		tt:SetCell(l,2,C("ltblue",PVP_TALENTS),nil,nil,2);
+		tt:SetCell(tt:AddLine(),2,C("ltblue",PVP_TALENTS),nil,"LEFT",0);
 		tt:AddSeparator();
 
-		local tierLevels = {1,2,4,6,8,10};
 		local Id, Name, Icon, Selected, Available, spellId, Unlocked = 1,2,3,4,5,6,7;
 		for row=1, MAX_PVP_TALENT_TIERS do
 			local selected,isUnlocked = false,false;
-			local l=tt:AddLine(C("ltyellow",tierLevels[row]));
+			local l=tt:AddLine(C("ltyellow",row));
 			if UnitLevel("player") == MAX_PLAYER_LEVEL_TABLE[LE_EXPANSION_LEVEL_CURRENT] then
 				for col=1, MAX_PVP_TALENT_COLUMNS do 
 					local tmp={GetPvpTalentInfo(row, col, talentGroup)};
@@ -237,7 +300,7 @@ local function createTooltip(self, tt)
 				tt:SetCell(l,2,str:format(selected[Icon],C("ltyellow",selected[Name])),nil,nil,2);
 				tt:SetLineScript(l,"OnEnter",function(_self)
 					GameTooltip:SetOwner(tt,"ANCHOR_NONE");
-					GameTooltip:SetPoint(ns.GetTipAnchor(tt));
+					GameTooltip:SetPoint(ns.GetTipAnchor(tt,"horizontal"));
 					GameTooltip:SetHyperlink("spell:"..selected[spellId]);
 					GameTooltip:Show();
 				end);
@@ -267,11 +330,11 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
-ns.modules[name].onevent = function(self,event,msg)
+ns.modules[name].onevent = function(self,event,msg,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	else
@@ -280,7 +343,7 @@ ns.modules[name].onevent = function(self,event,msg)
 		local spec = GetSpecialization()
 		local _ = nil
 		local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
-		unspent = {GetNumUnspentTalents()>0 or GetNumUnspentPvpTalents()>0,GetNumUnspentTalents(),GetNumUnspentPvpTalents()};
+		local unspent = {GetNumUnspentTalents()>0 or GetNumUnspentPvpTalents()>0,GetNumUnspentTalents(),GetNumUnspentPvpTalents()};
 
 		if spec ~= nil then
 			 _, specName, _, icon.iconfile, _, _ = GetSpecializationInfo(spec)
@@ -304,7 +367,6 @@ ns.modules[name].onevent = function(self,event,msg)
 	end
 end
 
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].ontooltip = function(tt) end
@@ -315,7 +377,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.LQT:Acquire(ttName, ttColumns, "RIGHT", "LEFT", "LEFT", "LEFT")
+	tt = ns.acquireTooltip(ttName, ttColumns, "RIGHT", "LEFT", "LEFT", "CENTER")
 	createTooltip(self, tt);
 end
 
