@@ -54,7 +54,7 @@ ns.modules[name] = {
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
@@ -67,6 +67,7 @@ ns.modules[name].onevent = function(self,event,msg)
 			wipe(Broker_Everything_DataDB[name]);
 		end
 		L[name] = GetItemInfo(122284);
+		C_Timer.NewTicker(ns.modules[name].updateinterval,C_WowTokenPublic.UpdateMarketPrice);
 	elseif(event=="PLAYER_ENTERING_WORLD")then
 		L[name] = GetItemInfo(122284);
 		C_WowTokenPublic.UpdateMarketPrice();
@@ -92,10 +93,6 @@ ns.modules[name].onevent = function(self,event,msg)
 			obj.text = ns.GetCoinColorOrTextureString(name,current,{hideLowerZeros=true});
 		end
 	end
-end
-
-ns.modules[name].onupdate = function(self)
-	C_WowTokenPublic.UpdateMarketPrice();
 end
 
 -- ns.modules[name].optionspanel = function(panel) end
@@ -147,7 +144,8 @@ end
 -- module functions for LDB registration --
 -------------------------------------------
 --ns.modules[name].onenter = function(self)
---	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT");
+--	if (ns.tooltipChkOnShowModifier(false)) then return; end
+--	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT");
 --	ns.modules[name].ontooltip(tt)
 --	ns.roundupTooltip(self,tt);
 --end
