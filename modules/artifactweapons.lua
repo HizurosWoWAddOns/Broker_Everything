@@ -12,9 +12,9 @@ if ns.build<70000000 then return end
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Artifact weapon" -- L["Artifact weapon"]
-local ldbName,ttName,ttColumns, tt = name, name.."TT", 2;
-local empowering_items_found, _ = {};
-local empowering_items = {
+local ldbName,ttName,ttColumns, tt, createMenu = name, name.."TT", 3;
+local ap_items_found, _ = {};
+ns.artifactpower_items = {
 	-- >0 = known amount of artifact power
 	-- -1 = special actifact power items
 	[121818]=  -1,[127999]=  -1,[128000]=  -1,[128021]=  -1,[128022]=  -1,[128026]=  -1,[130144]=  -1,[130149]=  -1,[130152]=  35,[130153]=  -1,[130159]=  -1,[130160]=  -1,
@@ -31,11 +31,11 @@ local empowering_items = {
 	[140371]=  15,[140372]=  40,[140373]=  15,[140374]=  15,[140377]=   5,[140379]=   5,[140380]=   5,[140381]=  40,[140382]=   5,[140383]=   5,[140384]=  80,[140385]=   5,
 	[140386]=  40,[140387]=  15,[140388]=  40,[140389]=  15,[140391]=  15,[140392]=  15,[140393]=  15,[140396]=  40,[140409]= 900,[140410]=1000,[140421]=1200,[140422]= 750,
 	[140444]=1250,[140445]= 875,[140459]=   5,[140460]=   5,[140461]=   5,[140462]=   5,[140463]=   5,[140466]=   5,[140467]=   5,[140468]=   5,[140469]=   5,[140470]=   5,
-	[140471]=  15,[140473]=   5,[140474]=   5,[140475]=   5,[140476]=   5,[140477]=   5,[140478]=  15,[140479]=  15,[140480]=  15,[140481]=  15,[140482]=  15,[140484]=   5,
+	[140471]=  15,[140473]= 100,[140474]=   5,[140475]=   5,[140476]= 100,[140477]=   5,[140478]=  15,[140479]=  15,[140480]= 150,[140481]=  15,[140482]=  15,[140484]=   5,
 	[140485]=   5,[140486]=   5,[140487]=   5,[140488]=   5,[140489]=  15,[140490]=  15,[140491]=  15,[140492]=  15,[140494]=  15,[140497]=   5,[140498]=  15,[140503]=   5,
 	[140504]=   5,[140505]=   5,[140507]=   5,[140508]=   5,[140509]=  15,[140510]=  15,[140511]=  15,[140512]=  15,[140513]=  15,[140515]=   5,[140516]=   5,[140517]= 300,
 	[140518]=   5,[140519]=   5,[140520]=   5,[140521]=  15,[140522]=  15,[140523]=  15,[140524]=  15,[140525]=  15,[140528]=  15,[140529]=  15,[140530]=  15,[140531]=  15,
-	[140532]=  15,[140685]=  25,[140847]= 300,[141023]=  20,[141024]= 500,[141310]= 100,[141313]= 500,[141314]= 500,[141335]=  -1,[141337]= 300,[141383]= 100,[141384]= 100,
+	[140532]=  15,[140685]=  25,[140847]= 300,[141023]= 150,[141024]= 500,[141310]= 100,[141313]= 500,[141314]= 500,[141335]=  -1,[141337]= 300,[141383]= 100,[141384]= 100,
 	[141385]= 100,[141386]= 100,[141387]= 100,[141388]= 100,[141389]= 100,[141390]= 100,[141391]= 100,[141392]= 100,[141393]= 100,[141394]= 100,[141395]= 100,[141396]= 100,
 	[141397]= 100,[141398]= 100,[141399]= 100,[141400]= 100,[141401]= 100,[141402]= 100,[141403]= 100,[141404]= 100,[141405]= 100,[141638]= 200,[141639]= 300,[141667]= 800,
 	[141668]= 300,[141669]= 300,[141670]= 300,[141671]= 300,[141672]= 300,[141673]= 350,[141674]= 300,[141675]= 300,[141676]=1000,[141677]= 800,[141678]= 650,[141679]= 800,
@@ -47,14 +47,40 @@ local empowering_items = {
 	[141942]= 350,[141943]= 300,[141944]= 300,[141945]= 300,[141946]= 300,[141947]= 300,[141948]= 300,[141949]= 300,[141950]= 800,[141951]= 600,[141952]= 600,[141953]=1000,
 	[141954]= 650,[141955]= 450,[141956]= 200,[142001]= 400,[142002]= 400,[142003]= 400,[142004]= 400,[142005]= 400,[142006]= 400,[142007]= 400,[142054]= 100
 };
-
+ns.artifactrelikts = {};
+local spec2weapon = {};
 local doUpdateBroker = false;
 local PATTERN_ARTIFACT_XP_GAIN = gsub(ARTIFACT_XP_GAIN,"%s",".*");
+local knowledgeLevel = 0;
+local obtained = 0;
+local artifactLocked = nil;
+local artifactKnowledgeMultiplier = {
+	  0.25,  0.50,  0.90,  1.40,  2.00, --  1 -  5
+	  2.75,  3.75,  5.00,  6.50,  8.50, --  6 - 10
+	 11.00, 14.00, 17.75, 22.50, 28.50, -- 11 - 15
+	 36.00, 45.50, 57.00, 72.00, 90.00, -- 16 - 20
+	113.00,142.00,178.00,223.00,249.00, -- 21 - 25
+}
+local AP_MATCH_STRINGS = {
+	deDE = "Gewährt Eurem derzeit ausgerüsteten Artefakt (%d*) Artefaktmacht",
+	enUS = "Grants (%d*) Artifact Power to your currently equipped Artifact",
+	esES = "Otorga (%d*) p de poder de artefacto al artefacto que lleves equipado",
+	esMX = "Otorga (%d*) p de Poder de artefacto para el artefacto que llevas equipado",
+	frFR = "Confère (%d*) $lpoint:points; de puissance à l’arme prodigieuse que vous brandissez",
+	itIT = "(%d*) Potere Artefatto fornito all'Artefatto attualmente equipaggiato",
+	koKR = "현재 장착한 유물에 (%d*)의 유물력 부여",
+	ptBR = "Concede (%d*) de Poder do Artefato ao artefato equipado",
+	ptPT = "Concede (%d*) de Poder do Artefato ao artefato equipado",
+	ruRU = "Добавление используемому в данный момент артефакту (%d*) ед силы артефакта",
+	zhCN = "将(%d*)点神器能量注入到你当前装备的神器之中。",
+	zhTW = "賦予你目前裝備的神兵武器(%d*)點神兵之力。",
+}
+
 
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile="interface\\icons\\inv_misc_questionmark",coords={0.05,0.95,0.05,0.95}}
+I[name] = {iconfile=1109508 or ns.icon_fallback,coords={0.05,0.95,0.05,0.95}}
 
 
 ---------------------------------------
@@ -63,11 +89,12 @@ I[name] = {iconfile="interface\\icons\\inv_misc_questionmark",coords={0.05,0.95,
 ns.modules[name] = {
 	desc = L["..."],
 	events = {
+		"ADDON_LOADED",
 		"PLAYER_ENTERING_WORLD",
 		"ARTIFACT_XP_UPDATE",
 		"ARTIFACT_MAX_RANKS_UPDATE",
 		"ARTIFACT_UPDATE",
-		"CHAT_MSG_SYSTEM",
+		--"CHAT_MSG_SYSTEM",
 	},
 	updateinterval = nil, -- 10
 	config_defaults = {
@@ -76,15 +103,26 @@ ns.modules[name] = {
 		showXP = "1",
 		showPower = true,
 		showWarning = true,
-		showRelic = true
+		showRelic = true,
+		showItems = true,
+		showTotalAP = true
 	},
 	config_allowed = {},
 	config = {
 		{ type="header", label=L[name], align="left", icon=I[name] },
 		{ type="separator" },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Tooltip options"] },
+		{ type="separator", inMenuInvisible=true },
+		{ type="toggle", name="showRelic", label=L["Show artifact relic"], tooltip=L["Display a list of artifact relic slots in tooltip"]},
+		{ type="toggle", name="showItems", label=L["Show artifact power items"], tooltip=L["Display a list of artifact power items found in your bag in tooltip"]},
+		{ type="toggle", name="showTotalAP", label=L["Show total used artifact power"], tooltip=L["Display amount of total used artifact power on current equipped artifact weapon. That doesn't includes point resets!"]},
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Broker button options"] },
+		{ type="separator", inMenuInvisible=true },
 		{ type="toggle", name="showName", label=L["Show weapon name"], tooltip=L["Show artifact weapon name in broker button"], event="ARTIFACT_UPDATE"},
 		{ type="toggle", name="showPoints", label=L["Show points"], tooltip=L["Show spent/available points in broker button"], event="ARTIFACT_UPDATE"},
-		{ type="select", name="showXP", label=L["Show artifact power"], tooltip=L["Show artifact weapon expierence in broker button"], event="ARTIFACT_UPDATE",
+		{ type="select", name="showXP", label=L["Show artifact power"], tooltip=L["Show artifact weapon expierence (artifact power) in broker button"], event="ARTIFACT_UPDATE",
 			values	= {
 				["0"]    = L["Hide"],
 				["1"]    = L["Current / max expierence"],
@@ -94,7 +132,10 @@ ns.modules[name] = {
 		},
 		{ type="toggle", name="showPower", label=L["Show unspend artifact power"], tooltip=L["Show amount summary of artifact power from items in your backpack in broker button"]},
 		{ type="toggle", name="showWarning", label=L["Show 'not equipped' warning"], tooltip=L["Show 'artifact weapon not equipped' warning in broker button"]},
-		{ type="toggle", name="showRelic", label=L["Show artifact relic"], tooltip=L["Show a list of artifact relic slots in tooltip"]},
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Broker button options"] },
+		{ type="separator", inMenuInvisible=true },
+		{ type="toggle", name="knowledgeUpdate", label=L["Force knowledge update"], tooltip=L["It is necessary to open artifact window to update artifact knowledge. Enable this option to short open the window for update. This will happen on use artifact knowledge item or on detected differencies like data reset or on new chars."]},
 	},
 	clickOptions = {
 		["1_open_character_info"] = {
@@ -107,8 +148,6 @@ ns.modules[name] = {
 				securecall("ToggleCharacter","PaperDollFrame");
 			end
 		},
-		--[=[
-		-- it is not clear how it is possible to set a weapon to display without shift right click on an artifact weapon...
 		["2_artifact_frame"] = {
 			cfg_label = "Open artifact frame", -- L["Show artifact frame"]
 			cfg_desc = "open artifact frame", -- L["open artifact frame"]
@@ -116,15 +155,9 @@ ns.modules[name] = {
 			hint = "Open artifact frame",
 			func = function(self,button)
 				local _mod=name;
-				securecall("ArtifactFrame_LoadUI");
-				--ArtifactFrame.AppearancesTab:OnNewItemEquipped();
-				ArtifactFrame:OnEvent("ARTIFACT_UPDATE",true);
-				--ArtifactFrame.AppearancesTab:OnEvent("ARTIFACT_UPDATE",true);
-				--ShowUIPanel(ArtifactFrame);
-				--ArtifactFrame:Show();
+				SocketInventoryItem(16);
 			end
 		},
-		--]=]
 		["3_open_menu"] = {
 			cfg_label = "Open option menu", -- L["Open option menu"]
 			cfg_desc = "open the option menu", -- L["open the option menu"]
@@ -149,13 +182,101 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
-local function updateItemState()
-	wipe(empowering_items_found);
-	local c,lst = 0,ns.items.GetItemlist();
-	for i,v in pairs(lst) do
-		if empowering_items[i]~=nil then
-			tinsert(empowering_items_found,{id=i, count=#v, name=v[1].name, link=v[1].link, icon=v[1].icon, artifact_power=empowering_items[i],quality=v[1].rarity});
-			c=c+1;
+local function CalculateArtifactPower(ap,ak) -- artifact_power, artifact_knowledge
+	ap,ak=tonumber(ap) or 0,tonumber(ak) or 0;
+	if ak > 0 then
+		ap = tonumber(("%.0f"):format(ap*(artifactKnowledgeMultiplier[ak]+1)));
+		local n = tonumber(strsub(ap,-1));
+		if n<3 then
+			ap = ap-n;
+		elseif n<=7 then
+			ap = ap-n+5;
+		end
+	end
+	return ap;
+end
+
+local forceUpdate = false;
+local function updateKnowledgeLevel(arg1,arg2,arg3)
+	if arg1==ArtifactFrame then
+		-- from opened artifact window
+		ns.toon[name].knowledgeLevel = C_ArtifactUI.GetArtifactKnowledgeLevel();
+		if forceUpdate then
+			ArtifactFrame:Hide();
+			ArtifactFrame:SetAlpha(1);
+			forceUpdate = false;
+		end
+	else
+		if arg3==139390 then
+			-- on use of artifact knowledge upgrade items
+			-- ns.toon[name].knowledgeLevel = ns.toon[name].knowledgeLevel + 1;
+			forceUpdate = true;
+		else
+			arg1=tonumber(arg1);
+			if arg1 and arg1>ns.toon[name].knowledgeLevel then
+				-- from scanned artifact power items
+				-- ns.toon[name].knowledgeLevel = arg1;
+				forceUpdate = true;
+			end
+		end
+		if ns.profile[name].knowledgeUpdate and forceUpdate then
+			SocketInventoryItem(16);
+		else
+			forceUpdate = false;
+		end
+	end
+end
+
+local updateItemStateTry,updateItemState=0;
+function updateItemState()
+	wipe(ap_items_found);
+	local lst = ns.items.GetItemlist();
+	local matchString = AP_MATCH_STRINGS[ns.locale] or AP_MATCH_STRINGS.enUS;
+	for id,v in pairs(lst) do
+		if ns.artifactpower_items[id]~=nil then
+			-- group items by knowledge levels
+			local kl = {};
+			for I,V in ipairs(v)do
+				local knowledge = V.linkData[#V.linkData-3];
+				if knowledge then
+					if kl[knowledge]==nil then kl[knowledge]={}; end
+					tinsert(kl[knowledge],V);
+				end
+			end
+			for klvl,V in pairs(kl)do
+				local knowledgeLevel = klvl-1;
+				local AP = nil;
+				-- try to get artifact power from tooltip
+				if v[1].tooltip then
+					for i=2, #v[1].tooltip do
+						AP = tonumber(v[1].tooltip[i]:gsub("%.",""):match(matchString));
+						if AP then
+							break;
+						end
+					end
+				end
+				-- second, calculate from ground value with knowledge level multiplier.
+				-- sometimes not really accurate because blizzard does not really use its own multiplier.
+				-- all values comes from database. 
+				-- for example: item 141708 > 545 artifact power without knowledge level. 1025 instead of 1035 with knowledge level 3.
+				-- /run print("\124cff0070dd\124Hitem:141708::::::::110:62:8388608:30::1:::\124h[Item 141708]\124h\124r")
+				-- /run print("\124cff0070dd\124Hitem:141708::::::::110:62:8388608:30::4:::\124h[Item 141708]\124h\124r")
+				if not AP and ns.artifactpower_items[id]~=-1 then
+					AP = CalculateArtifactPower(ns.artifactpower_items[id],knowledgeLevel);
+				end
+				tinsert(ap_items_found,{
+					id=id,
+					count=#V,
+					name=v[1].name,
+					link=v[1].link,
+					icon=v[1].icon,
+					artifact_power=AP or -1,
+					quality=v[1].rarity
+				});
+				if knowledgeLevel and ns.toon[name].knowledgeLevel and knowledgeLevel>ns.toon[name].knowledgeLevel then
+					updateKnowledgeLevel(knowledgeLevel);
+				end
+			end
 		end
 	end
 	doUpdateBroker=true;
@@ -168,22 +289,26 @@ local function updateCharacterDB(equipped)
 		local maxPoints = numPoints+pointsSpent;
 
 		local relic = {};
+		artifactLocked = nil;
 		if equipped then
-			Broker_Everything_CharacterDB[ns.player.name_realm][name].equipped=equipped;
+			ns.toon[name].equipped=equipped;
 		end
-		if Broker_Everything_CharacterDB[ns.player.name_realm][name][itemID] and Broker_Everything_CharacterDB[ns.player.name_realm][name][itemID].relic then
-			relic = Broker_Everything_CharacterDB[ns.player.name_realm][name][itemID].relic;
+		if ns.toon[name][itemID] and ns.toon[name][itemID].relic then
+			relic = ns.toon[name][itemID].relic;
 		end
-		Broker_Everything_CharacterDB[ns.player.name_realm][name][itemID] = {name=itemName,points={pointsSpent,maxPoints},xp={artifactXP, xpForNextPoint},relic=relic};
+		ns.toon[name][itemID] = {name=itemName,points={pointsSpent,maxPoints},xp={artifactXP, xpForNextPoint},relic=relic};
 
 		if ArtifactFrame and ArtifactFrame.PerksTab then
 			for i,v in ipairs(ArtifactFrame.PerksTab.TitleContainer.RelicSlots)do
-				local icon,itemname,color,linktype,itemid,data,_="interface\\icons\\INV_MISC_QUESTIONMARK";
+				if not v.relicType then
+					artifactLocked = ARTIFACT_VISIT_FORGE_TO_START;
+				end
+				local icon,itemname,color,linktype,itemid,data,_=ns.icon_fallback;
 				if v.relicLink then
 					_,_,color,linktype,itemid,data,itemname = v.relicLink:find("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
 					icon = GetItemIcon(itemid);
 				end
-				Broker_Everything_CharacterDB[ns.player.name_realm][name][itemID].relic[i]={id=tonumber(itemid),color=color,icon=icon,name=itemname,type=v.relicType,locked=v.lockedReason or false,link=v.relicLink};
+				ns.toon[name][itemID].relic[i]={id=tonumber(itemid),color=color,icon=icon,name=itemname,type=v.relicType,locked=v.lockedReason or false,link=v.relicLink};
 			end
 		end
 	end
@@ -193,6 +318,7 @@ local function updateBroker()
 	if not doUpdateBroker then return end
 	doUpdateBroker=false;
 
+	obtained = C_ArtifactUI.GetNumObtainedArtifacts();
 
 	local allDisabled,data,obj = true,{}, ns.LDB:GetDataObjectByName(ldbName);
 	local itemID, altItemID, itemName, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop = C_ArtifactUI.GetEquippedArtifactInfo();
@@ -214,22 +340,22 @@ local function updateBroker()
 		end
 
 		if ns.profile[name].showXP=="1" then
-			tinsert(data,C("yellow",artifactXP).."/"..C("ltblue",xpForNextPoint));
+			tinsert(data,C("yellow",ns.FormatLargeNumber(artifactXP)).."/"..C("ltblue",ns.FormatLargeNumber(xpForNextPoint)));
 			allDisabled=false;
 		elseif ns.profile[name].showXP=="2" then
-			tinsert(data,C("yellow",xpForNextPoint-artifactXP));
+			tinsert(data,C("yellow",ns.FormatLargeNumber(xpForNextPoint-artifactXP)));
 			allDisabled=false;
 		end
 		if ns.profile[name].showPower then
 			local sum = {0,0};
-			for i,v in ipairs(empowering_items_found)do
+			for i,v in ipairs(ap_items_found)do
 				if v.artifact_power==-1 then
 					sum[2] = sum[2] + 1;
 				elseif v.artifact_power>0 then
 					sum[1] = sum[1] + (v.count * v.artifact_power);
 				end
 			end
-			tinsert(data,sum[1]..strrep("+",sum[2]));
+			tinsert(data,ns.FormatLargeNumber(sum[1])..strrep("+",sum[2]));
 			allDisabled=false;
 		end
 	end
@@ -237,8 +363,7 @@ local function updateBroker()
 	obj.icon = icon or "interface\\icons\\Ability_MeleeDamage";
 
 	if allDisabled then
-		if ns.profile[name].showWarning and Broker_Everything_CharacterDB[ns.player.name_realm][name].equipped~=false then
-			X = Broker_Everything_CharacterDB[ns.player.name_realm][name];
+		if ns.profile[name].showWarning and obtained>0 then
 			obj.text = C("orange",L["Artifact weapon not equipped"]);
 		else
 			obj.text = L[name];
@@ -249,91 +374,134 @@ local function updateBroker()
 end
 
 local function createTooltip(self, tt)
-	if not (tt and tt.key and tt.key==ttName) then return end
-	tt:Clear();
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
+	tt:Clear();
 	tt:AddHeader(C("dkyellow",L[name]));
 	tt:AddSeparator();
 
-	local itemID, altItemID, itemName, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop = C_ArtifactUI.GetEquippedArtifactInfo();
-	if itemID then
-		local numPoints, artifactXP, xpForNextPoint = MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp);
-		local maxPoints = numPoints+pointsSpent;
+	if obtained==0 then
+		tt:SetCell(tt:AddLine(),1,C("gray",L["Currently you have no artifact weapon obtained..."]));
+	elseif artifactLocked then
+		tt:AddLine(artifactLocked);
+	else
+		local itemID, altItemID, itemName, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop = C_ArtifactUI.GetEquippedArtifactInfo();
+		if itemID then
+			local numPoints, artifactXP, xpForNextPoint = MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp);
+			local maxPoints = numPoints+pointsSpent;
 
-		tt:AddLine(C("ltgreen",L["Equipped artifact weapon"])," |T"..icon..":0|t"..C("ltyellow",itemName));
-		tt:AddLine(C("ltgreen",L["Spent expierence"]),C("ltyellow",xp).."/"..C("ltyellow",xpForNextPoint));
-		tt:AddLine(C("ltgreen",L["Spent points"]),C(maxPoints>pointsSpent and "ltorange" or "ltyellow",pointsSpent).."/"..C("ltyellow",numPoints+pointsSpent));
-		local weapon = ns.items.GetInventoryItemBySlotIndex(16);
-		if weapon then
-			tt:AddLine(C("ltgreen",STAT_AVERAGE_ITEM_LEVEL),C("ltyellow",weapon.level));
-		end
+			local l=tt:AddLine();
+			tt:SetCell(l,1,C("ltgreen",L["Equipped artifact weapon"]),nil,"LEFT",2);
+			if strlen(itemName)>16 then
+				l=tt:AddLine();
+				tt:SetCell(l,1,"     |T"..icon..":0|t "..C("ltyellow",itemName),nil,"RIGHT",0);
+			else
+				tt:SetCell(l,3,"|T"..icon..":0|t "..C("ltyellow",itemName));
+			end
 
-		if ns.profile[name].showRelic and Broker_Everything_CharacterDB[ns.player.name_realm][name][itemID] and Broker_Everything_CharacterDB[ns.player.name_realm][name][itemID].relic then
-			tt:AddSeparator(4,0,0,0,0);
-			tt:AddLine(C("ltblue",RELICSLOT));
-			tt:AddSeparator();
-			if #Broker_Everything_CharacterDB[ns.player.name_realm][name][itemID].relic>0 then
-				for i,v in ipairs(Broker_Everything_CharacterDB[ns.player.name_realm][name][itemID].relic) do
-					local n = (v.color and C(v.color,v.name)) or (v.locked and C("red", LOCKED)) or C("ltgray",EMPTY);
-					local icon = v.locked and "|TInterface\\LFGFrame\\UI-LFG-ICON-LOCK:14:14:0:0:32:32:0:25:0:25|t " or "|T"..(v.icon or "interface\\icons\\INV_MISC_QUESTIONMARK")..":0|t ";
-					local l=tt:AddLine(C("white",i..". ")..C("ltgreen",_G["STRING_SCHOOL_"..v.type:upper()] or v.type), icon .. n);
-					if v.locked or v.link then
-						tt:SetLineScript(l,"OnEnter",function()
+			l=tt:AddLine();
+			tt:SetCell(l,1,C("ltgreen",L["Spent artifact power"]),nil,nil,2);
+			tt:SetCell(l,3,C("ltyellow",ns.FormatLargeNumber(xp)).."/"..C("ltyellow",ns.FormatLargeNumber(xpForNextPoint)));
+
+			l=tt:AddLine();
+			tt:SetCell(l,1,C("ltgreen",L["Spent points"]),nil,nil,2);
+			tt:SetCell(l,3,C(maxPoints>pointsSpent and "ltorange" or "ltyellow",pointsSpent).."/"..C("ltyellow",numPoints+pointsSpent));
+
+			if ns.profile[name].showTotalAP then
+				local _,_,_,_,xp,ps=C_ArtifactUI.GetEquippedArtifactInfo();
+				for i=1,ps-1 do
+					xp=xp+C_ArtifactUI.GetCostForPointAtRank(i);
+				end 
+				l=tt:AddLine();
+				tt:SetCell(l,1,C("ltgreen",L["Total spend power"]),nil,nil,2);
+				tt:SetCell(l,3,C("ltyellow",ns.FormatLargeNumber(xp)));
+			end
+
+			if ns.toon[name].knowledgeLevel and ns.toon[name].knowledgeLevel>0 then
+				l=tt:AddLine();
+				tt:SetCell(l,1,C("ltgreen",L["Artifact knowledge"]),nil,nil,2);
+				tt:SetCell(l,3,C("ltyellow",("%d (+%d%%)"):format(ns.toon[name].knowledgeLevel,math.ceil(artifactKnowledgeMultiplier[ns.toon[name].knowledgeLevel]*10)*10)));
+			end
+
+			local weapon = ns.items.GetInventoryItemBySlotIndex(16);
+			if weapon then
+				tt:AddLine(C("ltgreen",STAT_AVERAGE_ITEM_LEVEL),C("ltyellow",weapon.level));
+			end
+
+			if ns.profile[name].showRelic and ns.toon[name][itemID] and ns.toon[name][itemID].relic then
+				tt:AddSeparator(4,0,0,0,0);
+				tt:AddLine(C("ltblue",RELICSLOT));
+				tt:AddSeparator();
+				if #ns.toon[name][itemID].relic>0 then
+					for i,v in ipairs(ns.toon[name][itemID].relic) do
+						local n = (v.color and C(v.color,v.name)) or (v.locked and C("red", LOCKED)) or C("ltgray",EMPTY);
+						local icon = v.locked and "|TInterface\\LFGFrame\\UI-LFG-ICON-LOCK:14:14:0:0:32:32:0:25:0:25|t " or "|T"..(v.icon or ns.icon_fallback)..":0|t ";
+						local _type = v.type or UNKNOWN;
+						local l=tt:AddLine(C("white",i..". ")..C("ltgreen",_G["STRING_SCHOOL_".._type:upper()] or _type));
+						tt:SetCell(l,2,icon .. n,nil,nil,0);
+						if v.locked or v.link then
+							tt:SetLineScript(l,"OnEnter",function()
+								local p = {tt:GetPoint()}; p[2]=tt;
+								GameTooltip:SetOwner(self,"ANCHOR_NONE");
+								GameTooltip:SetPoint(unpack(p));
+								if v.locked then
+									GameTooltip:SetText("|TInterface\\LFGFrame\\UI-LFG-ICON-LOCK:16:16:0:2:32:32:0:25:0:25|t "..C("red",LOCKED));
+									GameTooltip:AddLine(v.locked,.78,.78,.78,true);
+								elseif v.link then
+									GameTooltip:SetHyperlink(v.link);
+								end
+								GameTooltip:Show();
+							end);
+							tt:SetLineScript(l,"OnLeave",function() GameTooltip:Hide(); end);
+						end
+					end
+				else
+					local l=tt:AddLine();
+					tt:SetCell(l,1,C("ltgray",ns.strWrap(L["Artifact relic are displayable after opening artifact window. Shift Right-Click on your equipped artifact weapon."],64)),nil,nil,ttColumns);
+				end
+			end
+
+			if ns.profile[name].showItems then
+				tt:AddSeparator(4,0,0,0,0);
+				local l=tt:AddLine();
+				tt:SetCell(l,1,C("ltblue",L["Found in your backpack"]),nil,nil,2);
+				tt:SetCell(l,3,C("ltblue",ARTIFACT_POWER));
+				tt:AddSeparator();
+				local count,sum=0,0;
+				for i,v in ipairs(ap_items_found)do
+					local l;
+					if v.artifact_power==-1 then
+						l=tt:AddLine();
+						tt:SetCell(l,1,"|T".. v.icon .. ":0|t ".. v.name,nil,nil,2);
+						tt:SetCell(l,3,UNKNOWN);
+					elseif v.artifact_power>0 then
+						l=tt:AddLine();
+						tt:SetCell(l,1,"|T".. v.icon .. ":0|t ".. C("quality"..v.quality or 7,v.name),nil,nil,2);
+						tt:SetCell(l,3,C("ltyellow",v.count .." x " .. ns.FormatLargeNumber(v.artifact_power)));
+						sum = sum + (v.count*v.artifact_power);
+					end
+					tt:SetLineScript(l,"OnEnter",function(self)
+						if v.link then
 							local p = {tt:GetPoint()}; p[2]=tt;
 							GameTooltip:SetOwner(self,"ANCHOR_NONE");
 							GameTooltip:SetPoint(unpack(p));
-							if v.locked then
-								GameTooltip:SetText("|TInterface\\LFGFrame\\UI-LFG-ICON-LOCK:16:16:0:2:32:32:0:25:0:25|t "..C("red",LOCKED));
-								GameTooltip:AddLine(v.locked,.78,.78,.78,true);
-							elseif v.link then
-								GameTooltip:SetHyperlink(v.link);
-							end
-							GameTooltip:Show();
-						end);
-						tt:SetLineScript(l,"OnLeave",function() GameTooltip:Hide(); end);
-					end
+							GameTooltip:SetHyperlink(v.link);
+						end
+					end);
+					tt:SetLineScript(l,"OnLeave",function(self) GameTooltip:Hide(); end);
+					count=count+1;
 				end
-			else
-				local l=tt:AddLine();
-				tt:SetCell(l,1,C("ltgray",ns.strWrap(L["Artifact relic are displayable after opening artifact window. Shift Right-Click on your equipped artifact weapon."],64)),nil,nil,ttColumns);
-			end
-		end
-
-		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(C("ltblue",L["Found in your backpack"]), C("ltblue",ARTIFACT_POWER));
-		tt:AddSeparator();
-		local count,sum=0,0;
-		for i,v in ipairs(empowering_items_found)do
-			local l;
-			if v.artifact_power==-1 then
-				l=tt:AddLine("|T".. v.icon .. ":0|t ".. v.name, UNKNOWN);
-			elseif v.artifact_power>0 then
-				l=tt:AddLine("|T".. v.icon .. ":0|t ".. C("quality"..v.quality or 7,v.name), C("ltyellow",v.count .." x " .. v.artifact_power));
-				sum = sum + (v.count*v.artifact_power);
-			end
-			tt:SetLineScript(l,"OnEnter",function(self)
-				if v.link then
-					local p = {tt:GetPoint()}; p[2]=tt;
-					GameTooltip:SetOwner(self,"ANCHOR_NONE");
-					GameTooltip:SetPoint(unpack(p));
-					GameTooltip:SetHyperlink(v.link);
+				if count>0 then
+					tt:AddSeparator();
+					tt:AddLine(C("ltblue",L["Summary"]..":"),nil,ns.FormatLargeNumber(sum));
+				else
+					local l = tt:AddLine();
+					tt:SetCell(l,1,C("ltgray",L["Currently no artifact power items found"]), nil, nil, ttColumns);
 				end
-			end);
-			tt:SetLineScript(l,"OnLeave",function(self) GameTooltip:Hide(); end);
-			count=count+1;
-		end
-		if count>0 then
-			tt:AddSeparator();
-			tt:AddLine(C("ltblue",L["Summary"]..":"),sum);
-			tt:SetCell(tt:AddLine(),1,C("dkyellow",L["Note: The artifact power values of items can be higher since blizzard introduce scaling on artifact knowlege. Need futher testing..."]),nil,nil,ttColumns);
+			end
 		else
-			local l = tt:AddLine();
-			tt:SetCell(l,1,C("ltgray",L["Currently no artifact power items found"]), nil, nil, ttColumns);
+			tt:AddLine(C("ltgray",L["Currently you have no artifact weapon equipped..."]));
 		end
-	elseif Broker_Everything_CharacterDB[ns.player.name_realm][name].equipped~=nil then
-		tt:AddLine(C("ltgray",L["Currently you have no artifact weapon equipped..."]));
-	else
-		--tt:AddLine(C("ltgray",L[""]));
 	end
 
 	if ns.profile.GeneralOptions.showHints then
@@ -347,26 +515,34 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 end
 
 ns.modules[name].onevent = function(self,event,arg1,...)
 	if event=="PLAYER_ENTERING_WORLD" then
-		if Broker_Everything_CharacterDB[ns.player.name_realm][name]==nil then
-			Broker_Everything_CharacterDB[ns.player.name_realm][name] = {equipped=false};
+		if ns.toon[name]==nil then
+			ns.toon[name] = {equipped=false,knowledgeLevel=0};
+		end
+		if ns.toon[name].knowledgeLevel==nil then
+			ns.toon[name].knowledgeLevel = 0;
 		end
 		ns.items.RegisterCallback(name,updateItemState,"any");
+		C_Timer.After(15,ns.items.UpdateNow);
+		ns.UseContainerItemHook.registerItemID(name,139390,updateKnowledgeLevel); -- artifact knowledge upgrade item
 		C_Timer.NewTicker(1,updateBroker);
 		self:UnregisterEvent(event);
-	elseif event=="ARTIFACT_XP_UPDATE" or event=="ARTIFACT_MAX_RANKS_UPDATE" or event=="ARTIFACT_UPDATE" then
-		doUpdateBroker=true
+	elseif event=="ADDON_LOADED" and arg1=="Blizzard_ArtifactUI" then
+		ArtifactFrame:HookScript("OnShow",updateKnowledgeLevel);
+		self:UnregisterEvent(event);
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+	else--if event=="ARTIFACT_XP_UPDATE" or event=="ARTIFACT_MAX_RANKS_UPDATE" or event=="ARTIFACT_UPDATE" then
+		obtained = C_ArtifactUI.GetNumObtainedArtifacts();
+		doUpdateBroker=true
 	end
 end
 
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tooltip) end
@@ -376,7 +552,8 @@ end
 -- module functions for LDB registration --
 -------------------------------------------
 ns.modules[name].onenter = function(self)
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT", "CENTER", "LEFT", "LEFT","RIGHT", "CENTER", "LEFT", "LEFT", "LEFT")
+	if (ns.tooltipChkOnShowModifier(false)) then return; end
+	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "RIGHT", "RIGHT", "LEFT", "LEFT","RIGHT", "CENTER", "LEFT", "LEFT", "LEFT")
 	createTooltip(self, tt);
 end
 
@@ -387,4 +564,7 @@ end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 
+-- /run local c,ge,gc,xp,ps,n,_=C_ArtifactUI;_,_,n,_,xp,ps=c.GetEquippedArtifactInfo();for i=1,ps-1 do xp=xp+c.GetCostForPointAtRank(i);end print("Total used artifact power on "..n..":",xp);
 
+
+-- 15:25:05 " |cffa335ee|Hitem:141681::::::::110:62:8388608:11::5:::|h[Talisman des Talwandlers]|h|r"
