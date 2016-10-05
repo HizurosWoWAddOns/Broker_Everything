@@ -24,7 +24,8 @@ local latency = {home={cur=0,min=99999,max=0,his={},curStr="",minStr="",maxStr="
 local traffic = {inCur=0,inMin=99999,inMax=0,outCur=0,outMin=99999,outMax=0,inCurStr="",inMinStr="",inMaxStr="",outCurStr="",outMinStr="",outMaxStr="",inHis={},outHis={}};
 local fps     = {cur=0,min=-5,max=0,his={},curStr="",minStr="",maxStr=""};
 local memory  = {cur=0,min=0,max=0,his={},list={},curStr="",minStr="",maxStr="",brokerStr="",numAddOns=0,loadedAddOns=0};
-local PEW,netStatTimeout,memoryTimeout,enabled,createMenu=false,1,2,{};
+local PEW,netStatTimeout,memoryTimeout,enabled,createMenu,isHooked=false,1,2,{};
+local version, build, buildDate, interfaceVersion = GetBuildInfo();
 
 local addonpanels = {};
 local addonpanels_select = {["none"]=L["None (disable right click)"]};
@@ -50,6 +51,70 @@ do
 		end
 	end
 end
+local clickOptions = {
+	["1_garbage"] = {
+		cfg_label = "Collect garbage", -- L["Collect garbage"]
+		cfg_desc = "collect garbage", -- L["collect garbage"]
+		cfg_default = "__NONE",
+		hint = "Collect garbage", -- L["Collect garbage"]
+		func = function(self,button)
+			local _mod=name_sys;
+			ns.print(L["Collecting Garbage..."]);
+			collectgarbage("collect");
+		end
+	},
+	["2_optionpanel"] = {
+		cfg_label = "Open option panel", -- L["Open option panel"]
+		cfg_desc = "open the option panel", -- L["open the option panel"]
+		cfg_default = "_LEFT",
+		hint = "Open option panel", -- L["Open option panel"]
+		func = function(self,button)
+			local _mod=name_sys;
+			InterfaceOptionsFrame_OpenToCategory(ns.be_option_panel);
+			InterfaceOptionsFrame_OpenToCategory(ns.be_option_panel);
+		end
+	},
+	["3_addonlist"] = {
+		cfg_label = "Open addon list", -- L["Open addon list"]
+		cfg_desc = "open addon list", -- L["open addon list"]
+		cfg_default = "__NONE",
+		hint = "Open addon list", -- L["Open addon list"]
+		func = function(self,button)
+			local _mod=name_sys;
+			local ap = ns.profile[name_sys].addonpanel;
+			if (ap~="none") then
+				if (ap~="Blizzard's Addons Panel") then
+					if not IsAddOnLoaded(ap) then LoadAddOn(ap) end
+				end
+				if (addonpanels[ap]) and (addonpanels[ap](true)) then
+					addonpanels[ap]();
+				end
+			end
+		end
+	},
+	-- toggle netstats
+	["4_open_menu"] = {
+		cfg_label = "Open option menu",
+		cfg_desc = "open the option menu",
+		cfg_default = "_RIGHT",
+		hint = "Open option menu",
+		func = function(self,button)
+			local _mod=name_sys;
+			createMenu(self, _mod);
+		end
+	},
+	["5_update_memoryusage"] = {
+		cfg_label = "Update memory usage",
+		cfg_desc = "update memory usage",
+		cfg_default = "__NONE",
+		hint = "Update memory usage manually",
+		func = function(self,button)
+			local _mod=name_sys;
+			createMenu(self, _mod);
+		end
+	}
+};
+
 
 -------------------------------------------
 -- register icon names and default files --
@@ -87,17 +152,22 @@ ns.modules[name_sys] = {
 		showFpsOnBroker = true,
 		showMemoryUsageOnBroker = true,
 		showAddOnsCountOnBroker = true,
+		showClientVersionOnBroker = false,
+		showClientBuildOnBroker = false,
+		showInterfaceVersionOnBroker = false,
 
 		-- tooltip options
 		showTrafficInTooltip = true,
 		showLatencyInTooltip = true,
 		showFpsInTooltip = true,
 		showMemoryUsageInTooltip = true,
+		showClientInfoInTooltip = true,
 		numDisplayAddOns = 10,
 
 		-- misc
 		addonpanel = "none",
-		updateInterval = 300
+		updateInterval = 300,
+		collectGarbage = true
 	},
 	config_allowed = {},
 	config = {
@@ -105,20 +175,26 @@ ns.modules[name_sys] = {
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["On broker options"], align="center" },
 		{ type="separator", inMenuInvisible=true },
-		{ type="toggle", name="showInboundOnBroker",     label=L["Show inbound traffic"],  tooltip=L["x"] },
-		{ type="toggle", name="showOutboundOnBroker",    label=L["Show outbound traffic"], tooltip=L["x"] },
-		{ type="toggle", name="showWorldOnBroker",       label=L["Show world latency"],    tooltip=L["x"] },
-		{ type="toggle", name="showHomeOnBroker",        label=L["Show home latency"],     tooltip=L["x"] },
-		{ type="toggle", name="showFpsOnBroker",         label=L["Show fps"],              tooltip=L["x"] },
-		{ type="toggle", name="showMemoryUsageOnBroker", label=L["Show memory usage"],     tooltip=L["x"] },
-		{ type="toggle", name="showAddOnsCountOnBroker", label=L["Show addons"],           tooltip=L["x"] },
+		{ type="toggle", name="showInboundOnBroker",     label=L["Show inbound traffic"],  tooltip=L["Display inbound traffic on broker"] },
+		{ type="toggle", name="showOutboundOnBroker",    label=L["Show outbound traffic"], tooltip=L["Display outbound traffic on broker"] },
+		{ type="toggle", name="showWorldOnBroker",       label=L["Show world latency"],    tooltip=L["Display world latency on broker"] },
+		{ type="toggle", name="showHomeOnBroker",        label=L["Show home latency"],     tooltip=L["Display home latency on broker"] },
+		{ type="toggle", name="showFpsOnBroker",         label=L["Show fps"],              tooltip=L["Display fps on broker"] },
+		{ type="toggle", name="showMemoryUsageOnBroker", label=L["Show memory usage"],     tooltip=L["Display memory usage on broker"] },
+		{ type="toggle", name="showAddOnsCountOnBroker", label=L["Show addons"],           tooltip=L["Display addon count on broker"] },
+
+		{ type="toggle", name="showClientVersionOnBroker",    label=L["Show client version"],    tooltip=L["Display client version on broker"] },
+		{ type="toggle", name="showClientBuildOnBroker",      label=L["Show client build"],      tooltip=L["Display client build number on broker"] },
+		{ type="toggle", name="showInterfaceVersionOnBroker", label=L["Show interface version"], tooltip=L["Display interface version on broker"] },
+
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["In tooltip options"], align="center" },
 		{ type="separator", inMenuInvisible=true },
-		{ type="toggle", name="showTrafficInTooltip",     label=L["Show traffic"],      tooltip=L["x"] },
-		{ type="toggle", name="showLatencyInTooltip",     label=L["Show latency"],      tooltip=L["x"] },
-		{ type="toggle", name="showFpsInTooltip",         label=L["Show fps"],          tooltip=L["x"] },
-		{ type="toggle", name="showMemoryUsageInTooltip", label=L["Show memory usage"], tooltip=L["x"] },
+		{ type="toggle", name="showTrafficInTooltip",     label=L["Show traffic"],      tooltip=L["Display traffic in tooltip"] },
+		{ type="toggle", name="showLatencyInTooltip",     label=L["Show latency"],      tooltip=L["Display latency in tooltip"] },
+		{ type="toggle", name="showFpsInTooltip",         label=L["Show fps"],          tooltip=L["Display fps in tooltip"] },
+		{ type="toggle", name="showMemoryUsageInTooltip", label=L["Show memory usage"], tooltip=L["Display memory usage in tooltip"] },
+		{ type="toggle", name="showClientInfoInTooltip",  label=L["Show client info"], tooltip=L["Display client info in tooltip"] },
 		{ type="slider", name="numDisplayAddOns",         label=L["Show addons in tooltip"], tooltip=L["Select the maximum number of addons to display, otherwise drag to 'All'."],
 			minText = ACHIEVEMENTFRAME_FILTER_ALL,
 			default = 10,
@@ -141,60 +217,9 @@ ns.modules[name_sys] = {
 				[3600] = L["One time per hour"]
 			}
 		},
+		{ type="toggle", name="collectGarbage", label=L["Collect garbage on update"], tooltip=L["Collect garbage on any update of memory usage"] }
 	},
-	clickOptions = {
-		["1_garbage"] = {
-			cfg_label = "Collect garbage", -- L["Collect garbage"]
-			cfg_desc = "collect garbage", -- L["collect garbage"]
-			cfg_default = "__NONE",
-			hint = "Collect garbage", -- L["Collect garbage"]
-			func = function(self,button)
-				local _mod=name_sys;
-				ns.print(L["Collecting Garbage..."]);
-				collectgarbage("collect");
-			end
-		},
-		["2_optionpanel"] = {
-			cfg_label = "Open option panel", -- L["Open option panel"]
-			cfg_desc = "open the option panel", -- L["open the option panel"]
-			cfg_default = "_LEFT",
-			hint = "Open option panel", -- L["Open option panel"]
-			func = function(self,button)
-				local _mod=name_sys;
-				InterfaceOptionsFrame_OpenToCategory(ns.be_option_panel);
-				InterfaceOptionsFrame_OpenToCategory(ns.be_option_panel);
-			end
-		},
-		["3_addonlist"] = {
-			cfg_label = "Open addon list", -- L["Open addon list"]
-			cfg_desc = "open addon list", -- L["open addon list"]
-			cfg_default = "__NONE",
-			hint = "Open addon list", -- L["Open addon list"]
-			func = function(self,button)
-				local _mod=name_sys;
-				local ap = ns.profile[name_sys].addonpanel;
-				if (ap~="none") then
-					if (ap~="Blizzard's Addons Panel") then
-						if not IsAddOnLoaded(ap) then LoadAddOn(ap) end
-					end
-					if (addonpanels[ap]) and (addonpanels[ap](true)) then
-						addonpanels[ap]();
-					end
-				end
-			end
-		},
-		-- toggle netstats
-		["4_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name_sys;
-				createMenu(self, _mod);
-			end
-		}
-	}
+	clickOptions = clickOptions
 };
 
 ns.modules[name_fps] = {
@@ -245,8 +270,8 @@ ns.modules[name_mem] = {
 	config_defaults = {
 		mem_max_addons = -1,
 		addonpanel = "none",
-		updateInCombat = true,
-		updateInterval = 300
+		updateInterval = 300,
+		collectGarbage = true
 	},
 	config_allowed = {
 	},
@@ -278,14 +303,15 @@ ns.modules[name_mem] = {
 				[3600] = L["One time per hour"]
 			}
 		},
-		{ type="toggle", name="updateInCombat", label=L["Update while in combat"], tooltip=L["Does update memory usage while you are in combat."]},
+		{ type="toggle", name="collectGarbage", label=L["Collect garbage on update"], tooltip=L["Collect garbage on any update of memory usage"] },
 		{ type="desc", text="|n"..table.concat({
 				C("orange",L["Any update of the addon memory usage can cause results in fps drops and 'Script ran too long' error messages!"]),
 				C("white",L["The necessary time to collect memory usage of all addons depends on CPU speed, CPU usage, the number of running addons and other factors."]),
 				C("yellow",L["If you have more than one addon to display memory usage it is recommented to disable the update interval of this addon."])
 			},"|n|n")
 		},
-	}
+	},
+	clickOptions = clickOptions
 }
 
 ns.modules[name_traf] = {
@@ -306,12 +332,13 @@ ns.modules[name_traf] = {
 -- some local functions --
 --------------------------
 function createMenu(parent,name)
+	if not name then return end
 	if (tt) and (tt.key) and (tt.key==name.."TT") then ns.hideTooltip(tt,name.."TT",true) end
 	ns.EasyMenu.InitializeMenu();
-	-- additional elements...
-	if name then
+	-- additional elements...?
+	--if name then
 		ns.EasyMenu.addConfigElements(name,nil,true);
-	end
+	--end
 	ns.EasyMenu.ShowMenu(parent);
 end
 
@@ -421,6 +448,7 @@ end
 
 local function updateMemory()
 	memoryTimeout = 60;
+	if not (enabled.sys_mod or enabled.mem_mod) then return end
 	memory.numAddOns=GetNumAddOns();
 	local lst,sum,numLoadedAddOns = {},0,0;
 	for i=1, memory.numAddOns do
@@ -446,8 +474,8 @@ local function updateMemory()
 	memoryStr(memory,"max");
 end
 
-local function createTooltip(self, tt, name)
-	if (not tt.key) or tt.key~=name.."TT" then return end -- don't override other LibQTip tooltips...
+local function createTooltip(self, tt, name, ttName)
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local allHidden=true;
 
 	tt:Clear();
@@ -495,7 +523,7 @@ local function createTooltip(self, tt, name)
 
 		if ns.profile[name].showMemoryUsageInTooltip then
 			tt:AddSeparator(4,0,0,0,0);
-			tt:AddLine(C("ltblue",L["AddOns and memory"]));
+			tt:SetCell(tt:AddLine(),1,C("ltblue",L["AddOns and memory"]),nil,nil,0);
 			tt:AddSeparator();
 			tt:AddLine(C("ltyellow",L["Loaded AddOns"]..":"), memory.loadedAddOns.."/"..memory.numAddOns);
 			tt:AddLine(C("ltyellow",L["Memory usage"]..":"), memory.curStr);
@@ -510,6 +538,17 @@ local function createTooltip(self, tt, name)
 			for i=1, num do
 				tt:AddLine(C("ltyellow",memory.list[i].name),memory.list[i].curStr);
 			end
+			allHidden=false;
+		end
+
+		if ns.profile[name].showClientInfoInTooltip then
+			tt:AddSeparator(4,0,0,0,0);
+			tt:SetCell(tt:AddLine(),1,C("ltblue",L["Client info"]),nil,nil,0);
+			tt:AddSeparator();
+			tt:AddLine(C("ltyellow",L["Version"]..":"),version);
+			tt:AddLine(C("ltyellow",L["Build version"]..":"),build);
+			tt:AddLine(C("ltyellow",L["Build date"]..":"),buildDate);
+			tt:AddLine(C("ltyellow",L["Interface version"]..":"),interfaceVersion);
 			allHidden=false;
 		end
 
@@ -563,6 +602,7 @@ local function createTooltip(self, tt, name)
 		tt:SetCell(l,1,L["Total Memory usage"]..":",nil,nil,2);
 		tt:SetCell(l,3,memory.curStr,nil,nil,1);
 
+		--[[
 		if ns.profile.GeneralOptions.showHints then
 			tt:AddSeparator(4,0,0,0,0)
 			tt:SetCell(tt:AddLine(), 1, C("copper",L["Left-click"]).." || "..C("green",L["Open interface options"]),nil, nil, ttColumnsMem)
@@ -580,6 +620,12 @@ local function createTooltip(self, tt, name)
 				tt:SetCell(tt:AddLine(), 1, C("copper",L["Right-click"]).." || "..C("green",ap), nil, nil, ttColumnsMem);
 			end
 			tt:SetCell(tt:AddLine(), 1, C("copper",L["Shift+Right-click"]).." || "..C("green",L["Collect garbage"]), nil, nil, ttColumnsMem);
+		end
+		--]]
+
+		if (ns.profile.GeneralOptions.showHints) then
+			tt:AddSeparator(4,0,0,0,0)
+			ns.clickOptions.ttAddHints(tt,name_mem,ttColumnsMem);
 		end
 
 	elseif name_traf==name then
@@ -603,80 +649,46 @@ local function createTooltip(self, tt, name)
 	ns.roundupTooltip(self,tt)
 end
 
+local function updateAll()
+	if not (enabled.sys_mod or enabled.fps_mod or enabled.lat_mod or enabled.mem_mod) then return; end
 
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules.system_core.init = function() end
-
-ns.modules[name_sys].init = function()
-	ldbNameSys = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name_sys;
-	enabled.sys_mod = true;
-	enabled.fps_sys = (ns.profile[name_sys].showFpsOnBroker or ns.profile[name_sys].showFpsInTooltip);
-	enabled.lat_sys = (ns.profile[name_sys].showWorldOnBroker or ns.profile[name_sys].showHomeOnBroker or ns.profile[name_sys].showLatencyInTooltip);
-	enabled.mem_sys = (ns.profile[name_sys].showMemoryUsageOnBroker or ns.profile[name_sys].showAddOnsCountOnBroker or ns.profile[name_sys].showMemoryUsageInTooltip);
-	enabled.traf_sys = (ns.profile[name_sys].showInboundOnBroker or ns.profile[name_sys].showOutboundOnBroker or ns.profile[name_sys].showTrafficInTooltip);
-end
-ns.modules[name_fps].init = function()
-	ldbNameFPS = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name_fps;
-	enabled.fps_mod=true;
-end
-ns.modules[name_lat].init = function()
-	ldbNameLat = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name_lat;
-	enabled.lat_mod=true;
-end
-ns.modules[name_mem].init = function()
-	ldbNameMem = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name_mem;
-	enabled.mem_mod=true;
-end
-ns.modules[name_traf].init = function()
-	ldbNameTraf = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name_traf;
-	enabled.traf_mod=true;
-end
-
-
-ns.modules.system_core.onevent = function(self,event,msg)
-	if event=="PLAYER_ENTERING_WORLD" then
+	-- apply hook
+	if not isHooked and (enabled.sys_mod or enabled.mem_mod) then
 		hooksecurefunc("UpdateAddOnMemoryUsage",updateMemory);
-		C_Timer.After(10,function() PEW=true end);
-		self:UnregisterEvent(event);
+		isHooked = true;
 	end
-end
 
-ns.modules[name_sys].onevent = function(self,event,msg)
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name_sys],ns.profile[name_sys]);
-	end
-end
-
-ns.modules.system_core.onupdate = function(self)
-	if not PEW then return; end
-
+	-- update fps
 	if enabled.fps_mod or enabled.fps_sys then
 		updateFPS();
 	end
+
+	-- update network stats
 	if enabled.lat_mod or enabled.lat_sys or enabled.traf_mod or enabled.traf_sys then
 		updateNetStats();
 	end
-	if not InCombatLockdown() and (enabled.mem_mod or enabled.mem_sys) then
-		if memoryTimeout==false or (enabled.mem_sys and ns.profile[name_sys].updateInterval==0) or (enabled.mem_mod and ns.profile[name_mem].updateInterval==0) then return end
-		if memoryTimeout<0 then
-			collectgarbage("collect");
+
+	-- update memmory usage
+	if not InCombatLockdown() and memoryTimeout~=false and ((enabled.mem_sys and ns.profile[name_sys].updateInterval>0) or (enabled.mem_mod and ns.profile[name_mem].updateInterval>0)) then
+		if memoryTimeout<=0 then
+			if not ((enabled.mem_sys and not ns.profile[name_sys].collectGarbage) or (enabled.mem_mod and not ns.profile[name_mem].collectGarbage)) then
+				collectgarbage("collect");
+			end
 			UpdateAddOnMemoryUsage();
-			local interval=false;
+			local interval={};
 			if enabled.mem_sys then
-				interval = ns.profile[name_sys].updateInterval;
+				tinsert(interval,ns.profile[name_sys].updateInterval);
 			end
 			if enabled.mem_mod then
-				local i = ns.profile[name_mem].updateInterval;
-				interval = interval~=false and _G.min(interval,i) or i;
+				tinsert(interval,ns.profile[name_mem].updateInterval);
 			end
-			memoryTimeout = interval;
+			memoryTimeout = (#interval==1 and interval[1]) or (#interval>1 and _G.min(unpack(interval))) or false;
 		else
 			memoryTimeout=memoryTimeout-1;
 		end
 	end
 
+	-- update broker buttons and visible tooltips
 	if enabled.sys_mod then
 		local broker = {};
 
@@ -709,10 +721,22 @@ ns.modules.system_core.onupdate = function(self)
 			tinsert(broker, memory.loadedAddOns.."/"..memory.numAddOns);
 		end
 
+		if ns.profile[name_sys].showClientVersionOnBroker then
+			tinsert(broker,version);
+		end
+
+		if ns.profile[name_sys].showClientBuildOnBroker then
+			tinsert(broker,build);
+		end
+
+		if ns.profile[name_sys].showInterfaceVersionOnBroker then
+			tinsert(broker,interfaceVersion);
+		end
+
 		ns.LDB:GetDataObjectByName(ldbNameSys).text = #broker>0 and table.concat(broker," ") or L[name_sys];
 
 		if ttSys~=nil and ttSys.key~=nil and ttSys.key==ttNameSys and ttSys:IsShown() then
-			createTooltip(false, ttSys, name_sys);
+			createTooltip(false, ttSys, name_sys, ttNameSys);
 		end
 	end
 
@@ -720,7 +744,7 @@ ns.modules.system_core.onupdate = function(self)
 		ns.LDB:GetDataObjectByName(ldbNameFPS).text = fps.curStr~="" and fps.curStr or L[name_fps];
 
 		if ttFPS~=nil and ttFPS.key~=nil and ttFPS.key==ttNameFPS and ttFPS:IsShown() then
-			createTooltip(false, ttFPS, name_fps);
+			createTooltip(false, ttFPS, name_fps, ttNameFPS);
 		end
 	end
 
@@ -739,7 +763,7 @@ ns.modules.system_core.onupdate = function(self)
 		ns.LDB:GetDataObjectByName(ldbNameLat).text = #broker>0 and table.concat(broker," ") or L[name_lat];
 
 		if ttLat~=nil and ttLat.key~=nil and ttLat.key==ttNameLat and ttLat:IsShown() then
-			createTooltip(false, ttLat, name_lat);
+			createTooltip(false, ttLat, name_lat, ttNameLat);
 		end
 	end
 
@@ -747,7 +771,7 @@ ns.modules.system_core.onupdate = function(self)
 		ns.LDB:GetDataObjectByName(ldbNameMem).text = memory.curStr~="" and memory.curStr or L[name_mem];
 
 		if ttMem~=nil and ttMem.key~=nil and ttMem.key==ttNameMem and ttMem:IsShown() then
-			createTooltip(false, ttMem, name_mem);
+			createTooltip(false, ttMem, name_mem, ttNameMem);
 		end
 	end
 
@@ -765,8 +789,57 @@ ns.modules.system_core.onupdate = function(self)
 		ns.LDB:GetDataObjectByName(ldbNameTraf).text = #broker>0 and table.concat(broker," ") or L[name_traf];
 
 		if ttTraf~=nil and ttTraf.key~=nil and ttTraf.key==ttNameTraf and ttTraf:IsShown() then
-			createTooltip(false, ttTraf, name_traf);
+			createTooltip(false, ttTraf, name_traf, ttNameTraf);
 		end
+	end
+end
+
+------------------------------------
+-- module (BE internal) functions --
+------------------------------------
+ns.modules.system_core.init = function() end
+
+ns.modules[name_sys].init = function()
+	ldbNameSys = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name_sys;
+	enabled.sys_mod = true;
+	enabled.fps_sys = (ns.profile[name_sys].showFpsOnBroker or ns.profile[name_sys].showFpsInTooltip);
+	enabled.lat_sys = (ns.profile[name_sys].showWorldOnBroker or ns.profile[name_sys].showHomeOnBroker or ns.profile[name_sys].showLatencyInTooltip);
+	enabled.mem_sys = (ns.profile[name_sys].showMemoryUsageOnBroker or ns.profile[name_sys].showAddOnsCountOnBroker or ns.profile[name_sys].showMemoryUsageInTooltip);
+	enabled.traf_sys = (ns.profile[name_sys].showInboundOnBroker or ns.profile[name_sys].showOutboundOnBroker or ns.profile[name_sys].showTrafficInTooltip);
+end
+ns.modules[name_fps].init = function()
+	ldbNameFPS = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name_fps;
+	enabled.fps_mod=true;
+end
+ns.modules[name_lat].init = function()
+	ldbNameLat = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name_lat;
+	enabled.lat_mod=true;
+end
+ns.modules[name_mem].init = function()
+	ldbNameMem = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name_mem;
+	enabled.mem_mod=true;
+end
+ns.modules[name_traf].init = function()
+	ldbNameTraf = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name_traf;
+	enabled.traf_mod=true;
+end
+
+ns.modules.system_core.onevent = function(self,event,msg)
+	if event=="PLAYER_ENTERING_WORLD" then
+		C_Timer.NewTicker(ns.modules.system_core.updateinterval,updateAll);
+		self:UnregisterEvent(event);
+	end
+end
+
+ns.modules[name_sys].onevent = function(self,event,msg)
+	if (event=="BE_UPDATE_CLICKOPTIONS") then
+		ns.clickOptions.update(ns.modules[name_sys],ns.profile[name_sys]);
+	end
+end
+
+ns.modules[name_mem].onevent = function(self,event,msg)
+	if (event=="BE_UPDATE_CLICKOPTIONS") then
+		ns.clickOptions.update(ns.modules[name_mem],ns.profile[name_mem]);
 	end
 end
 
@@ -780,28 +853,28 @@ end
 -------------------------------------------
 ns.modules[name_sys].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttSys = ns.LQT:Acquire(ttNameSys, ttColumnsSys, "LEFT","RIGHT", "RIGHT");
-	createTooltip(self, ttSys, name_sys);
+	ttSys = ns.acquireTooltip(ttNameSys, ttColumnsSys, "LEFT","RIGHT", "RIGHT");
+	createTooltip(self, ttSys, name_sys, ttNameSys);
 end
 ns.modules[name_fps].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttFPS = ns.LQT:Acquire(ttNameFPS, ttColumnsFPS, "LEFT","RIGHT", "RIGHT");
-	createTooltip(self, ttFPS, name_fps);
+	ttFPS = ns.acquireTooltip(ttNameFPS, ttColumnsFPS, "LEFT","RIGHT", "RIGHT");
+	createTooltip(self, ttFPS, name_fps, ttNameFPS);
 end
 ns.modules[name_lat].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttLat = ns.LQT:Acquire(ttNameLat, ttColumnsLat, "LEFT","RIGHT", "RIGHT");
-	createTooltip(self, ttLat, name_lat);
+	ttLat = ns.acquireTooltip(ttNameLat, ttColumnsLat, "LEFT","RIGHT", "RIGHT");
+	createTooltip(self, ttLat, name_lat, ttNameLat);
 end
 ns.modules[name_mem].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttMem = ns.LQT:Acquire(ttNameMem, ttColumnsMem, "LEFT","RIGHT", "RIGHT");
-	createTooltip(self, ttMem, name_mem);
+	ttMem = ns.acquireTooltip(ttNameMem, ttColumnsMem, "LEFT","RIGHT", "RIGHT");
+	createTooltip(self, ttMem, name_mem, ttNameMem);
 end
 ns.modules[name_traf].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttTraf = ns.LQT:Acquire(ttNameTraf, ttColumnsTraf, "LEFT","RIGHT", "RIGHT");
-	createTooltip(self, ttTraf, name_traf);
+	ttTraf = ns.acquireTooltip(ttNameTraf, ttColumnsTraf, "LEFT","RIGHT", "RIGHT");
+	createTooltip(self, ttTraf, name_traf, ttNameTraf);
 end
 
 ns.modules[name_sys].onleave = function(self) if ttSys then ns.hideTooltip(ttSys,ttNameSys,true); end end
@@ -813,24 +886,3 @@ ns.modules[name_traf].onleave = function(self) if ttTraf then ns.hideTooltip(ttT
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 
-ns.modules[name_mem].onclick = function(self,button)
-	local shift = IsShiftKeyDown()
-	
-	if button == "RightButton" and shift then
-		ns.print(L["Collecting Garbage..."])
-		collectgarbage("collect");
-	elseif button == "LeftButton" then
-		InterfaceOptionsFrame_OpenToCategory(ns.be_option_panel);
-		InterfaceOptionsFrame_OpenToCategory(ns.be_option_panel);
-	elseif button == "RightButton" and not shift then
-		local ap = ns.profile[name_mem].addonpanel;
-		if (ap~="none") then
-			if (ap~="Blizzard's Addons Panel") then
-				if not IsAddOnLoaded(ap) then LoadAddOn(ap) end
-			end
-			if (addonpanels[ap]) and (addonpanels[ap](true)) then
-				addonpanels[ap]();
-			end
-		end
-	end
-end
