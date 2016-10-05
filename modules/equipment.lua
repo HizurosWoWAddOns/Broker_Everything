@@ -15,7 +15,6 @@ local objLink,objColor,objType,objId,objData,objName,objInfo,objTooltip=1,2,3,4,
 local itemEnchant,itemGem1,itemGem2,itemGem3,itemGem4=1,2,3,4,5;
 local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice=1,2,3,4,5,6,7,8,9,10,11;
 local slots = {"HEAD","NECK","SHOULDER","SHIRT","CHEST","WAIST","LEGS","FEET","WRIST","HANDS","FINGER0","FINGER1","TRINKET0","TRINKET1","BACK","MAINHAND","SECONDARYHAND","RANGED"};
-local fallbackIcon = "interface\\icons\\inv_misc_questionmark";
 local inventory,enchantSlots = {},{}; -- (enchantSlots) -1 = [iLevel<600], 0 = both, 1 = [iLevel=>600]
 if ns.build<6000000 then
 	enchantSlots = {
@@ -23,10 +22,14 @@ if ns.build<6000000 then
 		[3]=1, -- inscription
 		[7]=1, -- misc trade skills
 	};
-else --elseif ns.build>6000000 then
+elseif ns.build<7000000 then
 	enchantSlots = {
 		[2]=1,[11]=1,[12]=1,[15]=1,[16]=1 -- enchanters
 	};
+else --if ns.build<8000000 then
+	enchantSlots = {
+		[2]=1,[3]=1,[10]=1,[11]=1,[12]=1,[15]=1 -- enchanters
+	}
 end
 local warlords_crafted = {
 	-- Alchemy
@@ -113,8 +116,6 @@ ns.modules[name] = {
 		"PLAYER_REGEN_ENABLED",
 		"PLAYER_ALIVE",
 		"PLAYER_UNGHOST",
-		"UNIT_INVENTORY_CHANGED",
-		"EQUIPMENT_SETS_CHANGED",
 		"ITEM_UPGRADE_MASTER_UPDATE"
 	},
 	updateinterval = nil, -- 10
@@ -123,17 +124,34 @@ ns.modules[name] = {
 		showInventory = true,
 		showItemLevel = true,
 		showCurrentSet = true,
-		fullyUpgraded = true
+		fullyUpgraded = true,
+
+		showNotEnchanted = true,
+		showEmptyGems = true,
+		showTSet = true,
+		showGreenText = true,
+		showUpgrades = true,
 	},
 	config_allowed = nil,
 	config = {
 		{ type="header", label=BAG_FILTER_EQUIPMENT, align="left", icon=I[name] },
-		{ type="separator" },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Tooltip options"]},
+		{ type="separator", inMenuInvisible=true},
 		{ type="toggle", name="showSets",            label=L["Show equipment sets"],               tooltip=L["Display a list of your equipment sets"]},
 		{ type="toggle", name="showInventory" ,      label=L["Show inventory"],                    tooltip=L["Display a list of currently equipped items"]},
+		{ type="toggle", name="showNotEnchanted" ,   label=L["Show 'not enchanted' mark"],         tooltip=L["Display a red # on not enchanted/enchantable items"]},
+		{ type="toggle", name="showEmptyGems" ,      label=L["Show 'empty socket' mark"],          tooltip=L["Display a yellow # on items with empty sockets"]},
+		{ type="toggle", name="showTSet" ,           label=L["Show T-Set"],                        tooltip=L["Display a T-Set label on items"]},
+		{ type="toggle", name="showGreenText" ,      label=L["Show green text"],                   tooltip=L["Display green text line from item tooltip like titanforged"]},
+		{ type="toggle", name="showUpgrades" ,       label=L["Show upgrade info"],                 tooltip=L["Display upgrade info like 2/6"]},
+		{ type="toggle", name="fullyUpgraded",       label=L["Darker blue for fully upgraded"],    tooltip=L["Display upgrade counter in darker blue on fully upgraded items"]},
+
+		{ type="separator" },
+		{ type="header", label=L["Broker button options"]},
+		{ type="separator", inMenuInvisible=true},
 		{ type="toggle", name="showCurrentSet",      label=L["Show current set"],                  tooltip=L["Display your current equipment set on broker button"], event="BE_DUMMY_EVENT"},
 		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],           tooltip=L["Display your average item level on broker button"], event="BE_DUMMY_EVENT"},
-		{ type="toggle", name="fullyUpgraded",       label=L["Darker blue for fully upgraded"],    tooltip=L["Display upgrade counter in darker blue on fully upgraded items"]}
 	},
 	clickOptions = {
 		["1_open_character_info"] = {
@@ -246,7 +264,10 @@ end
 
 local function GetILevelColor(il)
 	local colors = {"cyan","green","yellow","orange","red"};
-	
+	if not inventory then
+		UpdateInventory();
+	end
+
 	if (il==inventory.iLevelMax) then return colors[1]; end
 
 	local diff,q = inventory.iLevelMax-inventory.iLevelMin;
@@ -290,7 +311,7 @@ local function InventoryTooltip(self,link)
 end
 
 local function createTooltip(self, tt)
-	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	
 	local line, column
 	tt:Clear()
@@ -313,7 +334,7 @@ local function createTooltip(self, tt)
 					local color = (equipPending==eName and "orange") or (numMissing>0 and "red") or (isEquipped and "ltyellow") or false
 					local formatName = color~=false and C(color,eName) or eName
 
-					local line = ns.AddSpannedLine(tt, "|T"..(icon or fallbackIcon)..":0|t "..formatName, ttColumns);
+					local line = ns.AddSpannedLine(tt, "|T"..(icon or ns.icon_fallback)..":0|t "..formatName, ttColumns);
 					tt:SetLineScript(line, "OnMouseUp", function(self) 
 						if (IsShiftKeyDown()) then 
 							if (tt) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
@@ -341,6 +362,7 @@ local function createTooltip(self, tt)
 	end
 
 	if (ns.profile[name].showInventory) then
+		UpdateInventory();
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(
 			C("ltblue",TRADESKILL_FILTER_SLOTS),
@@ -349,21 +371,26 @@ local function createTooltip(self, tt)
 		);
 		tt:AddSeparator();
 		local none,miss=true,false;
+		--WFEWERERE = inventory;
 		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do
 			if inventory[i] then
 				none=false;
-				local tSetItem,enchanted,greenline,upgrades = "","","","";
-				if enchantSlots[i] and tonumber(inventory[i].enchantId)==0 then
+				local tSetItem,enchanted,greenline,upgrades,gems = "","","","","";
+				if ns.profile[name].showNotEnchanted and enchantSlots[i] and (tonumber(inventory[i].enchantId) or 0)==0 then
 					enchanted=C("red"," #");
 					miss=true;
 				end
-				if(tSetItems[inventory[i].id])then
+				if ns.profile[name].showEmptyGems and inventory[i].empty_gem then
+					gems=C("yellow"," #");
+					miss=true;
+				end
+				if(ns.profile[name].showTSet and tSetItems[inventory[i].id])then
 					tSetItem=C("yellow"," T"..tSetItems[inventory[i].id]);
 				end
-				if(inventory[i].tooltip and type(inventory[i].tooltip[2])=="string" and inventory[i].tooltip[2]:find("\124"))then
+				if(ns.profile[name].showGreenText and inventory[i].tooltip and type(inventory[i].tooltip[2])=="string" and inventory[i].tooltip[2]:find("\124"))then
 					greenline = " "..inventory[i].tooltip[2];
 				end
-				if(inventory[i].upgrades)then
+				if(ns.profile[name].showUpgrades and inventory[i].upgrades)then
 					local col,cur,max = "ltblue",strsplit("/",inventory[i].upgrades);
 					if ns.profile[name].fullyUpgraded and cur==max then
 						col="blue";
@@ -372,7 +399,7 @@ local function createTooltip(self, tt)
 				end
 				local l = tt:AddLine(
 					C("ltyellow",_G[slots[i].."SLOT"]),
-					C("quality"..inventory[i].rarity,inventory[i].name) .. greenline .. tSetItem .. upgrades .. enchanted,
+					C("quality"..inventory[i].rarity,inventory[i].name) .. greenline .. tSetItem .. upgrades .. enchanted .. gems,
 					C(GetILevelColor(inventory[i].level),inventory[i].level)
 				);
 				tt:SetLineScript(l,"OnEnter",function(self) InventoryTooltip(self,inventory[i].link) end);
@@ -383,13 +410,14 @@ local function createTooltip(self, tt)
 			local l = tt:AddLine();
 			tt:SetCell(l,1,L["All slots are empty"],nil,nil,ttColumns);
 		end
+		--ns.debug(inventory.iLevelMax,inventory.iLevelMin);
 		tt:AddSeparator();
 		local _, avgItemLevelEquipped = GetAverageItemLevel();
 		local avgItemLevelEquippedf = floor(avgItemLevelEquipped);
 		local l = tt:AddLine(nil,nil,C(GetILevelColor(avgItemLevelEquipped),"%.1f"):format(avgItemLevelEquipped));
 		tt:SetCell(l,1,C("ltblue",STAT_AVERAGE_ITEM_LEVEL),nil,nil,2);
 		if (miss) then
-			ns.AddSpannedLine(tt,C("red","#")..": "..C("ltgray",L["Item is not enchanted"]),ttColumns);
+			ns.AddSpannedLine(tt,C("red","#")..": "..C("ltgray",L["Item is not enchanted"]) .. " || " .. C("yellow","#")..": "..C("ltgray",L["Item has empty socket"]),ttColumns);
 		end
 	end
 
@@ -404,29 +432,26 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 	hooksecurefunc("UpgradeItem",updateBroker);
+	ns.items.RegisterCallback(name,UpdateInventory,"inv");
 end
 
 ns.modules[name].onevent = function(self,event,arg1,...)
-	if (event=="PLAYER_ENTERING_WORLD") then
-		ns.items.RegisterCallback(name,UpdateInventory,"inv");
-		self:UnregisterEvent(event);
-	elseif (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and (equipPending~=nil) then
+	if (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and equipPending~=nil then
 		UseEquipmentSet(equipPending)
 		equipPending = nil
-	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
+	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-		return
-	elseif (event=="UNIT_INVENTORY_CHANGED") and (arg1~="player") then
-		return
+		return;
+	elseif event=="UNIT_INVENTORY_CHANGED" and arg1~="player" then
+		return;
 	end
 
 	updateBroker();
 end
 
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tt) end
@@ -437,7 +462,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "LEFT", "RIGHT");
+	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "LEFT", "RIGHT");
 	createTooltip(self, tt);
 end
 
