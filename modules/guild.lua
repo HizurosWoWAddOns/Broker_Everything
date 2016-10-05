@@ -13,10 +13,10 @@ L["Guild"] = GUILD;
 local name = "Guild";
 local ldbName, ttName, ttName2,ttColumns,ttColumns2 = name, name.."TT", name.."TT2",9,2;
 local tt,tt2,createMenu,db;
-local off, on = strtrim(gsub(ERR_FRIEND_OFFLINE_S,"%%s","")), strtrim(gsub(ERR_FRIEND_ONLINE_SS,"\124Hplayer:%%s\124h%[%%s%]\124h",""));
+local off, on = strtrim(gsub(ERR_FRIEND_OFFLINE_S,"%%s","(.*)")), strtrim(gsub(ERR_FRIEND_ONLINE_SS,"\124Hplayer:%%s\124h%[%%s%]\124h","(.*)"));
 local tradeskillsLockUpdate,tradeskillsLastUpdate,tradeskillsUpdateTimeout = false,0,20;
 local guild, player, members, membersName2Index, mobile, tradeskills, applicants = {},{},{},{},{},{},{};
-local doMembersUpdate, doTradeskillsUpdate, doApplicantsUpdate, doUpdateTooltip = false,false,false,false;
+local doGuildUpdate,doMembersUpdate, doTradeskillsUpdate, doApplicantsUpdate, doUpdateTooltip,updaterLocked = false,false,false,false,false,false;
 local gName, gDesc, gRealm, gRealmNoSpacer, gMotD, gNumMembers, gNumMembersOnline, gNumMobile, gNumApplicants = 1,2,3,4,5,6,7,8,9;
 local pStanding, pStandingText, pStandingMin, pStandingMax, pStandingValue = 1,2,3,4,5;
 local mFullName, mName, mRealm, mRank, mRankIndex, mLevel, mClassLocale, mZone, mNote, mOfficerNote, mOnline, mIsAway, mClassFile, mAchievementPoints, mAchievementRank, mIsMobile, mCanSoR, mStanding, mStandingText = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19;
@@ -24,7 +24,7 @@ local tsName, tsIcon, tsValue, tsID = 1,2,3,4;
 local app_index, app_name, app_realm, app_level, app_class, app_bQuest, app_bDungeon, app_bRaid, app_bPvP, app_bRP, app_bWeekdays, app_bWeekends, app_bTank, app_bHealer, app_bDamage, app_comment, app_timeSince, app_timeLeft = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18; -- applicants table entry indexes
 local MOBILE_BUSY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-BusyMobile:14:14:0:0:16:16:0:16:0:16|t";
 local MOBILE_AWAY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-AwayMobile:14:14:0:0:16:16:0:16:0:16|t";
-
+local eventLock=false;
 
 -------------------------------------------
 -- register icon names and default files --
@@ -41,7 +41,7 @@ ns.modules[name] = {
 		"PLAYER_ENTERING_WORLD",
 		"PLAYER_GUILD_UPDATE",
 	},
-	updateinterval = 1,
+	updateinterval = nil,
 	config_defaults = {
 		-- guild
 		showRep = true,
@@ -57,8 +57,10 @@ ns.modules[name] = {
 		
 		-- misc
 		showApplicants = true,
+		showApplicantsBroker = true,
 		showMobileChatter = true,
 		showMobileChatterBroker = true,
+		showTotalMembersBroker = true,
 		splitTables = false,
 		showMembersLevelUp = true
 	},
@@ -66,24 +68,41 @@ ns.modules[name] = {
 	},
 	config = {
 		{ type="header", label=GUILD, align="left", icon=I[name] },
-		{ type="separator" },
+
+		{ type="separator", alpha=0 },
+
+		{ type="header", label=L["Misc. options"] },
+		{ type="separator", inMenuInvisible=true },
 		{ type="toggle", name="showMembersLevelUp",		label=L["Show level up notification"],	tooltip=L["Show guild member level up notification in chat frame. (This is not a gratulation bot!)"]},
+
 		{ type="separator", alpha=0 },
+
+		{ type="header", label=L["Broker button options"] },
+		{ type="separator", inMenuInvisible=true, isSubMenu=true },
+		{ type="toggle", name="showApplicantsBroker",	label=L["Show applicants on broker"],			tooltip=L["Show applicants on broker button"], event = true },
+		{ type="toggle", name="showMobileChatterBroker",label=L["Show mobile chatter on broker"],		tooltip=L["Show count of mobile chatter on broker button"], event = true },
+		{ type="toggle", name="showTotalMembersBroker",	label=L["Show total members count on broker"],	tooltip=L["Show total members count on broker button"], event = true },
+		
+		{ type="separator", alpha=0 },
+
 		{ type="header", label=L["Main tooltip options"] },
-		{ type="toggle", name="showRep",				label=L["Show guild reputation"],		tooltip=L["Enable/Disable the display of Guild Reputation in the Guild data broker tooltip."] },
+		{ type="separator", inMenuInvisible=true, isSubMenu=true },
+		{ type="toggle", name="showRep",				label=L["Show guild reputation"],		tooltip=L["Enable/Disable the display of Guild Reputation in tooltip"] },
 		{ type="toggle", name="showMOTD",				label=L["Show Guild MotD"],				tooltip=L["Show Guild Message of the Day in tooltip"] },
-		{ type="toggle", name="showRealmname",			label=L["Show realm name"],				tooltip=L["Show realm names behind guild and character names. Guilds and characters from connected-realms gets an asterisk behind the names if this option is unchecked."] },
-		{ type="toggle", name="showZone",				label=L["Show zone"],					tooltip=L["Show current zone from guild members"]},
-		{ type="toggle", name="showNotes",				label=L["Show notes"],					tooltip=L["Show notes from guild members"]},
-		{ type="toggle", name="showONotes",				label=L["Show officer notes"],			tooltip=L["Show officer notes from guild members. (This option will be ignored if you have not permission to read the officer notes)"]},
-		{ type="toggle", name="showRank",				label=L["Show rank"],					tooltip=L["Show rank name from guild members"]},
-		{ type="toggle", name="showProfessions",		label=L["Show professions"],			tooltip=L["Show professions from guild members"], event = true },
-		{ type="toggle", name="showApplicants",			label=L["Show applicants"],				tooltip=L["Show applicants in broker and tooltip"], event = true },
+		{ type="toggle", name="showRealmname",			label=L["Show realm name"],				tooltip=L["Show realm names behind guild and character names in tooltip. Guilds and characters from connected-realms gets an asterisk behind the names if this option is unchecked."] },
+		{ type="toggle", name="showZone",				label=L["Show zone"],					tooltip=L["Show current zone from guild members in tooltip"]},
+		{ type="toggle", name="showNotes",				label=L["Show notes"],					tooltip=L["Show notes from guild members in tooltip"]},
+		{ type="toggle", name="showONotes",				label=L["Show officer notes"],			tooltip=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"]},
+		{ type="toggle", name="showRank",				label=L["Show rank"],					tooltip=L["Show rank name from guild members in tooltip"]},
+		{ type="toggle", name="showProfessions",		label=L["Show professions"],			tooltip=L["Show professions from guild members om tooltip"], event = true },
+		{ type="toggle", name="showApplicants",			label=L["Show applicants"],				tooltip=L["Show applicants in tooltip"] },
 		{ type="toggle", name="showMobileChatter",		label=L["Show mobile chatter"],			tooltip=L["Show mobile chatter in tooltip (Armory App users)"] },
-		{ type="toggle", name="showMobileChatterBroker",label=L["Show mobile chatter in broker"], tooltip=L["Show count of mobile chatter in broker button"], event = true },
 		{ type="toggle", name="splitTables",			label=L["Separate mobile chatter"],		tooltip=L["Display mobile chatter with own table in tooltip"] },
+
 		{ type="separator", alpha=0 },
+
 		{ type="header", label=L["Secondary tooltip options"] },
+		{ type="separator", inMenuInvisible=true, isSubMenu=true },
 		{ type="desc",   text=L["The secondary tooltip will be displayed by moving the mouse over a guild member in main tooltip. The tooltip will be displayed if one of the following options activated."]},
 		{ type="toggle", name="showZoneInTT2",			label=L["Show zone"],					tooltip=L["Show current zone from guild member"]},
 		{ type="toggle", name="showNotesInTT2",			label=L["Show notes"],					tooltip=L["Show notes from guild member"]},
@@ -192,7 +211,7 @@ local function updateTradeSkills()
 	-- 1. run...
 	local num = GetNumGuildTradeSkill();
 	for index=num, 1, -1 do
-		d = {GetGuildTradeSkillInfo(index)};
+		local d = {GetGuildTradeSkillInfo(index)};
 		if d[headerName] and d[isCollapsed] then
 			tinsert(collapsed,d[skillID]);
 			ExpandGuildTradeSkillHeader(d[skillID]);
@@ -203,7 +222,7 @@ local function updateTradeSkills()
 	local tmp,skillHeader = {},{};
 	local num = GetNumGuildTradeSkill();
 	for index=1, num do
-		d = {GetGuildTradeSkillInfo(index)};
+		local d = {GetGuildTradeSkillInfo(index)};
 		if (d[headerName]) then
 			skillHeader = {d[headerName],d[iconTexture],d[skillID]};
 		elseif (d[playerFullName]) then
@@ -214,7 +233,7 @@ local function updateTradeSkills()
 				tmp[d[playerFullName]],
 				{
 					skillHeader[1],
-					skillHeader[2] or "interface\\icons\\inv_misc_questionmark",
+					skillHeader[2] or ns.icon_fallback,
 					d[skill],
 					skillHeader[3] or d[skillID]
 				}
@@ -252,14 +271,16 @@ local function updateBroker()
 	local broker = ns.LDB:GetDataObjectByName(ldbName);
 	if guild[gName] then
 		local txt = {};
-		if (guild[gNumApplicants]>0) then
+		if (ns.profile[name].showApplicantsBroker) and (guild[gNumApplicants]>0) then
 			tinsert(txt, C("orange",guild[gNumApplicants]));
 		end
 		if (ns.profile[name].showMobileChatterBroker) then
 			tinsert(txt, C("ltblue",guild[gNumMobile]));
 		end
 		tinsert(txt,C("green",guild[gNumMembersOnline]));
-		tinsert(txt,C("green",guild[gNumMembers]));
+		if (ns.profile[name].showTotalMembersBroker) then
+			tinsert(txt,C("green",guild[gNumMembers]));
+		end
 		broker.text = table.concat(txt,"/");
 	else
 		broker.text = L["No guild"];
@@ -482,7 +503,7 @@ local function createTooltip(self, tt)
 		C("ltyellow",CHARACTER), -- [2]
 		(db.showZone) and C("ltyellow",ZONE) or "", -- [3]
 		(db.showNotes) and C("ltyellow",LABEL_NOTE) or "", -- [4]
-		(displayOfficerNotes and db.showONotes) and C("ltyellow",OFFICER_NOTE_COLON) or "", -- [5]
+		(db.showONotes and CanViewOfficerNote()) and C("ltyellow",OFFICER_NOTE_COLON) or "", -- [5]
 		(db.showRank) and C("ltyellow",RANK) or "" -- [6]
 	);
 
@@ -545,8 +566,7 @@ local function createTooltip(self, tt)
 				end
 			end
 			for i,v in ipairs(t1) do
-				line, column = tt:AddLine();
-				tt:SetCell(line,1,v,nil,"LEFT",ttColumns);
+				tt:SetCell(tt:AddLine(),1,v,nil,"LEFT",ttColumns);
 			end
 		end
 	end
@@ -555,10 +575,34 @@ local function createTooltip(self, tt)
 	ns.roundupTooltip(self, tt);
 end
 
+local function updater()
+	updaterLocked = false;
+	if doGuildUpdate then
+		doGuildUpdate = false;
+		updateGuild();
+	end
+	if doMembersUpdate then
+		doMembersUpdate = false;
+		updateMembers();
+	end
+	if doTradeskillsUpdate then
+		updateTradeSkills();
+	end
+	if doApplicantsUpdate then
+		doApplicantsUpdate = false;
+		updateApplicants();
+	end
+	updateBroker();
+	if doUpdateTooltip and tt and tt.key and tt.key==ttName and tt:IsShown() then
+		doUpdateTooltip = false;
+		createTooltip(false, tt);
+	end
+end
+
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 	db = ns.profile[name];
 end
@@ -594,7 +638,17 @@ ns.modules[name].onevent = function(self,event,msg,...)
 			doApplicantsUpdate = true;
 		end
 		self:UnregisterEvent("PLAYER_ENTERING_WORLD");
-	elseif event=="GUILD_ROSTER_UPDATE" or event=="LF_GUILD_RECRUITS_UPDATED" or event=="BE_DUMMY_EVENT" or (event=="CHAT_MSG_SYSTEM" and (msg:find(off) or msg:find(on))) then
+	elseif event=="CHAT_MSG_SYSTEM" then
+		local name = tostring(msg:match(off) or msg:match(on)):gsub("\124Hplayer:%%s\124h%[",""):gsub("%]\124h","");
+		if not name:find("-") then
+			name = name .."-".. ns.realm:gsub(" ","");
+		end
+		if not membersName2Index[name] then
+			return; -- it is not a guild member. don't update for toons from friendlist.
+		end
+		securecall("GuildRoster"); -- trigger
+		return;
+	elseif event=="GUILD_ROSTER_UPDATE" or event=="LF_GUILD_RECRUITS_UPDATED" or event=="BE_DUMMY_EVENT" then
 		doGuildUpdate = true;
 		doMembersUpdate = true;
 	elseif event=="GUILD_TRADESKILL_UPDATE" then
@@ -602,28 +656,9 @@ ns.modules[name].onevent = function(self,event,msg,...)
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
-end
-
-ns.modules[name].onupdate = function(self)
-	if doGuildUpdate then
-		doGuildUpdate = false;
-		updateGuild();
-	end
-	if doMembersUpdate then
-		doMembersUpdate = false;
-		updateMembers();
-	end
-	if doTradeskillsUpdate then
-		updateTradeSkills();
-	end
-	if doApplicantsUpdate then
-		doApplicantsUpdate = false;
-		updateApplicants();
-	end
-	updateBroker();
-	if doUpdateTooltip and tt and tt.key and tt.key==ttName and tt:IsShown() then
-		doUpdateTooltip = false;
-		createTooltip(false, tt);
+	if updaterLocked==false and (doGuildUpdate or doMembersUpdate or doTradeskillsUpdate or doApplicantsUpdate or doUpdateTooltip) then
+		updaterLocked = true;
+		C_Timer.After(0.5,updater);
 	end
 end
 
@@ -639,7 +674,6 @@ ns.modules[name].onenter = function(self)
 	local ttAlignings = {"LEFT"};
 
 	if IsInGuild() then
-		displayOfficerNotes = CanViewOfficerNote();
 		ttAlignings = {
 			"RIGHT", -- level
 			"LEFT" -- name
@@ -654,7 +688,7 @@ ns.modules[name].onenter = function(self)
 
 	ttColumns = #ttAlignings;
 
-	tt = ns.LQT:Acquire(ttName, ttColumns,unpack(ttAlignings));
+	tt = ns.acquireTooltip(ttName, ttColumns,unpack(ttAlignings));
 	createTooltip(self, tt);
 end
 
