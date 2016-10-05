@@ -107,7 +107,7 @@ ns.modules[name] = {
 		"PLAYER_REGEN_ENABLED",
 		"QUEST_LOG_UPDATE"
 	},
-	updateinterval = false, -- 10
+	updateinterval = 10,
 	config_defaults = {
 		showQuestIDs = false,
 		showChars = true,
@@ -239,11 +239,11 @@ local function updateQuestStatus()
 	end
 	if cQ<Q then
 		completed,numCompleted=c,nC;
-		if Broker_Everything_CharacterDB[ns.player.name_realm].tanaanjungle==nil then
-			Broker_Everything_CharacterDB[ns.player.name_realm].tanaanjungle={};
+		if ns.toon.tanaanjungle==nil then
+			ns.toon.tanaanjungle={};
 		end
-		Broker_Everything_CharacterDB[ns.player.name_realm].tanaanjungle.completed = c;
-		Broker_Everything_CharacterDB[ns.player.name_realm].tanaanjungle.questlog = questlog; --?
+		ns.toon.tanaanjungle.completed = c;
+		ns.toon.tanaanjungle.questlog = questlog; --?
 
 		local bbt = {}; -- broker button text
 		for _,i in ipairs(typeOrder) do
@@ -375,7 +375,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 end
 
@@ -383,17 +383,18 @@ ns.modules[name].onevent = function(self,event,...)
 	if event=="PLAYER_ENTERING_WORLD" then
 		updateResetTimes();
 
-		if Broker_Everything_CharacterDB[ns.player.name_realm]==nil then
-			Broker_Everything_CharacterDB[ns.player.name_realm]={};
+		if ns.toon==nil then
+			ns.toon={};
 		end
 
-		Broker_Everything_CharacterDB[ns.player.name_realm].tanaanjungle = nil;
+		ns.toon.tanaanjungle = nil;
 
-		if Broker_Everything_CharacterDB[ns.player.name_realm].tanaanjungle==nil then
-			Broker_Everything_CharacterDB[ns.player.name_realm].tanaanjungle={};
+		if ns.toon.tanaanjungle==nil then
+			ns.toon.tanaanjungle={};
 		end
 
 		C_Timer.After(3, updateLocaleNames);
+		C_Timer.NewTicker(ns.modules[name].updateinterval,function() update=true; updateQuestStatus() end);
 		self:UnregisterEvent(event);
 	elseif event=="PLAYER_REGEN_ENABLED" then
 		C_Timer.After(3, function()
@@ -403,16 +404,7 @@ ns.modules[name].onevent = function(self,event,...)
 		elapse,update=0,true;
 	end
 end
-
-ns.modules[name].onupdate = function(self,elapsed)
-	if update then
-		elapse = elapse + elapsed;
-		if elapse>=updateTimeout then
-			update=false;
-			updateQuestStatus();
-		end
-	end
-end
+-- ns.modules[name].onupdate = function(self,elapse) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tooltip) end
@@ -423,7 +415,8 @@ end
 -------------------------------------------
 
 ns.modules[name].onenter = function(self)
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT");
+	if (ns.tooltipChkOnShowModifier(false)) then return; end
+	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT");
 	createTooltip(self,tt);
 end
 
