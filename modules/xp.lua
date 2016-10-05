@@ -10,12 +10,10 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "XP" -- XP
-local ldbName, ttName, ttName2 = name, name.."TT", name.."TT2";
-local string = string
-local tt,tooltip,tt2,createMenu,ttColumns
+local ldbName, ttName, ttName2, ttColumns, tt, tt2, createMenu  = name, name.."TT", name.."TT2", 3;
 local data = {};
 local sessionStartLevel = UnitLevel("player");
-local slots = {  [1]=HEADSLOT, [3]=SHOULDERSLOT, [5]=CHESTSLOT, [7]=LEGSSLOT, [15]=BACKSLOT, [11]=FINGER0SLOT, [12]=FINGER1SLOT, [998]=L["Guild perk"], [999]=L["Recruite a Friend"]}
+local slots = {  [1]=HEADSLOT, [3]=SHOULDERSLOT, [5]=CHESTSLOT, [7]=LEGSSLOT, [15]=BACKSLOT, [11]=FINGER0SLOT, [12]=FINGER1SLOT, [998]=L["Guild perk"], [999]=L["Recruite a Friend"]};
 local items = { -- Heirlooms with {<percent>,<maxLevel>}
 	-- SoO Weapons
 	[104399] = {0,100}, [104400] = {0,100}, [104401] = {0,100}, [104402] = {0,100}, [104403] = {0,100}, [104404] = {0,100}, [104405] = {0,100},
@@ -56,7 +54,8 @@ local items = { -- Heirlooms with {<percent>,<maxLevel>}
 
 	-- rings
 	[50255] = {5,80},
-}
+};
+local textbarSigns = {"=","-","#","||","/","\\","+",">","•","◊","º","≈","⁄","¤","×"};
 
 
 -------------------------------------------
@@ -82,10 +81,12 @@ ns.modules[name] = {
 		display = "1",
 		showMyOtherChars = true,
 		showNonMaxLevelOnly = false,
-		showAllRealms = true
+		showAllRealms = true,
+		textBarCharacter = "=",
+		textBarCharCount = 20
 	},
 	config_allowed = {
-		display = {["1"]=true,["2"]=true,["3"]=true,["4"]=true}
+		display = {["1"]=true,["2"]=true,["3"]=true,["4"]=true,["5"]=true}
 	},
 	config = {
 		{ type="header", label=L[name], align="left", icon=I[name] },
@@ -99,9 +100,19 @@ ns.modules[name] = {
 				["1"]="Percent \"77%\"",
 				["2"]="Absolute value \"1234/4567\"",
 				["3"]="Til next level \"1242\"",
-				["4"]="Percent + Resting \"77% (>94%)\""
+				["4"]="Percent + Resting \"77% (>94%)\"",
+				["5"]="Little text bar"
 			},
 			event=true
+		},
+		{ type="select", name="textBarCharacter", label=L["Text bar character"], tooltip=L["Choose character for little text bar"],
+			values = {},
+			default = "=",
+			event=true
+		},
+		{
+			type="slider", name="textBarCharCount", label=L["Text bar num characters"], tooltip=L["..."],
+			min=5, max=200, default=20, format="%d", event=true
 		}
 	},
 	clickOptions = {
@@ -113,7 +124,7 @@ ns.modules[name] = {
 			func = function(self,button)
 				local _mod=name;
 				local cur = tonumber(ns.profile[name].display);
-				local new = cur==4 and 1 or cur+1;
+				local new = cur==5 and 1 or cur+1;
 				ns.profile[name].display = tostring(new);
 				ns.modules[name].onevent(self)
 			end
@@ -129,8 +140,11 @@ ns.modules[name] = {
 			end
 		}
 	}
-}
-
+};
+-- add values to config.textBarCharacter
+for _,v in ipairs(textbarSigns)do
+	ns.modules[name].config[7].values[v]=v;
+end
 
 --------------------------
 -- some local functions --
@@ -177,7 +191,7 @@ local function getTooltip2(parentLine,data)
 end
 
 local function createTooltip(self, tt)
-	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear();
 	if (IsXPUserDisabled()) then
@@ -189,7 +203,7 @@ local function createTooltip(self, tt)
 	if (UnitLevel("player")<MAX_PLAYER_LEVEL) then
 		tt:AddSeparator();
 		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE),"",C("white",("(%s/%s)"):format(ns.FormatLargeNumber(data.cur),ns.FormatLargeNumber(data.max))));
-		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE.." ("..L["Percent"]..")"), "",data.percent);
+		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE.." ("..L["Percent"]..")"), "",data.percentStr);
 		tt:AddLine(C("ltyellow",GARRISON_FOLLOWER_XP_STRING),"",C("white",data.need));
 		if (data.restStr) then
 			tt:AddLine(C("ltyellow",L["Rest"]),"",C("cyan",data.restStr));
@@ -272,10 +286,10 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-	if(Broker_Everything_CharacterDB[ns.player.name_realm].xp==nil)then
-		Broker_Everything_CharacterDB[ns.player.name_realm].xp={};
+	if(ns.toon.xp==nil)then
+		ns.toon.xp={};
 	end
 end
 
@@ -286,19 +300,23 @@ ns.modules[name].onevent = function(self,event,msg)
 
 	if (event=="UNIT_INVENTORY_CHANGED") and (msg~="player") then return end
 
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName);
+	local dataobj = ns.LDB:GetDataObjectByName(ldbName);
 
 	if (MAX_PLAYER_LEVEL==UnitLevel("player")) then
-		data = {cur=1,max=1,percent="100%",need=0,rest=0,restStr="n/a",bonus={},bonusSum=0};
+		data = {cur=1,max=1,rest=0,need=0,percentCur=1,percentRest=1,percentStr="100%",restStr="n/a",bonus={},bonusSum=0};
 	else
 		data = {
 			cur = UnitXP("player"),
 			max = UnitXPMax("player"),
 			rest = GetXPExhaustion() or 0,
 		}
-		data.percent   = math.floor((data.cur / data.max) * 100).."%";
-		data.need      = data.max - data.cur;
-		data.restStr   = (data.cur+data.rest>data.max) and ">100%+" or ">"..("%1.2f%%"):format((data.cur+data.rest)/data.max*100);
+		data.need = data.max-data.cur;
+		data.percentCur = ns.round(data.cur/data.max,2);
+		local cur_rest = data.cur+data.rest;
+		data.percentRest = (cur_rest>data.max) and 1 or ns.round(cur_rest/data.max,2);
+		data.percentStr = math.floor(data.percentCur * 100).."%";
+		data.restStr   = data.percentRest==1 and ">100%+" or ">"..("%1.2f%%"):format(data.percentRest*100);
+
 		data.bonus     = {};
 		data.bonusSum  = 0;
 
@@ -336,24 +354,26 @@ ns.modules[name].onevent = function(self,event,msg)
 		end
 	end
 
-	Broker_Everything_CharacterDB[ns.player.name_realm].xp = data;
+	ns.toon.xp = data;
 
+	-- broker button text
 	if (MAX_PLAYER_LEVEL~=sessionStartLevel) and (MAX_PLAYER_LEVEL==UnitLevel("player")) then
 		dataobj.text = C("ltblue",L["Max. Level reached"]);
 	elseif IsXPUserDisabled() then
 		dataobj.text = C("orange",L["XP gain disabled"])
 	elseif ns.profile[name].display == "1" then
-		dataobj.text = data.percent;
+		dataobj.text = data.percentStr;
 	elseif ns.profile[name].display == "2" then
 		dataobj.text = ns.FormatLargeNumber(data.cur).."/"..ns.FormatLargeNumber(data.max);
 	elseif ns.profile[name].display == "3" then
 		dataobj.text = data.need;
 	elseif ns.profile[name].display == "4" then
-		dataobj.text = data.percent.." ("..data.restStr..")";
+		dataobj.text = data.percentStr.." ("..data.restStr..")";
+	elseif ns.profile[name].display == "5" then
+		dataobj.text = ns.textBar(ns.profile[name].textBarCharCount,{1,data.percentCur or 1,data.percentRest-data.percentCur},{"gray2","violet","ltblue"},ns.profile[name].textBarCharacter);
 	end
 end
 
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tooltip) end
@@ -364,35 +384,12 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttColumns = 3
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT", "RIGHT")
-	createTooltip(self, tt)
+	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "RIGHT", "RIGHT");
+	createTooltip(self, tt);
 end
 
 ns.modules[name].onleave = function(self)
 	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
 end
 
-ns.modules[name].onclick = function(self,button)
-	if (button=="RightButton") then
-		if type(ns.profile[name].display)=="boolean" then
-			ns.profile[name].display = "1"
-		end
-
-		if (UnitLevel("player")<MAX_PLAYER_LEVEL) then
-			if (ns.profile[name].display=="1") then
-				ns.profile[name].display = "2"
-			elseif (ns.profile[name].display=="2") then
-				ns.profile[name].display = "3"
-			elseif (ns.profile[name].display=="3") then
-				ns.profile[name].display = "4"
-			elseif (ns.profile[name].display=="4") then
-				ns.profile[name].display = "1"
-			end
-			ns.modules[name].onevent(self)
-		end
-	end
-end
-
 -- ns.modules[name].ondblclick = function(self,button) end
-
