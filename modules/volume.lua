@@ -4,20 +4,16 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-local _G = _G
 
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Volume" -- VOLUME
-local ldbName = name
-local tt,createMenu,updateBrokerButton
-local ttName = name.."TT"
-local ttColumns,ttParent = 2
+local ldbName,ttName,ttColumns,tt,createMenu,createTooltip = name,name.."TT",2;
+local updateBrokerButton,getSoundHardware,setSoundHardware
 local icon = "Interface\\AddOns\\"..addon.."\\media\\volume_"
 local VIDEO_VOLUME_TITLE = L["Video Volume"];
-local getSoundHardware,setSoundHardware
 local volume = {}
 local vol = {
 	{inset=0,locale="MASTER_VOLUME",			toggle="Sound_EnableAllSound",									percent="Sound_MasterVolume"},
@@ -82,7 +78,8 @@ ns.modules[name] = {
 			func = function(self,button)
 				local _mod=name;
 				BlizzardOptionsPanel_SetCVarSafe("Sound_EnableAllSound",BlizzardOptionsPanel_GetCVarSafe("Sound_EnableAllSound")==0 and 1 or 0);
-				updateBrokerButton(self)
+				updateBrokerButton(self);
+				createTooltip(false, tt);
 			end
 		},
 		["1_louder"] = {
@@ -92,11 +89,12 @@ ns.modules[name] = {
 			hint = "Louder",
 			func = function(self,button)
 				local _mod=name;
-				if volume.master == 1 then return end
-				volume.master = volume.master + (ns.profile[name].steps / 100)
-				if volume.master > 1 then volume.master = 1 elseif volume.master < 0 then volume.master = 0 end
-				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master)
-				updateBrokerButton(self)
+				if volume.master==1 then return end
+				volume.master = volume.master + (ns.profile[name].steps / 100);
+				if volume.master>1 then volume.master=1 elseif volume.master<0 then volume.master=0; end
+				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master);
+				updateBrokerButton(self);
+				createTooltip(false, tt);
 			end
 		},
 		["2_quieter"] = {
@@ -106,11 +104,12 @@ ns.modules[name] = {
 			hint = "Quieter",
 			func = function(self,button)
 				local _mod=name;
-				if volume.master == 0 then return end
+				if volume.master==0 then return end
 				volume.master = volume.master - (ns.profile[name].steps / 100)
-				if volume.master > 1 then volume.master = 1 elseif volume.master < 0 then volume.master = 0 end
-				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master)
-				updateBrokerButton(self)
+				if volume.master>1 then volume.master=1 elseif volume.master<0 then volume.master=0; end
+				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master);
+				updateBrokerButton(self);
+				createTooltip(false, tt);
 			end
 		},
 		["3_open_menu"] = {
@@ -120,7 +119,7 @@ ns.modules[name] = {
 			hint = "Open option menu",
 			func = function(self,button)
 				local _mod=name;
-				createMenu(self)
+				createMenu(self);
 			end
 		}
 	}
@@ -148,18 +147,23 @@ function updateBrokerButton()
 	elseif volume.master < .6 then
 		suffix = "66"
 	end
-	local icon = I(name.."_"..(suffix or "100"))
-	obj.iconCoords = icon.coords or {0,1,0,1}
-	obj.icon = icon.iconfile
+
+	obj.iconCoords = {0,1,0,1};
+	obj.icon = "interface\\common\\VOICECHAT-MUTED";
 	if GetCVar("Sound_EnableAllSound")=="1" then
+		if volume.master>0 then
+			local icon = I(name.."_"..(suffix or "100"));
+			obj.iconCoords = icon.coords or {0,1,0,1};
+			obj.icon = icon.iconfile;
+		end
 		obj.text = ceil(volume.master*100).."%";
 	else
 		obj.text = C("gray",ceil(volume.master*100).."%");
 	end
 end
 
-local function createTooltip(self, tt)
-	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
+function createTooltip(self, tt)
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local l,c
 	tt:Clear()
 	tt:AddHeader(C("dkyellow",L[name]))
@@ -167,11 +171,11 @@ local function createTooltip(self, tt)
 
 	local function percent(self,cvar,now,direction)
 		if (direction==-1 and now==0) or (direction==1 and now==1) then return end
-		local new = now + ((direction * ns.profile[name].steps) / 100)
-		new = (new>1 and 1) or (new<0 and 0) or new
-		ns.SetCVar(cvar,new,cvar)
-		createTooltip(ttParent, tt)
-		updateBrokerButton(self)
+		local new = now + ((direction * ns.profile[name].steps) / 100);
+		new = (new>1 and 1) or (new<0 and 0) or new;
+		ns.SetCVar(cvar,new,cvar);
+		createTooltip(false, tt);
+		updateBrokerButton(self);
 	end
 
 	for i,v in ipairs(vol) do
@@ -180,25 +184,25 @@ local function createTooltip(self, tt)
 		if (v.hide) then
 			-- do nothing
 		elseif type(v.toggle)=="string" then
-			l,c = tt:AddLine()
-			v.now = tonumber(GetCVar(v.toggle)) vol[i].now=v.now
-			v.inv = v.now==1 and 0 or 1
+			l,c = tt:AddLine();
+			v.now = tonumber(GetCVar(v.toggle)); vol[i].now=v.now;
+			v.inv = v.now==1 and 0 or 1;
 			if (v.toggle~="no-toggle") then
 
 				if v.depend~=nil and ( (v.depend[1]~=nil and vol[v.depend[1]].now==0) or (v.depend[2]~=nil and vol[v.depend[2]].now==0) ) then
-					color = v.now==1 and "gray" or "dkgray"
-					disabled = color
+					color = v.now==1 and "gray" or "dkgray";
+					disabled = color;
 				end
 
 				if color==nil then
-					color = v.now==1 and "green" or "red"
-					disabled = v.now==1 and "white" or "gray"
+					color = v.now==1 and "green" or "red";
+					disabled = v.now==1 and "white" or "gray";
 				end
 
 				tt:SetLineScript(l,"OnMouseUp",function(self, button)
 					ns.SetCVar(v.toggle,tostring(v.inv),v.toggle);
 					updateBrokerButton();
-					createTooltip(ttParent,tt);
+					createTooltip(false,tt);
 				end);
 			else
 				if v.depend~=nil and ( (v.depend[1]~=nil and vol[v.depend[1]].now==0) or (v.depend[2]~=nil and vol[v.depend[2]].now==0) ) then
@@ -208,7 +212,7 @@ local function createTooltip(self, tt)
 					color = "dkyellow"
 					disabled = "white";
 				end
-				tt:SetLineScript(l,"OnMouseUp",function(self, button) createTooltip(ttParent,tt) end);
+				tt:SetLineScript(l,"OnMouseUp",function(self, button) createTooltip(false,tt) end);
 			end
 
 			tt:SetCell(l,1,strrep(" ",3 * v.inset)..C(color,_G[v.locale]));
@@ -218,31 +222,31 @@ local function createTooltip(self, tt)
 
 				tt.lines[l]:EnableMouseWheel(1)
 				tt.lines[l]:SetScript("OnMouseWheel",function(self,direction)
-					percent(self,v.percent,v.pnow,direction)
-				end)
+					percent(self,v.percent,v.pnow,direction);
+				end);
 
-				tt:SetCell(l,ttColumns,C(disabled,ceil(v.pnow*100).."%"))
-				tt:SetCellScript(l,ttColumns,"OnMouseUp",function(self,button) end)
+				tt:SetCell(l,ttColumns,C(disabled,ceil(v.pnow*100).."%"));
+				tt:SetCellScript(l,ttColumns,"OnMouseUp",function(self,button) end);
 				tt.lines[l].cells[ttColumns]:SetScript("OnMouseUp",function(self,button)
-					local direction = button=="RightButton" and -1 or 1
-					percent(self,v.percent,v.pnow,direction)
-				end)
+					local direction = button=="RightButton" and -1 or 1;
+					percent(self,v.percent,v.pnow,direction);
+				end);
 			else
-				tt:SetCell(l,ttColumns,"           ")
+				tt:SetCell(l,ttColumns,"           ");
 			end
 		elseif (v.special=="hardware") and (ns.profile[name].listHardware) then
-			tt:AddSeparator(3,0,0,0,0)
-			tt:AddHeader(C("dkyellow",_G[v.locale])..(InCombatLockdown() and C("orange"," (disabled in combat)") or ""))
-			tt:AddSeparator()
+			tt:AddSeparator(3,0,0,0,0);
+			tt:AddHeader(C("dkyellow",_G[v.locale])..(InCombatLockdown() and C("orange"," (disabled in combat)") or ""));
+			tt:AddSeparator();
 
-			local lst,num,sel = getSoundHardware()
+			local lst,num,sel = getSoundHardware();
 
 			for I,V in ipairs(lst) do
-				local color = I==sel and "green" or "ltgray"
+				local color = I==sel and "green" or "ltgray";
 
 				local m = 30
 				if strlen(V)>m then
-					V = strsub(V,0,m-3).."..."
+					V = strsub(V,0,m-3).."...";
 				end
 
 				l,c = tt:AddLine(strrep(" ",3 * (v.inset+1))..C(color,V).." ")
@@ -250,11 +254,11 @@ local function createTooltip(self, tt)
 				if not InCombatLockdown() then
 					tt:SetLineScript(l,"OnMouseUp",function(self,button)
 						if InCombatLockdown() then
-							ns.print("("..L[name]..")",L["Sorry, In combat lockdown."])
+							ns.print("("..L[name]..")",C("orange",L["Sorry, In combat lockdown."]));
 						else
-							setSoundHardware(I)
-							createTooltip(ttParent,tt)
-							AudioOptionsFrame_AudioRestart()
+							setSoundHardware(I);
+							createTooltip(false,tt);
+							AudioOptionsFrame_AudioRestart();
 						end
 					end)
 				end
@@ -305,21 +309,16 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(self)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-	if self then
-		updateBrokerButton(self)
-	end
 end
 
-ns.modules[name].onevent = function(self,event,msg)
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
+ns.modules[name].onevent = function(self,event,arg1)
+	if event=="ADDON_LOADED" and arg1==addon then
+		C_Timer.NewTicker(ns.modules[name].updateinterval,function() updateBrokerButton(self) end);
+	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
-end
-
-ns.modules[name].onupdate = function(self)
-	updateBrokerButton(self)
 end
 
 -- ns.modules[name].optionspanel = function(panel) end
@@ -354,9 +353,8 @@ ns.modules[name].onenter = function(self)
 		self.mousewheelOn = true;
 	end
 
-	tt = ns.LQT:Acquire(ttName, 2, "LEFT", "RIGHT")
+	tt = ns.acquireTooltip(ttName, 2, "LEFT", "RIGHT")
 	ns.RegisterMouseWheel(self,ns.modules[name].onmousewheel)
-	ttParent = self
 	createTooltip(self, tt)
 end
 
