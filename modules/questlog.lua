@@ -11,8 +11,8 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Quest Log" -- QUESTLOG_BUTTON
 L[name] = QUESTLOG_BUTTON;
-local ldbName,ttName,ttName2,ttColumns,ttColumns2,tt,tt2,createMenu = name,name.."TT",name.."TT2",8,2;
-local quests,numQuestStatus,sum,url
+local ldbName,ttName,ttName2,ttColumns,ttColumns2,tt,tt2,createMenu,createTooltip = name,name.."TT",name.."TT2",9,2;
+local quests,numQuestStatus,sum,url,tt2created,requested
 local urls = {
 	WoWHead = function(id)
 		local lang = {deDE="de",esES="es",esMX="es",frFR="fr",ptBR="pt"}
@@ -28,24 +28,12 @@ local urls = {
 	-- 
 }
 local Level, LevelPrefix, Title, Header, Color, Status, Type, ShortType, QuestId, Index, Title2, Text = 1,2,3,4,5,6,7,8,9,10,11,12;
-local questTags = {
-	[QUEST_TAG_GROUP] = "g",
-	[QUEST_TAG_PVP] = {"pvp","violet"},
-	[QUEST_TAG_DUNGEON] = "d",
-	[QUEST_TAG_HEROIC] = "hc",
-	[QUEST_TAG_RAID] = "r",
-	[QUEST_TAG_RAID10] = "r10",
-	[QUEST_TAG_RAID25] = "r25",
-	[QUEST_TAG_SCENARIO] = "s",
-	[QUEST_TAG_ACCOUNT] = "a",
-	[QUEST_TAG_LEGENDARY] = {"leg","orange"},
-	TRADE_SKILLS = {"ts","green"}
-};
+local Zone = 13;
 local frequencies = {
 	[LE_QUEST_FREQUENCY_DAILY] = {"*",DAILY},
 	[LE_QUEST_FREQUENCY_WEEKLY] = {"**",WEEKLY},
 };
-local ts_try,tradeskills = 0,{};
+local questZones = {};
 
 StaticPopupDialogs["BE_URL_DIALOG"] = {
 	text = "URL",
@@ -80,6 +68,7 @@ I[name] = {iconfile="Interface\\TARGETINGFRAME\\PortraitQuestBadge",coords={0.05
 ns.modules[name] = {
 	desc = L["Broker to show count of quests in your questlog and quest titles in tooltip"],
 	events = {
+		"PLAYER_LOGIN",
 		"PLAYER_ENTERING_WORLD",
 		"QUEST_LOG_UPDATE",
 	},
@@ -87,11 +76,19 @@ ns.modules[name] = {
 	config_defaults = {
 		showQuestTags = true,
 		showQuestIds = true,
+		showQuestZone = true,
 		showQuestTagsShort = true,
 		--showQuestItems = true,
 		showQuestOptions = true,
 		questIdUrl = "WoWHead",
 		separateBy = "status",
+		-- second tooltip options
+		tooltip2QuestText = true,
+		tooltip2QuestLevel = true,
+		tooltip2QuestZone = true,
+		tooltip2QuestTag = true,
+		tooltip2QuestID = true,
+
 	},
 	config_allowed = {
 	},
@@ -99,6 +96,7 @@ ns.modules[name] = {
 		{ type="header", label=L[name], align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="toggle", name="showQuestIds",       label=L["Show quest id's"], tooltip=L["Show quest id's in tooltip."] },
+		{ type="toggle", name="showQuestZone",      label=L["Show quest zone"], tooltip=L["Show quest zone in tooltip."] },
 		{ type="toggle", name="showQuestTags",      label=L["Show quest tags"], tooltip=L["Show quest tags in tooltip."] },
 		{ type="toggle", name="showQuestTagsShort", label=L["Show short quest tags"], tooltip=L["Show short quest tags in tooltip."] },
 		{ type="toggle", name="showQuestOptions",   label=L["Show quest option"], tooltip=L["Show quest options like track, untrack, share and cancel in tooltip."] },
@@ -115,9 +113,18 @@ ns.modules[name] = {
 			default = "status",
 			values = {
 				status = "Status",
-				header = "Header"
+				header = "Header",
+				zone = "Zone"
 			}
-		}
+		},
+		{ type="sepatator" },
+		{ type="header", label=L["Second tooltip options"] },
+		{ type="separator", inMenuInvisible=true },
+		{ type="toggle", name="tooltip2QuestText", label=L["Show quest text"], tooltip=L["Display quest text in tooltip"] },
+		{ type="toggle", name="tooltip2QuestLevel", label=L["Show quest level"], tooltip=L["Display quest level in tooltip"] },
+		{ type="toggle", name="tooltip2QuestZone", label=L["Show quest zone"], tooltip=L["Display quest zone in tooltip"] },
+		{ type="toggle", name="tooltip2QuestTag", label=L["Show quest tag"], tooltip=L["Display quest tags in tooltip"] },
+		{ type="toggle", name="tooltip2QuestID", label=L["Show quest id"], tooltip=L["Display quest id in tooltip"] },
 	},
 	clickOptions = {
 		["1_open_quest_log"] = {
@@ -154,51 +161,70 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
-local function tradeskills_build()
-	ts_try = ts_try+1;
-	local fail = false;
-	for spellId, spellName in pairs({
-		[1804] = "Lockpicking", [2018]  = "Blacksmithing", [2108]  = "Leatherworking", [2259]  = "Alchemy",     [2550]  = "Cooking",     [2575]   = "Mining",
-		[2656] = "Smelting",    [2366]  = "Herbalism",     [3273]  = "First Aid",      [3908]  = "Tailoring",   [4036]  = "Engineering", [7411]   = "Enchanting",
-		[8613] = "Skinning",    [25229] = "Jewelcrafting", [45357] = "Inscription",    [53428] = "Runeforging", [78670] = "Archaeology", [131474] = "Fishing",
-	}) do
-		local spellLocaleName,_,spellIcon = GetSpellInfo(spellId);
-		if spellLocaleName then
-			tradeskills[spellLocaleName] = true;
-		else
-			fail = true;
-		end
-	end
-	if fail and ts_try<=3 then
-		--ns.debug(modName,"tradeskills_build", "retry", ts_try);
-		C_Timer.After(0.5, function()
-			tradeskills_build()
-		end);
-	end
-end
-
 local function updateBroker()
-	local obj = ns.LDB:GetDataObjectByName(ldbName)
+	local obj = ns.LDB:GetDataObjectByName(ldbName);
 	local fail, active, complete = numQuestStatus.fail, numQuestStatus.active, numQuestStatus.complete;
-	obj.text = (fail>0 and C("red",fail).."/" or "")..(complete>0 and C("ltblue",complete).."/" or "")..sum.."/"..MAX_QUESTS
+	obj.text = (fail>0 and C("red",fail).."/" or "")..(complete>0 and C("ltblue",complete).."/" or "")..sum.."/"..MAX_QUESTS;
 end
 
-local function createTooltip2(self, tt2, v)
-	tt2:SetCell(tt2:AddLine(),1,C("dkyellow",v[Title]),tt2:GetHeaderFont(),"LEFT",2);
-	if false then
+local function deleteQuest(self)
+	local questId = self.questId;
+	if requested==questId then
+		SelectQuestLogEntry(GetQuestLogIndexByID(questId));
+		SetAbandonQuest();
+		AbandonQuest();
+		requested = false;
+	else
+		requested = questId;
+		createTooltip(false,tt);
+	end	
+end
+
+local function createTooltip2(self, tt2, obj)
+	if tt2created then return end
+	tt2created=true;
+
+	tt2:Clear();
+	tt2:SetCell(tt2:AddLine(),1,C("dkyellow",obj[Title]),tt2:GetHeaderFont(),"LEFT",2);
+
+	if ns.profile[name].tooltip2QuestText then
 		tt2:AddSeparator(4,0,0,0,0);
-		tt2:AddLine(C("ltblue",L["Quest level"]),C("ltgreen","?"));
-		tt2:AddLine(C("ltblue",L["Quest tags"]),C("ltgreen","?"));
-		tt2:AddLine(C("ltblue",L["Quest id"]),C("ltgreen","?"));
+		tt2:SetCell(tt2:AddLine(),1,ns.strWrap(obj[Text],40),nil,"LEFT",2);
 	end
-	tt2:AddSeparator(4,0,0,0,0);
-	tt2:SetCell(tt2:AddLine(),1,ns.strWrap(v[Text],40),nil,"LEFT",2);
+
+	if ns.profile[name].tooltip2QuestLevel
+	and ns.profile[name].tooltip2QuestZone
+	and ns.profile[name].tooltip2QuestTag
+	and ns.profile[name].tooltip2QuestID then
+		tt2:AddSeparator(4,0,0,0,0);
+	end
+
+	if ns.profile[name].tooltip2QuestLevel then
+		tt2:AddLine(C("ltblue",L["Quest level"]),C("ltgreen",obj[Level]));
+	end
+
+	if ns.profile[name].tooltip2QuestZone and questZones[obj[QuestId]] and questZones[obj[QuestId]].mapName then
+		tt2:AddLine(C("ltblue",L["Quest zone"]),C("ltgreen",questZones[obj[QuestId]].mapName));
+	end
+
+	if ns.profile[name].tooltip2QuestTag and obj[Type]:len()>1 then
+		tt2:AddLine(C("ltblue",L["Quest tags"]),C("ltgreen",obj[Type]));
+	end
+
+	if ns.profile[name].tooltip2QuestTag then
+		tt2:AddLine(C("ltblue",L["Quest id"]),C("ltgreen",obj[QuestId]));
+	end
+
 	ns.roundupTooltip(self,tt2,nil,"horizontal",tt);
 end
 
-local function createTooltip(self, tt)
-	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
+function createTooltip(self, tt)
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local UnitNames={};
+
+	if self then
+		requested=false;
+	end
 
 	local function addLine(obj)
 		assert(type(obj)=="table","object must be a table, got "..type(obj));
@@ -226,8 +252,11 @@ local function createTooltip(self, tt)
 		tt:SetCell(l,cell,C(color,obj[Level])); cell=cell+1; -- [1]
 		if ns.profile[name].showQuestTagsShort then tt:SetCell(l,cell,obj[ShortType]); end cell=cell+1; -- [2]
 		tt:SetCell(l,cell,C(color,ns.strCut(obj[Title2] or obj[Title],32))); cell=cell+1; -- [3]
+		if ns.profile[name].showQuestZone then
+			tt:SetCell(l,cell,questZones[obj[QuestId]].mapName or " "); cell=cell+1; -- [4]
+		end
 		if ns.profile[name].showQuestTags then
-			tt:SetCell(l,cell,C(color,obj[Type])); cell=cell+1; -- [4]
+			tt:SetCell(l,cell,C(color,obj[Type])); cell=cell+1; -- [5]
 		end
 		tt:SetLineScript(l,"OnMouseUp",function(self)
 			securecall("QuestMapFrame_OpenToQuestDetails",select(8, GetQuestLogTitle(obj[Index])));
@@ -241,30 +270,21 @@ local function createTooltip(self, tt)
 					StaticPopup_Show("BE_URL_DIALOG")
 				end)
 			end
-			cell=cell+1; -- [5]
+			cell=cell+1; -- [6]
 		end
 
 		if ns.profile[name].showQuestOptions then
 			tt:SetCell(l,cell,IsQuestWatched(obj[Index]) and UNTRACK_QUEST_ABBREV or TRACK_QUEST_ABBREV);
 			tt:SetCellScript(l,cell,"OnMouseUp",function()
-				QuestMapQuestOptions_TrackQuest(obj[QuestId]);
+				securecall("QuestMapQuestOptions_TrackQuest",obj[QuestId]);
 				createTooltip(false, tt);
 			end);
-			cell=cell+1; -- [5/6]
+			cell=cell+1; -- [7]
 
-			local cancelCell = cell;
-			tt:SetCell(l,cell,CANCEL);
-			tt:SetCellScript(l,cell,"OnMouseUp",function(_self)
-				if not _self.requested then
-					tt:SetCell(l,cancelCell,CANCEL..C("orange"," ("..L["really?"]..")"));
-					_self.requested=true;
-				else
-					SelectQuestLogEntry(GetQuestLogIndexByID(obj[QuestId]));
-					SetAbandonQuest();
-					AbandonQuest();
-				end
-			end);
-			cell=cell+1; -- [6/7]
+			tt:SetCell(l,cell,CANCEL .. (requested==obj[QuestId] and C("orange"," ("..L["really?"]..")") or ""));
+			tt:SetCellScript(l,cell,"OnMouseUp",deleteQuest);
+			tt.lines[l].cells[cell].questId = obj[QuestId];
+			cell=cell+1; -- [8]
 
 			if IsInGroup() then
 				if GetNumGroupMembers()>1 and GetQuestLogPushable(obj[Index]) then
@@ -272,7 +292,7 @@ local function createTooltip(self, tt)
 					tt:SetCellScript(l,cell,"OnMouseUp",function(self,button)
 						QuestLogPushQuest(obj[Index])
 					end)
-					cell=cell+1 -- [7/8]
+					cell=cell+1 -- [9]
 				end
 				if #GroupQuest>0 and IsShiftKeyDown() then
 					l,c = tt:AddLine();
@@ -287,14 +307,18 @@ local function createTooltip(self, tt)
 			createTooltip2(self,tt2,obj);
 		end);
 		tt:SetLineScript(l,"OnLeave",function()
-			if (tt2) then ns.hideTooltip(tt2,ttName2,false,true); end
+			if (tt2) then
+				ns.hideTooltip(tt2,ttName2,false,true);
+				tt2created=false;
+			end
 		end);
 
 		return #GroupQuest;
 	end
 	local header = false;
 
-	tt:Clear()
+	tt:AddLine(" "); --dummy
+	tt:Clear();
 	tt:SetCell(select(1,tt:AddLine()),1,C("dkyellow",name),tt:GetHeaderFont(),"LEFT",ttColumns)
 	local GroupQuestCount=0;
 
@@ -307,6 +331,9 @@ local function createTooltip(self, tt)
 		local c,l=4,tt:AddLine();
 		tt:SetCell(l,1,C("ltYellow",LEVEL),nil,"CENTER",2);
 		tt:SetCell(l,3,C("ltYellow",L["Quest name"]));
+		if ns.profile[name].showQuestZone then
+			tt:SetCell(l,c,C("ltyellow",L["Quest zone"])); c=c+1;
+		end
 		if ns.profile[name].showQuestTags then
 			tt:SetCell(l,c,C("ltYellow",L["Quest tags"])); c=c+1;
 		end
@@ -325,7 +352,8 @@ local function createTooltip(self, tt)
 					end
 					firstHeader = false;
 					tt:SetCell(select(1,tt:AddLine()),1,C(s[2],s[3]),nil,"LEFT",ttColumns);
-					for _,obj in ipairs(quests)do
+					table.sort(quests,function(a,b) return (a[Title2] or a[Title])<(b[Title2] or b[Title]) end);
+					for _,obj in pairs(quests)do
 						if obj[Status]==s[1] then
 							addLine(obj);
 						end
@@ -333,12 +361,25 @@ local function createTooltip(self, tt)
 				end
 			end
 		elseif ns.profile[name].separateBy=="header" then
+			table.sort(quests,function(a,b) return ns.strCut(a[Header],10)..ns.strCut(a[Title],10)<ns.strCut(b[Header],10)..ns.strCut(b[Title],10) ; end);
 			for _,obj in ipairs(quests) do
 				if header ~= obj[Header] then
 					if header then
 						tt:AddSeparator(2,0,0,0,0);
 					end
 					header = obj[Header];
+					tt:SetCell(select(1,tt:AddLine()),1,C("ltBlue",header),nil,"LEFT",ttColumns);
+				end
+				addLine(obj);
+			end
+		elseif ns.profile[name].separateBy=="zone" then
+			table.sort(quests,function(a,b) return ns.strCut(questZones[a[QuestId]].mapName or "0",10)..ns.strCut(a[Title],10)<ns.strCut(questZones[b[QuestId]].mapName or "0",10)..ns.strCut(b[Title],10) ; end);
+			for _,obj in ipairs(quests) do
+				if header ~= (questZones[obj[QuestId]].mapName or "0") then
+					if header then
+						tt:AddSeparator(2,0,0,0,0);
+					end
+					header = questZones[obj[QuestId]].mapName or UNKNOWN;
 					tt:SetCell(select(1,tt:AddLine()),1,C("ltBlue",header),nil,"LEFT",ttColumns);
 				end
 				addLine(obj);
@@ -362,13 +403,14 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-	tradeskills_build();
 end
 
 ns.modules[name].onevent = function(self,event,msg)
-	if event == "PLAYER_ENTERING_WORLD" or event == "QUEST_LOG_UPDATE" then
+	if event=="PLAYER_LOGIN" then
+		ns.tradeskills();
+	elseif event == "PLAYER_ENTERING_WORLD" or event == "QUEST_LOG_UPDATE" then
 		local numEntries, numQuests = GetNumQuestLogEntries()
 		local header, status, isBounty, _ = false;
 		local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, qText = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15; -- GetQuestLogTitle(index)
@@ -391,21 +433,27 @@ ns.modules[name].onevent = function(self,event,msg)
 					tagNameLong = LFG_TYPE_DUNGEON.." ("..tagName..")";
 				end
 				local tags,shortTags = {},{};
-				if questTags[tagID] then
+				if ns.questTags[tagID] then
 					tinsert(tags,tagNameLong);
-					if type(questTags[tagID])=="table" then
-						tinsert(shortTags,C(questTags[tagID][2],questTags[tagID][1]));
+					if type(ns.questTags[tagID])=="table" then
+						tinsert(shortTags,C(ns.questTags[tagID][2],ns.questTags[tagID][1]));
 					else
-						tinsert(shortTags,C("dailyblue",questTags[tagID]));
+						tinsert(shortTags,C("dailyblue",ns.questTags[tagID]));
 					end
 				end
-				if tradeskills[header] then
+				if ns.tradeskills[header] then
 					tinsert(tags,TRADE_SKILLS);
-					tinsert(shortTags,C(questTags.TRADE_SKILLS[2],questTags.TRADE_SKILLS[1]));
+					tinsert(shortTags,C(ns.questTags.TRADE_SKILLS[2],ns.questTags.TRADE_SKILLS[1]));
 				end
 				if frequencies[q[frequency]] then
 					tinsert(tags,frequencies[q[frequency]][2]);
 					tinsert(shortTags,C("dailyblue",frequencies[q[frequency]][1]));
+				end
+				local mapId,mapName;
+				if not questZones[q[questID]] and not WorldMapFrame:IsShown() then
+					mapId = securecall("GetQuestWorldMapAreaID",q[questID]);
+					mapName = GetMapNameByID(mapId);
+					questZones[q[questID]] = {mapId=mapId,mapName=mapName};
 				end
 				if #tags==0 then
 					tinsert(tags," ");
@@ -423,20 +471,19 @@ ns.modules[name].onevent = function(self,event,msg)
 					q[questID],
 					index,
 					nil,
-					q[qText]
+					q[qText],
+					mapId or 0
 				});
 				numQuestStatus[status]=numQuestStatus[status]+1;
 			end
 		end
 		updateBroker()
-		if tt then
+		if tt and tt.key and tt.key==ttName and not tt2created then
 			createTooltip(false, tt);
 		end
 	end
 end
 
-
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tooltip) end
@@ -447,8 +494,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-
-	tt = ns.LQT:Acquire(ttName, ttColumns,"RIGHT","LEFT","LEFT","LEFT","LEFT","LEFT","LEFT","LEFT");
+	tt = ns.acquireTooltip(ttName, ttColumns,"RIGHT","LEFT","LEFT","LEFT","LEFT","LEFT","LEFT","LEFT");
 	createTooltip(self, tt);
 end
 
