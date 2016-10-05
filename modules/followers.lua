@@ -16,7 +16,7 @@ local ldbNameS, ttNameS, ttColumnsS, ttS = nameS, nameS.."TT" ,7;
 local followers,ships,champions,troops,createMenu = {num=0},{num=0},{num=0},{num=0};
 local garrLevel, ohLevel, syLevel = 0,0,0;
 local followerEnabled,shipsEnabled=false,false;
-local delay=true;
+local delay,ticker=true;
 
 
 -------------------------------------------
@@ -59,6 +59,9 @@ ns.modules[nameF] = {
 		showChars = true,
 		showAllRealms = false,
 		showAllFactions = true,
+		showFollowers = true,
+		showChampions = true,
+		showTroops = true
 	},
 	config_allowed = {},
 	config = {
@@ -66,10 +69,10 @@ ns.modules[nameF] = {
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["On broker options"]},
 		{ type="separator", inMenuInvisible=true },
-		{ type="toggle", name="showAllInOne",          label=L["Show all in one"],       tooltip=L["Show all counts of followers, champions and troops as overall summary on broker button. You can disable single types with following toggles."], event=true},
-		{ type="toggle", name="showFollowersOnBroker", label=L["Show followers"],        tooltip=L["Show followers summary on broker button"], event=true},
-		{ type="toggle", name="showChamionsOnBroker",  label=L["Show champions"],        tooltip=L["Show champions summary on broker button"], event=true},
-		{ type="toggle", name="showTroopsOnBroker",    label=L["Show troops"],           tooltip=L["Show troops summary on broker button"], event=true},
+		{ type="toggle", name="showAllInOne",          label=L["Show all in one"],       tooltip=L["Show all counts of followers, champions and troops as overall summary on broker button. You can disable single types with following toggles."], event="BE_DUMMY_EVENT"},
+		{ type="toggle", name="showFollowersOnBroker", label=L["Show followers"],        tooltip=L["Show followers summary on broker button"], event="BE_DUMMY_EVENT"},
+		{ type="toggle", name="showChampionsOnBroker",  label=L["Show champions"],        tooltip=L["Show champions summary on broker button"], event="BE_DUMMY_EVENT"},
+		{ type="toggle", name="showTroopsOnBroker",    label=L["Show troops"],           tooltip=L["Show troops summary on broker button"], event="BE_DUMMY_EVENT"},
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["In tooltip options"]},
 		{ type="separator", inMenuInvisible=true },
@@ -79,6 +82,9 @@ ns.modules[nameF] = {
 		{ type="toggle", name="showChars",       label=L["Show characters"],                   tooltip=L["Show a list of your characters with count of chilling, working and followers on missions in tooltip"] },
 		{ type="toggle", name="showAllRealms",   label=L["Show all realms"],                   tooltip=L["Show characters from all realms in tooltip."] },
 		{ type="toggle", name="showAllFactions", label=L["Show all factions"],                 tooltip=L["Show characters from all factions in tooltip."] },
+		{ type="toggle", name="showFollowers",   label=L["Show followers"],                    tooltip=L["Show followers in tooltip"]},
+		{ type="toggle", name="showChampions",   label=L["Show champions"],                    tooltip=L["Show champions in tooltip"]},
+		{ type="toggle", name="showTroops",      label=L["Show troops"],                       tooltip=L["Show troops in tooltip"]},
 	},
 	clickOptions = {
 		["1_open_garrison_report"] = {
@@ -159,6 +165,7 @@ function createMenu(self,name)
 	ns.EasyMenu.ShowMenu(self);
 end
 
+
 local function getFollowers(tableName)
 	local _ = function(count,level,xp,quality,ilevel)
 		local num = ("%04d"):format(count);
@@ -170,32 +177,27 @@ local function getFollowers(tableName)
 	end
 	local xp = function(v) return (v.levelXP>0) and (v.xp/v.levelXP*100) or 100; end;
 
-	local name,isTroop = "Follower","nil";
+	local name,isTroop,Table,garrType,followerType = nameF;
 	if tableName=="followers" then
 		followers = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table = followers;
-		garrType,followerType = LE_GARRISON_TYPE_6_0,LE_FOLLOWER_TYPE_GARRISON_6_0;
+		Table,garrType,followerType = followers,LE_GARRISON_TYPE_6_0,LE_FOLLOWER_TYPE_GARRISON_6_0;
 	elseif tableName=="ships" then
 		ships = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table = ships;
-		garrType,followerType = LE_GARRISON_TYPE_6_0,LE_FOLLOWER_TYPE_SHIPYARD_6_2;
-		name = "Ships";
+		Table,garrType,followerType,name = ships,LE_GARRISON_TYPE_6_0,LE_FOLLOWER_TYPE_SHIPYARD_6_2,nameS;
 	elseif tableName=="champions" then
 		champions = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table = champions;
-		garrType,followerType,isTroop = LE_GARRISON_TYPE_7_0,LE_FOLLOWER_TYPE_GARRISON_7_0,false;
+		Table,garrType,followerType,isTroop = champions,LE_GARRISON_TYPE_7_0,LE_FOLLOWER_TYPE_GARRISON_7_0,false;
 	elseif tableName=="troops" then
 		troops = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table = troops;
-		garrType,followerType,isTroop = LE_GARRISON_TYPE_7_0,LE_FOLLOWER_TYPE_GARRISON_7_0,true;
+		Table,garrType,followerType,isTroop = troops,LE_GARRISON_TYPE_7_0,LE_FOLLOWER_TYPE_GARRISON_7_0,true;
 	end
 
-	Broker_Everything_CharacterDB[ns.player.name_realm][tableName]={}; -- wipe
-	local cache=Broker_Everything_CharacterDB[ns.player.name_realm][tableName];
+	ns.toon[tableName]={}; -- wipe
+	local cache=ns.toon[tableName];
 
 	local tmp = C_Garrison.GetFollowers(followerType) or {};
 	for i,v in ipairs(tmp)do
-		if v.isCollected==true and (isTroop=="nil" or v.isTroop==isTroop) then
+		if v.isCollected==true and (isTroop==nil or v.isTroop==isTroop) then
 			v.follower_Type = followerType; -- ?
 			v.AbilitiesAndTraits = C_Garrison.GetFollowerAbilities(v.followerID);
 			local s,m=0,0;
@@ -244,6 +246,55 @@ local function getFollowers(tableName)
 		end
 	end
 	Table.allinone_num=Table.num;
+end
+
+local function updateBroker()
+	if followerEnabled then
+		local aio = {0,0,0,0,0};
+		local single = {};
+		if ns.profile[nameF].showFollowersOnBroker and garrLevel>0 then
+			getFollowers("followers");
+			aio[1]=aio[1]+(followers.onresting_num or 0);
+			aio[2]=aio[2]+(followers.onmission_num or 0);
+			aio[3]=aio[3]+(followers.onwork_num or 0);
+			aio[4]=aio[4]+(followers.available_num or 0);
+			aio[5]=aio[5]+(followers.num or 0);
+			tinsert(single, ("%s/%s/%s/%s"):format(C("ltblue",followers.onresting_num),C("yellow",followers.onmission_num+followers.onwork_num),C("green",followers.available_num),followers.num));
+		end
+		if ns.profile[nameF].showChampionsOnBroker and LE_GARRISON_TYPE_7_0 and ohLevel>0 then
+			getFollowers("champions");
+			aio[1]=aio[1]+(champions.onresting_num or 0);
+			aio[2]=aio[2]+(champions.onmission_num or 0);
+			aio[3]=aio[3]+(champions.onwork_num or 0);
+			aio[4]=aio[4]+(champions.available_num or 0);
+			aio[5]=aio[5]+(champions.num or 0);
+			tinsert(single, ("%s/%s/%s/%s"):format(C("ltblue",champions.onresting_num),C("yellow",champions.onmission_num+champions.onwork_num),C("green",champions.available_num),champions.num));
+		end
+		if ns.profile[nameF].showTroopsOnBroker and LE_GARRISON_TYPE_7_0 and ohLevel>0 then
+			getFollowers("troops");
+			aio[1]=aio[1]+(troops.onresting_num or 0);
+			aio[2]=aio[2]+(troops.onmission_num or 0);
+			aio[3]=aio[3]+(troops.onwork_num or 0);
+			aio[4]=aio[4]+(troops.available_num or 0);
+			aio[5]=aio[5]+(troops.num or 0);
+			tinsert(single, ("%s/%s/%s/%s"):format(C("ltblue",troops.onresting_num),C("yellow",troops.onmission_num+troops.onwork_num),C("green",troops.available_num),troops.num));
+		end
+		local obj = ns.LDB:GetDataObjectByName(ldbNameF);
+		if ns.profile[nameF].showAllInOne then
+			obj.text = ("%s/%s/%s/%s"):format(C("ltblue",aio[1]),C("yellow",aio[2]+aio[3]),C("green",aio[4]),aio[5]);
+		else
+			obj.text = #single>0 and table.concat(single,", ") or L[nameF];
+		end
+	end
+	if shipsEnabled then
+		local obj = ns.LDB:GetDataObjectByName(ldbNameS);
+		if LE_FOLLOWER_TYPE_SHIPYARD_6_2 and garrLevel>0 and syLevel>0 then
+			getFollowers("ships");
+			obj.text = ("%s/%s/%s/%s"):format(C("ltblue",ships.onresting_num),C("yellow",ships.onmission_num+ships.onwork_num),C("green",ships.available_num),ships.num);
+		else
+			obj.text = L[nameS];
+		end
+	end
 end
 
 local function charSummary(lst,c,v,t,a)
@@ -305,10 +356,12 @@ local function charSummary(lst,c,v,t,a)
 end
 
 local function createTooltip(self, tt, name)
+	--if (tt) and (tt.key) and (tt.key~=name) then return end -- don't override other LibQTip tooltips...
 	local colors,qualities,count = {"ltblue","yellow","yellow","green","red"},{"white","ff1eaa00","ff0070dd","ffa335ee","ffff8000"},0
 	local statuscolors = {["onresting"]="ltblue",["onwork"]="orange",["onmission"]="yellow",["available"]="green",["disabled"]="red"};
 	local none=true;
 
+	tt:Clear();
 	if name==nameS then
 		tt:AddHeader(C("dkyellow",GARRISON_SHIPYARD_FOLLOWERS));
 	elseif ns.build>70000000 then
@@ -436,16 +489,17 @@ local function createTooltip(self, tt, name)
 				lst = {{"ships",GARRISON_SHIPYARD_FOLLOWERS}};
 			end
 			for _,x in ipairs(lst)do -- follower types
-				if x[1]=="followers" then
+				local Table;
+				if x[1]=="followers" and ns.profile[name].showFollowers then
 					Table = followers;
-				elseif x[1]=="champions" then
+				elseif x[1]=="champions" and ns.profile[name].showChampions then
 					Table = champions;
-				elseif x[1]=="troops" then
+				elseif x[1]=="troops" and ns.profile[name].showTroops then
 					Table = troops;
 				elseif x[1]=="ships" then
 					Table = ships;
 				end
-				if (type(Table[n.."_num"])=="number") and (Table[n.."_num"]>0) then
+				if Table and (type(Table[n.."_num"])=="number") and (Table[n.."_num"]>0) then
 					none=false;
 					for i,v in ns.pairsByKeys(Table[n]) do
 						if	(v.status2=="disabled" and ns.profile[name].hideDisabled)
@@ -511,12 +565,11 @@ local function createTooltip(self, tt, name)
 												or at.icon==134071 -- INV_Misc_Gem_01
 												or at.icon==1037260 -- Ability_HanzandFranz_ChestBump
 												or at.icon==134366 -- INV_Misc_Pelt_Wolf_01
-												or at.icon==237171 -- INV_Inscription_Tradeskill01
-											then
+												or at.icon==237171 then -- INV_Inscription_Tradeskill01
 												-- legion version
 												t = t .. " |T"..at.icon..":14:14:0:0:64:64:4:56:4:56|t";
 											else
-												a = a .. " |T"..at.icon..":14:14:0:0:64:64:4:56:4:56|t";
+												a = a .. " |T"..(at.icon or ns.icon_fallback)..":14:14:0:0:64:64:4:56:4:56|t";
 											end
 										end
 									end
@@ -580,6 +633,11 @@ local function createTooltip(self, tt, name)
 	ns.roundupTooltip(self, tt)
 end
 
+local function updater()
+	if UnitLevel("player")>=90 and ((followerEnabled and followers.num>0) or (shipsEnabled and ships.num>0)) then
+		ns.modules.followers_core.onevent(self,"GARRISON_FOLLOWER_LIST_UPDATE");
+	end
+end
 
 ------------------------------------
 -- module (BE internal) functions --
@@ -600,7 +658,7 @@ ns.modules.followers_core.onevent = function(self,event,msg)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[nameF],ns.profile[nameF]);
 		ns.clickOptions.update(ns.modules[nameS],ns.profile[nameS]);
-	else
+	elseif UnitLevel("player")>=90 then
 		if (delay==true) then
 			delay = false;
 			C_Timer.After(4,ns.modules.followers_core.onevent);
@@ -609,72 +667,27 @@ ns.modules.followers_core.onevent = function(self,event,msg)
 
 		-- garrison level
 		garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0;
+
 		-- shipyard level
 		if garrLevel>0 then
 			local lvl = C_Garrison.GetOwnedBuildingInfoAbbrev(98);
 			if lvl then syLevel=lvl-204; end
 		end
+
 		-- order hall level?
 		if ns.build>70000000 then
 			ohLevel = LE_GARRISON_TYPE_7_0~=nil and C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
 		end
 
-		if followerEnabled then
-			local aio = {0,0,0,0,0};
-			local single = {};
-			if ns.profile[nameF].showFollowersOnBroker and garrLevel>0 then
-				getFollowers("followers");
-				aio[1]=aio[1]+(followers.onresting_num or 0);
-				aio[2]=aio[2]+(followers.onmission_num or 0);
-				aio[3]=aio[3]+(followers.onwork_num or 0);
-				aio[4]=aio[4]+(followers.available_num or 0);
-				aio[5]=aio[5]+(followers.num or 0);
-				tinsert(single, ("%s/%s/%s/%s"):format(C("ltblue",followers.onresting_num),C("yellow",followers.onmission_num+followers.onwork_num),C("green",followers.available_num),followers.num));
-			end
-			if ns.profile[nameF].showChampionsOnBroker and LE_GARRISON_TYPE_7_0 and ohLevel>0 then
-				getFollowers("champions");
-				aio[1]=aio[1]+(champions.onresting_num or 0);
-				aio[2]=aio[2]+(champions.onmission_num or 0);
-				aio[3]=aio[3]+(champions.onwork_num or 0);
-				aio[4]=aio[4]+(champions.available_num or 0);
-				aio[5]=aio[5]+(champions.num or 0);
-				tinsert(single, ("%s/%s/%s/%s"):format(C("ltblue",champions.onresting_num),C("yellow",champions.onmission_num+champions.onwork_num),C("green",champions.available_num),champions.num));
-			end
-			if ns.profile[nameF].showTroopsOnBroker and LE_GARRISON_TYPE_7_0 and ohLevel>0 then
-				getFollowers("troops");
-				aio[1]=aio[1]+(troops.onresting_num or 0);
-				aio[2]=aio[2]+(troops.onmission_num or 0);
-				aio[3]=aio[3]+(troops.onwork_num or 0);
-				aio[4]=aio[4]+(troops.available_num or 0);
-				aio[5]=aio[5]+(troops.num or 0);
-				tinsert(single, ("%s/%s/%s/%s"):format(C("ltblue",troops.onresting_num),C("yellow",troops.onmission_num+troops.onwork_num),C("green",troops.available_num),troops.num));
-			end
-			local obj = ns.LDB:GetDataObjectByName(ldbNameF);
-			if ns.profile[nameF].showAllInOne then
-				obj.text = ("%s/%s/%s/%s"):format(C("ltblue",aio[1]),C("yellow",aio[2]+aio[3]),C("green",aio[4]),aio[5]);
-			else
-				obj.text = #single>0 and table.concat(single,", ") or L[nameF];
-			end
-		end
-		if shipsEnabled then
-			if LE_FOLLOWER_TYPE_SHIPYARD_6_2 and garrLevel>0 and syLevel>0 then
-				getFollowers("ships");
-				ns.LDB:GetDataObjectByName(ldbNameS).text = ("%s/%s/%s/%s"):format(C("ltblue",ships.onresting_num),C("yellow",ships.onmission_num+ships.onwork_num),C("green",ships.available_num),ships.num);
-			else
-				ns.LDB:GetDataObjectByName(ldbNameS).text = L[nameS];
-			end
-		end
+		updateBroker();
+	end
+	if not ticker then
+		ticker = C_Timer.NewTicker(ns.modules.followers_core.updateinterval,updater);
 	end
 end
+
 ns.modules[nameF].onevent = ns.modules.followers_core.onevent;
 ns.modules[nameS].onevent = ns.modules.followers_core.onevent;
-
-ns.modules.followers_core.onupdate = function(self)
-	if UnitLevel("player")>=90 and ((followerEnabled and followers.num>0) or (shipsEnabled and ships.num>0)) then
-		ns.modules.followers_core.onevent(self,"GARRISON_FOLLOWER_LIST_UPDATE");
-	end
-end
-
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(self) end
@@ -685,13 +698,13 @@ end
 -------------------------------------------
 ns.modules[nameF].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttF = ns.LQT:Acquire(ttNameF, ttColumnsF, "LEFT", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "RIGHT");
+	ttF = ns.acquireTooltip(ttNameF, ttColumnsF, "LEFT", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "RIGHT");
 	createTooltip(self, ttF, nameF)
 end
 
 ns.modules[nameS].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttS = ns.LQT:Acquire(ttNameS, ttColumnsS, "LEFT", "LEFT", "CENTER", "CENTER", "CENTER", "RIGHT","RIGHT");
+	ttS = ns.acquireTooltip(ttNameS, ttColumnsS, "LEFT", "LEFT", "CENTER", "CENTER", "CENTER", "RIGHT","RIGHT");
 	createTooltip(self, ttS, nameS)
 end
 
