@@ -26,6 +26,7 @@ local currencyCache = {};
 local currencySession = {};
 local currencyList = {}
 local currencyList2 = {}
+local last = 0;
 local BrokerPlacesMax = 4;
 
 
@@ -45,7 +46,8 @@ ns.modules[name] = {
 	icon_suffix = "_Neutral",
 	events = {
 		"PLAYER_ENTERING_WORLD",
-		"CURRENCY_DISPLAY_UPDATE"
+		"CURRENCY_DISPLAY_UPDATE",
+		"CHAT_MSG_CURRENCY"
 	},
 	updateinterval = nil, -- 10
 	config_defaults = {
@@ -54,6 +56,12 @@ ns.modules[name] = {
 		currenciesInTitle = {false,false,false,false},
 		favCurrencies = {},
 		favMode=false,
+		showTotalCap = true,
+		showWeeklyCap = true,
+		showCapColor = true,
+		showCapBroker = true,
+		showCapColorBroker = true,
+		showSession = true,
 		spacer=0,
 	},
 	config_allowed = {
@@ -61,7 +69,18 @@ ns.modules[name] = {
 	},
 	config = {
 		{ type="header", label=CURRENCY, align="left", icon=true },
-		{ type="separator" },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Broker button options"] },
+		{ type="separator", inMenuInvisible=true },
+		{ type="toggle", name="showCapBroker", label=L["Show total/weekly cap"], tooltip=L["Display currency total cap in tooltip."], event=true },
+		{ type="toggle", name="showCapColorBroker", label=L["Coloring total/weekly cap"], tooltip=L["..."], event=true },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Tooltip options"] },
+		{ type="separator", inMenuInvisible=true },
+		{ type="toggle", name="showTotalCap", label=L["Show total cap"], tooltip=L["Display currency total cap in tooltip."] },
+		{ type="toggle", name="showWeeklyCap", label=L["Show weekly cap"], tooltip=L["Display currency weekly earned and cap in tooltip."] },
+		{ type="toggle", name="showCapColor", label=L["Coloring total cap"], tooltip=L["Coloring limited currencies by total and/or weekly cap. If weekly cap not shown then will be colored total value by value which is near on cap."] },
+		{ type="toggle", name="showSession", label=L["Show session earn/loss"], tooltip=L["Display session profit in tooltip"] },
 		{ type="toggle", name="shortTT", label=L["Short Tooltip"], tooltip=L["Display the content of the tooltip shorter"] },
 		{ type="select", name="subTTposition", label=L["Second tooltip"], tooltip=L["Where does the second tooltip for a single currency are displayed from the first tooltip"],
 			values	= {
@@ -73,8 +92,7 @@ ns.modules[name] = {
 			},
 			default = "BOTTOM"
 		},
-		{ type="toggle", name="favMode", label=L["Favorite mode"], tooltip=L["Display as favorite selected currencies only."], disabled=true },
-		{ type="slider", name="spacer",  label=L["Space between currencies"], tooltip=L["Add more space between displayed currencies on broker button"],
+		{ type="slider", name="spacer",     label=L["Space between currencies"], tooltip=L["Add more space between displayed currencies on broker button"],
 			min			= 0,
 			max			= 10,
 			default		= 0,
@@ -114,11 +132,41 @@ local function GetSign(d)
 	return (d==1 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (d==-1 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
 end
 
-local function GetEarnLoss(id)
-	
+local function CapColor(colors,str,count,mCount,count2,mCount2)
+	local col,c = colors[1],0;
+	if mCount>0 then
+		c = mCount-count;
+	end
+	if count2 and mCount2 then
+		local tmp=mCount2-count2;
+		if mCount==0 or tmp<c then
+			mCount=mCount2;
+			c=tmp;
+		end
+	end
+	if mCount>0 then
+		if mCount<=100 then
+			if c<ceil(mCount*.1) then -- 10%
+				col=colors[4];
+			elseif c<ceil(mCount*.2) then -- 20%
+				col=colors[3];
+			elseif c<ceil(mCount*.3) then -- 30%
+				col=colors[2];
+			end
+		else
+			if c<ceil(mCount*.05) then -- 5%
+				col=colors[4];
+			elseif c<ceil(mCount*.125) then -- 10%
+				col=colors[3];
+			elseif c<ceil(mCount*.25) then -- 25%
+				col=colors[2];
+			end
+		end
+	end
+	return C(col,str);
 end
 
-local function updateCurrency(mode,sessionUpdate)
+local function updateCurrency(mode)
 	local collapsed,_ = {};
 	if mode=="full" or mode=="half" then
 		wipe(currencyList);
@@ -134,11 +182,9 @@ local function updateCurrency(mode,sessionUpdate)
 				currencyName2Id[t[cName]] = id;
 				currencyCache[id] = t;
 				if currencySession[id]==nil then
-					currencySession[id] = {sessionUpdate and t[cCount] or 0, sessionUpdate and 1 or 0};
+					currencySession[id] = {t[cCount],0};
 				end
-				if sessionUpdate then
-					--currencySession[id] = {currencySession[id] + t[cCount]};
-				end
+				currencySession[id][2] = t[cCount] - currencySession[id][1];
 			end
 			currencyList[i] = id or t[cName];
 		end
@@ -157,8 +203,9 @@ local function updateCurrency(mode,sessionUpdate)
 				id = tonumber(GetCurrencyListLink(i):match("currency:(%d+)"));
 				currencyName2Id[t[cName]] = id;
 				if currencySession[id]==nil then
-					currencySession[id] = {sessionUpdate and t[cCount] or 0, sessionUpdate and 1 or 0};
+					currencySession[id] = {t[cCount],0};
 				end
+				currencySession[id][2] = t[cCount] - currencySession[id][1];
 				tmp[id]=t;
 			end
 			currencyList2[i] = id or t[cName];
@@ -171,9 +218,7 @@ local function updateCurrency(mode,sessionUpdate)
 		for id,v in pairs(currencyCache) do
 			if not currencyCache[id][cIsHeader] then
 				_, currencyCache[id][cCount], _, currencyCache[id][cEarnedThisWeek] = GetCurrencyInfo(id);
-				if sessionUpdate then
-					--currencySession[id] = {currencySession[id] + t[cCount]};
-				end
+				currencySession[id][2] = currencyCache[id][cCount]-currencySession[id][1];
 			end
 		end
 	end
@@ -197,7 +242,14 @@ local function updateBroker()
 			end
 			local c = currencyCache[id];
 			if c and c[cIcon] then
-				tinsert(elems, ns.FormatLargeNumber(c[cCount]).."|T"..c[cIcon]..":0|t");
+				local str = ns.FormatLargeNumber(c[cCount]);
+				if ns.profile[name].showCapBroker and c[cTotalMax]>0 then
+					str = str.."/"..ns.FormatLargeNumber(c[cTotalMax]);
+				end
+				if ns.profile[name].showCapColorBroker and (c[cTotalMax]>0 or c[cWeeklyMax]) then
+					str = CapColor({"green","yellow","orange","red"},str,c[cCount],c[cTotalMax],c[cEarnedThisWeek],c[cWeeklyMax]);
+				end
+				tinsert(elems, str.."|T"..c[cIcon]..":0|t");
 			end
 		end
 	end
@@ -282,33 +334,87 @@ function createMenu(parent)
 end
 
 local function createTooltip(self, tt)
-	if (not tt.key) or (tt.key~=ttName) then return; end -- don't override other LibQTip tooltips...
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear()
 	tt:AddHeader(C("dkyellow",CURRENCY))
 	if ns.profile[name].shortTT == true then
+		tt:AddSeparator(4,0,0,0,0);
+		local c,l = 3,tt:AddLine(C("ltblue",L["Name"]));
+		if ns.profile[name].showWeeklyCap then
+			tt:SetCell(l,c,C("ltblue",L["Weekly"]));
+			c=c+1;
+		end
+		if ns.profile[name].showTotalCap then
+			tt:SetCell(l,c,C("ltblue",L["Max."]));
+			c=c+1;
+		end
+		if ns.profile[name].showSession then
+			tt:SetCell(l,c,C("ltblue",L["Session"]));
+		end
 		tt:AddSeparator()
 	end
 
 	for i,v in ipairs(currencyList) do
 		if type(v)=="string" and ns.profile[name].shortTT == false then
 			local isExpanded = type(currencyList[i+1])=="number";
-			tt:AddSeparator(4,0,0,0,0)
-			local l=tt:AddLine(C( isExpanded and "ltblue" or "gray",v));
+			tt:AddSeparator(4,0,0,0,0);
+			local color,str,c = "ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t "..v,3;
+			if not isExpanded then
+				color,str = "gray","|Tinterface\\buttons\\UI-PlusButton-Up:0|t "..v;
+			end
+			local l=tt:AddLine(C( isExpanded and "ltblue" or "gray",str));
+			if isExpanded then
+				--[[
+				if ns.profile[name].showWeeklyCap then
+					tt:SetCell(l,c,C("ltblue",L["Weekly"]));
+					c=c+1;
+				end
+				--]]
+				tt:AddSeparator();
+			end
 			tt:SetLineScript(l,"OnMouseUp",function()
-				ExpandCurrencyList(i, isExpanded and 0 or 1 );
-				createTooltip(false, tt);
+				ExpandCurrencyList(i,isExpanded and 0 or 1);
+				createTooltip(false,tt);
 				if TokenFrame:IsShown() and TokenFrame:IsVisible() then
 					TokenFrame_Update();
 				end
 			end);
-			-- tt:SetLineScript(l,"OnEnter",function() 	end);
-			if isExpanded then
-				tt:AddSeparator()
-			end
 		elseif currencyCache[v] then
-			local t = currencyCache[v];
-			local l=tt:AddLine(C("ltyellow",t[cName]),ns.FormatLargeNumber(t[cCount]).."  |T"..t[cIcon]..":14:14:0:0:64:64:4:56:4:56|t");
+			local t,c = currencyCache[v],3;
+			local str = ns.FormatLargeNumber(t[cCount]);
+			if ns.profile[name].showTotalCap and t[cTotalMax]>0 then
+				str = str .."/".. ns.FormatLargeNumber(t[cTotalMax]);
+			end
+			if ns.profile[name].showCapColor and (t[cTotalMax]>0 or t[cWeeklyMax]) then
+				local params = {t[cCount],t[cTotalMax]};
+				if not ns.profile[name].showWeeklyCap and t[cWeeklyMax] then
+					tinsert(params,t[cEarnedThisWeek]);
+					tinsert(params,t[cWeeklyMax]);
+				end
+				str = CapColor({"green","yellow","orange","red"},str,unpack(params));
+			end
+			local l = tt:AddLine(
+				"    "..C("ltyellow",t[cName]),
+				str.."  |T"..t[cIcon]..":14:14:0:0:64:64:4:56:4:56|t"
+			);
+			if ns.profile[name].showWeeklyCap then
+				if t[cWeeklyMax] then
+					tt:SetCell(l,c,CapColor({"green","yellow","orange","red"},t[cEarnedThisWeek].."/"..t[cWeeklyMax],t[cEarnedThisWeek],t[cWeeklyMax]));
+				end
+				c=c+1;
+			end
+			if ns.profile[name].showSession then
+				local color,str = false,currencySession[v][2];
+				if currencySession[v][2]>0 then
+					color,str = "ltgreen","+"..str;
+				elseif currencySession[v][2]<0 then
+					color = "ltred";
+				end
+				if color then
+					tt:SetCell(l,c,C(color,str));
+				end
+			end
 			local lineObj = tt.lines[l]
 			lineObj.currencyIndex = i;
 
@@ -362,23 +468,25 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(self)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
 ns.modules[name].onevent = function(self,event,msg)
 	if event=="PLAYER_ENTERING_WORLD" then
-		updateCurrency("full",false);
+		updateCurrency("full");
 		updateBroker();
-		if not self.loaded then
-			hooksecurefunc("SetCurrencyUnused",function() updateCurrency("half",false) end);
-			hooksecurefunc("ExpandCurrencyList",function() updateCurrency("half",false) end);
-			self.loaded = true;
-		end
+		hooksecurefunc("SetCurrencyUnused",function() updateCurrency("half") end);
+		hooksecurefunc("ExpandCurrencyList",function() updateCurrency("half") end);
+		self:UnregisterEvent(event);
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-	elseif self.loaded then
-		updateCurrency("half",true);
+	else
+		local id;
+		if event=="CHAT_MSG_CURRENCY" then -- detecting new currencies
+			id = tonumber(msg:lower():match("hcurrency:(%d*)"));
+		end
+		updateCurrency( (id and currencyCache[id]==nil) and "full" or "half");
 		updateBroker();
 		if (tt) and (tt.key) and (tt.key==ttName) and (tt:IsShown()) then
 			createTooltip(false, tt)
@@ -386,7 +494,6 @@ ns.modules[name].onevent = function(self,event,msg)
 	end
 end
 
--- ns.modules[name].onupdate = function(self) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tt) end
@@ -397,8 +504,8 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttColumns=2;
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT", "RIGHT")
+	ttColumns=5;
+	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "RIGHT", "RIGHT", "RIGHT")
 	createTooltip(self, tt)
 end
 
@@ -410,4 +517,3 @@ end
 -- ns.modules[name].ondblclick = function(self,button) end
 
 --[[ IDEAS: get max count and weekly max count of a currency for displaying caped counts in red. ]]
-
