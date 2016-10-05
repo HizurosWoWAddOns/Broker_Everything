@@ -21,7 +21,7 @@ local name3 = "ZoneText"; -- L["ZoneText"]
 local ldbName1, ldbName2, ldbName3 = name1, name2, name3;
 local ttName1, ttName2, ttName3, ttName4 = name1.."TT", name2.."TT", name3.."TT", name1.."TT2";
 local ttColumns,onleave,createTooltip2,createMenu;
-local ns_items_registered=false;
+local PEW=false;
 local tt1, tt2, tt3, tt4;
 local tt5positions = {
 	["LEFT"]   = {edgeSelf = "RIGHT",  edgeParent = "LEFT",   x = -2, y =  0},
@@ -39,10 +39,11 @@ local zoneDisplayValues = {
 local foundItems, foundToys, teleports, portals, spells = {},{},{},{},{};
 local _classSpecialSpellIds = {50977,18960,556,126892,147420};
 local _teleportIds = {3561,3562,3563,3565,3566,3567,32271,32272,33690,35715,49358,49359,53140,88342,88344,120145,132621,132627,176248,176242,193759,224869};
-local _portalIds = {10059,11416,11417,11418,11419,11420,32266,32267,33691,35717,49360,49361,53142,88345,88346,120146,132620,132626,176246,176244};
-local _itemIds = {12585,14547,18984,19276,19278,19279,19280,19281,19282,19283,19284,21711,21739,22589,22630,22631,22632,24335,29796,30542,30853,32093,32696,32757,33637,33774,34420,34973,35230,36747,38685,40585,40586,40731,42014,42015,42016,42017,42018,43824,44934,44935,45688,45689,45690,45691,45705,46842,46874,48954,48955,48956,48957,51537,51557,51558,51559,51560,52251,52567,52576,56024,57138,58487,58964,60273,60374,60407,60478,60498,61379,61385,62057,62379,62394,62412,62495,62496,63206,63207,63352,63353,63378,63379,64457,64747,65274,65360,65572,66061,68808,68809,69212,70314,70469,70568,71008,71015,71016,71017,72459,73487,73660,82469,82470,87215,87548,91806,91850,91860,91861,91862,91863,91864,91865,91866,92056,92057,92058,92430,92431,92432,93124,93761,95050,95051,103678,104110,104113,107441,108595,108683,113217,116413,117016,117389,118662,118663,118907,118908,119183,128353,128502,128503,128941,129161,129276,130199,131735,132119,132120,132122,132517,132749,132750,133755,134058,134064,136849,138028,138029,138030,138031,138032,138448,139541,139590,139599,140192,140319,140493,141013,141014,141015,141016,141017,95567,37863,110560};
+local _portalIds = {10059,11416,11417,11418,11419,11420,32266,32267,33691,35717,49360,49361,53142,88345,88346,120146,132620,132626,176246,176244,224871};
+local _itemIds = {18984,18986,21711,22589,22630,22631,22632,24335,29796,30542,30544,32757,33637,33774,34420,35230,36747,37863,38685,40585,40586,43824,44934,44935,45688,45689,45690,45691,45705,46874,48933,48954,48955,48956,48957,51557,51558,51559,51560,52251,52576,58487,58964,60273,60374,60407,60498,61379,63206,63207,63352,63353,63378,63379,64457,65274,65360,66061,68808,68809,82470,87215,87548,91850,91860,91861,91862,91863,91864,91865,91866,92056,92057,92058,92430,92431,92432,95050,95051,95567,95568,103678,104110,104113,107441,110560,112059,116413,117389,118662,118663,118907,118908,119183,128353,128502,128503,129276,132119,132120,132122,132517,133755,134058,136849,138448,139541,139590,139599,140192,140319,140493,141013,141014,141015,141016,141017};
 local _itemReplacementIds = {64488,28585,6948,44315,44314,37118};
 local _itemMustBeEquipped = {[32757]=1,[40585]=1};
+local _itemFactions = {}
 
 
 -- ------------------------------------- --
@@ -63,7 +64,7 @@ ns.modules[name0] = {
 		"PLAYER_ENTERING_WORLD",
 		"LEARNED_SPELL_IN_TAB"
 	},
-	updateinterval = 0.1,
+	updateinterval = 0.12,
 	config_defaults = {
 		precision = 0,
 		coordsFormat = "%s, %s",
@@ -138,14 +139,8 @@ ns.modules[name1] = {
 			hint = "Open transport menu",
 			func = function(self,button)
 				local _mod=name;
-				if tt1 then onleave(self,tt1,ttName1) end
-
 				if (InCombatLockdown()) then return; end
-				if ns.profile[name0].shortMenu then
-					tt4 = ns.LQT:Acquire(ttName4, 4, "LEFT","LEFT","LEFT","LEFT")
-				else
-					tt4 = ns.LQT:Acquire(ttName4, 1, "LEFT")
-				end
+				ns.hideTooltip(tt1,ttName1,true);
 				createTooltip2(self, tt4);
 			end
 		},
@@ -190,14 +185,8 @@ ns.modules[name2] = {
 			hint = "Open transport menu",
 			func = function(self,button)
 				local _mod=name;
-				if tt2 then onleave(self,tt2,ttName2) end
-
 				if (InCombatLockdown()) then return; end
-				if ns.profile[name0].shortMenu then
-					tt4 = ns.LQT:Acquire(ttName4, 4, "LEFT","LEFT","LEFT","LEFT")
-				else
-					tt4 = ns.LQT:Acquire(ttName4, 1, "LEFT")
-				end
+				ns.hideTooltip(tt2,ttName2,true);
 				createTooltip2(self, tt4);
 			end
 		},
@@ -246,15 +235,9 @@ ns.modules[name3] = {
 			hint = "Open transport menu",
 			func = function(self,button)
 				local _mod=name;
-				if tt3 then onleave(self,tt3,ttName3) end
-
 				if (InCombatLockdown()) then return; end
-				if ns.profile[name0].shortMenu then
-					tt4 = ns.LQT:Acquire(ttName4, 4, "LEFT","LEFT","LEFT","LEFT")
-				else
-					tt4 = ns.LQT:Acquire(ttName4, 1, "LEFT")
-				end
-				createTooltip2(self, tt4);
+				ns.hideTooltip(tt3,ttName3,true);
+				createTooltip2(self);
 			end
 		},
 		["3_open_menu"] = {
@@ -297,82 +280,46 @@ end
 local function updateItems()
 	foundItems, foundToys = {},{};
 	local items = ns.items.GetItemlist();
-	for i=1, #_itemIds do
+	local add=function(id,loc)
 		local toyName,toyIcon,_;
-		if PlayerHasToy(_itemIds[i]) then
-			_, toyName, toyIcon = C_ToyBox.GetToyInfo(_itemIds[i]);
+		if PlayerHasToy(id) then
+			_, toyName, toyIcon = C_ToyBox.GetToyInfo(id);
 		end
 		if toyName and toyIcon then
-			table.insert(foundToys,{
-				id = _itemIds[i],
-				icon = toyIcon,
-				name = toyName
-			});
-		elseif items[_itemIds[i]] then
-			local v=items[_itemIds[i]];
-			if v[1] and v[1].name then
-				table.insert(foundItems,{
-					id=_itemIds[i],
-					icon = v[1].icon,
-					name = v[1].name,
-					name2 = v[1].name,
-					mustBeEquipped = _itemMustBeEquipped[_itemIds[i]]==1,
-					equipped = v[1].type=="inv"
-				});
+			if C_ToyBox.IsToyUsable(id) then
+				table.insert(foundToys,{id=id,icon=toyIcon,name=toyName,name2=loc~=nil and toyName..loc or nil});
+			end
+		elseif items[id] and items[id][1] then
+			local v=items[id][1];
+			if type(v)=="table" and v.name then
+				table.insert(foundItems,{id=id,icon=v.icon,name=v.name,name2=v.name,mustBeEquipped=_itemMustBeEquipped[id]==1,equipped=v.type=="inv"});
 			end
 		end
 	end
+	for i=1, #_itemIds do
+		add(_itemIds[i]);
+	end
 	local loc = " "..C("ltblue","("..GetBindLocation()..")");
 	for i=1, #_itemReplacementIds do
-		local toyName,toyIcon,_;
-		if PlayerHasToy(_itemReplacementIds[i]) then
-			_, toyName, toyIcon = C_ToyBox.GetToyInfo(_itemReplacementIds[i]);
-		end
-		if toyName and toyIcon then
-			table.insert(foundToys,{
-				id = _itemReplacementIds[i],
-				icon = toyIcon,
-				name = toyName,
-				name2 = toyName..loc
-			});
-		else
-			local v = items[_itemReplacementIds[i]];
-			if v and v[1] then
-				table.insert(foundItems,{
-					id=_itemReplacementIds[i],
-					icon = v[1].icon,
-					name = v[1].name,
-					name2 = v[1].name..loc
-				});
-			end
-		end
+		add(_itemReplacementIds[i],loc);
 	end
 end
 
 local function position()
-	local p,f = ns.profile[name0].precision, ns.profile[name0].coordsFormat
-	if not p then p = 0 end
-	local precision_format = "%."..p.."f"
-	if not f then f = "%s, %s" end
-
-	local x, y = GetPlayerMapPosition("player")
-
+	local p, f, pf = ns.profile[name0].precision or 0, ns.profile[name0].coordsFormat or "%s, %s";
+	local x, y = GetPlayerMapPosition("player");
 	if x ~= 0 and y ~= 0 then
-		return string.format(
-			f,
-			string.format(precision_format, (x * 100)),
-			string.format(precision_format, (y * 100))
-		)
+		return f:format("%."..p.."f","%."..p.."f"):format(x*100, y*100);
 	else
-		local pX = strrep("?",p)
-		return string.format(f, (pX~="" and "?."..pX or "?"), (pX~="" and "?."..pX or "?") )
+		local pX = p==0 and "?" or "?."..strrep("?",p);
+		return f:format(pX,pX);
 	end
 end
 
 local function zone(byName)
-	local subZone = GetSubZoneText() or ""
-	local zone = GetRealZoneText() or ""
-	local types = {"%s: %s","%s (%s)"}
+	local subZone = GetSubZoneText() or "";
+	local zone = GetRealZoneText() or "";
+	local types = {"%s: %s","%s (%s)"};
 	local mode = "2";
 
 	if ns.profile[byName]==nil then
@@ -424,7 +371,7 @@ end
 
 -- shared tooltip for modules Location, GPS and ZoneText
 local function createTooltip(self,tt,ttName,modName)
-	if (not tt.key) or tt.key~=ttName then return end -- don't override other LibQTip tooltips...
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local pvp, color = zoneColor()
 	local line, column
@@ -469,7 +416,22 @@ local function createTooltip(self,tt,ttName,modName)
 	ns.roundupTooltip(self,tt);
 end
 
+local function createTooltip3(_,data)
+	GameTooltip:SetOwner(data.tooltip.parent,"ANCHOR_NONE");
+	GameTooltip:SetPoint(ns.GetTipAnchor(data.tooltip.parent,"horizontal"));
+	GameTooltip:SetHyperlink(data.tooltip.type..":"..data.tooltip.id);
+	GameTooltip:Show();
+end
+
+local function hideTooltip3()
+	GameTooltip:Hide();
+end
+
 function createTooltip2(self, tt)
+	updateItems();
+	tt4 = ns.LQT:Acquire(ttName4, ns.profile[name0].shortMenu and 4 or 1, "LEFT","LEFT","LEFT","LEFT");
+	tt = tt4;
+
 	local pts,ipts,tls,itls = {},{},{},{}
 	local line, column,cellcount = nil,nil,5
 
@@ -480,27 +442,36 @@ function createTooltip2(self, tt)
 	end
 
 	local function add_cell(v,t)
-		local startTime, duration, enable
-		if(t=="item")then
-			startTime, duration, enable = GetItemCooldown(v.id);
-		end
 		tt:SetCell(line, cellcount, iStr32:format(v.icon), nil, nil, 1)
-		tt:SetCellScript(line,cellcount,"OnEnter",function(_self) ns.secureButton(_self, { attributes={ type=t, [t]=v.name } } ) end);
+		tt:SetCellScript(line,cellcount,"OnEnter",function(_self)
+			ns.secureButton(_self,{
+				attributes={
+					type=t,
+					[t]=v.name
+				},
+				tooltip={parent=tt,type=t,id=v.id},
+				OnEnter=createTooltip3,
+				OnLeave=hideTooltip3
+			});
+		end);
 	end
 
 	local function add_line(v,t)
-		local startTime, duration, enable
-		if(t=="item")then
-			startTime, duration, enable = GetItemCooldown(v.id);
-			
-		end
 		local info,doUpdate = "";
 		if v.mustBeEquipped==true and v.equipped==false then
 			info = " "..C("orange","(click to equip)");
 			doUpdate=true
 		end
 		local line, column = tt:AddLine(iStr16:format(v.icon)..(v.name2 or v.name)..info, "1","2","3");
-		tt:SetLineScript(line,"OnEnter",function(_self) ns.secureButton(_self,{ attributes={ type=t, [t]=v.name }, hookOnClick=function() v.equipped=true; createTooltip2(self,tt); end }) end)
+		tt:SetLineScript(line,"OnEnter",function(_self)
+			ns.secureButton(_self,{
+				attributes={type=t,[t]=v.name},
+				tooltip={parent=tt,type=t,id=v.id},
+				OnClick=function() v.equipped=true; createTooltip2(self,tt); end,
+				OnEnter=createTooltip3,
+				OnLeave=hideTooltip3
+			})
+		end)
 	end
 
 	local function add_obj(v,t)
@@ -585,22 +556,20 @@ function createTooltip2(self, tt)
 	ns.roundupTooltip(self,tt,true);
 end
 
-function onleave(self,tt,ttN)
-	if (tt) and (tt~=tt4) then
-		ns.hideTooltip(tt,ttN,true);
-		ns.secureButton(false);
-		if (tt==tt1) then tt1=nil; end
-		if (tt==tt2) then tt2=nil; end
-		if (tt==tt3) then tt3=nil; end
-	end
+function onleave(self,tt)
 	if (tt4) then
 		if MouseIsOver(tt4) then
 			tt4:SetScript('OnLeave',function(self)
-				if (ns.hideTooltip(tt4,ttName4)) then tt4 = nil; end
+				if (ns.hideTooltip(tt4,ttName4,false,true)) then tt4 = nil; end
 			end)
 		else
 			if (ns.hideTooltip(tt4,ttName4)) then tt4 = nil; end
 		end
+	elseif tt and tt~=tt4 then
+		ns.hideTooltip(tt,tt.key,true,false,true);
+		if (tt==tt1) then tt1=nil; end
+		if (tt==tt2) then tt2=nil; end
+		if (tt==tt3) then tt3=nil; end
 	end
 end
 
@@ -622,6 +591,38 @@ local function onclick(self,button)
 	end
 end
 
+local function updater()
+	if not (ns.profile[name1].enabled or ns.profile[name2].enabled or ns.profile[name3].enabled) then return end
+	gpsLoc.zone1 = zone(name1)
+	gpsLoc.zone3 = zone(name3)
+	gpsLoc.pvp, gpsLoc.color = zoneColor()
+	local pos = position()
+	if pos then
+		gpsLoc.pos = pos
+		gpsLoc.posColor = nil
+		gpsLoc.posInfo = nil
+	else
+		if gpsLoc.posLast==nil then
+			gpsLoc.posLast=time()
+		elseif time()-gpsLoc.posLast>5 then
+			gpsLoc.posColor = "orange"
+			gpsLoc.posInfo = L["Coordinates indeterminable"]
+		end
+	end
+
+	if ns.profile[name1].enabled then
+		ns.LDB:GetDataObjectByName(ldbName1).text = C(gpsLoc.color,gpsLoc.zone1.." (")..C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos)..C(gpsLoc.color,")");
+	end
+
+	if ns.profile[name2].enabled then
+		ns.LDB:GetDataObjectByName(ldbName2).text = C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos);
+	end
+
+	if ns.profile[name3].enabled then
+		ns.LDB:GetDataObjectByName(ldbName3).text = C(gpsLoc.color,gpsLoc.zone3);
+	end
+end
+
 
 ------------------------------------
 -- module (BE internal) functions --
@@ -638,9 +639,10 @@ end
 -- ns.modules[name3].init = function(self) end
 
 ns.modules[name0].onevent = function(self,event,msg)
-	if event=="PLAYER_ENTERING_WORLD" and ns_items_registered==false then
-		ns_items_registered=true;
-		ns.items.RegisterCallback(name0,updateItems,"any");
+	if event=="PLAYER_ENTERING_WORLD" and PEW==false then
+		PEW=true;
+		--ns.items.RegisterCallback(name0,updateItems,"any");
+		C_Timer.NewTicker(ns.modules[name0].updateinterval,updater);
 	end
 	if event=="LEARNED_SPELL_IN_TAB" or event=="PLAYER_ENTERING_WORLD" then
 		wipe(teleports); wipe(portals); wipe(spells);
@@ -673,46 +675,6 @@ end
 -- ns.modules[name1].onmousewheel = function(self,direction) end
 -- ns.modules[name2].onmousewheel = function(self,direction) end
 -- ns.modules[name3].onmousewheel = function(self,direction) end
-
-ns.modules[name0].onupdate = function(self)
-	if not (ns.profile[name1].enabled or ns.profile[name2].enabled or ns.profile[name3].enabled) then return end
-
-	gpsLoc.zone1 = zone(name1)
-	gpsLoc.zone3 = zone(name3)
-	gpsLoc.pvp, gpsLoc.color = zoneColor()
-	local pos = position()
-	if pos then
-		gpsLoc.pos = pos
-		gpsLoc.posColor = nil
-		gpsLoc.posInfo = nil
-	else
-		if gpsLoc.posLast==nil then
-			gpsLoc.posLast=time()
-		elseif time()-gpsLoc.posLast>5 then
-			gpsLoc.posColor = "orange"
-			gpsLoc.posInfo = L["Coordinates indeterminable"]
-		end
-	end
-
-	local obj = ns.LDB:GetDataObjectByName(ldbName1);
-	if (obj) then
-		obj.text = C(gpsLoc.color,gpsLoc.zone1.." (")..C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos)..C(gpsLoc.color,")");
-	end
-
-	obj = ns.LDB:GetDataObjectByName(ldbName2);
-	if (obj) then
-		obj.text = C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos);
-	end
-
-	obj = ns.LDB:GetDataObjectByName(ldbName3);
-	if (obj) then
-		obj.text = C(gpsLoc.color,gpsLoc.zone3);
-	end
-end
-
--- ns.modules[name1].onupdate = function(self) end
--- ns.modules[name2].onupdate = function(self) end
--- ns.modules[name3].onupdate = function(self) end
 -- ns.modules[name0].optionspanel = function(panel) end
 -- ns.modules[name1].optionspanel = function(panel) end
 -- ns.modules[name2].optionspanel = function(panel) end
@@ -724,38 +686,38 @@ end
 -------------------------------------------
 ns.modules[name1].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-
+	if tt4 then ns.hideTooltip(tt4,ttName4,true,false,true); end
 	ttColumns = 3;
-	tt1 = ns.LQT:Acquire(ttName1, ttColumns, "LEFT", "RIGHT", "RIGHT");
+	tt1 = ns.acquireTooltip(ttName1, ttColumns, "LEFT", "RIGHT", "RIGHT");
 	createTooltip(self,tt1,ttName1,name1);
 end
 
 ns.modules[name2].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-
+	if tt4 then ns.hideTooltip(tt4,ttName4,true,false,true); end
 	ttColumns = 3;
-	tt2 = ns.LQT:Acquire(ttName2, ttColumns, "LEFT", "RIGHT", "RIGHT");
+	tt2 = ns.acquireTooltip(ttName2, ttColumns, "LEFT", "RIGHT", "RIGHT");
 	createTooltip(self,tt2,ttName2,name2);
 end
 
 ns.modules[name3].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-
+	if tt4 then ns.hideTooltip(tt4,ttName4,true,false,true); end
 	ttColumns = 3;
-	tt3 = ns.LQT:Acquire(ttName3, ttColumns, "LEFT", "RIGHT", "RIGHT");
+	tt3 = ns.acquireTooltip(ttName3, ttColumns, "LEFT", "RIGHT", "RIGHT");
 	createTooltip(self,tt3,ttName3,name3);
 end
 
 ns.modules[name1].onleave = function(self)
-	onleave(self,tt1,ttName1);
+	ns.hideTooltip(tt1,ttName1,true);
 end
 
 ns.modules[name2].onleave = function(self)
-	onleave(self,tt2,ttName2);
+	ns.hideTooltip(tt2,ttName2,true);
 end
 
 ns.modules[name3].onleave = function(self)
-	onleave(self,tt3,ttName3);
+	ns.hideTooltip(tt3,ttName3,true);
 end
 
 --ns.modules[name1].onclick = function(self,button) end
@@ -765,3 +727,7 @@ end
 -- ns.modules[name1].ondblclick = function(self,button) end
 -- ns.modules[name2].ondblclick = function(self,button) end
 -- ns.modules[name3].ondblclick = function(self,button) end
+
+
+--[95567]=1
+--[95568]=2
