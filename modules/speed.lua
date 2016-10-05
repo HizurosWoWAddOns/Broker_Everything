@@ -56,7 +56,7 @@ I[name] = {iconfile="Interface\\Icons\\Ability_Rogue_Sprint",coords={0.05,0.95,0
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show swimming, walking, riding and flying speed in broker button, a list of riding skills and currently active speed bonuses"],
-	events = {},
+	events = {"ADDON_LOADED"},
 	updateinterval = 0.1, -- false or integer
 	config_defaults = {
 		precision = 0
@@ -75,6 +75,7 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 local function createTooltip(self, tt)
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local _=function(d) if tonumber(d) then return ("+%d%%"):format(d); end return d; end;
 	local lvl = UnitLevel("player");
 	tt:Clear();
@@ -218,21 +219,17 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
+ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 end
 
--- ns.modules[name].onevent = function(self,event,msg) end
-
-ns.modules[name].onupdate = function(self)
-	local obj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
-
-	local unit = "player"
-	if UnitInVehicle("player") then unit = "vehicle" end
-
-	local speed = ("%."..ns.profile[name].precision.."f"):format(GetUnitSpeed(unit) / 7 * 100 ) .. "%"
-
-	obj.text = speed
+ns.modules[name].onevent = function(self,event,msg)
+	if event=="ADDON_LOADED" and msg==addon then
+		C_Timer.NewTicker(ns.modules[name].updateinterval,function()
+			local currentSpeed = GetUnitSpeed( UnitInVehicle("player") and "vehicle" or "player" );
+			ns.LDB:GetDataObjectByName(ldbName).text = ("%."..ns.profile[name].precision.."f"):format(currentSpeed / 7 * 100 ) .. "%";
+		end);
+	end
 end
 
 -- ns.modules[name].optionspanel = function(panel) end
@@ -244,7 +241,8 @@ end
 -- module functions for LDB registration --
 -------------------------------------------
 ns.modules[name].onenter = function(self)
-	tt = ns.LQT:Acquire(ttName, ttColumns, "LEFT","RIGHT", "RIGHT", "CENTER", "LEFT", "LEFT", "LEFT", "LEFT" );
+	if (ns.tooltipChkOnShowModifier(false)) then return; end
+	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT","RIGHT", "RIGHT", "CENTER", "LEFT", "LEFT", "LEFT", "LEFT" );
 	createTooltip(self, tt);
 end -- tt prevention (currently not on all broker panels...)
 
