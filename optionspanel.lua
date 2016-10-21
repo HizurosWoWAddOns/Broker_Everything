@@ -813,12 +813,12 @@ ns.optionpanel = function()
 			f.Modules.List.update=f.ModList_Update;
 			HybridScrollFrame_CreateButtons(f.Modules.List, "BEConfigPanel_ModuleButtonTemplate", 0, 0, nil, nil, 0, -mods.entryOffset);
 			mods.entryHeight = f.Modules.List.buttons[1]:GetHeight();
-			if ns.build>=70000000 then
-				for i=1, #scroll.buttons do
-					scroll.buttons[i].StyleN:SetTexCoord(0,0.294921875,0.654296875,0.701171875);
-					scroll.buttons[i].StyleP:SetTexCoord(0,0.294921875,0.607421875,0.654296875);
-				end
-			end
+			--if ns.build>=70000000 then
+				--for i=1, #scroll.buttons do
+					--scroll.buttons[i].TextureN:SetTexCoord(0,0.294921875,0.654296875,0.701171875);
+					--scroll.buttons[i].TextureP:SetTexCoord(0,0.294921875,0.607421875,0.654296875);
+				--end
+			--end
 		end
 
 		offset = HybridScrollFrame_GetOffset(scroll);
@@ -834,9 +834,8 @@ ns.optionpanel = function()
 
 				if (type(name)=="number") then
 					button.name:SetText( (name==1) and L["With options"] or L["Without options"] );
-					button.Bg:Hide();
 					button.pointer:Hide();
-					button.StyleN:Hide();
+					button.TextureN:Hide();
 					button:Disable();
 				elseif (ns.modules[name]) then
 					local d,e = ns.modules[name],ns.profile[name].enabled;
@@ -846,13 +845,17 @@ ns.optionpanel = function()
 					button.data = {name=name,db=ns.profile[name]};
 					button.name:SetText(L[name]);
 
-					button.Bg:Show()
 					if (d.noBroker) then -- no broker, can't be disabled
-						button.Bg:SetVertexColor(0.5,0.5,0.5,0.5);
+						button.TextureN:SetVertexColor( .8, .8, .8, .5);
+						button.TextureP:SetVertexColor( .8, .8, .8, .5);
 					elseif (e) then
-						button.Bg:SetVertexColor(0,1,0,0.5);
+						-- on
+						button.TextureN:SetVertexColor( .3, 1, .3, .5);
+						button.TextureP:SetVertexColor( .3, 1, .3, .5);
 					else
-						button.Bg:SetVertexColor(1,0,0,0.5);
+						-- off
+						button.TextureN:SetVertexColor( 1, .4, .4, .5);
+						button.TextureP:SetVertexColor( 1, .4, .4, .5);
 					end
 
 					if (mods.pointer==name) then
@@ -880,7 +883,7 @@ ns.optionpanel = function()
 					end
 					button:SetScript("OnEnter",tooltipOnEnter);
 					button:SetScript("OnLeave",tooltipOnLeave);
-					button.StyleN:Show();
+					button.TextureN:Show();
 					button:Enable();
 				end
 				button:Show();

@@ -152,15 +152,6 @@
 			<Anchor point="RIGHT" x="-12" />
 		</Anchors>
 		<Layers>
-			<Layer level="BACKGROUND">
-				<Texture parentKey="Bg" file="Interface\AddOns\Broker_Everything\media\modListBg">
-					<Anchors>
-						<Anchor point="TOPLEFT" x="2" y="-2" />
-						<Anchor point="BOTTOMRIGHT" x="-2" y="2" />
-					</Anchors>
-					<TexCoords left="0" right="0.5703125" top="0" bottom="0.59375" />
-				</Texture>
-			</Layer>
 			<Layer level="ARTWORK" textureSubLevel="0">
 				<FontString parentKey="name" inherits="GameFontNormal" maxLines="1" justifyH="LEFT">
 					<Anchors>
@@ -178,18 +169,25 @@
 				</Texture>
 			</Layer>
 		</Layers>
-		<NormalTexture parentKey="StyleN" file="Interface\LFGFRAME\GroupFinder">
-			<TexCoords left="0" right="0.294921875" top="0.330078125" bottom="0.376953125" />
-		</NormalTexture>
-		<PushedTexture parentKey="StyleP" file="Interface\LFGFRAME\GroupFinder">
-			<TexCoords left="0" right="0.294921875" top="0.376953125" bottom="0.423828125" />
-		</PushedTexture>
-		<HighlightTexture parentKey="StyleH" file="Interface\AddOns\Broker_Everything\media\modListBg" alphaMode="ADD" alpha="0.09">
+		<NormalTexture parentKey="TextureN" file="Interface\AddOns\Broker_Everything\media\modlistbutton">
 			<Anchors>
-				<Anchor point="TOPLEFT" x="3" y="-2" />
-				<Anchor point="BOTTOMRIGHT" x="-1" y="2" />
+				<Anchor point="TOPLEFT" x="2" y="-2" />
+				<Anchor point="BOTTOMRIGHT" x="-2" y="2" />
 			</Anchors>
-			<TexCoords left="0" right="0.5703125" top="0" bottom="0.59375" />
+			<TexCoords left="0.1" right="0.4" top="0" bottom="1" />
+		</NormalTexture>
+		<PushedTexture parentKey="TextureP" file="Interface\AddOns\Broker_Everything\media\modlistbutton">
+			<Anchors>
+				<Anchor point="TOPLEFT" x="2" y="-2" />
+				<Anchor point="BOTTOMRIGHT" x="-2" y="2" />
+			</Anchors>
+			<TexCoords left="0.6" right="0.9" top="0" bottom="1" />
+		</PushedTexture>
+		<HighlightTexture parentKey="TextureH" file="Interface\Buttons\white8x8" alphaMode="ADD" alpha="0.09">
+			<Anchors>
+				<Anchor point="TOPLEFT" x="2" y="-2" />
+				<Anchor point="BOTTOMRIGHT" x="-2" y="2" />
+			</Anchors>
 		</HighlightTexture>
 	</Button>
 
