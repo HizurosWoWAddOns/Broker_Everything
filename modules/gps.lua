@@ -19,8 +19,8 @@ local name1 = "GPS"; -- L["GPS"]
 local name2 = "Location"; -- L["Location"]
 local name3 = "ZoneText"; -- L["ZoneText"]
 local ldbName1, ldbName2, ldbName3 = name1, name2, name3;
-local ttName1, ttName2, ttName3, ttName4 = name1.."TT", name2.."TT", name3.."TT", name1.."TT2";
-local ttColumns,onleave,createTooltip2,createMenu;
+local ttName1, ttName2, ttName3, ttName4 = name1.."TT", name2.."TT", name3.."TT", "TransportMenuTT";
+local ttColumns,ttColumns4,onleave,createTooltip2,createMenu = 3,5;
 local PEW=false;
 local tt1, tt2, tt3, tt4;
 local tt5positions = {
@@ -44,7 +44,39 @@ local _itemIds = {18984,18986,21711,22589,22630,22631,22632,24335,29796,30542,30
 local _itemReplacementIds = {64488,28585,6948,44315,44314,37118};
 local _itemMustBeEquipped = {[32757]=1,[40585]=1};
 local _itemFactions = {}
-
+local sharedClickOptions = {
+	["1_open_world_map"] = {
+		cfg_label = "Open world map",
+		cfg_desc = "open the world map",
+		cfg_default = "_LEFT",
+		hint = "Open World map",
+		func = function(self,button)
+			local _mod=name;
+			securecall("ToggleFrame",WorldMapFrame)
+		end
+	},
+	["2_open_transport_menu"] = {
+		cfg_label = "Open transport menu",
+		cfg_desc = "open the transport menu",
+		cfg_default = "_RIGHT",
+		hint = "Open transport menu",
+		func = function(self,button)
+			local _mod=name;
+			if InCombatLockdown() then return; end
+			createTooltip2(self);
+		end
+	},
+	["3_open_menu"] = {
+		cfg_label = "Open option menu",
+		cfg_desc = "open the option menu",
+		cfg_default = "__NONE",
+		hint = "Open option menu",
+		func = function(self,button)
+			local _mod=name;
+			createMenu(self)
+		end
+	}
+}
 
 -- ------------------------------------- --
 -- register icon names and default files --
@@ -121,40 +153,7 @@ ns.modules[name1] = {
 		{ type="separator" },
 		{ type="select", name="bothZones", label=L["Display zone names"], tooltip=L["Display in broker zone and subzone if exists or one of it."], default="2", values=zoneDisplayValues }
 	},
-	clickOptions = {
-		["1_open_world_map"] = {
-			cfg_label = "Open world map",
-			cfg_desc = "open the world map",
-			cfg_default = "_LEFT",
-			hint = "Open World map",
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleFrame",WorldMapFrame)
-			end
-		},
-		["2_open_transport_menu"] = {
-			cfg_label = "Open transport menu",
-			cfg_desc = "open the transport menu",
-			cfg_default = "_RIGHT",
-			hint = "Open transport menu",
-			func = function(self,button)
-				local _mod=name;
-				if (InCombatLockdown()) then return; end
-				ns.hideTooltip(tt1,ttName1,true);
-				createTooltip2(self, tt4);
-			end
-		},
-		["3_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "__NONE",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
-	}
+	clickOptions = sharedClickOptions
 }
 
 ns.modules[name2] = {
@@ -167,40 +166,7 @@ ns.modules[name2] = {
 	config = {
 		{type="header", label=L[name2], align="left", icon=I[name2] },
 	},
-	clickOptions = {
-		["1_open_world_map"] = {
-			cfg_label = "Open world map",
-			cfg_desc = "open the world map",
-			cfg_default = "_LEFT",
-			hint = "Open World map",
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleFrame",WorldMapFrame)
-			end
-		},
-		["2_open_transport_menu"] = {
-			cfg_label = "Open transport menu",
-			cfg_desc = "open the transport menu",
-			cfg_default = "_RIGHT",
-			hint = "Open transport menu",
-			func = function(self,button)
-				local _mod=name;
-				if (InCombatLockdown()) then return; end
-				ns.hideTooltip(tt2,ttName2,true);
-				createTooltip2(self, tt4);
-			end
-		},
-		["3_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "__NONE",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self,false)
-			end
-		}
-	}
+	clickOptions = sharedClickOptions
 }
 
 ns.modules[name3] = {
@@ -217,41 +183,7 @@ ns.modules[name3] = {
 		{ type="separator" },
 		{ type="select", name="bothZones", label=L["Display zone names"], tooltip=L["Display in broker zone and subzone if exists or one of it."], default="2", values=zoneDisplayValues }
 	},
-	clickOptions = {
-		["1_open_world_map"] = {
-			cfg_label = "Open world map", -- L["Open world map"]
-			cfg_desc = "open the world map", -- L["open the world map"]
-			cfg_default = "_LEFT",
-			hint = "Open World map",
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleFrame",WorldMapFrame)
-			end
-		},
-		["2_open_transport_menu"] = {
-			cfg_label = "Open transport menu", -- L["Open transport menu"]
-			cfg_desc = "open the transport menu", -- L["open the transport menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open transport menu",
-			func = function(self,button)
-				local _mod=name;
-				if (InCombatLockdown()) then return; end
-				ns.hideTooltip(tt3,ttName3,true);
-				createTooltip2(self);
-			end
-		},
-		["3_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "__NONE",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self,name3)
-			end
-		}
-	}
-
+	clickOptions = sharedClickOptions
 }
 
 
@@ -259,9 +191,10 @@ ns.modules[name3] = {
 -- some local functions --
 --------------------------
 function createMenu(self,nameX)
-	if (tt1~=nil) then ns.hideTooltip(tt1,ttName1,true); end
-	if (tt2~=nil) then ns.hideTooltip(tt2,ttName2,true); end
-	if (tt3~=nil) then ns.hideTooltip(tt3,ttName3,true); end
+	if (tt1~=nil) then tt1=ns.hideTooltip(tt1); end
+	if (tt2~=nil) then tt2=ns.hideTooltip(tt2); end
+	if (tt3~=nil) then tt3=ns.hideTooltip(tt3); end
+	if (tt4~=nil) then tt4=ns.hideTooltip(tt4); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name0);
 	if (nameX) then
@@ -308,6 +241,10 @@ end
 local function position()
 	local p, f, pf = ns.profile[name0].precision or 0, ns.profile[name0].coordsFormat or "%s, %s";
 	local x, y = GetPlayerMapPosition("player");
+	--if x==0 and y==0 and not WorldMapFrame:IsShown() and not IsInInstance() then
+	--	SetMapToCurrentZone();
+	--	x, y = GetPlayerMapPosition("player");
+	--end
 	if x ~= 0 and y ~= 0 then
 		return f:format("%."..p.."f","%."..p.."f"):format(x*100, y*100);
 	else
@@ -370,7 +307,7 @@ local function zoneColor()
 end
 
 -- shared tooltip for modules Location, GPS and ZoneText
-local function createTooltip(self,tt,ttName,modName)
+local function createTooltip(tt,ttName,modName)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local pvp, color = zoneColor()
@@ -413,10 +350,11 @@ local function createTooltip(self,tt,ttName,modName)
 		tt:AddSeparator(4,0,0,0,0)
 		ns.clickOptions.ttAddHints(tt,modName,ttColumns);
 	end
-	ns.roundupTooltip(self,tt);
+	ns.roundupTooltip(tt);
 end
 
 local function createTooltip3(_,data)
+	if not (data.tooltip and data.tooltip.parent and data.tooltip.parent:IsShown()) then return end
 	GameTooltip:SetOwner(data.tooltip.parent,"ANCHOR_NONE");
 	GameTooltip:SetPoint(ns.GetTipAnchor(data.tooltip.parent,"horizontal"));
 	GameTooltip:SetHyperlink(data.tooltip.type..":"..data.tooltip.id);
@@ -427,110 +365,115 @@ local function hideTooltip3()
 	GameTooltip:Hide();
 end
 
-function createTooltip2(self, tt)
-	updateItems();
-	tt4 = ns.LQT:Acquire(ttName4, ns.profile[name0].shortMenu and 4 or 1, "LEFT","LEFT","LEFT","LEFT");
-	tt = tt4;
-
-	local pts,ipts,tls,itls = {},{},{},{}
-	local line, column,cellcount = nil,nil,5
-
-	local function add_title(title)
-		tt:AddSeparator(4,0,0,0,0)
-		tt:AddLine(C("ltyellow",title))
-		tt:AddSeparator()
+-- tooltip as transport menu
+local function tpmOnEnter(self)
+	local parent, v, t = unpack(self.info);
+	local data = {
+		attributes={type=t,[t]=v.name},
+		tooltip={parent=tt4,type=t,id=v.id},
+		OnEnter=createTooltip3,
+		OnLeave=hideTooltip3
+	};
+	--[[
+	if v.equipped==false then
+		data.OnClick=function()
+			v.equipped=true;
+			createTooltip2(parent);
+		end
 	end
+	--]]
+	ns.secureButton(self,data);
+end
 
-	local function add_cell(v,t)
-		tt:SetCell(line, cellcount, iStr32:format(v.icon), nil, nil, 1)
-		tt:SetCellScript(line,cellcount,"OnEnter",function(_self)
-			ns.secureButton(_self,{
-				attributes={
-					type=t,
-					[t]=v.name
-				},
-				tooltip={parent=tt,type=t,id=v.id},
-				OnEnter=createTooltip3,
-				OnLeave=hideTooltip3
-			});
-		end);
-	end
-
-	local function add_line(v,t)
+local function tpmAddObject(tt,p,l,c,v,t)
+	if ns.profile[name0].shortMenu then
+		if c<ttColumns4 and l~=nil then
+			c=c+1;
+		else
+			c=1;
+			l=tt:AddLine();
+		end
+		tt:SetCell(l, c, iStr32:format(v.icon), nil, nil, 1);
+		tt:SetCellScript(l,c,"OnEnter",tpmOnEnter);
+		tt.lines[l].cells[c].info = {p,v,t};
+		return l,c;
+	else
 		local info,doUpdate = "";
 		if v.mustBeEquipped==true and v.equipped==false then
 			info = " "..C("orange","(click to equip)");
 			doUpdate=true
 		end
-		local line, column = tt:AddLine(iStr16:format(v.icon)..(v.name2 or v.name)..info, "1","2","3");
-		tt:SetLineScript(line,"OnEnter",function(_self)
-			ns.secureButton(_self,{
-				attributes={type=t,[t]=v.name},
-				tooltip={parent=tt,type=t,id=v.id},
-				OnClick=function() v.equipped=true; createTooltip2(self,tt); end,
-				OnEnter=createTooltip3,
-				OnLeave=hideTooltip3
-			})
-		end)
+		l = tt:AddLine(iStr16:format(v.icon)..(v.name2 or v.name)..info, "1","2","3");
+		tt:SetLineScript(l,"OnEnter",tpmOnEnter);
+		tt.lines[l].info = {p,v,t};
 	end
+end
 
-	local function add_obj(v,t)
-		if ns.profile[name0].shortMenu then
-			if cellcount<4 then
-				cellcount = cellcount + 1
-			else
-				cellcount = 1
-				line, column = tt:AddLine()
-			end
-			add_cell(v,t)
-		else
-			add_line(v,t)
-		end
-	end
+function createTooltip2(self)
+	if InCombatLockdown() then return; end
+	if (tt1~=nil) then tt1=ns.hideTooltip(tt1); end
+	if (tt2~=nil) then tt2=ns.hideTooltip(tt2); end
+	if (tt3~=nil) then tt3=ns.hideTooltip(tt3); end
 
-	tt:Clear()
+	updateItems();
+
+	local columns = 5;
+	ttColumns4 = ns.profile[name0].shortMenu and columns or 1;
+	tt4 = ns.acquireTooltip({ttName4, ttColumns4, "LEFT","LEFT","LEFT","LEFT","LEFT"},{false},{self});
+
+	local pts,ipts,tls,itls = {},{},{},{}
+	local line, column,cellcount = nil,nil,5
+
+	tt4:Clear()
 
 	-- title
 	if not ns.profile[name0].shortMenu then
-		tt:AddHeader(C("dkyellow","Choose your transport"))
+		tt4:AddHeader(C("dkyellow","Choose your transport"))
 	end
 
 	local counter = 0
+	local l,c=nil,ttColumns4;
 
 	if #teleports>0 or #portals>0 or #spells>0 then
 		-- class title
 		if not ns.profile[name0].shortMenu then
-			add_title(ns.player.classLocale)
+			tt4:AddSeparator(4,0,0,0,0)
+			tt4:AddLine(C("ltyellow",ns.player.classLocale))
+			tt4:AddSeparator()
 		end
 		-- class spells
+		local t = "spell";
 		if ns.player.class=="MAGE" then
 			for i,v in ns.pairsByKeys(teleports) do
-				add_obj(v,"spell")
+				l,c = tpmAddObject(tt4,self,l,c,v,t);
 				counter = counter+1;
 			end
 			if not ns.profile[name0].shortMenu then
-				tt:AddSeparator()
+				tt4:AddSeparator()
 			end
 			for i,v in ns.pairsByKeys(portals) do
-				add_obj(v,"spell")
+				l,c = tpmAddObject(tt4,self,l,c,v,t);
 				counter = counter+1;
 			end
 		else
 			for i,v in ns.pairsByKeys(spells) do
-				add_obj(v,"spell")
+				l,c = tpmAddObject(tt4,self,l,c,v,t);
 				counter = counter+1;
 			end
 		end
 	end
 
+	local t = "item";
 	if #foundItems>0 then
 		-- item title
 		if not ns.profile[name0].shortMenu then
-			add_title(ITEMS)
+			tt4:AddSeparator(4,0,0,0,0);
+			tt4:AddLine(C("ltyellow",ITEMS));
+			tt4:AddSeparator();
 		end
 		-- items
 		for i,v in ns.pairsByKeys(foundItems) do
-			add_obj(v,"item")
+			l,c = tpmAddObject(tt4,self,l,c,v,t);
 			counter = counter + 1
 		end
 	end
@@ -538,57 +481,24 @@ function createTooltip2(self, tt)
 	if #foundToys>0 then
 		-- toy title
 		if not ns.profile[name0].shortMenu then
-			add_title(TOY_BOX);
+			tt4:AddSeparator(4,0,0,0,0);
+			tt4:AddLine(C("ltyellow",TOY_BOX));
+			tt4:AddSeparator();
 		end
 		-- toys
 		for i,v in ns.pairsByKeys(foundToys) do
-			add_obj(v,"item");
+			l,c = tpmAddObject(tt4,self,l,c,v,t);
 			counter = counter + 1;
 		end
 	end
 
 	if counter==0 then
-		tt:AddSeparator(4,0,0,0,0)
-		tt:AddHeader(C("ltred",L["Sorry"].."!"))
-		tt:AddSeparator(1,1,.4,.4,1)
-		tt:AddLine(C("ltred",L["No spells, items or toys found"].."."))
+		tt4:AddSeparator(4,0,0,0,0)
+		tt4:AddHeader(C("ltred",L["Sorry"].."!"))
+		tt4:AddSeparator(1,1,.4,.4,1)
+		tt4:AddLine(C("ltred",L["No spells, items or toys found"].."."))
 	end
-	ns.roundupTooltip(self,tt,true);
-end
-
-function onleave(self,tt)
-	if (tt4) then
-		if MouseIsOver(tt4) then
-			tt4:SetScript('OnLeave',function(self)
-				if (ns.hideTooltip(tt4,ttName4,false,true)) then tt4 = nil; end
-			end)
-		else
-			if (ns.hideTooltip(tt4,ttName4)) then tt4 = nil; end
-		end
-	elseif tt and tt~=tt4 then
-		ns.hideTooltip(tt,tt.key,true,false,true);
-		if (tt==tt1) then tt1=nil; end
-		if (tt==tt2) then tt2=nil; end
-		if (tt==tt3) then tt3=nil; end
-	end
-end
-
-local function onclick(self,button)
-	if button == "LeftButton" then
-		securecall("ToggleFrame",WorldMapFrame)
-	elseif button == "RightButton" then
-		if tt1 then onleave(self,tt1,ttName1) end
-		if tt2 then onleave(self,tt2,ttName2) end
-		if tt3 then onleave(self,tt3,ttName3) end
-
-		if (InCombatLockdown()) then return; end
-		if ns.profile[name0].shortMenu then
-			tt4 = ns.LQT:Acquire(ttName4, 4, "LEFT","LEFT","LEFT","LEFT");
-		else
-			tt4 = ns.LQT:Acquire(ttName4, 4, "LEFT","RIGHT","CENTER","CENTER");
-		end
-		createTooltip2(self, tt4);
-	end
+	ns.roundupTooltip(tt4);
 end
 
 local function updater()
@@ -686,43 +596,29 @@ end
 -------------------------------------------
 ns.modules[name1].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	if tt4 then ns.hideTooltip(tt4,ttName4,true,false,true); end
-	ttColumns = 3;
-	tt1 = ns.acquireTooltip(ttName1, ttColumns, "LEFT", "RIGHT", "RIGHT");
-	createTooltip(self,tt1,ttName1,name1);
+	tt1 = ns.acquireTooltip({ttName1, ttColumns, "LEFT", "RIGHT", "RIGHT"},{true},{self});
+	createTooltip(tt1,ttName1,name1);
 end
 
 ns.modules[name2].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	if tt4 then ns.hideTooltip(tt4,ttName4,true,false,true); end
-	ttColumns = 3;
-	tt2 = ns.acquireTooltip(ttName2, ttColumns, "LEFT", "RIGHT", "RIGHT");
-	createTooltip(self,tt2,ttName2,name2);
+	tt2 = ns.acquireTooltip({ttName2, ttColumns, "LEFT", "RIGHT", "RIGHT"},{true},{self});
+	createTooltip(tt2,ttName2,name2);
 end
 
 ns.modules[name3].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	if tt4 then ns.hideTooltip(tt4,ttName4,true,false,true); end
-	ttColumns = 3;
-	tt3 = ns.acquireTooltip(ttName3, ttColumns, "LEFT", "RIGHT", "RIGHT");
-	createTooltip(self,tt3,ttName3,name3);
+	tt3 = ns.acquireTooltip({ttName3, ttColumns, "LEFT", "RIGHT", "RIGHT"},{true},{self});
+	createTooltip(tt3,ttName3,name3);
 end
 
-ns.modules[name1].onleave = function(self)
-	ns.hideTooltip(tt1,ttName1,true);
-end
+-- ns.modules[name1].onleave = function(self) end
+-- ns.modules[name2].onleave = function(self) end
+-- ns.modules[name3].onleave = function(self) end
 
-ns.modules[name2].onleave = function(self)
-	ns.hideTooltip(tt2,ttName2,true);
-end
-
-ns.modules[name3].onleave = function(self)
-	ns.hideTooltip(tt3,ttName3,true);
-end
-
---ns.modules[name1].onclick = function(self,button) end
---ns.modules[name2].onclick = function(self,button) end
---ns.modules[name3].onclick = function(self,button) end
+-- ns.modules[name1].onclick = function(self,button) end
+-- ns.modules[name2].onclick = function(self,button) end
+-- ns.modules[name3].onclick = function(self,button) end
 
 -- ns.modules[name1].ondblclick = function(self,button) end
 -- ns.modules[name2].ondblclick = function(self,button) end

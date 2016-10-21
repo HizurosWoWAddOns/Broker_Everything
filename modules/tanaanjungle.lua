@@ -155,7 +155,7 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
@@ -295,15 +295,17 @@ end
 
 local function createTooltip2(self,tt2,Class,Name,Realm,Data)
 	if (tt2) and (tt2.key) and (tt2.key~=ttName2) then return end -- don't override other LibQTip tooltips...
-	tt:Clear();
+	tt2 = ns.acquireTooltip({ttName2, ttColumns2, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT"},{true},{self,"horizontal",tt});
+	tt2:Clear();
 	--[[
 	local l = tt:AddHeader();
 	tt:SetCell(l,1,C("dkyellow",L[name]) .." ".. C("orange",L["(Experimental)"]),nil,nil,ttColumns);
 	--]]
 	listQuests(tt2,{},Data.completed,Data.numCompleted);
+	ns.roundupTooltip(tt2);
 end
 
-local function createTooltip(self,tt)
+local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear();
@@ -314,7 +316,7 @@ local function createTooltip(self,tt)
 		local l=tt:AddLine();
 		tt:SetCell(l,1,L["This module is waiting for some localized names."],nil,nil,2);
 		tt:AddLine(L["Count of data to collect:"],namesCount.." / "..namesNeed);
-		ns.roundupTooltip(self,tt);
+		ns.roundupTooltip(tt);
 		return;
 	end
 
@@ -346,16 +348,6 @@ local function createTooltip(self,tt)
 				if(name_realm==ns.player.name_realm)then
 					tt:SetLineColor(l, 0.1, 0.3, 0.6);
 				end
-				--[[
-				tt:SetLineScript(l,"OnEnter",function(self)
-					tt2 = ns.LQT:Acquire(ttName2, ttColumns2, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT");
-					createTooltip2(self, tt2, v.class, c, r, v.tanaanjungle);
-					ns.roundupTooltip(self,tt2,nil,tt);
-				end);
-				tt:SetLineScript(l,"OnLeave",function(self)
-					if(tt2)then ns.hideTooltip(tt2,ttName2,true,true); end
-				end);
-				--]]
 			end
 		end
 	end
@@ -368,7 +360,7 @@ local function createTooltip(self,tt)
 		local l=tt:AddLine();
 		tt:SetCell(l,1,C("copper",L["Hold shift"]).." || "..C("green",L["Show your other chars"]),nil,nil,ttColumns);
 	end
-	ns.roundupTooltip(self,tt);
+	ns.roundupTooltip(tt);
 end
 
 
@@ -416,15 +408,11 @@ end
 
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT");
-	createTooltip(self,tt);
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT"},{false},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if(tt)then
-		ns.hideTooltip(tt,ttName,false,true);
-	end
-end
+-- ns.modules[name].onleave = function(self) end
 
 
 

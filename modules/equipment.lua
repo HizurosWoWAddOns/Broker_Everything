@@ -193,12 +193,13 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 function createMenu(self)
-	if (tt) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+	if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
 end
 
+-- defined in addon namespace for chatcommand.lua
 ns.toggleEquipment = function(eName)
 	if InCombatLockdown() or UnitIsDeadOrGhost("player") then
 		equipPending = eName
@@ -206,7 +207,7 @@ ns.toggleEquipment = function(eName)
 	else
 		securecall("UseEquipmentSet",eName);
 	end
-	ns.hideTooltip(tt,ttName,true);
+	ns.hideTooltip(tt);
 end
 
 local function updateBroker()
@@ -260,6 +261,7 @@ local function UpdateInventory()
 		end
 	end
 	inventory = lst;
+	updateBroker();
 end
 
 local function GetILevelColor(il)
@@ -290,27 +292,49 @@ local function GetILevelColor(il)
 	return "white";
 end
 
-local function InventoryTooltip(self,link)
-	if (self) then
-		GameTooltip:SetOwner(self,"ANCHOR_NONE");
-		if (select(1,self:GetCenter()) > (select(1,UIParent:GetWidth()) / 2)) then
-			GameTooltip:SetPoint("RIGHT",tt,"LEFT",-2,0);
-		else
-			GameTooltip:SetPoint("LEFT",tt,"RIGHT",2,0);
-		end
-		GameTooltip:SetPoint("TOP",self,"TOP", 0, 4);
-
-		GameTooltip:ClearLines();
-		GameTooltip:SetHyperlink(link);
-
-		GameTooltip:SetFrameLevel(self:GetFrameLevel()+1);
-		GameTooltip:Show();
+local function InventoryTooltipShow(self)
+	GameTooltip:SetOwner(self,"ANCHOR_NONE");
+	if (select(1,self:GetCenter()) > (select(1,UIParent:GetWidth()) / 2)) then
+		GameTooltip:SetPoint("RIGHT",tt,"LEFT",-2,0);
 	else
-		GameTooltip:Hide();
+		GameTooltip:SetPoint("LEFT",tt,"RIGHT",2,0);
 	end
+	GameTooltip:SetPoint("TOP",self,"TOP", 0, 4);
+
+	GameTooltip:ClearLines();
+	GameTooltip:SetHyperlink(self.invLink);
+
+	GameTooltip:SetFrameLevel(self:GetFrameLevel()+1);
+	GameTooltip:Show();
 end
 
-local function createTooltip(self, tt)
+local function InventoryTooltipHide()
+	GameTooltip:Hide();
+end
+
+local function equipOnClick(self)
+	if (IsShiftKeyDown()) then 
+		if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
+		local main = ns.items.GetInventoryItemBySlotIndex(16);
+		if main and main.level>=750 and main.rarity==6 then
+			EquipmentManagerIgnoreSlotForSave(16);
+		end
+		local off = ns.items.GetInventoryItemBySlotIndex(17);
+		if off and off.level>=750 and main.rarity==6 then
+			EquipmentManagerIgnoreSlotForSave(17);
+		end
+		local dialog = StaticPopup_Show('CONFIRM_SAVE_EQUIPMENT_SET', self.equipName);
+		dialog.data = self.equipName;
+	elseif (IsControlKeyDown()) then
+		if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
+		local dialog = StaticPopup_Show('CONFIRM_DELETE_EQUIPMENT_SET', self.equipName);
+		dialog.data = self.equipName;
+	else
+		ns.toggleEquipment(self.equipName);
+	end 
+end
+
+local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	
 	local line, column
@@ -335,19 +359,8 @@ local function createTooltip(self, tt)
 					local formatName = color~=false and C(color,eName) or eName
 
 					local line = ns.AddSpannedLine(tt, "|T"..(icon or ns.icon_fallback)..":0|t "..formatName, ttColumns);
-					tt:SetLineScript(line, "OnMouseUp", function(self) 
-						if (IsShiftKeyDown()) then 
-							if (tt) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
-							local dialog = StaticPopup_Show('CONFIRM_SAVE_EQUIPMENT_SET', eName);
-							dialog.data = eName;
-						elseif (IsControlKeyDown()) then
-							if (tt) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
-							local dialog = StaticPopup_Show('CONFIRM_DELETE_EQUIPMENT_SET', eName);
-							dialog.data = eName;
-						else
-							ns.toggleEquipment(eName)
-						end 
-					end)
+					tt.lines[line].equipName = eName;
+					tt:SetLineScript(line, "OnMouseUp", equipOnClick);
 				end
 
 				if (ns.profile.GeneralOptions.showHints) then
@@ -375,7 +388,7 @@ local function createTooltip(self, tt)
 			if inventory[i] then
 				none=false;
 				local tSetItem,enchanted,greenline,upgrades,gems = "","","","","";
-				if ns.profile[name].showNotEnchanted and enchantSlots[i] and (tonumber(inventory[i].enchantId) or 0)==0 then
+				if ns.profile[name].showNotEnchanted and enchantSlots[i] and (tonumber(inventory[i].linkData[1]) or 0)==0 then
 					enchanted=C("red"," #");
 					miss=true;
 				end
@@ -401,8 +414,9 @@ local function createTooltip(self, tt)
 					C("quality"..inventory[i].rarity,inventory[i].name) .. greenline .. tSetItem .. upgrades .. enchanted .. gems,
 					C(GetILevelColor(inventory[i].level),inventory[i].level)
 				);
-				tt:SetLineScript(l,"OnEnter",function(self) InventoryTooltip(self,inventory[i].link) end);
-				tt:SetLineScript(l,"OnLeave",function(self) InventoryTooltip(false) end);
+				tt.lines[l].invLink = inventory[i].link;
+				tt:SetLineScript(l,"OnEnter",InventoryTooltipShow);
+				tt:SetLineScript(l,"OnLeave",InventoryTooltipHide);
 			end
 		end
 		if (none) then
@@ -425,7 +439,7 @@ local function createTooltip(self, tt)
 		tt:AddSeparator(4,0,0,0,0);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt)
+	ns.roundupTooltip(tt);
 end
 
 ------------------------------------
@@ -433,22 +447,23 @@ end
 ------------------------------------
 ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-	hooksecurefunc("UpgradeItem",updateBroker);
-	ns.items.RegisterCallback(name,UpdateInventory,"inv");
 end
 
 ns.modules[name].onevent = function(self,event,arg1,...)
+	if not self.hooked_UgradeUtem then
+		ns.items.RegisterCallback(name,UpdateInventory,"inv");
+		hooksecurefunc("UpgradeItem",updateBroker);
+		self.hooked_UgradeUtem = true;
+	end
 	if (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and equipPending~=nil then
 		UseEquipmentSet(equipPending)
 		equipPending = nil
+		updateBroker();
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-		return;
-	elseif event=="UNIT_INVENTORY_CHANGED" and arg1~="player" then
-		return;
+	elseif event=="UNIT_INVENTORY_CHANGED" and arg1=="player" then
+		updateBroker();
 	end
-
-	updateBroker();
 end
 
 -- ns.modules[name].optionspanel = function(panel) end
@@ -461,14 +476,11 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "LEFT", "RIGHT");
-	createTooltip(self, tt);
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "LEFT", "RIGHT"},{false},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

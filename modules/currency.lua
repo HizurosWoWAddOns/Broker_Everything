@@ -21,7 +21,7 @@ local tt2positions = {
 	["TOP"]    = {edgeSelf = "BOTTOM", edgeParent = "TOP",    x =  0, y =  2}
 }
 local cName, cIcon, cCount, cEarnedThisWeek, cWeeklyMax, cTotalMax, cIsUnused = 1,2,3,4,5,6,7,8,9,10,11;
-local currencies,currencyName2Id = {},{};
+local currencies,currencyName2Id,createTooltip = {},{};
 local currencyCache = {};
 local currencySession = {};
 local currencyList = {}
@@ -168,27 +168,26 @@ end
 
 local function updateCurrency(mode)
 	local collapsed,_ = {};
-	if mode=="full" or mode=="half" then
-		wipe(currencyList);
-		local num = GetCurrencyListSize();
-		for i=1, num do
-			local t,id,isHeader,isExpanded = {};
-			t[cName], isHeader, isExpanded, t[cIsUnused], _, t[cCount], t[cIcon], t[cTotalMax], t[cWeeklyMax], t[cEarnedThisWeek] = GetCurrencyListInfo(i);
-			if isHeader and not isExpanded then
-				tinsert(collapsed,i);
-			end
-			if not isHeader then
-				id = tonumber(GetCurrencyListLink(i):match("currency:(%d+)"));
-				currencyName2Id[t[cName]] = id;
-				currencyCache[id] = t;
-				if currencySession[id]==nil then
-					currencySession[id] = {t[cCount],0};
-				end
-				currencySession[id][2] = t[cCount] - currencySession[id][1];
-			end
-			currencyList[i] = id or t[cName];
+
+	wipe(currencyList);
+	local num = GetCurrencyListSize();
+	for i=1, num do
+		local t,id,isHeader,isExpanded = {};
+		t[cName], isHeader, isExpanded, t[cIsUnused], _, t[cCount], t[cIcon], t[cTotalMax], t[cWeeklyMax], t[cEarnedThisWeek] = GetCurrencyListInfo(i);
+		if isHeader and not isExpanded then
+			tinsert(collapsed,i);
 		end
+		if not isHeader then
+			id = tonumber(GetCurrencyListLink(i):match("currency:(%d+)"));
+			currencyName2Id[t[cName]] = id;
+			currencyCache[id] = t;
+			if currencySession[id]==nil then
+				currencySession[id] = t[cCount];
+			end
+		end
+		currencyList[i] = id or t[cName];
 	end
+
 	if mode=="full" then
 		wipe(currencyList2);
 		local tmp = {};
@@ -203,9 +202,8 @@ local function updateCurrency(mode)
 				id = tonumber(GetCurrencyListLink(i):match("currency:(%d+)"));
 				currencyName2Id[t[cName]] = id;
 				if currencySession[id]==nil then
-					currencySession[id] = {t[cCount],0};
+					currencySession[id] = t[cCount];
 				end
-				currencySession[id][2] = t[cCount] - currencySession[id][1];
 				tmp[id]=t;
 			end
 			currencyList2[i] = id or t[cName];
@@ -218,7 +216,6 @@ local function updateCurrency(mode)
 		for id,v in pairs(currencyCache) do
 			if not currencyCache[id][cIsHeader] then
 				_, currencyCache[id][cCount], _, currencyCache[id][cEarnedThisWeek] = GetCurrencyInfo(id);
-				currencySession[id][2] = currencyCache[id][cCount]-currencySession[id][1];
 			end
 		end
 	end
@@ -333,7 +330,51 @@ function createMenu(parent)
 	ns.EasyMenu.ShowMenu(parent);
 end
 
-local function createTooltip(self, tt)
+local function toggleCurrencyHeader(self)
+	ExpandCurrencyList(self.currency[1],self.currency[2]);
+	createTooltip(tt,true);
+	if TokenFrame:IsShown() and TokenFrame:IsVisible() then
+		TokenFrame_Update();
+	end
+end
+
+local function tooltip2Show(self)
+	local pos = {};
+	if (not tt2) then
+		tt2=GameTooltip;
+	end
+	tt2:SetOwner(tt,"ANCHOR_NONE");
+
+	if ns.profile[name].subTTposition == "AUTO" then
+		local tL,tR,tT,tB = ns.getBorderPositions(tt);
+		local uW = UIParent:GetWidth();
+		if tB<200 then
+			pos = tt2positions["TOP"];
+		elseif tL<200 then
+			pos = tt2positions["RIGHT"];
+		elseif tR<200 then
+			pos = tt2positions["LEFT"];
+		else
+			pos = tt2positions["BOTTOM"];
+		end
+	else
+		pos = tt2positions[ns.profile[name].subTTposition];
+	end
+
+	tt2:SetPoint(pos.edgeSelf,tt,pos.edgeParent, pos.x , pos.y);
+	-- changes for user choosen direction
+	tt2:ClearLines();
+	tt2:SetCurrencyToken(self.currencyIndex); -- tokenId / the same index number if needed by GetCurrencyListInfo
+	tt2:Show();
+end
+
+local function tooltip2Hide(self)
+	if tt2 then
+		tt2:Hide();
+	end
+end
+
+function createTooltip(tt,update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear()
@@ -373,13 +414,8 @@ local function createTooltip(self, tt)
 				--]]
 				tt:AddSeparator();
 			end
-			tt:SetLineScript(l,"OnMouseUp",function()
-				ExpandCurrencyList(i,isExpanded and 0 or 1);
-				createTooltip(false,tt);
-				if TokenFrame:IsShown() and TokenFrame:IsVisible() then
-					TokenFrame_Update();
-				end
-			end);
+			tt.lines[l].currency = {i,isExpanded and 0 or 1};
+			tt:SetLineScript(l,"OnMouseUp", toggleCurrencyHeader);
 		elseif currencyCache[v] then
 			local t,c = currencyCache[v],3;
 			local str = ns.FormatLargeNumber(t[cCount]);
@@ -405,50 +441,19 @@ local function createTooltip(self, tt)
 				c=c+1;
 			end
 			if ns.profile[name].showSession then
-				local color,str = false,currencySession[v][2];
-				if currencySession[v][2]>0 then
-					color,str = "ltgreen","+"..str;
-				elseif currencySession[v][2]<0 then
+				local color,num = false,t[cCount]-currencySession[v];
+				if num>0 then
+					color,num = "ltgreen","+"..num;
+				elseif num<0 then
 					color = "ltred";
 				end
 				if color then
-					tt:SetCell(l,c,C(color,str));
+					tt:SetCell(l,c,C(color,num));
 				end
 			end
-			local lineObj = tt.lines[l]
-			lineObj.currencyIndex = i;
-
-			tt:SetLineScript(l, "OnEnter",function(self)
-				local pos = {}
-				if (not tt2) then tt2=GameTooltip; end
-				tt2:SetOwner(tt,"ANCHOR_NONE")
-
-				if ns.profile[name].subTTposition == "AUTO" then
-					local tL,tR,tT,tB = ns.getBorderPositions(tt)
-					local uW = UIParent:GetWidth()
-					if tB<200 then
-						pos = tt2positions["TOP"]
-					elseif tL<200 then
-						pos = tt2positions["RIGHT"]
-					elseif tR<200 then
-						pos = tt2positions["LEFT"]
-					else
-						pos = tt2positions["BOTTOM"]
-					end
-				else
-					pos = tt2positions[ns.profile[name].subTTposition];
-				end
-
-				tt2:SetPoint(pos.edgeSelf,tt,pos.edgeParent, pos.x , pos.y)
-				-- changes for user choosen direction
-				tt2:ClearLines()
-				tt2:SetCurrencyToken(self.currencyIndex) -- tokenId / the same index number if needed by GetCurrencyListInfo
-				tt2:Show()
-			end)
-
-			tt:SetLineScript(l, "OnLeave", function(self)
-				if (tt2) then tt2:Hide(); end
-			end)
+			tt.lines[l].currencyIndex = i;
+			tt:SetLineScript(l, "OnEnter", tooltip2Show);
+			tt:SetLineScript(l, "OnLeave", tooltip2Hide);
 		end
 	end
 
@@ -461,7 +466,9 @@ local function createTooltip(self, tt)
 		tt:AddSeparator(4,0,0,0,0)
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt);
+	if not update then
+		ns.roundupTooltip(tt);
+	end
 end
 
 
@@ -476,8 +483,8 @@ ns.modules[name].onevent = function(self,event,msg)
 	if event=="PLAYER_ENTERING_WORLD" then
 		updateCurrency("full");
 		updateBroker();
-		hooksecurefunc("SetCurrencyUnused",function() updateCurrency("half") end);
-		hooksecurefunc("ExpandCurrencyList",function() updateCurrency("half") end);
+		hooksecurefunc("SetCurrencyUnused",updateCurrency);
+		hooksecurefunc("ExpandCurrencyList",updateCurrency);
 		self:UnregisterEvent(event);
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
@@ -486,10 +493,10 @@ ns.modules[name].onevent = function(self,event,msg)
 		if event=="CHAT_MSG_CURRENCY" then -- detecting new currencies
 			id = tonumber(msg:lower():match("hcurrency:(%d*)"));
 		end
-		updateCurrency( (id and currencyCache[id]==nil) and "full" or "half");
+		updateCurrency( id and currencyCache[id]==nil and "full" or nil );
 		updateBroker();
 		if (tt) and (tt.key) and (tt.key==ttName) and (tt:IsShown()) then
-			createTooltip(false, tt)
+			createTooltip(tt,true);
 		end
 	end
 end
@@ -505,14 +512,11 @@ end
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	ttColumns=5;
-	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "RIGHT", "RIGHT", "RIGHT")
-	createTooltip(self, tt)
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "RIGHT", "RIGHT"},{false},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

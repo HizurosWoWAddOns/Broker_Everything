@@ -79,7 +79,7 @@ ns.modules[name] = {
 				local _mod=name;
 				BlizzardOptionsPanel_SetCVarSafe("Sound_EnableAllSound",BlizzardOptionsPanel_GetCVarSafe("Sound_EnableAllSound")==0 and 1 or 0);
 				updateBrokerButton(self);
-				createTooltip(false, tt);
+				createTooltip(tt,true);
 			end
 		},
 		["1_louder"] = {
@@ -94,7 +94,7 @@ ns.modules[name] = {
 				if volume.master>1 then volume.master=1 elseif volume.master<0 then volume.master=0; end
 				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master);
 				updateBrokerButton(self);
-				createTooltip(false, tt);
+				createTooltip(tt,true);
 			end
 		},
 		["2_quieter"] = {
@@ -109,7 +109,7 @@ ns.modules[name] = {
 				if volume.master>1 then volume.master=1 elseif volume.master<0 then volume.master=0; end
 				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master);
 				updateBrokerButton(self);
-				createTooltip(false, tt);
+				createTooltip(tt,true);
 			end
 		},
 		["3_open_menu"] = {
@@ -130,7 +130,7 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 function createMenu(self)
-	if (tt~=nil) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
@@ -162,21 +162,70 @@ function updateBrokerButton()
 	end
 end
 
-function createTooltip(self, tt)
+do
+	local cvar = "Sound_OutputDriverIndex"
+	local hardware = {
+		selected = tonumber(GetCVar(cvar))+1,
+		list = {}
+	}
+	local hardware_selected = nil
+
+	function getSoundHardware()
+		if #hardware.list==0 then
+			local num = Sound_GameSystem_GetNumOutputDrivers()
+			for index=1, num do
+				hardware.list[index] = Sound_GameSystem_GetOutputDriverNameByIndex(index-1)
+			end
+		end
+		return hardware.list, hardware.num, hardware.selected
+	end
+
+	function setSoundHardware(self)
+		if InCombatLockdown() then
+			ns.print("("..L[name]..")",C("orange",L["Sorry, In combat lockdown."]));
+		else
+			hardware.selected = value;
+			SetCVar(cvar,tostring(value-1) or 0)
+			AudioOptionsFrame_AudioRestart();
+			createTooltip(tt,true);
+		end
+	end
+end
+
+local function updateTooltip()
+	createTooltip(tt, true);
+end
+
+local function toggleEntry(self, button)
+	ns.SetCVar(self.info.toggle,tostring(self.info.inv),self.info.toggle);
+	updateBrokerButton();
+	createTooltip(tt,true);
+end
+
+local function percent(self,cvar,now,direction)
+	if (direction==-1 and now==0) or (direction==1 and now==1) then return end
+	local new = now + ((direction * ns.profile[name].steps) / 100);
+	new = (new>1 and 1) or (new<0 and 0) or new;
+	ns.SetCVar(cvar,new,cvar);
+	createTooltip(tt,true);
+	updateBrokerButton(self);
+end
+
+local function volumeWheel(self,direction)
+	percent(self,self.info.percent,self.info.pnow,direction);
+end
+
+local function volumeClick(self,_,button)
+	local direction = button=="RightButton" and -1 or 1;
+	percent(self,self.info.percent,self.info.pnow,direction);
+end
+
+function createTooltip(tt, update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local l,c
 	tt:Clear()
 	tt:AddHeader(C("dkyellow",L[name]))
 	tt:AddSeparator()
-
-	local function percent(self,cvar,now,direction)
-		if (direction==-1 and now==0) or (direction==1 and now==1) then return end
-		local new = now + ((direction * ns.profile[name].steps) / 100);
-		new = (new>1 and 1) or (new<0 and 0) or new;
-		ns.SetCVar(cvar,new,cvar);
-		createTooltip(false, tt);
-		updateBrokerButton(self);
-	end
 
 	for i,v in ipairs(vol) do
 		local color,disabled
@@ -198,12 +247,8 @@ function createTooltip(self, tt)
 					color = v.now==1 and "green" or "red";
 					disabled = v.now==1 and "white" or "gray";
 				end
-
-				tt:SetLineScript(l,"OnMouseUp",function(self, button)
-					ns.SetCVar(v.toggle,tostring(v.inv),v.toggle);
-					updateBrokerButton();
-					createTooltip(false,tt);
-				end);
+				tt.lines[l].info = v;
+				tt:SetLineScript(l,"OnMouseUp",toggleEntry);
 			else
 				if v.depend~=nil and ( (v.depend[1]~=nil and vol[v.depend[1]].now==0) or (v.depend[2]~=nil and vol[v.depend[2]].now==0) ) then
 					color = "gray";
@@ -212,7 +257,7 @@ function createTooltip(self, tt)
 					color = "dkyellow"
 					disabled = "white";
 				end
-				tt:SetLineScript(l,"OnMouseUp",function(self, button) createTooltip(false,tt) end);
+				tt:SetLineScript(l,"OnMouseUp",updateTooltip);
 			end
 
 			tt:SetCell(l,1,strrep(" ",3 * v.inset)..C(color,_G[v.locale]));
@@ -220,17 +265,14 @@ function createTooltip(self, tt)
 			if v.percent~=nil then
 				v.pnow = tonumber(("%.2f"):format(GetCVar(v.percent)));
 
+				tt.lines[l].info = v;
 				tt.lines[l]:EnableMouseWheel(1)
-				tt.lines[l]:SetScript("OnMouseWheel",function(self,direction)
-					percent(self,v.percent,v.pnow,direction);
-				end);
+				tt.lines[l]:SetScript("OnMouseWheel",volumeWheel);
 
 				tt:SetCell(l,ttColumns,C(disabled,ceil(v.pnow*100).."%"));
-				tt:SetCellScript(l,ttColumns,"OnMouseUp",function(self,button) end);
-				tt.lines[l].cells[ttColumns]:SetScript("OnMouseUp",function(self,button)
-					local direction = button=="RightButton" and -1 or 1;
-					percent(self,v.percent,v.pnow,direction);
-				end);
+
+				tt.lines[l].cells[ttColumns].info = v;
+				tt:SetCellScript(l,ttColumns,"OnMouseUp",volumeClick);
 			else
 				tt:SetCell(l,ttColumns,"           ");
 			end
@@ -252,15 +294,8 @@ function createTooltip(self, tt)
 				l,c = tt:AddLine(strrep(" ",3 * (v.inset+1))..C(color,V).." ")
 
 				if not InCombatLockdown() then
-					tt:SetLineScript(l,"OnMouseUp",function(self,button)
-						if InCombatLockdown() then
-							ns.print("("..L[name]..")",C("orange",L["Sorry, In combat lockdown."]));
-						else
-							setSoundHardware(I);
-							createTooltip(false,tt);
-							AudioOptionsFrame_AudioRestart();
-						end
-					end)
+					tt.lines[l].hid = I;
+					tt:SetLineScript(l,"OnMouseUp",setSoundHardware);
 				end
 			end
 		elseif (v.special=="video") then
@@ -278,30 +313,9 @@ function createTooltip(self, tt)
 		tt:AddLine(C("ltblue",L["Mousewheel"]).. " || "..C("green",L["Louder"].."/"..L["Quieter"]));
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt)
-end
 
-do
-	local cvar = "Sound_OutputDriverIndex"
-	local hardware = {
-		selected = tonumber(GetCVar(cvar))+1,
-		list = {}
-	}
-	local hardware_selected = nil
-
-	getSoundHardware = function()
-		if #hardware.list==0 then
-			local num = Sound_GameSystem_GetNumOutputDrivers()
-			for index=1, num do
-				hardware.list[index] = Sound_GameSystem_GetOutputDriverNameByIndex(index-1)
-			end
-		end
-		return hardware.list, hardware.num, hardware.selected
-	end
-
-	setSoundHardware = function(value)
-		hardware.selected = value
-		SetCVar(cvar,tostring(value-1) or 0)
+	if not update then
+		ns.roundupTooltip(tt);
 	end
 end
 
@@ -337,7 +351,7 @@ ns.modules[name].onmousewheel = function(self,direction)
 	ns.SetCVar(cvar,volume.master,cvar)
 	updateBrokerButton(self);
 	if tt and tt.key==ttName and tt:IsShown() then
-		createTooltip(false,tt);
+		createTooltip(tt,true);
 	end
 end
 
@@ -353,15 +367,12 @@ ns.modules[name].onenter = function(self)
 		self.mousewheelOn = true;
 	end
 
-	tt = ns.acquireTooltip(ttName, 2, "LEFT", "RIGHT")
+	tt = ns.acquireTooltip({ttName, 2, "LEFT", "RIGHT"},{false},{self})
 	ns.RegisterMouseWheel(self,ns.modules[name].onmousewheel)
-	createTooltip(self, tt)
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

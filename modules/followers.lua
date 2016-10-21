@@ -159,7 +159,7 @@ ns.modules[nameS] = {
 -- some local functions --
 --------------------------
 function createMenu(self,name)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name,nil,name==nameF);
 	ns.EasyMenu.ShowMenu(self);
@@ -355,7 +355,7 @@ local function charSummary(lst,c,v,t,a)
 	return cMissions, cWorking, cCollected,n,a;
 end
 
-local function createTooltip(self, tt, name)
+local function createTooltip(tt, name)
 	--if (tt) and (tt.key) and (tt.key~=name) then return end -- don't override other LibQTip tooltips...
 	local colors,qualities,count = {"ltblue","yellow","yellow","green","red"},{"white","ff1eaa00","ff0070dd","ffa335ee","ffff8000"},0
 	local statuscolors = {["onresting"]="ltblue",["onwork"]="orange",["onmission"]="yellow",["available"]="green",["disabled"]="red"};
@@ -630,7 +630,7 @@ local function createTooltip(self, tt, name)
 		tt:AddSeparator(4,0,0,0,0);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self, tt)
+	ns.roundupTooltip(tt);
 end
 
 local function updater()
@@ -698,24 +698,18 @@ ns.modules[nameS].onevent = ns.modules.followers_core.onevent;
 -------------------------------------------
 ns.modules[nameF].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttF = ns.acquireTooltip(ttNameF, ttColumnsF, "LEFT", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "RIGHT");
-	createTooltip(self, ttF, nameF)
+	ttF = ns.acquireTooltip({ttNameF, ttColumnsF, "LEFT", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "RIGHT"},{true},{self});
+	createTooltip(ttF, nameF)
 end
 
 ns.modules[nameS].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttS = ns.acquireTooltip(ttNameS, ttColumnsS, "LEFT", "LEFT", "CENTER", "CENTER", "CENTER", "RIGHT","RIGHT");
-	createTooltip(self, ttS, nameS)
+	ttS = ns.acquireTooltip({ttNameS, ttColumnsS, "LEFT", "LEFT", "CENTER", "CENTER", "CENTER", "RIGHT","RIGHT"},{true},{self});
+	createTooltip(ttS, nameS)
 end
 
-ns.modules[nameF].onleave = function(self)
-	if (ttF) then ns.hideTooltip(ttF,ttNameF,true); end
-end
-
-ns.modules[nameS].onleave = function(self)
-	if (ttS) then ns.hideTooltip(ttS,ttNameS,true); end
-end
-
+-- ns.modules[nameF].onleave = function(self) end
+-- ns.modules[nameS].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

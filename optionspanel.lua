@@ -143,6 +143,166 @@ local function init(parent, index, data)
 	return Index;
 end
 
+local functions = {
+	toggleOnClick = function(self,button)
+		local v = not not self:GetChecked();
+		self:SetChecked(v);
+		if data.set then
+			data.set(v);
+		else
+			panel:change(data.modName,data.name,v);
+		end
+	end,
+	sliderOnValueChanged = function(self)
+		local value,data = self:GetValue(),self.data;
+		if (data.format) then
+			value = tonumber(data.format:format(value));
+		end
+		if data.step then
+			value = floor(value/data.step)*data.step;
+		end
+		self:SetValue(value);
+		if data.set then
+			data.set(value);
+		else
+			panel:change(data.modName,data.name,value);
+		end
+		if (data.rep) and (data.rep[value]) then
+			value = data.rep[value];
+		end
+		self.Current:SetText(value);
+	end,
+	selectOnClick = function(self,button)
+		local data, values, _ = self.data;
+		values = data.values;
+
+		if(data.get)then
+			_, values = data.get();
+		end
+
+		ns.EasyMenu.InitializeMenu();
+
+		for k,d in ns.pairsByKeys(values) do
+			local add = true;
+			local entry={
+				radio = k,
+				keepShown = data.keepShown~=nil and data.keepShown or false,
+				checked = function() return (current==k); end,
+				func = function(_self)
+					if type(values[k])=="table" then
+						self.Text:SetText(L[values[k].label]);
+					else
+						self.Text:SetText(L[values[k]]);
+					end
+					if(data.set)then
+						data.set(k);
+					else
+						panel:change(data.modName,data.name,k);
+					end
+					current = k;
+					ns.EasyMenu.RefreshAll(menu);
+				end
+			};
+			if type(d)=="table" then
+				entry.label=d.label;
+				if d.hide==true then
+					add=false;
+				elseif d.disabled==true then
+					entry.disabled = true;
+				elseif d.title==true then
+					entry.title = true;
+				end
+			else
+				entry.label=L[d];
+			end
+			if add then
+				ns.EasyMenu.addEntry(entry);
+			end
+		end
+		ns.EasyMenu.ShowMenu(self);
+		PlaySound("igMainMenuOptionCheckBoxOn");
+	end,
+	colorOnClick = function(self)
+		local data,cur=self.data;
+		if (data.modName) then
+			cur = ns.profile[data.modName][data.name];
+		else
+			cur = ns.profile.GeneralOptions[data.name];
+		end
+		self.info = {
+			ignore=2,
+			swatchFunc = function()
+				if (self.info.ignore>0)then
+					self.info.ignore=self.info.ignore-1;
+					return false;
+				end
+				local f,i,r,g,b,a = "%0.4f",self.info,ColorPickerFrame:GetColorRGB();
+				a = OpacitySliderFrame:GetValue();
+				r=f:format(r); g=f:format(g); b=f:format(b); a=f:format(a);
+				self.info.r,self.info.g,self.info.b,self.info.opacity = r,g,b,a;
+				panel:change(data.modName,data.name,{r,g,b,1-a});
+				self.Color:SetVertexColor(r,g,b,1-a);
+			end,
+			r = cur[1] or 1,
+			g = cur[2] or 1,
+			b = cur[3] or 1,
+			cancelFunc = function()
+				local i=self.info;
+				i.r,i.g,i.b,i.opacity=unpack(cur);
+				i.opacity=1-i.opacity;
+				panel:change(data.modName,data.name,cur);
+			end
+		};
+
+		if (data.opacity==true) then
+			self.info.hasOpacity = true;
+			self.info.opacityFunc = self.info.swatchFunc;
+			self.info.opacity = 1-(cur[4] or 1);
+		end
+		OpenColorPicker(self.info);
+	end,
+	inputOnClickOrEnterPressed = function(self)
+		if not self.Ok then
+			self = self:GetParent();
+		end
+		local data=self.data;
+		if(data.set)then
+			data.set(e:GetText());
+		else
+			panel:change(data.modName,data.name,self:GetText());
+		end
+		self:ClearFocus();
+		self.Ok:Hide();
+	end,
+	inputOnTextChanged = function(self,changed)
+		if changed then
+			self.Ok:Show();
+		end
+	end,
+	inputOnEscapePressed = function(self)
+		self:SetText(self.prev);
+		self:ClearFocus();
+		self.Ok:Hide();
+	end,
+	modListButtonOnClick = function(self,button)
+		local name = self.modName;
+		if (button=="LeftButton") then
+			if (self.parentPanel:ModOpts_Choose(self.data.name)) then
+				self.mods.pointer=self.data.name;
+			else
+				self.mods.pointer=nil;
+			end
+		elseif (button=="RightButton") then
+			local val = not ns.profile[name].enabled;
+			if (self.parentPanel.changes[name]) and (self.parentPanel.changes[name].enabled~=nil) then
+				val = not self.parentPanel.changes[name].enabled;
+			end
+			self.parentPanel:change(name,"enabled",val);
+		end
+		self.parentPanel:ModList_Update()
+	end
+};
+
 local build = {
 	header = function(parent,index,data)
 		local Index,s,d,i,h,icon = init(parent,index,data),"",ns.modules[data.modName];
@@ -231,15 +391,7 @@ local build = {
 		e.Text:SetWidth(160);
 		e.Text:SetText(data.label);
 		e:SetHitRectInsets(0, -e.Text:GetWidth() - 1, 0, 0);
-		e:SetScript("OnClick",function(self,button)
-			local v = not not self:GetChecked();
-			self:SetChecked(v);
-			if data.set then
-				data.set(v);
-			else
-				panel:change(data.modName,data.name,v);
-			end
-		end);
+		e:SetScript("OnClick",functions.toggleOnClick);
 		parent[Index]:SetHeight(e:GetHeight()+6);
 	end,
 
@@ -292,25 +444,7 @@ local build = {
 		e.High:SetText(M);
 		e.Current:SetText(c);
 
-		e:SetScript("OnValueChanged",function(self)
-			local value = self:GetValue();
-			if (data.format) then
-				value = tonumber(data.format:format(value));
-			end
-			if data.step then
-				value = floor(value/data.step)*data.step;
-			end
-			self:SetValue(value);
-			if data.set then
-				data.set(value);
-			else
-				panel:change(data.modName,data.name,value);
-			end
-			if (data.rep) and (data.rep[value]) then
-				value = data.rep[value];
-			end
-			self.Current:SetText(value);
-		end);
+		e:SetScript("OnValueChanged",functions.sliderOnValueChanged);
 		parent[Index]:SetHeight(e:GetHeight()+30);
 	end,
 
@@ -351,62 +485,12 @@ local build = {
 				e.Text:SetText(alternative);
 			end
 
-			e:SetScript("OnClick",function(self,button)
-				local data, values, _ = self.data;
-				values = data.values;
-
-				if(data.get)then
-					_, values = data.get();
-				end
-
-				ns.EasyMenu.InitializeMenu();
-
-				for k,d in ns.pairsByKeys(values) do
-					local add = true;
-					local entry={
-						radio = k,
-						keepShown = data.keepShown~=nil and data.keepShown or false,
-						checked = function() return (current==k); end,
-						func = function(self)
-							if type(values[k])=="table" then
-								e.Text:SetText(L[values[k].label]);
-							else
-								e.Text:SetText(L[values[k]]);
-							end
-							if(data.set)then
-								data.set(k);
-							else
-								panel:change(data.modName,data.name,k);
-							end
-							current = k;
-							ns.EasyMenu.RefreshAll(menu);
-						end
-					};
-					if type(d)=="table" then
-						entry.label=d.label;
-						if d.hide==true then
-							add=false;
-						elseif d.disabled==true then
-							entry.disabled = true;
-						elseif d.title==true then
-							entry.title = true;
-						end
-					else
-						entry.label=L[d];
-					end
-					if add then
-						ns.EasyMenu.addEntry(entry);
-					end
-				end
-				ns.EasyMenu.ShowMenu(self);
-				PlaySound("igMainMenuOptionCheckBoxOn");
-			end);
+			e:SetScript("OnClick",functions.selectOnClick);
 			e:Enable();
 		else
 			e.Text:SetText(alternative);
 			e:Disable();
 		end
-
 
 		e:SetHitRectInsets(-3,-e.Label:GetWidth(),-3,-3)
 		parent[Index]:SetHeight(e:GetHeight()+14);
@@ -425,47 +509,7 @@ local build = {
 		e.Text:SetText(data.label);
 		e.Color:SetVertexColor(unpack(cur or {1,1,1,1}));
 		e:SetHitRectInsets(0, -e.Text:GetWidth() - 1, 0, 0)
-
-		e:SetScript("OnClick",function(self)
-			local cur;
-			if (data.modName) then
-				cur = ns.profile[data.modName][data.name];
-			else
-				cur = ns.profile.GeneralOptions[data.name];
-			end
-			self.info = {
-				ignore=2,
-				swatchFunc = function()
-					if (self.info.ignore>0)then
-						self.info.ignore=self.info.ignore-1;
-						return false;
-					end
-					local f,i,r,g,b,a = "%0.4f",self.info,ColorPickerFrame:GetColorRGB();
-					a = OpacitySliderFrame:GetValue();
-					r=f:format(r); g=f:format(g); b=f:format(b); a=f:format(a);
-					self.info.r,self.info.g,self.info.b,self.info.opacity = r,g,b,a;
-					panel:change(data.modName,data.name,{r,g,b,1-a});
-					e.Color:SetVertexColor(r,g,b,1-a);
-				end,
-				r = cur[1] or 1,
-				g = cur[2] or 1,
-				b = cur[3] or 1,
-				cancelFunc = function()
-					local i=self.info;
-					i.r,i.g,i.b,i.opacity=unpack(cur);
-					i.opacity=1-i.opacity;
-					panel:change(data.modName,data.name,cur);
-				end
-			};
-
-			if (data.opacity==true) then
-				self.info.hasOpacity = true;
-				self.info.opacityFunc = self.info.swatchFunc;
-				self.info.opacity = 1-(cur[4] or 1);
-			end
-			OpenColorPicker(self.info)
-		end);
-
+		e:SetScript("OnClick",functions.colorOnClick);
 		parent[Index]:SetHeight(e:GetHeight());
 	end,
 
@@ -486,30 +530,10 @@ local build = {
 		e.Label:SetText(data.label);
 		e:SetText(cur);
 
-		local change = function()
-			if(data.set)then
-				data.set(e:GetText());
-			else
-				panel:change(data.modName,data.name,e:GetText());
-			end
-			e:ClearFocus();
-			e.Ok:Hide();
-		end
-
-		e:SetScript("OnEnterPressed",function(self) change() end);
-		e.Ok:SetScript("OnClick",function(self) change() end);
-
-		e:SetScript("OnTextChanged",function(self,changed)
-			if (changed) then
-				e.Ok:Show();
-			end
-		end);
-
-		e:SetScript("OnEscapePressed",function(self)
-			e:SetText(e.prev);
-			self:ClearFocus();
-			e.Ok:Hide();
-		end);
+		e:SetScript("OnEnterPressed",functions.inputOnClickOrEnterPressed);
+		e:SetScript("OnTextChanged",functions.inputOnTextChanged);
+		e.Ok:SetScript("OnClick",functions.inputOnClickOrEnterPressed);
+		e:SetScript("OnEscapePressed",functions.inputOnEscapePressed);
 
 		parent[Index]:SetHeight(e:GetHeight()+e.Label:GetHeight()+6);
 	end
@@ -837,23 +861,12 @@ ns.optionpanel = function()
 						button.pointer:Hide();
 					end
 
+					button.modName = name;
+					button.mods = mods;
+					button.parentPanel = f;
+
 					button:RegisterForClicks("AnyUp");
-					button:SetScript("OnClick",function(self,button)
-						if (button=="LeftButton") then
-							if (f:ModOpts_Choose(self.data.name)) then
-								mods.pointer=self.data.name;
-							else
-								mods.pointer=nil;
-							end
-						elseif (button=="RightButton") then
-							local val = not ns.profile[name].enabled;
-							if (f.changes[name]) and (f.changes[name].enabled~=nil) then
-								val = not f.changes[name].enabled;
-							end
-							f:change(name,"enabled",val);
-						end
-						f:ModList_Update()
-					end);
+					button:SetScript("OnClick",functions.modListButtonOnClick);
 
 					button.tooltip_anchor="LEFT";
 					button.tooltip = {
@@ -1059,22 +1072,22 @@ ns.datapanel = function()
 		end
 		ns.toon.level = UnitLevel("player");
 	end
-
-	local function CharList_OrderUp(name)
-		tremove(f.tmpCharCache.order,f.tmpCharCache[name].orderId);
-		tinsert(f.tmpCharCache.order,f.tmpCharCache[name].orderId-1,name);
-	end
-
-	local function CharList_OrderDown(name)
-		tremove(f.tmpCharCache.order,f.tmpCharCache[name].orderId);
-		tinsert(f.tmpCharCache.order,f.tmpCharCache[name].orderId+1,name);
-	end
-
-	local function CharList_Delete(name)
-		tremove(f.tmpCharCache.order,f.tmpCharCache[name].orderId);
-		f.tmpCharCache[name]=nil;
-	end
 	
+	local function CharList_Change(self)
+		local parent=self:GetParent();
+		local name = parent.realm_name;
+		if self==parent.OrderUp then
+			tremove(f.tmpCharCache.order,f.tmpCharCache[name].orderId);
+			tinsert(f.tmpCharCache.order,f.tmpCharCache[name].orderId-1,name);
+		elseif self==parent.OrderDown then
+			tremove(f.tmpCharCache.order,f.tmpCharCache[name].orderId);
+			tinsert(f.tmpCharCache.order,f.tmpCharCache[name].orderId+1,name);
+		elseif self==parent.Delete then
+			tremove(f.tmpCharCache.order,f.tmpCharCache[name].orderId);
+		end
+		CharList_Update();
+	end
+
 	function CharList_Update()
 		local scroll = f.CharList;
 		local button, index, offset, nButtons, nEntries;
@@ -1100,6 +1113,7 @@ ns.datapanel = function()
 				local name_realm = f.tmpCharCache.order[index];
 				local name, realm = strsplit("-",name_realm);
 				local data = f.tmpCharCache[name_realm];
+				button.name_realm = name_realm;
 
 				local factionIcon = " |TInterface\\minimap\\tracking\\BattleMaster:16:16:0:-1:16:16:0:16:0:16|t";
 				if(data.faction~="Neutral")then
@@ -1117,17 +1131,15 @@ ns.datapanel = function()
 
 				button.OrderUp:Enable();
 				button.OrderDown:Enable();
-
-				button.OrderUp:SetScript("OnClick",function() CharList_OrderUp(name_realm); CharList_Update(); end);
-				button.OrderDown:SetScript("OnClick",function() CharList_OrderDown(name_realm); CharList_Update(); end);
-
 				if(data.orderId==1)then
 					button.OrderUp:Disable();
 				elseif(data.orderId==nEntries)then
 					button.OrderDown:Disable();
 				end
 
-				button.Delete:SetScript("OnClick",function() CharList_Delete(name_realm); CharList_Update(); end);
+				button.OrderUp:SetScript("OnClick",CharList_Change);
+				button.OrderDown:SetScript("OnClick",CharList_Change);
+				button.Delete:SetScript("OnClick",CharList_Change);
 
 				button:SetBackdropColor(1,.6,.1, index/2==floor(index/2) and .15 or .07);
 

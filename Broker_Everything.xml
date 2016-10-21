@@ -129,7 +129,7 @@
 			</Layer>
 			<Layer level="BACKGROUND" textureSubLevel="-1">
 				<Texture parentKey="Bg" file="Interface\BUTTONS\GreyscaleRamp64" SetAllPoints="true">
-					<Color r="0.2" g="0.2" b="0.2" />
+					<Color r="0.3" g="0.3" b="0.3" />
 					<TexCoords left="1" right="0" top="1" bottom="0" />
 				</Texture>
 				<Texture parentKey="Bg2" file="Interface\BUTTONS\GreyscaleRamp64" hidden="true">

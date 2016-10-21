@@ -18,14 +18,15 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Reputation"; -- REPUTATION
-local ldbName, ttName, ttColumns, tt, createMenu,createTooltip = name, name.."TT", 5;
+local ldbName, ttName, ttColumns, tt, createMenu,createTooltip,updateBroker = name, name.."TT", 5;
 local Name,description,standingID,barMin,barMax,barValue,atWarWith,canToggleAtWar,isHeader,isCollapsed,hasRep,isWatched,isChild,factionID,hasBonusRepGain,canBeLFGBonus,factionStandingText=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17;
 
 local bars,wasShown = {},false;
 local allinone = 85000;
 local allinone_friend = 43000;
 local allinone_bodyguard = 31000;
-local session = {};
+local session,initSessionTicker = {};
+local collapsed,round = {},-1;
 local bodyguards,known_bodyguards = {193,207,216,218,219},{};
 local formats = {
 	["_NONE"]       = "None",
@@ -34,6 +35,7 @@ local formats = {
 	["Number"]      = "1234/3000",
 	["NumberNeed"]  = "321 need",
 };
+
 
 -------------------------------------------
 -- register icon names and default files --
@@ -129,21 +131,32 @@ ns.modules[name] = {
 --------------------------
 -- some local functions --
 --------------------------
+local function resetSession()
+	local _;
+	for i,v in pairs(session) do
+		_,_,_,_,_,session[i] = GetFactionInfoByID(i);
+	end
+	updateBroker();
+end
+
 function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.addEntry({separator=true});
+	ns.EasyMenu.addEntry({ label = C("yellow",L["Reset session earn/loss reputation"]), func=resetSession, keepShown=false });
 	ns.EasyMenu.ShowMenu(self);
 end
 
-local function GetSession(Name,current)
-	if not session[Name] then return ""; end
-	local col,str = "gray",false;
-	session[Name][2] = current-session[Name][1];
-	if session[Name][2]>0 then
-		col,str = "ltgreen","+"..session[Name][2];
-	elseif session[Name][2]<0 then
-		col,str = "ltred",session[Name][2];
+local function GetSession(factionID,current)
+	if not session[factionID] then
+		return "";
+	end
+	local col,str,diff = "gray",false,current-session[factionID];
+	if diff>0 then
+		col,str = "ltgreen","+"..diff;
+	elseif diff<0 then
+		col,str = "ltred",diff;
 	end
 	if str then
 		return C(col,str);
@@ -151,10 +164,10 @@ local function GetSession(Name,current)
 	return "";
 end
 
-local function updateBroker()
+function updateBroker()
 	local txt,mode = L[name],ns.profile[name].watchedFormatOnBroker;
-	local Name, standingId, barMin, barMax, barValue = GetWatchedFactionInfo();
-	barMax = barMax - barMin;
+	local Name, standingId, barMin, barMax, barValue, factionID = GetWatchedFactionInfo();
+	barMax = standingId==8 and 999 or (barMax - barMin);
 	local barValue2 = barValue - barMin;
 	barMin = 0;
 
@@ -176,7 +189,7 @@ local function updateBroker()
 			tinsert(tmp,_G["FACTION_STANDING_LABEL"..standingId]);
 		end
 		if ns.profile[name].watchedSessionBroker then
-			local val = GetSession(Name,barValue);
+			local val = GetSession(factionID,barValue);
 			if val~="" then
 				tinsert(tmp,val);
 			end
@@ -230,23 +243,28 @@ local function updateBars()
 	end
 end
 
+local function tooltipOnHide()
+	for i=1, #bars do
+		bars[i]:SetParent(nil);
+		bars[i]:ClearAllPoints();
+		bars[i]:Hide();
+	end
+end
+
 local function toggleHeader(self)
 	if (self.isCollapsed) then
 		ExpandFactionHeader(self.index);
 	else
 		CollapseFactionHeader(self.index);
 	end
-	ns.hideTooltip(tt,ttName,true);
+	tooltipOnHide();
+	createTooltip(tt);
 end
 
 local function ttAddLine(tt,mode,data,count,childLevel)
 	local inset,line,_barMax,_barValue = 0, {}, data[barMax]-data[barMin], data[barValue]-data[barMin];
 	if(data[standingID]==8)then _barMax=999; end
 	local percent = _barValue/_barMax;
-
-	if data[barValue] and data[Name] then
-		session[data[Name]][2] = data[barValue]-session[data[Name]][1];
-	end
 
 	local color,icon,inset = "ltyellow","",1+childLevel;
 	if data[isHeader] then
@@ -277,8 +295,8 @@ local function ttAddLine(tt,mode,data,count,childLevel)
 		tinsert(line,ns.FormatLargeNumber(_barMax-_barValue).." "..L["need"]);
 	end
 
-	if ns.profile[name].showSession and data[barValue] and session[data[Name]] then
-		tinsert(line,GetSession(data[Name],data[barValue]));
+	if ns.profile[name].showSession and data[barValue] and session[data[factionID]] then
+		tinsert(line,GetSession(data[factionID],data[barValue]));
 	end
 
 	for i=#line, ttColumns do
@@ -318,61 +336,94 @@ local function ttAddLine(tt,mode,data,count,childLevel)
 	end
 end
 
-function createTooltip(self, tt)
+local function ttFaction(tt,data,count,childLevel)
+	if data[Name] and data[barMax]>0 then
+		data[factionStandingText] = _G["FACTION_STANDING_LABEL"..data[standingID]];
+
+		if data[factionID] and data[barValue] and session[data[factionID]]==nil then
+			session[data[factionID]] = data[barValue];
+		end
+
+		local friendID,friendRep,friendMaxRep,friendName,friendText,friendTexture,friendTextLevel,friendThreshold,nextFriendThreshold = GetFriendshipReputation(data[factionID]);
+		if friendID~=nil then
+			data[factionStandingText] = friendTextLevel;
+			data[standingID] = 5;
+			if ( nextFriendThreshold ) then
+				data[barMin], data[barMax], data[barValue] = friendThreshold, nextFriendThreshold, friendRep;
+			else
+				data[barMin], data[barMax], data[barValue] = 0, 1, 1;
+			end
+		end
+
+		if data[isHeader] then
+			tt:AddSeparator(4,0,0,0,0);
+			childLevel = data[isChild] and 1 or 0;
+			if data[hasRep] then
+				count=count+1;
+				ttAddLine(tt,ns.profile[name].numbers,data,count,childLevel);
+			else
+				local color,icon,prefix = "ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t ",strrep("    ",childLevel);
+				if data[isCollapsed] then
+					color,icon = "gray","|Tinterface\\buttons\\UI-PlusButton-Up:0|t ";
+				end
+				local l=tt:AddLine(C(color,prefix..icon..data[Name]));
+				if data[isHeader] then
+					tt.lines[l].isCollapsed = data[isCollapsed];
+					tt.lines[l].index = data.index;
+					tt:SetLineScript(l,"OnMouseUp",toggleHeader);
+				end
+			end
+			if --[[not data[isChild] and]] not data[isCollapsed] then
+				tt:AddSeparator();
+			end
+		else
+			count=count+1;
+			ttAddLine(tt,ns.profile[name].numbers,data,count,childLevel);
+		end
+	end
+	return count,childLevel;
+end
+
+local function tooltipOnHide(self)
+	for i,v in ipairs(bars)do
+		v:SetParent(nil);
+		v:ClearAllPoints();
+		v:Hide();
+	end
+	self:SetScript("OnHide",nil);
+end
+
+function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear();
 	tt:AddHeader(C("dkyellow",L[name]));
 
-	local count,inset,childLevel,num = 0,0,0,GetNumFactions();
+	local count,countHeader,childLevel,num,margoss,firstHeader = 0,0,0,GetNumFactions();
+
+	-- first search margoss (game bug fix)
+	for i=9, num do
+		local tmp = {GetFactionInfo(i)};
+		if tmp[factionID]==1975 then
+			margoss = tmp;
+		end
+	end
+
 	for i=1, num do
 		local data = {GetFactionInfo(i)};
 		data.index = i;
-		if data[Name] and data[barMax]>0 then
-			data[factionStandingText] = _G["FACTION_STANDING_LABEL"..data[standingID]];
-
-
-
-			if data[Name] and data[barValue] and session[data[Name]]==nil then
-				session[data[Name]] = {data[barValue],0};
+		if i==1 and data[isHeader] then
+			firstHeader = data[isCollapsed];
+		end
+		if margoss~=nil and data[isHeader] then
+			countHeader = countHeader + 1;
+			if countHeader==2 and firstHeader==false then
+				count,childLevel = ttFaction(tt,margoss,count,childLevel);
+				margoss = false;
 			end
-
-			local friendID,friendRep,friendMaxRep,friendName,friendText,friendTexture,friendTextLevel,friendThreshold,nextFriendThreshold = GetFriendshipReputation(data[factionID]);
-			if friendID~=nil then
-				data[factionStandingText] = friendTextLevel;
-				data[standingID] = 5;
-				if ( nextFriendThreshold ) then
-					data[barMin], data[barMax], data[barValue] = friendThreshold, nextFriendThreshold, friendRep;
-				else
-					data[barMin], data[barMax], data[barValue] = 0, 1, 1;
-				end
-			end
-
-			if data[isHeader] then
-				tt:AddSeparator(4,0,0,0,0);
-				childLevel = data[isChild] and 1 or 0;
-				if data[hasRep] then
-					count=count+1;
-					ttAddLine(tt,ns.profile[name].numbers,data,count,childLevel);
-				else
-					local color,icon,prefix = "ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t ",strrep("    ",childLevel);
-					if data[isCollapsed] then
-						color,icon = "gray","|Tinterface\\buttons\\UI-PlusButton-Up:0|t ";
-					end
-					local l=tt:AddLine(C(color,prefix..icon..data[Name]));
-					if data[isHeader] then
-						tt.lines[l].isCollapsed = data[isCollapsed];
-						tt.lines[l].index = data.index;
-						tt:SetLineScript(l,"OnMouseUp",toggleHeader);
-					end
-				end
-				if --[[not data[isChild] and]] not data[isCollapsed] then
-					tt:AddSeparator();
-				end
-			else
-				count=count+1;
-				ttAddLine(tt,ns.profile[name].numbers,data,count,childLevel);
-			end
+		end
+		if not (margoss==false and data[factionID]==1975) then
+			count,childLevel = ttFaction(tt,data,count,childLevel);
 		end
 	end
 	wasShown=true;
@@ -381,20 +432,39 @@ function createTooltip(self, tt)
 		tt:AddSeparator(4,0,0,0,0)
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt);
+	ns.roundupTooltip(tt);
 	
 	if #bars>0 then
-		tt:SetScript("OnHide",function(self)
-			for i,v in ipairs(bars)do
-				v:SetParent(nil);
-				v:ClearAllPoints();
-				v:Hide();
-			end
-			self:SetScript("OnHide",nil);
-		end);
+		tt:SetScript("OnHide", tooltipOnHide);
 	end
+	C_Timer.After(0.1,updateBars);
 end
 
+local function initSessionCurrencies()
+	if round==-1 then
+		for i=GetNumFactions(),1,-1 do
+			local _,_,_,_,_,_,_,_,_,isCollapsed=GetFactionInfo(i);
+			if isCollapsed then
+				tinsert(collapsed,1,i);
+				ExpandFactionHeader(i);
+			end
+		end
+	elseif round==0 then
+		for i=1, GetNumFactions() do
+			local _, _, _, _, _, barValue, _, _, _, _, _, _, _, factionID = GetFactionInfo(i);
+			if factionID and barValue and session[factionID]==nil then
+				session[factionID] = barValue;
+			end
+		end
+	else
+		if not collapsed[round] then
+			initSessionTicker:Cancel();
+			return;
+		end
+		CollapseFactionHeader(collapsed[round]);
+	end
+	round=round+1;
+end
 
 ------------------------------------
 -- module (BE internal) functions --
@@ -417,12 +487,7 @@ ns.modules[name].onevent = function(self,event,...)
 		end
 	end
 	if not self.loadedSession then
-		for i=1, GetNumFactions() do
-			local Name,_,_,_,_,barValue = GetFactionInfo(i);
-			if Name and barValue and session[Name]==nil then
-				session[Name] = {barValue,0};
-			end
-		end
+		initSessionTicker = C_Timer.NewTicker(.3,initSessionCurrencies);
 		self.loadedSession=true;
 	end
 	updateBroker();
@@ -438,24 +503,10 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "LEFT", "RIGHT", "CENTER", "LEFT")
-	tt:SetScript("OnHide",function()
-		for i=1, #bars do
-			bars[i]:SetParent(nil);
-			bars[i]:ClearAllPoints();
-			bars[i]:Hide();
-		end
-	end);
-	createTooltip(self, tt);
-	C_Timer.After(0.12,updateBars);
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "LEFT", "RIGHT", "CENTER", "LEFT"},{false},{self},{OnHide=tooltipOnHide});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then
-		ns.hideTooltip(tt,ttName,false,true);
-	end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button)m end
 -- ns.modules[name].ondblclick = function(self,button) end
-

@@ -4,7 +4,6 @@
 ## Author: Hizuro, Ekaterina, Hungtar
 ## Version: @project-version@
 ## OptionalDeps: LibStub, CallbackHandler-1.0, LibSharedMedia-3.0, LibSimpleOptions-1.0-be_mod, LibDataBroker-1.1, LibDBIcon-1.0, LibQTip-1.0, LibColors-1.0
-## SavedVariables: Broker_EverythingGlobalDB, Broker_Everything_ProfileDB, Broker_Everything_DataDB, Broker_Everything_CharacterDB, be_character_cache
-## SavedVariablesPerCharacter: Broker_EverythingDB, be_durability_db
+## SavedVariables: Broker_Everything_ProfileDB, Broker_Everything_DataDB, Broker_Everything_CharacterDB
 
 Broker_Everything.xml

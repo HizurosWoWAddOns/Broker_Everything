@@ -176,7 +176,7 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
@@ -373,7 +373,24 @@ local function updateBroker()
 	end
 end
 
-local function createTooltip(self, tt)
+local function itemTooltipShow(self)
+	GameTooltip:SetOwner(tt,"ANCHOR_NONE");
+	GameTooltip:SetPoint("TOP",tt,"BOTTOM");
+	GameTooltip:SetClampedToScreen(true);
+	if self.info.locked then
+		GameTooltip:SetText("|TInterface\\LFGFrame\\UI-LFG-ICON-LOCK:16:16:0:2:32:32:0:25:0:25|t "..C("red",LOCKED));
+		GameTooltip:AddLine(self.info.locked,.78,.78,.78,true);
+	elseif self.info.link then
+		GameTooltip:SetHyperlink(self.info.link);
+	end
+	GameTooltip:Show();
+end
+
+local function itemTooltipHide(self)
+	GameTooltip:Hide();
+end
+
+local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear();
@@ -425,7 +442,7 @@ local function createTooltip(self, tt)
 
 			local weapon = ns.items.GetInventoryItemBySlotIndex(16);
 			if weapon then
-				tt:AddLine(C("ltgreen",STAT_AVERAGE_ITEM_LEVEL),C("ltyellow",weapon.level));
+				tt:AddLine(C("ltgreen",STAT_AVERAGE_ITEM_LEVEL),"",C("ltyellow",weapon.level));
 			end
 
 			if ns.profile[name].showRelic and ns.toon[name][itemID] and ns.toon[name][itemID].relic then
@@ -440,19 +457,9 @@ local function createTooltip(self, tt)
 						local l=tt:AddLine(C("white",i..". ")..C("ltgreen",_G["STRING_SCHOOL_".._type:upper()] or _type));
 						tt:SetCell(l,2,icon .. n,nil,nil,0);
 						if v.locked or v.link then
-							tt:SetLineScript(l,"OnEnter",function()
-								local p = {tt:GetPoint()}; p[2]=tt;
-								GameTooltip:SetOwner(self,"ANCHOR_NONE");
-								GameTooltip:SetPoint(unpack(p));
-								if v.locked then
-									GameTooltip:SetText("|TInterface\\LFGFrame\\UI-LFG-ICON-LOCK:16:16:0:2:32:32:0:25:0:25|t "..C("red",LOCKED));
-									GameTooltip:AddLine(v.locked,.78,.78,.78,true);
-								elseif v.link then
-									GameTooltip:SetHyperlink(v.link);
-								end
-								GameTooltip:Show();
-							end);
-							tt:SetLineScript(l,"OnLeave",function() GameTooltip:Hide(); end);
+							tt.lines[l].info = v;
+							tt:SetLineScript(l,"OnEnter",itemTooltipShow);
+							tt:SetLineScript(l,"OnLeave",itemTooltipHide);
 						end
 					end
 				else
@@ -480,15 +487,9 @@ local function createTooltip(self, tt)
 						tt:SetCell(l,3,C("ltyellow",v.count .." x " .. ns.FormatLargeNumber(v.artifact_power)));
 						sum = sum + (v.count*v.artifact_power);
 					end
-					tt:SetLineScript(l,"OnEnter",function(self)
-						if v.link then
-							local p = {tt:GetPoint()}; p[2]=tt;
-							GameTooltip:SetOwner(self,"ANCHOR_NONE");
-							GameTooltip:SetPoint(unpack(p));
-							GameTooltip:SetHyperlink(v.link);
-						end
-					end);
-					tt:SetLineScript(l,"OnLeave",function(self) GameTooltip:Hide(); end);
+					tt.lines[l].info = v;
+					tt:SetLineScript(l,"OnEnter",itemTooltipShow);
+					tt:SetLineScript(l,"OnLeave",itemTooltipHide);
 					count=count+1;
 				end
 				if count>0 then
@@ -508,7 +509,7 @@ local function createTooltip(self, tt)
 		tt:AddSeparator(3,0,0,0,0);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt)
+	ns.roundupTooltip(tt);
 end
 
 
@@ -553,14 +554,11 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "RIGHT", "RIGHT", "LEFT", "LEFT","RIGHT", "CENTER", "LEFT", "LEFT", "LEFT")
-	createTooltip(self, tt);
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "RIGHT", "LEFT", "LEFT","RIGHT", "CENTER", "LEFT", "LEFT", "LEFT"},{false},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

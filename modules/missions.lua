@@ -98,7 +98,7 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 function createMenu(self)
-	if (tt~=nil) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
@@ -108,7 +108,7 @@ local function stripTime(str,tag)
 	local h, m, s = str:match("(%d+)");
 end
 
-local function createTooltip(self, tt)
+local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	tt:Clear()
 	local labels,colors,l,c = {"Missions completed","Missions in progress","Missions available"},{"ltblue","yellow","green"};
@@ -288,7 +288,7 @@ local function createTooltip(self, tt)
 		end
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self, tt)
+	ns.roundupTooltip(tt);
 end
 
 local function update()
@@ -376,14 +376,11 @@ ns.modules[name].onenter = function(self)
 	if not ns.profile[name].showMissionType then          ttColumns=ttColumns-1; end
 	if not ns.profile[name].showMissionItemLevel then     ttColumns=ttColumns-1; end
 	if not ns.profile[name].showMissionFollowerSlots then ttColumns=ttColumns-1; end
-	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "RIGHT", "LEFT", "CENTER", "CENTER","RIGHT");
-	createTooltip(self, tt);
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "LEFT", "CENTER", "CENTER","RIGHT"},{true},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,true); end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

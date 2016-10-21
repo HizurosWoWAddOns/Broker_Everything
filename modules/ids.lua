@@ -114,13 +114,18 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 function createMenu(self)
-	if (tt) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+	if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
 end
 
-local function createTooltip(self, tt)
+local function extendInstance(self)
+	securecall("SetSavedInstanceExtend", self.info.index, self.info.doExtend);
+	securecall("RequestRaidInfo");
+end
+
+local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local allNothing,iniNothing = true,true;
 	local _,title = ns.DurationOrExpireDate(0,false,"Duration","Expire date");
@@ -228,10 +233,8 @@ local function createTooltip(self, tt)
 							duration or ""
 						);
 						if not duration then
-							tt:SetCellScript(l,4,"OnMouseUp",function()
-								securecall("SetSavedInstanceExtend", v.index, doExtend);
-								securecall("RequestRaidInfo");
-							end);
+							tt.lines[l].cells[4].info = {index=v.index,doExtend=doExtend};
+							tt:SetCellScript(l,4,"OnMouseUp", extendInstance);
 						end
 					end
 					allNothing = false;
@@ -250,7 +253,7 @@ local function createTooltip(self, tt)
 		tt:SetCell(tt:AddLine(),1,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]),nil,nil,ttColumns);
 	end
 
-	ns.roundupTooltip(self, tt)
+	ns.roundupTooltip(tt);
 end
 
 
@@ -277,13 +280,10 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "LEFT", "RIGHT", "RIGHT", "RIGHT");
-	createTooltip(self, tt);
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "LEFT", "RIGHT", "RIGHT", "RIGHT"},{false},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if tt then ns.hideTooltip(tt,ttName,false,true) end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end

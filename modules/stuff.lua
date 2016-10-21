@@ -47,7 +47,7 @@ ns.modules[name] = {
 --------------------------
 -- some local functions --
 --------------------------
-StaticPopupDialogs["CONFIRM"] = {
+StaticPopupDialogs["BE_CONFIRM_RELOADUI"] = {
 	text = L["Are you sure you want to Reload the UI?"],
 	button1 = ACCEPT,
 	button2 = CANCEL,
@@ -61,11 +61,8 @@ StaticPopupDialogs["CONFIRM"] = {
 }
 
 local function pushedTooltip(parent,id,msg)
-	if (tt) and (tt.key) and (tt.key==ttName) then ns.hideTooltip(tt,ttName,true); end
-	if (not tt2) or ((tt2) and (tt2.key) and (tt2.key~=tt2Name)) then
-		tt2 = ns.LQT:Acquire(tt2Name, 1, "LEFT");
-		ns.roundupTooltip(parent,tt2);
-	end
+	if (tt) and (tt.key) and (tt.key==ttName) then ns.hideTooltip(tt); end
+	tt2 = ns.acquireTooltip({tt2Name, 1, "LEFT"},{true},{parent});
 
 	tt2:Clear();
 	tt2:AddLine(C("orange",L[msg]));
@@ -76,16 +73,27 @@ local function pushedTooltip(parent,id,msg)
 		timeout_counter = timeout_counter - 1;
 		C_Timer.After(1,function()
 			if (timeout_counter==0) or (nextAction==nil) then
-				ns.hideTooltip(tt2,tt2Name,true);
+				ns.hideTooltip(tt2);
 				tt2=nil;
 			elseif (id==nextAction) then
 				pushedTooltip(parent,id,msg);
 			end
 		end);
 	end
+
+	ns.roundupTooltip(tt2);
 end
 
-local function createTooltip(self, tt)
+local function toggleWindowMode()
+	ns.SetCVar("gxWindow", 1 - tonumber(GetCVar("gxWindow")));
+	RestartGx();
+end
+
+local function reloadUI()
+	StaticPopup_Show("BE_CONFIRM_RELOADUI");
+end
+
+local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local line, column
@@ -95,27 +103,16 @@ local function createTooltip(self, tt)
 	tt:AddLine (" ")
 	
 	line, column = tt:AddLine(L["Windowed / Fullscreen"])
-	tt:SetLineScript(line, "OnMouseUp", function(self) 
-		ns.SetCVar("gxWindow", 1 - tonumber(GetCVar("gxWindow")))
-		RestartGx()
-	end)
-	tt:SetLineScript(line, "OnEnter", function(self) tt:SetLineColor(line, 1,192/255, 90/255, 0.3) end )
-	tt:SetLineScript(line, "OnLeave", function(self) tt:SetLineColor(line, 0,0,0,0) end)
+	tt:SetLineScript(line, "OnMouseUp", toggleWindowMode);
 	
 	line, column = tt:AddLine(L["Reload UI"])
-	tt:SetLineScript(line, "OnMouseUp", function(self)	StaticPopup_Show("CONFIRM")	end) -- Use static Popup to avoid taint.
-	tt:SetLineScript(line, "OnEnter", function(self) tt:SetLineColor(line, 1,192/255, 90/255, 0.3) end )
-	tt:SetLineScript(line, "OnLeave", function(self) tt:SetLineColor(line, 0,0,0,0) end)
+	tt:SetLineScript(line, "OnMouseUp", reloadUI); -- Use static Popup to avoid taint.
 	
 	line, column = tt:AddLine(LOGOUT)
-	tt:SetLineScript(line, "OnMouseUp", function(self) Logout() end)			
-	tt:SetLineScript(line, "OnEnter", function(self) tt:SetLineColor(line, 1,192/255, 90/255, 0.3) end )
-	tt:SetLineScript(line, "OnLeave", function(self) tt:SetLineColor(line, 0,0,0,0) end)
+	tt:SetLineScript(line, "OnMouseUp", Logout);
 	
 	line, column = tt:AddLine(L["Quit Game"])
-	tt:SetLineScript(line, "OnMouseUp", function(self) Quit() end)			
-	tt:SetLineScript(line, "OnEnter", function(self) tt:SetLineColor(line, 1,192/255, 90/255, 0.3) end )
-	tt:SetLineScript(line, "OnLeave", function(self) tt:SetLineColor(line, 0,0,0,0) end)
+	tt:SetLineScript(line, "OnMouseUp", Quit); 
 	
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddLine(" ")
@@ -130,7 +127,7 @@ local function createTooltip(self, tt)
 			C("copper",L["Shift+Left-click"]).." || "..C("green",L["Reload UI"])
 		)
 	end
-	ns.roundupTooltip(self,tt);
+	ns.roundupTooltip(tt);
 end
 
 ------------------------------------
@@ -152,13 +149,11 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, 1, "LEFT");
-	createTooltip(self, tt)
+	tt = ns.acquireTooltip({ttName, 1, "LEFT"},{false},{self});
+	createTooltip(tt);
 end
 
 ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,false,true); tt=nil; end
-	if (tt2) then ns.hideTooltip(tt2,ttName2,true); tt2=nil; end
 	timeout_counter=0;
 	nextAction=nil;
 end

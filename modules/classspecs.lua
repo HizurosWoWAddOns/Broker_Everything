@@ -12,6 +12,7 @@ if ns.build<70000000 then return end
 -----------------------------------------------------------
 local name = "ClassSpecs" -- L["ClassSpecs"]
 local ldbName, ttName, ttColumns, tt, createMenu, createTalentMenu = name, name.."TT", 4;
+local createTooltip
 
 
 -------------------------------------------
@@ -118,14 +119,14 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
 end
 
 function createTalentMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	-- 1. pve talents
 	-- 2. pvp talents
@@ -133,17 +134,37 @@ function createTalentMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
-local function createSecTooltip(...)
-	if select('#',...)==0 then return end
-	GameTooltip:SetOwner(tt,"ANCHOR_NONE");
-	GameTooltip:SetPoint(ns.GetTipAnchor(tt,"horizontal"));
-	for i,v in ipairs({...}) do
-		GameTooltip:AddLine(unpack(v));
+local function infoTooltipShow(self)
+	if self.infoTooltip then
+		GameTooltip:SetOwner(tt,"ANCHOR_NONE");
+		GameTooltip:SetPoint(ns.GetTipAnchor(tt,"horizontal"));
+		if self.infoTooltip.type=="text" and #self.intoTooltip>0 then
+			for i=1, #self.infoTooltip do
+				GameTooltip:AddLine(unpack(self.infoTooltip[i]));
+			end
+		elseif self.infoTooltip.type=="spell" and self.infoTooltip.spellId then
+			GameTooltip:SetHyperlink("spell:"..self.infoTooltip.spellId);
+		end
+		GameTooltip:Show();
 	end
-	GameTooltip:Show();
 end
 
-local function createTooltip(self, tt)
+local function infoTooltipHide()
+	GameTooltip:Hide();
+end
+
+local function setSpec(self)
+	if not InCombatLockdown() then
+		SetSpecialization(self.specIndex,self.specPet);
+	end
+end
+
+local function setLootSpec(self)
+	SetLootSpecialization(self.specId);
+	C_Timer.After(.7,function() createTooltip(tt,true) end);
+end
+
+function createTooltip(tt,update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear()
@@ -175,34 +196,31 @@ local function createTooltip(self, tt)
 			lootSpecID==spec[i].id and C("green",ACTIVE_PETS) or C( "gray", L["Set"])
 		);
 		if lootSpecID~=spec[i].id then
-			tt:SetCellScript(l,4,"OnMouseUp",function()
-				SetLootSpecialization(spec[i].id);
-				C_Timer.After(.7,function() createTooltip(false, tt) end);
-			end);
-			tt:SetCellScript(l,4,"OnEnter",function(self) createSecTooltip({L["Click to change your loot specialization"]}); end);
-			tt:SetCellScript(l,4,"OnLeave",function() GameTooltip:Hide(); end);
+			tt.lines[l].cells[4].specId = spec[i].id;
+			tt.lines[l].cells[4].infoTooltip = {{L["Click to change your loot specialization"]}};
+			tt:SetCellScript(l,4,"OnMouseUp",setLootSpec);
+			tt:SetCellScript(l,4,"OnEnter",infoTooltipShow);
+			tt:SetCellScript(l,4,"OnLeave",infoTooltipHide);
 		end
 		if i~=active then
-			tt:SetLineScript(l,"OnMouseUp",function()
-				if not InCombatLockdown() then
-					SetSpecialization(i);
-				end
-			end);
+			tt.lines[l].specIndex = i;
+			tt.lines[l].specPet = false;
+			tt:SetLineScript(l,"OnMouseUp",setSpec);
 		end
-		tt:SetLineScript(l,"OnEnter",function() createSecTooltip({("|T%s:32:32|t %s"):format(spec[i].icon,spec[i].name)},{spec[i].desc,1,1,1,true}); end);
-		tt:SetLineScript(l,"OnLeave",function() GameTooltip:Hide(); end);
+		tt.lines[l].infoTooltip = {{("|T%s:32:32|t %s"):format(spec[i].icon,spec[i].name)},{spec[i].desc,1,1,1,true}};
+		tt:SetLineScript(l,"OnEnter",infoTooltipShow);
+		tt:SetLineScript(l,"OnLeave",infoTooltipHide);
 	end
 
 	local l=tt:AddLine();
 	tt:SetCell(l,1,C("dkyellow",LOOT_SPECIALIZATION_DEFAULT:gsub(" %( %%s %)",":")),nil,"RIGHT",3);
 	tt:SetCell(l,4,lootSpecID==0 and C("green",ACTIVE_PETS) or C( "gray", L["Set"]));
 	if lootSpecID~=0 then
-		tt:SetCellScript(l,4,"OnMouseUp",function()
-			SetLootSpecialization(0);
-			C_Timer.After(.7,function() createTooltip(false, tt) end);
-		end);
-		tt:SetCellScript(l,4,"OnEnter",function() createSecTooltip({L["Click to change your loot specialization"]}); end);
-		tt:SetCellScript(l,4,"OnLeave",function() GameTooltip:Hide(); end);
+		tt.lines[l].specId = 0;
+		tt.lines[l].cells[4].infoTooltip = {{L["Click to change your loot specialization"]}};
+		tt:SetCellScript(l,4,"OnMouseUp",setLootSpec);
+		tt:SetCellScript(l,4,"OnEnter",infoTooltipShow);
+		tt:SetCellScript(l,4,"OnLeave",infoTooltipHide);
 	end
 
 	if ns.player.class:lower()=="hunter" then
@@ -233,11 +251,9 @@ local function createTooltip(self, tt)
 					C( (spec[i].role=="TANK" and "ltblue") or (spec[i].role=="HEALER" and "ltgreen") or "ltred", _G[spec[i].role] )
 				);
 				if i~=active then
-					tt:SetLineScript(l,"OnMouseUp",function(_self)
-						if not InCombatLockdown() then
-							SetSpecialization(i,true);
-						end
-					end);
+					tt.lines[l].specIndex = i;
+					tt.lines[l].specPet = true;
+					tt:SetLineScript(l,"OnMouseUp",setSpec);
 				end
 			end
 		else
@@ -264,13 +280,9 @@ local function createTooltip(self, tt)
 			else
 				local talentID, Name, iconTexture, Selected, Available, spellId, u1, u2, u3, u4 = GetTalentInfo(row, selectedTalent, talentGroup);
 				tt:SetCell(l,2,str:format(iconTexture,C("ltyellow",Name)),nil,nil,2);
-				tt:SetLineScript(l,"OnEnter",function(_self)
-					GameTooltip:SetOwner(tt,"ANCHOR_NONE");
-					GameTooltip:SetPoint(ns.GetTipAnchor(tt,"horizontal"));
-					GameTooltip:SetHyperlink("spell:"..spellId);
-					GameTooltip:Show();
-				end);
-				tt:SetLineScript(l,"OnLeave",function() GameTooltip:ClearLines(); GameTooltip:Hide(); end);
+				tt.lines[l].cells[2].infoTooltip = {type="spell",spellId=spellId};
+				tt:SetLineScript(l,"OnEnter",infoTooltipShow);
+				tt:SetLineScript(l,"OnLeave",infoTooltipHide);
 			end
 		end
 	end
@@ -298,16 +310,9 @@ local function createTooltip(self, tt)
 			end
 			if selected then
 				tt:SetCell(l,2,str:format(selected[Icon],C("ltyellow",selected[Name])),nil,nil,2);
-				tt:SetLineScript(l,"OnEnter",function(_self)
-					GameTooltip:SetOwner(tt,"ANCHOR_NONE");
-					GameTooltip:SetPoint(ns.GetTipAnchor(tt,"horizontal"));
-					GameTooltip:SetHyperlink("spell:"..selected[spellId]);
-					GameTooltip:Show();
-				end);
-				tt:SetLineScript(l,"OnLeave",function()
-					GameTooltip:ClearLines();
-					GameTooltip:Hide();
-				end);
+				tt.lines[l].cells[2].infoTooltip = {type="spell",spellId=selected[spellId]};
+				tt:SetLineScript(l,"OnEnter",infoTooltipShow);
+				tt:SetLineScript(l,"OnLeave",infoTooltipHide);
 			else
 				if isUnlocked then
 					tt:SetCell(l,2,C("orange","Unlocked, not selected"),nil,nil,2);
@@ -323,7 +328,9 @@ local function createTooltip(self, tt)
 		tt:SetCell(tt:AddLine(),1,C("ltblue",L["Click"]).." || "..C("green",L["Activate specialization"]),nil,"LEFT",ttColumns);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt);
+	if not update then
+		ns.roundupTooltip(tt);
+	end
 end
 
 
@@ -377,15 +384,11 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, ttColumns, "RIGHT", "LEFT", "LEFT", "CENTER")
-	createTooltip(self, tt);
+	tt = ns.acquireTooltip({ttName, ttColumns, "RIGHT", "LEFT", "LEFT", "CENTER"},{false},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
-
 -- ns.modules[name].ondblclick = function(self,button) end
 

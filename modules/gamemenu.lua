@@ -220,9 +220,9 @@ local function updateGMTicket()
 end
 
 local function pushedTooltip(parent,id,msg)
-	if (tt) and (tt.key) and (tt.key==ttName) then ns.hideTooltip(tt,ttName,true); end
-	tt2 = ns.LQT:Acquire(tt2Name, 1, "LEFT");
-	ns.roundupTooltip(parent,tt2);
+	if (tt) and (tt.key) and (tt.key==ttName) then ns.hideTooltip(tt); end
+	tt2 = ns.acquireTooltip({tt2Name, 1, "LEFT"},{true},{parent});
+	ns.roundupTooltip(tt2);
 
 	tt2:Clear();
 	tt2:AddLine(C("orange",L[msg]));
@@ -233,7 +233,7 @@ local function pushedTooltip(parent,id,msg)
 		timeout_counter = timeout_counter - 1;
 		C_Timer.After(1,function()
 			if (timeout_counter==0) or (nextAction==nil) then
-				ns.hideTooltip(tt2,tt2Name,true);
+				ns.hideTooltip(tt2);
 				tt2=nil;
 			elseif (id==nextAction) then
 				pushedTooltip(parent,id,msg);
@@ -242,7 +242,33 @@ local function pushedTooltip(parent,id,msg)
 	end
 end
 
-local function createTooltip(self, tt)
+local function tooltipCellScript_OnAction(self)
+	if self.info.click~=nil then
+		ns.secureButton(self, { attributes={type="click", clickbutton=_G[self.info.click]} }, self.info.name);
+		tinsert(tt.secureButtons,self.info.name);
+	elseif self.info.macro~=nil then
+		ns.secureButton(self, { attributes={type="macro", macrotext=self.info.macro} }, self.info.name);
+		tinsert(tt.secureButtons,self.info.name);
+	elseif type(self.info.func)=="function" then
+		ns.hideTooltip(tt);
+		self.info.func();
+	end	
+end
+
+local function showGMTicket()
+	HelpFrame_ShowFrame(HELPFRAME_SUBMIT_TICKET)
+	if gmticket.caseIndex then
+		HelpBrowser:OpenTicket(gmticket.caseIndex)
+	end
+end
+
+local function deleteGMTicket()
+	if not StaticPopup_Visible("HELP_TICKET_ABANDON_CONFIRM") then
+		StaticPopup_Show("HELP_TICKET_ABANDON_CONFIRM")
+	end
+end
+
+local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local line, column
@@ -291,24 +317,8 @@ local function createTooltip(self, tt)
 				local icon = I("gm_"..v.iconName)
 				tt:SetCell(line, cell, (v.disabled and link_disabled or link):format((icon.iconfile or ns.icon_fallback), (icon.coordsStr or iconCoords), v.name), nil, nil, oneCell and 2 or 1)
 				if (not v.disabled) or not (InCombatLockdown() and (v.click or v.macro)) then
-					local e, f
-					if v.click~=nil then
-						e, f = "OnEnter", function(self)
-							ns.secureButton(self, { attributes={type="click", clickbutton=_G[v.click]} }, v.name)
-							tinsert(tt.secureButtons,v.name)
-						end
-					elseif v.macro~=nil then
-						e, f = "OnEnter", function(self)
-							ns.secureButton(self, { attributes={type="macro", macrotext=v.macro} }, v.name)
-							tinsert(tt.secureButtons,v.name)
-						end
-					else
-						e, f = "OnMouseUp", function()
-							ns.hideTooltip(tt,ttName,true)
-							v.func()
-						end
-					end
-					tt:SetCellScript(line, cell, e, f)
+					tt.lines[line].cells[cell].info = v;
+					tt:SetCellScript(line,cell, (v.click or v.macro) and "OnEnter" or "OnMouseUp",tooltipCellScript_OnAction);
 				end
 				if not oneCell then
 					if cell==1 then cell=2 else cell=1 end
@@ -329,17 +339,8 @@ local function createTooltip(self, tt)
 		local edit,cancel = I("gm_gmticket_edit"),I("gm_gmticket_cancel")
 		tt:SetCell(line,1,link:format(edit.iconfile,(edit.coordsStr or iconCoords),L["Edit ticket"]))
 		tt:SetCell(line,2,link:format(cancel.iconfile,(cancel.coordsStr or iconCoords),L["Cancel ticket"]))
-		tt:SetCellScript(line,1,"OnMouseUp",function(self,button)
-			HelpFrame_ShowFrame(HELPFRAME_SUBMIT_TICKET)
-			if gmticket.caseIndex then
-				HelpBrowser:OpenTicket(gmticket.caseIndex)
-			end
-		end)
-		tt:SetCellScript(line,2,"OnMouseUp",function(self,button)
-			if not StaticPopup_Visible("HELP_TICKET_ABANDON_CONFIRM") then
-				StaticPopup_Show("HELP_TICKET_ABANDON_CONFIRM")
-			end
-		end)
+		tt:SetCellScript(line,1,"OnMouseUp", showGMTicket);
+		tt:SetCellScript(line,2,"OnMouseUp", deleteGMTicket);
 		if (ticketStatus == LE_TICKET_STATUS_NMI) then -- ticketStatus = 3
 			line,column = tt:AddLine()
 			tt:SetCell(line,1,TICKET_STATUS_NMI,nil,nil,2)
@@ -374,7 +375,7 @@ local function createTooltip(self, tt)
 			C("copper", L["Shift+Left-click"]).." || "..C("green", L["Reload UI"])
 		, nil, nil, 2);
 	end
-	ns.roundupTooltip(self, tt);
+	ns.roundupTooltip(tt);
 end
 
 
@@ -409,13 +410,11 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, 2, "LEFT", "LEFT")
-	createTooltip(self, tt)
+	tt = ns.acquireTooltip({ttName, 2, "LEFT", "LEFT"},{false},{self})
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
-end
+-- ns.modules[name].onleave = function(self) end
 
 ns.modules[name].onclick = function(self, button)
 	if ns.profile[name].disableOnClick then return end

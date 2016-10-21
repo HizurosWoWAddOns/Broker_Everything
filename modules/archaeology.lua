@@ -176,7 +176,7 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
@@ -307,7 +307,7 @@ local function ItemTooltipShow(self,link)
 		GameTooltip:SetPoint("TOP",self,"TOP", 0, 4);
 
 		GameTooltip:ClearLines();
-		GameTooltip:SetHyperlink(link);
+		GameTooltip:SetHyperlink("item:"..self.itemId);
 
 		GameTooltip:SetFrameLevel(self:GetFrameLevel()+1);
 		GameTooltip:Show();
@@ -320,7 +320,20 @@ local function ItemTooltipHide(self)
 	GameTooltip:Hide();
 end
 
-local function createTooltip(self, tt)
+local function toggleArchaeologyFrame(self)
+	if ( not ArchaeologyFrame ) then
+		securecall("ArchaeologyFrame_LoadUI");
+	end
+	if ( ArchaeologyFrame ) then
+		if not ArchaeologyFrame:IsShown() then
+			securecall("ArchaeologyFrame_Show");
+		end
+		securecall("ArchaeologyFrame_OnTabClick",ArchaeologyFrame.tab1);
+		securecall("ArchaeologyFrame_ShowArtifact",self.raceIndex);
+	end
+end
+
+local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	tt:Clear()
 	local ts,l = C("gray",L["Not learned"]),tt:AddHeader(C("dkyellow",PROFESSIONS_ARCHAEOLOGY))
@@ -352,24 +365,16 @@ local function createTooltip(self, tt)
 				--[[QuestStarterItems[raceArtifactName] and "|TInterface\\OptionsFrame\\UI-OptionsFrame-NewFeatureIcon:0:0:0:-1|t" or]] " "
 			);
 			if(v[raceKeystoneItemID]~=0)then
-				tt:SetLineScript(l,"OnEnter", function(self) ItemTooltipShow(self,"item:"..v[raceKeystoneItemID]); end);
+				tt.lines[l].itemId=v[raceKeystoneItemID];
+				tt:SetLineScript(l,"OnEnter", ItemTooltipShow);
 				tt:SetLineScript(l,"OnLeave", ItemTooltipHide);
 			end
-			tt:SetLineScript(l,"OnMouseUp", function(self)
-				if ( not ArchaeologyFrame ) then
-					securecall("ArchaeologyFrame_LoadUI");
-				end
-				if ( ArchaeologyFrame ) then
-					if not ArchaeologyFrame:IsShown() then
-						securecall("ArchaeologyFrame_Show");
-					end
-					securecall("ArchaeologyFrame_OnTabClick",ArchaeologyFrame.tab1);
-					securecall("ArchaeologyFrame_ShowArtifact",v[raceIndex]);
-				end
-			end);
+			tt.lines[l].raceIndex = v[raceIndex];
+			tt:SetLineScript(l,"OnMouseUp", toggleArchaeologyFrame);
 			--[=[
 			if QuestStarterItems[v[raceArtifactName]] then
-				tt:SetCellScript(l,4,"OnEnter", function(self) ItemTooltipShow(self,"item:"..QuestStarterItems[v[raceArtifactName]]); end);
+				tt.lines[l].cells[4].itemId = QuestStarterItems[v[raceArtifactName]];
+				tt:SetCellScript(l,4,"OnEnter", ItemTooltipShow);
 				tt:SetCellScript(l,4,"OnLeave", ItemTooltipHide);
 			end
 			--]=]
@@ -389,7 +394,7 @@ local function createTooltip(self, tt)
 		ns.AddSpannedLine(tt,C("ltblue",L["Click"]).." || "..C("green",L["Open archaeology frame with choosen faction"]),ttColumns);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt)
+	ns.roundupTooltip(tt);
 end
 
 ------------------------------------
@@ -442,14 +447,11 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "CENTER", "RIGHT", "RIGHT","RIGHT");
-	createTooltip(self,tt)
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "CENTER", "RIGHT", "RIGHT","RIGHT"},{false},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if tt then ns.hideTooltip(tt,ttName, false, true); end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

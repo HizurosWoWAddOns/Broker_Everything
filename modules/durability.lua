@@ -241,7 +241,7 @@ local function AutoRepairAll(costs)
 	return false;
 end
 
-local function createTooltip(self, tt)
+local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear()
@@ -327,11 +327,11 @@ local function createTooltip(self, tt)
 		tt:AddSeparator(4,0,0,0,0);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt);
+	ns.roundupTooltip(tt);
 end
 
 function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 
 	ns.EasyMenu.InitializeMenu();
 
@@ -475,11 +475,9 @@ end
 
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, 2, "LEFT", "RIGHT");
-	createTooltip(self, tt);
+	tt = ns.acquireTooltip({ttName, 2, "LEFT", "RIGHT"},{true},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,true); end
-end
+-- ns.modules[name].onleave = function(self) end
 

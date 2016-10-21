@@ -69,12 +69,16 @@ ns.modules[name] = {
 		{ type="slider", name="precision", label=L["Precision"], tooltip=L["Adjust the count of numbers behind the dot."], min = 0, max = 3, default = 0, format="%d" }
 	}
 }
+-- possible click option
+	--if not PetJournalParent then PetJournal_LoadUI() end 
+	--securecall("TogglePetJournal",1)
+
 
 
 --------------------------
 -- some local functions --
 --------------------------
-local function createTooltip(self, tt)
+local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local _=function(d) if tonumber(d) then return ("+%d%%"):format(d); end return d; end;
 	local lvl = UnitLevel("player");
@@ -207,12 +211,12 @@ local function createTooltip(self, tt)
 					tt:AddLine(C("yellow",Name),C("ltgray",L["Learnable"]));
 				else
 					tt:AddLine(C("red",Name),C("ltgray",L["Need level"].." "..v[2]));
-					learnable=true;
+					--learnable=true;
 				end
 			end
 		end
 	end
-	ns.roundupTooltip(self,tt);
+	ns.roundupTooltip(tt);
 end
 
 
@@ -242,18 +246,15 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT","RIGHT", "RIGHT", "CENTER", "LEFT", "LEFT", "LEFT", "LEFT" );
-	createTooltip(self, tt);
+	tt = ns.acquireTooltip(
+		{ttName, ttColumns, "LEFT","RIGHT", "RIGHT", "CENTER", "LEFT", "LEFT", "LEFT", "LEFT"}, -- for LibQTip:Aquire 
+		{true}, -- show/hide mode
+		{self} -- anchor data
+	);
+	createTooltip(tt);
 end -- tt prevention (currently not on all broker panels...)
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,true); end
-end
-
--- ns.modules[name].onclick = function(self,button)
-	--if not PetJournalParent then PetJournal_LoadUI() end 
-	--securecall("TogglePetJournal",1)
---end
-
+-- ns.modules[name].onleave = function(self) end
+-- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

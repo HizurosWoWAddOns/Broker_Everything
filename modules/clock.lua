@@ -127,7 +127,7 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 function createMenu(self)
-	if (tt~=nil) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
@@ -145,7 +145,7 @@ local function date(dateStr)
 	return _G.date(dateStr);
 end
 
-local function createTooltip(self, tt)
+local function createTooltip(tt,update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local h24 = ns.profile[name].format24;
 	local dSec = ns.profile[name].showSeconds;
@@ -178,7 +178,9 @@ local function createTooltip(self, tt)
 		tt:AddSeparator(3,0,0,0,0)
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt)
+	if not update then
+		ns.roundupTooltip(tt);
+	end
 end
 
 local function updater(self)
@@ -187,7 +189,7 @@ local function updater(self)
 	local dSec = ns.profile[name].showSeconds;
 	obj.text = ns.profile[name].timeLocal and ns.LT.GetTimeString("GetLocalTime",h24,dSec) or ns.LT.GetTimeString("GetGameTime",h24,dSec)
 	if tt~=nil and tt.key==name.."TT" and tt:IsShown() then
-		createTooltip(false, tt)
+		createTooltip(tt,true);
 	end
 end
 
@@ -233,14 +235,10 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, ttColumns , "LEFT", "RIGHT" )
-	createTooltip(self, tt)
+	tt = ns.acquireTooltip({ttName, ttColumns , "LEFT", "RIGHT"},{true},{self})
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,true); end
-	if (tt2) then ns.hideTooltip(tt2,ttName2,true); end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

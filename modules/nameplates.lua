@@ -10,13 +10,7 @@ local NAMEPLATES = NAMEPLATES or "Nameplates"
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Nameplates" -- L["Nameplates"]
-local ldbName = name
-local tt = nil
-local ttName = name.."TT"
-local GetCVar,RegisterCVar = GetCVar,RegisterCVar
-local ttColumns = 5
-
-
+local ldbName,ttName,ttColumns,tt,createTooltip = name,name.."TT",5
 
 local nameplateStatus = {
 	{ FRIENDLY },
@@ -180,7 +174,12 @@ local function getCVarSettings(cVarName)
 	return shown, toggle
 end
 
-local function createTooltip(self, tt)
+local function ttSetCVar(self)
+	ns.SetCVar(unpack(self.info));
+	createTooltip(tt);
+end
+
+function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear()
@@ -210,7 +209,7 @@ local function createTooltip(self, tt)
 						end
 						cellFunction=function()
 							ns.SetCVar(v.cvar, state and 0 or 1, v.cvar);
-							createTooltip(self, tt)
+							createTooltip(tt)
 						end;
 					elseif type(v.cvar)=="table" then
 						state = true;
@@ -247,7 +246,7 @@ local function createTooltip(self, tt)
 							if type(v.onChange) then
 								v.onChange();
 							end
-							createTooltip(self, tt)
+							createTooltip(tt)
 						end;
 					end
 					if v.colors then
@@ -302,14 +301,9 @@ local function createTooltip(self, tt)
 					cell = 1
 					line = tt:AddLine()
 				end
+				tt.lines[line].cells[cell].info = {v[2], toggle, v[2]};
 				tt:SetCell(line, cell, C(toggle==1 and "gray" or "white",v[1]), nil, nil, v[3])
-				tt:SetCellScript(line, cell, "OnEnter", function(self) tt:SetLineColor(line, 1,192/255, 90/255, 0.3) end )
-				tt:SetCellScript(line, cell, "OnLeave", function(self) tt:SetLineColor(line, 0,0,0,0) end)
-				tt:SetCellScript(line, cell, "OnMouseUp", function(self)
-					ns.SetCVar(v[2], toggle, v[2])
-					tt:Clear()
-					ns.modules[name].ontooltip(tt)
-				end)
+				tt:SetCellScript(line, cell, "OnMouseUp", ttSetCVar);
 				cell = cell + v[3];
 			else
 				local shown, toggle = getCVarSettings(v[2])
@@ -325,8 +319,6 @@ local function createTooltip(self, tt)
 				end
 				if v[3]==true then
 					tt:SetCell(line, 1, C(toggle==1 and "gray" or "white",v[1]), nil, nil, 5)
-					tt:SetCellScript(line, 1, "OnEnter", function(self) tt:SetLineColor(line, 1,192/255, 90/255, 0.3) end )
-					tt:SetCellScript(line, 1, "OnLeave", function(self) tt:SetLineColor(line, 0,0,0,0) end)
 					line = false
 				else
 					if depend == 0 then
@@ -336,14 +328,9 @@ local function createTooltip(self, tt)
 					elseif depend == 3 then
 						color = toggle==1 and "gray" or "white"
 					end
+					tt.lines[line].cells[cell].info = {v[2], toggle, v[2]};
 					tt:SetCell(line, cell, C(color,v[1]), nil, nil, 1)
-					tt:SetCellScript(line, cell, "OnEnter", function(self) tt:SetLineColor(line, 1,192/255, 90/255, 0.3) end )
-					tt:SetCellScript(line, cell, "OnLeave", function(self) tt:SetLineColor(line, 0,0,0,0) end)
-					tt:SetCellScript(line, cell, "OnMouseUp", function(self)
-						ns.SetCVar(v[2], toggle, v[2])
-						tt:Clear()
-						ns.modules[name].ontooltip(tt)
-					end)
+					tt:SetCellScript(line, cell, "OnMouseUp", ttSetCVar);
 					cell = cell + 1
 				end
 			end
@@ -354,7 +341,7 @@ local function createTooltip(self, tt)
 		tt:AddLine(" ")
 		tt:SetCell(tt:AddLine(), 1, C("ltblue",L["Click"]).." || "..C("green",L["Names/Nameplates on/off"]), nil, nil, ttColumns)
 	end
-	ns.roundupTooltip(self,tt);
+	ns.roundupTooltip(tt);
 end
 
 ------------------------------------
@@ -390,14 +377,11 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "LEFT","LEFT","LEFT","LEFT","LEFT")
-	createTooltip(self, tt)
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "LEFT","LEFT","LEFT","LEFT","LEFT"},{false},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

@@ -65,7 +65,7 @@ ns.realm = GetRealmName();
 ns.realm_short = ns.realm:gsub(" ","");
 ns.media = "Interface\\AddOns\\"..addon.."\\media\\";
 ns.locale = GetLocale();
-
+ns.ui = {size={UIParent:GetSize()},center={UIParent:GetCenter()}};
 
   ---------------------------------------
 --- player and twinks dependent data    ---
@@ -106,7 +106,6 @@ if GetAddOnMetadata(addon,"Version")=="@project-version@" then
 	ns.debug = function(...)
 		ns.print("debug",...);
 	end
-	--BrokerEverything = ns;
 end
 
 
@@ -139,18 +138,22 @@ end
   ---------------------------------------
 --- Helpful function for extra tooltips ---
   ---------------------------------------
-local openTooltip = nil;
+local openTooltip, hiddenMouseOver;
 ns.GetTipAnchor = function(frame, direction, parentTT)
 	if not frame then return end
-	local f,u,i,H,h,v,V = {frame:GetCenter()},{UIParent:GetWidth(),UIParent:GetCenter()},.5;
-	h = (f[1]>u[2] and "RIGHT") or "LEFT";
-	v = (f[2]>u[3] and "TOP") or "BOTTOM";
-	u[4]=u[2]/4; u[5]=u[3]/4; u[6]=(u[2]*2)-u[4]; u[7]=(u[3]*2)-u[5];
+	local f,u,i,H,h,v,V = {frame:GetCenter()},{},0;
+	if f[1]==nil or ns.ui.center[1]==nil then
+		ns.debug("ns.GetTipAnchor","f[1]>ns.ui.center[1]",type(f[1]),type(ns.ui.center[1]),debugstack());
+		return "LEFT";
+	end
+	h = (f[1]>ns.ui.center[1] and "RIGHT") or "LEFT";
+	v = (f[2]>ns.ui.center[2] and "TOP") or "BOTTOM";
+	u[4]=ns.ui.center[1]/4; u[5]=ns.ui.center[2]/4; u[6]=(ns.ui.center[1]*2)-u[4]; u[7]=(ns.ui.center[2]*2)-u[5];
 	H = (f[1]>u[6] and "RIGHT") or (f[1]<u[4] and "LEFT") or "";
 	V = (f[2]>u[7] and "TOP") or (f[2]<u[5] and "BOTTOM") or "";
 	if parentTT then
 		local p,ph,pv,pH,pV = {parentTT:GetCenter()};
-		ph,pv = (p[1]>u[2] and "RIGHT") or "LEFT", (p[2]>u[3] and "TOP") or "BOTTOM";
+		ph,pv = (p[1]>ns.ui.center[1] and "RIGHT") or "LEFT", (p[2]>ns.ui.center[2] and "TOP") or "BOTTOM";
 		pH = (p[1]>u[6] and "RIGHT") or (p[1]<u[4] and "LEFT") or "";
 		pV = (p[2]>u[7] and "TOP") or (p[2]<u[5] and "BOTTOM") or "";
 		if direction=="horizontal" then
@@ -171,43 +174,74 @@ ns.tooltipScaling = function(tooltip)
 	end
 end
 
-ns.acquireTooltip = function(name,...)
-	if openTooltip then
-		ns.hideTooltip(openTooltip,name,true);
-	end
-	openTooltip = ns.LQT:Acquire(name,...);
-	return openTooltip;
+----------------------------------
+-- ttMode [ 1: close on leave broker button (bool/nil) | 2: dont use hiddenMouseOver (bool/nil) ],
+-- ttParent [ 1: parent frame element (frame) | 2: anchor direction (string) | 3: alternative anchor target (frame/optional) ]
+
+local function hideOnLeave(self)
+	local _, hiddenMouseOverAnchor = hiddenMouseOver:GetPoint();
+	if self.parent and self.parent[1] and (MouseIsOver(self.parent[1]) or (self.parent[1]==hiddenMouseOverAnchor and MouseIsOver(hiddenMouseOver))) then return end -- mouse is over broker and/or extended broker button area
+	if MouseIsOver(self) and ( (self.slider and self.slider:IsShown()) or (self.mode and self.mode[1]~=true) ) then return end -- tooltip with active scrollframe or mouse over tooltip with clickable elements
+	ns.hideTooltip(self);
 end
 
-ns.hideTooltip = function(tooltip,ttName,ttForce,ttSetOnLeave,ignoreMouseIsOverBroker,dontLoop)
+local function hideOnUpdate(self, elapse)
+	if not self:IsShown() then
+		self:SetScript("OnUpdate",nil);
+		return;
+	end
+	if (self.elapsed or 1)>0 then
+		self.elapsed = 0;
+		hideOnLeave(self);
+	else
+		self.elapsed = (self.elapsed or 0) + elapse;
+	end
+end
+
+ns.acquireTooltip = function(ttData,ttMode,ttParent,ttScripts)
+	if openTooltip and openTooltip.key~=ttData[1] and openTooltip.parent and not (ttParent[1]==openTooltip or (ttParent[3] and ttParent[3]==openTooltip)) then
+		ns.hideTooltip(openTooltip);
+	end
+	if ns.LQT:IsAcquired(ttData[1]) then
+		openTooltip = ns.LQT:Acquire(ttData[1])
+		return openTooltip;
+	end
+	local modifier = ns.profile.GeneralOptions.ttModifierKey2;
+	local tooltip = ns.LQT:Acquire(unpack(ttData)); openTooltip = tooltip;
+	tooltip.parent,tooltip.mode,tooltip.scripts = ttParent,ttMode,ttScripts;
+	tooltip.mode[1] = tooltip.mode[1]==true or (modifier~="NONE" and ns.tooltipChkOnShowModifier(modifier,false))
+	if ns.profile.GeneralOptions.tooltipScale==true then
+		tooltip:SetScale(tonumber(GetCVar("uiScale")));
+	end
+	if hiddenMouseOver==nil then
+		hiddenMouseOver = CreateFrame("Frame",addon.."TooltipHideShowFix2",UIParent);
+		hiddenMouseOver:SetFrameStrata("BACKGROUND");
+	end
+	if not tooltip.mode[2] and ttParent[1] and not ttParent[1].parent then
+		hiddenMouseOver:SetPoint("TOPLEFT",ttParent[1],"TOPLEFT",0,1);
+		hiddenMouseOver:SetPoint("BOTTOMRIGHT",ttParent[1],"BOTTOMRIGHT",0,-1);
+	end
+	tooltip:SetScript("OnUpdate",hideOnUpdate);
+	tooltip:SetScript("OnLeave",hideOnLeave);
+	-- Tiptac Support for LibQTip Tooltips
+	if tooltip and _G.TipTac and _G.TipTac.AddModifiedTip then
+		-- Pass true as second parameter because hooking OnHide causes C stack overflows
+		_G.TipTac:AddModifiedTip(tooltip, true);
+	end
+	tooltip:SetClampedToScreen(true);
+	tooltip:SetPoint(ns.GetTipAnchor(unpack(ttParent)));
+	return tooltip;
+end
+
+ns.roundupTooltip = function(tooltip)
 	if not tooltip then return end
-	local modifier=ns.profile.GeneralOptions.ttModifierKey2;
-	ttForce = not not ttForce;
-	if not ttForce and modifier~="NONE" and ns.tooltipChkOnShowModifier(modifier,false) then
-		ttForce=true;
-	end
-	if not ttForce and tooltip.key==ttName and ttSetOnLeave then
-		if MouseIsOver(tooltip) then
-			tooltip:SetScript("OnLeave",function(self)
-				if not MouseIsOver(tooltip) and not MouseIsOver(tooltip.parent) then
-					ns.hideTooltip(tooltip,ttName,true,false,false);
-				end
-			end);
-			return;
-		end
-	elseif not dontLoop and tooltip.slider and tooltip.slider:IsShown() then
-		ns.hideTooltip(tooltip,tooltip.key,false,true,false,true);
-		return;
-	elseif not ignoreMouseIsOverBroker and tooltip.parent and MouseIsOver(tooltip.parent) then
-		if ttforce then
-			tooltip:SetScript("OnUpdate",function(self)
-				if not MouseIsOver(tooltip.parent) then
-					ns.hideTooltip(tooltip,ttName,ttforce,false,true);
-				end
-			end);
-		end
-		return;
-	end
+	tooltip:UpdateScrolling(GetScreenHeight() * (ns.profile.GeneralOptions.maxTooltipHeight/100));
+	tooltip:SetClampedToScreen(true);
+	tooltip:Show();
+end
+
+ns.hideTooltip = function(tooltip)
+	if type(tooltip)~="table" then return; end
 	if type(tooltip.secureButtons)=="table" then
 		local f = GetMouseFocus()
 		if f and not f:IsForbidden() and (not f:IsProtected() and InCombatLockdown()) and type(f.key)=="string" and type(ttName)=="string" and f.key==ttName then
@@ -215,55 +249,20 @@ ns.hideTooltip = function(tooltip,ttName,ttForce,ttSetOnLeave,ignoreMouseIsOverB
 		end
 		ns.secureButton(false);
 	end
+	tooltip:SetScript("OnLeave",nil);
 	tooltip:SetScript("OnUpdate",nil);
+	hiddenMouseOver:ClearAllPoints();
+	if tooltip.scripts and type(tooltip.scripts.OnHide)=="function" then
+		tooltip.scripts.OnHide(tooltip);
+	end
+	tooltip.parent = nil;
+	tooltip.mode = nil;
+	tooltip.scripts = nil;
 	ns.LQT:Release(tooltip);
-	openTooltip = nil;
-	return true;
+	return;
 end
 
-ns.roundupTooltip = function(frame, tooltip, SetOnLeave, direction, parentTooltip)
-	local eclipsed = 0;
-	if (ns.profile.GeneralOptions.tooltipScale==true) then
-		tooltip:SetScale(tonumber(GetCVar("uiScale")))
-	end
-	frame = frame or tooltip.parent;
-	tooltip.parent = frame;
-	if not frame then return end
-	tooltip:Show();
-	tooltip:SetPoint(ns.GetTipAnchor(frame,direction,parentTooltip));
-
-	if (SetOnLeave) then
-		frame._OnLeave = frame:GetScript("OnLeave");
-		if frame._OnLeave~=nil then
-			frame:SetScript("OnLeave", nil);
-			tooltip:SetScript("OnLeave", function(self)
-				ns.hideTooltip(self,self.key);
-				if frame._OnLeave~=nil then
-					frame:SetScript("OnLeave",frame._OnLeave);
-					frame._OnLeave(frame);
-					frame._OnLeave = nil;
-				end
-			end)
-		end
-	end
-
-	tooltip:SetScript("OnUpdate", function(self,eclipse)
-		if (self.eclipsed==nil) then self.eclipsed=0; end
-		self.eclipsed = self.eclipsed + eclipse;
-		if (self.eclipsed>0.5) and (GetMouseFocus()==WorldFrame) then
-			ns.hideTooltip(self,self.key,true);
-		end
-	end);
-	-- Tiptac Support for LibQTip Tooltips
-	if _G.TipTac and _G.TipTac.AddModifiedTip then
-		-- Pass true as second parameter because hooking OnHide causes C stack overflows
-		_G.TipTac:AddModifiedTip(tooltip, true);
-	end
-	tooltip:AddSeparator(2,0,0,0,0);
-	tooltip:UpdateScrolling(GetScreenHeight() * (ns.profile.GeneralOptions.maxTooltipHeight/100));
-	tooltip:SetClampedToScreen(true);
-	tooltip:Show();
-end
+----------------------------------------
 
 ns.RegisterMouseWheel = function(self,func)
 	self:EnableMouseWheel(1);
@@ -573,7 +572,7 @@ end
 -- -------------------------------------------------------------- --
 do
 	--- local elements
-	local d,update,_ = {ids={}, seen={}, bags={},inv={},item={}, callbacks={any={},bags={},inv={},item={}}, preScanCallbacks={}, linkData={}, tooltipData={}, NeedTooltip={}};
+	local update,d,_ = false,{ids={}, seen={}, bags={},inv={},item={}, callbacks={any={},bags={},inv={},item={}}, preScanCallbacks={}, linkData={}, tooltipData={}, NeedTooltip={}};
 	local GetItemInfoFailed,IsEnabled = false,false;
 	local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d*)");
 	local _UPGRADES = gsub(ITEM_UPGRADE_TOOLTIP_FORMAT,": %%d/%%d","");
@@ -588,16 +587,16 @@ do
 		if not d.linkData[obj.link] then
 			local _,_,_,data = obj.link:match("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
 			d.linkData[obj.link] = {strsplit(":",data or "")};
-			local dataKeys = {"enchantId", "gems", "gems", "gems", "gems" , "suffix", "unique", "linkLvl", "reforging","spelleffect"};
+			--local dataKeys = {"enchantId", "gems", "gems", "gems", "gems" , "suffix", "unique", "linkLvl", "reforging","spelleffect"};
 			for i=1, #d.linkData[obj.link] do
 				d.linkData[obj.link][i] = tonumber(d.linkData[obj.link][i]) or 0;
-				if dataKeys[i] then
-					if dataKeys[i]=="gems" then
-						tinsert(obj[dataKeys[i]],d.linkData[obj.link][i]);
-					else
-						obj[dataKeys[i]] = d.linkData[obj.link][i];
-					end
-				end
+				--if dataKeys[i] then
+				--	if dataKeys[i]=="gems" then
+				--		tinsert(obj[dataKeys[i]],d.linkData[obj.link][i]);
+				--	else
+				--		obj[dataKeys[i]] = d.linkData[obj.link][i];
+				--	end
+				--end
 			end
 		end
 		obj.linkData = d.linkData[obj.link];
@@ -647,10 +646,9 @@ do
 					end
 					-- check sockets
 					if socketCount>0 then
-						for i=1, #obj.gems do
-							if i>socketCount then
-								obj.gems[i]=false;
-							elseif obj.gems[i]==0 then
+						for i=2, 5 do
+							obj.gems[i-1]=obj.linkData[i];
+							if obj.linkData[i]==0 then
 								obj.empty_gem=true;
 							end
 						end
@@ -794,7 +792,7 @@ do
 			if GetItemInfoFailed>4 then
 				GetItemInfoFailed=false;
 			elseif ns.pastPEW then
-				update();
+				update = 0.5;
 			end
 		elseif GetItemInfoFailed==_GetItemInfoFailed then
 			GetItemInfoFailed = false;
@@ -802,22 +800,24 @@ do
 	end
 
 	--- event and update frame
-	local locked,delay,f = false,5,CreateFrame("Frame");
-	function update()
-		if locked then return end locked=true;
-		C_Timer.After(delay,function()
+	local locked,tickerDelay,defaultDelay,f = false,0.3,1.5,CreateFrame("Frame");
+	function updater()
+		if update==false or locked then return end
+		locked = true;
+		update = update - tickerDelay;
+		if update<=0 then
 			scanner();
-			locked=nil;
-		end);
+			update = false;
+		end;
+		locked = false;
 	end
 	f:SetScript("OnEvent",function(self,event)
 		if event=="PLAYER_ENTERING_WORLD" then
-			update();
-			delay=0.7;
-			self.PEW=true;
+			self.PEW = true;
+			C_Timer.NewTicker(tickerDelay,updater);
 			self:UnregisterEvent(event);
 		elseif self.PEW then
-			update();
+			update = defaultDelay;
 		end
 	end);
 	f:RegisterEvent("GET_ITEM_INFO_RECEIVED");
@@ -880,7 +880,7 @@ do
 	end;
 	ns.items.UpdateNow = function()
 		if not IsEnabled and ns.pastPEW then return end
-		update();
+		update = 1;
 	end
 	ns.items.GetBagItems = function()
 		local result = {};
@@ -893,13 +893,7 @@ do
 		return d.inv;
 	end
 	ns.items.GetInventoryItemBySlotIndex = function(index)
-		if d.inv[index]~=nil and d.ids[d.inv[index]] then
-			for i=1, #d.ids[d.inv[index]] do
-				if d.ids[d.inv[index]][i] then
-					return d.ids[d.inv[index]][i];
-				end
-			end
-		end
+		return d.inv[index] or false;
 	end
 end
 
@@ -913,6 +907,7 @@ do
 		if bag and slot then
 			local itemId = tonumber((GetContainerItemLink(bag,slot) or ""):match("Hitem:([0-9]+)"));
 			if itemid and callback[itemId] then
+				ns.debug("UseContainerItem",bag,slot,itemId);
 				for i,v in pairs(callback[itemId])do
 					if type(v)=="function" then v(bag,slot,itemId); end
 				end
@@ -1727,7 +1722,8 @@ do
 		[QUEST_TAG_SCENARIO] = "s",
 		[QUEST_TAG_ACCOUNT] = "a",
 		[QUEST_TAG_LEGENDARY] = {"leg","orange"},
-		TRADE_SKILLS = {"ts","green"}
+		TRADE_SKILLS = {"ts","green"},
+		WORLD_QUESTS = {"wq","yellow"}
 	};
 	local tradeskills_update;
 	local tradeskills_mt = {__call=function(t,k)

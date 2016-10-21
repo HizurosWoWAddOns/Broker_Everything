@@ -10,7 +10,7 @@ L.Gold = BONUS_ROLL_REWARD_MONEY;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Gold";
-local ldbName, ttName, tt, createMenu = name, name.."TT";
+local ldbName, ttName, tt, createMenu, createTooltip = name, name.."TT";
 local login_money = nil;
 local next_try = false;
 local current_money = 0
@@ -104,7 +104,7 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.addEntry({separator=true});
@@ -126,7 +126,15 @@ local function getProfit()
 	return profit, direction;
 end
 
-local function createTooltip(self, tt)
+local function deleteCharacterGoldData(self,_,button)
+	if button == "RightButton" then
+		Broker_Everything_CharacterDB[name_realm].gold = nil;
+		tt:Clear();
+		createTooltip(tt,true);
+	end 
+end
+
+function createTooltip(tt,update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local sAR,sAF = ns.profile[name].showAllRealms==true,ns.profile[name].showAllFactions==true;
@@ -158,16 +166,7 @@ local function createTooltip(self, tt)
 			local realm = sAR==true and C("dkyellow"," - "..ns.scm(realm)) or "";
 			local line, column = tt:AddLine( C(v.class,ns.scm(charName)) .. realm .. faction, ns.GetCoinColorOrTextureString(name,v.gold));
 
-			tt:SetLineScript(line, "OnMouseUp", function(self,x,button)
-				if button == "RightButton" then
-					Broker_Everything_CharacterDB[name_realm].gold = nil;
-					tt:Clear();
-					createTooltip(false,tt);
-				end 
-			end)
-
-			tt:SetLineScript(line, "OnEnter", function(self) tt:SetLineColor(line, 1,192/255, 90/255, 0.3); end );
-			tt:SetLineScript(line, "OnLeave", function(self) tt:SetLineColor(line, 0,0,0,0); end);
+			tt:SetLineScript(line, "OnMouseUp", deleteCharacterGoldData);
 
 			totalGold = totalGold + v.gold;
 
@@ -186,8 +185,6 @@ local function createTooltip(self, tt)
 	if profit then
 		local sign = (direction==1 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (direction==-1 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
 		tt:AddLine(profit<0 and C("ltred",L["Session loss"]) or C("ltgreen",L["Session profit"]), sign .. ns.GetCoinColorOrTextureString(name,profit));
-		--local l=tt:AddLine(C("ltgray","("..L["Reset session profit"]..")"));
-		--tt:SetCellScript(l,1,"OnMouseUp",function()  end);
 	else
 		tt:AddLine(C("ltgreen",L["Session profit"]),C("orange","Error"));
 	end
@@ -197,7 +194,10 @@ local function createTooltip(self, tt)
 		tt:SetCell(tt:AddLine(), 1, C("ltblue",L["Right-click"]).." || "..C("green",L["Remove entry"]), nil, nil, 2);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt)
+
+	if not update then
+		ns.roundupTooltip(tt);
+	end
 end
 
 
@@ -246,18 +246,10 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, 2, "LEFT", "RIGHT")
-	createTooltip(self, tt);
+	tt = ns.acquireTooltip({ttName, 2, "LEFT", "RIGHT"},{false},{self})
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
-end
-
---[[
-ns.modules[name].onclick = function(self,button)
-	securecall("ToggleCharacter","TokenFrame")
-end
-]]
-
+-- ns.modules[name].onleave = function(self) end
+-- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end

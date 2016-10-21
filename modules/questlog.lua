@@ -167,6 +167,19 @@ local function updateBroker()
 	obj.text = (fail>0 and C("red",fail).."/" or "")..(complete>0 and C("ltblue",complete).."/" or "")..sum.."/"..MAX_QUESTS;
 end
 
+local function showQuest(self)
+	securecall("QuestMapFrame_OpenToQuestDetails",select(8, GetQuestLogTitle(self.questIndex)));
+end
+
+local function showQuestURL(self)
+	url = urls[ns.profile[name].questIdUrl](self.questId);
+	StaticPopup_Show("BE_URL_DIALOG");
+end
+
+local function pushQuest(self)
+	QuestLogPushQuest(self.questIndex);
+end
+
 local function deleteQuest(self)
 	local questId = self.questId;
 	if requested==questId then
@@ -176,13 +189,20 @@ local function deleteQuest(self)
 		requested = false;
 	else
 		requested = questId;
-		createTooltip(false,tt);
+		createTooltip(tt,true,"deleteQuest");
 	end	
 end
 
-local function createTooltip2(self, tt2, obj)
+local function trackQuest(self)
+	securecall("QuestMapQuestOptions_TrackQuest",self.questId);
+	createTooltip(tt,true,"trackQuest");
+end
+
+local function createTooltip2(self, obj)
 	if tt2created then return end
 	tt2created=true;
+
+	tt2 = ns.acquireTooltip({ttName2,ttColumns2,"LEFT","RIGHT"},{true},{self,"horizontal",tt});
 
 	tt2:Clear();
 	tt2:SetCell(tt2:AddLine(),1,C("dkyellow",obj[Title]),tt2:GetHeaderFont(),"LEFT",2);
@@ -215,107 +235,97 @@ local function createTooltip2(self, tt2, obj)
 		tt2:AddLine(C("ltblue",L["Quest id"]),C("ltgreen",obj[QuestId]));
 	end
 
-	ns.roundupTooltip(self,tt2,nil,"horizontal",tt);
+	--ns.roundupTooltip(tt2);
+	tt2:Show();
 end
 
-function createTooltip(self, tt)
-	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
-	local UnitNames={};
+local function tt2ShowOnEnter(self)
+	createTooltip2(self,self.info);
+end
+local function tt2HideOnLeave()
+	if tt2 then
+		tt2created=false;
+	end
+end
 
-	if self then
-		requested=false;
+local function ttAddLine(obj)
+	assert(type(obj)=="table","object must be a table, got "..type(obj));
+	local l = tt:AddLine();
+	local cell, color,GroupQuest = 1,"red",{};
+
+	if (obj[Color]) then
+		color = ns.LC.colorTable2HexCode(obj[Color]);
 	end
 
-	local function addLine(obj)
-		assert(type(obj)=="table","object must be a table, got "..type(obj));
-		local l,c = tt:AddLine();
-		local cell, color,GroupQuest = 1,"red",{};
-
-		if (obj[Color]) then
-			color = ns.LC.colorTable2HexCode(obj[Color]);
-		end
-
-		if (type(obj[QuestId])=="number") and (IsInGroup()) then
-			for i=1, GetNumSubgroupMembers() do -- GetNumSubgroupMembers
-				if (IsUnitOnQuestByQuestID(obj[QuestId],"party"..i)) then
-					if (not UnitNames["p"..i]) then
-						UnitNames["p"..i] = C(select(2,UnitClass("party"..i)),UnitName("party"..i));
-					end
-					tinsert(GroupQuest,UnitNames["p"..i]);
-				end
-			end
-			if (#GroupQuest>0) then
-				obj[Title2] = ("%s [%d]"):format(obj[Title],#GroupQuest);
+	if (type(obj[QuestId])=="number") and (IsInGroup()) then
+		for i=1, GetNumSubgroupMembers() do -- GetNumSubgroupMembers
+			if (IsUnitOnQuestByQuestID(obj[QuestId],"party"..i)) then
+				tinsert(GroupQuest,C(select(2,UnitClass("party"..i)),UnitName("party"..i)));
 			end
 		end
-
-		tt:SetCell(l,cell,C(color,obj[Level])); cell=cell+1; -- [1]
-		if ns.profile[name].showQuestTagsShort then tt:SetCell(l,cell,obj[ShortType]); end cell=cell+1; -- [2]
-		tt:SetCell(l,cell,C(color,ns.strCut(obj[Title2] or obj[Title],32))); cell=cell+1; -- [3]
-		if ns.profile[name].showQuestZone then
-			tt:SetCell(l,cell,questZones[obj[QuestId]].mapName or " "); cell=cell+1; -- [4]
+		if (#GroupQuest>0) then
+			obj[Title2] = ("%s [%d]"):format(obj[Title],#GroupQuest);
 		end
-		if ns.profile[name].showQuestTags then
-			tt:SetCell(l,cell,C(color,obj[Type])); cell=cell+1; -- [5]
-		end
-		tt:SetLineScript(l,"OnMouseUp",function(self)
-			securecall("QuestMapFrame_OpenToQuestDetails",select(8, GetQuestLogTitle(obj[Index])));
-		end)
+	end
 
-		if ns.profile[name].showQuestIds then
-			tt:SetCell(l,cell,obj[QuestId])
-			if (obj[QuestId]~=L["QuestId"]) then
-				tt:SetCellScript(l,cell,"OnMouseUp",function(self,button)
-					url = urls[ns.profile[name].questIdUrl](obj[QuestId])
-					StaticPopup_Show("BE_URL_DIALOG")
-				end)
-			end
-			cell=cell+1; -- [6]
-		end
+	tt:SetCell(l,cell,C(color,obj[Level])); cell=cell+1; -- [1]
+	if ns.profile[name].showQuestTagsShort then tt:SetCell(l,cell,obj[ShortType]); end cell=cell+1; -- [2]
+	tt:SetCell(l,cell,C(color,ns.strCut(obj[Title2] or obj[Title],32))); cell=cell+1; -- [3]
+	if ns.profile[name].showQuestZone then
+		tt:SetCell(l,cell,questZones[obj[QuestId]].mapName or " "); cell=cell+1; -- [4]
+	end
+	if ns.profile[name].showQuestTags then
+		tt:SetCell(l,cell,C(color,obj[Type])); cell=cell+1; -- [5]
+	end
+	tt:SetLineScript(l,"OnMouseUp",showQuest);
+	tt.lines[l].questIndex = obj[Index];
 
-		if ns.profile[name].showQuestOptions then
-			tt:SetCell(l,cell,IsQuestWatched(obj[Index]) and UNTRACK_QUEST_ABBREV or TRACK_QUEST_ABBREV);
-			tt:SetCellScript(l,cell,"OnMouseUp",function()
-				securecall("QuestMapQuestOptions_TrackQuest",obj[QuestId]);
-				createTooltip(false, tt);
-			end);
-			cell=cell+1; -- [7]
-
-			tt:SetCell(l,cell,CANCEL .. (requested==obj[QuestId] and C("orange"," ("..L["really?"]..")") or ""));
-			tt:SetCellScript(l,cell,"OnMouseUp",deleteQuest);
+	if ns.profile[name].showQuestIds then
+		tt:SetCell(l,cell,obj[QuestId])
+		if (obj[QuestId]~=L["QuestId"]) then
+			tt:SetCellScript(l,cell,"OnMouseUp",showQuestURL);
 			tt.lines[l].cells[cell].questId = obj[QuestId];
-			cell=cell+1; -- [8]
+		end
+		cell=cell+1; -- [6]
+	end
 
-			if IsInGroup() then
-				if GetNumGroupMembers()>1 and GetQuestLogPushable(obj[Index]) then
-					tt:SetCell(l,cell,SHARE_QUEST_ABBREV);
-					tt:SetCellScript(l,cell,"OnMouseUp",function(self,button)
-						QuestLogPushQuest(obj[Index])
-					end)
-					cell=cell+1 -- [9]
-				end
-				if #GroupQuest>0 and IsShiftKeyDown() then
-					l,c = tt:AddLine();
-					tt:SetCell(l,1,table.concat(GroupQuest,", "), nil, nil, ttColumns);
-					tt:AddSeparator();
-				end
+	if ns.profile[name].showQuestOptions then
+		tt:SetCell(l,cell,IsQuestWatched(obj[Index]) and UNTRACK_QUEST_ABBREV or TRACK_QUEST_ABBREV);
+		tt:SetCellScript(l,cell,"OnMouseUp",trackQuest);
+		tt.lines[l].cells[cell].questId = obj[QuestId];
+		cell=cell+1; -- [7]
+
+		tt:SetCell(l,cell,CANCEL .. (requested==obj[QuestId] and C("orange"," ("..L["really?"]..")") or ""));
+		tt:SetCellScript(l,cell,"OnMouseUp",deleteQuest);
+		tt.lines[l].cells[cell].questId = obj[QuestId];
+		cell=cell+1; -- [8]
+
+		if IsInGroup() then
+			if GetNumGroupMembers()>1 and GetQuestLogPushable(obj[Index]) then
+				tt:SetCell(l,cell,SHARE_QUEST_ABBREV);
+				tt:SetCellScript(l,cell,"OnMouseUp",pushQuest);
+				tt.lines[l].cells[cell].questIndex = obj[Index];
+				cell=cell+1 -- [9]
+			end
+			if #GroupQuest>0 and IsShiftKeyDown() then
+				l,c = tt:AddLine();
+				tt:SetCell(l,1,table.concat(GroupQuest,", "), nil, nil, ttColumns);
+				tt:AddSeparator();
 			end
 		end
-
-		tt:SetLineScript(l,"OnEnter",function(parent)
-			tt2 = ns.LQT:Acquire(ttName2,ttColumns2,"LEFT","RIGHT");
-			createTooltip2(self,tt2,obj);
-		end);
-		tt:SetLineScript(l,"OnLeave",function()
-			if (tt2) then
-				ns.hideTooltip(tt2,ttName2,false,true);
-				tt2created=false;
-			end
-		end);
-
-		return #GroupQuest;
 	end
+
+	tt.lines[l].info = obj;
+	tt:SetLineScript(l,"OnEnter", tt2ShowOnEnter);
+	tt:SetLineScript(l,"OnLeave", tt2HideOnLeave);
+
+	return #GroupQuest;
+end
+
+function createTooltip(tt, update, from)
+	if not tt or (tt and tt.key and tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local header = false;
+	if self then requested=false; end
 
 	tt:AddLine(" "); --dummy
 	tt:Clear();
@@ -355,7 +365,7 @@ function createTooltip(self, tt)
 					table.sort(quests,function(a,b) return (a[Title2] or a[Title])<(b[Title2] or b[Title]) end);
 					for _,obj in pairs(quests)do
 						if obj[Status]==s[1] then
-							addLine(obj);
+							ttAddLine(obj);
 						end
 					end
 				end
@@ -370,7 +380,7 @@ function createTooltip(self, tt)
 					header = obj[Header];
 					tt:SetCell(select(1,tt:AddLine()),1,C("ltBlue",header),nil,"LEFT",ttColumns);
 				end
-				addLine(obj);
+				ttAddLine(obj);
 			end
 		elseif ns.profile[name].separateBy=="zone" then
 			table.sort(quests,function(a,b) return ns.strCut(questZones[a[QuestId]].mapName or "0",10)..ns.strCut(a[Title],10)<ns.strCut(questZones[b[QuestId]].mapName or "0",10)..ns.strCut(b[Title],10) ; end);
@@ -382,7 +392,7 @@ function createTooltip(self, tt)
 					header = questZones[obj[QuestId]].mapName or UNKNOWN;
 					tt:SetCell(select(1,tt:AddLine()),1,C("ltBlue",header),nil,"LEFT",ttColumns);
 				end
-				addLine(obj);
+				ttAddLine(obj);
 			end
 		end
 	end
@@ -397,7 +407,10 @@ function createTooltip(self, tt)
 		tt:SetCell(l,1,C("ltblue",L["Click"]).." || "..C("green",L["Open QuestLog and select quest"]),nil,"LEFT",ttColumns)
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt);
+
+	if not update then
+		ns.roundupTooltip(tt);
+	end
 end
 
 ------------------------------------
@@ -415,9 +428,6 @@ ns.modules[name].onevent = function(self,event,msg)
 		local header, status, isBounty, _ = false;
 		local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, qText = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15; -- GetQuestLogTitle(index)
 		sum,quests,numQuestStatus = numQuests,{},{fail=0,complete=0,active=0};
-		--if ns.build>70000000 then
-		--	isBounty, isStory = 14,15; -- legion change
-		--end
 
 		for index=1, numEntries do
 			local q = {GetQuestLogTitle(index)};
@@ -444,6 +454,10 @@ ns.modules[name].onevent = function(self,event,msg)
 				if ns.tradeskills[header] then
 					tinsert(tags,TRADE_SKILLS);
 					tinsert(shortTags,C(ns.questTags.TRADE_SKILLS[2],ns.questTags.TRADE_SKILLS[1]));
+				end
+				if q[qText]:find(TRACKER_HEADER_WORLD_QUESTS) then
+					tinsert(tags,TRACKER_HEADER_WORLD_QUESTS);
+					tinsert(shortTags,C(ns.questTags.WORLD_QUESTS[2],ns.questTags.WORLD_QUESTS[1]));
 				end
 				if frequencies[q[frequency]] then
 					tinsert(tags,frequencies[q[frequency]][2]);
@@ -477,9 +491,10 @@ ns.modules[name].onevent = function(self,event,msg)
 				numQuestStatus[status]=numQuestStatus[status]+1;
 			end
 		end
+
 		updateBroker()
 		if tt and tt.key and tt.key==ttName and not tt2created then
-			createTooltip(false, tt);
+			createTooltip(tt, true, "event("..event..")");
 		end
 	end
 end
@@ -494,14 +509,11 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, ttColumns,"RIGHT","LEFT","LEFT","LEFT","LEFT","LEFT","LEFT","LEFT");
-	createTooltip(self, tt);
+	tt = ns.acquireTooltip({ttName, ttColumns,"RIGHT","LEFT","LEFT","LEFT","LEFT","LEFT","LEFT","LEFT"},{false},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

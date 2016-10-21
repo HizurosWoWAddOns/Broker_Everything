@@ -89,7 +89,7 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
@@ -135,7 +135,7 @@ local function updateList()
 	end
 end
 
-local function createTooltip(self,tt)
+local function createTooltip(tt,update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear();
@@ -171,7 +171,9 @@ local function createTooltip(self,tt)
 		tt:AddSeparator(3,0,0,0,0);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt)
+	if not update then
+		ns.roundupTooltip(tt);
+	end
 end
 
 local function updater()
@@ -183,7 +185,7 @@ local function updater()
 				if(ChannelFrame and ChannelFrame:IsShown()) then return end
 				SetSelectedDisplayChannel(i);
 				if(tt and tt.key and tt.key==ttName)then
-					createTooltip(false, tt)
+					createTooltip(tt,true);
 				end
 			end);
 		end
@@ -243,22 +245,12 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "RIGHT","RIGHT")
-	createTooltip(self, tt);
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT","RIGHT"},{true},{self})
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if tt then ns.hideTooltip(tt,ttName,true,true); end
-end
-
---[[
-ns.modules[name].onclick = function(self,button)
-	if button=="LeftButton" then
-	elseif button=="RightButton" then
-	end
-end
-]]
-
+-- ns.modules[name].onleave = function(self) end
+-- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 
 

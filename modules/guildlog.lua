@@ -127,7 +127,7 @@ local function showRealm(Char)
 	return Name..(Realm and C("dkyellow","*") or "");
 end
 
-local function createTooltip(self, tt)
+local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local doHide = {
 		["join"] = ns.profile[name].hideJoin==true,
@@ -230,7 +230,7 @@ local function createTooltip(self, tt)
 		tt:AddSeparator(4,0,0,0,0)
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt);
+	ns.roundupTooltip(tt);
 end
 
 
@@ -286,13 +286,10 @@ end
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	ttColumns=4;
-	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "LEFT", "LEFT", "RIGHT");
-	createTooltip(self, tt);
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "LEFT", "LEFT", "RIGHT"},{false},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end

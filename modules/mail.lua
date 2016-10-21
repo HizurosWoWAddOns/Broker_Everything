@@ -82,7 +82,7 @@ ns.modules[name] = {
 --------------------------
 local function createMenu(self,button)
 	if (button=="RightButton") then
-		if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+		if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 		ns.EasyMenu.InitializeMenu();
 		ns.EasyMenu.addConfigElements(name);
 		ns.EasyMenu.ShowMenu(parent);
@@ -162,7 +162,7 @@ local function UpdateStatus(event)
 	obj.iconCoords,obj.icon,obj.text = icon.coords or {0,1,0,1},icon.iconfile,text;
 end
 
-local function createTooltip(self, tt)
+local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local newMails = {};
@@ -248,7 +248,7 @@ local function createTooltip(self, tt)
 		local l,c = tt:AddLine()
 		tt:SetCell(l,1,C("copper",L["Right-click"]).." || "..C("green",L["Open option menu"]),nil,nil,2);
 	end
-	ns.roundupTooltip(self,tt);
+	ns.roundupTooltip(tt);
 end
 
 
@@ -306,13 +306,11 @@ end
 
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, 2, "LEFT", "RIGHT")
-	createTooltip(self,tt);
+	tt = ns.acquireTooltip({ttName, 2, "LEFT", "RIGHT"},{true},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,true) end
-end
+-- ns.modules[name].onleave = function(self) end
 
 ns.modules[name].onclick = createMenu; --function(self,button) end
 

@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "XP" -- XP
-local ldbName, ttName, ttName2, ttColumns, tt, tt2, createMenu  = name, name.."TT", name.."TT2", 3;
+local ldbName, ttName, ttName2, ttColumns, tt, tt2, createMenu, createTooltip  = name, name.."TT", name.."TT2", 3;
 local data = {};
 local sessionStartLevel = UnitLevel("player");
 local slots = {  [1]=HEADSLOT, [3]=SHOULDERSLOT, [5]=CHESTSLOT, [7]=LEGSSLOT, [15]=BACKSLOT, [11]=FINGER0SLOT, [12]=FINGER1SLOT, [998]=L["Guild perk"], [999]=L["Recruite a Friend"]};
@@ -150,14 +150,20 @@ end
 -- some local functions --
 --------------------------
 function createMenu(self)
-	if (tt~=nil) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
 end
 
-local function getTooltip2(parentLine,data)
-	tt2 = ns.LQT:Acquire(ttName2, 2, "LEFT", "RIGHT");
+local function deleteCharacterXP(self,button)
+	Broker_Everything_CharacterDB[self.name_realm].xp = nil;
+	createTooltip(tt);
+end
+
+local function createTooltip2(parentLine)
+	local data = parentLine.info;
+	tt2 = ns.acquireTooltip({ttName2, 2, "LEFT", "RIGHT"},{true},{parentLine,"horizontal",tt});
 
 	tt2:Clear();
 
@@ -177,7 +183,8 @@ local function getTooltip2(parentLine,data)
 		end
 	end
 
-	ns.roundupTooltip(parentLine, tt2);
+	ns.roundupTooltip(tt2);
+	--[[
 	tt2:ClearAllPoints();
 	tt2:SetPoint("TOP",parentLine,"TOP",0,0);
 
@@ -188,9 +195,10 @@ local function getTooltip2(parentLine,data)
 	else
 		tt2:SetPoint("LEFT",tt,"RIGHT",2,0);
 	end
+	]]
 end
 
-local function createTooltip(self, tt)
+function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear();
@@ -257,10 +265,11 @@ local function createTooltip(self, tt)
 					("%s "..C("cyan","%s")):format(v.xp.percent or 0,v.xp.restStr or "> ?%"),
 					("(%s/%s)"):format(ns.FormatLargeNumber(v.xp.cur),ns.FormatLargeNumber(v.xp.max))
 				);
-				tt:SetLineScript(l,"OnMouseUp",function(_,button) Broker_Everything_CharacterDB[name_realm].xp = nil; createTooltip(self, tt); end);
+				tt.lines[l].name_realm = name_realm;
+				tt:SetLineScript(l,"OnMouseUp",deleteCharacterXP);
 				if (v.xp.bonus and #v.xp.bonus>0) then
-					tt:SetLineScript(l,"OnEnter",function(self) getTooltip2(self,v.xp) end);
-					tt:SetLineScript(l,"OnLeave",function(self) ns.hideTooltip(tt2,ttName2,true) end);
+					tt.lines[l].info = v.xp;
+					tt:SetLineScript(l,"OnEnter",createTooltip2);
 				end
 				count = count + 1;
 			end
@@ -279,7 +288,7 @@ local function createTooltip(self, tt)
 		end
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt)
+	ns.roundupTooltip(tt);
 end
 
 
@@ -384,12 +393,9 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT", "RIGHT", "RIGHT");
-	createTooltip(self, tt);
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "RIGHT"},{false},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].ondblclick = function(self,button) end

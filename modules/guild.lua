@@ -139,7 +139,7 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 function createMenu(self)
-	if (tt) and (tt:IsShown()) then ns.hideTooltip(tt,ttName,true); end
+	if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
@@ -287,9 +287,44 @@ local function updateBroker()
 	end
 end
 
-local function createTooltip2(self, tt2, v)
-	if not (tt2 and tt2.key and tt2.key==ttName2) then return end
-	local s,t="";
+local function GetMemberRecipes(self)
+	GetGuildMemberRecipes(self.info.name,self.info.id);
+end
+
+local function memberInviteOrWhisper(self)
+	if IsAltKeyDown() then
+		if not self.info[mIsMobile] then
+			InviteUnit(self.info[mFullName]);
+		end
+	else
+		SetItemRef("player:"..self.info[mFullName], ("|Hplayer:%1$s|h[%1$s]|h"):format(self.info[mFullName]), "LeftButton");
+	end
+end
+
+local function showApplication(self)
+	if IsInGuild() then
+		if (not GuildFrame) then
+			GuildFrame_LoadUI();
+		end
+		if (not GuildFrame:IsShown()) then
+			ShowUIPanel(GuildFrame)
+		end
+		if (not GuildInfoFrameApplicantsContainer:IsVisible()) then
+			GuildFrameTab5:Click();
+			GuildInfoFrameTab3:Click();
+		end
+		SetGuildApplicantSelection(self.appIndex);
+		GuildInfoFrameApplicants_Update();
+	end
+end
+
+local function createTooltip2(self)
+	tt2 = ns.acquireTooltip(
+		{ttName2, ttColumns2, "LEFT","RIGHT"},
+		{true,true},
+		{self, "horizontal", tt}
+	);
+	local v,s,t=self.info,"";
 	tt2:Clear();
 	tt2:AddHeader(C("dkyellow",NAME), C(v[mClassFile],ns.scm(v[mName])));
 	tt2:AddSeparator();
@@ -319,7 +354,7 @@ local function createTooltip2(self, tt2, v)
 		end
 	end
 	tt2:AddSeparator(1,0,0,0,0);
-	ns.roundupTooltip(self, tt2, nil, "horizontal", tt);
+	ns.roundupTooltip(tt2, nil, "horizontal", tt);
 end
 
 local function tooltipAddLine(v,me)
@@ -334,17 +369,15 @@ local function tooltipAddLine(v,me)
 			realm = C("dkyellow","*");
 		end
 	end
-	local ts1, ts2, ts1script, ts2script = "","", false, false;
+	local ts1, ts2 = "","";
 	if db.showProfessions and tradeskills[v[mFullName]] then
 		if tradeskills[v[mFullName]][1] then
 			local t = tradeskills[v[mFullName]][1];
 			ts1 = "|T"..t[tsIcon]..":0|t "..t[tsValue];
-			ts1script = {"OnMouseUp", function(self, button) GetGuildMemberRecipes(v[mFullName],t[tsID]); end}
 		end
 		if tradeskills[v[mFullName]][2] then
 			local t = tradeskills[v[mFullName]][2];
 			ts2 = "|T"..t[tsIcon]..":0|t "..t[tsValue];
-			ts2script = {"OnMouseUp", function(self, button) GetGuildMemberRecipes(v[mFullName],t[tsID]); end}
 		end
 	end
 
@@ -373,40 +406,29 @@ local function tooltipAddLine(v,me)
 		ts2 -- [8]
 	);
 
-	if ts1script then
-		tt:SetCellScript(l, 7, unpack(ts1script));
+	if ts1 and tradeskills[v[mFullName]] and tradeskills[v[mFullName]][1] then
+		tt.lines[l].cells[7].info = {name=v[mFullName],id=tradeskills[v[mFullName]][1][4]};
+		tt:SetCellScript(l, 7, "OnMouseUp", GetMemberRecipes);
 	end
 
-	if ts2script then
-		tt:SetCellScript(l, 8, unpack(ts2script));
+	if ts2 and tradeskills[v[mFullName]] and tradeskills[v[mFullName]][2] then
+		tt.lines[l].cells[8].info = {name=v[mFullName],id=tradeskills[v[mFullName]][2][4]};
+		tt:SetCellScript(l, 8, "OnMouseUp", GetMemberRecipes);
 	end
 
 	if v[mFullName]==ns.player.name_realm_short then
 		tt:SetLineColor(l, .5, .5, .5);
 	end
 
-	tt:SetLineScript(l, "OnMouseUp", function(self)
-		if (IsAltKeyDown()) then
-			if (not v[mIsMobile]) then
-				InviteUnit(v[mFullName]);
-			end
-		else
-			SetItemRef("player:"..v[mFullName], ("|Hplayer:%1$s|h[%1$s]|h"):format(v[mFullName]), "LeftButton");
-		end
-	end);
+	tt.lines[l].info = v;
+	tt:SetLineScript(l, "OnMouseUp", memberInviteOrWhisper);
 
 	if ns.profile[name].showZoneInTT2 or ns.profile[name].showNotesInTT2 or ns.profile[name].showONotesInTT2 or ns.profile[name].showRankInTT2 or ns.profile[name].showProfessionsInTT2 then
-		tt:SetLineScript(l,"OnEnter",function(parent)
-			tt2 = ns.LQT:Acquire(ttName2, ttColumns2, "LEFT","RIGHT");
-			createTooltip2(parent, tt2, v);
-		end);
-		tt:SetLineScript(l,"OnLeave",function()
-			if (tt2) then ns.hideTooltip(tt2,ttName2,false,true); end
-		end);
+		tt:SetLineScript(l,"OnEnter",createTooltip2);
 	end
 end
 
-local function createTooltip(self, tt)
+local function createTooltip(tt,update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	tt:Clear()
 
@@ -414,7 +436,7 @@ local function createTooltip(self, tt)
 		tt:AddHeader(C("dkyellow",GUILD));
 		tt:AddSeparator();
 		tt:AddLine(C("ltgray",ERR_GUILD_PLAYER_NOT_IN_GUILD));
-		ns.roundupTooltip(self, tt);
+		ns.roundupTooltip(tt);
 		return;
 	end
 
@@ -478,22 +500,7 @@ local function createTooltip(self, tt)
 			tt:SetCell(l,5,(strlen(a[app_comment])>0 and ns.scm(ns.strCut(a[app_comment],60)) or L["No Text"]),nil,nil,ttColumns-4);
 
 			tt.lines[l].appIndex=a[app_index];
-			tt:SetLineScript(l,"OnMouseUp",function(self)
-				if (IsInGuild()) then
-					if (not GuildFrame) then
-						GuildFrame_LoadUI();
-					end
-					if (not GuildFrame:IsShown()) then
-						ShowUIPanel(GuildFrame)
-					end
-					if (not GuildInfoFrameApplicantsContainer:IsVisible()) then
-						GuildFrameTab5:Click();
-						GuildInfoFrameTab3:Click();
-					end
-					SetGuildApplicantSelection(self.appIndex);
-					GuildInfoFrameApplicants_Update();
-				end
-			end)
+			tt:SetLineScript(l,"OnMouseUp",showApplication);
 		end
 		tt:AddSeparator(4,0,0,0,0);
 	end
@@ -571,8 +578,9 @@ local function createTooltip(self, tt)
 		end
 	end
 
-	tt:AddSeparator(1,0,0,0,0);
-	ns.roundupTooltip(self, tt);
+	if not update then
+		ns.roundupTooltip(tt);
+	end
 end
 
 local function updater()
@@ -595,7 +603,7 @@ local function updater()
 	updateBroker();
 	if doUpdateTooltip and tt and tt.key and tt.key==ttName and tt:IsShown() then
 		doUpdateTooltip = false;
-		createTooltip(false, tt);
+		createTooltip(tt,true);
 	end
 end
 
@@ -688,14 +696,11 @@ ns.modules[name].onenter = function(self)
 
 	ttColumns = #ttAlignings;
 
-	tt = ns.acquireTooltip(ttName, ttColumns,unpack(ttAlignings));
-	createTooltip(self, tt);
+	tt = ns.acquireTooltip({ttName, ttColumns,unpack(ttAlignings)},{false},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

@@ -293,7 +293,7 @@ profs.build=function()
 	end
 end
 
-local function createTooltip(self, tt)
+local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local iconnameLocale = "|T%s:12:12:0:0:64:64:2:62:4:62|t %s";
 	local function item_icon(name,icon) return select(10,GetItemInfo(name)) or icon or ns.icon_fallback; end
@@ -385,11 +385,11 @@ local function createTooltip(self, tt)
 		tt:SetCell(l,1,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]),nil,nil,2);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self,tt);
+	ns.roundupTooltip(tt);
 end
 
 function createMenu(self,menu)
-	if (tt~=nil) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) then ns.hideTooltip(tt); end
 
 	ns.EasyMenu.InitializeMenu();
 
@@ -579,14 +579,11 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip(ttName, 2, "LEFT", "RIGHT");
-	createTooltip(self, tt);
+	tt = ns.acquireTooltip({ttName, 2, "LEFT", "RIGHT"},{true},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then ns.hideTooltip(tt,ttName,true); end
-end
-
---ns.modules[name].onclick = function(self,button) end
+-- ns.modules[name].onleave = function(self) end
+-- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

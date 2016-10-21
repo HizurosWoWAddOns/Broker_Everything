@@ -145,15 +145,12 @@ end
 -------------------------------------------
 --ns.modules[name].onenter = function(self)
 --	if (ns.tooltipChkOnShowModifier(false)) then return; end
---	tt = ns.acquireTooltip(ttName, ttColumns, "LEFT");
+--	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT"},{true},{self});
 --	ns.modules[name].ontooltip(tt)
---	ns.roundupTooltip(self,tt);
+--	ns.roundupTooltip(tt);
 --end
 
---ns.modules[name].onleave = function(self)
---	if (tt) then ns.hideTooltip(tt,ttName,false,true); end
---end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

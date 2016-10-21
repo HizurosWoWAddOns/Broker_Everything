@@ -116,33 +116,50 @@ local function strCut(str,length)
 end
 
 function createMenu(self)
-	if (tt~=nil) then ns.hideTooltip(tt,ttName,true); end
+	if (tt~=nil) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
 end
 
-local function AchievementTooltip(self,link)
-	if (self) then
-		GameTooltip:SetOwner(self,"ANCHOR_NONE");
-		if (select(1,self:GetCenter()) > (select(1,UIParent:GetWidth()) / 2)) then
-			GameTooltip:SetPoint("RIGHT",tt,"LEFT",-2,0);
-		else
-			GameTooltip:SetPoint("LEFT",tt,"RIGHT",2,0);
-		end
-		GameTooltip:SetPoint("TOP",self,"TOP", 0, 4);
-
-		GameTooltip:ClearLines();
-		GameTooltip:SetHyperlink(link);
-
-		GameTooltip:SetFrameLevel(self:GetFrameLevel()+1);
-		GameTooltip:Show();
+local function AchievementTooltipShow(self)
+	GameTooltip:SetOwner(self,"ANCHOR_NONE");
+	if (select(1,self:GetCenter()) > (select(1,UIParent:GetWidth()) / 2)) then
+		GameTooltip:SetPoint("RIGHT",tt,"LEFT",-2,0);
 	else
-		GameTooltip:Hide();
+		GameTooltip:SetPoint("LEFT",tt,"RIGHT",2,0);
+	end
+	GameTooltip:SetPoint("TOP",self,"TOP", 0, 4);
+
+	GameTooltip:ClearLines();
+	GameTooltip:SetHyperlink(GetAchievementLink(self.achievementId));
+
+	GameTooltip:SetFrameLevel(self:GetFrameLevel()+1);
+	GameTooltip:Show();
+end
+
+local function AchievementTooltipHide()
+	GameTooltip:Hide();
+end
+
+local function toggleAchievementFrame()
+	if ( not AchievementFrame ) then
+		AchievementFrame_LoadUI();
+	end
+	
+	if ( not AchievementFrame:IsShown() ) then
+		AchievementFrame_ToggleAchievementFrame();
+		AchievementFrame_SelectAchievement(v.id);
+	else
+		if ( AchievementFrameAchievements.selection ~= v.id ) then
+			AchievementFrame_SelectAchievement(v.id);
+		else
+			AchievementFrame_ToggleAchievementFrame();
+		end
 	end
 end
 
-local function createTooltip(self, tt)
+local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local now, timeleft, timeleftAll, shipmentsCurrent = time();
 	local none, qualities = true,{"white","ff1eaa00","ff0070dd","ffa335ee"};
@@ -294,28 +311,10 @@ local function createTooltip(self, tt)
 					("|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltyellow","%s")):format(v.icon,v.name)
 				);
 				tt:SetCell(l,3, v.need, nil,"LEFT",5);
-				tt:SetLineScript(l,"OnMouseUp", function(self)
-					if ( not AchievementFrame ) then
-						AchievementFrame_LoadUI();
-					end
-					
-					if ( not AchievementFrame:IsShown() ) then
-						AchievementFrame_ToggleAchievementFrame();
-						AchievementFrame_SelectAchievement(v.id);
-					else
-						if ( AchievementFrameAchievements.selection ~= v.id ) then
-							AchievementFrame_SelectAchievement(v.id);
-						else
-							AchievementFrame_ToggleAchievementFrame();
-						end
-					end
-				end);
-				tt:SetLineScript(l,"OnEnter", function(self)
-					AchievementTooltip(self,GetAchievementLink(v.id));
-				end);
-				tt:SetLineScript(l,"OnLeave", function()
-					AchievementTooltip(false)
-				end);
+				tt.lines[l].achievementId = v.id;
+				tt:SetLineScript(l,"OnMouseUp", toggleAchievementFrame);
+				tt:SetLineScript(l,"OnEnter", AchievementTooltipShow);
+				tt:SetLineScript(l,"OnLeave", AchievementTooltipHide);
 			end
 		end
 	end
@@ -380,7 +379,7 @@ local function createTooltip(self, tt)
 		ns.AddSpannedLine(tt,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]),ttColumns);
 		ns.clickOptions.ttAddHints(tt,name,ttColumns);
 	end
-	ns.roundupTooltip(self, tt);
+	ns.roundupTooltip(tt);
 end
 
 local function updateBlueprints(Data)
@@ -674,16 +673,11 @@ end
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	ttColumns = 7;
-	tt = ns.acquireTooltip(ttName, 7, "LEFT","LEFT", "CENTER", "CENTER", "CENTER", "RIGHT","RIGHT");
-	createTooltip(self, tt);
+	tt = ns.acquireTooltip({ttName, 7, "LEFT","LEFT", "CENTER", "CENTER", "CENTER", "RIGHT","RIGHT"},{not displayAchievements},{self});
+	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
-	if (tt) then
-		ns.hideTooltip(tt,ttName,not displayAchievements,true);
-	end
-end
-
+-- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

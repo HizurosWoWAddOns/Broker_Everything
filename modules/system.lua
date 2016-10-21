@@ -333,7 +333,7 @@ ns.modules[name_traf] = {
 --------------------------
 function createMenu(parent,name)
 	if not name then return end
-	if (tt) and (tt.key) and (tt.key==name.."TT") then ns.hideTooltip(tt,name.."TT",true) end
+	if (tt) and (tt.key) and (tt.key==name.."TT") then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	-- additional elements...?
 	--if name then
@@ -446,8 +446,23 @@ local function updateNetStats()
 	trafficStr("outMax");
 end
 
+local function setMemoryTimeout()
+	local interval={};
+	memoryTimeout = false;
+	if enabled.mem_sys then
+		tinsert(interval,ns.profile[name_sys].updateInterval);
+	end
+	if enabled.mem_mod then
+		tinsert(interval,ns.profile[name_mem].updateInterval);
+	end
+	if #interval>0 then
+		memoryTimeout = math.min(unpack(interval));
+	end
+end
+
 local function updateMemory()
-	memoryTimeout = 60;
+	--memoryTimeout = 60;
+	setMemoryTimeout();
 	if not (enabled.sys_mod or enabled.mem_mod) then return end
 	memory.numAddOns=GetNumAddOns();
 	local lst,sum,numLoadedAddOns = {},0,0;
@@ -474,14 +489,12 @@ local function updateMemory()
 	memoryStr(memory,"max");
 end
 
-local function createTooltip(self, tt, name, ttName)
+local function createTooltip(tt, name, ttName, update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local allHidden=true;
-
 	tt:Clear();
 	tt:AddHeader(C("dkyellow",L[name]))
 	if name_sys==name then
-
 		if ns.profile[name].showFpsInTooltip then
 			tt:AddSeparator(4,0,0,0,0);
 			tt:AddLine(C("ltblue",FPS_ABBR..":"),fps.curStr);
@@ -490,7 +503,6 @@ local function createTooltip(self, tt, name, ttName)
 			tt:AddLine(C("ltyellow",L["Max."]..":"),fps.maxStr);
 			allHidden=false;
 		end
-
 		if ns.profile[name].showLatencyInTooltip then
 			tt:AddSeparator(4,0,0,0,0);
 			tt:AddLine(C("ltblue",L["Latency"].." ("..L["Home"].."):"), latency.home.curStr);
@@ -505,7 +517,6 @@ local function createTooltip(self, tt, name, ttName)
 			tt:AddLine(C("ltyellow",L["Max."] .. ":"), latency.world.maxStr);
 			allHidden=false;
 		end
-
 		if ns.profile[name].showTrafficInTooltip then
 			tt:AddSeparator(4,0,0,0,0);
 			tt:AddLine(C("ltblue",L["Traffic"].." ("..L["Inbound"].."):"),traffic.inCurStr);
@@ -520,7 +531,6 @@ local function createTooltip(self, tt, name, ttName)
 			tt:AddLine(C("ltyellow",L["Max."] .. ":"), traffic.outMaxStr);
 			allHidden=false;
 		end
-
 		if ns.profile[name].showMemoryUsageInTooltip then
 			tt:AddSeparator(4,0,0,0,0);
 			tt:SetCell(tt:AddLine(),1,C("ltblue",L["AddOns and memory"]),nil,nil,0);
@@ -540,7 +550,6 @@ local function createTooltip(self, tt, name, ttName)
 			end
 			allHidden=false;
 		end
-
 		if ns.profile[name].showClientInfoInTooltip then
 			tt:AddSeparator(4,0,0,0,0);
 			tt:SetCell(tt:AddLine(),1,C("ltblue",L["Client info"]),nil,nil,0);
@@ -551,11 +560,9 @@ local function createTooltip(self, tt, name, ttName)
 			tt:AddLine(C("ltyellow",L["Interface version"]..":"),interfaceVersion);
 			allHidden=false;
 		end
-
 		if allHidden then
 			tt:AddLine(C("violet",L["Oops... You have all 'In tooltip' options disabled. :)"]));
 		end
-
 		if (ns.profile.GeneralOptions.showHints) then
 			tt:AddSeparator(4,0,0,0,0)
 			ns.clickOptions.ttAddHints(tt,name_sys,ttColumnsSys);
@@ -588,7 +595,6 @@ local function createTooltip(self, tt, name, ttName)
 		tt:AddSeparator(4,0,0,0,0);
 		tt:SetCell(tt:AddLine(C("ltgreen",L["Addon"])),2,C("ltgreen",L["Memory Usage"]),nil,nil,2);
 		tt:AddSeparator()
-
 		table.sort(memory.list,function(a,b) return a.cur>b.cur; end);
 		local maxAddons = tonumber(ns.profile[name].mem_max_addons) or 0;
 		local num = _G.min(#memory.list, maxAddons>0 and maxAddons or 1000);
@@ -601,28 +607,6 @@ local function createTooltip(self, tt, name, ttName)
 		local l = tt:AddLine();
 		tt:SetCell(l,1,L["Total Memory usage"]..":",nil,nil,2);
 		tt:SetCell(l,3,memory.curStr,nil,nil,1);
-
-		--[[
-		if ns.profile.GeneralOptions.showHints then
-			tt:AddSeparator(4,0,0,0,0)
-			tt:SetCell(tt:AddLine(), 1, C("copper",L["Left-click"]).." || "..C("green",L["Open interface options"]),nil, nil, ttColumnsMem)
-			local ap = ns.profile[name].addonpanel;
-			if (ap) and (ap~="none") then
-				if (addonpanels[ap]) and (addonpanels[ap](true)) then
-					ap = addonpanels_select[ap];
-				elseif (addonpanels["Blizzard's Addons Panel"]) and (addonpanels["Blizzard's Addons Panel"](true)) then
-					ap = "Blizzard's Addons Panel";
-				end
-			else
-				ap = false;
-			end
-			if (ap) then
-				tt:SetCell(tt:AddLine(), 1, C("copper",L["Right-click"]).." || "..C("green",ap), nil, nil, ttColumnsMem);
-			end
-			tt:SetCell(tt:AddLine(), 1, C("copper",L["Shift+Right-click"]).." || "..C("green",L["Collect garbage"]), nil, nil, ttColumnsMem);
-		end
-		--]]
-
 		if (ns.profile.GeneralOptions.showHints) then
 			tt:AddSeparator(4,0,0,0,0)
 			ns.clickOptions.ttAddHints(tt,name_mem,ttColumnsMem);
@@ -646,7 +630,9 @@ local function createTooltip(self, tt, name, ttName)
 
 	end
 
-	ns.roundupTooltip(self,tt)
+	if not update then
+		ns.roundupTooltip(tt);
+	end
 end
 
 local function updateAll()
@@ -675,14 +661,8 @@ local function updateAll()
 				collectgarbage("collect");
 			end
 			UpdateAddOnMemoryUsage();
-			local interval={};
-			if enabled.mem_sys then
-				tinsert(interval,ns.profile[name_sys].updateInterval);
-			end
-			if enabled.mem_mod then
-				tinsert(interval,ns.profile[name_mem].updateInterval);
-			end
-			memoryTimeout = (#interval==1 and interval[1]) or (#interval>1 and _G.min(unpack(interval))) or false;
+			--> updateMemory (via hook)
+				--> setMemoryTimeout
 		else
 			memoryTimeout=memoryTimeout-1;
 		end
@@ -736,7 +716,7 @@ local function updateAll()
 		ns.LDB:GetDataObjectByName(ldbNameSys).text = #broker>0 and table.concat(broker," ") or L[name_sys];
 
 		if ttSys~=nil and ttSys.key~=nil and ttSys.key==ttNameSys and ttSys:IsShown() then
-			createTooltip(false, ttSys, name_sys, ttNameSys);
+			createTooltip(ttSys, name_sys, ttNameSys, true);
 		end
 	end
 
@@ -744,7 +724,7 @@ local function updateAll()
 		ns.LDB:GetDataObjectByName(ldbNameFPS).text = fps.curStr~="" and fps.curStr or L[name_fps];
 
 		if ttFPS~=nil and ttFPS.key~=nil and ttFPS.key==ttNameFPS and ttFPS:IsShown() then
-			createTooltip(false, ttFPS, name_fps, ttNameFPS);
+			createTooltip(ttFPS, name_fps, ttNameFPS, true);
 		end
 	end
 
@@ -763,7 +743,7 @@ local function updateAll()
 		ns.LDB:GetDataObjectByName(ldbNameLat).text = #broker>0 and table.concat(broker," ") or L[name_lat];
 
 		if ttLat~=nil and ttLat.key~=nil and ttLat.key==ttNameLat and ttLat:IsShown() then
-			createTooltip(false, ttLat, name_lat, ttNameLat);
+			createTooltip(ttLat, name_lat, ttNameLat, true);
 		end
 	end
 
@@ -771,7 +751,7 @@ local function updateAll()
 		ns.LDB:GetDataObjectByName(ldbNameMem).text = memory.curStr~="" and memory.curStr or L[name_mem];
 
 		if ttMem~=nil and ttMem.key~=nil and ttMem.key==ttNameMem and ttMem:IsShown() then
-			createTooltip(false, ttMem, name_mem, ttNameMem);
+			createTooltip(ttMem, name_mem, ttNameMem, true);
 		end
 	end
 
@@ -789,7 +769,7 @@ local function updateAll()
 		ns.LDB:GetDataObjectByName(ldbNameTraf).text = #broker>0 and table.concat(broker," ") or L[name_traf];
 
 		if ttTraf~=nil and ttTraf.key~=nil and ttTraf.key==ttNameTraf and ttTraf:IsShown() then
-			createTooltip(false, ttTraf, name_traf, ttNameTraf);
+			createTooltip(ttTraf, name_traf, ttNameTraf, true);
 		end
 	end
 end
@@ -853,35 +833,35 @@ end
 -------------------------------------------
 ns.modules[name_sys].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttSys = ns.acquireTooltip(ttNameSys, ttColumnsSys, "LEFT","RIGHT", "RIGHT");
-	createTooltip(self, ttSys, name_sys, ttNameSys);
+	ttSys = ns.acquireTooltip({ttNameSys, ttColumnsSys, "LEFT","RIGHT", "RIGHT"},{true},{self});
+	createTooltip(ttSys, name_sys, ttNameSys);
 end
 ns.modules[name_fps].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttFPS = ns.acquireTooltip(ttNameFPS, ttColumnsFPS, "LEFT","RIGHT", "RIGHT");
-	createTooltip(self, ttFPS, name_fps, ttNameFPS);
+	ttFPS = ns.acquireTooltip({ttNameFPS, ttColumnsFPS, "LEFT","RIGHT", "RIGHT"},{true},{self});
+	createTooltip(ttFPS, name_fps, ttNameFPS);
 end
 ns.modules[name_lat].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttLat = ns.acquireTooltip(ttNameLat, ttColumnsLat, "LEFT","RIGHT", "RIGHT");
-	createTooltip(self, ttLat, name_lat, ttNameLat);
+	ttLat = ns.acquireTooltip({ttNameLat, ttColumnsLat, "LEFT","RIGHT", "RIGHT"},{true},{self});
+	createTooltip(ttLat, name_lat, ttNameLat);
 end
 ns.modules[name_mem].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttMem = ns.acquireTooltip(ttNameMem, ttColumnsMem, "LEFT","RIGHT", "RIGHT");
-	createTooltip(self, ttMem, name_mem, ttNameMem);
+	ttMem = ns.acquireTooltip({ttNameMem, ttColumnsMem, "LEFT","RIGHT", "RIGHT"},{false},{self});
+	createTooltip(ttMem, name_mem, ttNameMem);
 end
 ns.modules[name_traf].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttTraf = ns.acquireTooltip(ttNameTraf, ttColumnsTraf, "LEFT","RIGHT", "RIGHT");
-	createTooltip(self, ttTraf, name_traf, ttNameTraf);
+	ttTraf = ns.acquireTooltip({ttNameTraf, ttColumnsTraf, "LEFT","RIGHT", "RIGHT"},{true},{self});
+	createTooltip(ttTraf, name_traf, ttNameTraf);
 end
 
-ns.modules[name_sys].onleave = function(self) if ttSys then ns.hideTooltip(ttSys,ttNameSys,true); end end
-ns.modules[name_fps].onleave = function(self) if ttFPS then ns.hideTooltip(ttFPS,ttNameFPS,true); end end
-ns.modules[name_lat].onleave = function(self) if ttLat then ns.hideTooltip(ttLat,ttNameLat,true); end end
-ns.modules[name_mem].onleave = function(self) if ttMem then ns.hideTooltip(ttMem,ttNameMem,false,true); end end
-ns.modules[name_traf].onleave = function(self) if ttTraf then ns.hideTooltip(ttTraf,ttNameTraf,true); end end
+--ns.modules[name_sys].onleave = function(self) end
+--ns.modules[name_fps].onleave = function(self) end
+--ns.modules[name_lat].onleave = function(self) end
+--ns.modules[name_mem].onleave = function(self) end
+--ns.modules[name_traf].onleave = function(self) end
 
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
