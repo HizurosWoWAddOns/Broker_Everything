@@ -70,12 +70,13 @@ if LOCALE_deDE then
 	L["Broker as Minimap Buttons"] = "Broker als Minikartenbuttons";
 	L["Broker button options"] = "Broker-Button-Optionen";
 	L["Broker format"] = "Broker-Format";
+
 	L["Broker to alert you if you have mail."] = "Broker, um dich zu warnen, wenn du Nachrichten erhalten hast.";
 	L["Broker to allow you to do...Stuff! Switch to windowed mode, reload ui, logout and quit."] = "Broker, der dir ein paar nützliche Dinge ermöglicht! Zum Fenstermodus zu wechseln, UI neu laden, ausloggen und verlassen.";
 	L["Broker to allow you to toggle the various nameplates. Eg, friendly or hostile."] = "Broker, um die Anzeige von verschiedenen Namensplaketten ein-/auszuschalten. Z.B. für befreundete oder feindliche Einheiten.";
 	L["Broker to buildings of your garrison and there active work orders."] = "Broker für deine Garnisionsgebäude und deren aktive Arbeitsaufträge.";
 	L["Broker to have an eye on your suprise item. What is a suprise item? Anything thats needs some days to open it and thats lootable after the time. Can contain random objects like mounts, companions and more."] = "Broker, um deine Überraschungsgegenstände zu beobachten. Was ist ein Überraschungsgegenstand? Alles was ein paar Tage braucht, um es zu öffnen und zu plündern. Kann zufällige Gegenstände wie Reittiere, Begleiter und mehr enthalten.";
-	L["Broker to show a list of your follower with level, quality, xp and more."] = "Broker zur Anzeige einer Liste all deiner Anhänger mit deren Stufe, Qualität, EP und mehr.";
+	L["Broker to show a list of your follower with level, quality, experience and more"] = "Broker zur Anzeige einer Liste all deiner Anhänger mit deren Stufe, Qualität, Erfahrung und mehr";
 	L["Broker to show a list of your naval ships with level, quality, xp and more."] = "Broker zur Anzeige einer Lister all deiner Schiffe mit deren Stufe, Qualität, EP und mehr. ";
 	L["Broker to show active and available missions for your followers."] = "Broker zur Anzeige von aktiven und verfügbaren Missionen deiner Anhänger.";
 	L["Broker to show and switch your character specializations"] = "Broker zum Anzeigen und Wechseln deiner Charakter-Spezialisierung.";
@@ -91,15 +92,16 @@ if LOCALE_deDE then
 	L["Broker to show realm or local time"] = "Broker zur Anzeige von Realm- oder  Ortszeit";
 	L["Broker to show the name of the current Zone and the co-ordinates."] = "Broker zur Anzeige des Namens der aktuellen Zone und der Koordinaten.";
 	L["Broker to show the name of the current zone."] = "Broker zur Anzeige des aktuellen Zonennamens.";
-	L["Broker to show what you are currently tracking. You can also change the tracking types from this broker."] = "Broker zur Anzeige dessen, was du momentan aufspürst. Du kannst deine Aufspüroptionen mit diesem Broker ändern.";
+	L["Broker to show current tracking list with option to change it"] = "Broker zur Anzeige Aufspürliste mit der Möglichkeit diese zu ändern";
 	L["Broker to show you which friends are online."] = "Broker zur Anzeige deiner Freunde, die gerade Online sind.";
-	L["Broker to show your archaeology artifacts."] = "Broker zur Anzeige deiner Archaeologie-Artefakte";
-	L["Broker to show your current co-ordinates within the zone."] = "Broker zur Anzeige deiner momentanen Koordinaten innerhalb der Zone";
+	L["Broker to show your archaeology factions with fragments, keystones and necessary amount of fragments to solve artifacts"] = "Broker zur Anzeige von Archaeologie Fragmenten, Schlüsselsteinen und benötigten Mengen von Fragmenten um Artefakte zu vervollständigen";
+	L["Broker to show your current coordinates within the zone"] = "Broker zur Anzeige deiner momentanen Koordinaten innerhalb der Zone";
 	L["Broker to show your current latency. Can be configured to show both Home and/or World latency."] = "Broker zur Anzeige deiner momentanen Latenz. Kann konfiguriert werden, um Standort- und/oder Weltlatenz anzuzeigen";
-	L["Broker to show your different currencies."] = "Broker zur Anzeige deiner unterschiedlichen Abzeichen.";
+	L["Broker to show your currencies"] = "Broker zur Anzeige deiner Abzeichen";
 	L["Broker to show your frames per second."] = "Broker zur Anzeige der Bilder-pro-Sekunde.";
 	L["Broker to show your xp. Can be shown either as a percentage, or as values."] = "Broker zur Anzeige deiner EP. Kann entweder in Prozent oder als Wert gezeigt werden";
 	L["Broker to show, equip, delete, update and save equipment sets"] = "Broker, um Ausrüstungssets zu zeigen, anzulegen, zu entfernen, zu aktualisieren oder zu speichern";
+
 	L["Broker_Everything will use the new setting on next reload."] = "Broker_Everything wird die neuen Einstellungen nach dem nächsten Neuladen nutzen.";
 	L["Build"] = "Erstellt";
 	L["By"] = "durch";
@@ -295,7 +297,6 @@ if LOCALE_deDE then
 	L["Hold modifier key to display tooltip"] = "Halte die Modifikatortaste, um den Tooltip anzuzeigen";
 	L["Hold modifier key to use mouseover in tooltip"] = "Halte die Modifikatortaste, um die Mouseoverfunktion im Tooltip zu verwenden";
 	L["Hold shift"] = "Halte Umschalt";
-	L["Home"] = "Standort";
 	L["Honoured"] = "Wohlwollend";
 	L["Hostile"] = "Feindlich";
 	L["How fast are you swimming, walking, riding or flying."] = "Wie schnell bist du im Schwimmen, Laufen, Reiten oder Fliegen.";
@@ -723,7 +724,6 @@ if LOCALE_deDE then
 	L["Without options"] = "Ohne Optionen";
 	L["WoWToken"] = "WoW-Marken";
 	L["Working"] = "Arbeitend";
-	L["World"] = "Welt";
 	L["World bosses"] = "Weltbosse";
 	L["XP"] = "EP";
 	L["XP bonus"] = "EP-Bonus";
