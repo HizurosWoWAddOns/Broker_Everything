@@ -244,7 +244,10 @@ end
 
 Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 	if event == "ADDON_LOADED" and addonName == addon then
-		if (Broker_Everything_ProfileDB.profiles==nil)then
+		if Broker_Everything_ProfileDB==nil then
+			Broker_Everything_ProfileDB = {};
+		end
+		if Broker_Everything_ProfileDB.profiles==nil then
 			Broker_Everything_ProfileDB = {
 				use_default_profile=false,
 				default_profile=DEFAULT,
@@ -355,7 +358,9 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 	elseif event == "ADDON_LOADED" and addonName == "Blizzard_ItemUpgradeUI" then
 		ItemUpgradeFrameUpgradeButton:HookScript("OnClick",ns.items.UpdateNow);
 		hooksecurefunc(_G,"ItemUpgradeFrame_UpgradeClick",ns.items.UpdateNow);
-	elseif (event=="PLAYER_ENTERING_WORLD") then
+	elseif event == "DISPLAY_SIZE_CHANGED" then
+		ns.ui = {size={UIParent:GetSize()},center={UIParent:GetCenter()}};
+	elseif event=="PLAYER_ENTERING_WORLD" then
 		-- iconset
 		ns.I(true);
 		ns.updateIcons();
@@ -389,4 +394,6 @@ Broker_Everything:RegisterEvent("ADDON_LOADED");
 Broker_Everything:RegisterEvent("PLAYER_ENTERING_WORLD");
 Broker_Everything:RegisterEvent("PLAYER_LEVEL_UP");
 Broker_Everything:RegisterEvent("NEUTRAL_FACTION_SELECT_RESULT");
+Broker_Everything:RegisterEvent("DISPLAY_SIZE_CHANGED");
+
 
