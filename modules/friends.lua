@@ -423,7 +423,7 @@ local function createTooltip(tt)
 									nameStr = nameStr..C("dkyellow","*");
 								end
 							end
-							if ns.profile[name].showFaction=="1" and ti[client]~="App" then
+							if ns.profile[name].showFaction=="1" and ti[client]=="WoW" and ti[faction] then
 								nameStr = nameStr.."|TInterface\\PVPFrame\\PVP-Currency-"..ti[faction]..":16:16:0:-1:32:32:2:30:2:30|t";
 							end
 							if ns.profile[name].showBattleTags=="0" and ti[client]~="App" then
@@ -434,7 +434,7 @@ local function createTooltip(tt)
 							if ns.profile[name].showGame~="0" then
 								tt:SetCell(l,4,C("white", BNet_GetClientTexture(ti[client]) ));	-- 4
 							end
-							if (ti[client]=="WoW") then
+							if ti[client]=="WoW" then
 								-- zone
 								if ns.profile[name].showZone then
 									if ti[zoneName] and ti[zoneName]:match("^"..GARRISON_LOCATION_TOOLTIP) and ti[zoneName]~=GARRISON_LOCATION_TOOLTIP then
