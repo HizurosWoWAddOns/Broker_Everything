@@ -184,8 +184,8 @@ do
 		if InCombatLockdown() then
 			ns.print("("..L[name]..")",C("orange",L["Sorry, In combat lockdown."]));
 		else
-			hardware.selected = value;
-			SetCVar(cvar,tostring(value-1) or 0)
+			hardware.selected = self.hardwareIndex;
+			SetCVar(cvar,tostring(self.hardwareIndex-1) or 0);
 			AudioOptionsFrame_AudioRestart();
 			createTooltip(tt,true);
 		end
@@ -294,7 +294,7 @@ function createTooltip(tt, update)
 				l,c = tt:AddLine(strrep(" ",3 * (v.inset+1))..C(color,V).." ")
 
 				if not InCombatLockdown() then
-					tt.lines[l].hid = I;
+					tt.lines[l].hardwareIndex = I;
 					tt:SetLineScript(l,"OnMouseUp",setSoundHardware);
 				end
 			end
