@@ -169,7 +169,9 @@ ns.modules[name_sys] = {
 		updateInterval = 300,
 		collectGarbage = true
 	},
-	config_allowed = {},
+	config_allowed = {
+		updateInterval = {[0]=true,[30]=true,[60]=true,[300]=true,[600]=true,[1200]=true,[2400]=true,[3600]=true}
+	},
 	config = {
 		{ type="header", label=L[name_sys], align="left", icon=I[name_sys] },
 		{ type="separator", alpha=0 },
@@ -274,6 +276,7 @@ ns.modules[name_mem] = {
 		collectGarbage = true
 	},
 	config_allowed = {
+		updateInterval = {[0]=true,[30]=true,[60]=true,[300]=true,[600]=true,[1200]=true,[2400]=true,[3600]=true}
 	},
 	config = {
 		{ type="header", label=L[name_mem], align="left", icon=I[name_mem] },
