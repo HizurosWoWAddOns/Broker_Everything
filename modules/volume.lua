@@ -14,7 +14,7 @@ local ldbName,ttName,ttColumns,tt,createMenu,createTooltip = name,name.."TT",2;
 local updateBrokerButton,getSoundHardware,setSoundHardware
 local icon = "Interface\\AddOns\\"..addon.."\\media\\volume_"
 local VIDEO_VOLUME_TITLE = L["Video Volume"];
-local volume = {}
+local volume,cvars = {},{};
 local vol = {
 	{inset=0,locale="MASTER_VOLUME",			toggle="Sound_EnableAllSound",									percent="Sound_MasterVolume"},
 	{inset=1,locale="ENABLE_SOUNDFX",			toggle="Sound_EnableSFX",						depend={1},		percent="Sound_SFXVolume"},
@@ -34,6 +34,17 @@ local vol = {
 	--{inset=0,locale="VIDEO_VOLUME_TITLE",		toggle=false,									special="video"},
 	{inset=0,locale="HARDWARE",					toggle=false,									special="hardware"},
 }
+for i=1,#vol do
+	if vol[i].locale then
+		cvars[vol[i].locale:lower()]=true;
+	end
+	if vol[i].toggle then
+		cvars[vol[i].toggle:lower()]=true;
+	end
+	if vol[i].percent then
+		cvars[vol[i].percent:lower()]=true;
+	end
+end
 
 
 -- ------------------------------------- --
@@ -52,9 +63,11 @@ ns.modules[name] = {
 	desc = L["Broker to show current volume and in tooltip all changable audio options"],
 	icon_suffix = "_100",
 	events = {
-		"ADDON_LOADED"
+		"PLAYER_ENTERING_WORLD",
+		"CVAR_UPDATE",
+		"SOUND_DEVICE_UPDATE"
 	},
-	updateinterval = 5,
+	updateinterval = nil, --5,
 	config_defaults = {
 		useWheel = false,
 		steps = 10,
@@ -78,7 +91,7 @@ ns.modules[name] = {
 			func = function(self,button)
 				local _mod=name;
 				BlizzardOptionsPanel_SetCVarSafe("Sound_EnableAllSound",BlizzardOptionsPanel_GetCVarSafe("Sound_EnableAllSound")==0 and 1 or 0);
-				updateBrokerButton(self);
+				updateBroker();
 				createTooltip(tt,true);
 			end
 		},
@@ -93,7 +106,7 @@ ns.modules[name] = {
 				volume.master = volume.master + (ns.profile[name].steps / 100);
 				if volume.master>1 then volume.master=1 elseif volume.master<0 then volume.master=0; end
 				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master);
-				updateBrokerButton(self);
+				updateBroker();
 				createTooltip(tt,true);
 			end
 		},
@@ -108,7 +121,7 @@ ns.modules[name] = {
 				volume.master = volume.master - (ns.profile[name].steps / 100)
 				if volume.master>1 then volume.master=1 elseif volume.master<0 then volume.master=0; end
 				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master);
-				updateBrokerButton(self);
+				updateBroker();
 				createTooltip(tt,true);
 			end
 		},
@@ -136,7 +149,7 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
-function updateBrokerButton()
+function updateBroker()
 	volume.master = tonumber(("%.2f"):format(GetCVar("Sound_MasterVolume")))
 	local obj = ns.LDB:GetDataObjectByName(ldbName);
 	local suffix,color = "100","green"
@@ -198,7 +211,7 @@ end
 
 local function toggleEntry(self, button)
 	ns.SetCVar(self.info.toggle,tostring(self.info.inv),self.info.toggle);
-	updateBrokerButton();
+	updateBroker();
 	createTooltip(tt,true);
 end
 
@@ -208,7 +221,7 @@ local function percent(self,cvar,now,direction)
 	new = (new>1 and 1) or (new<0 and 0) or new;
 	ns.SetCVar(cvar,new,cvar);
 	createTooltip(tt,true);
-	updateBrokerButton(self);
+	updateBroker();
 end
 
 local function volumeWheel(self,direction)
@@ -222,7 +235,7 @@ end
 
 function createTooltip(tt, update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
-	local l,c
+	local wheels,l,c={};
 	tt:Clear()
 	tt:AddHeader(C("dkyellow",L[name]))
 	tt:AddSeparator()
@@ -268,6 +281,7 @@ function createTooltip(tt, update)
 				tt.lines[l].info = v;
 				tt.lines[l]:EnableMouseWheel(1)
 				tt.lines[l]:SetScript("OnMouseWheel",volumeWheel);
+				tinsert(wheels,l);
 
 				tt:SetCell(l,ttColumns,C(disabled,ceil(v.pnow*100).."%"));
 
@@ -316,6 +330,19 @@ function createTooltip(tt, update)
 
 	if not update then
 		ns.roundupTooltip(tt);
+		tt.OnHide = function()
+			ns.debug("OnHide");
+			for i=1, #wheels do
+				tt.lines[wheels[i]]:EnableMouseWheel(false);
+				tt.lines[wheels[i]]:SetScript("OnMouseWheel",nil);
+			end
+		end
+	end
+end
+
+local function BlizzardOptionsPanel_SetCVarSafeHook(cvar)
+	if cvars[cvar:lower()] then
+		updateBroker();
 	end
 end
 
@@ -328,9 +355,13 @@ ns.modules[name].init = function()
 end
 
 ns.modules[name].onevent = function(self,event,arg1)
-	if event=="ADDON_LOADED" and arg1==addon then
-		C_Timer.NewTicker(ns.modules[name].updateinterval,function() updateBrokerButton(self) end);
-	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
+	if event=="PLAYER_ENTERING_WORLD" or event=="SOUND_DEVICE_UPDATE" or (event=="CVAR_UPDATE" and cvars[arg1:lower()]) then
+		if not self.hooked then
+			hooksecurefunc("BlizzardOptionsPanel_SetCVarSafe",BlizzardOptionsPanel_SetCVarSafeHook);
+			self.hooked = true;
+		end
+		updateBroker();
+	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 end
@@ -349,7 +380,7 @@ ns.modules[name].onmousewheel = function(self,direction)
 	end
 	local cvar = "Sound_MasterVolume"
 	ns.SetCVar(cvar,volume.master,cvar)
-	updateBrokerButton(self);
+	updateBroker();
 	if tt and tt.key==ttName and tt:IsShown() then
 		createTooltip(tt,true);
 	end
