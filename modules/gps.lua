@@ -241,15 +241,11 @@ end
 local function position()
 	local p, f, pf = ns.profile[name0].precision or 0, ns.profile[name0].coordsFormat or "%s, %s";
 	local x, y = GetPlayerMapPosition("player");
-	--if x==0 and y==0 and not WorldMapFrame:IsShown() and not IsInInstance() then
-	--	SetMapToCurrentZone();
-	--	x, y = GetPlayerMapPosition("player");
-	--end
-	if x ~= 0 and y ~= 0 then
-		return f:format("%."..p.."f","%."..p.."f"):format(x*100, y*100);
-	else
+	if not x or (x==0 and y==0) then
 		local pX = p==0 and "?" or "?."..strrep("?",p);
 		return f:format(pX,pX);
+	else
+		return f:format("%."..p.."f","%."..p.."f"):format(x*100, y*100);
 	end
 end
 
