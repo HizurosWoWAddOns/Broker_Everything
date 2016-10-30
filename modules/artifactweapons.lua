@@ -13,7 +13,7 @@ if ns.build<70000000 then return end
 -----------------------------------------------------------
 local name = "Artifact weapon" -- L["Artifact weapon"]
 local ldbName,ttName,ttColumns, tt, createMenu = name, name.."TT", 3;
-local ap_items_found, _ = {};
+local ap_items_found,updateBroker, _ = {};
 ns.artifactpower_items = {
 	-- >0 = known amount of artifact power
 	-- -1 = special actifact power items
@@ -49,7 +49,6 @@ ns.artifactpower_items = {
 };
 ns.artifactrelikts = {};
 local spec2weapon = {};
-local doUpdateBroker = false;
 local PATTERN_ARTIFACT_XP_GAIN = gsub(ARTIFACT_XP_GAIN,"%s",".*");
 local knowledgeLevel = 0;
 local obtained = 0;
@@ -61,20 +60,38 @@ local artifactKnowledgeMultiplier = {
 	 36.00, 45.50, 57.00, 72.00, 90.00, -- 16 - 20
 	113.00,142.00,178.00,223.00,249.00, -- 21 - 25
 }
+
 local AP_MATCH_STRINGS = {
 	deDE = "Gewährt Eurem derzeit ausgerüsteten Artefakt (%d*) Artefaktmacht",
 	enUS = "Grants (%d*) Artifact Power to your currently equipped Artifact",
-	esES = "Otorga (%d*) p de poder de artefacto al artefacto que lleves equipado",
-	esMX = "Otorga (%d*) p de Poder de artefacto para el artefacto que llevas equipado",
-	frFR = "Confère (%d*) $lpoint:points; de puissance à l’arme prodigieuse que vous brandissez",
-	itIT = "(%d*) Potere Artefatto fornito all'Artefatto attualmente equipaggiato",
-	koKR = "현재 장착한 유물에 (%d*)의 유물력 부여",
+	esES = "Otorga (%d*) p. de poder de artefacto al artefacto que lleves equipado",
+	esMX = "Otorga (%d*) p. de Poder de artefacto para el artefacto que llevas equipado",
+	frFR = "Confère (%d*) point* de puissance à l’arme prodigieuse que vous brandissez",
+	itIT = {"Fornisce (%d*) Potere Artefatto all'Artefatto attualmente equipaggiato.","(%d*) Potere Artefatto fornito all'Artefatto attualmente equipaggiato"},
+	koKR = {"현재 장착한 유물에 (%d*)의 유물력을 부여합니다.","현재 장착한 유물에 (%d*)의 유물력 부여"},
 	ptBR = "Concede (%d*) de Poder do Artefato ao artefato equipado",
 	ptPT = "Concede (%d*) de Poder do Artefato ao artefato equipado",
-	ruRU = "Добавление используемому в данный момент артефакту (%d*) ед силы артефакта",
-	zhCN = "将(%d*)点神器能量注入到你当前装备的神器之中。",
-	zhTW = "賦予你目前裝備的神兵武器(%d*)點神兵之力。",
+	ruRU = {"Добавляет используемому в данный момент артефакту (%d*) ед. силы артефакта.","Добавление используемому в данный момент артефакту (%d*) ед. силы артефакта"},
+	zhCN = "将(%d*)点神器能量注入到你当前装备的神器之中",
+	zhTW = "賦予你目前裝備的神兵武器(%d*)點神兵之力",
 }
+
+local FISHING_AP_MATCH_STRINGS = {
+	deDE = "Wirft den Fisch zurück ins Wasser und gewährt Eurem Angelartefakt (%d*) Artefaktmacht",
+	enUS = "Toss the fish back into the water, granting (%d*) Artifact Power to your fishing artifact",
+	esES = "Lanza el pez de nuevo al agua, lo que otorga (%d*) p. de poder de artefacto a tu artefacto de pesca",
+	esMX = "Devuelve el pez al agua, lo que otorga (%d*) de poder de artefacto a tu artefacto de pesca",
+	frFR = "Vous rejetez le poisson à l’eau, ce qui confère (%d*) $lpoint:points; de puissance prodigieuse à votre ustensile de pêche prodigieux",
+	itIT = "Rilancia il pesce in acqua, fornendo (%d*) Potere Artefatto al tuo artefatto da pesca",
+	koKR = "물고기를 다시 물에 던져 낚시 유물에 (%d*)의 유물력을 추가합니다.",
+	ptBR = "Joga o peixe de volta na água, concedendo (%d*) de Poder do Artefato ao seu artefato de pesca",
+	ptPT = "Joga o peixe de volta na água, concedendo (%d*) de Poder do Artefato ao seu artefato de pesca",
+	ruRU = "Бросить рыбу обратно в воду, добавив вашему рыболовному артефакту (%d*) ед. силы артефакта",
+	zhCN = "将鱼扔回到水中，使你的钓鱼神器获得(%d*)点神器能量",
+	zhTW = "將魚丟回水中，為你的釣魚神器取得(%d*)點神兵之力",
+}
+
+
 
 
 -------------------------------------------
@@ -89,12 +106,12 @@ I[name] = {iconfile=1109508 or ns.icon_fallback,coords={0.05,0.95,0.05,0.95}}
 ns.modules[name] = {
 	desc = L["..."],
 	events = {
-		"ADDON_LOADED",
 		"PLAYER_ENTERING_WORLD",
 		"ARTIFACT_XP_UPDATE",
 		"ARTIFACT_MAX_RANKS_UPDATE",
 		"ARTIFACT_UPDATE",
-		--"CHAT_MSG_SYSTEM",
+		"UNIT_INVENTORY_CHANGED",
+		"CURRENCY_DISPLAY_UPDATE"
 	},
 	updateinterval = nil, -- 10
 	config_defaults = {
@@ -196,42 +213,26 @@ local function CalculateArtifactPower(ap,ak) -- artifact_power, artifact_knowled
 	return ap;
 end
 
-local forceUpdate = false;
-local function updateKnowledgeLevel(arg1,arg2,arg3)
-	if arg1==ArtifactFrame then
-		-- from opened artifact window
-		ns.toon[name].knowledgeLevel = C_ArtifactUI.GetArtifactKnowledgeLevel();
-		if forceUpdate then
-			ArtifactFrame:Hide();
-			ArtifactFrame:SetAlpha(1);
-			forceUpdate = false;
+local updateItemStateTry,updateItemState=0;
+local function ttMatchString(line,matchString)
+	local AP;
+	if type(matchString)=="table" then
+		AP = tonumber(line:gsub("%.",""):match(matchString[1]));
+		if not AP then
+			AP = tonumber(line:gsub("%.",""):match(matchString[2]));
 		end
 	else
-		if arg3==139390 then
-			-- on use of artifact knowledge upgrade items
-			-- ns.toon[name].knowledgeLevel = ns.toon[name].knowledgeLevel + 1;
-			forceUpdate = true;
-		else
-			arg1=tonumber(arg1);
-			if arg1 and arg1>ns.toon[name].knowledgeLevel then
-				-- from scanned artifact power items
-				-- ns.toon[name].knowledgeLevel = arg1;
-				forceUpdate = true;
-			end
-		end
-		if ns.profile[name].knowledgeUpdate and forceUpdate then
-			SocketInventoryItem(16);
-		else
-			forceUpdate = false;
-		end
+		AP = tonumber(line:gsub("%.",""):match(matchString));
 	end
+	return AP;
 end
 
-local updateItemStateTry,updateItemState=0;
 function updateItemState()
 	wipe(ap_items_found);
 	local lst = ns.items.GetItemlist();
-	local matchString = AP_MATCH_STRINGS[ns.locale] or AP_MATCH_STRINGS.enUS;
+	local matchString1 = AP_MATCH_STRINGS[ns.locale] or AP_MATCH_STRINGS.enUS;
+	local matchString2 = FISHING_AP_MATCH_STRINGS[ns.locale] or FISHING_AP_MATCH_STRINGS.enUS;
+	local isFishing = false;
 	for id,v in pairs(lst) do
 		if ns.artifactpower_items[id]~=nil then
 			-- group items by knowledge levels
@@ -249,7 +250,13 @@ function updateItemState()
 				-- try to get artifact power from tooltip
 				if v[1].tooltip then
 					for i=2, #v[1].tooltip do
-						AP = tonumber(v[1].tooltip[i]:gsub("%.",""):match(matchString));
+						AP = ttMatchString(v[1].tooltip[i],matchString1);
+						if not AP then
+							AP = ttMatchString(v[1].tooltip[i],matchString2);
+							if AP then
+								isFishing = true;
+							end
+						end
 						if AP then
 							break;
 						end
@@ -261,7 +268,7 @@ function updateItemState()
 				-- for example: item 141708 > 545 artifact power without knowledge level. 1025 instead of 1035 with knowledge level 3.
 				-- /run print("\124cff0070dd\124Hitem:141708::::::::110:62:8388608:30::1:::\124h[Item 141708]\124h\124r")
 				-- /run print("\124cff0070dd\124Hitem:141708::::::::110:62:8388608:30::4:::\124h[Item 141708]\124h\124r")
-				if not AP and ns.artifactpower_items[id]~=-1 then
+				if not isFishing and not AP and ns.artifactpower_items[id]~=-1 then
 					AP = CalculateArtifactPower(ns.artifactpower_items[id],knowledgeLevel);
 				end
 				tinsert(ap_items_found,{
@@ -271,15 +278,13 @@ function updateItemState()
 					link=v[1].link,
 					icon=v[1].icon,
 					artifact_power=AP or -1,
-					quality=v[1].rarity
+					quality=v[1].rarity,
+					isFishing = isFishing
 				});
-				if knowledgeLevel and ns.toon[name].knowledgeLevel and knowledgeLevel>ns.toon[name].knowledgeLevel then
-					updateKnowledgeLevel(knowledgeLevel);
-				end
 			end
 		end
 	end
-	doUpdateBroker=true;
+	updateBroker()
 end
 
 local function updateCharacterDB(equipped)
@@ -314,9 +319,8 @@ local function updateCharacterDB(equipped)
 	end
 end
 
-local function updateBroker()
-	if not doUpdateBroker then return end
-	doUpdateBroker=false;
+function updateBroker()
+	local _;
 
 	obtained = C_ArtifactUI.GetNumObtainedArtifacts();
 
@@ -346,6 +350,7 @@ local function updateBroker()
 			tinsert(data,C("yellow",ns.FormatLargeNumber(xpForNextPoint-artifactXP)));
 			allDisabled=false;
 		end
+
 		if ns.profile[name].showPower then
 			local sum = {0,0};
 			for i,v in ipairs(ap_items_found)do
@@ -434,7 +439,7 @@ local function createTooltip(tt)
 				tt:SetCell(l,3,C("ltyellow",ns.FormatLargeNumber(xp)));
 			end
 
-			if ns.toon[name].knowledgeLevel and ns.toon[name].knowledgeLevel>0 then
+			if ns.toon[name].knowledgeLevel and ns.toon[name].knowledgeLevel>0 and itemID~=133755 then
 				l=tt:AddLine();
 				tt:SetCell(l,1,C("ltgreen",L["Artifact knowledge"]),nil,nil,2);
 				tt:SetCell(l,3,C("ltyellow",("%d (+%d%%)"):format(ns.toon[name].knowledgeLevel,math.ceil(artifactKnowledgeMultiplier[ns.toon[name].knowledgeLevel]*10)*10)));
@@ -445,7 +450,7 @@ local function createTooltip(tt)
 				tt:AddLine(C("ltgreen",STAT_AVERAGE_ITEM_LEVEL),"",C("ltyellow",weapon.level));
 			end
 
-			if ns.profile[name].showRelic and ns.toon[name][itemID] and ns.toon[name][itemID].relic then
+			if ns.profile[name].showRelic and ns.toon[name][itemID] and ns.toon[name][itemID].relic and itemID~=133755 then
 				tt:AddSeparator(4,0,0,0,0);
 				tt:AddLine(C("ltblue",RELICSLOT));
 				tt:AddSeparator();
@@ -479,8 +484,8 @@ local function createTooltip(tt)
 					local l;
 					if v.artifact_power==-1 then
 						l=tt:AddLine();
-						tt:SetCell(l,1,"|T".. v.icon .. ":0|t ".. v.name,nil,nil,2);
-						tt:SetCell(l,3,UNKNOWN);
+						tt:SetCell(l,1,"|T".. v.icon .. ":0|t ".. C("quality"..v.quality or 7,v.name),nil,nil,2);
+						tt:SetCell(l,3," ");
 					elseif v.artifact_power>0 then
 						l=tt:AddLine();
 						tt:SetCell(l,1,"|T".. v.icon .. ":0|t ".. C("quality"..v.quality or 7,v.name),nil,nil,2);
@@ -530,17 +535,18 @@ ns.modules[name].onevent = function(self,event,arg1,...)
 		end
 		ns.items.RegisterCallback(name,updateItemState,"any");
 		C_Timer.After(15,ns.items.UpdateNow);
-		ns.UseContainerItemHook.registerItemID(name,139390,updateKnowledgeLevel); -- artifact knowledge upgrade item
-		C_Timer.NewTicker(1,updateBroker);
-		self:UnregisterEvent(event);
-	elseif event=="ADDON_LOADED" and arg1=="Blizzard_ArtifactUI" then
-		ArtifactFrame:HookScript("OnShow",updateKnowledgeLevel);
 		self:UnregisterEvent(event);
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+	elseif event=="CURRENCY_DISPLAY_UPDATE" then -- update artifact knowledge
+		local _, value = GetCurrencyInfo(1171);
+		if value and ns.toon[name].knowledgeLevel~=value then
+			ns.toon[name].knowledgeLevel = value;
+			updateBroker();
+		end
 	else--if event=="ARTIFACT_XP_UPDATE" or event=="ARTIFACT_MAX_RANKS_UPDATE" or event=="ARTIFACT_UPDATE" then
 		obtained = C_ArtifactUI.GetNumObtainedArtifacts();
-		doUpdateBroker=true
+		updateBroker();
 	end
 end
 
@@ -561,8 +567,3 @@ end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-
--- /run local c,ge,gc,xp,ps,n,_=C_ArtifactUI;_,_,n,_,xp,ps=c.GetEquippedArtifactInfo();for i=1,ps-1 do xp=xp+c.GetCostForPointAtRank(i);end print("Total used artifact power on "..n..":",xp);
-
-
--- 15:25:05 " |cffa335ee|Hitem:141681::::::::110:62:8388608:11::5:::|h[Talisman des Talwandlers]|h|r"
