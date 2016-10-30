@@ -182,6 +182,10 @@ local function hideOnLeave(self)
 	local _, hiddenMouseOverAnchor = hiddenMouseOver:GetPoint();
 	if self.parent and self.parent[1] and (MouseIsOver(self.parent[1]) or (self.parent[1]==hiddenMouseOverAnchor and MouseIsOver(hiddenMouseOver))) then return end -- mouse is over broker and/or extended broker button area
 	if MouseIsOver(self) and ( (self.slider and self.slider:IsShown()) or (self.mode and self.mode[1]~=true) ) then return end -- tooltip with active scrollframe or mouse over tooltip with clickable elements
+	if self.OnHide then
+		self.OnHide(self);
+		self.OnHide = nil;
+	end
 	ns.hideTooltip(self);
 end
 
@@ -572,7 +576,7 @@ end
 -- -------------------------------------------------------------- --
 do
 	--- local elements
-	local update,d,_ = false,{ids={}, seen={}, bags={},inv={},item={}, callbacks={any={},bags={},inv={},item={}}, preScanCallbacks={}, linkData={}, tooltipData={}, NeedTooltip={}};
+	local update,d,ticker,_ = false,{ids={}, seen={}, bags={},inv={},item={}, callbacks={any={},bags={},inv={},item={}}, preScanCallbacks={}, linkData={}, tooltipData={}, NeedTooltip={}};
 	local GetItemInfoFailed,IsEnabled = false,false;
 	local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d*)");
 	local _UPGRADES = gsub(ITEM_UPGRADE_TOOLTIP_FORMAT,": %%d/%%d","");
@@ -808,16 +812,21 @@ do
 		if update<=0 then
 			scanner();
 			update = false;
+			ticker:Cancel();
+			ticker = nil;
 		end;
 		locked = false;
 	end
 	f:SetScript("OnEvent",function(self,event)
 		if event=="PLAYER_ENTERING_WORLD" then
 			self.PEW = true;
-			C_Timer.NewTicker(tickerDelay,updater);
+			ticker = C_Timer.NewTicker(tickerDelay,updater);
 			self:UnregisterEvent(event);
 		elseif self.PEW then
 			update = defaultDelay;
+			if not ticker then
+				ticker = C_Timer.NewTicker(tickerDelay,updater);
+			end
 		end
 	end);
 	f:RegisterEvent("GET_ITEM_INFO_RECEIVED");
@@ -909,7 +918,7 @@ do
 			if itemid and callback[itemId] then
 				ns.debug("UseContainerItem",bag,slot,itemId);
 				for i,v in pairs(callback[itemId])do
-					if type(v)=="function" then v(bag,slot,itemId); end
+					if type(v)=="function" then v("UseContainerItem",itemId); end
 				end
 			end
 		end

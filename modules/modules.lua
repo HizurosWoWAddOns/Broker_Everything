@@ -28,10 +28,8 @@ local function moduleInit(name)
 		for i,v in pairs(data.config_defaults) do
 			if (ns.profile[name][i]==nil) then
 				ns.profile[name][i] = v;
-			elseif (data.config_allowed~=nil) and (data.config_allowed[i]~=nil) then
-				if (data.config_allowed[i][ns.profile[name][i]]~=true) then
-					ns.profile[name][i] = v;
-				end
+			elseif (data.config_allowed~=nil) and type(data.config_allowed[i])=="table" and (data.config_allowed[i][ns.profile[name][i]]~=true) then
+				ns.profile[name][i] = v;
 			end
 		end
 	end
