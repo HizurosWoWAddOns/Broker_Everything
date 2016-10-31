@@ -143,7 +143,6 @@ ns.GetTipAnchor = function(frame, direction, parentTT)
 	if not frame then return end
 	local f,u,i,H,h,v,V = {frame:GetCenter()},{},0;
 	if f[1]==nil or ns.ui.center[1]==nil then
-		ns.debug("ns.GetTipAnchor","f[1]>ns.ui.center[1]",type(f[1]),type(ns.ui.center[1]),debugstack());
 		return "LEFT";
 	end
 	h = (f[1]>ns.ui.center[1] and "RIGHT") or "LEFT";
@@ -916,7 +915,6 @@ do
 		if bag and slot then
 			local itemId = tonumber((GetContainerItemLink(bag,slot) or ""):match("Hitem:([0-9]+)"));
 			if itemid and callback[itemId] then
-				ns.debug("UseContainerItem",bag,slot,itemId);
 				for i,v in pairs(callback[itemId])do
 					if type(v)=="function" then v("UseContainerItem",itemId); end
 				end

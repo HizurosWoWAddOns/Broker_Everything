@@ -331,7 +331,6 @@ function createTooltip(tt, update)
 	if not update then
 		ns.roundupTooltip(tt);
 		tt.OnHide = function()
-			ns.debug("OnHide");
 			for i=1, #wheels do
 				tt.lines[wheels[i]]:EnableMouseWheel(false);
 				tt.lines[wheels[i]]:SetScript("OnMouseWheel",nil);

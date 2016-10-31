@@ -423,7 +423,6 @@ local function createTooltip(tt)
 			local l = tt:AddLine();
 			tt:SetCell(l,1,L["All slots are empty"],nil,nil,ttColumns);
 		end
-		--ns.debug(inventory.iLevelMax,inventory.iLevelMin);
 		tt:AddSeparator();
 		local _, avgItemLevelEquipped = GetAverageItemLevel();
 		local avgItemLevelEquippedf = floor(avgItemLevelEquipped);
