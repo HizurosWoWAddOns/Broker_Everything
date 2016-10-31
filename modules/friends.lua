@@ -289,23 +289,26 @@ local function createTooltip2(self)
 		tt2:SetCell(tt2:AddLine(C(color1,ZONE)),2,self.toonInfo[10] or self.toonInfo[12] or self.realmFriendInfo[4],nil,"RIGHT",0);
 	end
 	-- notes
-	if ns.profile[name].showNotesTT2 and tostring(self.friendInfo[13] or self.realmFriendInfo[7]):len()>0 then
+	local note = tostring(self.friendInfo[13] or self.realmFriendInfo[7] or ""):trim();
+	if ns.profile[name].showNotesTT2 and note:len()>0 then
 		tt2:AddSeparator(4,0,0,0,0);
 		tt2:SetCell(tt2:AddLine(),1,C(color1,L["Note"]),nil,nil,0);
 		tt2:AddSeparator();
-		tt2:SetCell(tt2:AddLine(),1,ns.scm(self.friendInfo[13] or self.realmFriendInfo[7],true),nil,"LEFT",0);
+		tt2:SetCell(tt2:AddLine(),1,ns.scm(note,true),nil,"LEFT",0);
 	end
 	-- broadcast
-	if ns.profile[name].showBroadcastTT2 and tostring(self.friendInfo[12]):trim():len()>0 then
+	local broadcast = tostring(self.friendInfo[12] or ""):trim();
+	if ns.profile[name].showBroadcastTT2 and broadcast:len()>0 then
 		tt2:AddSeparator(4,0,0,0,0);
 		tt2:SetCell(tt2:AddLine(),1,C(color1,BATTLENET_BROADCAST),nil,nil,0);
 		tt2:AddSeparator();
-		local msg = "***";
 		if not ns.profile.GeneralOptions.scm then
-			msg=ns.strWrap(self.friendInfo[12],48);
+			broadcast=ns.strWrap(broadcast,48);
 		end
-		tt2:SetCell(tt2:AddLine(),1,msg,nil,"LEFT",0);
-		tt2:SetCell(tt2:AddLine(),1,C("ltgray","("..L["Active since"]..": "..SecondsToTime(time()-self.friendInfo[15])..")"),nil,"RIGHT",0);
+		tt2:SetCell(tt2:AddLine(),1,broadcast,nil,"LEFT",0);
+		if self.friendInfo[15] then
+			tt2:SetCell(tt2:AddLine(),1,C("ltgray","("..L["Active since"]..": "..SecondsToTime(time()-self.friendInfo[15])..")"),nil,"RIGHT",0);
+		end
 	end
 
 	ns.roundupTooltip(tt2);
