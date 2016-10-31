@@ -21,8 +21,7 @@ local name3 = "ZoneText"; -- L["ZoneText"]
 local ldbName1, ldbName2, ldbName3 = name1, name2, name3;
 local ttName1, ttName2, ttName3, ttName4 = name1.."TT", name2.."TT", name3.."TT", "TransportMenuTT";
 local ttColumns,ttColumns4,onleave,createTooltip2,createMenu = 3,5;
-local PEW=false;
-local tt1, tt2, tt3, tt4;
+local tt1, tt2, tt3, tt4, items;
 local tt5positions = {
 	["LEFT"]   = {edgeSelf = "RIGHT",  edgeParent = "LEFT",   x = -2, y =  0},
 	["RIGHT"]  = {edgeSelf = "LEFT",   edgeParent = "RIGHT",  x =  2, y =  0},
@@ -37,10 +36,10 @@ local zoneDisplayValues = {
 	["5"] = ("%s (%s)"):format(L["Subzone"],ZONE),
 }
 local foundItems, foundToys, teleports, portals, spells = {},{},{},{},{};
-local _classSpecialSpellIds = {50977,18960,556,126892,147420};
+local _classSpecialSpellIds = {50977,18960,556,126892,147420,193753};
 local _teleportIds = {3561,3562,3563,3565,3566,3567,32271,32272,33690,35715,49358,49359,53140,88342,88344,120145,132621,132627,176248,176242,193759,224869};
 local _portalIds = {10059,11416,11417,11418,11419,11420,32266,32267,33691,35717,49360,49361,53142,88345,88346,120146,132620,132626,176246,176244,224871};
-local _itemIds = {18984,18986,21711,22589,22630,22631,22632,24335,29796,30542,30544,32757,33637,33774,34420,35230,36747,37863,38685,40585,40586,43824,44934,44935,45688,45689,45690,45691,45705,46874,48933,48954,48955,48956,48957,51557,51558,51559,51560,52251,52576,58487,58964,60273,60374,60407,60498,61379,63206,63207,63352,63353,63378,63379,64457,65274,65360,66061,68808,68809,82470,87215,87548,91850,91860,91861,91862,91863,91864,91865,91866,92056,92057,92058,92430,92431,92432,95050,95051,95567,95568,103678,104110,104113,107441,110560,112059,116413,117389,118662,118663,118907,118908,119183,128353,128502,128503,129276,132119,132120,132122,132517,133755,134058,136849,138448,139541,139590,139599,140192,140319,140493,141013,141014,141015,141016,141017};
+local _itemIds = {18984,18986,21711,22589,22630,22631,22632,24335,29796,30542,30544,32757,33637,33774,34420,35230,36747,37863,38685,40585,40586,43824,44934,44935,45688,45689,45690,45691,45705,46874,48933,48954,48955,48956,48957,51557,51558,51559,51560,52251,52576,58487,58964,60273,60374,60407,60498,61379,63206,63207,63352,63353,63378,63379,64457,65274,65360,66061,68808,68809,82470,87215,87548,91850,91860,91861,91862,91863,91864,91865,91866,92056,92057,92058,92430,92431,92432,95050,95051,95567,95568,103678,104110,104113,107441,110560,112059,116413,117389,118662,118663,118907,118908,119183,128353,128502,128503,129276,132119,132120,132122,132517,133755,134058,136849,138448,139541,139590,139599,140192,140319,140493,141013,141014,141015,141016,141017,141605};
 local _itemReplacementIds = {64488,28585,6948,44315,44314,37118};
 local _itemMustBeEquipped = {[32757]=1,[40585]=1};
 local _itemFactions = {}
@@ -93,8 +92,7 @@ ns.modules[name0] = {
 	noBroker = true,
 	desc = L["Some shared options for the modules GPS, Location and ZoneText"],
 	events = {
-		"PLAYER_ENTERING_WORLD",
-		"LEARNED_SPELL_IN_TAB"
+		"PLAYER_ENTERING_WORLD"
 	},
 	updateinterval = 0.12,
 	config_defaults = {
@@ -204,38 +202,49 @@ function createMenu(self,nameX)
 end
 
 local function setSpell(tb,id)
-	if (IsSpellKnown(id)) then
-		local sName, _, icon, _, _, _, _, _, _ = GetSpellInfo(id)
+	if IsSpellKnown(id) then
+		local sName, _, icon, _, _, _, _, _, _ = GetSpellInfo(id);
 		table.insert(tb,{id=id,icon=icon,name=sName,name2=sName});
 	end
 end
 
-local function updateItems()
-	foundItems, foundToys = {},{};
-	local items = ns.items.GetItemlist();
-	local add=function(id,loc)
-		local toyName,toyIcon,_;
-		if PlayerHasToy(id) then
-			_, toyName, toyIcon = C_ToyBox.GetToyInfo(id);
+local function updateSpells()
+	wipe(teleports); wipe(portals); wipe(spells);
+	if (ns.player.class=="MAGE") then
+		for i=1, #_teleportIds do setSpell(teleports,_teleportIds[i]) end
+		for i=1, #_portalIds do setSpell(portals,_portalIds[i]) end
+	end
+	for i=1, #_classSpecialSpellIds do setSpell(spells,_classSpecialSpellIds[i]) end
+end
+
+local function addItem(id,loc)
+	local toyName,toyIcon,_;
+	if PlayerHasToy(id) then
+		_, toyName, toyIcon = C_ToyBox.GetToyInfo(id);
+	end
+	if toyName and toyIcon then
+		if C_ToyBox.IsToyUsable(id) then
+			table.insert(foundToys,{id=id,icon=toyIcon,name=toyName,name2=loc~=nil and toyName..loc or nil});
 		end
-		if toyName and toyIcon then
-			if C_ToyBox.IsToyUsable(id) then
-				table.insert(foundToys,{id=id,icon=toyIcon,name=toyName,name2=loc~=nil and toyName..loc or nil});
-			end
-		elseif items[id] and items[id][1] then
-			local v=items[id][1];
-			if type(v)=="table" and v.name then
-				table.insert(foundItems,{id=id,icon=v.icon,name=v.name,name2=v.name,mustBeEquipped=_itemMustBeEquipped[id]==1,equipped=v.type=="inv"});
-			end
+	elseif items[id] and items[id][1] then
+		local v=items[id][1];
+		if type(v)=="table" and v.name then
+			table.insert(foundItems,{id=id,icon=v.icon,name=v.name,name2=v.name,mustBeEquipped=_itemMustBeEquipped[id]==1,equipped=v.type=="inv"});
 		end
 	end
+end
+
+local function updateItems()
+	wipe(foundItems); wipe(foundToys);
+	items = ns.items.GetItemlist();
 	for i=1, #_itemIds do
-		add(_itemIds[i]);
+		addItem(_itemIds[i]);
 	end
 	local loc = " "..C("ltblue","("..GetBindLocation()..")");
 	for i=1, #_itemReplacementIds do
-		add(_itemReplacementIds[i],loc);
+		addItem(_itemReplacementIds[i],loc);
 	end
+	items = nil;
 end
 
 local function position()
@@ -412,6 +421,7 @@ function createTooltip2(self)
 	if (tt3~=nil) then tt3=ns.hideTooltip(tt3); end
 
 	updateItems();
+	updateSpells();
 
 	local columns = 5;
 	ttColumns4 = ns.profile[name0].shortMenu and columns or 1;
@@ -545,18 +555,12 @@ end
 -- ns.modules[name3].init = function(self) end
 
 ns.modules[name0].onevent = function(self,event,msg)
-	if event=="PLAYER_ENTERING_WORLD" and PEW==false then
-		PEW=true;
+	if event=="PLAYER_ENTERING_WORLD" and self.PEW==false then
+		self.PEW=true;
 		--ns.items.RegisterCallback(name0,updateItems,"any");
 		C_Timer.NewTicker(ns.modules[name0].updateinterval,updater);
-	end
-	if event=="LEARNED_SPELL_IN_TAB" or event=="PLAYER_ENTERING_WORLD" then
-		wipe(teleports); wipe(portals); wipe(spells);
-		if (ns.player.class=="MAGE") then
-			for _,v in ipairs(_teleportIds) do setSpell(teleports,v) end
-			for _,v in ipairs(_portalIds) do setSpell(portals,v) end
-		end
-		for _,v in ipairs(_classSpecialSpellIds) do setSpell(spells,v) end
+		updateItems();
+		updateSpells();
 	end
 end
 
