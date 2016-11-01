@@ -14,11 +14,11 @@ local ldbName,ttName,ttColumns,tt = name,name.."TT",3,nil
 local ITEM_DURATION,ITEM_COOLDOWN,ITEM_LOOTABLE=1,2,3
 local founds,counter,items = {},{},{
 	-- 1 items with duration time
-	[39878] = {ITEM_DURATION, "tooltipLine4"}, -- Mysterious Egg (Geen <Oracles Quartermaster>, Sholaar Basin)
-	[44717] = {ITEM_DURATION, "tooltipLine4"}, -- Disgusting Jar
-	[94295] = {ITEM_DURATION, "tooltipLine4"}, -- Primal Egg
-	[118705] = {ITEM_DURATION, "tooltipLine4"}, -- Warm Goren Egg
-	[127396] = {ITEM_DURATION, "tooltipLine4"}, -- Strange Green Fruit
+	[39878] = {ITEM_DURATION, "tooltip", 4}, -- Mysterious Egg (Geen <Oracles Quartermaster>, Sholaar Basin)
+	[44717] = {ITEM_DURATION, "tooltip", 4}, -- Disgusting Jar
+	[94295] = {ITEM_DURATION, "tooltip", 4}, -- Primal Egg
+	[118705] = {ITEM_DURATION, "tooltip", 4}, -- Warm Goren Egg
+	[127396] = {ITEM_DURATION, "tooltip", 4}, -- Strange Green Fruit
 	-- 2 items with cooldown time
 	[19462] = {ITEM_COOLDOWN, "duration"}, -- Unhatched Jubling Egg
 	-- 3 lootable items
@@ -68,11 +68,11 @@ local function resetFunc() -- clear founds table
 	updateBroker();
 end
 
-local function callbackFunc(Type,Data)
+local function callbackFunc(data)
 	local status;
 	tinsert(founds,data);
 	counter.sum = counter.sum+1;
-	status = v[1]==ITEM_LOOTABLE and "lootable" or "progress";
+	status = data[1]==ITEM_LOOTABLE and "lootable" or "progress";
 	counter[status] = counter[status]+1;
 	updateBroker();
 end
@@ -108,9 +108,10 @@ local function createTooltip(tt)
 				("|T%s:12:12:0:-1:64:64:4:56:4:56|t |C%s%s|r"):format(item.itemTexture,C("quality"..item.itemRarity),item.itemName),
 				C("dkyellow","||"),
 				(type(items[item.id][2])=="function" and items[item.id][2]())
-				or (type(items[item.id][2])=="string" and item.data[items[item.id][2]])
+				or (items[item.id][2]=="tooltip" and item.lines[items[item.id][3]])
+				or (items[item.id][2]=="duration" and tonumber(item.duraction) SecondsToTime(item.duraction))
 				or (items[item.id][1]==ITEM_LOOTABLE and L["(finished)"])
-				or L["(Unknown)"]
+				or "("..UNKNOWN..")"
 			);
 		end
 	else
