@@ -109,7 +109,7 @@ local function createTooltip(tt)
 				C("dkyellow","||"),
 				(type(items[item.id][2])=="function" and items[item.id][2]())
 				or (items[item.id][2]=="tooltip" and item.lines[items[item.id][3]])
-				or (items[item.id][2]=="duration" and tonumber(item.duraction) SecondsToTime(item.duraction))
+				or (items[item.id][2]=="duration" and tonumber(item.duraction) and SecondsToTime(item.duraction))
 				or (items[item.id][1]==ITEM_LOOTABLE and L["(finished)"])
 				or "("..UNKNOWN..")"
 			);
