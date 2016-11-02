@@ -14,6 +14,7 @@ if ns.build<70000000 then return end
 local name = "Artifact weapon" -- L["Artifact weapon"]
 local ldbName,ttName,ttColumns, tt, createMenu = name, name.."TT", 3;
 local ap_items_found,updateBroker, _ = {};
+local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d*)");
 ns.artifactpower_items = {
 	-- >0 = known amount of artifact power
 	-- -1 = special actifact power items
@@ -121,6 +122,8 @@ ns.modules[name] = {
 		showPower = true,
 		showWarning = true,
 		showRelic = true,
+		showRelicItemLevel = false,
+		showRelicIncreaseItemLevel = true,
 		showItems = true,
 		showTotalAP = true
 	},
@@ -131,9 +134,11 @@ ns.modules[name] = {
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["Tooltip options"] },
 		{ type="separator", inMenuInvisible=true },
-		{ type="toggle", name="showRelic", label=L["Show artifact relic"], tooltip=L["Display a list of artifact relic slots in tooltip"]},
-		{ type="toggle", name="showItems", label=L["Show artifact power items"], tooltip=L["Display a list of artifact power items found in your bag in tooltip"]},
-		{ type="toggle", name="showTotalAP", label=L["Show total used artifact power"], tooltip=L["Display amount of total used artifact power on current equipped artifact weapon. That doesn't includes point resets!"]},
+		{ type="toggle", name="showRelic",                  label=L["Show artifact relic"],               tooltip=L["Display a list of artifact relic slots in tooltip"]},
+		{ type="toggle", name="showRelicItemLevel",         label=L["Show relic item level"],             tooltip=L["Display relic item level"]},
+		{ type="toggle", name="showRelicIncreaseItemLevel", label=L["Show increase item level by relic"], tooltip=L["Display increase item level by relic"]},
+		{ type="toggle", name="showItems",                  label=L["Show artifact power items"],         tooltip=L["Display a list of artifact power items found in your bag in tooltip"]},
+		{ type="toggle", name="showTotalAP",                label=L["Show total used artifact power"],    tooltip=L["Display amount of total used artifact power on current equipped artifact weapon. That doesn't includes point resets!"]},
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["Broker button options"] },
 		{ type="separator", inMenuInvisible=true },
@@ -149,10 +154,6 @@ ns.modules[name] = {
 		},
 		{ type="toggle", name="showPower", label=L["Show unspend artifact power"], tooltip=L["Show amount summary of artifact power from items in your backpack in broker button"]},
 		{ type="toggle", name="showWarning", label=L["Show 'not equipped' warning"], tooltip=L["Show 'artifact weapon not equipped' warning in broker button"]},
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Broker button options"] },
-		{ type="separator", inMenuInvisible=true },
-		{ type="toggle", name="knowledgeUpdate", label=L["Force knowledge update"], tooltip=L["It is necessary to open artifact window to update artifact knowledge. Enable this option to short open the window for update. This will happen on use artifact knowledge item or on detected differencies like data reset or on new chars."]},
 	},
 	clickOptions = {
 		["1_open_character_info"] = {
@@ -287,6 +288,18 @@ function updateItemState()
 	updateBroker()
 end
 
+local function GetRelicTooltipData(data)
+	local obj = data.obj;
+	local iLevel = tonumber(data.lines[2]:match(_ITEM_LEVEL));
+	local increaseLevel = tonumber(data.lines[5]:match("(.*) "..RELIC_ITEM_LEVEL_INCREASE));
+	if iLevel then
+		ns.toon[name][obj.awItemID].relic[obj.relicIndex].level = iLevel;
+	end
+	if increaseLevel then
+		ns.toon[name][obj.awItemID].relic[obj.relicIndex].increase = increaseLevel;
+	end
+end
+
 local function updateCharacterDB(equipped)
 	local itemID, altItemID, itemName, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop = C_ArtifactUI[(ArtifactFrame and ArtifactFrame.PerksTab) and "GetArtifactInfo" or "GetEquippedArtifactInfo"]();
 	if itemID then
@@ -300,6 +313,13 @@ local function updateCharacterDB(equipped)
 		end
 		if ns.toon[name][itemID] and ns.toon[name][itemID].relic then
 			relic = ns.toon[name][itemID].relic;
+			if ArtifactFrame==nil then
+				for i=1,#relic do
+					if relic[i].link and relic[i].level==nil then
+						ns.ScanTT.query({type="link",link=relic[i].link,obj={awItemID=itemID,relicIndex=i},callback=GetRelicTooltipData});
+					end
+				end
+			end
 		end
 		ns.toon[name][itemID] = {name=itemName,points={pointsSpent,maxPoints},xp={artifactXP, xpForNextPoint},relic=relic};
 
@@ -314,6 +334,7 @@ local function updateCharacterDB(equipped)
 					icon = GetItemIcon(itemid);
 				end
 				ns.toon[name][itemID].relic[i]={id=tonumber(itemid),color=color,icon=icon,name=itemname,type=v.relicType,locked=v.lockedReason or false,link=v.relicLink};
+				ns.ScanTT.query({type="link",link=v.relicLink,obj={awItemID=itemID,relicIndex=i},callback=GetRelicTooltipData});
 			end
 		end
 	end
@@ -443,6 +464,12 @@ local function createTooltip(tt)
 				l=tt:AddLine();
 				tt:SetCell(l,1,C("ltgreen",L["Artifact knowledge"]),nil,nil,2);
 				tt:SetCell(l,3,C("ltyellow",("%d (+%d%%)"):format(ns.toon[name].knowledgeLevel,math.ceil(artifactKnowledgeMultiplier[ns.toon[name].knowledgeLevel]*10)*10)));
+				local nextKL = ns.toon[name].knowledgeLevel+1;
+				if nextKL<=#artifactKnowledgeMultiplier then
+					l=tt:AddLine();
+					tt:SetCell(l,1,C("gray2",L["Next artifact knowledge"]),nil,nil,2);
+					tt:SetCell(l,3,C("gray2",("%d (+%d%%)"):format(nextKL,math.ceil(artifactKnowledgeMultiplier[nextKL]*10)*10)));
+				end
 			end
 
 			local weapon = ns.items.GetInventoryItemBySlotIndex(16);
@@ -456,7 +483,19 @@ local function createTooltip(tt)
 				tt:AddSeparator();
 				if #ns.toon[name][itemID].relic>0 then
 					for i,v in ipairs(ns.toon[name][itemID].relic) do
-						local n = (v.color and C(v.color,v.name)) or (v.locked and C("red", LOCKED)) or C("ltgray",EMPTY);
+						local ilvl={};
+						if v.level and ns.profile[name].showRelicItemLevel then
+							tinsert(ilvl,v.level);
+						end
+						if v.increase and ns.profile[name].showRelicIncreaseItemLevel then
+							tinsert(ilvl,"+"..v.increase);
+						end
+						if #ilvl>0 then
+							ilvl = " "..C("gray2","("..table.concat(ilvl,"/")..")");
+						else
+							ilvl="";
+						end
+						local n = (v.color and C(v.color,v.name)..ilvl) or (v.locked and C("red", LOCKED)) or C("ltgray",EMPTY);
 						local icon = v.locked and "|TInterface\\LFGFrame\\UI-LFG-ICON-LOCK:14:14:0:0:32:32:0:25:0:25|t " or "|T"..(v.icon or ns.icon_fallback)..":0|t ";
 						local _type = v.type or UNKNOWN;
 						local l=tt:AddLine(C("white",i..". ")..C("ltgreen",_G["STRING_SCHOOL_".._type:upper()] or _type));
