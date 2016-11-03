@@ -145,7 +145,7 @@ end
 
 local functions = {
 	toggleOnClick = function(self,button)
-		local v = not not self:GetChecked();
+		local data,v = self.data,not not self:GetChecked();
 		self:SetChecked(v);
 		if data.set then
 			data.set(v);
