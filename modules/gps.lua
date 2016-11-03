@@ -555,9 +555,8 @@ end
 -- ns.modules[name3].init = function(self) end
 
 ns.modules[name0].onevent = function(self,event,msg)
-	if event=="PLAYER_ENTERING_WORLD" and self.PEW==false then
+	if event=="PLAYER_ENTERING_WORLD" and self.PEW~=true then
 		self.PEW=true;
-		--ns.items.RegisterCallback(name0,updateItems,"any");
 		C_Timer.NewTicker(ns.modules[name0].updateinterval,updater);
 		updateItems();
 		updateSpells();
