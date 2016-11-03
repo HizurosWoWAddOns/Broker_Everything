@@ -2,14 +2,10 @@
 -- ====================================== --
 -- Shared Functions for Broker_Everything --
 -- ====================================== --
-local addon, ns = ...
-local upper,format,type = upper,format,type
-local GetPlayerMapPosition,GetRealZoneText,GetSubZoneText = GetPlayerMapPosition,GetRealZoneText,GetSubZoneText
-local GetZonePVPInfo,GetBindLocation = GetZonePVPInfo,GetBindLocation
-local L = ns.L
-local _
+local addon, ns = ...;
+local L,_ = ns.L;
 ns.debug = function() end
-ns.build = tonumber(gsub(({GetBuildInfo()})[1],"[|.]","")..({GetBuildInfo()})[2])
+ns.build = tonumber(gsub(({GetBuildInfo()})[1],"[|.]","")..({GetBuildInfo()})[2]);
 ns.icon_fallback = 134400; -- interface\\icons\\INV_MISC_QUESTIONMARK;
 
 ns.LDB = LibStub("LibDataBroker-1.1");
@@ -55,7 +51,7 @@ ns.LC.colorset({
 	["copper"]		= "f0a55f",
 
 	["unknown"]		= "ee0000",
-})
+});
 
 
   ---------------------------------------
@@ -679,8 +675,8 @@ do
 					obj.durability,obj.durability_max = GetContainerItemDurability(bag, slot);
 					if obj.name then
 						GetObjectLinkData(obj);
-						if obj.itemType==ARMOR or obj.itemType==WEAPON or ns.artifactpower_items[id] or d.NeedTooltip[id] then
-							GetObjectTooltipData(obj,{type="bag",bag=bag,slot=slot--[[,link=obj.link]]} --[[, ns.artifactpower_items[id]~=nil or d.NeedTooltip[id]~=nil]]);
+						if obj.itemType==ARMOR or obj.itemType==WEAPON or (ns.artifactpower_items and ns.artifactpower_items[id]) or d.NeedTooltip[id] then
+							GetObjectTooltipData(obj,{type="bag",bag=bag,slot=slot});
 						end
 						tinsert(items[id],obj);
 						seen[id]=true; bags[bag..":"..slot]=id;
