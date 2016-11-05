@@ -435,7 +435,7 @@ function createTooltip(tt,update)
 				str.."  |T"..t[cIcon]..":14:14:0:0:64:64:4:56:4:56|t"
 			);
 			if ns.profile[name].showWeeklyCap then
-				if t[cWeeklyMax] then
+				if tonumber(t[cEarnedThisWeek]) and tonumber(t[cWeeklyMax]) then
 					tt:SetCell(l,c,CapColor({"green","yellow","orange","red"},t[cEarnedThisWeek].."/"..t[cWeeklyMax],t[cEarnedThisWeek],t[cWeeklyMax]));
 				end
 				c=c+1;
