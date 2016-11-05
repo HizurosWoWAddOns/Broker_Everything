@@ -59,7 +59,7 @@ local artifactKnowledgeMultiplier = {
 	  2.75,  3.75,  5.00,  6.50,  8.50, --  6 - 10
 	 11.00, 14.00, 17.75, 22.50, 28.50, -- 11 - 15
 	 36.00, 45.50, 57.00, 72.00, 90.00, -- 16 - 20
-	113.00,142.00,178.00,223.00,249.00, -- 21 - 25
+	113.00,142.00,178.00,223.00,249.00  -- 21 - 25
 }
 
 local AP_MATCH_STRINGS = {
@@ -289,14 +289,19 @@ function updateItemState()
 end
 
 local function GetRelicTooltipData(data)
-	local obj = data.obj;
-	local iLevel = tonumber(data.lines[2]:match(_ITEM_LEVEL));
-	local increaseLevel = tonumber(data.lines[5]:match("(.*) "..RELIC_ITEM_LEVEL_INCREASE));
-	if iLevel then
-		ns.toon[name][obj.awItemID].relic[obj.relicIndex].level = iLevel;
-	end
-	if increaseLevel then
-		ns.toon[name][obj.awItemID].relic[obj.relicIndex].increase = increaseLevel;
+	if data and data.lines and #data.lines>0 then
+		local obj = data.obj;
+		local iLevel = tonumber(data.lines[2]:match(_ITEM_LEVEL));
+		local increaseLevel = tonumber(data.lines[5]:match("(.*) "..RELIC_ITEM_LEVEL_INCREASE));
+		if iLevel then
+			ns.toon[name][obj.awItemID].relic[obj.relicIndex].level = iLevel;
+		end
+		if increaseLevel then
+			ns.toon[name][obj.awItemID].relic[obj.relicIndex].increase = increaseLevel;
+		end
+	else
+		ns.toon[name][obj.awItemID].relic[obj.relicIndex].level = 0;
+		ns.toon[name][obj.awItemID].relic[obj.relicIndex].increase = 0;
 	end
 end
 
@@ -334,7 +339,9 @@ local function updateCharacterDB(equipped)
 					icon = GetItemIcon(itemid);
 				end
 				ns.toon[name][itemID].relic[i]={id=tonumber(itemid),color=color,icon=icon,name=itemname,type=v.relicType,locked=v.lockedReason or false,link=v.relicLink};
-				ns.ScanTT.query({type="link",link=v.relicLink,obj={awItemID=itemID,relicIndex=i},callback=GetRelicTooltipData});
+				if v.relicLink then
+					ns.ScanTT.query({type="link",link=v.relicLink,obj={awItemID=itemID,relicIndex=i},callback=GetRelicTooltipData});
+				end
 			end
 		end
 	end
@@ -484,10 +491,10 @@ local function createTooltip(tt)
 				if #ns.toon[name][itemID].relic>0 then
 					for i,v in ipairs(ns.toon[name][itemID].relic) do
 						local ilvl={};
-						if v.level and ns.profile[name].showRelicItemLevel then
+						if (tonumber(v.level) or 0)>0 and ns.profile[name].showRelicItemLevel then
 							tinsert(ilvl,v.level);
 						end
-						if v.increase and ns.profile[name].showRelicIncreaseItemLevel then
+						if (tonumber(v.increase) or 0)>0 and ns.profile[name].showRelicIncreaseItemLevel then
 							tinsert(ilvl,"+"..v.increase);
 						end
 						if #ilvl>0 then
