@@ -13,7 +13,7 @@ local name = "IDs";
 local ldbName,ttName,ttColumns,tt,createMenu = name, name.."TT", 4;
 local scanTooltip = CreateFrame("GameTooltip",addon.."_"..name.."_ScanTooltip",UIParent,"GameTooltipTemplate"); scanTooltip:SetScale(0.0001); scanTooltip:Hide();
 
-local diffTypes = setmetatable({ -- http://wowpedia.org/API_GetDifficultyInfo
+local diffTypes = setmetatable({ -- http://wowpedia.org/API_GetDifficultyInfo / http://wow.gamepedia.com/DifficultyID
 	[1] = 1,	--  1 =  5 Regular
 	[2] = 1,	--  2 =  5 Heroic
 
@@ -24,10 +24,14 @@ local diffTypes = setmetatable({ -- http://wowpedia.org/API_GetDifficultyInfo
 	[7] = 5,	--  7 = 25 LFR
 
 	[8] = 2,	--  8 =  5 Challenge
-	[9] = 4,	--  9 = 40 man classic
+	[9] = 4,	--  9 = 40 man classic raids
+
+	--[10] = 0,	-- 10 = unknown
 
 	[11] = 3,	-- 11 = 5 Szenario Heroic
 	[12] = 3,	-- 12 = 5 Szenario Normal
+
+	--[13] = 0,	-- 13 = unknown
 
 	[14] = 7,	-- 14 = 10-30 Normal
 	[15] = 7,	-- 15 = 10-30 Heroic
@@ -37,6 +41,13 @@ local diffTypes = setmetatable({ -- http://wowpedia.org/API_GetDifficultyInfo
 	[18] = 8,	-- 18 = ? Event
 	[19] = 8,	-- 19 = ? Event
 	[20] = 8,	-- 20 = ? Event Scenario
+
+	--[21] = 0,	-- 21 = unknown
+	--[22] = 0,	-- 22 = unknown
+
+	[23] = 1,	-- 23 = Mythic dungeons
+	[24] = 1,	-- 24 = timewalker dungeons
+	[25] = 3,	-- 25 = PvP scenarios
 },{__index=function(t,k) rawset(t,k,0); return 0; end});
 
 local diffName = {
@@ -199,7 +210,7 @@ local function createTooltip(tt)
 				{ns.profile[name].showEvents,      false},										--"Events" -- [8]
 			};
 			for diff, data in ns.pairsByKeys(lst) do
-				if showDiff[diff][1] and (diffCounter[diff][2]>0 or (diffCounter[diff][1]>0 and showDiff[diff][2])) then
+				if diff~=0 and showDiff[diff][1] and (diffCounter[diff][2]>0 or (diffCounter[diff][1]>0 and showDiff[diff][2])) then
 					local header,doExtend = (diffName[diff]) and diffName[diff] or "Unknown type",false;
 					tt:AddLine(C("gray",header));
 					for i,v in ipairs(data) do
