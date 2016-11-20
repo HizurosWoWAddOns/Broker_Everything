@@ -20,7 +20,7 @@ local riding_skills = { -- <spellid>, <skill>, <minLevel>, <air speed increase>,
 	{33388, 20,  60},
 };
 local licences = { -- <spellid>, <minLevel>, <mapIds>
-	{"Legion flight licence (Placeholder)"},
+	{L["Broken Isles Flying (Patch 7.2)"], nil, nil, {L["Broken Isles Pathfinder, Part Two (Patch 7.2)"]," ","a11190",L["Explore Broken Shore"],L["Defender of the Broken Isles"],L["Breaching the Tomb"],L["Legionfall Commander"]," ",L["Reward: Broken Isles Flying"]}}, --{"a?`", 100},
 	{"a10018", 90, { --[[ draenor map ids? ]] }},
 	{115913,   85, {[862]=1,[858]=1,[929]=1,[928]=1,[857]=1,[809]=1,[905]=1,[903]=1,[806]=1,[873]=1,[808]=1,[951]=1,[810]=1,[811]=1,[807]=1}},
 	{54197,    68, {[485]=1,[486]=1,[510]=1,[504]=1,[488]=1,[490]=1,[491]=1,[541]=1,[492]=1,[493]=1,[495]=1,[501]=1,[496]=1}},
@@ -78,6 +78,34 @@ ns.modules[name] = {
 --------------------------
 -- some local functions --
 --------------------------
+local function tooltipOnEnter(self)
+	GameTooltip:SetOwner(tt,"ANCHOR_NONE");
+	GameTooltip:SetPoint("TOP",tt,"BOTTOM");
+	if self.info then
+		for i=1, #self.info do
+			local aid = self.info[i]:match("^a(%d+)$");
+			local Name, color, completed, _ = self.info[i],{.8,.8,.8,false};
+			if i==1 then
+				color = {1,.8,0,false};
+			end
+			if aid then
+				_, Name, _, completed = GetAchievementInfo(aid);
+				if completed then
+					color = {.1,.95,.1,false};
+				end
+			end
+			GameTooltip:AddLine(Name,unpack(color));
+		end
+	elseif self.link then
+		GameTooltip:SetHyperlink(self.link);
+	end
+	GameTooltip:Show();
+end
+
+local function tooltipOnLeave()
+	GameTooltip:Hide();
+end
+
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local _=function(d) if tonumber(d) then return ("+%d%%"):format(d); end return d; end;
@@ -92,20 +120,27 @@ local function createTooltip(tt)
 	local learned = nil;
 	for i,v in ipairs(riding_skills) do
 		local Name, rank, icon, castTime, minRange, maxRange, spellId = GetSpellInfo(v[1]);
+		local l,Link = nil,GetSpellLink(v[1]);
 		if(learned==nil and IsSpellKnown(v[1]))then
 			learned = true;
 		end
 		if (learned==nil) then
 			if(lvl>=v[2])then
-				tt:AddLine(C("yellow",Name), C("ltgray",L["Learnable"]));
+				l=tt:AddLine(C("yellow",Name), C("ltgray",L["Learnable"]));
 			else
-				tt:AddLine(C("red",Name), C("ltgray", L["Need level"].." "..v[2]));
+				l=tt:AddLine(C("red",Name), C("ltgray", L["Need level"].." "..v[2]));
 			end
 		elseif(learned==true)then
-			tt:AddLine(C("green",Name), _(v[3]));
+			l=tt:AddLine(C("green",Name), _(v[3]));
 			learned=false;
 		elseif(learned==false)then
-			tt:AddLine(C("dkgreen",Name), C("gray",_(v[3])) );
+			l=tt:AddLine(C("dkgreen",Name), C("gray",_(v[3])) );
+		end
+		if l and Link then
+			tt.lines[l].link = Link;
+			tt.lines[l].info = nil;
+			tt:SetLineScript(l,"OnEnter",tooltipOnEnter);
+			tt:SetLineScript(l,"OnLeave",tooltipOnLeave);
 		end
 	end
 	if (lvl<20)then
@@ -135,6 +170,7 @@ local function createTooltip(tt)
 			local active=false;
 			local custom = "";
 			local Name, rank, icon, castTime, minRange, maxRange = GetSpellInfo(spell[Id]);
+			local Link = GetSpellLink(spell[Id]);
 
 			if(spell[CustomText]==true)then
 				rank = {strsplit(" ",rank)};
@@ -171,7 +207,13 @@ local function createTooltip(tt)
 			end
 
 			if(active)then
-				tt:AddLine(C("ltyellow",Name .. custom), _(spell[Speed]));
+				local l=tt:AddLine(C("ltyellow",Name .. custom), _(spell[Speed]));
+				if Link then
+					tt.lines[l].link = Link;
+					tt.lines[l].info = nil;
+					tt:SetLineScript(l,"OnEnter",tooltipOnEnter);
+					tt:SetLineScript(l,"OnLeave",tooltipOnLeave);
+				end
 				count=count+1;
 			end
 		end
@@ -187,32 +229,46 @@ local function createTooltip(tt)
 		tt:AddLine(C("ltblue",L["Flight licences"]));
 		tt:AddSeparator();
 		for i,v in ipairs(licences) do
-			local Name, rank, icon, castTime, minRange, maxRange, completed, wasEarnedByMe, ready, _;
+			local Name, rank, icon, castTime, minRange, maxRange, completed, wasEarnedByMe, ready, link, l, tt2, _;
 			if v[2]==nil then
 				Name = v[1];
 			elseif(type(v[1])=="string")then
 				local id = tonumber(v[1]:match("a(%d+)"));
-				if(id)then
+				if id then
 					_, Name, _, completed, _, _, _, _, _, _, _, _, wasEarnedByMe = GetAchievementInfo(id);
+					link = GetAchievementLink(id);
 					ready = completed;
 				end
 			else
 				Name, rank, icon, castTime, minRange, maxRange = GetSpellInfo(v[1]);
+				link = GetSpellLink(v[1]);
 				ready = IsSpellKnown(v[1]);
 			end
 			if(Name)then
 				if v[2]==nil then
-					tt:AddLine(C("ltgray",Name));
+					l=tt:AddLine(C("ltgray",Name));
 				elseif(ready and lvl<v[2])then
-					tt:AddLine(C("yellow",Name),C("ltgray",L["Need level"].." "..v[2]));
+					l=tt:AddLine(C("yellow",Name),C("ltgray",L["Need level"].." "..v[2]));
 				elseif(ready) then
-					tt:AddLine(C("green",Name));
+					l=tt:AddLine(C("green",Name));
 				elseif(lvl>=v[2])then
-					tt:AddLine(C("yellow",Name),C("ltgray",L["Learnable"]));
+					l=tt:AddLine(C("yellow",Name),C("ltgray",L["Learnable"]));
 				else
-					tt:AddLine(C("red",Name),C("ltgray",L["Need level"].." "..v[2]));
-					--learnable=true;
+					l=tt:AddLine(C("red",Name),C("ltgray",L["Need level"].." "..v[2]));
 				end
+			end
+			if type(v[4])=="table" then
+				tt.lines[l].info = v[4];
+				tt.lines[l].link = nil;
+				tt2=true;
+			elseif link then
+				tt.lines[l].info = nil;
+				tt.lines[l].link = link;
+				tt2=true
+			end
+			if tt2 then
+				tt:SetLineScript(l,"OnEnter",tooltipOnEnter);
+				tt:SetLineScript(l,"OnLeave",tooltipOnLeave);
 			end
 		end
 	end
@@ -248,7 +304,7 @@ ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip(
 		{ttName, ttColumns, "LEFT","RIGHT", "RIGHT", "CENTER", "LEFT", "LEFT", "LEFT", "LEFT"}, -- for LibQTip:Aquire 
-		{true}, -- show/hide mode
+		{false}, -- show/hide mode
 		{self} -- anchor data
 	);
 	createTooltip(tt);
