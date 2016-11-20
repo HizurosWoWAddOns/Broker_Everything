@@ -95,44 +95,54 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
-local function updateChannels(id,num)
-	channels[id][5]=num;
-	channels[id].lastUpdate=time();
+local function addChannel(tbl,index)
+	local data = {GetChannelDisplayInfo(index)};
+	local chatTypeName = "SYSTEM";
+	if(type(data[iChannelNumber])=="number")then
+		chatTypeName = "CHANNEL"..data[iChannelNumber];
+	elseif(data[iName]==GROUP)then
+		chatTypeName = "PARTY";
+		if(not IsInGroup())then
+			data[iActive]=false;
+		end
+	elseif(data[iName]==RAID)then
+		chatTypeName = "RAID";
+		if(not IsInRaid())then
+			data[iActive]=false;
+		end
+	elseif(data[iName]==INSTANCE_CHAT)then
+		chatTypeName = "INSTANCE_CHAT";
+		if(not IsInInstance())then
+			data[iActive]=false;
+		end
+	end
+	if(data[iName]==wd)then
+		data.noUpdate = true;
+	end
+	local r,g,b = GetMessageTypeColor(chatTypeName);
+	data.color = {r or 0.6, g or 0.6, b or 0.6};
+	if not (tbl==channels and channels[index] and channels[index][iName]==data[iName]) then
+		data.lastUpdate=0;
+	end
+	tinsert(tbl,data);
+end
+
+local function updateChannels(index,num)
+	if channels[index]==nil then
+		addChannel(channels,index);
+	end
+	channels[index][5]=num;
+	channels[index].lastUpdate=time();
 end
 
 --local iName, iHeader, iCollapsed, iChannelNumber, iCount, iActive, iCategory, iVoiceEnabled, iVoiceActive = 1,2,3,4,5,6,7,8,9;
 local function updateList()
-	wipe(channels);
-	local n = GetNumDisplayChannels();
-	for i=1, n do
-		local data = {GetChannelDisplayInfo(i)};
-		local chatTypeName = "SYSTEM";
-		if(type(data[iChannelNumber])=="number")then
-			chatTypeName = "CHANNEL"..data[iChannelNumber];
-		elseif(data[iName]==GROUP)then
-			chatTypeName = "PARTY";
-			if(not IsInGroup())then
-				data[iActive]=false;
-			end
-		elseif(data[iName]==RAID)then
-			chatTypeName = "RAID";
-			if(not IsInRaid())then
-				data[iActive]=false;
-			end
-		elseif(data[iName]==INSTANCE_CHAT)then
-			chatTypeName = "INSTANCE_CHAT";
-			if(not IsInInstance())then
-				data[iActive]=false;
-			end
-		end
-		if(data[iName]==wd)then
-			data.noUpdate = true;
-		end
-		local r,g,b = GetMessageTypeColor(chatTypeName);
-		data.color = {r or 0.6, g or 0.6, b or 0.6};
-		data.lastUpdate=0;
-		tinsert(channels,data);
+	local tmp = {};
+	local num = GetNumDisplayChannels();
+	for index=1, num do
+		addChannel(tmp,index);
 	end
+	channels = tmp;
 end
 
 local function createTooltip(tt,update)
