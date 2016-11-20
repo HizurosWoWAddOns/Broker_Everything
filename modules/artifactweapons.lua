@@ -593,14 +593,14 @@ ns.modules[name].onevent = function(self,event,arg1,...)
 		self:UnregisterEvent(event);
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-	elseif event=="CURRENCY_DISPLAY_UPDATE" then -- update artifact knowledge
+	elseif obtained>0 and event=="CURRENCY_DISPLAY_UPDATE" then -- update artifact knowledge
 		local _, value = GetCurrencyInfo(1171);
 		if value and ns.toon[name].knowledgeLevel~=value then
 			ns.toon[name].knowledgeLevel = value;
 			updateBroker();
 		end
 	else--if event=="ARTIFACT_XP_UPDATE" or event=="ARTIFACT_MAX_RANKS_UPDATE" or event=="ARTIFACT_UPDATE" then
-		obtained = C_ArtifactUI.GetNumObtainedArtifacts();
+		obtained = C_ArtifactUI.GetNumObtainedArtifacts() or 0;
 		updateBroker();
 	end
 end
