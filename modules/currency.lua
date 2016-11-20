@@ -244,7 +244,7 @@ local function updateBroker()
 					str = str.."/"..ns.FormatLargeNumber(c[cTotalMax]);
 				end
 				if ns.profile[name].showCapColorBroker and (c[cTotalMax]>0 or c[cWeeklyMax]) then
-					str = CapColor({"green","yellow","orange","red"},str,c[cCount],c[cTotalMax],c[cEarnedThisWeek],c[cWeeklyMax]);
+					str = CapColor({"green","yellow","orange","red"},str,c[cCount],tonumber(c[cTotalMax]),tonumber(c[cEarnedThisWeek]),tonumber(c[cWeeklyMax]));
 				end
 				tinsert(elems, str.."|T"..c[cIcon]..":0|t");
 			end
@@ -423,10 +423,10 @@ function createTooltip(tt,update)
 				str = str .."/".. ns.FormatLargeNumber(t[cTotalMax]);
 			end
 			if ns.profile[name].showCapColor and (t[cTotalMax]>0 or t[cWeeklyMax]) then
-				local params = {t[cCount],t[cTotalMax]};
+				local params = {t[cCount],tonumber(t[cTotalMax])};
 				if not ns.profile[name].showWeeklyCap and t[cWeeklyMax] then
-					tinsert(params,t[cEarnedThisWeek]);
-					tinsert(params,t[cWeeklyMax]);
+					tinsert(params,tonumber(t[cEarnedThisWeek]));
+					tinsert(params,tonumber(t[cWeeklyMax]));
 				end
 				str = CapColor({"green","yellow","orange","red"},str,unpack(params));
 			end
@@ -436,7 +436,7 @@ function createTooltip(tt,update)
 			);
 			if ns.profile[name].showWeeklyCap then
 				if tonumber(t[cEarnedThisWeek]) and tonumber(t[cWeeklyMax]) then
-					tt:SetCell(l,c,CapColor({"green","yellow","orange","red"},t[cEarnedThisWeek].."/"..t[cWeeklyMax],t[cEarnedThisWeek],t[cWeeklyMax]));
+					tt:SetCell(l,c,CapColor({"green","yellow","orange","red"},t[cEarnedThisWeek].."/"..t[cWeeklyMax],tonumber(t[cEarnedThisWeek]),tonumber(t[cWeeklyMax])));
 				end
 				c=c+1;
 			end
