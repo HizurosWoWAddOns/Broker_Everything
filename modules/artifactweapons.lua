@@ -294,8 +294,8 @@ end
 local function GetRelicTooltipData(data)
 	if data and data.lines and #data.lines>0 then
 		local obj = data.obj;
-		local iLevel = tonumber(data.lines[2]:match(_ITEM_LEVEL));
-		local increaseLevel = tonumber(data.lines[5]:match("(.*) "..RELIC_ITEM_LEVEL_INCREASE));
+		local iLevel = tonumber(data.lines[2]:match(_ITEM_LEVEL)) or tonumber(data.lines[3]:match(_ITEM_LEVEL));
+		local increaseLevel = tonumber(data.lines[5]:match("(.*) "..RELIC_ITEM_LEVEL_INCREASE)) or tonumber(data.lines[6]:match("(.*) "..RELIC_ITEM_LEVEL_INCREASE));
 		if iLevel then
 			ns.toon[name][obj.awItemID].relic[obj.relicIndex].level = iLevel;
 		end
