@@ -8,6 +8,9 @@ ns.debug = function() end
 ns.build = tonumber(gsub(({GetBuildInfo()})[1],"[|.]","")..({GetBuildInfo()})[2]);
 ns.icon_fallback = 134400; -- interface\\icons\\INV_MISC_QUESTIONMARK;
 
+BINDING_HEADER_BROKEREVERYTHING = "Broker_Everything";
+BINDING_NAME_BETOGGLEALLSOUND = L["Toggle all sound"];
+
 ns.LDB = LibStub("LibDataBroker-1.1");
 ns.LQT = LibStub("LibQTip-1.0");
 ns.LDBI = LibStub("LibDBIcon-1.0");

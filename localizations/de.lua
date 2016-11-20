@@ -2,8 +2,7 @@ local _, ns = ...;
 local L = ns.L;
 
 if LOCALE_deDE then
-	BINDING_NAME_BETOGGLEALLSOUND = "Alle Sounds ein/aus";
-
+	L["Toggle all sound"] = "Alle Sounds ein/aus";
 	L["%d unspent talent"] = "%d unverteiltes Talent";
 	L["%d unspent talents"] = "%s unverteilte Talente";
 	L["%s found. It's unsave to hide the minimap mail icon without errors."] = "%s gefunden. Es ist unsicher, das Minikarten-Postsymbol zu verstecken ohne Fehlermeldungen.";

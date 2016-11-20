@@ -90,6 +90,3 @@ do
 	ns.L["SHIPS_ABBREV"] = "S";
 	ns.L["CHAMPIONS_ABBREV"] = "C";
 end
-
-BINDING_HEADER_BROKEREVERYTHING = "Broker_Everything";
-BINDING_NAME_BETOGGLEALLSOUND = "Toggle all sound";
