@@ -244,21 +244,32 @@ end
 
 Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 	if event == "ADDON_LOADED" and addonName == addon then
+		local migrate = false;
+
 		if Broker_Everything_ProfileDB==nil then
 			Broker_Everything_ProfileDB = {};
 		end
-		if Broker_Everything_ProfileDB.profiles==nil then
-			Broker_Everything_ProfileDB = {
-				use_default_profile=false,
-				default_profile=DEFAULT,
-				profiles={[DEFAULT]={}},
-				use_profile={}
-			};
+
+		for i,v in ipairs({
+			use_default_profile=false,
+			default_profile=DEFAULT,
+			profiles={[DEFAULT]={}},
+			use_profile={}
+		})do
+			if type(Broker_Everything_ProfileDB[i])==type(v) then
+				Broker_Everything_ProfileDB[i]=v;
+				if i=="profiles" then
+					migrate = true;
+				end
+			end
+		end
+
+		--- migration from old saved variables ---
+		if migrate then
 			if(type(Broker_EverythingGlobalDB)=="table" and Broker_EverythingGlobalDB.global==true)then
 				Broker_Everything_ProfileDB.use_default_profile=true;
 				Broker_Everything_ProfileDB.profiles[Broker_Everything_ProfileDB.default_profile] = CopyTable(Broker_EverythingGlobalDB);
 				Broker_Everything_ProfileDB.use_profile[ns.player.name_realm] = DEFAULT;
-
 			elseif Broker_Everything_ProfileDB.profiles[ns.player.name_realm]==nil then
 				if type(Broker_EverythingDB)=="table" then
 					Broker_Everything_ProfileDB.profiles[ns.player.name_realm] = CopyTable(Broker_EverythingDB);
@@ -268,25 +279,20 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 				Broker_Everything_ProfileDB.use_profile[ns.player.name_realm] = ns.player.name_realm;
 			end
 		end
-
-		if Broker_Everything_ProfileDB.use_default_profile then
-			if Broker_Everything_ProfileDB.use_profile[ns.player.name_realm]==nil then
-				Broker_Everything_ProfileDB.use_profile[ns.player.name_realm] = DEFAULT;
-			end
-		else
-			if Broker_Everything_ProfileDB.use_profile[ns.player.name_realm]==nil then
-				if Broker_Everything_ProfileDB.profiles[ns.player.name_realm]==nil then
-					Broker_Everything_ProfileDB.profiles[ns.player.name_realm] = {};
-				end
-				Broker_Everything_ProfileDB.use_profile[ns.player.name_realm] = ns.player.name_realm;
-			end
-		end
-
 		if Broker_EverythingDB~=nil then
 			Broker_EverythingDB=nil;
 		end
 		if Broker_EverythingGlobalDB~=nil then
 			Broker_EverythingGlobalDB=nil;
+		end
+		---
+
+		if Broker_Everything_ProfileDB.use_profile[ns.player.name_realm]==nil then
+			Broker_Everything_ProfileDB.use_profile[ns.player.name_realm] = Broker_Everything_ProfileDB.use_default_profile and Broker_Everything_ProfileDB.default_profile or ns.player.name_realm;
+		end
+
+		if Broker_Everything_ProfileDB.profiles[Broker_Everything_ProfileDB.use_profile[ns.player.name_realm]]==nil then
+			Broker_Everything_ProfileDB.profiles[Broker_Everything_ProfileDB.use_profile[ns.player.name_realm]] = {};
 		end
 
 		ns.profile = Broker_Everything_ProfileDB.profiles[Broker_Everything_ProfileDB.use_profile[ns.player.name_realm]];
@@ -395,5 +401,3 @@ Broker_Everything:RegisterEvent("PLAYER_ENTERING_WORLD");
 Broker_Everything:RegisterEvent("PLAYER_LEVEL_UP");
 Broker_Everything:RegisterEvent("NEUTRAL_FACTION_SELECT_RESULT");
 Broker_Everything:RegisterEvent("DISPLAY_SIZE_CHANGED");
-
-
