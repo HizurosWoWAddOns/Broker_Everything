@@ -216,6 +216,7 @@ local function toggleEntry(self, button)
 end
 
 local function percent(self,cvar,now,direction)
+	if not (cvar and now) then return end
 	if (direction==-1 and now==0) or (direction==1 and now==1) then return end
 	local new = now + ((direction * ns.profile[name].steps) / 100);
 	new = (new>1 and 1) or (new<0 and 0) or new;
@@ -345,6 +346,10 @@ local function BlizzardOptionsPanel_SetCVarSafeHook(cvar)
 	end
 end
 
+function BE_ToggleAllSound()
+	ns.SetCVar(vol[1].toggle,GetCVar(vol[1].toggle)=="1" and 0 or 1,vol[1].locale);
+	updateBroker();
+end
 
 ------------------------------------
 -- module (BE internal) functions --

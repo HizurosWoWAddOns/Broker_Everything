@@ -1,0 +1,7 @@
+<Bindings>
+	<Binding name="BE_TOGGLEALLSOUND" header="BROKEREVERYTHING" category="ADDONS">
+		if BE_ToggleAllSound then
+			BE_ToggleAllSound();
+		end
+	</Binding>
+</Bindings>
