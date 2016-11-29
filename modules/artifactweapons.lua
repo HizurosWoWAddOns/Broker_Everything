@@ -13,7 +13,7 @@ if ns.build<70000000 then return end
 -----------------------------------------------------------
 local name = "Artifact weapon" -- L["Artifact weapon"]
 local ldbName,ttName,ttColumns, tt, createMenu, createTooltip = name, name.."TT", 3;
-local ap_items_found,updateBroker, _ = {};
+local ap_items_found,spec2weapon,knowledgeLevel,obtained,updateBroker, _ = {},{},0,0;
 local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d*)");
 ns.artifactpower_items = {
 	-- >0 = known amount of artifact power
@@ -52,12 +52,8 @@ ns.artifactpower_items = {
 	[143749]=1000,[143757]=3000,[143844]= 250,[143868]= 250,[143869]= 400,[143870]= 500,[143871]= 600
 };
 ns.artifactrelikts = {};
-local spec2weapon = {};
 local PATTERN_ARTIFACT_XP_GAIN = gsub(ARTIFACT_XP_GAIN,"%s",".*");
-local knowledgeLevel = 0;
-local obtained = 0;
-local artifactLocked = nil;
-local artifactKnowledgeMultiplier = {
+local artifactKnowledgeMultiplier,artifactLocked = {
 	  0.25,  0.50,  0.90,  1.40,  2.00, --  1 -  5
 	  2.75,  3.75,  5.00,  6.50,  8.50, --  6 - 10
 	 11.00, 14.00, 17.75, 22.50, 28.50, -- 11 - 15
@@ -94,8 +90,6 @@ local FISHING_AP_MATCH_STRINGS = {
 	zhCN = "将鱼扔回到水中，使你的钓鱼神器获得(%d*)点神器能量",
 	zhTW = "將魚丟回水中，為你的釣魚神器取得(%d*)點神兵之力",
 }
-
-
 
 
 -------------------------------------------
@@ -476,7 +470,8 @@ function createTooltip(tt)
 
 			if ns.toon[name].knowledgeLevel and ns.toon[name].knowledgeLevel>0 and itemID~=133755 then
 				l=tt:AddLine();
-				tt:SetCell(l,1,C("ltgreen",L["Artifact knowledge"]),nil,nil,2);
+				local ak = GetCurrencyInfo(1171);
+				tt:SetCell(l,1,C("ltgreen",ak or L["Artifact knowledge"]),nil,nil,2);
 				tt:SetCell(l,3,C("ltyellow",("%d (+%d%%)"):format(ns.toon[name].knowledgeLevel,math.ceil(artifactKnowledgeMultiplier[ns.toon[name].knowledgeLevel]*10)*10)));
 				local nextKL = ns.toon[name].knowledgeLevel+1;
 				if nextKL<=#artifactKnowledgeMultiplier then
@@ -591,17 +586,20 @@ ns.modules[name].onevent = function(self,event,arg1,...)
 		ns.items.RegisterCallback(name,updateItemState,"any");
 		C_Timer.After(15,ns.items.UpdateNow);
 		self:UnregisterEvent(event);
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-	elseif obtained>0 and event=="CURRENCY_DISPLAY_UPDATE" then -- update artifact knowledge
-		local _, value = GetCurrencyInfo(1171);
-		if value and ns.toon[name].knowledgeLevel~=value then
-			ns.toon[name].knowledgeLevel = value;
+		self.PEW=true;
+	elseif self.PEW then
+		if event=="BE_UPDATE_CLICKOPTIONS" then
+			ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+		elseif obtained>0 and event=="CURRENCY_DISPLAY_UPDATE" then -- update artifact knowledge
+			local _, value = GetCurrencyInfo(1171);
+			if value and ns.toon[name].knowledgeLevel~=value then
+				ns.toon[name].knowledgeLevel = value;
+				updateBroker();
+			end
+		else--if event=="ARTIFACT_XP_UPDATE" or event=="ARTIFACT_MAX_RANKS_UPDATE" or event=="ARTIFACT_UPDATE" then
+			obtained = C_ArtifactUI.GetNumObtainedArtifacts() or 0;
 			updateBroker();
 		end
-	else--if event=="ARTIFACT_XP_UPDATE" or event=="ARTIFACT_MAX_RANKS_UPDATE" or event=="ARTIFACT_UPDATE" then
-		obtained = C_ArtifactUI.GetNumObtainedArtifacts() or 0;
-		updateBroker();
 	end
 end
 
