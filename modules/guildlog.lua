@@ -13,7 +13,7 @@ local name = "GuildLog" -- L["GuildLog"]
 local ldbName = name
 local tt,ttColumns,createMenu;
 local ttName = name.."TT"
-local type2label = {
+local type2locale = {
 	["invite"]	= C("cyan",CALENDAR_STATUS_INVITED),
 	["join"]	= C("green",LFG_LIST_APP_INVITE_ACCEPTED),
 	["promote"]	= C("yellow",L["Promoted"]),
