@@ -256,7 +256,7 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 			profiles={[DEFAULT]={}},
 			use_profile={}
 		})do
-			if Broker_Everything_ProfileDB[k]==nil or type(Broker_Everything_ProfileDB[k])==type(v) then
+			if Broker_Everything_ProfileDB[k]==nil or type(Broker_Everything_ProfileDB[k])~=type(v) then
 				Broker_Everything_ProfileDB[k]=v;
 				if k=="profiles" then
 					migrate = true;
@@ -372,8 +372,10 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 		ns.updateIcons();
 
 		-- panels for broker and config
-		ns.be_option_panel = ns.optionpanel();
-		ns.be_data_panel = ns.datapanel();
+		C_Timer.After(10,function()
+			ns.be_option_panel = ns.optionpanel();
+			ns.be_data_panel = ns.datapanel();
+		end);
 
 		-- coexist with other addons
 		for _,name in pairs(ns.coexist.names) do
