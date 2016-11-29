@@ -250,15 +250,15 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 			Broker_Everything_ProfileDB = {};
 		end
 
-		for i,v in ipairs({
+		for k,v in pairs({
 			use_default_profile=false,
 			default_profile=DEFAULT,
 			profiles={[DEFAULT]={}},
 			use_profile={}
 		})do
-			if type(Broker_Everything_ProfileDB[i])==type(v) then
-				Broker_Everything_ProfileDB[i]=v;
-				if i=="profiles" then
+			if Broker_Everything_ProfileDB[k]==nil or type(Broker_Everything_ProfileDB[k])==type(v) then
+				Broker_Everything_ProfileDB[k]=v;
+				if k=="profiles" then
 					migrate = true;
 				end
 			end
