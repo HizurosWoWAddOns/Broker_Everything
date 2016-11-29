@@ -58,7 +58,7 @@ ns.modules[name] = {
 	config_allowed = {
 	},
 	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="header", label=BUTTON_LAG_MAIL, align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="toggle", name="playsound", label=L["Play sound on new mail"], tooltip=L["Enable to play a sound on receiving a new mail message. Default is off"] },
 		{ type="toggle", name="showDaysLeft", label=L["List mails on chars"], tooltip=L["Display a list of chars on all realms with there mail counts and 3 lowest days before return to sender. Chars with empty mail box aren't displayed."] },
@@ -172,7 +172,7 @@ local function createTooltip(tt)
 	local l,c
 	tt:Clear()
 
-	tt:AddHeader(C("dkyellow",L[name]))
+	tt:AddHeader(C("dkyellow",BUTTON_LAG_MAIL))
 	tt:AddSeparator()
 	tt:AddLine(C("ltblue",L["Last 3 new mails"]),#newMails.." "..L["mails"])
 	if #newMails>0 then

@@ -89,7 +89,7 @@ ns.modules[name] = {
 		display = {["1"]=true,["2"]=true,["3"]=true,["4"]=true,["5"]=true}
 	},
 	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="header", label=XP, align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="toggle", name="showMyOtherChars", label=L["Show other chars xp"], tooltip=L["Display a list of my chars on same realm with her level and xp"] },
 		{ type="toggle", name="showNonMaxLevelOnly", label=L["Show non max. level characters only"], tooltip=L["Hide all characters who have reached the level cap."] },
@@ -205,7 +205,7 @@ function createTooltip(tt)
 	if (IsXPUserDisabled()) then
 		tt:AddHeader(C("orange",L["XP gain disabled"]));
 	else
-		tt:AddHeader(C("dkyellow",L[name]));
+		tt:AddHeader(C("dkyellow",XP));
 	end
 
 	if (UnitLevel("player")<MAX_PLAYER_LEVEL) then

@@ -10,7 +10,7 @@ L.Currency = CURRENCY;
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Currency";
+local name = "Currency"; -- CURRENCY
 local ldbName,ttName = name,name.."TT";
 local tt,tt2,ttColumns,createMenu
 local GetCurrencyInfo,GetCurrencyListInfo,GetCurrencyListLink = GetCurrencyInfo,GetCurrencyListInfo,GetCurrencyListLink

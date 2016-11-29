@@ -10,7 +10,6 @@ local C,L,I = ns.LC.color,ns.L,ns.I;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Professions";
-L.professions = TRADE_SKILLS;
 local ldbName,ttName,ttName2,tt,tt2 = name,name.."TT",name.."TT2";
 
 local GetSpellInfo,GetSpellCooldown,GetProfessionInfo,unpack = GetSpellInfo,GetSpellCooldown,GetProfessionInfo,unpack;
@@ -210,7 +209,7 @@ ns.modules[name] = {
 	config_allowed = {
 	},
 	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="header", label=TRADE_SKILLS, align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="toggle", name="showCooldowns", label=L["Show cooldowns"], tooltip=L["Show/Hide profession cooldowns from all characters."] },
 		-- { type="toggle", name="showDigSiteStatus", label=L["Show dig site status"], tooltip=L["Show dig site status in broker button."] },
@@ -256,7 +255,7 @@ local function Title_Update()
 	end
 
 	local obj = ns.LDB:GetDataObjectByName(ldbName);
-	obj.text = (#inTitle==0) and L[name] or table.concat(inTitle," ");
+	obj.text = (#inTitle==0) and TRADE_SKILLS or table.concat(inTitle," ");
 end
 
 local function Title_Set(place,obj)
@@ -299,7 +298,7 @@ local function createTooltip(tt)
 	local function item_icon(name,icon) return select(10,GetItemInfo(name)) or icon or ns.icon_fallback; end
 
 	tt:Clear();
-	tt:AddHeader(C("dkyellow",L[name]));
+	tt:AddHeader(C("dkyellow",TRADE_SKILLS));
 
 	tt:AddLine(C("ltblue","Name"),C("ltblue","Skill"),C("ltblue","Abilities"));
 	tt:AddSeparator();

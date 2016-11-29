@@ -310,7 +310,7 @@ ns.modules[name_mem] = {
 		{ type="desc", text="|n"..table.concat({
 				C("orange",L["Any update of the addon memory usage can cause results in fps drops and 'Script ran too long' error messages!"]),
 				C("white",L["The necessary time to collect memory usage of all addons depends on CPU speed, CPU usage, the number of running addons and other factors."]),
-				C("yellow",L["If you have more than one addon to display memory usage it is recommented to disable the update interval of this addon."])
+				C("yellow",L["If you have more than one addon to display memory usage it is recommended to disable the update interval of this addon."])
 			},"|n|n")
 		},
 	},

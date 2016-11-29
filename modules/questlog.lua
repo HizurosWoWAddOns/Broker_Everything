@@ -10,7 +10,6 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Quest Log" -- QUESTLOG_BUTTON
-L[name] = QUESTLOG_BUTTON;
 local ldbName,ttName,ttName2,ttColumns,ttColumns2,tt,tt2,createMenu,createTooltip = name,name.."TT",name.."TT2",9,2;
 local quests,numQuestStatus,sum,url,tt2created,requested
 local urls = {
@@ -93,7 +92,7 @@ ns.modules[name] = {
 	config_allowed = {
 	},
 	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="header", label=QUESTLOG_BUTTON, align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="toggle", name="showQuestIds",       label=L["Show quest id's"], tooltip=L["Show quest id's in tooltip."] },
 		{ type="toggle", name="showQuestZone",      label=L["Show quest zone"], tooltip=L["Show quest zone in tooltip."] },

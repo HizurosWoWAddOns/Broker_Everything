@@ -10,7 +10,7 @@ L.Clock = TIMEMANAGER_TITLE;
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Clock";
+local name = "Clock"; -- TIMEMANAGER_TITLE
 local ldbName, ttName,ttColumns, tt, createMenu = name, name.."TT", 2;
 local GetGameTime = GetGameTime
 local countries = {}

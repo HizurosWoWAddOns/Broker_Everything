@@ -64,7 +64,7 @@ ns.modules[name] = {
 	config_allowed = {
 	},
 	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="header", label=SPEED, align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="slider", name="precision", label=L["Precision"], tooltip=L["Adjust the count of numbers behind the dot."], min = 0, max = 3, default = 0, format="%d" }
 	}
@@ -112,7 +112,7 @@ local function createTooltip(tt)
 	local lvl = UnitLevel("player");
 	tt:Clear();
 
-	tt:AddHeader(C("dkyellow",L[name]));
+	tt:AddHeader(C("dkyellow",SPEED));
 	tt:AddSeparator(4,0,0,0,0);
 
 	tt:AddLine(C("ltblue",L["Riding skill"]));

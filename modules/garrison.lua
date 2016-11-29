@@ -64,7 +64,7 @@ ns.modules[name] = {
 	},
 	config_allowed = {},
 	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="header", label=GARRISON_LOCATION_TOOLTIP, align="left", icon=I[name] },
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["In tooltip options"]},
 		{ type="separator", inMenuInvisible=true },
@@ -192,11 +192,11 @@ local function createTooltip(tt)
 			-- 
 
 			if(IsShiftKeyDown())then
-				tt:SetCell(l, 2, C("ltblue",GARRISON_LOCATION_TOOLTIP..		"|n"..C("green",L["level"])..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2 
+				tt:SetCell(l, 2, C("ltblue",GARRISON_LOCATION_TOOLTIP..		"|n"..C("green",LEVEL)..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2 
 				tt:SetCell(l, 3, C("ltblue",L["Shipments"]..	"|n"..C("green",L["finished"])..	" / "..C("yellow",L["in progress"])), nil, "RIGHT", 3); -- 3,4,5
 				tt:SetCell(l, 6, C("ltblue",L["Jobs"]..			"|n"..C("green",L["available"])..	" / "..C("yellow",L["worker"])), nil, "RIGHT", 2); -- 6,7
 			else
-				tt:SetCell(l, 2, C("ltblue",GARRISON_LOCATION_TOOLTIP..		"|n"..C("green",L["level"])..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2 
+				tt:SetCell(l, 2, C("ltblue",GARRISON_LOCATION_TOOLTIP..		"|n"..C("green",LEVEL)..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2 
 				tt:SetCell(l, 3, C("ltblue",L["Shipments"]..	"|n"..C("green",L["finished"])..	" / "..C("yellow",L["in progress"])), nil, "RIGHT", 3); -- 3,4,5
 				tt:SetCell(l, 6, C("ltblue",L["Jobs"]..			"|n"..C("green",L["available"])..	" / "..C("yellow",L["worker"])), nil, "RIGHT", 2); -- 6,7
 			end

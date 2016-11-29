@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local _
-local name = "Durability";
+local name = "Durability"; -- DURABILITY
 local ldbName,ttName,tt = name,name.."TT",nil;
 local hiddenTooltip,createMenu
 local last_repairs = {};

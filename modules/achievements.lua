@@ -9,7 +9,7 @@ L.Achievements = ACHIEVEMENTS;
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Achievements";
+local name = "Achievements"; -- ACHIEVEMENTS
 local ldbName, ttName, ttColumns, tt, createMenu = name, name.."TT", 2;
 local categoryIds,bars,count = {92, 96, 97, 95, 168, 169, 201, 15165, 155, 15117, 15246, 15237},{},0;
 
@@ -37,7 +37,7 @@ ns.modules[name] = {
 	},
 	config_allowed = {},
 	config = {
-		{ type="header", label=L[name], align="left", icon=true },
+		{ type="header", label=ACHIEVEMENTS, align="left", icon=true },
 		{ type="separator" },
 		{ type="toggle", name="showLatest",       label=L["Show latest achievements"],    tooltip=L["Show 5 latest earned achievements in tooltip"]},
 		{ type="toggle", name="showCategory",     label=L["Show achievement categories"], tooltip=L["Show achievement categories in tooltip"]},
@@ -137,7 +137,7 @@ end
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	tt:Clear();
-	tt:AddHeader(C("dkyellow",L[name]));
+	tt:AddHeader(C("dkyellow",ACHIEVEMENTS));
 	count=0;
 
 	if(ns.profile[name].showLatest)then

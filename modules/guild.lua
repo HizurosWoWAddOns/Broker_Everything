@@ -4,13 +4,12 @@
 ----------------------------------
 local addon,ns = ...;
 local C,L,I=ns.LC.color,ns.L,ns.I;
-L["Guild"] = GUILD;
 
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Guild";
+local name = "Guild"; -- GUILD
 local ldbName, ttName, ttName2,ttColumns,ttColumns2 = name, name.."TT", name.."TT2",9,2;
 local tt,tt2,createMenu,db;
 local off, on = strtrim(gsub(ERR_FRIEND_OFFLINE_S,"%%s","(.*)")), strtrim(gsub(ERR_FRIEND_ONLINE_SS,"\124Hplayer:%%s\124h%[%%s%]\124h","(.*)"));
@@ -94,7 +93,7 @@ ns.modules[name] = {
 		{ type="toggle", name="showNotes",				label=L["Show notes"],					tooltip=L["Show notes from guild members in tooltip"]},
 		{ type="toggle", name="showONotes",				label=L["Show officer notes"],			tooltip=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"]},
 		{ type="toggle", name="showRank",				label=L["Show rank"],					tooltip=L["Show rank name from guild members in tooltip"]},
-		{ type="toggle", name="showProfessions",		label=L["Show professions"],			tooltip=L["Show professions from guild members om tooltip"], event = true },
+		{ type="toggle", name="showProfessions",		label=L["Show professions"],			tooltip=L["Show professions from guild members in tooltip"], event = true },
 		{ type="toggle", name="showApplicants",			label=L["Show applicants"],				tooltip=L["Show applicants in tooltip"] },
 		{ type="toggle", name="showMobileChatter",		label=L["Show mobile chatter"],			tooltip=L["Show mobile chatter in tooltip (Armory App users)"] },
 		{ type="toggle", name="splitTables",			label=L["Separate mobile chatter"],		tooltip=L["Display mobile chatter with own table in tooltip"] },

@@ -14,7 +14,7 @@ local _
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name0 = "GPS / Location / ZoneText"; -- L["GPS / Location / ZoneText"]
+local name0 = "GPS / Location / ZoneText"; L[name0] = ("%s / %s / %s"):format(L["GPS"],L["Location"],L["ZoneText"]);
 local name1 = "GPS"; -- L["GPS"]
 local name2 = "Location"; -- L["Location"]
 local name3 = "ZoneText"; -- L["ZoneText"]

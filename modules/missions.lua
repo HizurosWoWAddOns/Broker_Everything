@@ -53,7 +53,7 @@ ns.modules[name] = {
 	},
 	config_allowed = {},
 	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="header", label=GARRISON_MISSIONS, align="left", icon=I[name] },
 		{ type="separator" },
 
 		{ type="toggle", name="showChars",       label=L["Show characters"],          tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
@@ -113,7 +113,7 @@ local function createTooltip(tt)
 	tt:Clear()
 	local labels,colors,l,c = {"Missions completed","Missions in progress","Missions available"},{"ltblue","yellow","green"};
 	local pipe = C("gray","   ||   ");
-	tt:AddHeader(C("dkyellow",L[name]))
+	tt:AddHeader(C("dkyellow",GARRISON_MISSIONS))
 
 	if (ns.profile[name].showChars) then
 		tt:AddSeparator(4,0,0,0,0)

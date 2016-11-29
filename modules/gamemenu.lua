@@ -9,7 +9,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Game Menu";
+local name = "Game Menu"; -- MAINMENU_BUTTON
 local ldbName = name
 local tt,tt2 = nil
 local ttName,tt2Name = name.."TT",name.."TT2"
@@ -162,7 +162,7 @@ I["gm_Challenges"]        = {iconfile="Interface\\Icons\\Achievement_ChallengeMo
 -- module variables for registration --
 ---------------------------------------
 ns.modules[name] = {
-	desc = L["Broker to show combined list of clickable elements from game menu, microbutton bar. It is not recommented to use it in combat."],
+	desc = L["Broker to show combined list of clickable elements from game menu, microbutton bar. It is not recommended to use it in combat."],
 	events = {
 		"PLAYER_ENTERING_WORLD",
 		"UPDATE_WEB_TICKET"
@@ -187,7 +187,7 @@ ns.modules[name] = {
 		{ type="input",  name="customTitle", label=L["Custom title"], tooltip=L["Set your own Title instead of 'Game Menu'"], event=true },
 		{ type="toggle", name="customTooltipTitle", label=L["Custom title in tooltip"], tooltip=L["Use custom title as tooltip title"] },
 		{ type="toggle", name="showGMTicket", label=L["Show GMTicket"], tooltip=L["Show GMTickets in tooltip and average wait time in broker button"] },
-		{ type="toggle", name="showTaintingEntries", label=L["Show tainting entries"], tooltip=L["Show all entries there taint the environment. Be carefull. Can produce error in combat."] }
+		{ type="toggle", name="showTaintingEntries", label=L["Show tainting entries"], tooltip=L["Show all entries their tainting the environment. Be carefull. Can produce error in combat."] }
 	}
 }
 

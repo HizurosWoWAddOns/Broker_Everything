@@ -54,7 +54,7 @@ ns.modules[name] = {
 	config_allowed = {
 	},
 	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="header", label=TRACKING, align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="toggle", name="displaySelection", label=L["Display selection"], tooltip=L["Display one of the selected tracking options in broker text."], event=true },
 		{ type="toggle", name="hideMinimapButton", label=L["Hide minimap button"], tooltip=L["Hide blizzard's tracking button on minimap"], event="BE_HIDE_TRACKING", disabled=function()
@@ -110,7 +110,7 @@ ns.modules[name].onevent = function(self,event,msg)
 
 	-- broker button text
 	local numActive, trackActive = updateTracking()
-	local n = L[name];
+	local n = TRACKING;
 	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
 	if ns.profile[name].displaySelection then
 		if numActive == 0 then
@@ -133,7 +133,7 @@ ns.modules[name].ontooltip = function(tooltip)
 
 	local numActive, trackActive = updateTracking()
 	ns.tooltipScaling(tt)
-	tt:AddLine(L[name])
+	tt:AddLine(TRACKING)
 	tt:AddLine(" ")
 
 	if numActive == 0 then

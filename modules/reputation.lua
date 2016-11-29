@@ -66,7 +66,7 @@ ns.modules[name] = {
 	},
 	config_allowed = {},
 	config = {
-		{ type="header", label=L[name], align="left", icon=true },
+		{ type="header", label=REPUTATION, align="left", icon=true },
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["Tooltip options"] },
 		{ type="separator", inMenuInvisible=true },
@@ -165,7 +165,7 @@ local function GetSession(factionID,current)
 end
 
 function updateBroker()
-	local txt,mode = L[name],ns.profile[name].watchedFormatOnBroker;
+	local txt,mode = REPUTATION,ns.profile[name].watchedFormatOnBroker;
 	local Name, standingId, barMin, barMax, barValue, factionID = GetWatchedFactionInfo();
 	barMax = standingId==8 and 999 or (barMax - barMin);
 	local barValue2 = barValue - barMin;
@@ -397,7 +397,7 @@ function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	tt:Clear();
-	tt:AddHeader(C("dkyellow",L[name]));
+	tt:AddHeader(C("dkyellow",REPUTATION));
 
 	local count,countHeader,childLevel,num,margoss,firstHeader = 0,0,0,GetNumFactions();
 

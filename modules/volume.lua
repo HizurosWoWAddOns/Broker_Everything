@@ -60,7 +60,7 @@ I[name..'_100']  = {iconfile=icon.."100"}	--IconName::Volume_100--
 -- module variables for registration --
 ---------------------------------------
 ns.modules[name] = {
-	desc = L["Broker to show current volume and in tooltip all changable audio options"],
+	desc = L["Broker to show current volume and in tooltip all changeable audio options"],
 	icon_suffix = "_100",
 	events = {
 		"PLAYER_ENTERING_WORLD",
@@ -76,7 +76,7 @@ ns.modules[name] = {
 	config_allowed = {
 	},
 	config = {
-		{ type="header", label=L[name], align="left", icon=I[name..'_100'] },
+		{ type="header", label=VOLUME, align="left", icon=I[name..'_100'] },
 		{ type="separator" },
 		{ type="toggle", name="useWheel", label=L["Use MouseWheel"], tooltip=L["Use the MouseWheel to change the volume"] },
 		{ type="slider", name="steps", label=L["Change steps"], tooltip=L["Change the stepping width for volume changes with mousewheel and clicks."], min=1, max=100, default=10, format = "%d" },
@@ -195,7 +195,7 @@ do
 
 	function setSoundHardware(self)
 		if InCombatLockdown() then
-			ns.print("("..L[name]..")",C("orange",L["Sorry, In combat lockdown."]));
+			ns.print("("..VOLUME..")",C("orange",L["Sorry, In combat lockdown."]));
 		else
 			hardware.selected = self.hardwareIndex;
 			SetCVar(cvar,tostring(self.hardwareIndex-1) or 0);
@@ -238,7 +238,7 @@ function createTooltip(tt, update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local wheels,l,c={};
 	tt:Clear()
-	tt:AddHeader(C("dkyellow",L[name]))
+	tt:AddHeader(C("dkyellow",VOLUME))
 	tt:AddSeparator()
 
 	for i,v in ipairs(vol) do

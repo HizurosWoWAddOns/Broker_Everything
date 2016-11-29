@@ -9,7 +9,7 @@ L.Gold = BONUS_ROLL_REWARD_MONEY;
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Gold";
+local name = "Gold"; -- BONUS_ROLL_REWARD_MONEY
 local ldbName, ttName, tt, createMenu, createTooltip = name, name.."TT";
 local login_money = nil;
 local next_try = false;
@@ -46,7 +46,7 @@ ns.modules[name] = {
 	},
 	config_allowed = {},
 	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
+		{ type="header", label=BONUS_ROLL_REWARD_MONEY, align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="toggle", name="showAllRealms",     label=L["Show all realms"],     tooltip=L["Show characters from all realms in tooltip."] },
 		{ type="toggle", name="showAllFactions",   label=L["Show all factions"],   tooltip=L["Show characters from all factions in tooltip."] },
@@ -231,7 +231,7 @@ ns.modules[name].onevent = function(self,event,msg)
 		tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,profit));
 	end
 	if #broker==0 then
-		broker = {L[name]};
+		broker = {BONUS_ROLL_REWARD_MONEY};
 	end
 	ns.LDB:GetDataObjectByName(ldbName).text = table.concat(broker,", ");
 end

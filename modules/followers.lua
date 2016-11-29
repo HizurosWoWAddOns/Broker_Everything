@@ -10,7 +10,7 @@ if ns.build<60000000 then return end
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local nameF,nameS = "Follower","Ships";
+local nameF,nameS = "Follower","Ships"; -- GARRISON_FOLLOWERS, GARRISON_SHIPYARD_FOLLOWERS
 local ldbNameF, ttNameF, ttColumnsF, ttF = nameF, nameF.."TT", 7;
 local ldbNameS, ttNameS, ttColumnsS, ttS = nameS, nameS.."TT" ,7;
 local followers,ships,champions,troops,createMenu = {num=0},{num=0},{num=0},{num=0};
@@ -123,7 +123,7 @@ ns.modules[nameS] = {
 	},
 	config_allowed = {},
 	config = {
-		{ type="header", label=L[nameS], align="left", icon=I[nameS] },
+		{ type="header", label=GARRISON_SHIPYARD_FOLLOWERS, align="left", icon=I[nameS] },
 		{ type="separator" },
 		{ type="toggle", name="showChars",       label=L["Show characters"],          tooltip=L["Show a list of your characters with count of chilling, working and ships on missions in tooltip"] },
 		{ type="toggle", name="showAllRealms",   label=L["Show all realms"],          tooltip=L["Show characters from all realms in tooltip."] },
@@ -292,7 +292,7 @@ local function updateBroker()
 			getFollowers("ships");
 			obj.text = ("%s/%s/%s/%s"):format(C("ltblue",ships.onresting_num),C("yellow",ships.onmission_num+ships.onwork_num),C("green",ships.available_num),ships.num);
 		else
-			obj.text = L[nameS];
+			obj.text = GARRISON_SHIPYARD_FOLLOWERS;
 		end
 	end
 end

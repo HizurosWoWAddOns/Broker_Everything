@@ -10,7 +10,7 @@ local type,GetItemInfo=type,GetItemInfo;
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Archaeology";
+local name = "Archaeology"; -- PROFESSIONS_ARCHAEOLOGY
 local ldbName, ttName, ttColumns, tt = name, name.."TT", 5, nil
 local skill,createMenu
 local tradeskill = {};
