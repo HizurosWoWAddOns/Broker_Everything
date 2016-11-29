@@ -61,6 +61,7 @@ I[name..'_100']  = {iconfile=icon.."100"}	--IconName::Volume_100--
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show current volume and in tooltip all changeable audio options"],
+	label = VOLUME,
 	icon_suffix = "_100",
 	events = {
 		"PLAYER_ENTERING_WORLD",

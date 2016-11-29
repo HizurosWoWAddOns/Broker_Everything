@@ -109,6 +109,7 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\equip"}; --IconName:
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show current equipped items and list & modify equipment sets"],
+	label = BAG_FILTER_EQUIPMENT,
 	events = {
 		"UNIT_INVENTORY_CHANGED",
 		"EQUIPMENT_SETS_CHANGED",

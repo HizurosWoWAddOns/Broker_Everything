@@ -9,7 +9,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Speed" -- SPEED
+local name = "Speed"; -- SPEED
 local ldbName, ttName, ttColumns, tt = name, name.."TT", 2
 local string,GetUnitSpeed,UnitInVehicle = string,GetUnitSpeed,UnitInVehicle
 local riding_skills = { -- <spellid>, <skill>, <minLevel>, <air speed increase>, <ground speed increase>
@@ -56,6 +56,7 @@ I[name] = {iconfile="Interface\\Icons\\Ability_Rogue_Sprint",coords={0.05,0.95,0
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show swimming, walking, riding and flying speed in broker button, a list of riding skills and currently active speed bonuses"],
+	label = SPEED,
 	events = {"ADDON_LOADED"},
 	updateinterval = 0.1, -- false or integer
 	config_defaults = {

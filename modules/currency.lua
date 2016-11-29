@@ -4,7 +4,6 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-L.Currency = CURRENCY;
 
 
 -----------------------------------------------------------
@@ -43,6 +42,7 @@ I[name..'_Alliance'] = {iconfile="Interface\\PVPFrame\\PVP-Currency-Alliance", c
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show your currencies"],
+	label = CURRENCY,
 	icon_suffix = "_Neutral",
 	events = {
 		"PLAYER_ENTERING_WORLD",

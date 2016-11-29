@@ -66,6 +66,7 @@ I[name] = {iconfile="Interface\\TARGETINGFRAME\\PortraitQuestBadge",coords={0.05
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show count of quests in your questlog and quest titles in tooltip"],
+	label = QUESTLOG_BUTTON,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_ENTERING_WORLD",

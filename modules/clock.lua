@@ -31,6 +31,7 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\clock"}; --IconName:
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show local and/or realm time"],
+	label = TIMEMANAGER_TITLE,
 	events = {"PLAYER_ENTERING_WORLD","TIME_PLAYED_MSG"},
 	updateinterval = 1,
 	timeout = 30,

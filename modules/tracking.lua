@@ -41,6 +41,7 @@ I[name] = {iconfile="Interface\\minimap\\tracking\\none"}; --IconName::Tracking-
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show current tracking list with option to change it"],
+	label = TRACKING,
 	events = {
 		"MINIMAP_UPDATE_TRACKING",
 		"PLAYER_LOGIN",

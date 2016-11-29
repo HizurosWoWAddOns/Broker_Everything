@@ -36,6 +36,7 @@ I[name] = {iconfile=GetItemIcon(5976),coords={0.05,0.95,0.05,0.95}} --IconName::
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show guild message of the day, your guild reputation, guild members, applicants and mobile app users"],
+	label = GUILD,
 	events = {
 		"PLAYER_ENTERING_WORLD",
 		"PLAYER_GUILD_UPDATE",

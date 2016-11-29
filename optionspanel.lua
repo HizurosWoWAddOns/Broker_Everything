@@ -762,7 +762,7 @@ ns.optionpanel = function()
 	function f:ModOpts_Build(name)
 		local mod = ns.modules[name];
 		if (mod) then
-			local frame, i = CreateFrame("Frame", ("%s_%s"):format(addon,gsub(gsub(gsub(name,"_",""),"/","")," ","")), f.Modules.Container.child), 1;
+			local frame, i = CreateFrame("Frame", ("%s_%s"):format(addon,name:gsub("_",""):gsub("/",""):gsub(" ",""):trim()), f.Modules.Container.child), 1;
 			frame:SetPoint("TOPLEFT"); frame:SetSize(f.Modules.Container.child:GetWidth(),1); frame:Hide();
 			local icon = ns.I[name];
 
@@ -813,12 +813,6 @@ ns.optionpanel = function()
 			f.Modules.List.update=f.ModList_Update;
 			HybridScrollFrame_CreateButtons(f.Modules.List, "BEConfigPanel_ModuleButtonTemplate", 0, 0, nil, nil, 0, -mods.entryOffset);
 			mods.entryHeight = f.Modules.List.buttons[1]:GetHeight();
-			--if ns.build>=70000000 then
-				--for i=1, #scroll.buttons do
-					--scroll.buttons[i].TextureN:SetTexCoord(0,0.294921875,0.654296875,0.701171875);
-					--scroll.buttons[i].TextureP:SetTexCoord(0,0.294921875,0.607421875,0.654296875);
-				--end
-			--end
 		end
 
 		offset = HybridScrollFrame_GetOffset(scroll);
@@ -843,7 +837,7 @@ ns.optionpanel = function()
 						e = f.changes[name].enabled;
 					end
 					button.data = {name=name,db=ns.profile[name]};
-					button.name:SetText(L[name]);
+					button.name:SetText(ns.modules[name].label or L[name]);
 
 					if (d.noBroker) then -- no broker, can't be disabled
 						button.TextureN:SetVertexColor( .8, .8, .8, .5);
@@ -962,7 +956,7 @@ ns.optionpanel = function()
 		f.Modules.Title2:SetPoint("LEFT", f.Modules.List.split, "LEFT", 10,0);
 
 		local tmp1,tmp2,d={},{};
-		for k, v in pairs(ns.modules) do if not v.noOptions then tmp1[L[k]] = k; end end -- tmp1 to order modules by localized names
+		for k, v in pairs(ns.modules) do if not v.noOptions then tmp1[v.label or L[k]] = k; end end -- tmp1 to order modules by localized names
 
 		tinsert(mods.list,1);
 		for k, v in ns.pairsByKeys(tmp1) do -- mods.list as order list with names and boolean. the booleans indicates the header "With options" and "Without options"

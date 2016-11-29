@@ -115,6 +115,7 @@ I[name] = {iconfile="INTERFACE\\ICONS\\trade_archaeology",coords={0.05,0.95,0.05
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show archaeology factions with fragments, keystones and necessary amount of fragments to solve artifacts"],
+	label = PROFESSIONS_ARCHAEOLOGY,
 	--icon_suffix = "_Neutral",
 	events = {
 		"PLAYER_ENTERING_WORLD",

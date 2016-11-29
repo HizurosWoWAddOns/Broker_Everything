@@ -9,7 +9,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "IDs";
+local name = "IDs"; -- L["IDs"]
 local ldbName,ttName,ttColumns,tt,createMenu = name, name.."TT", 4;
 local scanTooltip = CreateFrame("GameTooltip",addon.."_"..name.."_ScanTooltip",UIParent,"GameTooltipTemplate"); scanTooltip:SetScale(0.0001); scanTooltip:Hide();
 

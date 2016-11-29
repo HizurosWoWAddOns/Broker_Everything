@@ -38,6 +38,7 @@ I[name] = {iconfile="Interface\\Icons\\inv_garrison_resource", coords={0.05,0.95
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show garrison buildings, worker, active work orders, available blueprints, depending achievements and gives you a garrison cache forecast for all your chars"],
+	label = GARRISON_LOCATION_TOOLTIP,
 	events = {
 		"PLAYER_ENTERING_WORLD",
 		"GARRISON_LANDINGPAGE_SHIPMENTS",

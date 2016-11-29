@@ -32,6 +32,7 @@ local WD_Locale = {
 local wd = WD_Locale[ns.locale];
 local events={PLAYER_ENTERING_WORLD=1,CHANNEL_UI_UPDATE=1,PARTY_LEADER_CHANGED=1,GROUP_ROSTER_UPDATE=1,CHANNEL_ROSTER_UPDATE=1,MUTELIST_UPDATE=2,IGNORELIST_UPDATE=2}
 
+
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------

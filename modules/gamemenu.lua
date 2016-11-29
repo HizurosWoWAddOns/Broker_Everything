@@ -163,6 +163,7 @@ I["gm_Challenges"]        = {iconfile="Interface\\Icons\\Achievement_ChallengeMo
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show combined list of clickable elements from game menu, microbutton bar. It is not recommended to use it in combat."],
+	label = MAINMENU_BUTTON,
 	events = {
 		"PLAYER_ENTERING_WORLD",
 		"UPDATE_WEB_TICKET"

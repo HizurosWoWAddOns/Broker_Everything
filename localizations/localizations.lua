@@ -32,13 +32,16 @@ if (FACTION_STANDING_LABEL1~="Hated") then
 	ns.L["Revered"]       = FACTION_STANDING_LABEL7
 	ns.L["Exalted"]       = FACTION_STANDING_LABEL8
 	ns.L["Inn"]           = HOME_INN
-	ns.L["Officer notes"] = gsub(OFFICER_NOTE_COLON,":","");
+	ns.L["Officer notes"] = OFFICER_NOTE_COLON:gsub(":",""):gsub("：",""):trim();
+	ns.L["FPS"]           = FRAMERATE_LABEL:gsub(":",""):gsub("：",""):trim();
 end
 
 if not (LOCALE_enUS or LOCALE_enGB) then
 	ns.L["Home"], ns.L["World"] = MAINMENUBAR_LATENCY_LABEL:match("%((.*)%).*%((.*)%)");
 end
 
+ns.L["ChatChannels"] = "Chat channels";
+ns.L["ClassSpecs"] = "Class specs";
 ns.L["FOLLOWERS_ABBREV"] = "F";
 ns.L["SHIPS_ABBREV"] = "S";
 ns.L["CHAMPIONS_ABBREV"] = "C";

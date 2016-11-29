@@ -10,7 +10,7 @@ if ns.build<60000000 then return end
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local nameF,nameS = "Follower","Ships"; -- GARRISON_FOLLOWERS, GARRISON_SHIPYARD_FOLLOWERS
+local nameF,nameS = "Followers","Ships"; -- GARRISON_FOLLOWERS, GARRISON_SHIPYARD_FOLLOWERS
 local ldbNameF, ttNameF, ttColumnsF, ttF = nameF, nameF.."TT", 7;
 local ldbNameS, ttNameS, ttColumnsS, ttS = nameS, nameS.."TT" ,7;
 local followers,ships,champions,troops,createMenu = {num=0},{num=0},{num=0},{num=0};
@@ -44,6 +44,7 @@ ns.modules.followers_core = {
 
 ns.modules[nameF] = {
 	desc = L["Broker to show a list of your follower with level, quality, experience and more"],
+	label = GARRISON_FOLLOWERS,
 	--icon_suffix = "_Neutral",
 	events = {},
 	updateinterval = nil,
@@ -112,6 +113,7 @@ ns.modules[nameF] = {
 
 ns.modules[nameS] = {
 	desc = L["Broker to show your naval ships with level, quality, xp and more"],
+	label = GARRISON_SHIPYARD_FOLLOWERS,
 	--icon_suffix = "_Neutral",
 	events = {},
 	updateinterval = nil,

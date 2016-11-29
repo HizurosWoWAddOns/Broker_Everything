@@ -41,6 +41,7 @@ I[name..'_stored'] = {iconfile="interface\\icons\\inv_letter_03",coords={0.05,0.
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show incoming mails and stored mails on all your chars"],
+	label = BUTTON_LAG_MAIL,
 	events = {
 		"PLAYER_ENTERING_WORLD",
 		"UPDATE_PENDING_MAIL",

@@ -65,6 +65,7 @@ I[name] = {iconfile="Interface\\Minimap\\TRACKING\\Repair",coords={0.05,0.95,0.0
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show durability of your gear and estimated repair costs"],
+	label = DURABILITY,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_DEAD",

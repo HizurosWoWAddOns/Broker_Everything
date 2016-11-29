@@ -25,6 +25,7 @@ I[name] = {iconfile="interface\\achievementframe\\UI-Achievement-Progressive-Shi
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show earned achievements and the curent tracking list"],
+	label = ACHIEVEMENTS,
 	--icon_suffix = "",
 	events = {},
 	updateinterval = false, -- 10

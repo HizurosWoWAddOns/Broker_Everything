@@ -9,7 +9,7 @@ local C,L,I = ns.LC.color,ns.L,ns.I;
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Professions";
+local name = "Professions"; -- TRADE_SKILLS
 local ldbName,ttName,ttName2,tt,tt2 = name,name.."TT",name.."TT2";
 
 local GetSpellInfo,GetSpellCooldown,GetProfessionInfo,unpack = GetSpellInfo,GetSpellCooldown,GetProfessionInfo,unpack;
@@ -185,6 +185,7 @@ I[name] = {iconfile="Interface\\Icons\\INV_Misc_Book_09.png",coords={0.05,0.95,0
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show your profession skills and cooldowns"],
+	label = TRADE_SKILLS,
 	events = {
 		"ADDON_LOADED",
 		"PLAYER_ENTERING_WORLD",

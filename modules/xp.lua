@@ -69,6 +69,7 @@ I[name] = {iconfile="interface\\icons\\ability_dualwield",coords={0.05,0.95,0.05
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show experience from all chars in tooltip and the current character in broker button"],
+	label = XP,
 	events = {
 		"PLAYER_XP_UPDATE",
 		"PLAYER_LOGIN",

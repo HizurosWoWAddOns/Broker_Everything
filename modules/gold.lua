@@ -4,7 +4,7 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-L.Gold = BONUS_ROLL_REWARD_MONEY;
+
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
@@ -28,6 +28,7 @@ I[name] = {iconfile="Interface\\Minimap\\TRACKING\\Auctioneer",coords={0.05,0.95
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show gold of all your chars and lost and earned money for the current session"],
+	label = BONUS_ROLL_REWARD_MONEY,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_MONEY",

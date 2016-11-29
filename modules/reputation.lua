@@ -48,6 +48,7 @@ I[name] = {iconfile="Interface\\Icons\\Achievement_Reputation_01", coords={0.1,0
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Broker to show faction standing of your character"],
+	label = REPUTATION,
 	--icon_suffix = "",
 	events = {
 		"PLAYER_ENTERING_WORLD",

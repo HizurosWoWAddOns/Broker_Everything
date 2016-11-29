@@ -141,6 +141,7 @@ ns.modules.system_core = {
 
 ns.modules[name_sys] = {
 	desc = L["Broker to show system infos like fps, traffic, latency and memory in broker and tooltip"],
+	label = CHAT_MSG_SYSTEM,
 	events = {},
 	updateinterval = nil,
 	config_defaults = {
@@ -173,7 +174,7 @@ ns.modules[name_sys] = {
 		updateInterval = {[0]=true,[30]=true,[60]=true,[300]=true,[600]=true,[1200]=true,[2400]=true,[3600]=true}
 	},
 	config = {
-		{ type="header", label=L[name_sys], align="left", icon=I[name_sys] },
+		{ type="header", label=CHAT_MSG_SYSTEM, align="left", icon=I[name_sys] },
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["On broker options"], align="center" },
 		{ type="separator", inMenuInvisible=true },
@@ -716,7 +717,7 @@ local function updateAll()
 			tinsert(broker,interfaceVersion);
 		end
 
-		ns.LDB:GetDataObjectByName(ldbNameSys).text = #broker>0 and table.concat(broker," ") or L[name_sys];
+		ns.LDB:GetDataObjectByName(ldbNameSys).text = #broker>0 and table.concat(broker," ") or CHAT_MSG_SYSTEM;
 
 		if ttSys~=nil and ttSys.key~=nil and ttSys.key==ttNameSys and ttSys:IsShown() then
 			createTooltip(ttSys, name_sys, ttNameSys, true);

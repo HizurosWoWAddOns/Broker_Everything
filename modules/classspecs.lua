@@ -10,7 +10,7 @@ if ns.build<70000000 then return end
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "ClassSpecs" -- L["ClassSpecs"]
+local name = "ClassSpecs"
 local ldbName, ttName, ttColumns, tt, createMenu, createTalentMenu = name, name.."TT", 4;
 local createTooltip
 
