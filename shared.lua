@@ -637,6 +637,8 @@ do
 					obj.level=lvl;
 				elseif obj.tooltip[i]:find(_UPGRADES) then
 					_,obj.upgrades = strsplit(" ",obj.tooltip[i]);
+				elseif i>4 and obj.setname==nil and obj.tooltip[i]:find("%(%d*/%d*%)$") then
+					obj.setname = strsplit("(",obj.tooltip[i]);
 				else
 					local socketCount,inLines = 0,{};
 					-- detect sockets in tooltip
@@ -1018,9 +1020,9 @@ do
 		data.lines={};
 		for _,v in ipairs(regions) do
 			if (v~=nil) and (v:GetObjectType()=="FontString")then
-				local str = v:GetText();
-				if type(str)=="string" and strlen(str)>0 then
-					tinsert(data.lines,v:GetText());
+				local str = strtrim(v:GetText() or "");
+				if strlen(str)>0 then
+					tinsert(data.lines,str);
 				end
 			end
 		end
