@@ -584,7 +584,7 @@ ns.modules[name].onevent = function(self,event,msg)
 		return;
 	end
 	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName);
-	local numBNFriends, numOnlineBNFriends = "?","?";
+	local numBNFriends, numOnlineBNFriends = 0,0;
 	if BNConnected() then
 		numBNFriends, numOnlineBNFriends = BNGetNumFriends();
 	end
