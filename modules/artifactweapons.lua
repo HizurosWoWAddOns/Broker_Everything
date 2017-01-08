@@ -122,7 +122,8 @@ ns.modules[name] = {
 		showRelicItemLevel = false,
 		showRelicIncreaseItemLevel = true,
 		showItems = true,
-		showTotalAP = true
+		showTotalAP = true,
+		showKnowledge = true
 	},
 	config_allowed = {},
 	config = {
@@ -150,6 +151,7 @@ ns.modules[name] = {
 			default = "1"
 		},
 		{ type="toggle", name="showPower", label=L["Show unspend artifact power"], tooltip=L["Show amount summary of artifact power from items in your backpack in broker button"]},
+		{ type="toggle", name="showKnowledge", label=L["Show artifact knowledge"], tooltip=L["Show artifact knowledge in broker button"]},
 		{ type="toggle", name="showWarning", label=L["Show 'not equipped' warning"], tooltip=L["Show 'artifact weapon not equipped' warning in broker button"]},
 	},
 	clickOptions = {
@@ -286,19 +288,18 @@ function updateItemState()
 end
 
 local function GetRelicTooltipData(data)
-	if data and data.lines and #data.lines>0 then
-		local obj = data.obj;
-		local iLevel = tonumber(data.lines[2]:match(_ITEM_LEVEL)) or tonumber(data.lines[3]:match(_ITEM_LEVEL));
-		local increaseLevel = tonumber(data.lines[5]:match("(.*) "..RELIC_ITEM_LEVEL_INCREASE)) or tonumber(data.lines[6]:match("(.*) "..RELIC_ITEM_LEVEL_INCREASE));
-		if iLevel then
-			ns.toon[name][obj.awItemID].relic[obj.relicIndex].level = iLevel;
+	local obj = data.obj or {};
+	if obj.awItemID and obj.relicIndex then
+		if ns.toon[name][obj.awItemID].relic==nil then
+			ns.toon[name][obj.awItemID].relic = {};
 		end
-		if increaseLevel then
-			ns.toon[name][obj.awItemID].relic[obj.relicIndex].increase = increaseLevel;
+		local iLevel,increaseLevel = 0,0;
+		if data and data.lines and #data.lines>0 then
+			iLevel = tonumber(data.lines[2]:match(_ITEM_LEVEL)) or tonumber(data.lines[3]:match(_ITEM_LEVEL)) or 0;
+			increaseLevel = tonumber(data.lines[5]:match("(.*) "..RELIC_ITEM_LEVEL_INCREASE)) or tonumber(data.lines[6]:match("(.*) "..RELIC_ITEM_LEVEL_INCREASE)) or 0;
 		end
-	else
-		ns.toon[name][obj.awItemID].relic[obj.relicIndex].level = 0;
-		ns.toon[name][obj.awItemID].relic[obj.relicIndex].increase = 0;
+		ns.toon[name][obj.awItemID].relic[obj.relicIndex].level = iLevel;
+		ns.toon[name][obj.awItemID].relic[obj.relicIndex].increase = increaseLevel;
 	end
 end
 
@@ -374,6 +375,10 @@ function updateBroker()
 		elseif ns.profile[name].showXP=="2" then
 			tinsert(data,C("yellow",ns.FormatLargeNumber(xpForNextPoint-artifactXP)));
 			allDisabled=false;
+		end
+
+		if ns.profile[name].showKnowledge and ns.toon[name].knowledgeLevel>0 then
+			tinsert(data,C("orange",ns.toon[name].knowledgeLevel));
 		end
 
 		if ns.profile[name].showPower then
