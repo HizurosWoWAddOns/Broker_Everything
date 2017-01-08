@@ -95,7 +95,7 @@ ns.modules[name] = {
 		{ type="header", label=XP, align="left", icon=I[name] },
 		{ type="separator" },
 		{ type="toggle", name="showMyOtherChars", label=L["Show other chars xp"], tooltip=L["Display a list of my chars on same realm with her level and xp"] },
-		{ type="toggle", name="showNonMaxLevelOnly", label=L["Show non max. level characters only"], tooltip=L["Hide all characters who have reached the level cap."] },
+		{ type="toggle", name="showNonMaxLevelOnly", label=L["Hide characters at maximum level"], tooltip=L["Hide all characters who have reached the level cap."] },
 		{ type="toggle", name="showAllRealms", label=L["Show all realms"], tooltip=L["Show characters from all realms in tooltip."] },
 		{ type="select", name="display", label=L["Display XP in broker"], tooltip=L["Select to show XP as an absolute value; Deselected will show it as a percentage."],
 			default="1",
@@ -166,39 +166,30 @@ end
 
 local function createTooltip2(parentLine)
 	local data = parentLine.info;
-	tt2 = ns.acquireTooltip({ttName2, 2, "LEFT", "RIGHT"},{true},{parentLine,"horizontal",tt});
+	tt2 = ns.acquireTooltip({ttName2, 3, "LEFT", "RIGHT", "RIGHT"},{true},{parentLine,"horizontal",tt});
 
 	tt2:Clear();
 
-	tt2:AddLine(C("ltblue",L["XP bonus"]),C("green",data.bonusSum.."%"));
+	tt2:AddLine(C("ltblue",L["XP bonus"]),C("ltblue",L["max Level"]),C("ltblue",L["XP bonus"]));
 	tt2:AddSeparator(1);
 	for slotId,slotName in ns.pairsByKeys(slots) do
 		local v=data.bonus[slotId] or {};
 		if(slotId==998)then
-			tt2:AddLine(C("ltyellow",slotName),(v.percent) and v.percent.."%" or C("ltgray",ERR_GUILD_PLAYER_NOT_IN_GUILD));
+			tt2:AddLine(C("ltyellow",slotName),v.maxLevel or "",(v.percent) and v.percent.."%" or C("ltgray",ERR_GUILD_PLAYER_NOT_IN_GUILD));
 		elseif(slotId==999)then
 			-- ignore refer-a-friend
 		else
 			tt2:AddLine(
 				C("ltyellow",slotName),
+				v.maxLevel or "",
 				(v.percent==nil and C("ltgray",L["Not equipped"])) or (v.outOfLevel==true and C("red",L["Out of level"])) or v.percent.."%"
 			);
 		end
 	end
+	tt2:AddSeparator();
+	tt2:AddLine(C("ltblue",L["Summary"]),"",C(data.bonusSum>0 and "green" or "gray",data.bonusSum.."%"));
 
 	ns.roundupTooltip(tt2);
-	--[[
-	tt2:ClearAllPoints();
-	tt2:SetPoint("TOP",parentLine,"TOP",0,0);
-
-	local tL,tR,tT,tB = ns.getBorderPositions(tt);
-	local uW = UIParent:GetWidth();
-	if tR<(uW/2) then
-		tt2:SetPoint("RIGHT",tt,"LEFT",-2,0);
-	else
-		tt2:SetPoint("LEFT",tt,"RIGHT",2,0);
-	end
-	]]
 end
 
 function createTooltip(tt)
@@ -223,7 +214,7 @@ function createTooltip(tt)
 
 	if (UnitLevel("player")<MAX_PLAYER_LEVEL) and (#data.bonus>0) then
 		tt:AddSeparator(5,0,0,0,0);
-		tt:AddLine(C("ltblue",L["XP bonus"]),"",C("green",data.bonusSum.."%"));
+		tt:AddLine(C("ltblue",L["XP bonus"]),C("ltblue",L["max Level"]),C("ltblue",L["XP bonus"]));
 		tt:AddSeparator();
 		for slotId,slotName in ns.pairsByKeys(slots) do
 			local v = data.bonus[slotId] or {};
@@ -236,11 +227,13 @@ function createTooltip(tt)
 			else
 				tt:AddLine(
 					C("ltyellow", slotName),
-					"",
+					v.maxLevel or "",
 					(v.percent==nil and C("ltgray",L["not equipped"])) or (v.outOfLevel==true and C("red",L["Out of Level"])) or v.percent.."%"
 				);
 			end
 		end
+		tt:AddSeparator();
+		tt:AddLine(C("ltblue",L["Summary"]),"",C(data.bonusSum>0 and "green" or "gray",data.bonusSum.."%"));
 	end
 
 	if ns.profile[name].showMyOtherChars then
@@ -347,7 +340,7 @@ ns.modules[name].onevent = function(self,event,msg)
 				elseif upgrade==584 then -- maybe used by blizzard in future... ^^
 					maxLevel = 110;
 				end
-				data.bonus[slotId] = {percent=items[itemId][1], outOfLevel=(UnitLevel("player")>maxLevel) and true or nil};
+				data.bonus[slotId] = {percent=items[itemId][1], outOfLevel=(UnitLevel("player")>maxLevel) and true or nil, maxLevel=maxLevel};
 			end
 		end
 
