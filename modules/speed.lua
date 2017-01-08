@@ -20,7 +20,8 @@ local riding_skills = { -- <spellid>, <skill>, <minLevel>, <air speed increase>,
 	{33388, 20,  60},
 };
 local licences = { -- <spellid>, <minLevel>, <mapIds>
-	{L["Broken Isles Flying (Patch 7.2)"], nil, nil, {L["Broken Isles Pathfinder, Part Two (Patch 7.2)"]," ","a11190",L["Explore Broken Shore"],L["Defender of the Broken Isles"],L["Breaching the Tomb"],L["Legionfall Commander"]," ",L["Reward: Broken Isles Flying"]}}, --{"a?`", 100},
+	{L["Broken Isles Flying"], nil, L["Patch 7.2"], {L["Broken Isles Pathfinder, Part Two"]," ","a11190",L["Explore Broken Shore"],L["Defender of the Broken Isles"],L["Breaching the Tomb"],L["Legionfall Commander"]," ",L["Reward: Broken Isles Flying"]}}, --{"a?`", 100},
+
 	{"a10018", 90, { --[[ draenor map ids? ]] }},
 	{115913,   85, {[862]=1,[858]=1,[929]=1,[928]=1,[857]=1,[809]=1,[905]=1,[903]=1,[806]=1,[873]=1,[808]=1,[951]=1,[810]=1,[811]=1,[807]=1}},
 	{54197,    68, {[485]=1,[486]=1,[510]=1,[504]=1,[488]=1,[490]=1,[491]=1,[541]=1,[492]=1,[493]=1,[495]=1,[501]=1,[496]=1}},
@@ -41,9 +42,14 @@ local bonus_spells = { -- <spellid>, <chkActive[bool]>, <type>, <typeValue>, <cu
 
 	-- misc
 	{ 78633, false,    nil,        nil, true, 10}, -- guild perk
-	{ 220510, true,    nil,        nil, false, UNKNOWN} -- Bloodtotem Saddle Blanket (Tailoring 800)
+	{ 220510, true,    nil,        nil, false, UNKNOWN}, -- Bloodtotem Saddle Blanket (Tailoring 800)
+	{ 226342, true,    nil,        nil, false, 20}
 }
+-- note: little problem with not stagging speed increasement spells...
 
+--[[
+Greetings! [name] might be the perfect guild for you! We are a sophisticated little community with a laidback atmosphere. There is no pushing, just amazingness and nice members. Whisper me for an invitation.
+]]
 
 -------------------------------------------
 -- register icon names and default files --
@@ -247,7 +253,7 @@ local function createTooltip(tt)
 			end
 			if(Name)then
 				if v[2]==nil then
-					l=tt:AddLine(C("ltgray",Name));
+					l=tt:AddLine(C("ltgray",Name),type(v[3])=="string" and C("ltgray",v[3]));
 				elseif(ready and lvl<v[2])then
 					l=tt:AddLine(C("yellow",Name),C("ltgray",L["Need level"].." "..v[2]));
 				elseif(ready) then
