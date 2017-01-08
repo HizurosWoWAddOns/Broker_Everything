@@ -23,9 +23,7 @@ local plot_order=setmetatable({[59]=1,[63]=2,[67]=3,[81]=4,[98]=5,[23]=6,[24]=7,
 local garrLevel, ohLevel, syLevel = 0,0,0;
 local merchant=false;
 local UseContainerItemHooked = false;
-if ns.build>7000000 then
-	LName = GARRISON_LOCATION_TOOLTIP.."/".."OrderHall";
-end
+
 
 -------------------------------------------
 -- register icon names and default files --
@@ -178,11 +176,7 @@ local function createTooltip(tt)
 	tt:Clear();
 	tt:AddHeader(C("dkyellow",LName));
 
-	if (ohLevel>0 and ns.profile[name].showOrderhall) then
-		
-	end
-
-	if (garrLevel>0 and ns.profile[name].showGarrison) then
+	if (garrLevel>0) then
 		if (ns.profile[name].showChars and false) then
 			tt:AddSeparator(4,0,0,0,0);
 			local l=tt:AddLine( C("ltblue", L["Characters"]) ); -- 1
