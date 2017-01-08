@@ -183,7 +183,11 @@ function createTooltip(tt,update)
 	tt:AddSeparator();
 	for i=1, num do
 		spec[i]={};
-		spec[i].id, spec[i].name, spec[i].desc, spec[i].icon, _, spec[i].role = GetSpecializationInfo(i);
+		if ns.build<71500000 then
+			spec[i].id, spec[i].name, spec[i].desc, spec[i].icon,_, spec[i].role = GetSpecializationInfo(i); -- 7.1.0
+		else
+			spec[i].id, spec[i].name, spec[i].desc, spec[i].icon, spec[i].role = GetSpecializationInfo(i); -- since 7.1.5
+		end
 		if active.index==i then
 			active.id,active.name,active.icon = spec[i].id,spec[i].name,spec[i].icon;
 		end
