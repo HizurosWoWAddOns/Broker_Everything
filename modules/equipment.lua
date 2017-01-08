@@ -130,6 +130,7 @@ ns.modules[name] = {
 		showNotEnchanted = true,
 		showEmptyGems = true,
 		showTSet = true,
+		showSetName = true,
 		showGreenText = true,
 		showUpgrades = true,
 	},
@@ -144,6 +145,7 @@ ns.modules[name] = {
 		{ type="toggle", name="showNotEnchanted" ,   label=L["Show 'not enchanted' mark"],         tooltip=L["Display a red # on not enchanted/enchantable items"]},
 		{ type="toggle", name="showEmptyGems" ,      label=L["Show 'empty socket' mark"],          tooltip=L["Display a yellow # on items with empty sockets"]},
 		{ type="toggle", name="showTSet" ,           label=L["Show T-Set"],                        tooltip=L["Display a T-Set label on items"]},
+		{ type="toggle", name="showSetName",         label=L["Show Set name"],                     tooltip=L["Display set name on items"]},
 		{ type="toggle", name="showGreenText" ,      label=L["Show green text"],                   tooltip=L["Display green text line from item tooltip like titanforged"]},
 		{ type="toggle", name="showUpgrades" ,       label=L["Show upgrade info"],                 tooltip=L["Display upgrade info like 2/6"]},
 		{ type="toggle", name="fullyUpgraded",       label=L["Darker blue for fully upgraded"],    tooltip=L["Display upgrade counter in darker blue on fully upgraded items"]},
@@ -388,7 +390,7 @@ local function createTooltip(tt)
 		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do
 			if inventory[i] then
 				none=false;
-				local tSetItem,enchanted,greenline,upgrades,gems = "","","","","";
+				local tSetItem,setName,enchanted,greenline,upgrades,gems = "","","","","","";
 				if ns.profile[name].showNotEnchanted and enchantSlots[i] and (tonumber(inventory[i].linkData[1]) or 0)==0 then
 					enchanted=C("red"," #");
 					miss=true;
@@ -399,6 +401,9 @@ local function createTooltip(tt)
 				end
 				if(ns.profile[name].showTSet and tSetItems[inventory[i].id])then
 					tSetItem=C("yellow"," T"..tSetItems[inventory[i].id]);
+				end
+				if(ns.profile[name].showSetName and inventory[i].setname)then
+					setName=" "..C("dkgreen",inventory[i].setname);
 				end
 				if(ns.profile[name].showGreenText and inventory[i].tooltip and type(inventory[i].tooltip[2])=="string" and inventory[i].tooltip[2]:find("\124"))then
 					greenline = " "..inventory[i].tooltip[2];
@@ -412,7 +417,7 @@ local function createTooltip(tt)
 				end
 				local l = tt:AddLine(
 					C("ltyellow",_G[slots[i].."SLOT"]),
-					C("quality"..inventory[i].rarity,inventory[i].name) .. greenline .. tSetItem .. upgrades .. enchanted .. gems,
+					C("quality"..inventory[i].rarity,inventory[i].name) .. greenline .. tSetItem .. setName .. upgrades .. enchanted .. gems,
 					C(GetILevelColor(inventory[i].level),inventory[i].level)
 				);
 				tt.lines[l].invLink = inventory[i].link;
