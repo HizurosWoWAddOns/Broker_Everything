@@ -129,7 +129,7 @@ end
 
 local function deleteCharacterGoldData(self,_,button)
 	if button == "RightButton" then
-		Broker_Everything_CharacterDB[name_realm].gold = nil;
+		Broker_Everything_CharacterDB[self.name_realm].gold = nil;
 		tt:Clear();
 		createTooltip(tt,true);
 	end 
@@ -167,6 +167,7 @@ function createTooltip(tt,update)
 			local realm = sAR==true and C("dkyellow"," - "..ns.scm(realm)) or "";
 			local line, column = tt:AddLine( C(v.class,ns.scm(charName)) .. realm .. faction, ns.GetCoinColorOrTextureString(name,v.gold));
 
+			tt.lines[line].name_realm = name_realm;
 			tt:SetLineScript(line, "OnMouseUp", deleteCharacterGoldData);
 
 			totalGold = totalGold + v.gold;
