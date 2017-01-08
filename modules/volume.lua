@@ -332,10 +332,14 @@ function createTooltip(tt, update)
 
 	if not update then
 		ns.roundupTooltip(tt);
-		tt.OnHide = function()
-			for i=1, #wheels do
-				tt.lines[wheels[i]]:EnableMouseWheel(false);
-				tt.lines[wheels[i]]:SetScript("OnMouseWheel",nil);
+		tt.OnHide = function(self)
+			if type(wheels)=="table" then
+				for i=1, #wheels do
+					if self.lines[wheels[i]] and self.lines[wheels[i]].EnableMouseWheel then
+						self.lines[wheels[i]]:EnableMouseWheel(false);
+						self.lines[wheels[i]]:SetScript("OnMouseWheel",nil);
+					end
+				end
 			end
 		end
 	end
