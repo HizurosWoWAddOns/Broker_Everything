@@ -9,11 +9,12 @@
 	<Script file="bags.lua"/>
 	<Script file="calendar.lua"/>
 	<Script file="chatchannels.lua"/>
+	<Script file="classspecs.lua"/>
 	<Script file="clock.lua"/>
 	<Script file="currency.lua"/>
-	<Script file="classspecs.lua"/>
 	<Script file="dualspec.lua"/>
 	<Script file="durability.lua"/>
+	<Script file="emissaryquests.lua"/>
 	<Script file="equipment.lua"/>
 	<Script file="followers.lua"/>
 	<Script file="framenames.lua"/>
