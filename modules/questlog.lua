@@ -272,7 +272,11 @@ local function ttAddLine(obj)
 	if ns.profile[name].showQuestTagsShort then tt:SetCell(l,cell,obj[ShortType]); end cell=cell+1; -- [2]
 	tt:SetCell(l,cell,C(color,ns.strCut(obj[Title2] or obj[Title],32))); cell=cell+1; -- [3]
 	if ns.profile[name].showQuestZone then
-		tt:SetCell(l,cell,questZones[obj[QuestId]].mapName or " "); cell=cell+1; -- [4]
+		local mapName = " ";
+		if obj[QuestId] and questZones[obj[QuestId]] and questZones[obj[QuestId]].mapName then
+			mapName = questZones[obj[QuestId]].mapName;
+		end
+		tt:SetCell(l,cell,mapName); cell=cell+1; -- [4]
 	end
 	if ns.profile[name].showQuestTags then
 		tt:SetCell(l,cell,C(color,obj[Type])); cell=cell+1; -- [5]
