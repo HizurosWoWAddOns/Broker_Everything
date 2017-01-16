@@ -134,6 +134,7 @@ ns.modules[name] = {
 		showSetName = true,
 		showGreenText = true,
 		showUpgrades = true,
+		showShorterInfo = false
 	},
 	config_allowed = nil,
 	config = {
@@ -151,11 +152,12 @@ ns.modules[name] = {
 		{ type="toggle", name="showUpgrades" ,       label=L["Show upgrade info"],                 tooltip=L["Display upgrade info like 2/6"]},
 		{ type="toggle", name="fullyUpgraded",       label=L["Darker blue for fully upgraded"],    tooltip=L["Display upgrade counter in darker blue on fully upgraded items"]},
 
-		{ type="separator" },
+		{ type="separator", alpha=0 },
 		{ type="header", label=L["Broker button options"]},
 		{ type="separator", inMenuInvisible=true},
-		{ type="toggle", name="showCurrentSet",      label=L["Show current set"],                  tooltip=L["Display your current equipment set on broker button"], event="BE_DUMMY_EVENT"},
-		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],           tooltip=L["Display your average item level on broker button"], event="BE_DUMMY_EVENT"},
+		{ type="toggle", name="showCurrentSet",      label=L["Show current set"],                             tooltip=L["Display your current equipment set on broker button"], event="BE_DUMMY_EVENT"},
+		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],                      tooltip=L["Display your average item level on broker button"], event="BE_DUMMY_EVENT"},
+		{ type="toggle", name="showShorterInfo",     label=L["Show shorter Info for 'Unknown set' and more"], tooltip=L["Display shorter Info on broker button. 'Set?' instead of 'Unknown set'. 'No sets' instead of 'No sets found'."], event=true}
 	},
 	clickOptions = {
 		["1_open_character_info"] = {
@@ -232,10 +234,18 @@ local function updateBroker()
 				end
 			end
 			if(#text==0)then
-				tinsert(text,pending~=false and pending or C("red",L["Unknown set"]));
+				local txt = L["Unknown set"];
+				if ns.profile[name].showShorterInfo then
+					txt = L["Set?"];
+				end
+				tinsert(text,pending~=false and pending or C("red",txt));
 			end
 		else
-			tinsert(text,L["No sets found"]);
+			local txt = L["No sets found"];
+			if ns.profile[name].showShorterInfo then
+				txt = L["No sets"];
+			end
+			tinsert(text,txt);
 		end
 	elseif pending~=false then
 		tinsert(text,pending);
