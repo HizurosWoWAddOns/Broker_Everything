@@ -81,11 +81,30 @@ ns.modules[name] = {
 --------------------------
 -- some local functions --
 --------------------------
+local function clearStoredMailsData()
+	for i=1, #Broker_Everything_CharacterDB.order do
+		if Broker_Everything_CharacterDB.order[i]~=ns.player.name_realm then
+			local v = Broker_Everything_CharacterDB[Broker_Everything_CharacterDB.order[i]];
+			if v.mail then
+				if v.mail.count~=nil then
+					v.mail = { new={}, stored={} };
+				else
+					v.mail.new = {};
+					v.mail.stored = {};
+				end
+			end
+		end
+	end
+	ns.modules[name].onevent({},"BE_DUMMY_EVENT");
+end
+
 local function createMenu(self,button)
 	if (button=="RightButton") then
 		if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 		ns.EasyMenu.InitializeMenu();
 		ns.EasyMenu.addConfigElements(name);
+		ns.EasyMenu.addEntry({separator=true});
+		ns.EasyMenu.addEntry({ label = C("yellow",L["Reset stored mails data"]), func=clearStoredMailsData, keepShown=false });
 		ns.EasyMenu.ShowMenu(parent);
 	end
 end
@@ -143,7 +162,7 @@ local function UpdateStatus(event)
 			local v = Broker_Everything_CharacterDB[Broker_Everything_CharacterDB.order[i]];
 			if v.mail then
 				if v.mail.count~=nil then
-					v.mail = { new={}, stored=v.mail.next3 };
+					v.mail = { new={}, stored={} };
 				end
 				if #v.mail.new>0 or #v.mail.stored>0 then
 					mailStored = true;
