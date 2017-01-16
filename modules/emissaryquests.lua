@@ -135,14 +135,17 @@ local function updateBroker()
 end
 
 local function CalculateBountySubObjectives(data,toon)
-	toon.numCompleted = 0;
-	data.numTotal = 0;
-
-	for objectiveIndex = 1, data.numObjectives do
-		if data.questID>0 then
+	local reset = true;
+	if data.questID>0 then
+		for objectiveIndex = 1, data.numObjectives do
 			local objectiveText, _, _, numFulfilled, numRequired = GetQuestObjectiveInfo(data.questID, objectiveIndex, false);
 			if objectiveText and #objectiveText > 0 and numRequired > 0 then
 				for objectiveSubIndex = 1, numRequired do
+					if reset then
+						toon.numCompleted = 0;
+						data.numTotal = 0;
+						reset = false;
+					end
 					if objectiveSubIndex <= numFulfilled then
 						toon.numCompleted = toon.numCompleted + 1;
 					end
