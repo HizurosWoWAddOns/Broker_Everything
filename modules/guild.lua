@@ -472,7 +472,7 @@ local function createTooltip(tt,update)
 		tt:AddSeparator(4,0,0,0,0);
 	end
 
-	if (db.showApplicants) and (guild[gNumApplicants]>0) then
+	if (db.showApplicants) and type(guild[gNumApplicants])=="number" and (guild[gNumApplicants]>0) then
 		local line,column = tt:AddLine(C("orange",LEVEL),C("orange",L["Applicant"]),C("orange",L["Roles"]),C("orange",RAID_INSTANCE_EXPIRES_EXPIRED),C("orange",COMMENT));
 		tt:AddSeparator();
 		for i, a in ipairs(applicants) do
