@@ -18,7 +18,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Reputation"; -- REPUTATION
-local ldbName, ttName, ttColumns, tt, createMenu,createTooltip,updateBroker = name, name.."TT", 5;
+local ldbName, ttName, ttColumns, tt, createMenu,createTooltip,updateBroker = name, name.."TT", 6;
 local Name,description,standingID,barMin,barMax,barValue,atWarWith,canToggleAtWar,isHeader,isCollapsed,hasRep,isWatched,isChild,factionID,hasBonusRepGain,canBeLFGBonus,factionStandingText=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17;
 
 local bars,wasShown = {},false;
@@ -28,6 +28,7 @@ local allinone_bodyguard = 31000;
 local session,initSessionTicker = {};
 local collapsed,round = {},-1;
 local bodyguards,known_bodyguards = {193,207,216,218,219},{};
+local idStr = C("gray"," (%d)");
 local formats = {
 	["_NONE"]       = "None",
 	["Percent"]     = "25.4%",
@@ -59,6 +60,7 @@ ns.modules[name] = {
 		bgBars = true,
 		standingText = true,
 		showSession = true,
+		showID = false,
 		numbers = "Percent",
 		watchedNameOnBroker = true,
 		watchedStandingOnBroker = true,
@@ -91,6 +93,7 @@ ns.modules[name] = {
 			},
 			default = "single",
 		},
+		{ type="toggle", name="showID", label=L["Show id's"], tooltip=L["Display faction and standing id's in tooltip"]},
 		{ type="separator" },
 		{ type="header", label=L["Broker button options"]},
 		{ type="separator", inMenuInvisible=true },
@@ -276,14 +279,22 @@ local function ttAddLine(tt,mode,data,count,childLevel)
 		end
 	end
 
+	local id = "";
+	if ns.profile[name].showID then
+		id = idStr:format(data[factionID]);
+	end
 	tinsert(line,
 		strrep("    ",inset)..icon..
-		C(color,ns.strCut(tostring(data[Name]),24))..
+		C(color,ns.strCut(tostring(data[Name]),24))..id..
 		(data[atWarWith] and " |TInterface\\buttons\\UI-Checkbox-SwordCheck:12:12:0:-1:32:32:0:18:0:18|t" or "")
 	);
 
 	if(ns.profile[name].standingText)then
-		tinsert(line,data[factionStandingText]);
+		local id = "";
+		if ns.profile[name].showID then
+			id = idStr:format(data[standingID]);
+		end
+		tinsert(line,data[factionStandingText]..id);
 	end
 
 	if(mode=="Percent")then
