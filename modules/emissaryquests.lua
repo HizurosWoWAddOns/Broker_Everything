@@ -6,12 +6,13 @@ local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
+
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Emissary Quests"; L[name] = BOUNTY_BOARD_LOCKED_TITLE;
 local ldbName, ttName, ttColumns, tt, createMenu = name, name.."TT", 4
-local factions,totalQuests = {},{};
+local factions,totalQuests,locked = {},{},false;
 local continents = {
 	1007 -- legion
 };
@@ -155,7 +156,12 @@ local function CalculateBountySubObjectives(data,toon)
 	end
 end
 
+local function unlock()
+	locked = false;
+end
+
 local function updateData()
+	if locked then return end locked = true;
 	local Time = ceil(time()/60)*60;
 	for c=1, #continents do
 		local bounties,location,locked = GetQuestBountyInfoForMapID(continents[c]); -- empty table on chars lower than 110
@@ -187,11 +193,11 @@ local function updateData()
 	end
 
 	updateBroker();
+	C_Timer.After(1,unlock);
 end
 
 
 local function createTooltip(tt)
-
 	local sAR,sAF = ns.profile[name].showAllRealms==true,ns.profile[name].showAllFactions==true;
 	local Time = time();
 	table.sort(factions,sortFactions);
