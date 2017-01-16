@@ -12,12 +12,9 @@ Broker_EverythingDB = {}
 
 ns.L = setmetatable({}, {
 	__index = function(t, k)
+		if not k then return "?"; end
 		local v=tostring(k);
-		if (not v) or (strlen(v)==0) then
-			v = "?";
-		else
-			rawset(t, k, v);
-		end
+		rawset(t, k, v);
 		return v;
 	end
 })
