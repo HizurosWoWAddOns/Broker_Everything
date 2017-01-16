@@ -382,8 +382,8 @@ local function createTooltip(tt)
 		tt:AddSeparator(3,0,0,0,0)
 		local l,c = tt:AddLine()
 		local _,_,mod = ns.DurationOrExpireDate();
-		tt:SetCell(l,1,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]),nil,nil,2);
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.AddSpannedLine(tt,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]));
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end

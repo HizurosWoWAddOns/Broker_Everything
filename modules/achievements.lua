@@ -195,6 +195,11 @@ local function createTooltip(tt)
 			end
 		end
 	end
+
+	if ns.profile.GeneralOptions.showHints then
+		tt:AddSeparator(4,0,0,0,0)
+		ns.clickOptions.ttAddHints(tt,name);
+	end
 	ns.roundupTooltip(tt);
 end
 
@@ -213,7 +218,11 @@ ns.modules[name].init = function()
 	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 end
 
--- ns.modules[name].onevent = function(self,event,...) end
+ns.modules[name].onevent = function(self,event,...)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+	end
+end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
 -- ns.modules[name].ontooltip = function(tooltip) end
@@ -230,16 +239,6 @@ ns.modules[name].onenter = function(self)
 end
 
 -- ns.modules[name].onleave = function(self) end
-
---[[ ns.modules[name].onclick = function(self,button)
-	if button=="LeftButton" then
-		
-	elseif button=="RightButton" then
-		if IsShiftKeyDown() then
-		else
-		end
-	end
-end ]]
-
+-- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
 

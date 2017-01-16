@@ -155,8 +155,8 @@ ns.modules[name] = {
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["Broker button options"]},
 		{ type="separator", inMenuInvisible=true},
-		{ type="toggle", name="showCurrentSet",      label=L["Show current set"],                             tooltip=L["Display your current equipment set on broker button"], event="BE_DUMMY_EVENT"},
-		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],                      tooltip=L["Display your average item level on broker button"], event="BE_DUMMY_EVENT"},
+		{ type="toggle", name="showCurrentSet",      label=L["Show current set"],                             tooltip=L["Display your current equipment set on broker button"], event=true},
+		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],                      tooltip=L["Display your average item level on broker button"], event=true},
 		{ type="toggle", name="showShorterInfo",     label=L["Show shorter Info for 'Unknown set' and more"], tooltip=L["Display shorter Info on broker button. 'Set?' instead of 'Unknown set'. 'No sets' instead of 'No sets found'."], event=true}
 	},
 	clickOptions = {
@@ -361,8 +361,8 @@ local function createTooltip(tt)
 		tt:AddLine(C("ltblue",L["Sets"]));
 		tt:AddSeparator();
 		if (CanUseEquipmentSets) and (not CanUseEquipmentSets()) then  -- prevent error if function removed
-			ns.AddSpannedLine(tt,L["Equipment manager is not enabled"],ttColumns);
-			ns.AddSpannedLine(tt,L["Enable it from the character info"],ttColumns);
+			ns.AddSpannedLine(tt,L["Equipment manager is not enabled"]);
+			ns.AddSpannedLine(tt,L["Enable it from the character info"]);
 		else
 			local numEquipSets = GetNumEquipmentSets()
 
@@ -372,18 +372,18 @@ local function createTooltip(tt)
 					local color = (equipPending==eName and "orange") or (numMissing>0 and "red") or (isEquipped and "ltyellow") or false
 					local formatName = color~=false and C(color,eName) or eName
 
-					local line = ns.AddSpannedLine(tt, "|T"..(icon or ns.icon_fallback)..":0|t "..formatName, ttColumns);
+					local line = ns.AddSpannedLine(tt, "|T"..(icon or ns.icon_fallback)..":0|t "..formatName);
 					tt.lines[line].equipName = eName;
 					tt:SetLineScript(line, "OnMouseUp", equipOnClick);
 				end
 
 				if (ns.profile.GeneralOptions.showHints) then
 					tt:AddSeparator();
-					ns.AddSpannedLine(tt, C("ltblue",L["Click"]).." "..C("green",L["to equip"]) .." - ".. C("ltblue",L["Ctrl+Click"]).." "..C("green",L["to delete"]), ttColumns);
-					ns.AddSpannedLine(tt, C("ltblue",L["Shift+Click"]).." "..C("green",L["to update/save"]), ttColumns);
+					ns.AddSpannedLine(tt, C("ltblue",L["Click"]).." "..C("green",L["to equip"]) .." - ".. C("ltblue",L["Ctrl+Click"]).." "..C("green",L["to delete"]));
+					ns.AddSpannedLine(tt, C("ltblue",L["Shift+Click"]).." "..C("green",L["to update/save"]));
 				end
 			else
-				ns.AddSpannedLine(tt,L["No equipment sets found"],ttColumns);
+				ns.AddSpannedLine(tt,L["No equipment sets found"]);
 			end
 		end
 	end
@@ -446,14 +446,14 @@ local function createTooltip(tt)
 		local l = tt:AddLine(nil,nil,C(GetILevelColor(avgItemLevelEquipped),"%.1f"):format(avgItemLevelEquipped));
 		tt:SetCell(l,1,C("ltblue",STAT_AVERAGE_ITEM_LEVEL),nil,nil,2);
 		if (miss) then
-			ns.AddSpannedLine(tt,C("red","#")..": "..C("ltgray",L["Item is not enchanted"]) .. " || " .. C("yellow","#")..": "..C("ltgray",L["Item has empty socket"]),ttColumns);
+			ns.AddSpannedLine(tt,C("red","#")..": "..C("ltgray",L["Item is not enchanted"]) .. " || " .. C("yellow","#")..": "..C("ltgray",L["Item has empty socket"]));
 		end
 	end
 
 	line, column = nil, nil
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0);
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -480,6 +480,8 @@ ns.modules[name].onevent = function(self,event,arg1,...)
 			updateBroker();
 		end
 		updateBroker();
+	elseif event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 end
 

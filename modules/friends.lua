@@ -551,7 +551,7 @@ local function createTooltip(tt)
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(3,0,0,0,0);
 		tt:SetCell(tt:AddLine(),1,C("ltblue",L["Click"]).." || "..C("green",L["Whisper with a friend"]) .." - ".. C("ltblue",L["Alt+Click"]).." || "..C("green",L["Invite a friend"]),nil,nil,columns);
-		ns.clickOptions.ttAddHints(tt,name,ttColumns,2);
+		ns.clickOptions.ttAddHints(tt,name,nil,2);
 	end
 
 	ns.roundupTooltip(tt);

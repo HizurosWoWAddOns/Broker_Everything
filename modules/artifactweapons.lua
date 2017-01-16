@@ -128,7 +128,6 @@ ns.modules[name] = {
 	config_allowed = {},
 	config = {
 		{ type="header", label=L[name], align="left", icon=I[name] },
-		{ type="separator" },
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["Tooltip options"] },
 		{ type="separator", inMenuInvisible=true },
@@ -567,7 +566,7 @@ function createTooltip(tt)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(3,0,0,0,0);
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end

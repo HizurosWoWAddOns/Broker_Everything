@@ -353,7 +353,7 @@ local function createTooltip(tt,ttName,modName)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,modName,ttColumns);
+		ns.clickOptions.ttAddHints(tt,modName);
 	end
 	ns.roundupTooltip(tt);
 end

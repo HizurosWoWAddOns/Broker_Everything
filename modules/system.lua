@@ -176,7 +176,7 @@ ns.modules[name_sys] = {
 	config = {
 		{ type="header", label=CHAT_MSG_SYSTEM, align="left", icon=I[name_sys] },
 		{ type="separator", alpha=0 },
-		{ type="header", label=L["On broker options"], align="center" },
+		{ type="header", label=L["Broker button options"], align="center" },
 		{ type="separator", inMenuInvisible=true },
 		{ type="toggle", name="showInboundOnBroker",     label=L["Show inbound traffic"],  tooltip=L["Display inbound traffic on broker"] },
 		{ type="toggle", name="showOutboundOnBroker",    label=L["Show outbound traffic"], tooltip=L["Display outbound traffic on broker"] },
@@ -191,7 +191,7 @@ ns.modules[name_sys] = {
 		{ type="toggle", name="showInterfaceVersionOnBroker", label=L["Show interface version"], tooltip=L["Display interface version on broker"] },
 
 		{ type="separator", alpha=0 },
-		{ type="header", label=L["In tooltip options"], align="center" },
+		{ type="header", label=L["Tooltip options"], align="center" },
 		{ type="separator", inMenuInvisible=true },
 		{ type="toggle", name="showTrafficInTooltip",     label=L["Show traffic"],      tooltip=L["Display traffic in tooltip"] },
 		{ type="toggle", name="showLatencyInTooltip",     label=L["Show latency"],      tooltip=L["Display latency in tooltip"] },
@@ -569,7 +569,7 @@ local function createTooltip(tt, name, ttName, update)
 		end
 		if (ns.profile.GeneralOptions.showHints) then
 			tt:AddSeparator(4,0,0,0,0)
-			ns.clickOptions.ttAddHints(tt,name_sys,ttColumnsSys);
+			ns.clickOptions.ttAddHints(tt,name_sys);
 		end
 
 	elseif name_fps==name then
@@ -613,7 +613,7 @@ local function createTooltip(tt, name, ttName, update)
 		tt:SetCell(l,3,memory.curStr,nil,nil,1);
 		if (ns.profile.GeneralOptions.showHints) then
 			tt:AddSeparator(4,0,0,0,0)
-			ns.clickOptions.ttAddHints(tt,name_mem,ttColumnsMem);
+			ns.clickOptions.ttAddHints(tt,name_mem);
 		end
 
 	elseif name_traf==name then

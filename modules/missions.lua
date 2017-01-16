@@ -279,15 +279,13 @@ local function createTooltip(tt)
 		tt:AddSeparator(4,0,0,0,0)
 		if act.completed or act.inprogress then
 			if(ns.profile[name].showChars)then
-				local line = tt:AddLine()
-				tt:SetCell(line,1,C("copper",L["Hold shift"]).." || "..C("green",L["Show time in characters list"]),nil,nil,ttColumns);
+				ns.AddSpannedLine(tt,C("copper",L["Hold shift"]).." || "..C("green",L["Show time in characters list"]));
 			end
 			if(ns.profile[name].showReady or ns.profile[name].showActive)then
-				local line = tt:AddLine()
-				tt:SetCell(line,1,C("copper",L["Hold shift"]).." || "..C("green",L["Show followers on missions"]),nil,nil,ttColumns);
+				ns.AddSpannedLine(tt,C("copper",L["Hold shift"]).." || "..C("green",L["Show followers on missions"]));
 			end
 		end
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end

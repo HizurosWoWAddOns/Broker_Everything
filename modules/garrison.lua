@@ -369,10 +369,10 @@ local function createTooltip(tt)
 		tt:AddSeparator(4,0,0,0,0);
 		local _,_,mod = ns.DurationOrExpireDate();
 		if (displayAchievements) then
-			ns.AddSpannedLine(tt,C("ltblue",L["Click"]).." || "..C("green",L["Open achievement"]),ttColumns);
+			ns.AddSpannedLine(tt,C("ltblue",L["Click"]).." || "..C("green",L["Open achievement"]));
 		end
-		ns.AddSpannedLine(tt,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]),ttColumns);
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.AddSpannedLine(tt,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]));
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end

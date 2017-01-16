@@ -239,7 +239,9 @@ ns.roundupTooltip = function(tooltip)
 	if not tooltip then return end
 	tooltip:UpdateScrolling(GetScreenHeight() * (ns.profile.GeneralOptions.maxTooltipHeight/100));
 	tooltip:SetClampedToScreen(true);
-	tooltip:Show();
+	if not tooltip:IsShown() then
+		tooltip:Show();
+	end
 end
 
 ns.hideTooltip = function(tooltip)
@@ -296,10 +298,9 @@ ns.tooltipChkOnShowModifier = function(bool)
 	return false;
 end
 
-ns.AddSpannedLine = function(tt,content,ttColumns,start)
-	start = start or 1;
-	local l = tt:AddLine();
-	tt:SetCell(l,start,content,nil,nil,ttColumns);
+ns.AddSpannedLine = function(tt,content,cells,align,font)
+	local cells,l = cells or {},tt:AddLine();
+	tt:SetCell(l,cells.start or 1,content,font,align,cells.count or 0);
 	return l;
 end
 
@@ -1614,7 +1615,7 @@ do
 					v = table.concat(v," - ");
 					if (type(tt.SetCell)=="function") then
 						local line = tt:AddLine();
-						tt:SetCell(line,1,v,nil,"LEFT",ttColumns);
+						tt:SetCell(line,1,v,nil,"LEFT",ttColumns or 0);
 					else
 						tt:AddLine(v);
 					end
@@ -1622,96 +1623,6 @@ do
 			end
 		end
 	};
-end
-
-
--- ----------------
--- tooltip graph (unstable)
--- ----------------
-do
-	--[[
-	local width,height,space,count = 2,50,1,50;
-	local graphWidth=width*count+(space*count-1);
-
-	local g = CreateFrame("Frame",nil, UIParent);
-	g.bars={};g.elapsed=0;
-	g:SetScript("OnEvent",function(self,event)
-		if(event=="PLAYER_ENTERING_WORLD")then
-			local b = GameTooltip:GetBackdrop()
-			g:SetBackdrop(b)
-			if(b)then
-				g:SetBackdropColor(GameTooltip:GetBackdropColor())
-				g:SetBackdropBorderColor(GameTooltip:GetBackdropBorderColor())
-			end
-			g:SetScale(GameTooltip:GetScale())
-			g:SetAlpha(1);
-			g:SetFrameStrata("TOOLTIP");
-			g:SetWidth(graphWidth+12);
-			g:SetHeight(height+12);
-			g:Hide();
-
-			g.anchor = g:CreateTexture();
-			g.anchor:SetWidth(1); g.anchor:SetHeight(height);
-			g.anchor:SetPoint("LEFT",6+graphWidth+1,0);
-
-			for i=1, count do
-				g.bars[i] = g:CreateTexture();
-				g.bars[i]:SetTexture(1,1,1,0.8);
-				g.bars[i]:SetWidth(width); g.bars[i]:SetHeight(1);
-				g.bars[i]:SetPoint("BOTTOMRIGHT",i==1 and g.anchor or g.bars[i-1],"BOTTOMLEFT",-space,0);
-			end
-
-			g.Min = g:CreateFontString(nil,"ARTWORK","GameFontNormalSmall");
-			g.Max = g:CreateFontString(nil,"ARTWORK","GameFontNormalSmall");
-			g.Min:SetPoint("LEFT",g.anchor,"BOTTOMRIGHT",6,3);
-			g.Max:SetPoint("LEFT",g.anchor,"TOPRIGHT",6,-3);
-		end
-	end);
-	g:RegisterEvent("PLAYER_ENTERING_WORLD");
-
-	g.trackHideParent = function(self,elapse)
-		self.elapsed=self.elapsed+elapse;
-		if(self.elapsed<0.3)then return end
-		if(g.parent)then
-			if(not g.parent:IsShown())then
-				g:Hide();
-				g:ClearAllPoints();
-				g.parent=false;
-			end
-		end
-	end
-	
-	g.Update = function(parent,values,opts)
-		opts = opts or {};
-		if(g.parent~=parent)then
-			g.parent=parent;
-			g:SetPoint("TOP",parent,"BOTTOM",0,-2);
-			g:SetScript("OnUpdate",g.trackHideParent);
-			g:Show();
-		end
-		local minV,maxV=values[1],0;
-		for i,v in ipairs(values)do
-			if(v<minV)then minV=v; end
-			if(v>maxV)then maxV=v; end
-		end
-		local x = height/(maxV-minV);
-		for i,v in ipairs(ns.graphTT.bars)do
-			if(values[i])then
-				local h = (values[i]-minV)*x;
-				v:SetHeight(h);
-				v:SetAlpha(0.7);
-			else
-				v:SetAlpha(0);
-			end
-		end
-		g.Min:SetText(ceil(minV));
-		g.Max:SetText(ceil(maxV));
-		local wMin,wMax=g.Min:GetWidth(),g.Max:GetWidth()
-		g:SetWidth(6+graphWidth+6+((wMin>wMax) and wMin or wMax)+6);
-	end
-
-	ns.graphTT = g;
-	--]]
 end
 
 

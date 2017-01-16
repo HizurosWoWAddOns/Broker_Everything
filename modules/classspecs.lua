@@ -183,7 +183,7 @@ function createTooltip(tt,update)
 	tt:AddSeparator();
 	for i=1, num do
 		spec[i]={};
-		spec[i].id, spec[i].name, spec[i].desc, spec[i].icon, spec[i].role = GetSpecializationInfo(i); -- since 7.1.5
+		spec[i].id, spec[i].name, spec[i].desc, spec[i].icon, spec[i].role = GetSpecializationInfo(i);
 		if active.index==i then
 			active.id,active.name,active.icon = spec[i].id,spec[i].name,spec[i].icon;
 		end
@@ -326,7 +326,7 @@ function createTooltip(tt,update)
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0);
 		tt:SetCell(tt:AddLine(),1,C("ltblue",L["Click"]).." || "..C("green",L["Activate specialization"]),nil,"LEFT",ttColumns);
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 	if not update then
 		ns.roundupTooltip(tt);

@@ -327,7 +327,7 @@ function createTooltip(tt, update)
 		tt:AddSeparator(5,0,0,0,0)
 		tt:AddLine(C("ltblue",L["Click"])..      " || "..C("green",L["On/Off"]));
 		tt:AddLine(C("ltblue",L["Mousewheel"]).. " || "..C("green",L["Louder"].."/"..L["Quieter"]));
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 
 	if not update then

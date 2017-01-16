@@ -431,7 +431,7 @@ function createTooltip(tt)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 	
@@ -475,7 +475,9 @@ ns.modules[name].init = function()
 end
 
 ns.modules[name].onevent = function(self,event,...)
-	if not self.loadedBodyguards then
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+	elseif not self.loadedBodyguards then
 		local glvl = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0);
 		if UnitLevel("player")>=90 and glvl then
 			for i=1,#bodyguards do

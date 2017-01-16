@@ -254,14 +254,18 @@ local function createTooltip(tt)
 			end
 		end
 	end
+
 	if iniNothing then
 		tt:AddLine(C("gray",L["No instance IDs found..."]));
 	end
 
-	if allNothing==false and ns.profile.GeneralOptions.showHints then
-		tt:AddSeparator(3,0,0,0,0);
-		local _,_,mod = ns.DurationOrExpireDate();
-		tt:SetCell(tt:AddLine(),1,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]),nil,nil,ttColumns);
+	if ns.profile.GeneralOptions.showHints then
+		tt:AddSeparator(4,0,0,0,0)
+		if allNothing==false then
+			local _,_,mod = ns.DurationOrExpireDate();
+			tt:SetCell(tt:AddLine(),1,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]),nil,nil,ttColumns);
+		end
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 
 	ns.roundupTooltip(tt);

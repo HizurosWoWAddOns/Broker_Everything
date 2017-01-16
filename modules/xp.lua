@@ -279,10 +279,9 @@ function createTooltip(tt)
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0);
 		if (ns.profile[name].showMyOtherChars) then
-			local l = tt:AddLine();
-			tt:SetCell(l,1,C("ltblue",L["Click"]).."||"..C("green",L["Delete a character from the list"]),nil,nil,ttColumns);
+			ns.AddSpannedLine(tt,C("ltblue",L["Click"]).." || "..C("green",L["Delete a character from the list"]));
 		end
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end

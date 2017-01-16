@@ -193,8 +193,8 @@ function createTooltip(tt,update)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(3,0,0,0,0);
-		tt:SetCell(tt:AddLine(), 1, C("ltblue",L["Right-click"]).." || "..C("green",L["Remove entry"]), nil, nil, 2);
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.AddSpannedLine(tt,C("ltblue",L["Right-click"]).." || "..C("green",L["Remove entry"]));
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 
 	if not update then
@@ -219,7 +219,10 @@ ns.modules[name].onevent = function(self,event,msg)
 
 	if(event=="PLAYER_LOGIN")then
 		login_money = current_money;
+	elseif event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
+
 	local broker = {};
 	if ns.profile[name].showCharGold then
 		tinsert(broker,ns.GetCoinColorOrTextureString(name,current_money));

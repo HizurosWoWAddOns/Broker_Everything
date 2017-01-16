@@ -68,14 +68,14 @@ ns.modules[nameF] = {
 	config = {
 		{ type="header", label=GARRISON_FOLLOWERS, align="left", icon=I[nameF] },
 		{ type="separator", alpha=0 },
-		{ type="header", label=L["On broker options"]},
+		{ type="header", label=L["Broker button options"]},
 		{ type="separator", inMenuInvisible=true },
 		{ type="toggle", name="showAllInOne",          label=L["Show all in one"],       tooltip=L["Show all counts of followers, champions and troops as overall summary on broker button. You can disable single types with following toggles."], event="BE_DUMMY_EVENT"},
 		{ type="toggle", name="showFollowersOnBroker", label=L["Show followers"],        tooltip=L["Show followers summary on broker button"], event="BE_DUMMY_EVENT"},
 		{ type="toggle", name="showChampionsOnBroker",  label=L["Show champions"],        tooltip=L["Show champions summary on broker button"], event="BE_DUMMY_EVENT"},
 		{ type="toggle", name="showTroopsOnBroker",    label=L["Show troops"],           tooltip=L["Show troops summary on broker button"], event="BE_DUMMY_EVENT"},
 		{ type="separator", alpha=0 },
-		{ type="header", label=L["In tooltip options"]},
+		{ type="header", label=L["Tooltip options"]},
 		{ type="separator", inMenuInvisible=true },
 		{ type="toggle", name="bgColoredStatus", label=L["Background colored row for status"], tooltip=L["Use background colored row for follower status instead to split in separate tables"], event=true },
 		{ type="toggle", name="hideDisabled",    label=L["Hide disabled followers"],           tooltip=L["Hide disabled followers in tooltip"], event=true },
@@ -630,7 +630,7 @@ local function createTooltip(tt, name)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0);
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end

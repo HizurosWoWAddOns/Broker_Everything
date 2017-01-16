@@ -404,12 +404,10 @@ function createTooltip(tt, update, from)
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(3,0,0,0,0)
 		if (GroupQuestCount>0) then
-			local l,c = tt:AddLine()
-			tt:SetCell(l,1,C("ltblue",L["Hold shift"]).." || "..C("green",L["Show group member name with same quests"]),nil,"LEFT",ttColumns);
+			ns.AddSpannedLine(tt,C("ltblue",L["Hold shift"]).." || "..C("green",L["Show group member name with same quests"]),nil,"LEFT");
 		end
-		local l,c = tt:AddLine()
-		tt:SetCell(l,1,C("ltblue",L["Click"]).." || "..C("green",L["Open QuestLog and select quest"]),nil,"LEFT",ttColumns)
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.AddSpannedLine(tt,C("ltblue",L["Click"]).." || "..C("green",L["Open QuestLog and select quest"]),nil,"LEFT");
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 
 	if not update then
@@ -427,6 +425,8 @@ end
 ns.modules[name].onevent = function(self,event,msg)
 	if event=="PLAYER_LOGIN" then
 		ns.tradeskills();
+	elseif event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	elseif event == "PLAYER_ENTERING_WORLD" or event == "QUEST_LOG_UPDATE" then
 		local numEntries, numQuests = GetNumQuestLogEntries()
 		local header, status, isBounty, _ = false;

@@ -356,9 +356,8 @@ local function createTooltip(tt)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(3,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
-		local l=tt:AddLine();
-		tt:SetCell(l,1,C("copper",L["Hold shift"]).." || "..C("green",L["Show your other chars"]),nil,nil,ttColumns);
+		ns.AddSpannedLine(tt,C("copper",L["Hold shift"]).." || "..C("green",L["Show your other chars"]));
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -394,6 +393,8 @@ ns.modules[name].onevent = function(self,event,...)
 		end);
 	elseif event=="QUEST_LOG_UPDATE" then
 		elapse,update=0,true;
+	elseif event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 end
 -- ns.modules[name].onupdate = function(self,elapse) end

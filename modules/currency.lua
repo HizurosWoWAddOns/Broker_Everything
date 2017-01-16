@@ -464,7 +464,7 @@ function createTooltip(tt,update)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 	if not update then
 		ns.roundupTooltip(tt);

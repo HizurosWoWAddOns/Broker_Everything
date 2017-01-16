@@ -5,8 +5,6 @@
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
-
-
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
@@ -294,7 +292,7 @@ local function createTooltip(tt)
 
 	if ns.profile.GeneralOptions.showHints and false then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end

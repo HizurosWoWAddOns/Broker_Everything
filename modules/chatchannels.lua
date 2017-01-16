@@ -180,7 +180,7 @@ local function createTooltip(tt,update)
 	end
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(3,0,0,0,0);
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 	if not update then
 		ns.roundupTooltip(tt);
@@ -240,6 +240,8 @@ ns.modules[name].onevent = function(self,event,arg1,arg2,...)
 	--elseif event=="CHANNEL_VOICE_UPDATE" then
 	elseif event=="CHANNEL_COUNT_UPDATE" then
 		updateChannels(arg1,arg2 or 0)
+	elseif event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	elseif event=="d" then
 		updateList()
 	--elseif events[event]==2 then

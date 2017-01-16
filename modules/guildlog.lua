@@ -219,8 +219,7 @@ local function createTooltip(tt)
 					end
 				end
 				if (c==0) then
-					local l = tt:AddLine();
-					tt:SetCell(l,1,L["No log entries found..."],nil,nil,ttColumns);
+					ns.AddSpannedLine(tt,L["No log entries found..."]);
 				end
 			end
 		end
@@ -228,7 +227,7 @@ local function createTooltip(tt)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,name,ttColumns);
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
