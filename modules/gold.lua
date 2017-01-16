@@ -48,12 +48,17 @@ ns.modules[name] = {
 	config_allowed = {},
 	config = {
 		{ type="header", label=BONUS_ROLL_REWARD_MONEY, align="left", icon=I[name] },
-		{ type="separator" },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Broker button options"] },
+		{ type="separator", inMenuInvisible=true },
+		{ type="toggle", name="showCharGold",      label=L["Show character gold"], tooltip=L["Show character gold on broker button"], event=true },
+		{ type="toggle", name="showSessionProfit", label=L["Show session profit"], tooltip=L["Show session profit on broker button"], event=true },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Tooltip options"] },
+		{ type="separator", inMenuInvisible=true },
 		{ type="toggle", name="showAllRealms",     label=L["Show all realms"],     tooltip=L["Show characters from all realms in tooltip."] },
 		{ type="toggle", name="showAllFactions",   label=L["Show all factions"],   tooltip=L["Show characters from all factions in tooltip."] },
-		{ type="toggle", name="showCharGold",      label=L["Show character gold"], tooltip=L["Show character gold on broker button"], event=true },
 		--{ type="toggle", name="showRealmGold",     label=L["Show realm gold"],     tooltip=L["Show summary of gold on current realm (factionbound) on broker button"] },
-		{ type="toggle", name="showSessionProfit", label=L["Show session profit"], tooltip=L["Show session profit on broker button"], event=true }
 	},
 	clickOptions = {
 		["1_open_tokenframe"] = {
@@ -192,7 +197,7 @@ function createTooltip(tt,update)
 	end
 
 	if ns.profile.GeneralOptions.showHints then
-		tt:AddSeparator(3,0,0,0,0);
+		tt:AddSeparator(4,0,0,0,0);
 		ns.AddSpannedLine(tt,C("ltblue",L["Right-click"]).." || "..C("green",L["Remove entry"]));
 		ns.clickOptions.ttAddHints(tt,name);
 	end
@@ -217,7 +222,7 @@ ns.modules[name].onevent = function(self,event,msg)
 	current_money = GetMoney();
 	ns.toon.gold = current_money;
 
-	if(event=="PLAYER_LOGIN")then
+	if event=="PLAYER_LOGIN" then
 		login_money = current_money;
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);

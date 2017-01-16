@@ -65,7 +65,11 @@ ns.modules[name] = {
 	config = {
 		{ type="header", label=GARRISON_LOCATION_TOOLTIP, align="left", icon=I[name] },
 		{ type="separator", alpha=0 },
-		{ type="header", label=L["In tooltip options"]},
+		{ type="header", label=L["Broker button options"]},
+		{ type="separator", inMenuInvisible=true },
+		{ type="toggle", name="showCacheForcastInBroker", label=L["Show cache forcast in title"], tooltip=L["Show garrison cache forecast for your current char in broker button"] },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Tooltip options"]},
 		{ type="separator", inMenuInvisible=true },
 		{ type="toggle", name="showConstruct",            label=L["Show under construction"],     tooltip=L["Show list of buildings there are under construction in tooltip"] },
 		{ type="toggle", name="showBlueprints",           label=L["Show blueprints"],             tooltip=L["Show available blueprints in tooltip"] },
@@ -74,10 +78,6 @@ ns.modules[name] = {
 		{ type="toggle", name="showChars",                label=L["Show characters"],             tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
 		{ type="toggle", name="showAllRealms",            label=L["Show all realms"],             tooltip=L["Show characters from all realms in tooltip."] },
 		{ type="toggle", name="showAllFactions",          label=L["Show all factions"],           tooltip=L["Show characters from all factions in tooltip."] },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["On broker button options"]},
-		{ type="separator", inMenuInvisible=true },
-		{ type="toggle", name="showCacheForcastInBroker", label=L["Show cache forcast in title"], tooltip=L["Show garrison cache forecast for your current char in broker button"] },
 	},
 	clickOptions = {
 		["1_open_garrison_report"] = {

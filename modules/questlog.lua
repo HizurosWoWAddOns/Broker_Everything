@@ -94,7 +94,9 @@ ns.modules[name] = {
 	},
 	config = {
 		{ type="header", label=QUESTLOG_BUTTON, align="left", icon=I[name] },
-		{ type="separator" },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Tooltip options"] },
+		{ type="separator", inMenuInvisible=true },
 		{ type="toggle", name="showQuestIds",       label=L["Show quest id's"], tooltip=L["Show quest id's in tooltip."] },
 		{ type="toggle", name="showQuestZone",      label=L["Show quest zone"], tooltip=L["Show quest zone in tooltip."] },
 		{ type="toggle", name="showQuestTags",      label=L["Show quest tags"], tooltip=L["Show quest tags in tooltip."] },
@@ -117,7 +119,7 @@ ns.modules[name] = {
 				zone = "Zone"
 			}
 		},
-		{ type="sepatator" },
+		{ type="separator", alpha=0 },
 		{ type="header", label=L["Second tooltip options"] },
 		{ type="separator", inMenuInvisible=true },
 		{ type="toggle", name="tooltip2QuestText", label=L["Show quest text"], tooltip=L["Display quest text in tooltip"] },

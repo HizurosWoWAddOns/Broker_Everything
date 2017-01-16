@@ -98,9 +98,14 @@ ns.modules[name] = {
 	},
 	config = {
 		{ type="header", label=DURABILITY, align="left", icon=I[name] },
-		{ type="separator" },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Options"] },
+		{ type="separator", inMenuInvisible=true },
+		{ type="select", name="colorSet", label=L["Percent color set"], tooltip=L["Choose your favorite color set in which the percent text in broker should be displayed."], event=true, default="set1", values=colorSets.values },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Broker button options"] },
+		{ type="separator", inMenuInvisible=true },
 		{ type="toggle", name="lowestItem", label=L["Lowest durability"], tooltip=L["Display the lowest item durability in broker."], event=true },
-		{ type="toggle", name="showDiscount", label=L["Show discount"], tooltip=L["Show list of reputation discounts in tooltip"] },
 		{ type="select", name="inBroker", label=L["Broker format"], tooltip=L["Choose your favorite display format for the broker button."], default="percent", event=true,
 			values={
 				["percent"]="54%",
@@ -109,7 +114,10 @@ ns.modules[name] = {
 				["percent/costs"]="54%, 32.27.16"
 			}
 		},
-		{ type="select", name="colorSet", label=L["Percent color set"], tooltip=L["Choose your favorite color set in which the percent text in broker should be displayed."], event=true, default="set1", values=colorSets.values },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Tooltip options"] },
+		{ type="separator", inMenuInvisible=true },
+		{ type="toggle", name="showDiscount", label=L["Show discount"], tooltip=L["Show list of reputation discounts in tooltip"] },
 		{ type="select", name="dateFormat", label=L["Date format"], tooltip=L["Choose the date format if used in the list of repair costs"], default="%Y-%m-%d %H:%M", values=date_formats, event=true },
 		{ type="separator", alpha=0 },
 		{ type="header", label=L["Repair options"] },
