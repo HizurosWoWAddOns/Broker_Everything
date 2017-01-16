@@ -1072,7 +1072,7 @@ ns.datapanel = function()
 	
 	local function CharList_Change(self)
 		local parent=self:GetParent();
-		local name = parent.realm_name;
+		local name = parent.name_realm;
 		if self==parent.OrderUp then
 			tremove(f.tmpCharCache.order,f.tmpCharCache[name].orderId);
 			tinsert(f.tmpCharCache.order,f.tmpCharCache[name].orderId-1,name);
@@ -1080,6 +1080,7 @@ ns.datapanel = function()
 			tremove(f.tmpCharCache.order,f.tmpCharCache[name].orderId);
 			tinsert(f.tmpCharCache.order,f.tmpCharCache[name].orderId+1,name);
 		elseif self==parent.Delete then
+			ns.debug(name,type(f.tmpCharCache.order),type(f.tmpCharCache[name]))
 			tremove(f.tmpCharCache.order,f.tmpCharCache[name].orderId);
 		end
 		CharList_Update();
