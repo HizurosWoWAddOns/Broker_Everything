@@ -112,6 +112,7 @@ ns.modules[name] = {
 	label = BAG_FILTER_EQUIPMENT,
 	events = {
 		"UNIT_INVENTORY_CHANGED",
+		"EQUIPMENT_SWAP_FINISHED",
 		"EQUIPMENT_SETS_CHANGED",
 		"PLAYER_ENTERING_WORLD",
 		"PLAYER_REGEN_ENABLED",
@@ -455,18 +456,19 @@ ns.modules[name].init = function()
 end
 
 ns.modules[name].onevent = function(self,event,arg1,...)
-	if not self.hooked_UgradeUtem then
-		ns.items.RegisterCallback(name,UpdateInventory,"inv");
-		hooksecurefunc("UpgradeItem",updateBroker);
-		self.hooked_UgradeUtem = true;
-	end
-	if (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and equipPending~=nil then
-		UseEquipmentSet(equipPending)
-		equipPending = nil
-		updateBroker();
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-	elseif event=="UNIT_INVENTORY_CHANGED" and arg1=="player" then
+	if event=="PLAYER_ENTERING_WORLD" then
+		if not self.hooked_UgradeUtem then
+			ns.items.RegisterCallback(name,UpdateInventory,"inv");
+			hooksecurefunc("UpgradeItem",updateBroker);
+			self.hooked_UgradeUtem = true;
+		end
+		self.PEW=true;
+	elseif self.PEW then
+		if (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and equipPending~=nil then
+			UseEquipmentSet(equipPending)
+			equipPending = nil
+			updateBroker();
+		end
 		updateBroker();
 	end
 end
