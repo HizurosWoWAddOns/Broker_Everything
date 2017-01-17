@@ -303,7 +303,8 @@ local function GetRelicTooltipData(data)
 end
 
 local function updateCharacterDB(equipped)
-	local itemID, altItemID, itemName, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop = C_ArtifactUI[(ArtifactFrame and ArtifactFrame.PerksTab) and "GetArtifactInfo" or "GetEquippedArtifactInfo"]();
+	local artifact_frame = (ArtifactFrame and ArtifactFrame:IsShown() and ArtifactFrame.PerksTab and ArtifactFrame.PerksTab:IsShown());
+	local itemID, altItemID, itemName, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop = C_ArtifactUI[artifact_frame and "GetArtifactInfo" or "GetEquippedArtifactInfo"]();
 	if itemID then
 		local numPoints, artifactXP, xpForNextPoint = MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp);
 		local maxPoints = numPoints+pointsSpent;
@@ -315,7 +316,7 @@ local function updateCharacterDB(equipped)
 		end
 		if ns.toon[name][itemID] and ns.toon[name][itemID].relic then
 			relic = ns.toon[name][itemID].relic;
-			if ArtifactFrame==nil then
+			if not artifact_frame then
 				for i=1,#relic do
 					if relic[i].link and relic[i].level==nil then
 						ns.ScanTT.query({type="link",link=relic[i].link,obj={awItemID=itemID,relicIndex=i},callback=GetRelicTooltipData});
@@ -325,7 +326,7 @@ local function updateCharacterDB(equipped)
 		end
 		ns.toon[name][itemID] = {name=itemName,points={pointsSpent,maxPoints},xp={artifactXP, xpForNextPoint},relic=relic};
 
-		if ArtifactFrame and ArtifactFrame.PerksTab then
+		if artifact_frame then
 			for i,v in ipairs(ArtifactFrame.PerksTab.TitleContainer.RelicSlots)do
 				if not v.relicType then
 					artifactLocked = ARTIFACT_VISIT_FORGE_TO_START;
