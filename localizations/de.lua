@@ -334,6 +334,7 @@ L["Do you really want to switch display mode?"] = "Bist du sicher, dass du den A
 L["Dualspec"] = "Duale Spezialisierung"
 -- L["Earn/loss of watched faction"] = ""
 L["Edit ticket"] = "Ticket bearbeiten"
+L["Emissary Quests-ShortCut"] = "AQ"
 L["Enable all modules"] = "Aktiviert alle Module"
 L["Enable auto repair"] = "Automatische Reparatur aktivieren"
 L["Enable crap/junk selling on opening a mergant frame."] = "Aktiviert den Schrottverkauf beim Öffnen eines Händlerfensters"

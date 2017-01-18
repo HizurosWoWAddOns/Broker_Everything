@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Emissary Quests"; L[name] = BOUNTY_BOARD_LOCKED_TITLE;
+local name = "Emissary Quests";
 local ldbName, ttName, ttColumns, tt, createMenu = name, name.."TT", 4
 local factions,totalQuests,locked = {},{},false;
 local continents = {
@@ -21,7 +21,10 @@ local factionName = setmetatable({},{__index=function(t,k)
 	end
 	return v or k;
 end});
-
+L[name] = BOUNTY_BOARD_LOCKED_TITLE;
+if L["Emissary Quests-ShortCut"]=="Emissary Quests-ShortCut" then
+	L["Emissary Quests-ShortCut"] = "EQ";
+end
 
 -------------------------------------------
 -- register icon names and default files --
@@ -43,11 +46,15 @@ ns.modules[name] = {
 	config_defaults = {
 		--showRealm = "ALL",
 		--howFaction = true
+		shortTitle = false
 	},
 	config_allowed = {},
 	config = {
 		{ type="header", label=L[name], align="left", icon=true },
-		--{ type="separator" },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Broker button options"]},
+		{ type="separator", inMenuInvisible=true },
+		{ type="toggle", name="shortTitle", label="Show shoter title", tooltip=L["Display '%s' instead of '%s' on chars under level 110 on broker button"]:format(L["Emissary Quests-ShortCut"],L["Emissary Quests"]), event=true }
 	},
 	clickOptions = {
 		-- world map
@@ -101,11 +108,13 @@ local function sortFactions(a,b)
 end
 
 local function updateBroker()
-	if UnitLevel("player")<110 then return end
+	local lst,obj = {},ns.LDB:GetDataObjectByName(ldbName);
+	if UnitLevel("player")<110 then
+		obj.text = ns.profile[name].shortTitle and L["Emissary Quests-ShortCut"] or L[name];
+		return 
+	end
 
 	local Time = time();
-	local lst,obj = {},ns.LDB:GetDataObjectByName(ldbName);
-
 	table.sort(factions,sortFactions);
 	for _,v in pairs(factions)do
 		if v.eventEnding-Time>=0 then
@@ -128,7 +137,6 @@ local function updateBroker()
 			end
 		end
 	end
-	
 	obj.text = table.concat(lst," ");
 end
 
@@ -313,10 +321,10 @@ ns.modules[name].onevent = function(self,event,...)
 		if ns.toon[name].factions==nil then ns.toon[name].factions = {}; end
 		self.PEW=true;
 		self:UnregisterEvent(event);
-	elseif self.PEW and event=="QUEST_LOG_UPDATE" then
-		updateData();
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+	elseif self.PEW then -- events -"QUEST_LOG_UPDATE" "BE_DUMMY_EVENT"
+		updateData();
 	end
 end
 
