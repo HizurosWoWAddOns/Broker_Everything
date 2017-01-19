@@ -917,8 +917,8 @@
 								</FontString>
 							</Layer>
 						</Layers>
-						<FontString inherits="Game13Font">
-							<Color r=".98" g=".98" b=".98"/>
+						<FontString inherits="SystemFont_Med2">
+							<Color r=".99" g=".99" b=".99"/>
 						</FontString>
 					</EditBox>
 				</ScrollChild>
