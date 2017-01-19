@@ -870,4 +870,75 @@
 		</Frames>
 	</Frame>
 
+	<Frame name="BrokerEverythingNotesEditor" parent="UIParent" inherits="ButtonFrameTemplate" movable="TRUE" enableMouse="TRUE" toplevel="TRUE" clampedToScreen="TRUE" hidden="true">
+		<Size x="410" y="240"/>
+		<Anchors>
+			<Anchor point="CENTER"/>
+		</Anchors>
+		<Layers>
+			<Layer level="ARTWORK">
+				<FontString parentKey="titleCount" inherits="GameFontNormal">
+					<Anchors>
+						<Anchor point="BOTTOMRIGHT" relativeKey="$parent.Inset" relativePoint="TOPRIGHT" x="0" y="7" />
+					</Anchors>
+				</FontString>
+				<FontString parentKey="textCount" inherits="GameFontNormal">
+					<Anchors>
+						<Anchor point="BOTTOMRIGHT" x="-11" y="9" />
+					</Anchors>
+				</FontString>
+			</Layer>
+		</Layers>
+		<Frames>
+			<EditBox parentKey="title" autoFocus="false" inherits="InputBoxInstructionsTemplate">
+				<Size y="24" />
+				<Anchors>
+					<Anchor point="BOTTOMLEFT" relativeKey="$parent.Inset" relativePoint="TOPLEFT" x="8" y="2" />
+					<Anchor point="RIGHT" relativeKey="$parent.Inset" x="-62" />
+				</Anchors>
+			</EditBox>
+			<ScrollFrame name="$parent$crollFrame" parentKey="Scroll" inherits="MinimalScrollFrameTemplate">
+				<Size x="366" y="145" />
+				<Anchors>
+					<Anchor point="TOPLEFT" relativeKey="$parent.Inset" x="5" y="-5" />
+					<Anchor point="BOTTOMRIGHT" relativeKey="$parent.Inset" x="-28" y="4" />
+				</Anchors>
+				<ScrollChild>
+					<EditBox parentKey="text" autoFocus="false" multiLine="true" countInvisibleLetters="true" inherits="InputBoxInstructionsTemplate">
+						<Size x="436" y="145" />
+						<Anchors>
+							<Anchor point="TOPLEFT" />
+							<Anchor point="RIGHT" />
+						</Anchors>
+						<Layers>
+							<Layer level="ARTWORK">
+								<FontString parentKey="Instructions" justifyH="LEFT" justifyV="TOP" inherits="GameFontDisable" setAllPoints="true">
+									<Color r="0.35" g="0.35" b="0.35"/>
+								</FontString>
+							</Layer>
+						</Layers>
+						<FontString inherits="Game13Font">
+							<Color r=".98" g=".98" b=".98"/>
+						</FontString>
+					</EditBox>
+				</ScrollChild>
+			</ScrollFrame>
+		</Frames>
+		<Scripts>
+			<OnLoad>
+				self:RegisterForDrag("LeftButton");
+				self:SetScript("OnDragStart", self.StartMoving);
+				self:SetScript("OnDragStop", self.StopMovingOrSizing);
+				ButtonFrameTemplate_HidePortrait(self);
+				self.Scroll.ScrollBar:SetPoint("TOPLEFT",self.Scroll,"TOPRIGHT",5,-16);
+				self.Scroll.ScrollBar:SetPoint("BOTTOMLEFT",self.Scroll,"BOTTOMRIGHT",5,15);
+				self.text = self.Scroll.text;
+				self.text.Left:Hide()
+				self.text.Middle:Hide()
+				self.text.Right:Hide()
+				tinsert(UISpecialFrames, self:GetName())
+			</OnLoad>
+		</Scripts>
+	</Frame>
+
 </Ui>

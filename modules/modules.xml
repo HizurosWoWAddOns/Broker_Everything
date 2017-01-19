@@ -29,6 +29,7 @@
 	<Script file="mail.lua"/>
 	<Script file="missions.lua"/>
 	<Script file="nameplates.lua"/>
+	<Script file="notes.lua"/>
 	<Script file="professions.lua"/>
 	<Script file="questlog.lua"/>
 	<Script file="reputation.lua"/>
