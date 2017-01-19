@@ -18,36 +18,18 @@ local professions,db,createMenu,locked = {};
 local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset = 1,2,3,4,5,6,7,8,9,10; -- GetProfessionInfo
 local nameEnglish,spellId,skillId,disabled = 11, 12, 13, 14; -- custom after GetProfessionInfo
 local spellName,spellLocaleName,spellIcon,spellId = 1,2,3,4;
-local legion_emissary = { -- [<factionID>] = {<factionVendorNpcID>,<mapID>,<coordX>,<coordY>}
-	[1828] = {106902,1080,38.6,45.8},
-	[1859] = {97140,1033,37,46},
-	[1883] = {106901,1018,54.6,73.2},
-	[1894] = {107379,1015,48.2,73.8},
-	[1900] = {107376,1015,46.8,41.4},
-	[1948] = {106904,1017,60.2,51.2}
-};
 local legion_faction_recipes = { -- [<tradeSkill>] = { [<factionID>] = { [<recipe itemID>] = <factionStandingID> } } }
 	["Alchemy"]			= {[1859]={[142120]=7}},
 	["Blacksmithing"]	= {[1828]={[123948]=8,[123953]=8,[123955]=8,[136697]=6},[1948]={[136698]=6,[123951]=8,[123954]=8}},
-	["Enchanting"]		= {[1859]={[128600]=8,[128602]=8,[128603]=8,[128609]=8},[1883]={[128599]=6,[128593]=8,[128601]=8,[128608]=8}},
+	["Enchanting"]		= {[1859]={[128600]=8,[128602]=8,[128603]=8,[128609]=8},[1883]={[128593]=8,[128599]=6,[128601]=8,[128608]=8}},
 	["Engineering"]		= {[1894]={[137713]=6,[137714]=6,[137715]=8,[137716]=8}},
-	["Inscription"]		= {[1894]={[137773]=7,[137777]=7,[137781]=7,[142107]=7},[1900]={[137774]=7,[137776]=7,[137779]=7}},
-	["Jewelcrafting"]	= {[1828]={[137839]=6,[137844]=8,[137848]=8,[137855]=8},[1859]={[137850]=8},[1894]={[137849]=8}},
-	["Leatherworking"]	= {[1828]={[142408]=7,[142409]=8},[1883]={[137883]=6,[137898]=8,[137895]=8,[137896]=8},[1948]={[137915]=6,[137910]=6,[137927]=8,[137928]=8}},
+	["Inscription"]		= {[1894]={[137773]=7,[137777]=7,[137781]=7,[142107]=7},[1900]={[137774]=7,[137779]=7,[137780]=7}},
+	["Jewelcrafting"]	= {[1828]={[137839]=6,[137844]=8,[137846]=8,[137855]=8},[1859]={[137850]=8},[1894]={[137849]=8}},
+	["Leatherworking"]	= {[1828]={[142408]=7,[142409]=8},[1883]={[137883]=6,[137895]=8,[137896]=8,[137898]=8},[1948]={[137910]=6,[137915]=6,[137927]=8,[137928]=8}},
 	["Tailoring"]		= {[1859]={[137973]=8,[137976]=8,[137979]=8},[1900]={[137977]=8,[137978]=8,[137980]=8,[138015]=6}},
 	["Cooking"]			= {[1894]={[142331]=7}},
-	["First Aid"]		= {[1894]={[142333]=6}},
-}
-local recipeSpells = {
-	-- legion
-	[123948]=182982,[123951]=182985,[123953]=182987,[123954]=182988,[123955]=182989,[128593]=191006,[128599]=191012,[128600]=191013,
-	[128601]=191014,[128602]=191015,[128603]=191016,[128608]=191021,[128609]=191022,[136697]=209497,[136698]=209498,[137713]=199007,
-	[137714]=199008,[137715]=199009,[137716]=199010,[137773]=192897,[137774]=192898,[137776]=192900,[137777]=192901,[137779]=192903,
-	[137781]=192905,[137839]=195924,[137844]=195929,[137848]=195933,[137849]=195934,[137850]=195935,[137855]=195940,[137883]=194718,
-	[137895]=194730,[137896]=194731,[137898]=194733,[137910]=194753,[137915]=194758,[137927]=194770,[137928]=194771,[137973]=185954,
-	[137976]=185957,[137977]=185958,[137978]=185959,[137979]=185960,[137980]=185961,[138015]=208353,[142107]=229183,[142120]=229218,
-	[142331]=230046,[142333]=230047,[142408]=230954,[142409]=230955,
-}
+	["First Aid"]		= {[1894]={[142333]=6}}
+};
 local cd_groups = { -- %s cooldown group
 	"Transmutation",	-- L["Transmutation cooldown group"]
 	"Jewels",			-- L["Jewels cooldown group"]
@@ -200,7 +182,6 @@ local cdSpells = {
 		[178242]	= {group=0,	type=2}, -- Gearspring Parts					[wod beta, maybe a replacement on max skill level]
 	}
 };
---		[]	= {cd_group=0,	cd_type=0},
 
 
 -- ------------------------------------- --
@@ -355,15 +336,27 @@ local function createTooltip(tt)
 			tt:AddSeparator(4,0,0,0,0);
 			tt:AddLine(C("ltblue",L["Legion recipes from faction vendors"]));
 			tt:AddSeparator();
+			local faction,trade_skill = false,false;
 			for tradeSkill, tsData in pairs(legion_faction_recipes) do
 				if ts[tradeSkill] then
-					tt:AddLine(C("gray",L[tradeSkill]));
+					trade_skill = C("gray",L[tradeSkill]);
 					for factionID, recipes in pairs(tsData)do
 						local Name,_,standingID = GetFactionInfoByID(factionID);
-						tt:AddLine("   "..C("ltgray",Name),C("ltgray",_G["FACTION_STANDING_LABEL"..standingID]));
+						faction = {"   "..C("ltgray",Name),C("ltgray",_G["FACTION_STANDING_LABEL"..standingID])};
 						for itemID, factionStanding in pairs(recipes)do
 							local Name = GetItemInfo(itemID);
 							if Name then
+								-- trade skill
+								if trade_skill then
+									tt:AddLine(trade_skill);
+									trade_skill = false;
+								end
+								-- faction
+								if faction then
+									tt:AddLine(unpack(faction));
+									faction = false;
+								end
+								-- recipe
 								local color = "red";
 								if standingID>=factionStanding then
 									color = "green";
