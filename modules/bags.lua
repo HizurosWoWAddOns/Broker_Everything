@@ -15,6 +15,7 @@ local name = "Bags" -- L["Bags"]
 local ldbName,ttName,ttColumns,tt,createMenu = name,name.."TT",3;
 local ContainerIDToInventoryID,GetInventoryItemLink = ContainerIDToInventoryID,GetInventoryItemLink
 local GetItemInfo,GetContainerNumSlots,GetContainerNumFreeSlots = GetItemInfo,GetContainerNumSlots,GetContainerNumFreeSlots
+local IsMerchantOpen = false;
 local qualityModeValues = {
 	["1"]=L["Qualities"],
 	["2"]=L["Qualities with vendor price"],
@@ -112,7 +113,9 @@ ns.modules[name] = {
 	events = {
 		"PLAYER_LOGIN",
 		"BAG_UPDATE",
-		"UNIT_INVENTORY_CHANGED"
+		"UNIT_INVENTORY_CHANGED",
+		"MERCHANT_SHOW",
+		"MERCHANT_CLOSED"
 	},
 	updateinterval = nil, -- 10
 	config_defaults = {
@@ -125,17 +128,23 @@ ns.modules[name] = {
 		qualityMode = "1",
 		--expansionMode = "1",
 
-	--	crapSellingEnabled = false,
-	--	crapSellingAuto = false,
-	--	crapSellingInfo = true,
+		autoCrapSelling = false,
+		auotCrapSellingInfo = true,
 	},
 	config_allowed = {
 		qualityMode = {["1"]=true,["2"]=true,["3"]=true,["4"]=true,["5"]=true,["6"]=true,["7"]=true,["8"]=true}
 	},
 	config = {
 		{ type="header", label=L[name], align="left", icon=I[name] },
-		{ type="separator" },
+
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Broker button options"] },
+		{ type="separator", inMenuInvisible=true },
 		{ type="toggle", name="freespace",         label=L["Show freespace"],                  tooltip=L["Show bagspace instead used and max. bagslots in broker button"], event=true },
+
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Tooltip options"] },
+		{ type="separator", inMenuInvisible=true },
 		{ type="toggle", name="showQuality",       label=L["Show item summary by quality"],    tooltip=L["Display an item summary list by qualities in tooltip"], event=true },
 		{ type="select", name="qualityMode",       label=L["Item summary by quality mode"],    tooltip=L["Choose your favorite"], default="1", values=qualityModeValues },
 		--{ type="toggle", name="showExpansion",     label=L["Show item summary by expansion"],  tooltip=L["Display an item summary list by expansion in tooltip"], event=true },
@@ -143,12 +152,11 @@ ns.modules[name] = {
 		{ type="slider", name="critLowFree",       label=L["Critical low free slots"],         tooltip=L["Select the maximum free slot count to coloring in red."], min=1, max=50, default=5, format = "%d", event=true },
 		{ type="slider", name="warnLowFree",       label=L["Warn low free slots"],             tooltip=L["Select the maximum free slot count to coloring in yellow."], min=2, max=100, default=15, format = "%d", event=true },
 
-		--{ type="separator", alpha=0 },
-		--{ type="header", label=L["Crap selling options"] },
-		--{ type="separator" },
-		--{ type="toggle", name="crapSellingEnabled", label=VIDEO_OPTIONS_ENABLED, tooltip=L["Enable crap/junk selling on opening a mergant frame."] },
-		--{ type="toggle", name="crapSellingAuto", label=L["Automatic"], tooltip=L["Automatic crap/junk selling on opening a mergant frame."] },
-		--{ type="toggle", name="crapSellingInfo", label=L["Chat info"], tooltip=L["Post earned money in general chat frame."] },
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Crap selling options"] },
+		{ type="separator" },
+		{ type="toggle", name="autoCrapSelling", label=L["Enable auto crap selling"], tooltip=L["Enable automatically crap selling on opening a mergant frame"] },
+		{ type="toggle", name="autoCrapSellingInfo", label=L["Earned money summary in chat"], tooltip=L["Post earned money in chat frame"] },
 	},
 	clickOptions = {
 		["1_open_bags"] = {
@@ -195,6 +203,27 @@ function createMenu(self)
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
+end
+
+local function crapSelling()
+	if IsMerchantOpen==false or ns.profile[name].autoCrapSelling==false then return end
+	local sum = 0;
+	for bag=0, NUM_BAG_SLOTS do
+		for slot=1, GetContainerNumSlots(bag) do
+			local link = GetContainerItemLink(bag,slot);
+			if link then
+				local _,count = GetContainerItemInfo(bag, slot);
+				local _,_,quality,_,_,_,_,_,_,_,price = GetItemInfo(link);
+				if quality==0 and price>0 then
+					UseContainerItem(bag, slot);
+					sum = sum + (price*count);
+				end
+			end
+		end
+	end
+	if ns.profile[name].autoCrapSellingInfo and sum>0 then
+		ns.print(L["Auto crap selling - Summary"]..":",ns.GetCoinColorOrTextureString(sum,{forceWhite=true}));
+	end
 end
 
 -- Function to determine the total number of bag slots and the number of free bag slots.
@@ -255,6 +284,30 @@ local function itemExpansion()
 		end
 	end
 	return price,sum;
+end
+
+local function updateBroker()
+	local f, t = BagsFreeUsed()
+	local u = t - f
+	local p = u / t
+	local txt = u .. "/" .. t
+	local c = "white"
+	local min1 = tonumber(ns.profile[name].critLowFree)
+	local min2 = tonumber(ns.profile[name].warnLowFree)
+	if ns.profile[name].freespace == false then
+		txt = u .. "/" .. t
+	elseif ns.profile[name].freespace == true then
+		txt = (t - u) .. " ".. L["free"]
+	end
+
+	if f<=min1 then
+		c = "red"
+	elseif f<=min2 then
+		c = "dkyellow"
+	end
+
+	local obj = ns.LDB:GetDataObjectByName(ldbName) or {}
+	obj.text = C(c,txt)
 end
 
 local function createTooltip(tt)
@@ -333,32 +386,16 @@ ns.modules[name].init_configs = function()
 end
 
 ns.modules[name].onevent = function(self,event,msg)
-	local f, t = BagsFreeUsed()
-	local u = t - f
-	local p = u / t
-	local txt = u .. "/" .. t
-	local c = "white"
-	local min1 = tonumber(ns.profile[name].critLowFree)
-	local min2 = tonumber(ns.profile[name].warnLowFree)
-
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
+	if event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+	elseif event=="MERCHANT_SHOW" and ns.profile[name].autoCrapSelling then
+		IsMerchantOpen = true;
+		C_Timer.After(1.1,crapSelling);
+	elseif event=="MERCHANT_CLOSED" then
+		IsMerchantOpen = false;
+	else
+		updateBroker();
 	end
-
-	if ns.profile[name].freespace == false then
-		txt = u .. "/" .. t
-	elseif ns.profile[name].freespace == true then
-		txt = (t - u) .. " ".. L["free"]
-	end
-
-	if f<=min1 then
-		c = "red"
-	elseif f<=min2 then
-		c = "dkyellow"
-	end
-
-	local obj = self.obj or ns.LDB:GetDataObjectByName(ldbName) or {}
-	obj.text = C(c,txt)
 end
 
 -- ns.modules[name].optionspanel = function(panel) end
