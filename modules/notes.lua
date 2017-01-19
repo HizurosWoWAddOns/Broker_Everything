@@ -14,10 +14,13 @@ local name = "Notes" -- L["Notes"]
 local ldbName,ttName,ttColumns,tt,createMenu = name, name.."TT",2;
 local delIndex,editor,createTooltip,note_edit
 
+
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile="Interface\\Icons\\inv_garrison_resource", coords={0.05,0.95,0.05,0.95}}; --IconName::Garrison--
+I[name]              = {iconfile="Interface\\Icons\\INV_Misc_PaperBundle04a", coords={0.05,0.95,0.05,0.95}}; --IconName::Notes--
+I[name..'_alliance'] = {iconfile="Interface\\Icons\\INV_Misc_PaperBundle04c", coords={0.05,0.95,0.05,0.95}}; --IconName::Notes_alliance--
+I[name..'_horde']    = {iconfile="Interface\\Icons\\INV_Misc_PaperBundle04b", coords={0.05,0.95,0.05,0.95}}; --IconName::Notes_horde--
 
 
 ---------------------------------------
@@ -25,7 +28,10 @@ I[name] = {iconfile="Interface\\Icons\\inv_garrison_resource", coords={0.05,0.95
 ---------------------------------------
 ns.modules[name] = {
 	desc = L["Display a broker with very simple notes functionality"],
-	events = {},
+	events = {
+		"PLAYER_ENTERING_WORLD",
+		"NEUTRAL_FACTION_SELECT_RESULT"
+	},
 	updateinterval = 30, -- 10
 	config_defaults = {},
 	config_allowed = {},
@@ -65,6 +71,18 @@ function createMenu(self)
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
+end
+
+local function updateBroker()
+	local icon,obj = I[name],ns.LDB:GetDataObjectByName(ldbName);
+	local faction = UnitFactionGroup("player"):lower();
+	if faction~="neutral" then
+		icon = I[name..'_'..faction];
+	end
+	if icon then
+		obj.icon = icon.iconfile;
+		obj.iconCoords = icon.coords;
+	end
 end
 
 local function note_save(self)
@@ -220,6 +238,8 @@ end
 ns.modules[name].onevent = function(self,event,...)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+	else
+		updateBroker();
 	end
 end
 -- ns.modules[name].optionspanel = function(panel) end
