@@ -231,7 +231,7 @@ local function AutoRepairAll(costs)
 			RepairAllItems(true);
 			lastRepairs_add(costs,true,true);
 			if (chat) then
-				ns.print(L["Automatically repaired with guild money"]..":" ,ns.GetCoinColorOrTextureString(name,costs));
+				ns.print(L["Automatically repaired with guild money"]..":" ,ns.GetCoinColorOrTextureString(costs));
 			end
 			return true;
 		elseif (chat) then
@@ -243,7 +243,7 @@ local function AutoRepairAll(costs)
 		RepairAllItems();
 		lastRepairs_add(costs,nil,true);
 		if (chat) then
-			ns.print(L["Automatically repaired with player money"]..":", ns.GetCoinColorOrTextureString(name,costs));
+			ns.print(L["Automatically repaired with player money"]..":", ns.GetCoinColorOrTextureString(costs));
 		end
 		return nil;
 	end
@@ -267,20 +267,20 @@ local function createTooltip(tt)
 	local lst = setmetatable({},{__call = function(t,a) rawset(t,#t+1,a) end});
 
 	lst({sep={3,0,0,0,0}});
-	lst({c1=C("ltblue",gsub(REPAIR_COST,":","")),c2=ns.GetCoinColorOrTextureString(name,repairCost)});
+	lst({c1=C("ltblue",gsub(REPAIR_COST,":","")),c2=ns.GetCoinColorOrTextureString(repairCost)});
 	lst({sep={1}});
-	lst({c1=CHARACTER,c2=ns.GetCoinColorOrTextureString(name,equipCost)});
-	lst({c1=L["Bags"],c2=ns.GetCoinColorOrTextureString(name,bagCost)});
+	lst({c1=CHARACTER,c2=ns.GetCoinColorOrTextureString(equipCost)});
+	lst({c1=L["Bags"],c2=ns.GetCoinColorOrTextureString(bagCost)});
 
 	if ns.profile[name].showDiscount then
 		lst({sep={3,0,0,0,0}});
 		lst({c0=C("ltblue",L["Reputation discounts"])});
 		lst({sep={1}});
-		lst({c1=C("white",FACTION_STANDING_LABEL4),  c2=ns.GetCoinColorOrTextureString(name,repairCostN)});
-		lst({c1=C("white",FACTION_STANDING_LABEL5), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[5]))});
-		lst({c1=C("white",FACTION_STANDING_LABEL6), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[6]))});
-		lst({c1=C("white",FACTION_STANDING_LABEL7),  c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[7]))});
-		lst({c1=C("white",FACTION_STANDING_LABEL8),  c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[8]))});
+		lst({c1=C("white",FACTION_STANDING_LABEL4),  c2=ns.GetCoinColorOrTextureString(repairCostN)});
+		lst({c1=C("white",FACTION_STANDING_LABEL5), c2=ns.GetCoinColorOrTextureString(ceil(repairCostN * discount[5]))});
+		lst({c1=C("white",FACTION_STANDING_LABEL6), c2=ns.GetCoinColorOrTextureString(ceil(repairCostN * discount[6]))});
+		lst({c1=C("white",FACTION_STANDING_LABEL7),  c2=ns.GetCoinColorOrTextureString(ceil(repairCostN * discount[7]))});
+		lst({c1=C("white",FACTION_STANDING_LABEL8),  c2=ns.GetCoinColorOrTextureString(ceil(repairCostN * discount[8]))});
 	end
 
 	if (ns.profile[name].listCosts) then
@@ -296,7 +296,7 @@ local function createTooltip(tt)
 			for i,v in ipairs(last_repairs) do
 				if (i<=tonumber(ns.profile[name].maxCosts)) then
 					indicator = ((v[4]) and "a" or "") .. ((v[3]) and "G" or "P");
-					lst({c1=date(date_format,v[1]) .. (strlen(indicator)>0 and " "..indicator or ""), c2=ns.GetCoinColorOrTextureString(name,ceil(v[2]))});
+					lst({c1=date(date_format,v[1]) .. (strlen(indicator)>0 and " "..indicator or ""), c2=ns.GetCoinColorOrTextureString(ceil(v[2]))});
 				end
 			end
 		else
@@ -425,13 +425,13 @@ ns.modules[name].onevent = function(self,event,msg)
 	if (event=="BE_EVENT_REPAIRALL_GUILD") then
 		lastRepairs_add(merchant.costs,true);
 		if (ns.profile[name].chatRepairInfo) then
-			ns.print(L["RepairAll"],L["by guild fund"]..":",ns.GetCoinColorOrTextureString(name,merchant.costs));
+			ns.print(L["RepairAll"],L["by guild fund"]..":",ns.GetCoinColorOrTextureString(merchant.costs,{forceWhite=true}));
 		end
 		merchant.costs=0;
 	elseif (event=="BE_EVENT_REPAIRALL_PLAYER") then
 		lastRepairs_add(merchant.costs);
 		if (ns.profile[name].chatRepairInfo) then
-			ns.print(L["RepairAll"],L["by player money"]..":",ns.GetCoinColorOrTextureString(name,merchant.costs));
+			ns.print(L["RepairAll"],L["by player money"]..":",ns.GetCoinColorOrTextureString(merchant.costs,{forceWhite=true}));
 		end
 		merchant.costs=0;
 	end
@@ -450,7 +450,7 @@ ns.modules[name].onevent = function(self,event,msg)
 			if (merchant.single>0) then -- single item repair mode, step 2
 				lastRepairs_add(merchant.single, nil, false);
 				if (ns.profile[name].chatRepairInfo) then
-					ns.print(L["SingleRepairSummary"]..":",ns.GetCoinColorOrTextureString(name,merchant.single));
+					ns.print(L["SingleRepairSummary"]..":",ns.GetCoinColorOrTextureString(merchant.single,{forceWhite=true}));
 				end
 			end
 			merchant = {repair=false,costs=0,diff=0,single=0};
@@ -461,15 +461,15 @@ ns.modules[name].onevent = function(self,event,msg)
 	local repairCosts, equipCost, bagCost, dA, dL, dLSlot, d = scanAll();
 
 	if (ns.profile[name].inBroker=="costs") then
-		dataobj.text = ns.GetCoinColorOrTextureString(name,repairCosts)
+		dataobj.text = ns.GetCoinColorOrTextureString(repairCosts)
 	else
 		d = floor((ns.profile[name].lowestItem) and dL or dA);
 		if (ns.profile[name].inBroker=="percent") then
 			dataobj.text = C(colorSets(d)or "blue",d.."%");
 		elseif (ns.profile[name].inBroker=="percent/costs") then
-			dataobj.text = C(colorSets(d)or "blue",d.."%")..", "..ns.GetCoinColorOrTextureString(name,repairCosts);
+			dataobj.text = C(colorSets(d)or "blue",d.."%")..", "..ns.GetCoinColorOrTextureString(repairCosts);
 		elseif (ns.profile[name].inBroker=="costs/percent") then
-			dataobj.text = ns.GetCoinColorOrTextureString(name,repairCosts)..", "..C(colorSets(d) or "blue",d.."%");
+			dataobj.text = ns.GetCoinColorOrTextureString(repairCosts)..", "..C(colorSets(d) or "blue",d.."%");
 		end
 	end
 

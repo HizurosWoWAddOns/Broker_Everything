@@ -90,7 +90,7 @@ ns.modules[name].onevent = function(self,event,msg)
 			end
 
 			local obj = ns.LDB:GetDataObjectByName(ldbName);
-			obj.text = ns.GetCoinColorOrTextureString(name,current,{hideLowerZeros=true});
+			obj.text = ns.GetCoinColorOrTextureString(current,{hideLowerZeros=true});
 		end
 	end
 end
@@ -107,7 +107,7 @@ ns.modules[name].ontooltip = function(tt)
 	if(price.last~=0)then
 		tt:AddDoubleLine(
 			C("ltblue",L["Current price:"]),
-			ns.GetCoinColorOrTextureString(name,price.money,{hideLowerZeros=true})
+			ns.GetCoinColorOrTextureString(price.money,{hideLowerZeros=true})
 		);
 		tt:AddDoubleLine(
 			C("ltblue",L["Last changed:"]),
@@ -116,9 +116,9 @@ ns.modules[name].ontooltip = function(tt)
 		if(ns.profile[name].diff and price.diff)then
 			local diff=0;
 			if(price.diff<0)then
-				diff = "- "..ns.GetCoinColorOrTextureString(name,-price.diff,{hideLowerZeros=true});
+				diff = "- "..ns.GetCoinColorOrTextureString(-price.diff,{hideLowerZeros=true});
 			else
-				diff = ns.GetCoinColorOrTextureString(name,price.diff,{hideLowerZeros=true});
+				diff = ns.GetCoinColorOrTextureString(price.diff,{hideLowerZeros=true});
 			end
 			tt:AddDoubleLine(
 				C("ltblue",L["Difference to previous:"]),
@@ -130,7 +130,7 @@ ns.modules[name].ontooltip = function(tt)
 			tt:AddLine(C("ltblue",L["Price history (last 5 changes)"]));
 			for i,v in ipairs(Broker_Everything_DataDB[name])do
 				if(i>1 and v.money>0)then
-					tt:AddDoubleLine(date("%Y-%m-%d %H:%M",v.last),ns.GetCoinColorOrTextureString(name,v.money,{hideLowerZeros=true}));
+					tt:AddDoubleLine(date("%Y-%m-%d %H:%M",v.last),ns.GetCoinColorOrTextureString(v.money,{hideLowerZeros=true}));
 				end
 			end
 		end

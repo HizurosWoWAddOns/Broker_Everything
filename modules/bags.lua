@@ -281,7 +281,7 @@ local function createTooltip(tt)
 			if (i<=mode.max) and ((mode.empty and sum[i]>=0) or sum[i]>0) then
 				tt:AddLine(
 					C("quality"..i,G["ITEM_QUALITY"..i.."_DESC"]),
-					(price[i]>0 and mode.vendor) and ns.GetCoinColorOrTextureString(name,price[i]) or "",
+					(price[i]>0 and mode.vendor) and ns.GetCoinColorOrTextureString(price[i]) or "",
 					ns.FormatLargeNumber(sum[i]).." "
 				);
 			end
@@ -303,7 +303,7 @@ local function createTooltip(tt)
 			if (mode.empty and sum[i]>=0) or sum[i]>0 then
 				tt:AddLine(
 					C("ltyellow",expansions[i]),
-					(price[i]>0 and mode.vendor) and ns.GetCoinColorOrTextureString(name,price[i]) or "",
+					(price[i]>0 and mode.vendor) and ns.GetCoinColorOrTextureString(price[i]) or "",
 					ns.FormatLargeNumber(sum[i]).." "
 				);
 			end
