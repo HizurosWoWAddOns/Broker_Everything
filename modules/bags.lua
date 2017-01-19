@@ -129,7 +129,7 @@ ns.modules[name] = {
 		--expansionMode = "1",
 
 		autoCrapSelling = false,
-		auotCrapSellingInfo = true,
+		autoCrapSellingInfo = true,
 	},
 	config_allowed = {
 		qualityMode = {["1"]=true,["2"]=true,["3"]=true,["4"]=true,["5"]=true,["6"]=true,["7"]=true,["8"]=true}
