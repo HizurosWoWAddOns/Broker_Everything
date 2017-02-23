@@ -11,9 +11,6 @@ local C,L,I = ns.LC.color,ns.L,ns.I;
 -----------------------------------------------------------
 local name = "Professions"; -- TRADE_SKILLS
 local ldbName,ttName,ttName2,ttColumns,tt,tt2 = name,name.."TT",name.."TT2",2;
-
-local GetSpellInfo,GetSpellCooldown,GetProfessionInfo,unpack = GetSpellInfo,GetSpellCooldown,GetProfessionInfo,unpack;
-
 local professions,db,createMenu,locked = {};
 local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset = 1,2,3,4,5,6,7,8,9,10; -- GetProfessionInfo
 local nameEnglish,spellId,skillId,disabled = 11, 12, 13, 14; -- custom after GetProfessionInfo
@@ -197,7 +194,6 @@ ns.modules[name] = {
 	desc = L["Broker to show your profession skills and cooldowns"],
 	label = TRADE_SKILLS,
 	events = {
-		"ADDON_LOADED",
 		"PLAYER_ENTERING_WORLD",
 		"TRADE_SKILL_UPDATE",
 
@@ -530,107 +526,106 @@ ns.modules[name].onevent = function(self,event,arg1)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 		return;
-	end
-
-	local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset = 1,2,3,4,5,6,7,8,9,10; -- GetProfessionInfo
-	local nameEnglish,spellId,skillId = 11, 12, 13; -- custom after GetProfessionInfo
-
-	if (not profs.generated) then
-		profs.build();
-	end
-
-	local t = {GetProfessions()};
-	if (#t>0) then
-		wipe(professions);
-		local short, d, add, _ = {},{},true,nil;
-
-		for n=1, 7 do
-			add = true;
-			d = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil};
-
-			if (t[n]~=nil) then
-				d = {GetProfessionInfo(t[n])};
-				d[skillId] = t[n];
-
-				d[spellId] = profs.id2Name[L[d[nameLocale]]] or nil;
-				d[nameEnglish] = L[d[nameLocale]];
-
-				if (n<=2) then -- ?
-					short[n] = {d[nameEnglish],d[nameLocale],d[icon],d[skill],d[maxSkill],d[skillId],d[spellId]};
-				end
-				if (n==4) then -- hide fishing in profession menu to prevent error message
-					d[disabled]=true;
-				end
-			elseif (n<=2) then
-				d[nameLocale] = (n==1) and PROFESSIONS_FIRST_PROFESSION or PROFESSIONS_SECOND_PROFESSION;
-				d[icon] = ns.icon_fallback;
-				d[spellId] = false;
-			elseif (n>=3 and n<=6) then
-				d[spellId] = (n==3 and 78670) or (n==4 and 131474) or (n==5 and 2550) or (n==6 and 3273);
-				d[nameEnglish],d[nameLocale],d[icon] = unpack(profs.data[d[spellId]] or {});
-			elseif (ns.player.class=="DEATHKNIGHT") then
-				d[spellId] = 53428;
-				if (IsSpellKnown(d[spellId])) then
-					d[skill],d[maxSkill] = 1,1;
-				end
-				d[nameEnglish],d[nameLocale],d[icon] = unpack(profs.data[d[spellId]] or {});
-			elseif (ns.player.class=="ROGUE") then
-				d[spellId] = 1804;
-				if (IsSpellKnown(d[spellId])) then
-					d[skill] = UnitLevel("player") * 5;
-					d[maxSkill] = d[skill];
-				end
-				d[nameEnglish],d[nameLocale],d[icon] = unpack(profs.data[d[spellId]] or {});
-				d[disabled] = true;
-			else
-				add=false;
+	elseif tt and tt:IsShown() and event=="GET_ITEM_INFO_RECEIVED" and not locked then
+		locked = true;
+		C_Timer.After(.5,function()
+			if tt:IsShown() then
+				createTooltip(tt);
 			end
-			if (add) then
-				professions[n] = d;
-			end
-		end
-		db.profession1 = short[1] or false;
-		db.profession2 = short[2] or false;
-		db.hasCooldowns = false;
+			locked = false;
+		end);
+	elseif ns.pastPEW then
+		local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset = 1,2,3,4,5,6,7,8,9,10; -- GetProfessionInfo
+		local nameEnglish,spellId,skillId = 11, 12, 13; -- custom after GetProfessionInfo
 
-		local nCooldowns = 0;
-		for i,v in pairs(db.cooldowns) do
-			if (type(v)=="table") and (v.timeLeft) and (v.timeLeft-(time()-v.lastUpdate)<=0) then
-				db.cooldowns[i]=nil;
-			else
-				nCooldowns=nCooldowns+1;
-				db.hasCooldowns=true;
-			end
+		if (not profs.generated) then
+			profs.build();
 		end
 
-		local check = function(_nameEng,_nameLoc,_icon,_skill,_maxSkill,_skillId,_spellId)
-			local idOrGroup,timeLeft,lastUpdate,_name
-			for id,cd in pairs(cdSpells[_nameEng]) do
-				if (GetSpellCooldown(id)>0) then
-					idOrGroup = (cd.group>0) and "cd.group."..cd.group or id;
-					_name = (cd.group>0) and cd_groups[cd.group].." cooldown group" or select(1,GetSpellInfo(id));
-					timeLeft,lastUpdate = cdResetTypes[cd.type](id);
+		local t = {GetProfessions()};
+		if (#t>0) then
+			wipe(professions);
+			local short, d, add, _ = {},{},true,nil;
 
-					if (db.cooldowns[idOrGroup] and (timeLeft~=false) and floor(db.cooldowns[idOrGroup].timeLeft)~=floor(timeLeft)) or (not db.cooldowns[idOrGroup]) then
-						db.cooldowns[idOrGroup] = {name=_name,icon=_icon,timeLeft=timeLeft,lastUpdate=lastUpdate};
-						db.hasCooldowns = true;
+			for n=1, 7 do
+				add = true;
+				d = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil};
+
+				if (t[n]~=nil) then
+					d = {GetProfessionInfo(t[n])};
+					d[skillId] = t[n];
+
+					d[spellId] = profs.id2Name[L[d[nameLocale]]] or nil;
+					d[nameEnglish] = L[d[nameLocale]];
+
+					if (n<=2) then -- ?
+						short[n] = {d[nameEnglish],d[nameLocale],d[icon],d[skill],d[maxSkill],d[skillId],d[spellId]};
+					end
+					if (n==4) then -- hide fishing in profession menu to prevent error message
+						d[disabled]=true;
+					end
+				elseif (n<=2) then
+					d[nameLocale] = (n==1) and PROFESSIONS_FIRST_PROFESSION or PROFESSIONS_SECOND_PROFESSION;
+					d[icon] = ns.icon_fallback;
+					d[spellId] = false;
+				elseif (n>=3 and n<=6) then
+					d[spellId] = (n==3 and 78670) or (n==4 and 131474) or (n==5 and 2550) or (n==6 and 3273);
+					d[nameEnglish],d[nameLocale],d[icon] = unpack(profs.data[d[spellId]] or {});
+				elseif (ns.player.class=="DEATHKNIGHT") then
+					d[spellId] = 53428;
+					if (IsSpellKnown(d[spellId])) then
+						d[skill],d[maxSkill] = 1,1;
+					end
+					d[nameEnglish],d[nameLocale],d[icon] = unpack(profs.data[d[spellId]] or {});
+				elseif (ns.player.class=="ROGUE") then
+					d[spellId] = 1804;
+					if (IsSpellKnown(d[spellId])) then
+						d[skill] = UnitLevel("player") * 5;
+						d[maxSkill] = d[skill];
+					end
+					d[nameEnglish],d[nameLocale],d[icon] = unpack(profs.data[d[spellId]] or {});
+					d[disabled] = true;
+				else
+					add=false;
+				end
+				if (add) then
+					professions[n] = d;
+				end
+			end
+			db.profession1 = short[1] or false;
+			db.profession2 = short[2] or false;
+			db.hasCooldowns = false;
+
+			local nCooldowns = 0;
+			for i,v in pairs(db.cooldowns) do
+				if (type(v)=="table") and (v.timeLeft) and (v.timeLeft-(time()-v.lastUpdate)<=0) then
+					db.cooldowns[i]=nil;
+				else
+					nCooldowns=nCooldowns+1;
+					db.hasCooldowns=true;
+				end
+			end
+
+			local check = function(_nameEng,_nameLoc,_icon,_skill,_maxSkill,_skillId,_spellId)
+				local idOrGroup,timeLeft,lastUpdate,_name
+				for id,cd in pairs(cdSpells[_nameEng]) do
+					if (GetSpellCooldown(id)>0) then
+						idOrGroup = (cd.group>0) and "cd.group."..cd.group or id;
+						_name = (cd.group>0) and cd_groups[cd.group].." cooldown group" or select(1,GetSpellInfo(id));
+						timeLeft,lastUpdate = cdResetTypes[cd.type](id);
+
+						if (db.cooldowns[idOrGroup] and (timeLeft~=false) and floor(db.cooldowns[idOrGroup].timeLeft)~=floor(timeLeft)) or (not db.cooldowns[idOrGroup]) then
+							db.cooldowns[idOrGroup] = {name=_name,icon=_icon,timeLeft=timeLeft,lastUpdate=lastUpdate};
+							db.hasCooldowns = true;
+						end
 					end
 				end
 			end
+			if (short[1]) and (short[1][1]) and (type(cdSpells[short[1][1]])=="table") then check(unpack(short[1])); end
+			if (short[2]) and (short[2][1]) and (type(cdSpells[short[2][1]])=="table") then check(unpack(short[2])); end
 		end
-		if (short[1]) and (short[1][1]) and (type(cdSpells[short[1][1]])=="table") then check(unpack(short[1])); end
-		if (short[2]) and (short[2][1]) and (type(cdSpells[short[2][1]])=="table") then check(unpack(short[2])); end
+		Title_Update();
 	end
-
-	if tt and tt:IsShown() and event=="GET_ITEM_INFO_RECEIVED" and not locked then
-		locked = true;
-		C_Timer.After(.5,function()
-			createTooltip(tt);
-			locked = false;
-		end);
-	end
-
-	Title_Update();
 end
 
 -- ns.modules[name].optionspanel = function(panel) end
