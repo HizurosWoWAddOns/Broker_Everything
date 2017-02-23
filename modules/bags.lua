@@ -205,9 +205,28 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
-local function crapSelling()
-	if IsMerchantOpen==false or ns.profile[name].autoCrapSelling==false then return end
-	local sum = 0;
+local crap = {limit=3,sum=0,items={}};
+function crap:info()
+	if ns.profile[name].autoCrapSellingInfo and self.sum>0 then
+		ns.print(L["Auto crap selling - Summary"]..":",ns.GetCoinColorOrTextureString(name,self.sum,{color="white"}));
+	end
+end
+function crap:sell()
+	local num = #self.items;
+	for i=1, min(num,self.limit) do
+		local I=num-(i-1);
+		local bag,slot,price = unpack(self.items[I]);
+		self.sum = self.sum+price;
+		UseContainerItem(bag, slot);
+		tremove(self.items,I);
+	end
+	if #self.items==0 then
+		C_Timer.After(0.15,function()self:info();end);
+		return;
+	end
+	C_Timer.After(0.35,function()self:sell();end);
+end
+function crap:search()
 	for bag=0, NUM_BAG_SLOTS do
 		for slot=1, GetContainerNumSlots(bag) do
 			local link = GetContainerItemLink(bag,slot);
@@ -215,14 +234,13 @@ local function crapSelling()
 				local _,count = GetContainerItemInfo(bag, slot);
 				local _,_,quality,_,_,_,_,_,_,_,price = GetItemInfo(link);
 				if quality==0 and price>0 then
-					UseContainerItem(bag, slot);
-					sum = sum + (price*count);
+					tinsert(self.items,{bag,slot,price*count});
 				end
 			end
 		end
 	end
-	if ns.profile[name].autoCrapSellingInfo and sum>0 then
-		ns.print(L["Auto crap selling - Summary"]..":",ns.GetCoinColorOrTextureString(sum,{forceWhite=true}));
+	if #self.items>0 then
+		self:sell();
 	end
 end
 
@@ -390,7 +408,7 @@ ns.modules[name].onevent = function(self,event,msg)
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	elseif event=="MERCHANT_SHOW" and ns.profile[name].autoCrapSelling then
 		IsMerchantOpen = true;
-		C_Timer.After(1.1,crapSelling);
+		C_Timer.After(0.5,function() crap:search() end);
 	elseif event=="MERCHANT_CLOSED" then
 		IsMerchantOpen = false;
 	else
