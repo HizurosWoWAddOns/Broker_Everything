@@ -443,16 +443,39 @@ ns.reversePairsByKeys = function(t, f)
 end
 
 
--- ----------------------------- --
--- Separate thousands function   --
--- ----------------------------- --
-ns.FormatLargeNumber = function(value)
+-- ------------------------------------ --
+-- FormatLargeNumber function advanced  --
+-- ------------------------------------ --
+local suffixes1,suffixes2,floatformat = {"K","M","G","T","P","E"},{},"%0.1f";
+ns.FormatLargeNumber = function(modName,value,tooltip)
+	local shortNumbers,doShortcut = false,true;
+	if modName then
+		shortNumbers = ns.profile[modName].shortNumbers;
+	end
+	if tooltip and IsShiftKeyDown() then
+		doShortcut = false;
+	end
 	value = tonumber(value) or 0;
-	if ns.profile.GeneralOptions.separateThousands then
+	if shortNumbers and doShortcut then
+		local suffix = "";
+		if value>=1000 then
+			for i=1, #suffixes1 do
+				value,suffix = value/1000,suffixes1[i];
+				if value<1000 then
+					break;
+				end
+			end
+		end
+		if floor(value)~=value then
+			value = floatformat:format(value)
+		end
+		value = value..suffix;
+	elseif ns.profile.GeneralOptions.separateThousands then
 		value = FormatLargeNumber(value);
 	end
 	return value;
 end
+
 
 -- --------------------- --
 -- Some string  function --
