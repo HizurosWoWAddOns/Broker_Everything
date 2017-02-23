@@ -370,10 +370,10 @@ function updateBroker()
 		end
 
 		if ns.profile[name].showXP=="1" then
-			tinsert(data,C("yellow",ns.FormatLargeNumber(artifactXP)).."/"..C("ltblue",ns.FormatLargeNumber(xpForNextPoint)));
+			tinsert(data,C("yellow",ns.FormatLargeNumber(name,artifactXP)).."/"..C("ltblue",ns.FormatLargeNumber(name,xpForNextPoint)));
 			allDisabled=false;
 		elseif ns.profile[name].showXP=="2" then
-			tinsert(data,C("yellow",ns.FormatLargeNumber(xpForNextPoint-artifactXP)));
+			tinsert(data,C("yellow",ns.FormatLargeNumber(name,xpForNextPoint-artifactXP)));
 			allDisabled=false;
 		end
 
@@ -390,7 +390,7 @@ function updateBroker()
 					sum[1] = sum[1] + (v.count * v.artifact_power);
 				end
 			end
-			tinsert(data,ns.FormatLargeNumber(sum[1])..strrep("+",sum[2]));
+			tinsert(data,ns.FormatLargeNumber(name,sum[1])..strrep("+",sum[2]));
 			allDisabled=false;
 		end
 	end
@@ -457,7 +457,7 @@ function createTooltip(tt)
 
 			l=tt:AddLine();
 			tt:SetCell(l,1,C("ltgreen",L["Spent artifact power"]),nil,nil,2);
-			tt:SetCell(l,3,C("ltyellow",ns.FormatLargeNumber(xp)).."/"..C("ltyellow",ns.FormatLargeNumber(xpForNextPoint)));
+			tt:SetCell(l,3,C("ltyellow",ns.FormatLargeNumber(name,xp,true)).."/"..C("ltyellow",ns.FormatLargeNumber(name,xpForNextPoint,true)));
 
 			l=tt:AddLine();
 			tt:SetCell(l,1,C("ltgreen",L["Spent points"]),nil,nil,2);
@@ -470,7 +470,7 @@ function createTooltip(tt)
 				end 
 				l=tt:AddLine();
 				tt:SetCell(l,1,C("ltgreen",L["Total spend power"]),nil,nil,2);
-				tt:SetCell(l,3,C("ltyellow",ns.FormatLargeNumber(xp)));
+				tt:SetCell(l,3,C("ltyellow",ns.FormatLargeNumber(name,xp,true)));
 			end
 
 			if ns.toon[name].knowledgeLevel and ns.toon[name].knowledgeLevel>0 and itemID~=133755 then
@@ -542,7 +542,7 @@ function createTooltip(tt)
 					elseif v.artifact_power>0 then
 						l=tt:AddLine();
 						tt:SetCell(l,1,"|T".. v.icon .. ":0|t ".. C("quality"..v.quality or 7,v.name),nil,nil,2);
-						tt:SetCell(l,3,C("ltyellow",v.count .." x " .. ns.FormatLargeNumber(v.artifact_power)));
+						tt:SetCell(l,3,C("ltyellow",v.count .." x " .. ns.FormatLargeNumber(name,v.artifact_power,true)));
 						sum = sum + (v.count*v.artifact_power);
 					end
 					if v.link then
@@ -554,7 +554,7 @@ function createTooltip(tt)
 				end
 				if count>0 then
 					tt:AddSeparator();
-					tt:AddLine(C("ltblue",L["Summary"]..":"),nil,ns.FormatLargeNumber(sum));
+					tt:AddLine(C("ltblue",L["Summary"]..":"),nil,ns.FormatLargeNumber(name,sum,true));
 				else
 					local l = tt:AddLine();
 					tt:SetCell(l,1,C("ltgray",L["Currently no artifact power items found"]), nil, nil, ttColumns);

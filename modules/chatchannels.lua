@@ -173,7 +173,7 @@ local function createTooltip(tt,update)
 			if(v.color)then
 				color = ("ff%02x%02x%02x"):format(v.color[1]*255,v.color[2]*255,v.color[3]*255);
 			end
-			tt:AddLine(C(color,(channelNumber~=nil and channelNumber..". " or "") ..channel), ns.FormatLargeNumber(count));
+			tt:AddLine(C(color,(channelNumber~=nil and channelNumber..". " or "") ..channel), ns.FormatLargeNumber(name,count,true));
 		else
 			tt:AddLine(C("gray",(channelNumber~=nil and channelNumber..". " or "") ..channel), C("gray",FACTION_INACTIVE));
 		end
@@ -211,7 +211,7 @@ local function updater()
 				if(v.color and v[iActive])then
 					color = v.color;
 				end
-				tinsert(txt,C(color,ns.FormatLargeNumber(count)));
+				tinsert(txt,C(color,ns.FormatLargeNumber(name,count)));
 			end
 		end
 		if(#txt>0)then

@@ -239,9 +239,9 @@ local function updateBroker()
 			end
 			local c = currencyCache[id];
 			if c and c[cIcon] then
-				local str = ns.FormatLargeNumber(c[cCount]);
+				local str = ns.FormatLargeNumber(name,c[cCount]);
 				if ns.profile[name].showCapBroker and c[cTotalMax]>0 then
-					str = str.."/"..ns.FormatLargeNumber(c[cTotalMax]);
+					str = str.."/"..ns.FormatLargeNumber(name,c[cTotalMax]);
 				end
 				if ns.profile[name].showCapColorBroker and (c[cTotalMax]>0 or c[cWeeklyMax]) then
 					str = CapColor({"green","yellow","orange","red"},str,c[cCount],tonumber(c[cTotalMax]),tonumber(c[cEarnedThisWeek]),tonumber(c[cWeeklyMax]));
@@ -418,9 +418,9 @@ function createTooltip(tt,update)
 			tt:SetLineScript(l,"OnMouseUp", toggleCurrencyHeader);
 		elseif currencyCache[v] then
 			local t,c = currencyCache[v],3;
-			local str = ns.FormatLargeNumber(t[cCount]);
+			local str = ns.FormatLargeNumber(name,t[cCount],true);
 			if ns.profile[name].showTotalCap and t[cTotalMax]>0 then
-				str = str .."/".. ns.FormatLargeNumber(t[cTotalMax]);
+				str = str .."/".. ns.FormatLargeNumber(name,t[cTotalMax],true);
 			end
 			if ns.profile[name].showCapColor and (t[cTotalMax]>0 or t[cWeeklyMax]) then
 				local params = {t[cCount],tonumber(t[cTotalMax])};

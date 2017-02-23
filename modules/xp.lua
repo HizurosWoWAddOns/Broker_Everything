@@ -204,7 +204,7 @@ function createTooltip(tt)
 
 	if (UnitLevel("player")<MAX_PLAYER_LEVEL) then
 		tt:AddSeparator();
-		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE),"",C("white",("(%s/%s)"):format(ns.FormatLargeNumber(data.cur),ns.FormatLargeNumber(data.max))));
+		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE),"",C("white",("(%s/%s)"):format(ns.FormatLargeNumber(name,data.cur,true),ns.FormatLargeNumber(name,data.max,true))));
 		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE.." ("..L["Percent"]..")"), "",data.percentStr);
 		tt:AddLine(C("ltyellow",GARRISON_FOLLOWER_XP_STRING),"",C("white",data.need));
 		if (data.restStr) then
@@ -259,7 +259,7 @@ function createTooltip(tt)
 				local l = tt:AddLine(
 					("(%d) %s %s"):format(v.level,C(v.class,ns.scm(Name))..Realm, v.faction and "|TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or ""),
 					("%s "..C("cyan","%s")):format(v.xp.percent or 0,v.xp.restStr or "> ?%"),
-					("(%s/%s)"):format(ns.FormatLargeNumber(v.xp.cur),ns.FormatLargeNumber(v.xp.max))
+					("(%s/%s)"):format(ns.FormatLargeNumber(name,v.xp.cur,true),ns.FormatLargeNumber(name,v.xp.max,true))
 				);
 				tt.lines[l].name_realm = name_realm;
 				tt:SetLineScript(l,"OnMouseUp",deleteCharacterXP);
@@ -379,7 +379,7 @@ ns.modules[name].onevent = function(self,event,msg)
 	elseif ns.profile[name].display == "1" then
 		dataobj.text = data.percentStr;
 	elseif ns.profile[name].display == "2" then
-		dataobj.text = ns.FormatLargeNumber(data.cur).."/"..ns.FormatLargeNumber(data.max);
+		dataobj.text = ns.FormatLargeNumber(name,data.cur).."/"..ns.FormatLargeNumber(name,data.max);
 	elseif ns.profile[name].display == "3" then
 		dataobj.text = data.need;
 	elseif ns.profile[name].display == "4" then

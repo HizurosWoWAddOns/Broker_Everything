@@ -335,7 +335,7 @@ local function createTooltip(tt)
 				tt:AddLine(
 					C("quality"..i,G["ITEM_QUALITY"..i.."_DESC"]),
 					(price[i]>0 and mode.vendor) and ns.GetCoinColorOrTextureString(price[i]) or "",
-					ns.FormatLargeNumber(sum[i]).." "
+					ns.FormatLargeNumber(name,sum[i],true).." "
 				);
 			end
 		end
@@ -357,7 +357,7 @@ local function createTooltip(tt)
 				tt:AddLine(
 					C("ltyellow",expansions[i]),
 					(price[i]>0 and mode.vendor) and ns.GetCoinColorOrTextureString(price[i]) or "",
-					ns.FormatLargeNumber(sum[i]).." "
+					ns.FormatLargeNumber(name,sum[i],true).." "
 				);
 			end
 		end

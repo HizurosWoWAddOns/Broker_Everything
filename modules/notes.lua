@@ -95,7 +95,7 @@ local function note_save(self)
 	local titleCount,textCount = strlen(title),strlen(text);
 
 	editor.titleCount:SetFormattedText("%d / %d",titleCount,32);
-	editor.textCount:SetFormattedText("%s / %s",ns.FormatLargeNumber(textCount),ns.FormatLargeNumber(10000));
+	editor.textCount:SetFormattedText("%s / %s",ns.FormatLargeNumber(name,textCount),ns.FormatLargeNumber(name,10000));
 
 	if textCount==0 then
 		return; -- no text, no changes :)
@@ -122,7 +122,7 @@ local function initEditor()
 	editor.text:SetMaxLetters(textLimit);
 
 	editor.titleCount:SetText("0 / "..titleLimit);
-	editor.textCount:SetText("0 / "..ns.FormatLargeNumber(textLimit));
+	editor.textCount:SetText("0 / "..ns.FormatLargeNumber(name,textLimit));
 
 	editor:SetScript("OnHide",note_save);
 	editor.title:SetScript("OnTextChanged",note_save);

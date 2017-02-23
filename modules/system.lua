@@ -383,7 +383,7 @@ local function fpsStr(k)
 end
 
 local function latencyStr(a,b)
-	latency[a][b.."Str"] =  C( (latency[a][b]<40 and "ltblue") or (latency[a][b]<120 and "green") or (latency[a][b]<250 and "dkyellow") or (latency[a][b]<400 and "orange") or (latency[a][b]<1200 and "red") or "violet", ns.FormatLargeNumber(latency[a][b]) ) .. ns.suffixColour("ms");
+	latency[a][b.."Str"] =  C( (latency[a][b]<40 and "ltblue") or (latency[a][b]<120 and "green") or (latency[a][b]<250 and "dkyellow") or (latency[a][b]<400 and "orange") or (latency[a][b]<1200 and "red") or "violet", ns.FormatLargeNumber(name,latency[a][b]) ) .. ns.suffixColour("ms");
 end
 
 local function trafficStr(k)

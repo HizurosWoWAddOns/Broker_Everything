@@ -185,9 +185,9 @@ function updateBroker()
 		elseif(mode=="PercentNeed")then
 			tinsert(tmp,("%1.1f%% "..L["need"]):format(100-(barValue2/barMax*100)));
 		elseif(mode=="Number")then
-			tinsert(tmp,ns.FormatLargeNumber(barValue2).."/"..ns.FormatLargeNumber(barMax));
+			tinsert(tmp,ns.FormatLargeNumber(name,barValue2).."/"..ns.FormatLargeNumber(name,barMax));
 		elseif(mode=="NumberNeed")then
-			tinsert(tmp,ns.FormatLargeNumber(barMax-barValue2).." "..L["need"]);
+			tinsert(tmp,ns.FormatLargeNumber(name,barMax-barValue2).." "..L["need"]);
 		end
 		if ns.profile[name].watchedStandingOnBroker then
 			tinsert(tmp,_G["FACTION_STANDING_LABEL"..standingId]);
@@ -302,9 +302,9 @@ local function ttAddLine(tt,mode,data,count,childLevel)
 	elseif(mode=="PercentNeed")then
 		tinsert(line,("%1.1f%% "..L["need"]):format(100-(_barValue/_barMax*100)));
 	elseif(mode=="Number")then
-		tinsert(line,ns.FormatLargeNumber(_barValue).."/"..ns.FormatLargeNumber(_barMax));
+		tinsert(line,ns.FormatLargeNumber(name,_barValue,true).."/"..ns.FormatLargeNumber(name,_barMax,true));
 	elseif(mode=="NumberNeed")then
-		tinsert(line,ns.FormatLargeNumber(_barMax-_barValue).." "..L["need"]);
+		tinsert(line,ns.FormatLargeNumber(name,_barMax-_barValue,true).." "..L["need"]);
 	end
 
 	if ns.profile[name].showSession and data[barValue] and session[data[factionID]] then
