@@ -63,6 +63,7 @@ ns.modules[name] = {
 		showCapColorBroker = true,
 		showSession = true,
 		spacer=0,
+		showIDs = false,
 	},
 	config_allowed = {
 		subTTposition = {["AUTO"]=true,["TOP"]=true,["LEFT"]=true,["RIGHT"]=true,["BOTTOM"]=true}
@@ -99,6 +100,7 @@ ns.modules[name] = {
 			format		= "%d",
 			event = "BE_DUMMY_EVENT"
 		},
+		{ type="toggle", name="showIDs", label=L["Show currency id's"], tooltip=L["Display the currency id's in tooltip"] },
 	},
 	clickOptions = {
 		["1_open_character_info"] = {
@@ -430,8 +432,11 @@ function createTooltip(tt,update)
 				end
 				str = CapColor({"green","yellow","orange","red"},str,unpack(params));
 			end
+			if ns.profile[name].showIDs then
+				id = C("gray"," ("..v..")");
+			end
 			local l = tt:AddLine(
-				"    "..C("ltyellow",t[cName]),
+				"    "..C("ltyellow",t[cName])..id,
 				str.."  |T"..t[cIcon]..":14:14:0:0:64:64:4:56:4:56|t"
 			);
 			if ns.profile[name].showWeeklyCap then
