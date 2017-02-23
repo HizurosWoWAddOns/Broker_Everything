@@ -1111,7 +1111,7 @@ end
 -- in colored strings or with coin textures depending on --
 -- a per module and a addon wide toggle.                 --
 -- ----------------------------------------------------- --
-function ns.GetCoinColorOrTextureString(amount,opts)
+function ns.GetCoinColorOrTextureString(modName,amount,opts)
 	local zz,tex="%02d","|TInterface\\MoneyFrame\\UI-%sIcon:14:14:2:0|t";
 	if(type(amount)~="number")then amount=0; end
 
@@ -1165,7 +1165,7 @@ function ns.GetCoinColorOrTextureString(amount,opts)
 	end
 
 	if(gold>0)then
-		gold = ns.FormatLargeNumber(gold);
+		gold = ns.FormatLargeNumber(modName,gold,opts.inTooltip);
 		if (ns.profile.GeneralOptions.goldColor==true) then
 			tinsert(t,1,ns.LC.color("gold",gold));
 		else
@@ -1175,8 +1175,8 @@ function ns.GetCoinColorOrTextureString(amount,opts)
 
 	local str = table.concat(t,opts.sep);
 
-	if not ns.profile.GeneralOptions.goldColor and opts.forceWhite then
-		str = ns.LC.color("white",str);
+	if not ns.profile.GeneralOptions.goldColor and type(opts.color)=="string" then
+		str = ns.LC.color(opts.color,str);
 	end
 
 	return str;
