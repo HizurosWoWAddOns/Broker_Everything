@@ -53,13 +53,23 @@ ns.artifactpower_items = {
 };
 ns.artifactrelikts = {};
 local PATTERN_ARTIFACT_XP_GAIN = gsub(ARTIFACT_XP_GAIN,"%s",".*");
-local artifactKnowledgeMultiplier,artifactLocked = {
+local artifactKnowledgeMultiplier_len, artifactLocked = 25;
+local artifactKnowledgeMultiplier = {
+	-- with 7.0
 	  0.25,  0.50,  0.90,  1.40,  2.00, --  1 -  5
 	  2.75,  3.75,  5.00,  6.50,  8.50, --  6 - 10
 	 11.00, 14.00, 17.75, 22.50, 28.50, -- 11 - 15
 	 36.00, 45.50, 57.00, 72.00, 90.00, -- 16 - 20
-	113.00,142.00,178.00,223.00,249.00  -- 21 - 25
+	113.00,142.00,178.00,223.00,249.00, -- 21 - 25
+
+	-- with 7.2
+	 500.00, 750.00,1000.00,1250.00,1500.00, -- 26 - 30
+	1750.00,2000.00,2250.00,2500.00,2750.00, -- 31 - 35
+	3000.00,3250.00,3500.00,3750.00,4000.00  -- 36 - 40
 }
+if ns.build>=72000000 then
+	artifactKnowledgeMultiplier_len = 30;
+end
 
 local AP_MATCH_STRINGS = {
 	deDE = "Gewährt Eurem derzeit ausgerüsteten Artefakt (%d*) Artefaktmacht",
@@ -477,12 +487,12 @@ function createTooltip(tt)
 				l=tt:AddLine();
 				local ak = GetCurrencyInfo(1171);
 				tt:SetCell(l,1,C("ltgreen",ak or L["Artifact knowledge"]),nil,nil,2);
-				tt:SetCell(l,3,C("ltyellow",("%d (+%d%%)"):format(ns.toon[name].knowledgeLevel,math.ceil(artifactKnowledgeMultiplier[ns.toon[name].knowledgeLevel]*10)*10)));
+				tt:SetCell(l,3,C("ltyellow",("%d (+%s%%)"):format(ns.toon[name].knowledgeLevel,ns.FormatLargeNumber(name,math.ceil(artifactKnowledgeMultiplier[ns.toon[name].knowledgeLevel]*10)*10,true))));
 				local nextKL = ns.toon[name].knowledgeLevel+1;
-				if nextKL<=#artifactKnowledgeMultiplier then
+				if nextKL<=artifactKnowledgeMultiplier_len then
 					l=tt:AddLine();
 					tt:SetCell(l,1,C("gray2",L["Next artifact knowledge"]),nil,nil,2);
-					tt:SetCell(l,3,C("gray2",("%d (+%d%%)"):format(nextKL,math.ceil(artifactKnowledgeMultiplier[nextKL]*10)*10)));
+					tt:SetCell(l,3,C("gray2",("%d (+%s%%)"):format(nextKL,ns.FormatLargeNumber(name,math.ceil(artifactKnowledgeMultiplier[nextKL]*10)*10,true))));
 				end
 			end
 
