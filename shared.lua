@@ -230,6 +230,10 @@ ns.acquireTooltip = function(ttData,ttMode,ttParent,ttScripts)
 		-- Pass true as second parameter because hooking OnHide causes C stack overflows
 		_G.TipTac:AddModifiedTip(tooltip, true);
 	end
+	-- AddOnSkins support
+	if AddOnSkins and AddOnSkins.SkinTooltip then
+		AddOnSkins:SkinTooltip(tooltip);
+	end
 	tooltip:SetClampedToScreen(true);
 	tooltip:SetPoint(ns.GetTipAnchor(unpack(ttParent)));
 	return tooltip;
