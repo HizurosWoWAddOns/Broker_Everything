@@ -158,7 +158,7 @@ function createTooltip(tt,update)
 	end
 
 	local faction = ns.player.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..ns.player.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-	tt:AddLine(C(ns.player.class,ns.player.name) .. faction, ns.GetCoinColorOrTextureString(current_money));
+	tt:AddLine(C(ns.player.class,ns.player.name) .. faction, ns.GetCoinColorOrTextureString(name,current_money,{inTooltip=true}));
 	tt:AddSeparator();
 
 	local lineCount=0;
@@ -170,7 +170,7 @@ function createTooltip(tt,update)
 		if (v.gold) and (sAR==true or (sAR==false and realm==ns.realm)) and (sAF==true or (sAF==false and v.faction==ns.player.faction)) and (ns.player.name_realm~=name_realm) then
 			local faction = v.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 			local realm = sAR==true and C("dkyellow"," - "..ns.scm(realm)) or "";
-			local line, column = tt:AddLine( C(v.class,ns.scm(charName)) .. realm .. faction, ns.GetCoinColorOrTextureString(v.gold));
+			local line, column = tt:AddLine( C(v.class,ns.scm(charName)) .. realm .. faction, ns.GetCoinColorOrTextureString(name,v.gold,{inTooltip=true}));
 
 			tt.lines[line].name_realm = name_realm;
 			tt:SetLineScript(line, "OnMouseUp", deleteCharacterGoldData);
@@ -184,14 +184,14 @@ function createTooltip(tt,update)
 
 	if(lineCount>0)then
 		tt:AddSeparator()
-		tt:AddLine(L["Total Gold"], ns.GetCoinColorOrTextureString(totalGold))
+		tt:AddLine(L["Total Gold"], ns.GetCoinColorOrTextureString(name,totalGold,{inTooltip=true}))
 	end
 	tt:AddSeparator(3,0,0,0,0)
 
 	local profit, direction = getProfit();
 	if profit then
 		local sign = (direction==1 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (direction==-1 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
-		tt:AddLine(profit<0 and C("ltred",L["Session loss"]) or C("ltgreen",L["Session profit"]), sign .. ns.GetCoinColorOrTextureString(profit));
+		tt:AddLine(profit<0 and C("ltred",L["Session loss"]) or C("ltgreen",L["Session profit"]), sign .. ns.GetCoinColorOrTextureString(name,profit,{inTooltip=true}));
 	else
 		tt:AddLine(C("ltgreen",L["Session profit"]),C("orange","Error"));
 	end
@@ -230,15 +230,15 @@ ns.modules[name].onevent = function(self,event,msg)
 
 	local broker = {};
 	if ns.profile[name].showCharGold then
-		tinsert(broker,ns.GetCoinColorOrTextureString(current_money));
+		tinsert(broker,ns.GetCoinColorOrTextureString(name,current_money));
 	end
 	--[[if ns.profile[name].showRealmGold then
-		tinsert(broker,ns.GetCoinColorOrTextureString(current_money));
+		tinsert(broker,ns.GetCoinColorOrTextureString(name,current_money));
 	end]]
 	if ns.profile[name].showSessionProfit and login_money then
 		local profit, direction = getProfit();
 		local sign = (direction==1 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (direction==-1 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
-		tinsert(broker, sign .. ns.GetCoinColorOrTextureString(profit));
+		tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,profit));
 	end
 	if #broker==0 then
 		broker = {BONUS_ROLL_REWARD_MONEY};
