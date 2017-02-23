@@ -377,7 +377,11 @@ local function createTooltip(tt)
 
 	if ns.profile[name].showBNFriends then
 		tt:SetCell(tt:AddLine(),1,C("ltgray",L["BattleNet friends"]) .. ( (not BNConnected() and C("ltred"," ("..BATTLENET_UNAVAILABLE..")")) or (numOnlineBNFriends==0 and C("ltgray"," ("..L["Currently no battle.net friends online..."]..")")) or "" ),nil,"LEFT",0);
-		if BNConnected() then
+		if not BNConnected() then
+			tt:SetCell(tt:AddLine(),1,"    "..C("ltred",BATTLENET_UNAVAILABLE),nil,"LEFT",0);
+		elseif numOnlineBNFriends==0 then
+			tt:SetCell(tt:AddLine(),1,"    "..C("gray",L["Currently no battle.net friends online..."]),nil,"LEFT",0);
+		else
 			-- RealId	Status Character	Level	Zone	Game	Realm	Notes
 			for i=1, numBNFriends do
 				local nt,fi = BNGetNumFriendGameAccounts(i),{BNGetFriendInfo(i)};
@@ -478,68 +482,72 @@ local function createTooltip(tt)
 
 	if ns.profile[name].showFriends then
 		tt:SetCell(tt:AddLine(),1,C("ltgray",L["Friends"]) .. (friendsOnline==0 and C("gray"," ("..L["Currently no friends online..."]..")") or ""),nil,"LEFT",0);
-		local charName,level,class,area,connected,status,note,cName,cRealm,cGame=1,2,3,4,5,6,7,18,19,20; -- GetFriendInfo
-		local l,c,s,n,_;
-		for i=1, numFriends do
-			local v = {GetFriendInfo(i)};
-			if v[charName]:find("-") then
-				v[cName], v[cRealm] = strsplit("-",v[charName]);
-			else
-				v[cName], v[cRealm] = v[charName],ns.realm;
-			end
-			v[cGame] = BNET_CLIENT_WOW;
-			if visible[v[cName]..v[cRealm]..v[area]] then
-				-- filter duplicates...
-			elseif (v[charName]) and (v[connected]) then
-				visible[v[cName]..v[cRealm]..v[area]] = true;
+		if friendsOnline==0 then
+			tt:SetCell(tt:AddLine(),1,"    "..C("gray",L["Currently no friends online..."]),nil,"LEFT",0);
+		else
+			local charName,level,class,area,connected,status,note,cName,cRealm,cGame=1,2,3,4,5,6,7,18,19,20; -- GetFriendInfo
+			local l,c,s,n,_;
+			for i=1, numFriends do
+				local v = {GetFriendInfo(i)};
+				if v[charName]:find("-") then
+					v[cName], v[cRealm] = strsplit("-",v[charName]);
+				else
+					v[cName], v[cRealm] = v[charName],ns.realm;
+				end
+				v[cGame] = BNET_CLIENT_WOW;
+				if visible[v[cName]..v[cRealm]..v[area]] then
+					-- filter duplicates...
+				elseif (v[charName]) and (v[connected]) then
+					visible[v[cName]..v[cRealm]..v[area]] = true;
 
-				local l = tt:AddLine("","","","","","","","");
-				tt:SetCell(l,2,C("white",v[level]));
+					local l = tt:AddLine("","","","","","","","");
+					tt:SetCell(l,2,C("white",v[level]));
 
-				local nameStr = _status((status=="AFK"),(status=="DND")) .. C(v[class]:upper(),ns.scm(v[cName]));
-				if tonumber(ns.profile[name].showRealm)>1 and cRealm~=ns.realm then
-					if ns.profile[name].showRealm=="2" then
-						nameStr = nameStr..C("dkyellow","-"..ns.scm(v[cRealm]:gsub(" ","")));
-					else
-						nameStr = nameStr..C("dkyellow","*");
+					local nameStr = _status((status=="AFK"),(status=="DND")) .. C(v[class]:upper(),ns.scm(v[cName]));
+					if tonumber(ns.profile[name].showRealm)>1 and cRealm~=ns.realm then
+						if ns.profile[name].showRealm=="2" then
+							nameStr = nameStr..C("dkyellow","-"..ns.scm(v[cRealm]:gsub(" ","")));
+						else
+							nameStr = nameStr..C("dkyellow","*");
+						end
 					end
-				end
-				if ns.profile[name].showFaction=="1" then
-					nameStr = nameStr.."|TInterface\\PVPFrame\\PVP-Currency-"..ns.player.faction..":16:16:0:-1:32:32:2:30:2:30|t";
-				end
-				tt:SetCell(l,3,nameStr);
-
-				-- game icon or text
-				if ns.profile[name].showGame~="0" then
-					tt:SetCell(l,4,C("white",BNet_GetClientTexture(v[cGame])));
-				end
-				-- zone
-				if ns.profile[name].showZone then
-					if v[area]:match("^"..GARRISON_LOCATION_TOOLTIP) and v[area]~=GARRISON_LOCATION_TOOLTIP then
-						v[area] = GARRISON_LOCATION_TOOLTIP;
+					if ns.profile[name].showFaction=="1" then
+						nameStr = nameStr.."|TInterface\\PVPFrame\\PVP-Currency-"..ns.player.faction..":16:16:0:-1:32:32:2:30:2:30|t";
 					end
-					tt:SetCell(l,5,C("white",v[area]));
-				end
-				-- realm
-				if ns.profile[name].showRealm=="1" then
-					tt:SetCell(l,6,C("white",v[cRealm]));
-				end
-				-- faction
-				if ns.profile[name].showFaction=="2" then
-					tt:SetCell(l,7,C("white",ns.player.factionL or ns.player.faction));
-				elseif ns.profile[name].showFaction=="3" then
-					tt:SetCell(l,7,"|TInterface\\PVPFrame\\PVP-Currency-"..ns.player.faction..":16:16:0:-1:32:32:2:30:2:30|t");
-				end
-				-- notes
-				if ns.profile[name].showNotes then
-					tt:SetCell(l,8,C("white",ns.scm(v[note] or "")));
-				end
+					tt:SetCell(l,3,nameStr);
 
-				tt.lines[l].toonInfo={};
-				tt.lines[l].friendInfo={};
-				tt.lines[l].realmFriendInfo=v;
-				tt:SetLineScript(l, "OnMouseUp", tooltipLineScript_OnMouseUp);
-				tt:SetLineScript(l, "OnEnter", createTooltip2);
+					-- game icon or text
+					if ns.profile[name].showGame~="0" then
+						tt:SetCell(l,4,C("white",BNet_GetClientTexture(v[cGame])));
+					end
+					-- zone
+					if ns.profile[name].showZone then
+						if v[area]:match("^"..GARRISON_LOCATION_TOOLTIP) and v[area]~=GARRISON_LOCATION_TOOLTIP then
+							v[area] = GARRISON_LOCATION_TOOLTIP;
+						end
+						tt:SetCell(l,5,C("white",v[area]));
+					end
+					-- realm
+					if ns.profile[name].showRealm=="1" then
+						tt:SetCell(l,6,C("white",v[cRealm]));
+					end
+					-- faction
+					if ns.profile[name].showFaction=="2" then
+						tt:SetCell(l,7,C("white",ns.player.factionL or ns.player.faction));
+					elseif ns.profile[name].showFaction=="3" then
+						tt:SetCell(l,7,"|TInterface\\PVPFrame\\PVP-Currency-"..ns.player.faction..":16:16:0:-1:32:32:2:30:2:30|t");
+					end
+					-- notes
+					if ns.profile[name].showNotes then
+						tt:SetCell(l,8,C("white",ns.scm(v[note] or "")));
+					end
+
+					tt.lines[l].toonInfo={};
+					tt.lines[l].friendInfo={};
+					tt.lines[l].realmFriendInfo=v;
+					tt:SetLineScript(l, "OnMouseUp", tooltipLineScript_OnMouseUp);
+					tt:SetLineScript(l, "OnEnter", createTooltip2);
+				end
 			end
 		end
 	end
