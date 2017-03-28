@@ -945,17 +945,17 @@ do
 			local itemId = tonumber((GetContainerItemLink(bag,slot) or ""):match("Hitem:([0-9]+)"));
 			if itemid and callback[itemId] then
 				for i,v in pairs(callback[itemId])do
-					if type(v)=="function" then v("UseContainerItem",itemId); end
+					if type(v[1])=="function" then v[1]("UseContainerItem",itemId,v[2]); end
 				end
 			end
 		end
 	end);
 	ns.UseContainerItemHook = {
-		registerItemID = function(modName,itemId,callbackFunc)
+		registerItemID = function(modName,itemId,callbackFunc,info)
 			if callback[itemId]==nil then
 				callback[itemId] = {};
 			end
-			callback[itemId][modName] = callbackFunc;
+			callback[itemId][modName] = {callbackFunc,info};
 		end
 	};
 end

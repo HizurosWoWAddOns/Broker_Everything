@@ -15,18 +15,28 @@ local professions,db,createMenu,locked = {};
 local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset = 1,2,3,4,5,6,7,8,9,10; -- GetProfessionInfo
 local nameEnglish,spellId,skillId,disabled = 11, 12, 13, 14; -- custom after GetProfessionInfo
 local spellName,spellLocaleName,spellIcon,spellId = 1,2,3,4;
-local legion_faction_recipes = { -- [<tradeSkill>] = { [<factionID>] = { [<recipe itemID>] = <factionStandingID> } } }
-	["Alchemy"]			= {[1859]={[142120]=7}},
-	["Blacksmithing"]	= {[1828]={[123948]=8,[123953]=8,[123955]=8,[136697]=6},[1948]={[136698]=6,[123951]=8,[123954]=8}},
-	["Enchanting"]		= {[1859]={[128600]=8,[128602]=8,[128603]=8,[128609]=8},[1883]={[128593]=8,[128599]=6,[128601]=8,[128608]=8}},
-	["Engineering"]		= {[1894]={[137713]=6,[137714]=6,[137715]=8,[137716]=8}},
-	["Inscription"]		= {[1894]={[137773]=7,[137777]=7,[137781]=7,[142107]=7},[1900]={[137774]=7,[137779]=7,[137780]=7}},
-	["Jewelcrafting"]	= {[1828]={[137839]=6,[137844]=8,[137846]=8,[137855]=8},[1859]={[137850]=8},[1894]={[137849]=8}},
-	["Leatherworking"]	= {[1828]={[142408]=7,[142409]=8},[1883]={[137883]=6,[137895]=8,[137896]=8,[137898]=8},[1948]={[137910]=6,[137915]=6,[137927]=8,[137928]=8}},
-	["Tailoring"]		= {[1859]={[137973]=8,[137976]=8,[137979]=8},[1900]={[137977]=8,[137978]=8,[137980]=8,[138015]=6}},
-	["Cooking"]			= {[1894]={[142331]=7}},
-	["First Aid"]		= {[1894]={[142333]=6}}
-};
+local legion_faction_recipes = { -- { <tradeSkillId>, <faction>, <standing>, <itemId>, <recipeId> }
+	-- Alchemy
+	{171,1859,7,142120,229218},
+	-- Blacksmithing
+	{164,1828,8,123948,182982},{164,1828,8,123953,182987},{164,1828,8,123955,182989},{164,1828,6,136697,209497},{164,1948,6,136698,209498},{164,1948,8,123951,182985},{164,1948,8,123954,182988},
+	-- Enchanting
+	{333,1859,8,128600,191013},{333,1859,8,128602,191015},{333,1859,8,128603,191016},{333,1859,8,128609,191022},{333,1883,8,128593,191006},{333,1883,6,128599,191012},{333,1883,8,128601,191014},{333,1883,8,128608,191021},
+	-- Engineering
+	{202,1894,6,137713,199007},{202,1894,6,137714,199008},{202,1894,8,137715,199009},{202,1894,8,137716,199010},
+	-- Inscription
+	{773,1894,7,137773,192897},{773,1894,7,137777,192901},{773,1894,7,137781,192905},{773,1894,7,142107,229183},{773,1900,7,137774,192898},{773,1900,7,137779,192903},{773,1900,7,137780,192904},
+	-- Jewelcrafting
+	{755,1828,6,137839,195924},{755,1828,8,137844,195929},{755,1828,8,137846,195931},{755,1828,8,137855,195940},{755,1859,8,137850,195935},{755,1894,8,137849,195934},
+	-- Leatherworking
+	{165,1828,7,142408,230954},{165,1828,8,142409,230955},{165,1883,6,137883,194718},{165,1883,8,137895,194730},{165,1883,8,137896,194731},{165,1883,8,137898,194733},{165,1948,6,137910,194753},{165,1948,6,137915,194758},{165,1948,8,137927,194770},{165,1948,8,137928,194771},
+	-- Tailoring
+	{197,1859,8,137973,185954},{197,1859,8,137976,185957},{197,1859,8,137979,185960},{197,1900,8,137977,185958},{197,1900,8,137978,185959},{197,1900,8,137980,185961},{197,1900,6,138015,208353},
+	-- Cooking
+	{185,1894,7,142331,230046},
+	-- First Aid
+	{129,1894,6,142333,230047},
+}
 local cd_groups = { -- %s cooldown group
 	"Transmutation",	-- L["Transmutation cooldown group"]
 	"Jewels",			-- L["Jewels cooldown group"]
@@ -194,8 +204,10 @@ ns.modules[name] = {
 	desc = L["Broker to show your profession skills and cooldowns"],
 	label = TRADE_SKILLS,
 	events = {
+		"ADDON_LOADED",
 		"PLAYER_ENTERING_WORLD",
 		"TRADE_SKILL_UPDATE",
+		"TRADE_SKILL_NAME_UPDATE",
 
 		-- archaeology
 		"ARTIFACT_UPDATE",
@@ -296,6 +308,12 @@ profs.build=function()
 	end
 end
 
+local function OnLearnRecipe(itemId,i)
+	if legion_faction_recipes[i][4]==itemId then
+		ns.toon[name].learnedRecipes[legion_faction_recipes[i][5]]=true;
+	end
+end
+
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local iconnameLocale = "|T%s:12:12:0:0:64:64:2:62:4:62|t %s";
@@ -318,8 +336,8 @@ local function createTooltip(tt)
 			else
 				tt:AddLine((iconnameLocale):format(v[icon] or ns.icon_fallback,C("ltyellow",v[nameLocale] or "?")),("%d/%d"):format(v[skill] or 0,v[maxSkill] or 0));
 			end
-			if v[nameEnglish] then
-				ts[v[nameEnglish]] = true;
+			if v[7] and v[nameEnglish] then
+				ts[v[7]] = v[nameEnglish];
 			end
 		end
 
@@ -327,34 +345,26 @@ local function createTooltip(tt)
 			tt:AddSeparator(4,0,0,0,0);
 			tt:AddLine(C("ltblue",L["Legion recipes from faction vendors"]));
 			tt:AddSeparator();
+
 			local faction,trade_skill = false,false;
-			for tradeSkill, tsData in pairs(legion_faction_recipes) do
-				if ts[tradeSkill] then
-					trade_skill = C("gray",L[tradeSkill]);
-					for factionID, recipes in pairs(tsData)do
-						local Name,_,standingID = GetFactionInfoByID(factionID);
-						faction = {"   "..C("ltgray",Name),C("ltgray",_G["FACTION_STANDING_LABEL"..standingID])};
-						for itemID, factionStanding in pairs(recipes)do
-							local Name = GetItemInfo(itemID);
-							if Name then
-								-- trade skill
-								if trade_skill then
-									tt:AddLine(trade_skill);
-									trade_skill = false;
-								end
-								-- faction
-								if faction then
-									tt:AddLine(unpack(faction));
-									faction = false;
-								end
-								-- recipe
-								local color = "red";
-								if standingID>=factionStanding then
-									color = "green";
-								end
-								tt:AddLine("      "..C("ltyellow",Name),C(color,_G["FACTION_STANDING_LABEL"..factionStanding]));
-							end
+			for _, recipeData in ipairs(legion_faction_recipes) do
+				if ts[recipeData[1]] then
+					local Name = GetSpellInfo(recipeData[5]);
+					if Name and ns.toon[name].learnedRecipes[recipeData[5]]~=true then
+						-- trade skill header
+						if trade_skill~=recipeData[1] then
+							tt:AddLine(C("gray",L[ts[recipeData[1]]]));
+							trade_skill=recipeData[1];
+							faction=0;
 						end
+						-- faction header
+						if faction~=recipeData[2] then
+							factionName,_,standingID = GetFactionInfoByID(recipeData[2]);
+							tt:AddLine("   "..C("ltgray",factionName),C("ltgray",_G["FACTION_STANDING_LABEL"..standingID]));
+							faction = recipeData[2];
+						end
+						-- recipe
+						tt:AddLine("      "..C("ltyellow",Name),C(standingID>=recipeData[3] and "green" or "red",_G["FACTION_STANDING_LABEL"..recipeData[3]]));
 					end
 				end
 			end
@@ -497,12 +507,24 @@ function createMenu(self,menu)
 	ns.EasyMenu.ShowMenu(self);
 end
 
+local function updateTradeSkill(self)
+	local tradeSkillID = C_TradeSkillUI.GetTradeSkillLine();
+	for i=1, #legion_faction_recipes do
+		local info,v = {},legion_faction_recipes[i];
+		if v[1]==tradeSkillID then
+			C_TradeSkillUI.GetRecipeInfo(v[5],info);
+			if info and info.learned then
+				ns.toon[name].learnedRecipes[v[5]] = true;
+			end
+		end
+	end
+end
+
 
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 	if(ns.toon.professions==nil)then
 		ns.toon.professions = {cooldowns={},hasCooldowns=false};
 	end
@@ -520,15 +542,17 @@ ns.modules[name].onevent = function(self,event,arg1)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 		return;
-	elseif tt and tt:IsShown() and event=="GET_ITEM_INFO_RECEIVED" and not locked then
-		locked = true;
-		C_Timer.After(.5,function()
-			if tt:IsShown() then
-				createTooltip(tt);
-			end
-			locked = false;
-		end);
+	elseif event=="ADDON_LOADED" and arg1=="Blizzard_TradeSkillUI" then
+		hooksecurefunc(TradeSkillFrame,"RefreshTitle",updateTradeSkill);
+		self:UnregisterEvent(event);
 	elseif ns.pastPEW then
+		if ns.toon[name]==nil then
+			ns.toon[name]={};
+		end
+		if ns.toon[name].learnedRecipes==nil then
+			ns.toon[name].learnedRecipes = {};
+		end
+
 		local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset = 1,2,3,4,5,6,7,8,9,10; -- GetProfessionInfo
 		local nameEnglish,spellId,skillId = 11, 12, 13; -- custom after GetProfessionInfo
 
@@ -539,7 +563,7 @@ ns.modules[name].onevent = function(self,event,arg1)
 		local t = {GetProfessions()};
 		if (#t>0) then
 			wipe(professions);
-			local short, d, add, _ = {},{},true,nil;
+			local short, d, tsIds, add, _ = {},{},{},true,nil;
 
 			for n=1, 7 do
 				add = true;
@@ -558,6 +582,7 @@ ns.modules[name].onevent = function(self,event,arg1)
 					if (n==4) then -- hide fishing in profession menu to prevent error message
 						d[disabled]=true;
 					end
+					tsIds[d[7]] = true;
 				elseif (n<=2) then
 					d[nameLocale] = (n==1) and PROFESSIONS_FIRST_PROFESSION or PROFESSIONS_SECOND_PROFESSION;
 					d[icon] = ns.icon_fallback;
@@ -615,8 +640,16 @@ ns.modules[name].onevent = function(self,event,arg1)
 					end
 				end
 			end
+
 			if (short[1]) and (short[1][1]) and (type(cdSpells[short[1][1]])=="table") then check(unpack(short[1])); end
 			if (short[2]) and (short[2][1]) and (type(cdSpells[short[2][1]])=="table") then check(unpack(short[2])); end
+
+			for i=1, #legion_faction_recipes do
+				local v = legion_faction_recipes[i];
+				if tsIds[legion_faction_recipes[i][1]] then
+					ns.UseContainerItemHook.registerItemID(name,legion_faction_recipes[i][4],OnLearnRecipe,i);
+				end
+			end
 		end
 		Title_Update();
 	end
