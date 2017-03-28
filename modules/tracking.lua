@@ -10,11 +10,8 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Tracking" -- TRACKING
-local ldbName = name
 local tt = nil
 local menuOpened = false;
-local GetNumTrackingTypes,GetTrackingInfo = GetNumTrackingTypes,GetTrackingInfo
-
 local similar, own, unsave = "%s has a similar option to hide the minimap tracking icon.","%s has its own tracking icon.","%s found. It's unsave to hide the minimap tracking icon without errors.";
 -- L["%s has a similar option to hide the minimap tracking icon."] L["%s has its own tracking icon."] L["%s found. It's unsave to hide the minimap tracking icon without errors."]
 local coexist_tooltip = {
@@ -54,10 +51,13 @@ ns.modules[name] = {
 	},
 	config_allowed = {
 	},
-	config = {
-		{ type="header", label=TRACKING, align="left", icon=I[name] },
-		{ type="separator" },
+	config_header = {type="header", label=TRACKING, align="left", icon=I[name]},
+	config_broker = {
+		"minimapButton",
 		{ type="toggle", name="displaySelection", label=L["Display selection"], tooltip=L["Display one of the selected tracking options in broker text."], event=true },
+	},
+	config_tooltip = nil,
+	config_misc = {
 		{ type="toggle", name="hideMinimapButton", label=L["Hide minimap button"], tooltip=L["Hide blizzard's tracking button on minimap"], event="BE_HIDE_TRACKING", disabled=function()
 				if (ns.coexist.found~=false) then
 					return L["This option is disabled"],L[coexist_tooltip[ns.coexist.found]]:format(ns.coexist.found);
@@ -94,9 +94,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,msg)
 	if event=="BE_HIDE_TRACKING" then -- custom event on config changed
@@ -112,7 +110,7 @@ ns.modules[name].onevent = function(self,event,msg)
 	-- broker button text
 	local numActive, trackActive = updateTracking()
 	local n = TRACKING;
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
+	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ns.modules[name].ldbName)
 	if ns.profile[name].displaySelection then
 		if numActive == 0 then
 			n = "None";

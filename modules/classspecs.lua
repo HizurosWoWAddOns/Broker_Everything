@@ -3,22 +3,22 @@
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
-local C, L, I = ns.LC.color, ns.L, ns.I
 if ns.build<70000000 then return end
+local C, L, I = ns.LC.color, ns.L, ns.I
 
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "ClassSpecs"
-local ldbName, ttName, ttColumns, tt, createMenu, createTalentMenu = name, name.."TT", 4;
+local ttName, ttColumns, tt, createMenu, createTalentMenu = name.."TT", 4;
 local createTooltip
 
 
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile=GetItemIcon(7516),coords={0.05,0.95,0.05,0.95}}; --IconName::ClassSpecs--
+I[name] = {iconfile=134942,coords={0.05,0.95,0.05,0.95}}; --IconName::ClassSpecs--
 
 
 ---------------------------------------
@@ -42,12 +42,15 @@ ns.modules[name] = {
 		showPvPTalents = true
 	},
 	config_allowed = nil,
-	config = {
-		{ type="header", label=L[name], align="left", icon=true },
-		{ type="separator" },
-		{ type="toggle", name="showTalents", label=L["Show talents"], tooltip=L["Show talents in tooltip"]},
-		{ type="toggle", name="showPvPTalents", label=L["Show PvP talents"], tooltip=L["Show PvP talents in tooltip"]}
+	config_header = nil, -- use default header
+	config_broker = {
+		"minimapButton",
 	},
+	config_tooltip = {
+		{ type="toggle", name="showTalents", label=L["Show talents"], tooltip=L["Show talents in tooltip"]},
+		{ type="toggle", name="showPvPTalents", label=L["Show PvP talents"], tooltip=L["Show PvP talents in tooltip"]},
+	},
+	config_misc = nil,
 	clickOptions = {
 		["1_open_specialization"] = {
 			cfg_label = "Open specialization", -- L["Open specialization"]
@@ -89,18 +92,6 @@ ns.modules[name] = {
 				securecall("ToggleTalentFrame",ns.player.class:upper()=="HUNTER" and PET_SPECIALIZATION_TAB or SPECIALIZATION_TAB);
 			end
 		},
-		--[[
-		["5_open_talent_menu"] = {
-			cfg_label = "Open talents menu", -- L["Open talents menu"]
-			cfg_desc = "open talents menu", -- L["open talents menu"]
-			cfg_default = "__NONE",
-			hint = "Open talents menu", -- L["Open talents menu"]
-			func = function(self,button)
-				local _mod=name;
-				createTalentMenu(self);
-			end
-		},
-		--]]
 		["6_open_menu"] = {
 			cfg_label = "Open option menu", -- L["Open option menu"]
 			cfg_desc = "open the option menu", -- L["open the option menu"]
@@ -144,6 +135,13 @@ local function infoTooltipShow(self)
 			end
 		elseif self.infoTooltip.type=="spell" and self.infoTooltip.spellId then
 			GameTooltip:SetHyperlink("spell:"..self.infoTooltip.spellId);
+		elseif self.infoTooltip.type=="talent" and self.infoTooltip.args then
+			GameTooltip:SetTalent(unpack(self.infoTooltip.args));
+		elseif self.infoTooltip.type=="pvptalent" and self.infoTooltip.args then
+			GameTooltip:SetPvpTalent(unpack(self.infoTooltip.args));
+		end
+		if self.infoTooltip.extraLine then
+			GameTooltip:AddLine(self.infoTooltip.extraLine);
 		end
 		GameTooltip:Show();
 	end
@@ -337,9 +335,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,msg,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
@@ -349,7 +345,7 @@ ns.modules[name].onevent = function(self,event,msg,...)
 		local icon = I(name)
 		local spec = GetSpecialization()
 		local _ = nil
-		local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
+		local dataobj = self.obj or ns.LDB:GetDataObjectByName(ns.modules[name].ldbName)
 		local unspent = {GetNumUnspentTalents()>0 or GetNumUnspentPvpTalents()>0,GetNumUnspentTalents(),GetNumUnspentPvpTalents()};
 
 		if spec ~= nil then

@@ -10,9 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "GuildLog" -- L["GuildLog"]
-local ldbName = name
-local tt,ttColumns,createMenu;
-local ttName = name.."TT"
+local ttName,ttColumns,tt,createMenu = name.."TT",4
 local type2locale = {
 	["invite"]	= C("cyan",CALENDAR_STATUS_INVITED),
 	["join"]	= C("green",LFG_LIST_APP_INVITE_ACCEPTED),
@@ -53,11 +51,10 @@ ns.modules[name] = {
 		hideDemote = false,
 		showRealms = true
 	},
-	config_allowed = {
-	},
-	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
-		{ type="separator" },
+	config_allowed = nil,
+	config_header = nil, -- use default header
+	config_broker = {"minimapButton"},
+	config_tooltip = {
 		{ type="toggle", name="hideInvite",  label=L["Hide invites"],    tooltip=L["Hide all entries with 'Invite' as action."] },
 		{ type="toggle", name="hideJoin",    label=L["Hide joins"],      tooltip=L["Hide all entries with 'Join' as action."] },
 		{ type="toggle", name="hidePromote", label=L["Hide promotions"], tooltip=L["Hide all entries with 'Promote' as action."] },
@@ -83,6 +80,7 @@ ns.modules[name] = {
 			default = "BOTTOM"
 		},
 	},
+	config_misc = nil,
 	clickOptions = {
 		["1_open_guild"] = {
 			cfg_label = "Open guild roster", -- L["Open guild roster"]
@@ -237,9 +235,8 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
+
 ns.modules[name].onevent = function(self,event,msg)
 	if (event=="PLAYER_ENTERING_WORLD") or (event=="GUILD_ROSTER_UPDATE") then
 		QueryGuildEventLog();
@@ -284,7 +281,6 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttColumns=4;
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "LEFT", "LEFT", "RIGHT"},{false},{self});
 	createTooltip(tt);
 end

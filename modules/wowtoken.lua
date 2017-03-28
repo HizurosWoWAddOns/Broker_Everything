@@ -10,9 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "WoWToken";
-local ldbName, ttName = name, name.."TT";
-local tt,_,icon = nil;
-local ttColumns = 1;
+local ttName,ttColumns,tt,icon,_ = name.."TT",1;
 local price = {last=0,money=0,diff=0};
 
 
@@ -35,14 +33,16 @@ ns.modules[name] = {
 	updateinterval = 120, -- false or integer
 	config_defaults = {
 		diff=true,
-		history=true,
+		history=true
 	},
-	config_allowed = {},
-	config = {
-		{ type="header",                 label=L[name], align="left", icon=I[name] },
+	config_allowed = nil,
+	config_header = nil, -- use default header
+	config_broker = {"minimapButton"},
+	config_tooltip = {
 		{ type="toggle", name="diff",    label=L["Show difference"], tooltip=L["Show difference of last change in tooltip"]},
 		{ type="toggle", name="history", label=L["Show history"],    tooltip=L["Show history of the 5 last changes in tooltip"]},
-	}
+	},
+	config_misc = "shortNumbers",
 }
 
 
@@ -54,9 +54,7 @@ ns.modules[name] = {
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,msg)
 	if(event=="ADDON_LOADED" and msg==addon)then
@@ -66,7 +64,6 @@ ns.modules[name].onevent = function(self,event,msg)
 		if(#Broker_Everything_DataDB[name]>0 and Broker_Everything_DataDB[name][1].last<time()-(60*30))then
 			wipe(Broker_Everything_DataDB[name]);
 		end
-		L[name] = GetItemInfo(122284);
 		C_Timer.NewTicker(ns.modules[name].updateinterval,C_WowTokenPublic.UpdateMarketPrice);
 	elseif(event=="PLAYER_ENTERING_WORLD")then
 		L[name] = GetItemInfo(122284);
@@ -89,7 +86,7 @@ ns.modules[name].onevent = function(self,event,msg)
 				end
 			end
 
-			local obj = ns.LDB:GetDataObjectByName(ldbName);
+			local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 			obj.text = ns.GetCoinColorOrTextureString(name,current,{hideLowerZeros=true});
 		end
 	end
@@ -100,8 +97,6 @@ end
 
 ns.modules[name].ontooltip = function(tt)
 	local l;
-	--tt:AddHeader(C("dkyellow",L[name]));
-	--tt:AddSeparator(4,0,0,0,0);
 	tt:AddLine(L[name]);
 	tt:AddLine(" ");
 	if(price.last~=0)then
@@ -143,14 +138,7 @@ end
 -------------------------------------------
 -- module functions for LDB registration --
 -------------------------------------------
---ns.modules[name].onenter = function(self)
---	if (ns.tooltipChkOnShowModifier(false)) then return; end
---	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT"},{true},{self});
---	ns.modules[name].ontooltip(tt)
---	ns.roundupTooltip(tt);
---end
-
+-- ns.modules[name].onenter = function(self) end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-

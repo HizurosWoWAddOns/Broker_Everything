@@ -10,11 +10,11 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Volume" -- VOLUME
-local ldbName,ttName,ttColumns,tt,createMenu,createTooltip = name,name.."TT",2;
+local ttName,ttColumns,tt,createMenu,createTooltip = name.."TT",2;
 local updateBrokerButton,getSoundHardware,setSoundHardware
 local icon = "Interface\\AddOns\\"..addon.."\\media\\volume_"
 local VIDEO_VOLUME_TITLE = L["Video Volume"];
-local volume,cvars = {},{};
+local volume,cvars,updateBroker = {},{};
 local vol = {
 	{inset=0,locale="MASTER_VOLUME",			toggle="Sound_EnableAllSound",									percent="Sound_MasterVolume"},
 	{inset=1,locale="ENABLE_SOUNDFX",			toggle="Sound_EnableSFX",						depend={1},		percent="Sound_SFXVolume"},
@@ -76,12 +76,14 @@ ns.modules[name] = {
 	},
 	config_allowed = {
 	},
-	config = {
-		{ type="header", label=VOLUME, align="left", icon=I[name..'_100'] },
-		{ type="separator" },
+	config_header = {type="header", label=VOLUME, align="left", icon=I[name..'_100']},
+	config_broker = {"minimapButton"},
+	config_tooltip = {
+		{ type="toggle", name="listHardware", label=L["List of hardware"], tooltip=L["Display in tooltip a list of your sound output hardware."] },
+	},
+	config_misc = {
 		{ type="toggle", name="useWheel", label=L["Use MouseWheel"], tooltip=L["Use the MouseWheel to change the volume"] },
 		{ type="slider", name="steps", label=L["Change steps"], tooltip=L["Change the stepping width for volume changes with mousewheel and clicks."], min=1, max=100, default=10, format = "%d" },
-		{ type="toggle", name="listHardware", label=L["List of hardware"], tooltip=L["Display in tooltip a list of your sound output hardware."] },
 	},
 	clickOptions = {
 		["0_mute"] = {
@@ -152,7 +154,7 @@ end
 
 function updateBroker()
 	volume.master = tonumber(("%.2f"):format(GetCVar("Sound_MasterVolume")))
-	local obj = ns.LDB:GetDataObjectByName(ldbName);
+	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 	local suffix,color = "100","green"
 	if volume.master < .1 then
 		suffix,color = "0","gray"
@@ -351,17 +353,11 @@ local function BlizzardOptionsPanel_SetCVarSafeHook(cvar)
 	end
 end
 
-function BE_ToggleAllSound()
-	ns.SetCVar(vol[1].toggle,GetCVar(vol[1].toggle)=="1" and 0 or 1,vol[1].locale);
-	updateBroker();
-end
 
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,arg1)
 	if event=="PLAYER_ENTERING_WORLD" or event=="SOUND_DEVICE_UPDATE" or (event=="CVAR_UPDATE" and cvars[arg1:lower()]) then
@@ -415,4 +411,3 @@ end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-

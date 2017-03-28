@@ -10,7 +10,7 @@ local C,L,I=ns.LC.color,ns.L,ns.I;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Guild"; -- GUILD
-local ldbName, ttName, ttName2,ttColumns,ttColumns2 = name, name.."TT", name.."TT2",9,2;
+local ttName, ttName2,ttColumns,ttColumns2,tt,tt2,createMenu,db = name.."TT", name.."TT2",9,2;
 local tt,tt2,createMenu,db;
 local off, on = strtrim(gsub(ERR_FRIEND_OFFLINE_S,"%%s","(.*)")), strtrim(gsub(ERR_FRIEND_ONLINE_SS,"\124Hplayer:%%s\124h%[%%s%]\124h","(.*)"));
 local tradeskillsLockUpdate,tradeskillsLastUpdate,tradeskillsUpdateTimeout = false,0,20;
@@ -28,7 +28,7 @@ local eventLock=false;
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile=GetItemIcon(5976),coords={0.05,0.95,0.05,0.95}} --IconName::Guild--
+I[name] = {iconfile=135026,coords={0.05,0.95,0.05,0.95}} --IconName::Guild--
 
 
 ---------------------------------------
@@ -64,27 +64,15 @@ ns.modules[name] = {
 		splitTables = false,
 		showMembersLevelUp = true
 	},
-	config_allowed = {
-	},
-	config = {
-		{ type="header", label=GUILD, align="left", icon=I[name] },
-
-		{ type="separator", alpha=0 },
-
-		{ type="header", label=L["Misc. options"] },
-		{ type="separator", inMenuInvisible=true },
-		{ type="toggle", name="showMembersLevelUp",		label=L["Show level up notification"],	tooltip=L["Show guild member level up notification in chat frame. (This is not a gratulation bot!)"]},
-
-		{ type="separator", alpha=0 },
-
-		{ type="header", label=L["Broker button options"] },
-		{ type="separator", inMenuInvisible=true, isSubMenu=true },
+	config_allowed = nil,
+	config_header = {type="header", label=GUILD, align="left", icon=I[name]},
+	config_broker = {
+		"minimapButton",
 		{ type="toggle", name="showApplicantsBroker",	label=L["Show applicants on broker"],			tooltip=L["Show applicants on broker button"], event = true },
 		{ type="toggle", name="showMobileChatterBroker",label=L["Show mobile chatter on broker"],		tooltip=L["Show count of mobile chatter on broker button"], event = true },
 		{ type="toggle", name="showTotalMembersBroker",	label=L["Show total members count on broker"],	tooltip=L["Show total members count on broker button"], event = true },
-		
-		{ type="separator", alpha=0 },
-
+	},
+	config_tooltip = {
 		{ type="header", label=L["Main tooltip options"] },
 		{ type="separator", inMenuInvisible=true, isSubMenu=true },
 		{ type="toggle", name="showRep",				label=L["Show guild reputation"],		tooltip=L["Enable/Disable the display of Guild Reputation in tooltip"] },
@@ -109,6 +97,9 @@ ns.modules[name] = {
 		{ type="toggle", name="showONotesInTT2",		label=L["Show officer notes"],			tooltip=L["Show officer notes from guild member"]},
 		{ type="toggle", name="showRankInTT2",			label=L["Show rank"],					tooltip=L["Show rank from guild member"]},
 		{ type="toggle", name="showProfessionsInTT2",	label=L["Show professions"],			tooltip=L["Show professions from guild member"]}
+	},
+	config_misc = {
+		{ type="toggle", name="showMembersLevelUp",		label=L["Show level up notification"],	tooltip=L["Show guild member level up notification in chat frame. (This is not a gratulation bot!)"]},
 	},
 	clickOptions = {
 		["1_open_guild"] = {
@@ -268,7 +259,7 @@ local function updateApplicants()
 end
 
 local function updateBroker()
-	local broker = ns.LDB:GetDataObjectByName(ldbName);
+	local broker = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 	if guild[gName] then
 		local txt = {};
 		if (ns.profile[name].showApplicantsBroker) and (guild[gNumApplicants]>0) then
@@ -584,7 +575,6 @@ local function createTooltip(tt,update)
 end
 
 local function updater()
-	updaterLocked = false;
 	if doGuildUpdate then
 		doGuildUpdate = false;
 		updateGuild();
@@ -605,13 +595,13 @@ local function updater()
 		doUpdateTooltip = false;
 		createTooltip(tt,true);
 	end
+	updaterLocked = false;
 end
 
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 	db = ns.profile[name];
 end
 
@@ -666,7 +656,7 @@ ns.modules[name].onevent = function(self,event,msg,...)
 	end
 	if updaterLocked==false and (doGuildUpdate or doMembersUpdate or doTradeskillsUpdate or doApplicantsUpdate or doUpdateTooltip) then
 		updaterLocked = true;
-		C_Timer.After(0.5,updater);
+		C_Timer.After(0.1570595,updater); -- sometimes blizzard firing GUILD_ROSTER_UPDATE twice.
 	end
 end
 
@@ -703,4 +693,3 @@ end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-

@@ -12,7 +12,7 @@ if ns.build<70000000 then return end
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Artifact weapon" -- L["Artifact weapon"]
-local ldbName,ttName,ttColumns, tt, createMenu, createTooltip = name, name.."TT", 3;
+local ttName,ttColumns,tt,createMenu,createTooltip = name.."TT", 3;
 local ap_items_found,spec2weapon,knowledgeLevel,obtained,updateBroker, _ = {},{},0,0;
 local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d*)");
 ns.artifactpower_items = {
@@ -135,20 +135,10 @@ ns.modules[name] = {
 		showTotalAP = true,
 		showKnowledge = true
 	},
-	config_allowed = {},
-	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Tooltip options"] },
-		{ type="separator", inMenuInvisible=true },
-		{ type="toggle", name="showRelic",                  label=L["Show artifact relic"],               tooltip=L["Display a list of artifact relic slots in tooltip"]},
-		{ type="toggle", name="showRelicItemLevel",         label=L["Show relic item level"],             tooltip=L["Display relic item level"]},
-		{ type="toggle", name="showRelicIncreaseItemLevel", label=L["Show increase item level by relic"], tooltip=L["Display increase item level by relic"]},
-		{ type="toggle", name="showItems",                  label=L["Show artifact power items"],         tooltip=L["Display a list of artifact power items found in your bag in tooltip"]},
-		{ type="toggle", name="showTotalAP",                label=L["Show total used artifact power"],    tooltip=L["Display amount of total used artifact power on current equipped artifact weapon. That doesn't includes point resets!"]},
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Broker button options"] },
-		{ type="separator", inMenuInvisible=true },
+	config_allowed = nil,
+	config_header = nil, -- use default header
+	config_broker = {
+		"minimapButton",
 		{ type="toggle", name="showName", label=L["Show weapon name"], tooltip=L["Show artifact weapon name in broker button"], event="ARTIFACT_UPDATE"},
 		{ type="toggle", name="showPoints", label=L["Show points"], tooltip=L["Show spent/available points in broker button"], event="ARTIFACT_UPDATE"},
 		{ type="select", name="showXP", label=L["Show artifact power"], tooltip=L["Show artifact weapon expierence (artifact power) in broker button"], event="ARTIFACT_UPDATE",
@@ -163,6 +153,14 @@ ns.modules[name] = {
 		{ type="toggle", name="showKnowledge", label=L["Show artifact knowledge"], tooltip=L["Show artifact knowledge in broker button"]},
 		{ type="toggle", name="showWarning", label=L["Show 'not equipped' warning"], tooltip=L["Show 'artifact weapon not equipped' warning in broker button"]},
 	},
+	config_tooltip = {
+		{ type="toggle", name="showRelic",                  label=L["Show artifact relic"],               tooltip=L["Display a list of artifact relic slots in tooltip"]},
+		{ type="toggle", name="showRelicItemLevel",         label=L["Show relic item level"],             tooltip=L["Display relic item level"]},
+		{ type="toggle", name="showRelicIncreaseItemLevel", label=L["Show increase item level by relic"], tooltip=L["Display increase item level by relic"]},
+		{ type="toggle", name="showItems",                  label=L["Show artifact power items"],         tooltip=L["Display a list of artifact power items found in your bag in tooltip"]},
+		{ type="toggle", name="showTotalAP",                label=L["Show total used artifact power"],    tooltip=L["Display amount of total used artifact power on current equipped artifact weapon. That doesn't includes point resets!"]},
+	},
+	config_misc = "shortNumbers",
 	clickOptions = {
 		["1_open_character_info"] = {
 			cfg_label = "Open character info", -- L["Open character info"]
@@ -360,8 +358,8 @@ function updateBroker()
 
 	obtained = C_ArtifactUI.GetNumObtainedArtifacts();
 
-	local allDisabled,data,obj = true,{}, ns.LDB:GetDataObjectByName(ldbName);
-	local itemID, altItemID, itemName, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop = C_ArtifactUI.GetEquippedArtifactInfo();
+	local allDisabled,data,obj = true,{}, ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+	local itemID, altItemID, itemName, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop, artifactTier = C_ArtifactUI.GetEquippedArtifactInfo();
 
 	updateCharacterDB(itemID);
 
@@ -586,10 +584,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
-end
-
+-- ns.modules[name].init = function() end
 ns.modules[name].onevent = function(self,event,arg1,...)
 	if event=="PLAYER_ENTERING_WORLD" then
 		if ns.toon[name]==nil then

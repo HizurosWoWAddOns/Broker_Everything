@@ -3,16 +3,16 @@
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
+if ns.build<60000000 then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
 
-if ns.build<60000000 then return end
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local nameF,nameS = "Followers","Ships"; -- GARRISON_FOLLOWERS, GARRISON_SHIPYARD_FOLLOWERS
-local ldbNameF, ttNameF, ttColumnsF, ttF = nameF, nameF.."TT", 7;
-local ldbNameS, ttNameS, ttColumnsS, ttS = nameS, nameS.."TT" ,7;
+local ttNameF, ttColumnsF, ttF = nameF.."TT", 7;
+local ttNameS, ttColumnsS, ttS = nameS.."TT" ,7;
 local followers,ships,champions,troops,createMenu = {num=0},{num=0},{num=0},{num=0};
 local garrLevel, ohLevel, syLevel = 0,0,0;
 local followerEnabled,shipsEnabled=false,false;
@@ -64,19 +64,16 @@ ns.modules[nameF] = {
 		showChampions = true,
 		showTroops = true
 	},
-	config_allowed = {},
-	config = {
-		{ type="header", label=GARRISON_FOLLOWERS, align="left", icon=I[nameF] },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Broker button options"]},
-		{ type="separator", inMenuInvisible=true },
+	config_allowed = nil,
+	config_header = {type="header", label=GARRISON_FOLLOWERS, align="left", icon=I[nameF]},
+	config_broker = {
+		"minimapButton",
 		{ type="toggle", name="showAllInOne",          label=L["Show all in one"],       tooltip=L["Show all counts of followers, champions and troops as overall summary on broker button. You can disable single types with following toggles."], event="BE_DUMMY_EVENT"},
 		{ type="toggle", name="showFollowersOnBroker", label=L["Show followers"],        tooltip=L["Show followers summary on broker button"], event="BE_DUMMY_EVENT"},
 		{ type="toggle", name="showChampionsOnBroker",  label=L["Show champions"],        tooltip=L["Show champions summary on broker button"], event="BE_DUMMY_EVENT"},
 		{ type="toggle", name="showTroopsOnBroker",    label=L["Show troops"],           tooltip=L["Show troops summary on broker button"], event="BE_DUMMY_EVENT"},
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Tooltip options"]},
-		{ type="separator", inMenuInvisible=true },
+	},
+	config_tooltip = {
 		{ type="toggle", name="bgColoredStatus", label=L["Background colored row for status"], tooltip=L["Use background colored row for follower status instead to split in separate tables"], event=true },
 		{ type="toggle", name="hideDisabled",    label=L["Hide disabled followers"],           tooltip=L["Hide disabled followers in tooltip"], event=true },
 		{ type="toggle", name="hideWorking",     label=L["Hide working followers"],            tooltip=L["Hide working followers in tooltip"], event=true },
@@ -87,6 +84,7 @@ ns.modules[nameF] = {
 		{ type="toggle", name="showChampions",   label=L["Show champions"],                    tooltip=L["Show champions in tooltip"]},
 		{ type="toggle", name="showTroops",      label=L["Show troops"],                       tooltip=L["Show troops in tooltip"]},
 	},
+	config_misc = nil,
 	clickOptions = {
 		["1_open_garrison_report"] = {
 			cfg_label = "Open garrison report",
@@ -123,15 +121,16 @@ ns.modules[nameS] = {
 		showAllRealms = false,
 		showAllFactions = true
 	},
-	config_allowed = {},
-	config = {
-		{ type="header", label=GARRISON_SHIPYARD_FOLLOWERS, align="left", icon=I[nameS] },
-		{ type="separator" },
+	config_allowed = nil,
+	config_header = {type="header", label=GARRISON_SHIPYARD_FOLLOWERS, align="left", icon=I[nameS]},
+	config_broker = {"minimapButton"},
+	config_tooltip = {
 		{ type="toggle", name="showChars",       label=L["Show characters"],          tooltip=L["Show a list of your characters with count of chilling, working and ships on missions in tooltip"] },
 		{ type="toggle", name="showAllRealms",   label=L["Show all realms"],          tooltip=L["Show characters from all realms in tooltip."] },
 		{ type="toggle", name="showAllFactions", label=L["Show all factions"],        tooltip=L["Show characters from all factions in tooltip."] },
 		{ type="toggle", name="bgColoredStatus", label=L["Background colored row for status"], tooltip=L["Use background colored row for follower status instead to split in separate tables"], event=true },
 	},
+	config_misc = nil,
 	clickOptions = {
 		["1_open_garrison_report"] = {
 			cfg_label = "Open garrison report", -- L["Open garrison report"]
@@ -281,7 +280,7 @@ local function updateBroker()
 			aio[5]=aio[5]+(troops.num or 0);
 			tinsert(single, ("%s/%s/%s/%s"):format(C("ltblue",troops.onresting_num),C("yellow",troops.onmission_num+troops.onwork_num),C("green",troops.available_num),troops.num));
 		end
-		local obj = ns.LDB:GetDataObjectByName(ldbNameF);
+		local obj = ns.LDB:GetDataObjectByName(ns.modules[nameF].ldbName);
 		if ns.profile[nameF].showAllInOne then
 			obj.text = ("%s/%s/%s/%s"):format(C("ltblue",aio[1]),C("yellow",aio[2]+aio[3]),C("green",aio[4]),aio[5]);
 		else
@@ -289,7 +288,7 @@ local function updateBroker()
 		end
 	end
 	if shipsEnabled then
-		local obj = ns.LDB:GetDataObjectByName(ldbNameS);
+		local obj = ns.LDB:GetDataObjectByName(ns.modules[nameS].ldbName);
 		if LE_FOLLOWER_TYPE_SHIPYARD_6_2 and garrLevel>0 and syLevel>0 then
 			getFollowers("ships");
 			obj.text = ("%s/%s/%s/%s"):format(C("ltblue",ships.onresting_num),C("yellow",ships.onmission_num+ships.onwork_num),C("green",ships.available_num),ships.num);
@@ -329,23 +328,6 @@ local function charSummary(lst,c,v,t,a)
 						end
 						if data.missionEnd>t and ((n==0) or (n~=0 and data.missionEnd<n)) then n=data.missionEnd; end
 						if data.missionEnd>a then a=data.missionEnd; end
-					elseif #data>0 then -- old table
-						-- TODO: Delete in next version
-						if data[1] == 1 then
-							c[l].chilling=c[l].chilling+1;
-						elseif data[1] == 2 then
-							c[l].working=c[l].working+1;
-						elseif data[1] == 3 then
-							c[l].disabled=c[l].disabled+1;
-						elseif data[2]>t then
-							c[l].onmission=c[l].onmission+1;
-						elseif data[2]>0 then
-							c[l].aftermission=c[l].aftermission+1;
-						else
-							c[l].chilling=c[l].chilling+1;
-						end
-						if data[2]>t and ((n==0) or (n~=0 and data[2]<n)) then n=data[2]; end
-						if data[2]>a then a=data[2]; end
 					end
 				end
 			end
@@ -409,7 +391,7 @@ local function createTooltip(tt, name)
 
 				local l=tt:AddLine(C(v.class,ns.scm(charName)) .. realm .. faction );
 
-				local n,a = 0,0;
+				local n,a,cMissions,cWorking,cCollected = 0,0;
 				local c = {}
 				if followerEnabled and (followers.num>0 or champions.num>0) then
 					c.followers={chilling=0,working=0,onmission=0,resting=0,disabled=0,aftermission=0};
@@ -644,15 +626,13 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules.followers_core.init = function(self) end
+-- ns.modules.followers_core.init = function(self) end
 
 ns.modules[nameF].init = function(self)
-	ldbNameF = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..nameF;
 	followerEnabled=true;
 end
 
 ns.modules[nameS].init = function(self)
-	ldbNameS = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..nameS;
 	shipsEnabled=true;
 end
 
@@ -714,4 +694,3 @@ end
 -- ns.modules[nameS].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-

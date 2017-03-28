@@ -100,6 +100,7 @@ ns.commands = {
 					ns.print(BAG_FILTER_EQUIPMENT,L["No sets found"])
 				end
 			else
+				local validEquipment
 				for i=1, GetNumEquipmentSets() do
 					local eName, _, _, isEquipped, _, _, _, _ = GetEquipmentSetInfo(i)
 					if cmd==eName then validEquipment = true end

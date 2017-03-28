@@ -1,11 +1,3 @@
---[[
-ideas:
-	default - list of all active factions with reputation and session plus
-	fav mode - list of factions choosed by user
-
-	mouseover - tooltip with list of other user characters with count.
-]]
-
 
 ----------------------------------
 -- module independent variables --
@@ -18,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Reputation"; -- REPUTATION
-local ldbName, ttName, ttColumns, tt, createMenu,createTooltip,updateBroker = name, name.."TT", 6;
+local ttName, ttColumns, tt, createMenu,createTooltip,updateBroker = name.."TT", 6;
 local Name,description,standingID,barMin,barMax,barValue,atWarWith,canToggleAtWar,isHeader,isCollapsed,hasRep,isWatched,isChild,factionID,hasBonusRepGain,canBeLFGBonus,factionStandingText=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17;
 
 local bars,wasShown = {},false;
@@ -67,12 +59,21 @@ ns.modules[name] = {
 		watchedSessionBroker = true,
 		watchedFormatOnBroker = "Percent"
 	},
-	config_allowed = {},
-	config = {
-		{ type="header", label=REPUTATION, align="left", icon=true },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Tooltip options"] },
-		{ type="separator", inMenuInvisible=true },
+	config_allowed = nil,
+	config_header = {type="header", label=REPUTATION, align="left", icon=true},
+	config_broker = {
+		"minimapButton",
+		{ type="toggle", name="watchedNameOnBroker", label=L["Name of watched faction"], tooltip=L["Display name of watched faction on broker button"], event="UPDATE_FACTION" },
+		{ type="toggle", name="watchedStandingOnBroker", label=L["Standing of watched faction"], tooltip=L["Display standing of watched faction on broker button"], event="UPDATE_FACTION" },
+		{ type="toggle", name="watchedSessionBroker", label=L["Earn/loss of watched faction"], tooltip=L["Display earn/loss reputation of watched faction on broker button"], event="UPDATE_FACTION" },
+		{ type="select", name="watchedFormatOnBroker", label=L["Format of watched faction"], tooltip=L["Choose display format of watched faction"],
+			values = formats,
+			default = "Percent",
+			event="UPDATE_FACTION"
+		},
+		--{ type="toggle", name="favsOnly", label=L["Favorites only"], tooltip=L["Show favorites only in tooltip"] }
+	},
+	config_tooltip = {
 		{ type="select",
 			name	= "numbers",
 			label	= L["Numeric format"],
@@ -94,19 +95,8 @@ ns.modules[name] = {
 			default = "single",
 		},
 		{ type="toggle", name="showID", label=L["Show id's"], tooltip=L["Display faction and standing id's in tooltip"]},
-		{ type="separator" },
-		{ type="header", label=L["Broker button options"]},
-		{ type="separator", inMenuInvisible=true },
-		{ type="toggle", name="watchedNameOnBroker", label=L["Name of watched faction"], tooltip=L["Display name of watched faction on broker button"], event="UPDATE_FACTION" },
-		{ type="toggle", name="watchedStandingOnBroker", label=L["Standing of watched faction"], tooltip=L["Display standing of watched faction on broker button"], event="UPDATE_FACTION" },
-		{ type="toggle", name="watchedSessionBroker", label=L["Earn/loss of watched faction"], tooltip=L["Display earn/loss reputation of watched faction on broker button"], event="UPDATE_FACTION" },
-		{ type="select", name="watchedFormatOnBroker", label=L["Format of watched faction"], tooltip=L["Choose display format of watched faction"],
-			values = formats,
-			default = "Percent",
-			event="UPDATE_FACTION"
-		},
-		--{ type="toggle", name="favsOnly", label=L["Favorites only"], tooltip=L["Show favorites only in tooltip"] }
 	},
+	config_misc = "shortNumbers",
 	clickOptions = {
 		["1_open_reputation"] = {
 			cfg_label = "Open reputation pane", -- L["Open reputation pane"]
@@ -203,7 +193,7 @@ function updateBroker()
 		end
 	end
 
-	ns.LDB:GetDataObjectByName(ldbName).text = txt;
+	ns.LDB:GetDataObjectByName(ns.modules[name].ldbName).text = txt;
 end
 
 local function updateBars()
@@ -344,7 +334,6 @@ local function ttAddLine(tt,mode,data,count,childLevel)
 		local color = FACTION_BAR_COLORS[data[standingID]];
 		bars[count].BarSingle:SetVertexColor(color.r*darker,color.g*darker,color.b*darker,1);
 		bars[count].BarSingle:Show();
-	--elseif(ns.profile[name].bgBars=="allinone")then
 	end
 end
 
@@ -359,7 +348,6 @@ local function ttFaction(tt,data,count,childLevel)
 		local friendID,friendRep,friendMaxRep,friendName,friendText,friendTexture,friendTextLevel,friendThreshold,nextFriendThreshold = GetFriendshipReputation(data[factionID]);
 		if friendID~=nil then
 			data[factionStandingText] = friendTextLevel;
-			data[standingID] = 5;
 			if ( nextFriendThreshold ) then
 				data[barMin], data[barMax], data[barValue] = friendThreshold, nextFriendThreshold, friendRep;
 			else
@@ -481,9 +469,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then

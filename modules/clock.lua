@@ -11,13 +11,9 @@ L.Clock = TIMEMANAGER_TITLE;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Clock"; -- TIMEMANAGER_TITLE
-local ldbName, ttName,ttColumns, tt, createMenu = name, name.."TT", 2;
-local GetGameTime = GetGameTime
-local countries = {}
-local played = false
-local clock_diff = nil
-local initialized=false;
-local month_short = {}
+local ttName,ttColumns, tt, createMenu = name.."TT", 2;
+local countries,month_short = {},{};
+local played,initialized,clock_diff = false,false;
 
 
 -------------------------------------------
@@ -43,15 +39,18 @@ ns.modules[name] = {
 		showDate = true,
 		dateFormat = "%Y-%m-%d"
 	},
-	config_allowed = {
-	},
-	config = {
-		{ type="header", label=TIMEMANAGER_TITLE, align="left", icon=I[name] },
-		{ type="separator" },
-		{ type="toggle", name="format24",    label=TIMEMANAGER_24HOURMODE, tooltip=L["Switch between time format 24 hours and 12 hours with AM/PM"] },
+	config_allowed = nil,
+	config_header = {type="header", label=TIMEMANAGER_TITLE, align="left", icon=I[name]},
+	config_broker = {
+		"minimapButton",
 		{ type="toggle", name="timeLocal",   label=L["Local or realm time"], tooltip=L["Switch between local and realm time in broker button"] },
+	},
+	config_tooltip = {
 		{ type="toggle", name="showSeconds", label=L["Show seconds"], tooltip=L["Display the time with seconds in broker button and tooltip"] },
 		{ type="toggle", name="showDate",    label=L["Show date"], tooltip=L["Display date in tooltip"] },
+	},
+	config_misc = {
+		{ type="toggle", name="format24",    label=TIMEMANAGER_24HOURMODE, tooltip=L["Switch between time format 24 hours and 12 hours with AM/PM"] },
 		{ type="select", name="dateFormat",  label=L["Date format"], tooltip=L["Choose your favorite date format"],
 			values = {
 				["%Y-%m-%d"] = "yyyy-mm-dd",
@@ -66,7 +65,6 @@ ns.modules[name] = {
 				["%Y _mm_ %d."] = "yyyy mm dd.",
 			}
 		},
-		--{ type="listing", name="timezones", label=L["Time zones"], tooltip=L["Add time zones to display in tooltip"] }
 	},
 	clickOptions = {
 		["1_timemanager"] = {
@@ -185,7 +183,7 @@ local function createTooltip(tt,update)
 end
 
 local function updater(self)
-	local obj = ns.LDB:GetDataObjectByName(ldbName);
+	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 	local h24 = ns.profile[name].format24;
 	local dSec = ns.profile[name].showSeconds;
 	obj.text = ns.profile[name].timeLocal and ns.LT.GetTimeString("GetLocalTime",h24,dSec) or ns.LT.GetTimeString("GetGameTime",h24,dSec)
@@ -199,10 +197,9 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 	if not initialized then
-		for i,v in pairs(ns.modules[name].config[7].values)do
-			ns.modules[name].config[7].values[i] = date(i)..C("gray","("..v..")");
+		for i,v in pairs(ns.modules[name].config_misc[2].values)do
+			ns.modules[name].config_misc[2].values[i] = date(i)..C("gray","("..v..")");
 		end
 		initialized = true;
 	end

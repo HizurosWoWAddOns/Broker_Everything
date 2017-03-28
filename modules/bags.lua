@@ -12,9 +12,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Bags" -- L["Bags"]
-local ldbName,ttName,ttColumns,tt,createMenu = name,name.."TT",3;
-local ContainerIDToInventoryID,GetInventoryItemLink = ContainerIDToInventoryID,GetInventoryItemLink
-local GetItemInfo,GetContainerNumSlots,GetContainerNumFreeSlots = GetItemInfo,GetContainerNumSlots,GetContainerNumFreeSlots
+local ttName,ttColumns,tt,createMenu = name.."TT",3;
 local IsMerchantOpen = false;
 local qualityModeValues = {
 	["1"]=L["Qualities"],
@@ -123,40 +121,33 @@ ns.modules[name] = {
 		critLowFree = 5,
 		warnLowFree = 15,
 		showQuality = true,
-		--showExpansion = true,
 		goldColor = false,
 		qualityMode = "1",
-		--expansionMode = "1",
 
 		autoCrapSelling = false,
-		autoCrapSellingInfo = true,
+		autoCrapSellingInfo = true
 	},
 	config_allowed = {
 		qualityMode = {["1"]=true,["2"]=true,["3"]=true,["4"]=true,["5"]=true,["6"]=true,["7"]=true,["8"]=true}
 	},
-	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
-
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Broker button options"] },
-		{ type="separator", inMenuInvisible=true },
+	config_header = nil, -- use default header
+	config_broker = {
+		"minimapButton",
 		{ type="toggle", name="freespace",         label=L["Show freespace"],                  tooltip=L["Show bagspace instead used and max. bagslots in broker button"], event=true },
-
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Tooltip options"] },
-		{ type="separator", inMenuInvisible=true },
+	},
+	config_tooltip = {
 		{ type="toggle", name="showQuality",       label=L["Show item summary by quality"],    tooltip=L["Display an item summary list by qualities in tooltip"], event=true },
 		{ type="select", name="qualityMode",       label=L["Item summary by quality mode"],    tooltip=L["Choose your favorite"], default="1", values=qualityModeValues },
-		--{ type="toggle", name="showExpansion",     label=L["Show item summary by expansion"],  tooltip=L["Display an item summary list by expansion in tooltip"], event=true },
-		--{ type="select", name="expansionMode",     label=L["Item summary by expansion mode"],  tooltip=L["Choose your favorite"], default="1", values=expansionModeValues },
 		{ type="slider", name="critLowFree",       label=L["Critical low free slots"],         tooltip=L["Select the maximum free slot count to coloring in red."], min=1, max=50, default=5, format = "%d", event=true },
 		{ type="slider", name="warnLowFree",       label=L["Warn low free slots"],             tooltip=L["Select the maximum free slot count to coloring in yellow."], min=2, max=100, default=15, format = "%d", event=true },
-
-		{ type="separator", alpha=0 },
+	},
+	config_misc = {
 		{ type="header", label=L["Crap selling options"] },
 		{ type="separator" },
 		{ type="toggle", name="autoCrapSelling", label=L["Enable auto crap selling"], tooltip=L["Enable automatically crap selling on opening a mergant frame"] },
 		{ type="toggle", name="autoCrapSellingInfo", label=L["Earned money summary in chat"], tooltip=L["Post earned money in chat frame"] },
+		true, -- header "Misc options"
+		"shortNumbers",
 	},
 	clickOptions = {
 		["1_open_bags"] = {
@@ -324,7 +315,7 @@ local function updateBroker()
 		c = "dkyellow"
 	end
 
-	local obj = ns.LDB:GetDataObjectByName(ldbName) or {}
+	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName) or {}
 	obj.text = C(c,txt)
 end
 
@@ -359,29 +350,6 @@ local function createTooltip(tt)
 		end
 	end
 
-	--[[
-	if ns.profile[name].showExpansion then
-		local mode = expansionModes[ns.profile[name].expansionMode];
-		local price,sum = itemExpansion();
-		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(
-			C("ltblue",L["Item summary|nby expansion"]),
-			mode.vendor and C("ltblue",L["Vendor price"]) or "",
-			C("ltblue",L["Count"])
-		);
-		tt:AddSeparator();
-		for i=1,#expansions do
-			if (mode.empty and sum[i]>=0) or sum[i]>0 then
-				tt:AddLine(
-					C("ltyellow",expansions[i]),
-					(price[i]>0 and mode.vendor) and ns.GetCoinColorOrTextureString(name,price[i],{inTooltip=true}) or "",
-					ns.FormatLargeNumber(name,sum[i],true).." "
-				);
-			end
-		end
-	end
-	--]]
-
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0);
 		ns.clickOptions.ttAddHints(tt,name);
@@ -393,10 +361,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
-end
-
+-- ns.modules[name].init = function() end
 ns.modules[name].init_configs = function()
 	if (ns.profile[name].freespace==nil) then
 		ns.profile[name].freespace = true;

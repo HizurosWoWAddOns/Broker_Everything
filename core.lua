@@ -90,7 +90,6 @@ ns.defaultGeneralOptions = {
 	suffixColour = true,
 	tooltipScale = false,
 	showHints = true,
-	libdbicon = false,
 	iconset = "NONE",
 	iconcolor = C("white","colortable"),
 	goldColor = false,
@@ -176,17 +175,17 @@ ns.coreOptions = { -- option panel builder table
 
 	{type="header",    label=L["Misc options"]},
 	{type="separator", alpha=1 },
-	{type="toggle",    name="suffixColour",   label=L["Suffix coloring"], tooltip=L["Enable/Disable class coloring of the information display suffixes. (eg, ms, fps etc)"]},
+	{type="toggle",    name="suffixColour",   label=L["Suffix coloring"], tooltip=L["Enable/Disable class coloring of the information display suffixes. (eg, ms, fps etc)"], event=true},
 	{type="toggle",    name="showAddOnLoaded",label=L["Show 'AddOn Loaded...'"], tooltip=L["Show 'AddOn Loaded...' message on logins and UI reloads"]},
 
 	{type="separator", alpha=0 },
 
 	{type="header",    label=L["Money display options"]},
 	{type="separator", alpha=1 },
-	{type="toggle",    name="goldColor",          label=L["Gold coloring"],      tooltip=L["Use colors instead of icons for gold, silver and copper"]},
-	{type="toggle",    name="goldHideCopper",     label=L["Hide copper"],        tooltip=L["Hide copper values of your money"]},
-	{type="toggle",    name="goldHideSilver",     label=L["Hide silver"],        tooltip=L["Hide copper and silver values of your money"]},
-	{type="toggle",    name="goldHideLowerZeros", label=L["Hide lower zeros"],   tooltip=L["Hide lower zero values of your money"]},
+	{type="toggle",    name="goldColor",          label=L["Gold coloring"],      tooltip=L["Use colors instead of icons for gold, silver and copper"], event=true},
+	{type="toggle",    name="goldHideCopper",     label=L["Hide copper"],        tooltip=L["Hide copper values of your money"], event=true},
+	{type="toggle",    name="goldHideSilver",     label=L["Hide silver"],        tooltip=L["Hide copper and silver values of your money"], event=true},
+	{type="toggle",    name="goldHideLowerZeros", label=L["Hide lower zeros"],   tooltip=L["Hide lower zero values of your money"], event=true},
 	{type="toggle",    name="separateThousands",  label=L["Separate thousands"], tooltip=L["Separate thousands on displayed gold and other numeric values"]},
 
 	{type="separator", alpha=0 },
@@ -194,7 +193,6 @@ ns.coreOptions = { -- option panel builder table
 	{type="header",    label=L["DataBroker options"]},
 	{type="separator", alpha=1 },
 	{type="toggle",    name="usePrefix",      label=L["Use prefix"], tooltip=L["Use prefix 'BE..' on module registration at LibDataBroker. This fix problems with other addons with same broker names but effect your current settings in panel addons like Bazooka or Titan Panel."]},
-	{type="toggle",    name="libdbicon",      label=L["Broker as Minimap Buttons"], tooltip=L["Use LibDBIcon to add Broker to Minimap"]},
 
 	{type="separator", alpha=0 },
 
@@ -345,10 +343,7 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 		if Broker_Everything_DataDB==nil then
 			Broker_Everything_DataDB = {realms={}};
 		end
-		if Broker_Everything_DataDB.realms==nil then
-			Broker_Everything_DataDB.realms={};
-		end
-		Broker_Everything_DataDB.realms[ns.realm] = gsub(ns.realm," ","");
+		Broker_Everything_DataDB.realms=nil; -- deprecated
 		ns.data = Broker_Everything_DataDB;
 
 		-- modules

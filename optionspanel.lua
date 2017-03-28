@@ -183,7 +183,7 @@ local functions = {
 		ns.EasyMenu.InitializeMenu();
 
 		for k,d in ns.pairsByKeys(values) do
-			local add = true;
+			local add,current = true;
 			local entry={
 				radio = k,
 				keepShown = data.keepShown~=nil and data.keepShown or false,
@@ -379,10 +379,18 @@ local build = {
 		local Index,cur = init(parent,index,data);
 		local e = parent[Index].__toggle;
 		if data.get then
-			e:SetChecked(data.get());
+			if data.name=="minimap" then
+				e:SetChecked(not data.get());
+			else
+				e:SetChecked(data.get());
+			end
 		else
 			if data.modName then
-				e:SetChecked(not not ns.profile[data.modName][data.name]);
+				if data.name=="minimap" then
+					e:SetChecked(not ns.profile[data.modName].minimap.hide);
+				else
+					e:SetChecked(not not ns.profile[data.modName][data.name]);
+				end
 			else
 				e:SetChecked(not not ns.profile.GeneralOptions[data.name]);
 			end
@@ -589,8 +597,12 @@ ns.optionpanel = function()
 			if (type(value1)=="table") and (name1~="iconcolor") then
 				for name2,value2 in pairs(value1) do
 					if action=="defaults" then
-						ns.profile[name1][name2] = ns.modules[name1].defaults[name2];
-					elseif action~="none" then
+						if ns.allModDefaults[name2] then
+							ns.profile[name1][name2] = ns.allModDefaults[name2]; -- table defined in modules/modules.lua
+						else
+							ns.profile[name1][name2] = ns.modules[name1].defaults[name2];
+						end
+					elseif action~="none" and name2~="minimap" then
 						ns.profile[name1][name2] = value2;
 					end
 					if (mods.events[name1]) and (mods.events[name1][name2]) then
@@ -614,6 +626,14 @@ ns.optionpanel = function()
 						else
 							needs = true;
 						end
+					end
+					if name2=="minimap" then
+						if value2 then
+							ns.LDBI:Show(ns.modules[name1].ldbName);
+						else
+							ns.LDBI:Hide(ns.modules[name1].ldbName);
+						end
+						ns.profile[name1].minimap.hide=not value2;
 					end
 				end
 			else
@@ -657,7 +677,11 @@ ns.optionpanel = function()
 				if (f.changes[v.data.modName]) and (f.changes[v.data.modName][v.data.name]~=nil) then
 					cur = f.changes[v.data.modName][v.data.name];
 				else
-					cur = ns.profile[v.data.modName][v.data.name];
+					if v.data.name=="minimap" then
+						cur = not ns.profile[v.data.modName][v.data.name].hide;
+					else
+						cur = ns.profile[v.data.modName][v.data.name];
+					end
 				end
 			else
 				if (f.changes[v.data.name]~=nil) then
@@ -723,7 +747,12 @@ ns.optionpanel = function()
 		local changed=false;
 		if (name) then
 			if (not f.changes[name]) then f.changes[name]={}; end
-			if (hasChanged(ns.profile[name][key],value)) then
+			if key=="minimap" then
+				if (hasChanged(not ns.profile[name].minimap.hide,value)) then
+					f.changes[name][key] = value;
+					changed=true;
+				end
+			elseif (hasChanged(ns.profile[name][key],value)) then
 				f.changes[name][key] = value;
 				changed=true;
 			end
@@ -766,37 +795,33 @@ ns.optionpanel = function()
 			frame:SetPoint("TOPLEFT"); frame:SetSize(f.Modules.Container.child:GetWidth(),1); frame:Hide();
 			local icon = ns.I[name];
 
-			if (mod.config) and (#mod.config>0) then
-				tinsert(mod.config,1,{type="separator", alpha=0, height=7 });
-				if (#mod.config==2) then
-					tinsert(mod.config,{type="separator"});
-					tinsert(mod.config,{type="desc", text=L["This module has no options"]});
-				end
-				tinsert(mod.config,{type="separator",alpha=0,height=30});
-				for _, entry in ipairs(mod.config) do
-					if (type(entry.disabled)=="function") then
-						local h,m = entry.disabled();
-						if (h) then
-							entry.disabledMessage = {h,m};
-						end
-						entry.disabled=false;
+			for n=1, #mod.config do
+				if type(mod.config[n].disabled)=="function" then
+					local h,m = mod.config[n].disabled();
+					if h then
+						mod.config[n].disabledMessage = {h,m};
 					end
-					if (build[entry.type]) and (not entry.disabled) then
-						if (entry.set) and (entry.get) then
-							entry.modName = false;
-						else
-							entry.modName = name;
+					mod.config[n].disabled=false;
+				end
+				if build[mod.config[n].type] and not mod.config.disabled then
+					if mod.config[n].set and mod.config[n].get then
+						mod.config[n].modName = false;
+					else
+						mod.config[n].modName = name;
+					end
+					build[mod.config[n].type](frame,i,mod.config[n]);
+					i=i+1;
+					if mod.config[n].events then
+						if not mods.events[name] then
+							mods.events[name] = {};
 						end
-						build[entry.type](frame, i, entry);
-						i=i+1;
-						if (entry.event) then
-							if (not mods.events[name]) then mods.events[name] = {}; end
-							mods.events[name][entry.name] = entry.event;
+						mods.events[name][mod.config[n].name] = mod.config[n].event;
+					end
+					if mod.config[n].needs then
+						if not mods.needs[name] then
+							mods.needs[name] = {};
 						end
-						if (entry.needs) then
-							if (not mods.needs[name]) then mods.needs[name] = {}; end
-							mods.needs[name][entry.name] = entry.needs;
-						end
+						mods.needs[name][mod.config[n].name] = mod.config[n].needs;
 					end
 				end
 			end
@@ -955,25 +980,20 @@ ns.optionpanel = function()
 		f.Modules.Title2:SetText(L["Module options"]);
 		f.Modules.Title2:SetPoint("LEFT", f.Modules.List.split, "LEFT", 10,0);
 
-		local tmp1,tmp2,d={},{};
-		for k, v in pairs(ns.modules) do if not v.noOptions then tmp1[v.label or L[k]] = k; end end -- tmp1 to order modules by localized names
+		local tmp,d={};
+		for k, v in pairs(ns.modules) do -- to order modules by localized names
+			if not v.noOptions then
+				tmp[v.label or L[k]] = k;
+			end
+		end
 
-		tinsert(mods.list,1);
-		for k, v in ns.pairsByKeys(tmp1) do -- mods.list as order list with names and boolean. the booleans indicates the header "With options" and "Without options"
+		for k, v in ns.pairsByKeys(tmp) do
 			if(ns.modules[v].clickOptions)then
 				ns.clickOptions.update(ns.modules[v],ns.profile[v]);
 			end
-			if (type(ns.modules[v].config)=="table") and (#ns.modules[v].config>1) then
-				tinsert(mods.list,v);
-			else
-				tinsert(tmp2,v); -- modules without options into a second tmp table to add them after the second header indicator
-			end
-		end
-		tinsert(mods.list,-1);
-		for i,v in ipairs(tmp2) do
 			tinsert(mods.list,v);
 		end
-		tmp1,tmp2=nil,nil;
+		tmp=nil;
 
 		-- module list
 		f.Modules.All.tooltip = {ALL,L["Enable all modules"]};
@@ -1080,7 +1100,6 @@ ns.datapanel = function()
 			tremove(f.tmpCharCache.order,f.tmpCharCache[name].orderId);
 			tinsert(f.tmpCharCache.order,f.tmpCharCache[name].orderId+1,name);
 		elseif self==parent.Delete then
-			ns.debug(name,type(f.tmpCharCache.order),type(f.tmpCharCache[name]))
 			tremove(f.tmpCharCache.order,f.tmpCharCache[name].orderId);
 		end
 		CharList_Update();

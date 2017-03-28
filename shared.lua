@@ -833,7 +833,7 @@ do
 
 	--- event and update frame
 	local locked,tickerDelay,defaultDelay,f = false,0.3,1.5,CreateFrame("Frame");
-	function updater()
+	local function updater()
 		if update==false or locked then return end
 		locked = true;
 		update = update - tickerDelay;
@@ -1593,10 +1593,7 @@ do
 
 			if (not mod.clickOptionsConfigNum) then
 				mod.clickOptionsConfigNum={};
-
-				tinsert(mod.config,{type="separator",alpha=0});
-				tinsert(mod.config,{type="header", label=L["Broker click options"]});
-				tinsert(mod.config,{type="separator", inMenuInvisible=true });
+				mod.config_click_options={};
 
 				for cfgKey,clickOpts in ns.pairsByKeys(mod.clickOptions) do
 					local cfg_entry = {
@@ -1608,8 +1605,8 @@ do
 						default	= clickOpts.cfg_default or "__NONE",
 						event	= "BE_UPDATE_CLICKOPTIONS"
 					};
-					tinsert(mod.config,cfg_entry);
-					mod.clickOptionsConfigNum[cfgKey] = #mod.config;
+					tinsert(mod.config_click_options,cfg_entry);
+					mod.clickOptionsConfigNum[cfgKey] = #mod.config_click_options;
 
 					if (db["clickOptions::"..cfgKey]==nil) then
 						db["clickOptions::"..cfgKey] = clickOpts.cfg_default or "__NONE";

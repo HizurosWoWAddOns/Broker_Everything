@@ -10,9 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Currency"; -- CURRENCY
-local ldbName,ttName = name,name.."TT";
-local tt,tt2,ttColumns,createMenu
-local GetCurrencyInfo,GetCurrencyListInfo,GetCurrencyListLink = GetCurrencyInfo,GetCurrencyListInfo,GetCurrencyListLink
+local ttName,ttColumns,tt,tt2,createMenu = name.."TT",5;
 local tt2positions = {
 	["BOTTOM"] = {edgeSelf = "TOP",    edgeParent = "BOTTOM", x =  0, y = -2},
 	["LEFT"]   = {edgeSelf = "RIGHT",  edgeParent = "LEFT",   x = -2, y =  0},
@@ -63,21 +61,25 @@ ns.modules[name] = {
 		showCapColorBroker = true,
 		showSession = true,
 		spacer=0,
-		showIDs = false,
+		showIDs = false
 	},
 	config_allowed = {
 		subTTposition = {["AUTO"]=true,["TOP"]=true,["LEFT"]=true,["RIGHT"]=true,["BOTTOM"]=true}
 	},
-	config = {
-		{ type="header", label=CURRENCY, align="left", icon=true },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Broker button options"] },
-		{ type="separator", inMenuInvisible=true },
+	config_header = {type="header", label=CURRENCY, align="left", icon=true},
+	config_broker = {
+		"minimapButton",
 		{ type="toggle", name="showCapBroker", label=L["Show total/weekly cap"], tooltip=L["Display currency total cap in tooltip."], event=true },
 		{ type="toggle", name="showCapColorBroker", label=L["Coloring total/weekly cap"], tooltip=L["..."], event=true },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Tooltip options"] },
-		{ type="separator", inMenuInvisible=true },
+		{ type="slider", name="spacer",     label=L["Space between currencies"], tooltip=L["Add more space between displayed currencies on broker button"],
+			min			= 0,
+			max			= 10,
+			default		= 0,
+			format		= "%d",
+			event = "BE_DUMMY_EVENT"
+		},
+	},
+	config_tooltip = {
 		{ type="toggle", name="showTotalCap", label=L["Show total cap"], tooltip=L["Display currency total cap in tooltip."] },
 		{ type="toggle", name="showWeeklyCap", label=L["Show weekly cap"], tooltip=L["Display currency weekly earned and cap in tooltip."] },
 		{ type="toggle", name="showCapColor", label=L["Coloring total cap"], tooltip=L["Coloring limited currencies by total and/or weekly cap. If weekly cap not shown then will be colored total value by value which is near on cap."] },
@@ -93,15 +95,9 @@ ns.modules[name] = {
 			},
 			default = "BOTTOM"
 		},
-		{ type="slider", name="spacer",     label=L["Space between currencies"], tooltip=L["Add more space between displayed currencies on broker button"],
-			min			= 0,
-			max			= 10,
-			default		= 0,
-			format		= "%d",
-			event = "BE_DUMMY_EVENT"
-		},
 		{ type="toggle", name="showIDs", label=L["Show currency id's"], tooltip=L["Display the currency id's in tooltip"] },
 	},
+	config_misc = "shortNumbers",
 	clickOptions = {
 		["1_open_character_info"] = {
 			cfg_label = "Open currency pane", -- L["Open currency pane"]
@@ -224,7 +220,7 @@ local function updateCurrency(mode)
 end
 
 local function updateBroker()
-	local obj = ns.LDB:GetDataObjectByName(ldbName)
+	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName)
 	local elems = {};
 	local faction = UnitFactionGroup("player");
 	if faction~="Neutral" then
@@ -408,12 +404,6 @@ function createTooltip(tt,update)
 			end
 			local l=tt:AddLine(C( isExpanded and "ltblue" or "gray",str));
 			if isExpanded then
-				--[[
-				if ns.profile[name].showWeeklyCap then
-					tt:SetCell(l,c,C("ltblue",L["Weekly"]));
-					c=c+1;
-				end
-				--]]
 				tt:AddSeparator();
 			end
 			tt.lines[l].currency = {i,isExpanded and 0 or 1};
@@ -432,6 +422,7 @@ function createTooltip(tt,update)
 				end
 				str = CapColor({"green","yellow","orange","red"},str,unpack(params));
 			end
+			local id = "";
 			if ns.profile[name].showIDs then
 				id = C("gray"," ("..v..")");
 			end
@@ -480,9 +471,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,msg)
 	if event=="PLAYER_ENTERING_WORLD" then
@@ -516,7 +505,6 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttColumns=5;
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "RIGHT", "RIGHT"},{false},{self});
 	createTooltip(tt);
 end
@@ -524,5 +512,3 @@ end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-
---[[ IDEAS: get max count and weekly max count of a currency for displaying caped counts in red. ]]

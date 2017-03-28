@@ -10,7 +10,6 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Stuff" -- L["Stuff"]
-local ldbName = name
 local ttName,tt2Name = name.."TT",name.."TT2"
 local tt,tt2 = nil
 local last_click = 0
@@ -38,9 +37,12 @@ ns.modules[name] = {
 	desc = L["Broker to allow you to do...Stuff! Switch to windowed mode, reload ui, logout and quit."],
 	events = {},
 	updateinterval = nil, -- 10
-	config_defaults = nil, -- {}
+	config_defaults = {},
 	config_allowed = nil,
-	config = { { type="header", label=L[name], align="left", icon=I[name] } }
+	config_header = nil, -- use default header
+	config_broker = {"minimapButton"},
+	config_tooltip = nil,
+	config_misc = nil,
 }
 
 
@@ -134,10 +136,7 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
-
+-- ns.modules[name].init = function() end
 -- ns.modules[name].onevent = function(self,event,msg) end
 -- ns.modules[name].optionspanel = function(panel) end
 -- ns.modules[name].onmousewheel = function(self,direction) end
@@ -190,4 +189,3 @@ ns.modules[name].onclick = function(self,button)
 end
 
 -- ns.modules[name].ondblclick = function(self,button) end
-

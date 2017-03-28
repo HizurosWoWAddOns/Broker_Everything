@@ -10,7 +10,7 @@ L.Achievements = ACHIEVEMENTS;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Achievements"; -- ACHIEVEMENTS
-local ldbName, ttName, ttColumns, tt, createMenu = name, name.."TT", 2;
+local ttName, ttColumns, tt, createMenu = name.."TT", 2;
 local categoryIds,bars,count = {92, 96, 97, 95, 168, 169, 201, 15165, 155, 15117, 15246, 15237},{},0;
 
 
@@ -36,16 +36,17 @@ ns.modules[name] = {
 		showProgressBars = true,
 		showCompleted = true
 	},
-	config_allowed = {},
-	config = {
-		{ type="header", label=ACHIEVEMENTS, align="left", icon=true },
-		{ type="separator" },
+	config_allowed = nil,
+	config_header = { type="header", label=ACHIEVEMENTS, align="left", icon=true },
+	config_broker = {"minimapButton"},
+	config_tooltip = {
 		{ type="toggle", name="showLatest",       label=L["Show latest achievements"],    tooltip=L["Show 5 latest earned achievements in tooltip"]},
 		{ type="toggle", name="showCategory",     label=L["Show achievement categories"], tooltip=L["Show achievement categories in tooltip"]},
 		{ type="toggle", name="showWatchlist",    label=L["Show watch list"],             tooltip=L["Show watch list in tooltip"]},
 		{ type="toggle", name="showProgressBars", label=L["Show progress bars"],          tooltip=L["Show progress bars in tooltip"]},
 		{ type="toggle", name="showCompleted",    label=L["Show completed criteria"],     tooltip=L["Show completed criteria in watch list"]},
 	},
+	config_misc = nil,
 	clickOptions = {
 		["open_menu"] = {
 			cfg_label = "Open option menu",
@@ -214,10 +215,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
-end
-
+-- ns.modules[name].init = function() end
 ns.modules[name].onevent = function(self,event,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);

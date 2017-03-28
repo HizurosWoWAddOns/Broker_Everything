@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Gold"; -- BONUS_ROLL_REWARD_MONEY
-local ldbName, ttName, tt, createMenu, createTooltip = name, name.."TT";
+local ttName, tt, createMenu, createTooltip = name.."TT";
 local login_money = nil;
 local next_try = false;
 local current_money = 0
@@ -42,24 +42,18 @@ ns.modules[name] = {
 		showAllRealms = true,
 		showAllFactions = true,
 		showCharGold = true,
-		--showRealmGold = false,
 		showSessionProfit = true
 	},
 	config_allowed = {},
-	config = {
-		{ type="header", label=BONUS_ROLL_REWARD_MONEY, align="left", icon=I[name] },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Broker button options"] },
-		{ type="separator", inMenuInvisible=true },
+	config_allowed = nil,
+	config_header = {type="header", label=BONUS_ROLL_REWARD_MONEY, align="left", icon=I[name]},
+	config_broker = {
+		"minimapButton",
 		{ type="toggle", name="showCharGold",      label=L["Show character gold"], tooltip=L["Show character gold on broker button"], event=true },
 		{ type="toggle", name="showSessionProfit", label=L["Show session profit"], tooltip=L["Show session profit on broker button"], event=true },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Tooltip options"] },
-		{ type="separator", inMenuInvisible=true },
-		{ type="toggle", name="showAllRealms",     label=L["Show all realms"],     tooltip=L["Show characters from all realms in tooltip."] },
-		{ type="toggle", name="showAllFactions",   label=L["Show all factions"],   tooltip=L["Show characters from all factions in tooltip."] },
-		--{ type="toggle", name="showRealmGold",     label=L["Show realm gold"],     tooltip=L["Show summary of gold on current realm (factionbound) on broker button"] },
 	},
+	config_tooltip = nil,
+	config_misc = nil,
 	clickOptions = {
 		["1_open_tokenframe"] = {
 			cfg_label = "Open currency pane", -- L["Open currency pane"]
@@ -212,7 +206,6 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 	if(ns.toon.gold==nil)then
 		ns.toon.gold = 0;
 	end
@@ -232,9 +225,6 @@ ns.modules[name].onevent = function(self,event,msg)
 	if ns.profile[name].showCharGold then
 		tinsert(broker,ns.GetCoinColorOrTextureString(name,current_money));
 	end
-	--[[if ns.profile[name].showRealmGold then
-		tinsert(broker,ns.GetCoinColorOrTextureString(name,current_money));
-	end]]
 	if ns.profile[name].showSessionProfit and login_money then
 		local profit, direction = getProfit();
 		local sign = (direction==1 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (direction==-1 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";

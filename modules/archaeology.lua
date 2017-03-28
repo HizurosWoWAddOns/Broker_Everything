@@ -4,14 +4,13 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-local type,GetItemInfo=type,GetItemInfo;
 
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Archaeology"; -- PROFESSIONS_ARCHAEOLOGY
-local ldbName, ttName, ttColumns, tt = name, name.."TT", 5, nil
+local ttName, ttColumns, tt = name.."TT", 5, nil
 local skill,createMenu
 local tradeskill = {};
 local maxFragments = 200;
@@ -42,29 +41,6 @@ local racesOrder = {
 	"Vrykul","Nerubian"
 };
 local keystoneItem2race = {};
---[[
-local QuestStarterItems,QuestStarterItemIds = {},{
-	[ 79872]=1,[ 79873]=1,[ 79874]=1,[ 79875]=1,[ 79876]=1,[ 79877]=1,[ 79878]=1,[ 79879]=1,[ 79880]=1,[ 79881]=1,[ 79882]=1,[ 79883]=1,
-	[ 79884]=1,[ 79885]=1,[ 79886]=1,[ 79887]=1,[ 79888]=1,[ 79889]=1,[ 79890]=1,[ 79891]=1,[ 79892]=1,[ 79893]=1,[ 85453]=1,[ 85477]=1,
-	[ 85533]=1,[ 85534]=1,[ 85557]=1,[ 85558]=1,[ 89145]=1,[ 89146]=1,[ 89147]=1,[ 89148]=1,[ 89149]=1,[ 89150]=1,[ 89151]=1,[ 89152]=1,
-	[ 89154]=1,[ 89155]=1,[ 89156]=1,[ 89157]=1,[ 89158]=1,[ 89159]=1,[ 89160]=1,[ 89161]=1,[ 89169]=1,[ 89170]=1,[ 89171]=1,[ 89172]=1,
-	[ 89173]=1,[ 89174]=1,[ 89175]=1,[ 89176]=1,[ 89178]=1,[ 89179]=1,[ 89180]=1,[ 89181]=1,[ 89182]=1,[ 89183]=1,[ 89184]=1,[ 89185]=1,
-	[ 89209]=1,[ 89587]=1,[ 89590]=1,[ 89660]=1,[ 89661]=1,[ 95351]=1,[ 95352]=1,[ 95353]=1,[ 95354]=1,[ 95355]=1,[ 95356]=1,[ 95357]=1,
-	[ 95358]=1,[ 95359]=1,[ 95360]=1,[ 95361]=1,[ 95362]=1,[ 95363]=1,[ 95364]=1,[ 95365]=1,[ 95366]=1,[ 95367]=1,[ 95368]=1,[ 95383]=1,
-	[ 95384]=1,[ 95385]=1,[ 95386]=1,[ 95387]=1,[ 95388]=1,[ 95389]=1,[ 95390]=1,[114117]=1,[114118]=1,[114119]=1,[114120]=1,[114121]=1,
-	[114122]=1,[114123]=1,[114124]=1,[114125]=1,[114126]=1,[114127]=1,[114128]=1,[114129]=1,[114130]=1,[114131]=1,[114132]=1,[114133]=1,
-	[114134]=1,[114135]=1,[114136]=1,[114137]=1,[114138]=1,[114139]=1,[114140]=1,[114141]=1,[114142]=1,[114143]=1,[114144]=1,[114145]=1,
-	[114146]=1,[114147]=1,[114148]=1,[114149]=1,[114150]=1,[114151]=1,[114152]=1,[114153]=1,[114154]=1,[114156]=1,[114157]=1,[114158]=1,
-	[114159]=1,[114160]=1,[114161]=1,[114162]=1,[114163]=1,[114164]=1,[114165]=1,[114166]=1,[114167]=1,[114168]=1,[114169]=1,[114170]=1,
-	[114171]=1,[114172]=1,[114173]=1,[114174]=1,[114175]=1,[114176]=1,[114177]=1,[114178]=1,[114179]=1,[114180]=1,[114181]=1,[114182]=1,
-	[114183]=1,[114184]=1,[114185]=1,[114186]=1,[114187]=1,[114188]=1,[114189]=1,[114191]=1,[114192]=1,[114193]=1,[114194]=1,[114195]=1,
-	[114196]=1,[114197]=1,[114198]=1,[114199]=1,[114200]=1,[114208]=1,[114209]=1,[114210]=1,[114211]=1,[114212]=1,[114213]=1,[114215]=1,
-	[114216]=1,[114217]=1,[114218]=1,[114219]=1,[114220]=1,[114221]=1,[114222]=1,[114223]=1,[114224]=1,[130882]=1,[130883]=1,[130884]=1,
-	[130885]=1,[130886]=1,[130887]=1,[130888]=1,[130889]=1,[130890]=1,[130891]=1,[130892]=1,[130893]=1,[130894]=1,[130895]=1,[130896]=1,
-	[130897]=1,[130898]=1,[130899]=1,[130900]=1,[130901]=1,[130902]=1,[130903]=1,[130904]=1,[130905]=1,[130906]=1,[130907]=1,[130908]=1,
-	[130909]=1,[130910]=1,[130911]=1
-};
---]]
 local solvables,limitWarning = {},{};
 
 if ns.build>50000000 then -- MoP
@@ -123,7 +99,6 @@ ns.modules[name] = {
 		"ARTIFACT_UPDATE",
 		"ARTIFACT_COMPLETE",
 		"CURRENCY_DISPLAY_UPDATE",
-		"GET_ITEM_INFO_RECEIVED",
 		"CHAT_MSG_SKILL"
 	},
 	updateinterval = nil,
@@ -134,11 +109,10 @@ ns.modules[name] = {
 	config_allowed = {
 		subTTposition = {["AUTO"]=true,["TOP"]=true,["LEFT"]=true,["RIGHT"]=true,["BOTTOM"]=true}
 	},
-	config = {
-		{ type="header", label=PROFESSIONS_ARCHAEOLOGY, align="left", icon=true },
-		{ type="separator" },
-		{ type="toggle", name="continentOrder", label=L["Order by continent"], tooltip=L["Order archaeology races by continent"] }
-	},
+	config_header = {type="header", label=PROFESSIONS_ARCHAEOLOGY, align="left", icon=true},
+	config_broker = {"minimapButton"},
+	config_tooltip = { { type="toggle", name="continentOrder", label=L["Order by continent"], tooltip=L["Order archaeology races by continent"] } },
+	config_misc = nil,
 	clickOptions = {
 		["1_open_archaeology_frame"] = {
 			cfg_label = "Open archaeology frame", -- L["Open archaeology frame"]
@@ -189,7 +163,7 @@ end
 
 
 local function updateBroker()
-	local obj = ns.LDB:GetDataObjectByName(ldbName);
+	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 	local text = {};
 	if #limitWarning>0 then
 		table.sort(limitWarning,function(a,b) return a.free < b.free; end);
@@ -209,16 +183,6 @@ local function updateRaceArtifact(t,...)
 	if t[raceArtifactName]==nil and ArtifactName~=nil then
 		t[raceArtifactName],t[raceArtifactIcon],t[raceKeystoneSlots] = ArtifactName,ArtifactIcon,KeystoneSlots;
 		t[raceArtifactIcon] = icon:format(t[raceArtifactIcon]);
-
-		--[=[
-		local item = {GetItemInfo(t[raceArtifactName])};
-		if item[1] then
-			local id = tonumber(item[2]:match("item:(%d+)"));
-			if id~=nil then
-				QuestStarterItems[item[1]] = id;
-			end
-		end
-		--]=]
 
 		if(type(t[raceKeystoneItemID])=="number" and t[raceKeystoneItemID]>0) then
 			keystoneItem2race[t[raceKeystoneItemID]] = k;
@@ -362,8 +326,7 @@ local function createTooltip(tt)
 				v[raceTexture].." "..C(v[raceArtifactSolvable]==true and "green" or "ltyellow",v[raceName]),
 				v[raceKeystoneIcon]~=nil and v[raceKeystoneCount].." "..v[raceKeystoneIcon] or "",
 				C(limitColors(v[raceFragmentsMax]-v[raceFragmentsCollected],"white"),v[raceFragmentsCollected].." / "..v[raceFragmentsMax]).." "..v[raceFragmentsIcon],
-				C(v[raceArtifactSolvable]==true and "green" or "white",v[raceNumFragmentsRequired].." "..v[raceArtifactIcon]),
-				--[[QuestStarterItems[raceArtifactName] and "|TInterface\\OptionsFrame\\UI-OptionsFrame-NewFeatureIcon:0:0:0:-1|t" or]] " "
+				C(v[raceArtifactSolvable]==true and "green" or "white",v[raceNumFragmentsRequired].." "..v[raceArtifactIcon])
 			);
 			if(v[raceKeystoneItemID]~=0)then
 				tt.lines[l].itemId=v[raceKeystoneItemID];
@@ -372,13 +335,6 @@ local function createTooltip(tt)
 			end
 			tt.lines[l].raceIndex = v[raceIndex];
 			tt:SetLineScript(l,"OnMouseUp", toggleArchaeologyFrame);
-			--[=[
-			if QuestStarterItems[v[raceArtifactName]] then
-				tt.lines[l].cells[4].itemId = QuestStarterItems[v[raceArtifactName]];
-				tt:SetCellScript(l,4,"OnEnter", ItemTooltipShow);
-				tt:SetCellScript(l,4,"OnLeave", ItemTooltipHide);
-			end
-			--]=]
 		elseif v[raceName] then
 			local l=tt:AddLine(
 				v[raceTexture].." "..C("gray",v[raceName]),
@@ -401,22 +357,10 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,...)
-	if event=="GET_ITEM_INFO_RECEIVED" then
-		--[[
-		local id = ...;
-		if(type(id)=="number")then
-			local item=GetItemInfo(id);
-			if item~=nil then
-				QuestStarterItems[item]=id;
-			end
-		end
-		--]]
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
+	if event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	else
 		if event=="PLAYER_ENTERING_WORLD" then

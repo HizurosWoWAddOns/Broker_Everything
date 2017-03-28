@@ -9,9 +9,8 @@ local C, L, I = ns.LC.color, ns.L, ns.I;
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local _
-local name = "Durability"; -- DURABILITY
-local ldbName,ttName,tt = name,name.."TT",nil;
+local name,_ = "Durability"; -- DURABILITY
+local ttName,tt = name.."TT",nil;
 local hiddenTooltip,createMenu
 local last_repairs = {};
 local merchant = {repair=false,costs=0,diff=0,single=0};
@@ -89,22 +88,16 @@ ns.modules[name] = {
 		dateFormat = "%Y-%m-%d %H:%M",
 		showDiscount = true,
 		lowestItem = true,
-		chatRepairInfo = false,
+		chatRepairInfo = false
 	},
 	config_allowed = {
 		inBroker = {["percent"]=true,["costs"]=true,["costs/percent"]=true,["percent/costs"]=true},
 		colorSet = {},
 		dateFormat = {["%d.%m. %H:%M"] = true,["%d.%m. %I:%M %p"] = true,["%Y-%m-%d %H:%M"] = true,["%Y-%m-%d %I:%M %p"] = true,["%d/%m/%Y %H:%M"] = true,["%d/%m/%Y %I:%M %p"] = true}
 	},
-	config = {
-		{ type="header", label=DURABILITY, align="left", icon=I[name] },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Options"] },
-		{ type="separator", inMenuInvisible=true },
-		{ type="select", name="colorSet", label=L["Percent color set"], tooltip=L["Choose your favorite color set in which the percent text in broker should be displayed."], event=true, default="set1", values=colorSets.values },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Broker button options"] },
-		{ type="separator", inMenuInvisible=true },
+	config_header = {type="header", label=DURABILITY, align="left", icon=I[name]},
+	config_broker = {
+		"minimapButton",
 		{ type="toggle", name="lowestItem", label=L["Lowest durability"], tooltip=L["Display the lowest item durability in broker."], event=true },
 		{ type="select", name="inBroker", label=L["Broker format"], tooltip=L["Choose your favorite display format for the broker button."], default="percent", event=true,
 			values={
@@ -114,12 +107,13 @@ ns.modules[name] = {
 				["percent/costs"]="54%, 32.27.16"
 			}
 		},
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Tooltip options"] },
-		{ type="separator", inMenuInvisible=true },
+	},
+	config_tooltip = {
 		{ type="toggle", name="showDiscount", label=L["Show discount"], tooltip=L["Show list of reputation discounts in tooltip"] },
 		{ type="select", name="dateFormat", label=L["Date format"], tooltip=L["Choose the date format if used in the list of repair costs"], default="%Y-%m-%d %H:%M", values=date_formats, event=true },
-		{ type="separator", alpha=0 },
+	},
+	config_misc = {
+		{ type="select", name="colorSet", label=L["Percent color set"], tooltip=L["Choose your favorite color set in which the percent text in broker should be displayed."], event=true, default="set1", values=colorSets.values },
 		{ type="header", label=L["Repair options"] },
 		{ type="separator", inMenuInvisible=true },
 		{ type="toggle", name="autorepair", label=L["Enable auto repair"], tooltip=L["Automatically repair your equipment on opening a merchant with repair option."], event=true },
@@ -296,7 +290,7 @@ local function createTooltip(tt)
 			for i,v in ipairs(last_repairs) do
 				if (i<=tonumber(ns.profile[name].maxCosts)) then
 					indicator = ((v[4]) and "a" or "") .. ((v[3]) and "G" or "P");
-					lst({c1=date(date_format,v[1]) .. (strlen(indicator)>0 and " "..indicator or ""), c2=ns.GetCoinColorOrTextureString(ceil(v[2]),{inTooltip=true})});
+					lst({c1=date(date_format,v[1]) .. (strlen(indicator)>0 and " "..indicator or ""), c2=ns.GetCoinColorOrTextureString(name,ceil(v[2]),{inTooltip=true})});
 				end
 			end
 		else
@@ -366,8 +360,6 @@ end
 ------------------------------------
 
 ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
-
 	ns.items.Enable();
 
 	if not hiddenTooltip then
@@ -379,11 +371,6 @@ ns.modules[name].init = function()
 	end
 
 	date_format = ns.profile[name].dateFormat;
-
-	if be_durability_db~=nil then
-		ns.toon[name] = be_durability_db;
-		be_durability_db = nil;
-	end
 
 	if (ns.toon[name]==nil) then
 		ns.toon[name] = {};
@@ -457,11 +444,11 @@ ns.modules[name].onevent = function(self,event,msg)
 		end
 	end
 
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName) 
+	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ns.modules[name].ldbName) 
 	local repairCosts, equipCost, bagCost, dA, dL, dLSlot, d = scanAll();
 
 	if (ns.profile[name].inBroker=="costs") then
-		dataobj.text = ns.GetCoinColorOrTextureString(repairCosts)
+		dataobj.text = ns.GetCoinColorOrTextureString(name,repairCosts)
 	else
 		d = floor((ns.profile[name].lowestItem) and dL or dA);
 		if (ns.profile[name].inBroker=="percent") then
@@ -489,4 +476,3 @@ ns.modules[name].onenter = function(self)
 end
 
 -- ns.modules[name].onleave = function(self) end
-

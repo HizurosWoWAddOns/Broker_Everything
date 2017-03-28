@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Surprise" -- L["Surprise"]
-local ldbName,ttName,ttColumns,tt = name,name.."TT",3,nil
+local ttName,ttColumns,tt = name.."TT",3,nil
 local ITEM_DURATION,ITEM_COOLDOWN,ITEM_LOOTABLE=1,2,3
 local founds,counter,items = {},{},{
 	-- 1 items with duration time
@@ -44,9 +44,12 @@ ns.modules[name] = {
 	desc = L["Broker to have an eye on your suprise item. What is a suprise item? Anything thats needs some days to open it and thats lootable after the time. Can contain random objects like mounts, companions and more."],
 	events = {},
 	updateinterval = nil,
-	config_defaults = nil,
+	config_defaults = {},
 	config_allowed = nil,
-	config = { { type="header", label=L[name], align="left", icon=I[name] } }
+	config_header = nil, -- use default header
+	config_broker = {"minimapButton"},
+	config_tooltip = nil,
+	config_misc = nil,
 }
 
 
@@ -54,7 +57,7 @@ ns.modules[name] = {
 -- some local functions --
 --------------------------
 local function updateBroker()
-	local obj = ns.LDB:GetDataObjectByName(ldbName);
+	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 	if counter.sum>0 then
 		obj.text = ((counter.lootable and C("green",counter.lootable)) or C("ltgray",0)) .. "/" .. counter.sum;
 	else
@@ -118,7 +121,6 @@ local function createTooltip(tt)
 		tt:AddLine(L["No item found."])
 	end
 
---	if(ns.profile[name].showChars)then end
 	ns.roundupTooltip(tt);
 end
 
@@ -126,7 +128,6 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 	ns.items.RegisterPreScanCallback(name,resetFunc);
 	for i,v in pairs(items)do
 		ns.items.RegisterCallback(name,updateFunc,"item",i);
@@ -151,4 +152,3 @@ end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-

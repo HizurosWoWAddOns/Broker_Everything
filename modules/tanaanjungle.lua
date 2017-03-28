@@ -10,8 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Tanaan Jungle Dailies"; -- L["Tanaan Jungle Dailies"]
-local ldbName, ttName, ttName2, ttColumns, ttColumns2, tt, tt2, createMenu = name, name.."TT",name.."TT2", 2, 2;
---local ttName2, ttColumns2, tt2 = name.."TT2", 2;
+local ttName, ttName2, ttColumns, ttColumns2, tt, tt2, createMenu = name.."TT",name.."TT2", 2, 2;
 local try,dailiesReset,weekliesReset,namesCount,namesNeed,completed,numCompleted,names,questlog,numQuestlog = 6,0,0,0,0,{},{},{},{},{};
 local dubs,elapse,update,updateTimeout = {},0,false,10;
 -- [<questId>] = <number> ( 1=bosses, 2=zone dailies, 3=hidden zone dailies, 4=bonus zone dailies, 5=random dailies, 6=weeklies )
@@ -112,22 +111,16 @@ ns.modules[name] = {
 		showQuestIDs = false,
 		showChars = true,
 		showAllRealms = true,
-		showAllFactions = true,
-		--showLatest = true,
-		--showCategory = true,
-		--showWatchlist = true,
-		--showProgressBars = true,
-		--showCompleted = true
+		showAllFactions = true
 	},
-	config_allowed = {},
-	config = {
-		{ type="header", label=L[name], align="left", icon=true },
-		{ type="separator" },
+	config_allowed = nil,
+	config_header = nil, -- use default header
+	config_broker = {"minimapButton"},
+	config_tooltip = {
 		{ type="toggle", name="showQuestIDs", label=L["Show QuestIDs"],   tooltip=L["Show/Hide QuestIDs in tooltip"] },
 		{ type="toggle", name="showChars",    label=L["Show characters"], tooltip=L["Show a list of your characters with count of ready and available targets in tooltip"] },
-		{ type="toggle", name="showAllRealms", label=L["Show all realms"], tooltip=L["Show characters from all realms in tooltip."] },
-		{ type="toggle", name="showAllFactions", label=L["Show all factions"], tooltip=L["Show characters from all factions in tooltip."] },
 	},
+	config_misc = nil,
 	clickOptions = {
 		["1_open_questlog"] = {
 			cfg_label = "Open questlog", -- L["Open questlog"]
@@ -249,7 +242,7 @@ local function updateQuestStatus()
 		for _,i in ipairs(typeOrder) do
 			tinsert(bbt,C(colorIDTypes[i], numCompleted[i]) .. "/" .. C(colorIDTypes[i], numIDTypes[i]));
 		end
-		ns.LDB:GetDataObjectByName(ldbName).text = table.concat(bbt,", ");
+		ns.LDB:GetDataObjectByName(ns.modules[name].ldbName).text = table.concat(bbt,", ");
 	else
 		C_Timer.After(1, function()
 			elapse,update=0,true;
@@ -297,10 +290,6 @@ local function createTooltip2(self,tt2,Class,Name,Realm,Data)
 	if (tt2) and (tt2.key) and (tt2.key~=ttName2) then return end -- don't override other LibQTip tooltips...
 	tt2 = ns.acquireTooltip({ttName2, ttColumns2, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT"},{true},{self,"horizontal",tt});
 	tt2:Clear();
-	--[[
-	local l = tt:AddHeader();
-	tt:SetCell(l,1,C("dkyellow",L[name]) .." ".. C("orange",L["(Experimental)"]),nil,nil,ttColumns);
-	--]]
 	listQuests(tt2,{},Data.completed,Data.numCompleted);
 	ns.roundupTooltip(tt2);
 end
@@ -414,6 +403,3 @@ ns.modules[name].onenter = function(self)
 end
 
 -- ns.modules[name].onleave = function(self) end
-
-
-

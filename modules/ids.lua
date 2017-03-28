@@ -10,9 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "IDs"; -- L["IDs"]
-local ldbName,ttName,ttColumns,tt,createMenu = name, name.."TT", 4;
-local scanTooltip = CreateFrame("GameTooltip",addon.."_"..name.."_ScanTooltip",UIParent,"GameTooltipTemplate"); scanTooltip:SetScale(0.0001); scanTooltip:Hide();
-
+local ttName,ttColumns,tt,createMenu = name.."TT", 4;
 local diffTypes = setmetatable({ -- http://wowpedia.org/API_GetDifficultyInfo / http://wow.gamepedia.com/DifficultyID
 	[1] = 1,	--  1 =  5 Regular
 	[2] = 1,	--  2 =  5 Heroic
@@ -87,12 +85,12 @@ ns.modules[name] = {
 
 		-- show expired types
 		showExpiredRaidsClassic = true,
-		showExpiredRaids = true,
+		showExpiredRaids = true
 	},
-	config_allowed = {},
-	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
-		{ type="separator", alpha=0 },
+	config_allowed = nil,
+	config_header = nil, -- use default header
+	config_broker = {"minimapButton"},
+	config_tooltip = {
 		{ type="toggle", name="showBosses",              label=L["Show world bosses"],          tooltip=L["Display list of world boss IDs in tooltip"] },
 		{ type="toggle", name="showDungeons",            label=L["Show dungeons"],              tooltip=L["Display list of dungeon IDs in tooltip"] },
 		{ type="toggle", name="showChallenges",          label=L["Show challenges"],            tooltip=L["Display list of challenge IDs in tooltip"] },
@@ -106,6 +104,7 @@ ns.modules[name] = {
 		{ type="toggle", name="showExpiredRaidsClassic", label=L["Show expired classic raids"], tooltip=L["Display expired classic raids in tooltip"] },
 		{ type="toggle", name="showExpiredRaids",        label=L["Show expired raids"],         tooltip=L["Display expired raids in tooltip"] },
 	},
+	config_misc = nil,
 	clickOptions = {
 		["5_open_menu"] = {
 			cfg_label = "Open option menu", -- L["Open option menu"]
@@ -275,9 +274,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,...)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then

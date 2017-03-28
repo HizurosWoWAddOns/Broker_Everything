@@ -10,8 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Speed"; -- SPEED
-local ldbName, ttName, ttColumns, tt = name, name.."TT", 2
-local string,GetUnitSpeed,UnitInVehicle = string,GetUnitSpeed,UnitInVehicle
+local ttName, ttColumns, tt = name.."TT", 2
 local riding_skills = { -- <spellid>, <skill>, <minLevel>, <air speed increase>, <ground speed increase>
 	{90265, 80, 310},
 	{34091, 70, 280},
@@ -47,9 +46,6 @@ local bonus_spells = { -- <spellid>, <chkActive[bool]>, <type>, <typeValue>, <cu
 }
 -- note: little problem with not stagging speed increasement spells...
 
---[[
-Greetings! [name] might be the perfect guild for you! We are a sophisticated little community with a laidback atmosphere. There is no pushing, just amazingness and nice members. Whisper me for an invitation.
-]]
 
 -------------------------------------------
 -- register icon names and default files --
@@ -286,15 +282,13 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,msg)
 	if event=="ADDON_LOADED" and msg==addon then
 		C_Timer.NewTicker(ns.modules[name].updateinterval,function()
 			local currentSpeed = GetUnitSpeed( UnitInVehicle("player") and "vehicle" or "player" );
-			ns.LDB:GetDataObjectByName(ldbName).text = ("%."..ns.profile[name].precision.."f"):format(currentSpeed / 7 * 100 ) .. "%";
+			ns.LDB:GetDataObjectByName(ns.modules[name].ldbName).text = ("%."..ns.profile[name].precision.."f"):format(currentSpeed / 7 * 100 ) .. "%";
 		end);
 	end
 end
@@ -315,7 +309,7 @@ ns.modules[name].onenter = function(self)
 		{self} -- anchor data
 	);
 	createTooltip(tt);
-end -- tt prevention (currently not on all broker panels...)
+end
 
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end

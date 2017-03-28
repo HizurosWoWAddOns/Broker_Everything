@@ -11,7 +11,7 @@ local channels_last =1;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "ChatChannels";
-local ldbName,ttName,ttColumns,tt,createMenu,ticker = name,name.."TT",2
+local ttName,ttColumns,tt,createMenu,ticker = name.."TT",2
 local iName, iHeader, iCollapsed, iChannelNumber, iCount, iActive, iCategory, iVoiceEnabled, iVoiceActive = 1,2,3,4,5,6,7,8,9;
 local WD_Locale = {
 	enUS="WorldDefense",
@@ -57,10 +57,11 @@ ns.modules[name] = {
 	config_defaults = {
 		inTitle = {}
 	},
-	config_allowed = {},
-	config = {
-		{ type="header", label=CHAT_CHANNELS, align="left", icon=I[name] },
-	},
+	config_allowed = nil,
+	config_header = {type="header", label=CHAT_CHANNELS, align="left", icon=I[name]},
+	config_broker = {"minimapButton"},
+	config_tooltip = nil,
+	config_misc = "shortNumbers",
 	clickOptions = {
 		["1_open_chats"] = {
 			cfg_label = "Open chat channels window", -- L["Open chat channels window"]
@@ -203,7 +204,7 @@ local function updater()
 		I=i+1;
 	end
 	C_Timer.After(I*1.2,function()
-		local obj = ns.LDB:GetDataObjectByName(ldbName);
+		local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 		local txt={};
 		for i,v in ipairs(channels)do
 			if not v[iHeader] then
@@ -225,9 +226,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,arg1,arg2,...)
 	if events[event]==1 then
@@ -236,15 +235,12 @@ ns.modules[name].onevent = function(self,event,arg1,arg2,...)
 			C_Timer.After(5,updater);
 			ticker = C_Timer.NewTicker(ns.modules[name].updateinterval,updater);
 		end
-	--elseif event=="CHANNEL_FLAGS_UPDATED" then
-	--elseif event=="CHANNEL_VOICE_UPDATE" then
 	elseif event=="CHANNEL_COUNT_UPDATE" then
 		updateChannels(arg1,arg2 or 0)
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	elseif event=="d" then
 		updateList()
-	--elseif events[event]==2 then
 	end
 end
 
@@ -265,5 +261,3 @@ end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-
-

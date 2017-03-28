@@ -18,7 +18,6 @@ local name0 = "GPS / Location / ZoneText"; L[name0] = ("%s / %s / %s"):format(L[
 local name1 = "GPS"; -- L["GPS"]
 local name2 = "Location"; -- L["Location"]
 local name3 = "ZoneText"; -- L["ZoneText"]
-local ldbName1, ldbName2, ldbName3 = name1, name2, name3;
 local ttName1, ttName2, ttName3, ttName4 = name1.."TT", name2.."TT", name3.."TT", "TransportMenuTT";
 local ttColumns,ttColumns4,onleave,createTooltip2,createMenu = 3,5;
 local tt1, tt2, tt3, tt4, items;
@@ -82,7 +81,7 @@ local sharedClickOptions = {
 -- ------------------------------------- --
 I[name1] = {iconfile="Interface\\Addons\\"..addon.."\\media\\gps"}		--IconName::GPS--
 I[name2] = {iconfile="Interface\\Addons\\"..addon.."\\media\\gps"}		--IconName::Location--
-I[name3] = {iconfile=GetItemIcon(11105),coords={0.05,0.95,0.05,0.95}}	--IconName::ZoneText--
+I[name3] = {iconfile=134269,coords={0.05,0.95,0.05,0.95}}				--IconName::ZoneText--
 
 
 ---------------------------------------
@@ -109,9 +108,10 @@ ns.modules[name0] = {
 			["%s||%s"] = true
 		}
 	},
-	config = {
-		{ type="header", label=L[name0], align="left", icon=I[name1] },
-		{ type="separator" },
+	config_header = {type="header", label=L[name0], align="left", icon=I[name1]},
+	config_broker = false, -- do not use minimap button option
+	config_tooltip = nil,
+	config_misc = {
 		{ type="toggle", name="shortMenu", label=L["Short transport menu"], tooltip=L["Display the transport menu without names of spells and items behind the icons."]},
 		{ type="select",
 			name	= "coordsFormat",
@@ -135,7 +135,7 @@ ns.modules[name0] = {
 			default		= 0,
 			format		= "%d"
 		}
-	}
+	},
 }
 
 ns.modules[name1] = {
@@ -146,11 +146,13 @@ ns.modules[name1] = {
 		bothZones = "2"
 	},
 	config_prepend = name0,
-	config = {
-		{ type="header", label=L[name1], align="left", icon=I[name1] },
-		{ type="separator" },
+	config_header = {type="header", label=L[name1], align="left", icon=I[name1]},
+	config_broker = {
+		"minimapButton",
 		{ type="select", name="bothZones", label=L["Display zone names"], tooltip=L["Display in broker zone and subzone if exists or one of it."], default="2", values=zoneDisplayValues }
 	},
+	config_tooltip = nil,
+	config_misc = nil,
 	clickOptions = sharedClickOptions
 }
 
@@ -159,11 +161,12 @@ ns.modules[name2] = {
 	enabled = false,
 	events = {},
 	updateinterval = nil,
-	config_defaults = nil,
+	config_defaults = {},
 	config_prepend = name0,
-	config = {
-		{type="header", label=L[name2], align="left", icon=I[name2] },
-	},
+	config_header = {type="header", label=L[name2], align="left", icon=I[name2]},
+	config_broker = {"minimapButton"},
+	config_tooltip = nil,
+	config_misc = nil,
 	clickOptions = sharedClickOptions
 }
 
@@ -176,11 +179,13 @@ ns.modules[name3] = {
 		bothZones = "2"
 	},
 	config_prepend = name0,
-	config = {
-		{ type="header", label=L[name3], align="left", icon=I[name3] },
-		{ type="separator" },
+	config_header = {type="header", label=L[name3], align="left", icon=I[name3]},
+	config_broker = {
+		"minimapButton",
 		{ type="select", name="bothZones", label=L["Display zone names"], tooltip=L["Display in broker zone and subzone if exists or one of it."], default="2", values=zoneDisplayValues }
 	},
+	config_tooltip = nil,
+	config_misc = nil,
 	clickOptions = sharedClickOptions
 }
 
@@ -300,14 +305,6 @@ local function zoneColor()
 	elseif p == "sanctuary" then
 		color = "ltblue"
 	end
-	--[[
-		L["Contested"]
-		L["Sanctuary"]
-		FRIENDLY
-		COMBAT
-		ARENA
-		HOSTILE
-	]]
 	return p, color
 end
 
@@ -379,14 +376,6 @@ local function tpmOnEnter(self)
 		OnEnter=createTooltip3,
 		OnLeave=hideTooltip3
 	};
-	--[[
-	if v.equipped==false then
-		data.OnClick=function()
-			v.equipped=true;
-			createTooltip2(parent);
-		end
-	end
-	--]]
 	ns.secureButton(self,data);
 end
 
@@ -527,15 +516,15 @@ local function updater()
 	end
 
 	if ns.profile[name1].enabled then
-		ns.LDB:GetDataObjectByName(ldbName1).text = C(gpsLoc.color,gpsLoc.zone1.." (")..C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos)..C(gpsLoc.color,")");
+		ns.LDB:GetDataObjectByName(ns.modules[name1].ldbName).text = C(gpsLoc.color,gpsLoc.zone1.." (")..C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos)..C(gpsLoc.color,")");
 	end
 
 	if ns.profile[name2].enabled then
-		ns.LDB:GetDataObjectByName(ldbName2).text = C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos);
+		ns.LDB:GetDataObjectByName(ns.modules[name2].ldbName).text = C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos);
 	end
 
 	if ns.profile[name3].enabled then
-		ns.LDB:GetDataObjectByName(ldbName3).text = C(gpsLoc.color,gpsLoc.zone3);
+		ns.LDB:GetDataObjectByName(ns.modules[name3].ldbName).text = C(gpsLoc.color,gpsLoc.zone3);
 	end
 end
 
@@ -545,9 +534,6 @@ end
 ------------------------------------
 
 ns.modules[name0].init = function(self)
-	ldbName1 = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name1
-	ldbName2 = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name2
-	ldbName3 = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name3
 end
 
 -- ns.modules[name1].init = function(self) end
@@ -622,7 +608,3 @@ end
 -- ns.modules[name1].ondblclick = function(self,button) end
 -- ns.modules[name2].ondblclick = function(self,button) end
 -- ns.modules[name3].ondblclick = function(self,button) end
-
-
---[95567]=1
---[95568]=2

@@ -3,15 +3,15 @@
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
+if ns.build<60000000 then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
 
-if ns.build<60000000 then return end
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Missions" -- GARRISON_MISSIONS
-local ldbName, ttName, ttColumns,ttColumns_default, tt, createMenu = name, name.."TT",6,6
+local ttName, ttColumns,ttColumns_default, tt, createMenu = name.."TT",6,6
 local missions = {};
 local started = {};
 local qualities = {"white","ff1eaa00","ff0070dd","ffa335ee","red"};
@@ -52,14 +52,11 @@ ns.modules[name] = {
 		showMissionItemLevel = true,
 		showMissionFollowerSlots = true
 	},
-	config_allowed = {},
-	config = {
-		{ type="header", label=GARRISON_MISSIONS, align="left", icon=I[name] },
-		{ type="separator" },
-
+	config_allowed = nil,
+	config_header = {type="header", label=GARRISON_MISSIONS, align="left", icon=I[name]},
+	config_broker = {"minimapButton"},
+	config_tooltip = {
 		{ type="toggle", name="showChars",       label=L["Show characters"],          tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
-		{ type="toggle", name="showAllRealms",   label=L["Show all realms"],          tooltip=L["Show characters from all realms in tooltip."] },
-		{ type="toggle", name="showAllFactions", label=L["Show all factions"],        tooltip=L["Show characters from all factions in tooltip."] },
 
 		{ type="toggle", name="showReady",     label=L["Show ready missions"],     tooltip=L["Show ready missions in tooltip"] },
 		{ type="toggle", name="showActive",    label=L["Show active missions"],    tooltip=L["Show active missions in tooltip"] },
@@ -70,6 +67,7 @@ ns.modules[name] = {
 		{ type="toggle", name="showMissionItemLevel",     label=L["Show mission iLevel"], tooltip=L["Show mission item level in tooltip."] },
 		{ type="toggle", name="showMissionFollowerSlots", label=L["Show follower slots"], tooltip=L["Show mission follower slots in tooltip."] },
 	},
+	config_misc = nil,
 	clickOptions = {
 		["1_open_garrison_report"] = {
 			cfg_label = "Open garrison report", -- L["Open garrison report"]
@@ -221,7 +219,7 @@ local function createTooltip(tt)
 					for mi, md in ipairs(missions[Type][aType]) do
 						local duration_str = md["duration"];
 						if (duration_title ~= "Time") then
-							duration_str = SecondsToTime(md["missionEndTime"]-time()) --md["timeLeft"];
+							duration_str = SecondsToTime(md["missionEndTime"]-time());
 						end
 
 						local color,color_lvl,lvl = "white","white",md["level"];
@@ -292,7 +290,7 @@ end
 
 local function update()
 	-- LE_FOLLOWER_TYPE_GARRISON_6_0 // LE_FOLLOWER_TYPE_SHIPYARD_6_2 // LE_FOLLOWER_TYPE_GARRISON_7_0
-	local obj = ns.LDB:GetDataObjectByName(ldbName);
+	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 	local completed, inprogress, available = 0,0,0;
 
 	for _,Type in ipairs({"followers","ships","champions"})do
@@ -324,7 +322,6 @@ local function update()
 			missions[Type].inprogress,missions[Type].completed = {},{};
 
 			for i,v in ipairs(tmp) do
-				--_,_,_,_,_,_,v.isExhausting = C_Garrison.GetMissionInfo(v.missionID);
 				if(v.missionEndTime-_time>0)then
 					tinsert(missions[Type].inprogress,v);
 				else
@@ -348,14 +345,12 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,msg)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-	else
+	elseif ns.pastPEW then
 		update();
 	end
 end
@@ -382,6 +377,3 @@ end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-
-
-

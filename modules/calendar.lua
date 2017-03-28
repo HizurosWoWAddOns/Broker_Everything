@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Calendar" -- L["Calendar"]
-local ldbName,ttName,ttColumns,tt,createMenu = name,name.."TT",2;
+local ttName,ttColumns,tt,createMenu = name.."TT",2;
 local similar, own, unsave = "%s has a similar option to hide the minimap mail icon.","%s has its own mail icon.","%s found. It's unsave to hide the minimap mail icon without errors.";
 -- L["%s has a similar option to hide the minimap mail icon."] L["%s has its own mail icon."] L["%s found. It's unsave to hide the minimap mail icon without errors."]
 local coexist_tooltip = {
@@ -50,11 +50,18 @@ ns.modules[name] = {
 		showEvents = true,
 		singleLineEvents = false
 	},
-	config_allowed = {
+	config_allowed = nil,
+	config_header = nil, -- use default header
+	config_broker = {
+		"minimapButton",
+		{ type="toggle", name="shortBroker", label=L["Shorter Broker"], tooltip=L["Reduce the broker text to a number without text"], event=true },
 	},
-	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
-		{ type="separator" },
+	config_tooltip = {
+		{ type="toggle", name="showEvents",  label=L["Show events"], tooltip=L["Display a list of events in tooltip"]},
+		{ type="toggle", name="shortEvents", label=L["Shorter Events"], tooltip=L["Reduce event list height in tooltip"] },
+		{ type="toggle", name="singleLineEvents", label=L["One event per line"], tooltip=L["Display event title and start/end date in a single line in tooltip"]}
+	},
+	config_misc = {
 		{ type="toggle", name="hideMinimapCalendar", label=L["Hide calendar button"], tooltip=L["Hide Blizzard's minimap calendar button"],
 			disabled = function()
 				if (ns.coexist.found~=false) then
@@ -63,10 +70,6 @@ ns.modules[name] = {
 				return false;
 			end
 		},
-		{ type="toggle", name="shortBroker", label=L["Shorter Broker"], tooltip=L["Reduce the broker text to a number without text"], event=true },
-		{ type="toggle", name="showEvents",  label=L["Show events"], tooltip=L["Display a list of events in tooltip"]},
-		{ type="toggle", name="shortEvents", label=L["Shorter Events"], tooltip=L["Reduce event list height in tooltip"] },
-		{ type="toggle", name="singleLineEvents", label=L["One event per line"], tooltip=L["Display event title and start/end date in a single line in tooltip"]}
 	},
 	clickOptions = {
 		["1_open_character_info"] = {
@@ -223,12 +226,10 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,msg)
-	self.obj = self.obj or ns.LDB:GetDataObjectByName(ldbName);
+	self.obj = self.obj or ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 	local num = CalendarGetNumPendingInvites();
 
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
@@ -276,11 +277,3 @@ ns.modules[name].coexist = function()
 		GameTimeFrame.Show = dummyFunc;
 	end
 end
-
---[=[
-note:
-	broker text can extend with accepted entries today
-
-	tt can be extend with accepted today. (time, title) description are zoo much for tt.
-	can be display in second tt on mouseover
-]=]

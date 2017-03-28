@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Quest Log" -- QUESTLOG_BUTTON
-local ldbName,ttName,ttName2,ttColumns,ttColumns2,tt,tt2,createMenu,createTooltip = name,name.."TT",name.."TT2",9,2;
+local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,createMenu,createTooltip = name.."TT",name.."TT2",9,2;
 local quests,numQuestStatus,sum,url,tt2created,requested
 local urls = {
 	WoWHead = function(id)
@@ -52,7 +52,6 @@ StaticPopupDialogs["BE_URL_DIALOG"] = {
 		f:GetParent():Hide()
 	end
 }
--- StaticPopup_Show("BE_URL_DIALOG")
 
 
 -- ------------------------------------- --
@@ -78,7 +77,6 @@ ns.modules[name] = {
 		showQuestIds = true,
 		showQuestZone = true,
 		showQuestTagsShort = true,
-		--showQuestItems = true,
 		showQuestOptions = true,
 		questIdUrl = "WoWHead",
 		separateBy = "status",
@@ -87,16 +85,12 @@ ns.modules[name] = {
 		tooltip2QuestLevel = true,
 		tooltip2QuestZone = true,
 		tooltip2QuestTag = true,
-		tooltip2QuestID = true,
-
+		tooltip2QuestID = true
 	},
-	config_allowed = {
-	},
-	config = {
-		{ type="header", label=QUESTLOG_BUTTON, align="left", icon=I[name] },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Tooltip options"] },
-		{ type="separator", inMenuInvisible=true },
+	config_allowed = nil,
+	config_header = {type="header", label=QUESTLOG_BUTTON, align="left", icon=I[name]},
+	config_broker = {"minimapButton"},
+	config_tooltip = {
 		{ type="toggle", name="showQuestIds",       label=L["Show quest id's"], tooltip=L["Show quest id's in tooltip."] },
 		{ type="toggle", name="showQuestZone",      label=L["Show quest zone"], tooltip=L["Show quest zone in tooltip."] },
 		{ type="toggle", name="showQuestTags",      label=L["Show quest tags"], tooltip=L["Show quest tags in tooltip."] },
@@ -128,6 +122,7 @@ ns.modules[name] = {
 		{ type="toggle", name="tooltip2QuestTag", label=L["Show quest tag"], tooltip=L["Display quest tags in tooltip"] },
 		{ type="toggle", name="tooltip2QuestID", label=L["Show quest id"], tooltip=L["Display quest id in tooltip"] },
 	},
+	config_misc = nil,
 	clickOptions = {
 		["1_open_quest_log"] = {
 			cfg_label = "Open quest log", -- L["Open quest log"]
@@ -164,7 +159,7 @@ function createMenu(self)
 end
 
 local function updateBroker()
-	local obj = ns.LDB:GetDataObjectByName(ldbName);
+	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 	local fail, active, complete = numQuestStatus.fail, numQuestStatus.active, numQuestStatus.complete;
 	obj.text = (fail>0 and C("red",fail).."/" or "")..(complete>0 and C("ltblue",complete).."/" or "")..sum.."/"..MAX_QUESTS;
 end
@@ -237,13 +232,13 @@ local function createTooltip2(self, obj)
 		tt2:AddLine(C("ltblue",L["Quest id"]),C("ltgreen",obj[QuestId]));
 	end
 
-	--ns.roundupTooltip(tt2);
 	tt2:Show();
 end
 
 local function tt2ShowOnEnter(self)
 	createTooltip2(self,self.info);
 end
+
 local function tt2HideOnLeave()
 	if tt2 then
 		tt2created=false;
@@ -252,7 +247,7 @@ end
 
 local function ttAddLine(obj)
 	assert(type(obj)=="table","object must be a table, got "..type(obj));
-	local l = tt:AddLine();
+	local l,c = tt:AddLine();
 	local cell, color,GroupQuest = 1,"red",{};
 
 	if (obj[Color]) then
@@ -420,9 +415,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,msg)
 	if event=="PLAYER_LOGIN" then
@@ -522,4 +515,3 @@ end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-

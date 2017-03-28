@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Mail" -- BUTTON_LAG_MAIL
-local ldbName, ttName, tooltip, tt = name, name.."TT"
+local ttName, tooltip, tt = name.."TT"
 local alertLocked,onUpdateLocked,hookOn = false,false,false;
 local icons = {}
 do for i=1, 22 do local _ = ("inv_letter_%02d"):format(i) icons[_] = "|Tinterface\\icons\\".._..":16:16:0:0|t" end end
@@ -58,11 +58,14 @@ ns.modules[name] = {
 	},
 	config_allowed = {
 	},
-	config = {
-		{ type="header", label=BUTTON_LAG_MAIL, align="left", icon=I[name] },
-		{ type="separator" },
-		{ type="toggle", name="playsound", label=L["Play sound on new mail"], tooltip=L["Enable to play a sound on receiving a new mail message. Default is off"] },
+	config_allowed = nil,
+	config_header = {type="header", label=BUTTON_LAG_MAIL, align="left", icon=I[name]},
+	config_broker = {"minimapButton"},
+	config_tooltip = {
 		{ type="toggle", name="showDaysLeft", label=L["List mails on chars"], tooltip=L["Display a list of chars on all realms with there mail counts and 3 lowest days before return to sender. Chars with empty mail box aren't displayed."] },
+	},
+	config_misc = {
+		{ type="toggle", name="playsound", label=L["Play sound on new mail"], tooltip=L["Enable to play a sound on receiving a new mail message. Default is off"] },
 		{ type="toggle", name="hideMinimapMail", label=L["Hide minimap mail icon"], tooltip=L["Hide minimap mail icon"],
 			event = "BE_HIDE_MINIMAPMAIL",
 			disabled = function()
@@ -72,9 +75,7 @@ ns.modules[name] = {
 				return false;
 			end
 		},
-		{ type="toggle", name="showAllRealms", label=L["Show all realms"], tooltip=L["Show characters from all realms in tooltip."] },
-		{ type="toggle", name="showAllFactions", label=L["Show all factions"], tooltip=L["Show characters from all factions in tooltip."] },
-	}
+	},
 }
 
 
@@ -171,7 +172,7 @@ local function UpdateStatus(event)
 		end
 	end
 
-	local icon,text,obj = I(name), L["No Mail"],ns.LDB:GetDataObjectByName(ldbName);
+	local icon,text,obj = I(name), L["No Mail"],ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 
 	if #charDB_mail.new>0 then
 		icon, text = I(name.."_new"), C("green",L["New mail"]);
@@ -215,14 +216,6 @@ local function createTooltip(tt)
 				if v.mail and  not ((ns.profile[name].showAllRealms~=true and n[2]~=ns.realm) or (ns.profile[name].showAllFactions~=true and v.faction~=ns.player.faction)) then
 					if #v.mail.new>0 or #v.mail.stored>0 then
 						local count,countnew,str = #v.mail.stored,#v.mail.new,"";
-						--[[
-						if countnew>0 then
-							str = C("green",countnew.." "..L["new mail"..(countnew>1 and "s" or "")]);
-						end
-						if count>0 then
-							str = count.." "..L["mail"..(count>1 and "s" or "")] .. (str~="" and "("..str..")" or "");
-						end
-						]]
 						if count==0 and countnew>0 then
 							str = C("green",L["New mails"]..": "..countnew);
 						elseif count>0 or countnew>0 then
@@ -275,9 +268,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,msg)
 	if (event=="BE_HIDE_MINIMAPMAIL") and (not ns.coexist.found) then
@@ -304,7 +295,7 @@ ns.modules[name].onevent = function(self,event,msg)
 		end);
 
 		self:UnregisterEvent(event);
-	else
+	elseif ns.pastPEW then
 		if (HasNewMail()) and (ns.profile[name].playsound) and (not alertLocked) then
 			PlaySoundFile("Interface\\Addons\\"..addon.."\\media\\mailalert.mp3", "Master"); -- or SFX?
 			alertLocked=true;
@@ -341,4 +332,3 @@ ns.modules[name].coexist = function()
 		ns.hideFrame("MiniMapMailFrame");
 	end
 end
-

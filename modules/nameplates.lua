@@ -4,13 +4,14 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-local NAMEPLATES = NAMEPLATES or "Nameplates"
+
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
+local NAMEPLATES = NAMEPLATES or "Nameplates"
 local name = "Nameplates" -- L["Nameplates"]
-local ldbName,ttName,ttColumns,tt,createTooltip = name,name.."TT",5
+local ttName,ttColumns,tt,createTooltip = name.."TT",5
 
 local nameplateStatus = {
 	{ FRIENDLY },
@@ -107,7 +108,6 @@ if ns.build>70000000 then -- Legion
 				cvar={NamePlateHorizontalScale="1.4", NamePlateVerticalScale="2.7"}
 			},
 			{ txt=L["Larger"],
-				--rows=ttColumns,
 				onChange=function() NamePlateDriverFrame:UpdateNamePlateOptions() end,
 				cvar={NamePlateHorizontalScale="1.9", NamePlateVerticalScale="4.5"}
 			},
@@ -147,9 +147,12 @@ ns.modules[name] = {
 		"CVAR_UPDATE"
 	},
 	updateinterval = nil, -- 10
-	config_defaults = nil, -- {}
+	config_defaults = {},
 	config_allowed = nil,
-	config = { { type="header", label=L[name], align="left", icon=I[name] } }
+	config_header = nil, -- use default header
+	config_broker = {"minimapButton"},
+	config_tooltip = nil,
+	config_misc = nil
 }
 
 
@@ -347,12 +350,9 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function(obj)
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
-
+-- ns.modules[name].init = function() end
 ns.modules[name].onevent = function(self,event,msg,msg2)
-	local dataobj = ns.LDB:GetDataObjectByName(ldbName) 
+	local dataobj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName) 
 	local allFriends, friends = GetCVar("nameplateShowFriends"), GetCVar("UnitNameFriendlyPlayerName")
 	local allEnemies, enemy = GetCVar("nameplateShowEnemies"), GetCVar("UnitNameEnemyPlayerName")
 
@@ -384,4 +384,3 @@ end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-

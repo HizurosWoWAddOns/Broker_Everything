@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Equipment"; -- BAG_FILTER_EQUIPMENT
-local ldbName, ttName, ttColumns, tt,createMenu, equipPending = name, name.."TT", 3;
+local ttName, ttColumns, tt,createMenu, equipPending = name.."TT", 3;
 local objLink,objColor,objType,objId,objData,objName,objInfo,objTooltip=1,2,3,4,6,5,7,8;
 local itemEnchant,itemGem1,itemGem2,itemGem3,itemGem4=1,2,3,4,5;
 local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice=1,2,3,4,5,6,7,8,9,10,11;
@@ -137,11 +137,14 @@ ns.modules[name] = {
 		showShorterInfo = false
 	},
 	config_allowed = nil,
-	config = {
-		{ type="header", label=BAG_FILTER_EQUIPMENT, align="left", icon=I[name] },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Tooltip options"]},
-		{ type="separator", inMenuInvisible=true},
+	config_header = {type="header", label=BAG_FILTER_EQUIPMENT, align="left", icon=I[name]},
+	config_broker = {
+		"minimapButton",
+		{ type="toggle", name="showCurrentSet",      label=L["Show current set"],                             tooltip=L["Display your current equipment set on broker button"], event=true},
+		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],                      tooltip=L["Display your average item level on broker button"], event=true},
+		{ type="toggle", name="showShorterInfo",     label=L["Show shorter Info for 'Unknown set' and more"], tooltip=L["Display shorter Info on broker button. 'Set?' instead of 'Unknown set'. 'No sets' instead of 'No sets found'."], event=true}
+	},
+	config_tooltip = {
 		{ type="toggle", name="showSets",            label=L["Show equipment sets"],               tooltip=L["Display a list of your equipment sets"]},
 		{ type="toggle", name="showInventory" ,      label=L["Show inventory"],                    tooltip=L["Display a list of currently equipped items"]},
 		{ type="toggle", name="showNotEnchanted" ,   label=L["Show 'not enchanted' mark"],         tooltip=L["Display a red # on not enchanted/enchantable items"]},
@@ -151,14 +154,8 @@ ns.modules[name] = {
 		{ type="toggle", name="showGreenText" ,      label=L["Show green text"],                   tooltip=L["Display green text line from item tooltip like titanforged"]},
 		{ type="toggle", name="showUpgrades" ,       label=L["Show upgrade info"],                 tooltip=L["Display upgrade info like 2/6"]},
 		{ type="toggle", name="fullyUpgraded",       label=L["Darker blue for fully upgraded"],    tooltip=L["Display upgrade counter in darker blue on fully upgraded items"]},
-
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Broker button options"]},
-		{ type="separator", inMenuInvisible=true},
-		{ type="toggle", name="showCurrentSet",      label=L["Show current set"],                             tooltip=L["Display your current equipment set on broker button"], event=true},
-		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],                      tooltip=L["Display your average item level on broker button"], event=true},
-		{ type="toggle", name="showShorterInfo",     label=L["Show shorter Info for 'Unknown set' and more"], tooltip=L["Display shorter Info on broker button. 'Set?' instead of 'Unknown set'. 'No sets' instead of 'No sets found'."], event=true}
 	},
+	config_misc = nil,
 	clickOptions = {
 		["1_open_character_info"] = {
 			cfg_label = "Open character info", -- L["Open character info"]
@@ -271,7 +268,6 @@ local function UpdateInventory()
 	local lst,data = {iLevelMin=0,iLevelMax=0},ns.items.GetInventoryItems();
 	for _, d in pairs(data) do
 		if d and d.slotIndex and (d.itemType==ARMOR or d.itemType==WEAPON) and d.slotIndex~=4 and d.slotIndex~=19 then
-		--	local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice=1,2,3,4,5,6,7,8,9,10,11;
 			lst[d.slotIndex] = d;
 			if lst.iLevelMin==0 or d.level<lst.iLevelMin then
 				lst.iLevelMin=d.level;
@@ -475,9 +471,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,arg1,...)
 	if event=="PLAYER_ENTERING_WORLD" then
@@ -489,7 +483,7 @@ ns.modules[name].onevent = function(self,event,arg1,...)
 		self.PEW=true;
 	elseif self.PEW then
 		if (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and equipPending~=nil then
-			UseEquipmentSet(equipPending)
+			(UseEquipmentSet or C_EquipmentSet.UseEquipmentSet)(equipPending);
 			equipPending = nil
 			updateBroker();
 		end
@@ -516,5 +510,3 @@ end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-
-

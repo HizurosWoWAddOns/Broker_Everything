@@ -3,15 +3,14 @@
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
-local C, L, I = ns.LC.color, ns.L, ns.I
 if ns.build>70000000 then return end
+local C, L, I = ns.LC.color, ns.L, ns.I
 
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Dualspec" -- L["Dualspec"]
-local ldbName = name
 local tt = nil
 local unspent = 0
 local specs = {}
@@ -20,7 +19,7 @@ local specs = {}
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile=GetItemIcon(7516),coords={0.05,0.95,0.05,0.95}}; --IconName::Dualspec--
+I[name] = {iconfile=134942,coords={0.05,0.95,0.05,0.95}}; --IconName::Dualspec--
 
 
 ---------------------------------------
@@ -37,9 +36,14 @@ ns.modules[name] = {
 		"PLAYER_TALENT_UPDATE",
 	},
 	updateinterval = nil, -- 10
-	config_defaults = nil, -- {}
+	config_defaults = {
+		
+	},
 	config_allowed = nil,
-	config = { { type="header", label=L[name], align="left", icon=true } }
+	config_header = nil, -- use default header
+	config_broker = {"minimapButton"},
+	config_tooltip = nil,
+	config_misc = nil,
 }
 
 
@@ -52,16 +56,14 @@ ns.modules[name] = {
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,msg)
 	local specName = L["No Spec!"]
 	local icon = I(name)
 	local spec = GetSpecialization()
 	local _ = nil
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName)
+	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ns.modules[name].ldbName)
 	unspent = GetNumUnspentTalents()
 
 	if spec ~= nil then
@@ -140,4 +142,3 @@ ns.modules[name].onclick = function(self,button)
 end
 
 -- ns.modules[name].ondblclick = function(self,button) end
-

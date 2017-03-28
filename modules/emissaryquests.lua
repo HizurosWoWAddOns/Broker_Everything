@@ -9,7 +9,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Emissary Quests";
-local ldbName, ttName, ttColumns, tt, createMenu = name, name.."TT", 4
+local ttName, ttColumns, tt, createMenu = name.."TT", 4
 local factions,totalQuests,locked = {},{},false;
 local continents = {
 	1007 -- legion
@@ -44,41 +44,17 @@ ns.modules[name] = {
 	},
 	updateinterval = nil,
 	config_defaults = {
-		--showRealm = "ALL",
-		--howFaction = true
 		shortTitle = false
 	},
-	config_allowed = {},
-	config = {
-		{ type="header", label=L[name], align="left", icon=true },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Broker button options"]},
-		{ type="separator", inMenuInvisible=true },
-		{ type="toggle", name="shortTitle", label="Show shoter title", tooltip=L["Display '%s' instead of '%s' on chars under level 110 on broker button"]:format(L["Emissary Quests-ShortCut"],L["Emissary Quests"]), event=true }
+	config_allowed = nil,
+	config_header = nil,
+	config_broker = {
+		"minimapButton",
+		{ type="toggle", name="shortTitle", label="Show shorter title", tooltip=L["Display '%s' instead of '%s' on chars under level 110 on broker button"]:format(L["Emissary Quests-ShortCut"],L["Emissary Quests"]), event=true }
 	},
+	config_tooltip = nil,
+	config_misc = nil,
 	clickOptions = {
-		-- world map
-		--[[
-		["1_open_archaeology_frame"] = {
-			cfg_label = "Open archaeology frame", -- L["Open archaeology frame"]
-			cfg_desc = "open your archaeology frame", -- L["open your archaeology frame"]
-			cfg_default = "_LEFT",
-			hint = "Open archaeology frame", -- L["Open archaeology frame"]
-			func = function(self,button)
-				local _mod=name;
-				if ( not ArchaeologyFrame ) then
-					ArchaeologyFrame_LoadUI()
-				end
-				if ( ArchaeologyFrame ) then
-					if(ArchaeologyFrame:IsShown())then
-						securecall("ArchaeologyFrame_Hide")
-					else
-						securecall("ArchaeologyFrame_Show")
-					end
-				end
-			end
-		},
-		]]
 		["9_open_menu"] = {
 			cfg_label = "Open option menu", -- L["Open option menu"]
 			cfg_desc = "open the option menu", -- L["open the option menu"]
@@ -108,7 +84,7 @@ local function sortFactions(a,b)
 end
 
 local function updateBroker()
-	local lst,obj = {},ns.LDB:GetDataObjectByName(ldbName);
+	local lst,obj = {},ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 	if UnitLevel("player")<110 then
 		obj.text = ns.profile[name].shortTitle and L["Emissary Quests-ShortCut"] or L[name];
 		return 
@@ -309,9 +285,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,...)
 	if event=="PLAYER_ENTERING_WORLD" then
@@ -323,7 +297,7 @@ ns.modules[name].onevent = function(self,event,...)
 		self:UnregisterEvent(event);
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-	elseif self.PEW then -- events -"QUEST_LOG_UPDATE" "BE_DUMMY_EVENT"
+	elseif self.PEW then
 		updateData();
 	end
 end
@@ -345,4 +319,3 @@ end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-

@@ -10,15 +10,13 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Friends"; -- L["Friends"]
-local ldbName,ttName,ttName2=name,name.."TT",name.."TT2";
-local tt, tt2
+local ttName,ttName2,ttColumns,tt,tt2,createMenu=name.."TT",name.."TT2",8;
 local unknownGameError = false;
 local DSw, DSh =  0,  0;
 local ULx, ULy =  0,  0;
 local LLx, LLy = 32, 32;
 local URx, URy =  5, 27;
 local LRx, LRy =  5, 27;
-local ttColumns,createMenu;
 local off, on = strtrim(gsub(ERR_FRIEND_OFFLINE_S,"%%s","")), strtrim(gsub(ERR_FRIEND_ONLINE_SS,"\124Hplayer:%%s\124h%[%%s%]\124h",""));
 local gameIconPos = setmetatable({},{ __index = function(t,k) return format("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",DSw,DSh,ULx,ULy,LLx,LLy,URx,URy,LRx,LRy) end})
 local _BNet_GetClientTexture = BNet_GetClientTexture
@@ -65,11 +63,8 @@ ns.modules[name] = {
 		"BN_INFO_CHANGED",
 		"BN_SELF_ONLINE", -- same as BN_CONNECTED ?
 		"FRIENDLIST_UPDATE",
-		--"GROUP_ROSTER_UPDATE", -- ?
-		--"IGNORELIST_UPDATE", -- ?
 		"PLAYER_ENTERING_WORLD",
 		"PLAYER_LOGIN",
-		--"PLAYER_FLAGS_CHANGED", -- ?
 		"CHAT_MSG_SYSTEM"
 	},
 	updateinterval = nil, -- 10
@@ -97,27 +92,17 @@ ns.modules[name] = {
 		showFactionTT2 = false,
 		showZoneTT2 = false,
 		showGameTT2 = false,
-		showNotesTT2 = false,
+		showNotesTT2 = false
 	},
-	config_allowed = {},
-	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
-
-		--{ type="separator", alpha=0 },
-		--{ type="header", label=L["Misc. options"] },
-		--{ type="separator", inMenuInvisible=true },
-		--{ type="toggle", name="
-
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Broker button options"] },
-		{ type="separator", inMenuInvisible=true },
+	config_allowed = nil,
+	config_header = nil, -- use default header
+	config_broker = {
+		"minimapButton",
 		{ type="toggle", name="splitFriendsBroker",  label=L["Split friends on Broker"], tooltip=L["Split Characters and BattleNet-Friends on Broker Button"], event=true },
 		{ type="toggle", name="showFriendsBroker",   label=L["Show friends"], tooltip=L["Display count of friends if 'Split friends on Broker' enabled otherwise add friends to summary count."], event=true },
 		{ type="toggle", name="showBNFriendsBroker", label=L["Show BattleNet friends"], tooltip=L["Display count of BattleNet friends on Broker if 'Split friends on Broker' enabled otherwise add BattleNet friends to summary count."], event=true },
-
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Tooltip options"] },
-		{ type="separator", inMenuInvisible=true },
+	},
+	config_tooltip = {
 		{ type="toggle", name="showFriends",    label=L["Show friends"],           tooltip=L["Display friends in tooltip"] },
 		{ type="toggle", name="showBNFriends",  label=L["Show BattleNet friends"], tooltip=L["Display BattleNet friends in tooltip"] },
 		{ type="select", name="showBattleTags", label=L["Show BattleTag/RealID"],  tooltip=L["Display BattleTag and/or RealID in tooltip"],
@@ -178,6 +163,7 @@ ns.modules[name] = {
 		{ type="toggle", name="showGameTT2",      label=L["Show game"], tooltip=L["Display game in second tooltip"] },
 		{ type="toggle", name="showNotesTT2",     label=L["Show notes"], tooltip=L["Display notes in second tooltip"] },
 	},
+	config_misc = nil,
 	clickOptions = {
 		["1_open_character_info"] = {
 			cfg_label = "Open friends roster", -- L["Open friends roster"]
@@ -376,7 +362,7 @@ local function createTooltip(tt)
 	tt:AddSeparator();
 
 	if ns.profile[name].showBNFriends then
-		tt:SetCell(tt:AddLine(),1,C("ltgray",L["BattleNet friends"]) .. ( (not BNConnected() and C("ltred"," ("..BATTLENET_UNAVAILABLE..")")) or (numOnlineBNFriends==0 and C("ltgray"," ("..L["Currently no battle.net friends online..."]..")")) or "" ),nil,"LEFT",0);
+		tt:SetCell(tt:AddLine(),1,C("ltgray",L["BattleNet friends"]),nil,"LEFT",0);
 		if not BNConnected() then
 			tt:SetCell(tt:AddLine(),1,"    "..C("ltred",BATTLENET_UNAVAILABLE),nil,"LEFT",0);
 		elseif numOnlineBNFriends==0 then
@@ -481,7 +467,7 @@ local function createTooltip(tt)
 	end
 
 	if ns.profile[name].showFriends then
-		tt:SetCell(tt:AddLine(),1,C("ltgray",L["Friends"]) .. (friendsOnline==0 and C("gray"," ("..L["Currently no friends online..."]..")") or ""),nil,"LEFT",0);
+		tt:SetCell(tt:AddLine(),1,C("ltgray",L["Friends"]),nil,"LEFT",0);
 		if friendsOnline==0 then
 			tt:SetCell(tt:AddLine(),1,"    "..C("gray",L["Currently no friends online..."]),nil,"LEFT",0);
 		else
@@ -569,9 +555,7 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,msg)
 	if event=="PLAYER_LOGIN" then
@@ -591,7 +575,7 @@ ns.modules[name].onevent = function(self,event,msg)
 	elseif even=="CHAT_MSG_SYSTEM" and not (msg:find(off) or msg:find(on)) then
 		return;
 	end
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ldbName);
+	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 	local numBNFriends, numOnlineBNFriends = 0,0;
 	if BNConnected() then
 		numBNFriends, numOnlineBNFriends = BNGetNumFriends();
@@ -628,7 +612,6 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttColumns=8;
 	tt = ns.acquireTooltip(
 		{ttName, ttColumns, "LEFT","CENTER", "LEFT", "CENTER", "LEFT", "LEFT", "LEFT", "LEFT"},
 		{false},

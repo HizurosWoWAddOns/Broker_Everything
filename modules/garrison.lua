@@ -3,16 +3,15 @@
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
-local C, L, I = ns.LC.color, ns.L, ns.I
 if ns.build<60000000 then return end
+local C, L, I = ns.LC.color, ns.L, ns.I
 
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Garrison" -- GARRISON_LOCATION_TOOLTIP
-local ldbName,ttName,LName = name, name.."TT",GARRISON_LOCATION_TOOLTIP;
-local tt,createMenu,ttColumns
+local ttName,ttColumns,tt,createMenu= name.."TT",7;
 local buildings,nBuildings,construct,nConstruct,blueprints3,achievements3 = {},0,{},0,{},{}
 local longer,ticker = false,false;
 local displayAchievements=false;
@@ -38,6 +37,7 @@ ns.modules[name] = {
 	desc = L["Broker to show garrison buildings, worker, active work orders, available blueprints, depending achievements and gives you a garrison cache forecast for all your chars"],
 	label = GARRISON_LOCATION_TOOLTIP,
 	events = {
+		"ADDON_LOADED",
 		"PLAYER_ENTERING_WORLD",
 		"GARRISON_LANDINGPAGE_SHIPMENTS",
 		"GARRISON_UPDATE",
@@ -61,24 +61,20 @@ ns.modules[name] = {
 		showAllRealms = false,
 		showAllFactions = true
 	},
-	config_allowed = {},
-	config = {
-		{ type="header", label=GARRISON_LOCATION_TOOLTIP, align="left", icon=I[name] },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Broker button options"]},
-		{ type="separator", inMenuInvisible=true },
+	config_allowed = nil,
+	config_header = {type="header", label=GARRISON_LOCATION_TOOLTIP, align="left", icon=I[name]},
+	config_broker = {
+		"minimapButton",
 		{ type="toggle", name="showCacheForcastInBroker", label=L["Show cache forcast in title"], tooltip=L["Show garrison cache forecast for your current char in broker button"] },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Tooltip options"]},
-		{ type="separator", inMenuInvisible=true },
+	},
+	config_tooltip = {
 		{ type="toggle", name="showConstruct",            label=L["Show under construction"],     tooltip=L["Show list of buildings there are under construction in tooltip"] },
 		{ type="toggle", name="showBlueprints",           label=L["Show blueprints"],             tooltip=L["Show available blueprints in tooltip"] },
 		{ type="toggle", name="showAchievements",         label=L["Show archievements"],          tooltip=L["Show necessary archievements to unlock blueprints in tooltip"] },
 		{ type="toggle", name="showCacheForcast",         label=L["Show cache forcast"],          tooltip=L["Show garrison cache forecast for all your characters in tooltip"] },
 		{ type="toggle", name="showChars",                label=L["Show characters"],             tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
-		{ type="toggle", name="showAllRealms",            label=L["Show all realms"],             tooltip=L["Show characters from all realms in tooltip."] },
-		{ type="toggle", name="showAllFactions",          label=L["Show all factions"],           tooltip=L["Show characters from all factions in tooltip."] },
 	},
+	config_misc = nil,
 	clickOptions = {
 		["1_open_garrison_report"] = {
 			cfg_label = "Open garrison report", -- L["Open garrison report"]
@@ -174,7 +170,7 @@ local function createTooltip(tt)
 	end;
 
 	tt:Clear();
-	tt:AddHeader(C("dkyellow",LName));
+	tt:AddHeader(C("dkyellow",GARRISON_LOCATION_TOOLTIP));
 
 	if (garrLevel>0) then
 		if (ns.profile[name].showChars and false) then
@@ -609,16 +605,12 @@ ns.modules[name].onevent = function(self,event,...)
 
 		local ohLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
 
-		
-
-		local obj = ns.LDB:GetDataObjectByName(ldbName);
+		local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 		local title = {};
 		tinsert(title, C("ltblue",ready) .."/".. C("orange",progress - ready) );
 
 		if (ns.profile[name].showCacheForcastInBroker) then
 			if(ns.toon.garrison_cache[1]==nil or ns.toon.garrison_cache[1]==0)then
-				colCache = "orange";
-				colCap = "red";
 				tinsert(title, C("orange","n/a") );
 			else
 				local colCache,colCap,cap = "white","white",500;
@@ -667,7 +659,6 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttColumns = 7;
 	tt = ns.acquireTooltip({ttName, 7, "LEFT","LEFT", "CENTER", "CENTER", "CENTER", "RIGHT","RIGHT"},{not displayAchievements},{self});
 	createTooltip(tt);
 end
@@ -675,4 +666,3 @@ end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-

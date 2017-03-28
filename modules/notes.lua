@@ -4,15 +4,15 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-local titleLimit,textLimit = 32,10000;
 
 
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Notes" -- L["Notes"]
-local ldbName,ttName,ttColumns,tt,createMenu = name, name.."TT",2;
+local ttName,ttColumns,tt,createMenu = name.."TT",2;
 local delIndex,editor,createTooltip,note_edit
+local titleLimit,textLimit = 32,10000;
 
 
 -------------------------------------------
@@ -34,10 +34,11 @@ ns.modules[name] = {
 	},
 	updateinterval = 30, -- 10
 	config_defaults = {},
-	config_allowed = {},
-	config = {
-		{ type="header", label=L[name], align="left", icon=I[name] },
-	},
+	config_allowed = nil,
+	config_header = nil, -- use default header
+	config_broker = {"minimapButton"},
+	config_tooltip = nil,
+	config_misc = "shortNumbers",
 	clickOptions = {
 		["1_new_note"] = {
 			cfg_label = "Add new note",
@@ -74,7 +75,7 @@ function createMenu(self)
 end
 
 local function updateBroker()
-	local icon,obj = I[name],ns.LDB:GetDataObjectByName(ldbName);
+	local icon,obj = I[name],ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 	local faction = UnitFactionGroup("player"):lower();
 	if faction~="neutral" then
 		icon = I[name..'_'..faction];
@@ -229,7 +230,6 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 	if ns.data[name]==nil then
 		ns.data[name] = {};
 	end
@@ -260,4 +260,3 @@ end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-

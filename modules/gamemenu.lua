@@ -10,16 +10,14 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Game Menu"; -- MAINMENU_BUTTON
-local ldbName = name
-local tt,tt2 = nil
-local ttName,tt2Name = name.."TT",name.."TT2"
+local ttName,tt2Name,tt,tt2 = name.."TT",name.."TT2"
 local last_click = 0
 local iconCoords = "16:16:0:-1:64:64:4:56:4:56" --"16:16:0:-1:64:64:3:58:3:58"
 local link = "|T%s:%s|t %s"
 local link_disabled = "|T%s:%s:66:66:66|t "..C("gray", "%s")
 local gmticket = {}
 local customTitle = MAINMENU_BUTTON
-local clickActions = {
+local clickActions,nextAction = {
 	{"Do you really want to logout from this character?",function() securecall('Logout'); end}, -- L["Do you really want to logout from this character?"]
 	{"Do you really want to left the game?",function() securecall('Quit'); end}, -- L["Do you really want to left the game?"]
 	{"Do you really want to reload the UI?",function() securecall('ReloadUI'); end}, -- L["Do you really want to reload the UI?"]
@@ -50,9 +48,6 @@ local menu = { --section 1
 				v.iconName = "Guild";
 			end
 		end,
-		--setIcon=function()
-		--SetSmallGuildTabardTextures("player",
-		--end,
 		taint=true
 	},
 	{name=SOCIAL_BUTTON,		iconName="Friends",			func=function() securecall("ToggleFriendsFrame", 1) end,		disabled=IsTrialAccount()},
@@ -179,38 +174,28 @@ ns.modules[name] = {
 		showTaintingEntries = false
 	},
 	config_allowed = nil,
-	config = {
-		{ type="header", label=MAINMENU_BUTTON, align="left", icon=I[name] },
-		{ type="separator" },
-		{ type="toggle", name="hideSection2", label=L["Hide section 2"], tooltip=L["Hide section 2 in tooltip"] },
-		{ type="toggle", name="hideSection3", label=L["Hide section 3"], tooltip=L["Hide section 3 in tooltip"] },
+	config_header = {type="header", label=MAINMENU_BUTTON, align="left", icon=I[name]},
+	config_broker = {
+		"minimapButton",
 		{ type="toggle", name="disableOnClick", label=L["Disable Click options"], tooltip=L["Disable the click options on broker button"] },
 		{ type="input",  name="customTitle", label=L["Custom title"], tooltip=L["Set your own Title instead of 'Game Menu'"], event=true },
+	},
+	config_tooltip = {
+		{ type="toggle", name="hideSection2", label=L["Hide section 2"], tooltip=L["Hide section 2 in tooltip"] },
+		{ type="toggle", name="hideSection3", label=L["Hide section 3"], tooltip=L["Hide section 3 in tooltip"] },
 		{ type="toggle", name="customTooltipTitle", label=L["Custom title in tooltip"], tooltip=L["Use custom title as tooltip title"] },
 		{ type="toggle", name="showGMTicket", label=L["Show GMTicket"], tooltip=L["Show GMTickets in tooltip and average wait time in broker button"] },
 		{ type="toggle", name="showTaintingEntries", label=L["Show tainting entries"], tooltip=L["Show all entries their tainting the environment. Be carefull. Can produce error in combat."] }
-	}
+	},
+	config_misc = nil,
 }
 
 
 --------------------------
 -- some local functions --
 --------------------------
-StaticPopupDialogs["CONFIRM"] = {
-	text = L["Are you sure you want to Reload the UI?"],
-	button1 = ACCEPT,
-	button2 = CANCEL,
-	OnAccept = function()
-		ReloadUI()
-	end,
-	timeout = 20,
-	whileDead = true,
-	hideOnEscape = true,
-	preferredIndex = 5,
-}
-
 local function updateGMTicket()
-	local obj = ns.LDB:GetDataObjectByName(ldbName)
+	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName)
 	if ns.profile[name].showGMTicket and gmticket.hasTicket and gmticket.ticketStatus~=LE_TICKET_STATUS_OPEN then
 		local icon = I("gm_gmticket")
 		obj.text = C("cyan",(gmticket.waitTime) and SecondsToTime(gmticket.waitTime*60) or L["Open GM Ticket"]) .. link:format(icon.iconfile,(icon.coordsStr or iconCoords),"")
@@ -330,7 +315,7 @@ local function createTooltip(tt)
 
 	-- Open GM Ticket info Area
 	if ns.profile[name].showGMTicket and gmticket.hasTicket and (gmticket.ticketStatus~=LE_TICKET_STATUS_RESPONSE or gmticket.ticketStatus~=LE_TICKET_STATUS_SURVEY) then
-		waitTime, waitMsg, ticketStatus = gmticket.waitTime,gmticket.waitMsg,gmticket.ticketStatus
+		local waitTime, waitMsg, ticketStatus = gmticket.waitTime,gmticket.waitMsg,gmticket.ticketStatus
 		tt:AddSeparator(5,0,0,0,0)
 		line, column = tt:AddLine()
 		local icon = I("gm_gmticket")
@@ -384,17 +369,15 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
-end
-
+-- ns.modules[name].init = function() end
 ns.modules[name].onevent = function(self, event, arg1, ...)
+	local _
 	if event=="PLAYER_ENTERING_WORLD" or event=="BE_DUMMY_EVENT" then
 		local label = MAINMENU_BUTTON;
 		if type(ns.profile[name].customTitle)=="string" and ns.profile[name].customTitle~="" then
 			label = ns.profile[name].customTitle;
 		end
-		ns.LDB:GetDataObjectByName(ldbName).text = label;
+		ns.LDB:GetDataObjectByName(ns.modules[name].ldbName).text = label;
 	elseif event == "UPDATE_WEB_TICKET" then
 		_, gmticket.hasTicket, gmticket.numTickets, gmticket.ticketStatus, gmticket.caseIndex, gmticket.waitTime, gmticket.waitMsg = ...
 		updateGMTicket()
@@ -450,4 +433,3 @@ ns.modules[name].onclick = function(self, button)
 end
 
 -- ns.modules[name].ondblclick = function(self, button) end
-

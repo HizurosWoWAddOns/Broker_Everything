@@ -10,7 +10,7 @@ local C,L,I = ns.LC.color,ns.L,ns.I;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Professions"; -- TRADE_SKILLS
-local ldbName,ttName,ttName2,ttColumns,tt,tt2 = name,name.."TT",name.."TT2",2;
+local ttName,ttName2,ttColumns,tt,tt2 = name.."TT",name.."TT2",2;
 local professions,db,createMenu,locked = {};
 local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset = 1,2,3,4,5,6,7,8,9,10; -- GetProfessionInfo
 local nameEnglish,spellId,skillId,disabled = 11, 12, 13, 14; -- custom after GetProfessionInfo
@@ -214,15 +214,14 @@ ns.modules[name] = {
 		showLegionFactionRespices = true,
 		inTitle = {}
 	},
-	config_allowed = {
-	},
-	config = {
-		{ type="header", label=TRADE_SKILLS, align="left", icon=I[name] },
-		{ type="separator" },
+	config_allowed = nil,
+	config_header = {type="header", label=TRADE_SKILLS, align="left", icon=I[name]},
+	config_broker = {"minimapButton"},
+	config_tooltip = {
 		{ type="toggle", name="showCooldowns", label=L["Show cooldowns"], tooltip=L["Show/Hide profession cooldowns from all characters."] },
-		-- { type="toggle", name="showDigSiteStatus", label=L["Show dig site status"], tooltip=L["Show dig site status in broker button."] },
 		{ type="toggle", name="showLegionFactionRespices", label=L["Show legion recipes"], tooltip=L["Display a list of legion respices with neccessary faction repution"] }
 	},
+	config_misc = nil,
 	clickOptions = {
 		["1_open_character_info"] = {
 			cfg_label = "Open profession menu", -- L["Open profession menu"]
@@ -263,7 +262,7 @@ local function Title_Update()
 		end
 	end
 
-	local obj = ns.LDB:GetDataObjectByName(ldbName);
+	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 	obj.text = (#inTitle==0) and TRADE_SKILLS or table.concat(inTitle," ");
 end
 
@@ -271,10 +270,6 @@ local function Title_Set(place,obj)
 	local db = ns.profile[name].inTitle;
 	db[place] = (db[place]~=obj) and obj or false;
 	Title_Update();
-end
-
-local function Title_Check(id)
-	--?
 end
 
 local function GetTimeLeft(a,b)
@@ -460,7 +455,6 @@ function createMenu(self,menu)
 		end
 	elseif (menu=="options") then
 		ns.EasyMenu.addEntry({ label = L["In title"], title = true });
-		--ns.EasyMenu.addEntry({ separator = true });
 
 		local numProfs,numLearned = (ns.player.class=="ROGUE") and 7 or 6,0;
 		for i=1, numProfs do
@@ -645,4 +639,3 @@ end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-

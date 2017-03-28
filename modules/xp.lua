@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "XP" -- XP
-local ldbName, ttName, ttName2, ttColumns, tt, tt2, createMenu, createTooltip  = name, name.."TT", name.."TT2", 3;
+local ttName, ttName2, ttColumns, tt, tt2, createMenu, createTooltip  = name.."TT", name.."TT2", 3;
 local data = {};
 local sessionStartLevel = UnitLevel("player");
 local slots = {  [1]=HEADSLOT, [3]=SHOULDERSLOT, [5]=CHESTSLOT, [7]=LEGSSLOT, [15]=BACKSLOT, [11]=FINGER0SLOT, [12]=FINGER1SLOT, [998]=L["Guild perk"], [999]=L["Recruite a Friend"]};
@@ -91,12 +91,9 @@ ns.modules[name] = {
 	config_allowed = {
 		display = {["1"]=true,["2"]=true,["3"]=true,["4"]=true,["5"]=true}
 	},
-	config = {
-		{ type="header", label=XP, align="left", icon=I[name] },
-		{ type="separator" },
-		{ type="toggle", name="showMyOtherChars", label=L["Show other chars xp"], tooltip=L["Display a list of my chars on same realm with her level and xp"] },
-		{ type="toggle", name="showNonMaxLevelOnly", label=L["Hide characters at maximum level"], tooltip=L["Hide all characters who have reached the level cap."] },
-		{ type="toggle", name="showAllRealms", label=L["Show all realms"], tooltip=L["Show characters from all realms in tooltip."] },
+	config_header = {type="header", label=XP, align="left", icon=I[name]},
+	config_broker = {
+		"minimapButton",
 		{ type="select", name="display", label=L["Display XP in broker"], tooltip=L["Select to show XP as an absolute value; Deselected will show it as a percentage."],
 			default="1",
 			values={
@@ -118,6 +115,11 @@ ns.modules[name] = {
 			min=5, max=200, default=20, format="%d", event=true
 		}
 	},
+	config_tooltip = {
+		{ type="toggle", name="showMyOtherChars", label=L["Show other chars xp"], tooltip=L["Display a list of my chars on same realm with her level and xp"] },
+		{ type="toggle", name="showNonMaxLevelOnly", label=L["Hide characters at maximum level"], tooltip=L["Hide all characters who have reached the level cap."] },
+	},
+	config_misc = "shortNumbers",
 	clickOptions = {
 		["1_switch_mode"] = {
 			cfg_label = "Switch mode", -- L["Switch mode"]
@@ -146,7 +148,7 @@ ns.modules[name] = {
 };
 -- add values to config.textBarCharacter
 for _,v in ipairs(textbarSigns)do
-	ns.modules[name].config[7].values[v]=v;
+	ns.modules[name].config_broker[3].values[v]=v;
 end
 
 --------------------------
@@ -300,11 +302,11 @@ end
 ns.modules[name].onevent = function(self,event,msg)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+	elseif (event=="UNIT_INVENTORY_CHANGED" and msg~="player") then
+		return;
 	end
 
-	if (event=="UNIT_INVENTORY_CHANGED") and (msg~="player") then return end
-
-	local dataobj = ns.LDB:GetDataObjectByName(ldbName);
+	local dataobj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 
 	if (MAX_PLAYER_LEVEL==UnitLevel("player")) then
 		data = {cur=1,max=1,rest=0,need=0,percentCur=1,percentRest=1,percentStr="100%",restStr="n/a",bonus={},bonusSum=0};
