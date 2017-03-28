@@ -44,7 +44,10 @@ ns.modules[name] = {
 	},
 	updateinterval = nil,
 	config_defaults = {
-		shortTitle = false
+		shortTitle = false,
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4
 	},
 	config_allowed = nil,
 	config_header = nil,
@@ -52,7 +55,11 @@ ns.modules[name] = {
 		"minimapButton",
 		{ type="toggle", name="shortTitle", label="Show shorter title", tooltip=L["Display '%s' instead of '%s' on chars under level 110 on broker button"]:format(L["Emissary Quests-ShortCut"],L["Emissary Quests"]), event=true }
 	},
-	config_tooltip = nil,
+	config_tooltip = {
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom"
+	},
 	config_misc = nil,
 	clickOptions = {
 		["9_open_menu"] = {
@@ -233,10 +240,13 @@ local function createTooltip(tt)
 	for i=1, #Broker_Everything_CharacterDB.order do
 		local name_realm = Broker_Everything_CharacterDB.order[i];
 		local v,cell = Broker_Everything_CharacterDB[name_realm],2;
-		local c,r = strsplit("-",name_realm);
-		if v.level>=110 and v[name] then
+		local c,realm,_ = strsplit("-",name_realm);
+		if v.level>=110 and v[name] and ns.showThisChar(name,realm,v.faction) then
 			local faction = v.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-			local realm = sAR==true and C("dkyellow"," - "..ns.scm(realm)) or "";
+			if type(realm)=="string" and realm:len()>0 then
+				_,realm = ns.LRI:GetRealmInfo(realm);
+			end
+			realm = sAR==true and C("dkyellow"," - "..ns.scm(realm)) or "";
 			local c,l=2,tt:AddLine(C(v.class,ns.scm(c)) .. realm .. faction);
 			for _,data in pairs(factions)do
 				if data.eventEnding-Time>=0 then
