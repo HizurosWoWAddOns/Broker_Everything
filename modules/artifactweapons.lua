@@ -63,9 +63,11 @@ local artifactKnowledgeMultiplier = {
 	113.00,142.00,178.00,223.00,249.00, -- 21 - 25
 
 	-- with 7.2
-	 500.00, 750.00,1000.00,1250.00,1500.00, -- 26 - 30
-	1750.00,2000.00,2250.00,2500.00,2750.00, -- 31 - 35
-	3000.00,3250.00,3500.00,3750.00,4000.00  -- 36 - 40
+	  100100,   130100,   170100,   220100,   290100, -- 26 - 30
+	  380100,   490100,   640100,   830100,  1080100, -- 31 - 35
+	 1400100,  1820100,  2370100,  3080100,  4000100, -- 36 - 40
+	 5200100,  6760100,  8790100, 11430100, 14860100, -- 41 - 45
+	19320100, 25120100, 32660100, 42460100, 55200100, -- 46 - 50
 }
 if ns.build>=72000000 then
 	artifactKnowledgeMultiplier_len = 30;
@@ -312,9 +314,9 @@ end
 
 local function updateCharacterDB(equipped)
 	local artifact_frame = (ArtifactFrame and ArtifactFrame:IsShown() and ArtifactFrame.PerksTab and ArtifactFrame.PerksTab:IsShown());
-	local itemID, altItemID, itemName, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop = C_ArtifactUI[artifact_frame and "GetArtifactInfo" or "GetEquippedArtifactInfo"]();
+	local itemID, altItemID, itemName, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop, artifactTier = C_ArtifactUI[artifact_frame and "GetArtifactInfo" or "GetEquippedArtifactInfo"]();
 	if itemID then
-		local numPoints, artifactXP, xpForNextPoint = MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp);
+		local numPoints, artifactXP, xpForNextPoint = MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp,artifactTier);
 		local maxPoints = numPoints+pointsSpent;
 
 		local relic = {};
@@ -364,7 +366,7 @@ function updateBroker()
 	updateCharacterDB(itemID);
 
 	if itemID then
-		local numPoints, artifactXP, xpForNextPoint = MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp);
+		local numPoints, artifactXP, xpForNextPoint = MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp,artifactTier);
 		local maxPoints = numPoints+pointsSpent;
 
 		if ns.profile[name].showName then
@@ -449,9 +451,9 @@ function createTooltip(tt)
 	elseif artifactLocked then
 		tt:AddLine(artifactLocked);
 	else
-		local itemID, altItemID, itemName, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop = C_ArtifactUI.GetEquippedArtifactInfo();
+		local itemID, altItemID, itemName, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop, artifactTier = C_ArtifactUI.GetEquippedArtifactInfo();
 		if itemID then
-			local numPoints, artifactXP, xpForNextPoint = MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp);
+			local numPoints, artifactXP, xpForNextPoint = MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp,artifactTier);
 			local maxPoints = numPoints+pointsSpent;
 
 			local l=tt:AddLine();
@@ -474,7 +476,7 @@ function createTooltip(tt)
 			if ns.profile[name].showTotalAP then
 				local _,_,_,_,xp,ps=C_ArtifactUI.GetEquippedArtifactInfo();
 				for i=1,ps-1 do
-					xp=xp+C_ArtifactUI.GetCostForPointAtRank(i);
+					xp=xp+C_ArtifactUI.GetCostForPointAtRank(i,artifactTier);
 				end 
 				l=tt:AddLine();
 				tt:SetCell(l,1,C("ltgreen",L["Total spend power"]),nil,nil,2);
