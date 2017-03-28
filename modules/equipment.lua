@@ -203,10 +203,12 @@ function createMenu(self)
 end
 
 -- defined in addon namespace for chatcommand.lua
-ns.toggleEquipment = function(eName)
+ns.toggleEquipment = function(eName,eSetID)
 	if InCombatLockdown() or UnitIsDeadOrGhost("player") then
 		equipPending = eName
 		ns.modules[name].onevent("BE_DUMMY_EVENT")
+	elseif C_EquipmentSet then
+		securecall(C_EquipmentSet.UseEquipmentSet,eSetID);
 	else
 		securecall("UseEquipmentSet",eName);
 	end
