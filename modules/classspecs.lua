@@ -39,16 +39,24 @@ ns.modules[name] = {
 	updateinterval = nil, -- 10
 	config_defaults = {
 		showTalents = true,
-		showPvPTalents = true
+		showTalentsShort = false,
+		showPvPTalents = true,
+		showPvPTalentsShort = false,
+		showPvPHonor = true,
+		showPvPHonorOnBroker = true
 	},
 	config_allowed = nil,
 	config_header = nil, -- use default header
 	config_broker = {
 		"minimapButton",
+		{ type="toggle", name="showPvPHonorOnBroker", label=L["Show PvP honor"], tooltip=L["Show PvP honor on broker button"]}
 	},
 	config_tooltip = {
 		{ type="toggle", name="showTalents", label=L["Show talents"], tooltip=L["Show talents in tooltip"]},
+		{ type="toggle", name="showTalentsShort", label=L["Show short talent list"], tooltip=L["Show short list of PvE talents in tooltip"]},
 		{ type="toggle", name="showPvPTalents", label=L["Show PvP talents"], tooltip=L["Show PvP talents in tooltip"]},
+		{ type="toggle", name="showPvPTalentsShort", label=L["Show short PvP talent list"], tooltip=L["Show short list of PvP talents in tooltip"]},
+		{ type="toggle", name="showPvPHonor", label=L["Show PvP honor"], tooltip=L["Show PvP honor in tooltip"]},
 	},
 	config_misc = nil,
 	clickOptions = {
@@ -162,6 +170,14 @@ local function setLootSpec(self)
 	C_Timer.After(.7,function() createTooltip(tt,true) end);
 end
 
+local function changeTalent(self)
+	if self.talentId then
+		LearnTalent(self.talentId);
+	elseif self.pvpTalentId then
+		LearnPvpTalent(self.pvpTalentId);
+	end
+end
+
 function createTooltip(tt,update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
@@ -209,7 +225,7 @@ function createTooltip(tt,update)
 		tt:SetLineScript(l,"OnEnter",infoTooltipShow);
 		tt:SetLineScript(l,"OnLeave",infoTooltipHide);
 	end
-
+	tt:AddSeparator(1,1,1,1,.6);
 	local l=tt:AddLine();
 	tt:SetCell(l,1,C("dkyellow",LOOT_SPECIALIZATION_DEFAULT:gsub(" %( %%s %)",":")),nil,"RIGHT",3);
 	tt:SetCell(l,4,lootSpecID==0 and C("green",ACTIVE_PETS) or C( "gray", L["Set"]));
@@ -266,21 +282,50 @@ function createTooltip(tt,update)
 		local l=tt:AddLine(C("ltblue",LEVEL_ABBR));
 		tt:SetCell(l,2,C("ltblue",TALENTS),nil,nil,2);
 		tt:AddSeparator();
-
+		local Id, Name, Icon, Selected, Available, spellId, Unlocked,x,y,Known = 1,2,3,4,5,6,7,8,9,10;
 		local tierLevels = CLASS_TALENT_LEVELS[ns.player.class] or CLASS_TALENT_LEVELS.DEFAULT
+		local level = UnitLevel("player");
 		for row=1, MAX_TALENT_TIERS do
-			local tierAvailable, selectedTalent = GetTalentTierInfo(row,talentGroup);
+			local selected, isUnlocked,x = false,false;
 			local l=tt:AddLine(C("ltyellow",tierLevels[row]));
-			if not tierAvailable then
-				tt:SetCell(l,2,C("gray","Locked, level too low"),nil,nil,2);
-			elseif selectedTalent==0 then
-				tt:SetCell(l,2,C("orange","Unlocked, not selected"),nil,nil,2);
-			else
-				local talentID, Name, iconTexture, Selected, Available, spellId, u1, u2, u3, u4 = GetTalentInfo(row, selectedTalent, talentGroup);
-				tt:SetCell(l,2,str:format(iconTexture,C("ltyellow",Name)),nil,nil,2);
-				tt.lines[l].cells[2].infoTooltip = {type="spell",spellId=spellId};
-				tt:SetLineScript(l,"OnEnter",infoTooltipShow);
-				tt:SetLineScript(l,"OnLeave",infoTooltipHide);
+			for col=1, NUM_TALENT_COLUMNS do
+				local tmp = {GetTalentInfo(row,col,talentGroup)};
+				x=tmp;
+				if ns.profile[name].showTalentsShort then
+					if tmp[Selected]==true then
+						selected = tmp;
+						break;
+					elseif tmp[Unlocked] then
+						isUnlocked = tmp;
+					end
+				else
+					local c,color = col+1,(tmp[Selected] and "ltyellow") or (level>=tierLevels[row] and "gray") or "dkred";
+					tt:SetCell(l,c,str:format(tmp[Icon],C(color,tmp[Name])),nil,"LEFT");
+					tt.lines[l].cells[c].infoTooltip = {
+						type=level>=tierLevels[row] and "talent" or "spell",
+						spellId=tmp[spellId],
+						args={tmp[Id],false,talentGroup},
+						extraLine=level<tierLevels[row] and C("red","Locked, level too low") or nil
+					};
+					tt:SetCellScript(l,c,"OnEnter",infoTooltipShow);
+					tt:SetCellScript(l,c,"OnLeave",infoTooltipHide);
+					if not tmp[Selected] and level>=tierLevels[row] then
+						tt.lines[l].cells[c].talentId = tmp[Id];
+						tt:SetCellScript(l,c,"OnMouseUp",changeTalent);
+					end
+				end
+			end
+			if ns.profile[name].showTalentsShort then
+				if selected then
+					tt:SetCell(l,2,str:format(selected[Icon],C("ltyellow",selected[Name])),nil,nil,2);
+					tt.lines[l].infoTooltip = {type="talent",args={selected[Id],false,talentGroup}};
+					tt:SetLineScript(l,"OnEnter",infoTooltipShow);
+					tt:SetLineScript(l,"OnLeave",infoTooltipHide);
+				elseif isUnlocked then
+					tt:SetCell(l,2,C("orange","Unlocked, not selected"),nil,nil,2);
+				else
+					tt:SetCell(l,2,C("gray","Locked, level too low"),nil,nil,2);
+				end
 			end
 		end
 	end
@@ -290,34 +335,50 @@ function createTooltip(tt,update)
 		tt:AddSeparator(4,0,0,0,0);
 		tt:SetCell(tt:AddLine(),2,C("ltblue",PVP_TALENTS),nil,"LEFT",0);
 		tt:AddSeparator();
-
 		local Id, Name, Icon, Selected, Available, spellId, Unlocked = 1,2,3,4,5,6,7;
-		for row=1, MAX_PVP_TALENT_TIERS do
-			local selected,isUnlocked = false,false;
-			local l=tt:AddLine(C("ltyellow",row));
-			if UnitLevel("player") == MAX_PLAYER_LEVEL_TABLE[LE_EXPANSION_LEVEL_CURRENT] then
+
+		if UnitLevel("player") == MAX_PLAYER_LEVEL_TABLE[LE_EXPANSION_LEVEL_CURRENT] then
+			for row=1, MAX_PVP_TALENT_TIERS do
+				local selected,isUnlocked = false,false;
+				local l=tt:AddLine(C("ltyellow",row));
 				for col=1, MAX_PVP_TALENT_COLUMNS do 
-					local tmp={GetPvpTalentInfo(row, col, talentGroup)};
-					if tmp[Selected]==true then
-						selected = tmp;
-						break;
-					elseif tmp[Unlocked] then
-						isUnlocked = true;
+					local tmp={GetPvpTalentInfo(row,col,talentGroup)};
+					if ns.profile[name].showPvPTalentsShort then
+						if tmp[Selected]==true then
+							selected = tmp;
+							break;
+						elseif tmp[Unlocked] then
+							isUnlocked = true;
+						end
+					else
+						local c,color = col+1,(tmp[Selected] and "ltyellow") or (tmp[Unlocked] and "gray") or "dkred";
+						tt:SetCell(l,c,str:format(tmp[Icon],C(color,tmp[Name])),nil,"LEFT");
+						tt.lines[l].cells[c].infoTooltip = {type="pvptalent",args={tmp[Id],false,talentGroup}};
+						tt:SetCellScript(l,c,"OnEnter",infoTooltipShow);
+						tt:SetCellScript(l,c,"OnLeave",infoTooltipHide);
+						if not tmp[Selected] and tmp[Unlocked] then
+							tt.lines[l].cells[c].pvpTalentId = tmp[Id];
+							tt:SetCellScript(l,c,"OnMouseUp",changeTalent);
+						end
+					end
+				end
+				if ns.profile[name].showPvPTalentsShort then
+					if selected then
+						tt:SetCell(l,2,str:format(selected[Icon],C("ltyellow",selected[Name])),nil,nil,2);
+						tt.lines[l].infoTooltip = {type="pvptalent",args={selected[Id],false,talentGroup}};
+						tt:SetLineScript(l,"OnEnter",infoTooltipShow);
+						tt:SetLineScript(l,"OnLeave",infoTooltipHide);
+					else
+						if isUnlocked then
+							tt:SetCell(l,2,C("orange","Unlocked, not selected"),nil,nil,2);
+						else
+							tt:SetCell(l,2,C("gray","Locked, level too low"),nil,nil,2);
+						end
 					end
 				end
 			end
-			if selected then
-				tt:SetCell(l,2,str:format(selected[Icon],C("ltyellow",selected[Name])),nil,nil,2);
-				tt.lines[l].cells[2].infoTooltip = {type="spell",spellId=selected[spellId]};
-				tt:SetLineScript(l,"OnEnter",infoTooltipShow);
-				tt:SetLineScript(l,"OnLeave",infoTooltipHide);
-			else
-				if isUnlocked then
-					tt:SetCell(l,2,C("orange","Unlocked, not selected"),nil,nil,2);
-				else
-					tt:SetCell(l,2,C("gray","Locked, level too low"),nil,nil,2);
-				end
-			end
+		else
+			tt:SetCell(tt:AddLine(),2,C("gray",L["PvP talents will be available on max level"]),nil,nil,0);
 		end
 	end
 
