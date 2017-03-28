@@ -20,6 +20,7 @@ ns.LC = LibStub("LibColors-1.0");
 ns.LDDM = LibStub("LibDropDownMenu");
 ns.LRI = LibStub("LibRealmInfo");
 
+
 -- broker_everything colors
 ns.LC.colorset({
 	["ltyellow"]	= "fff569",
@@ -1711,7 +1712,8 @@ do
 		[QUEST_TAG_ACCOUNT] = "a",
 		[QUEST_TAG_LEGENDARY] = {"leg","orange"},
 		TRADE_SKILLS = {"ts","green"},
-		WORLD_QUESTS = {"wq","yellow"}
+		WORLD_QUESTS = {"wq","yellow"},
+		DUNGEON_MYTHIC = {"myth","ltred"}
 	};
 	local tradeskills_update;
 	local tradeskills_mt = {__call=function(t,k)

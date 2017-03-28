@@ -20,6 +20,13 @@ ns.showCharsFrom_Values = {
 local allModsOptions = {
 	minimapButton = {type="toggle", name="minimap", label=L["Broker as Minimap Button"], tooltip=L["Create a minimap button for this broker"]},
 	shortNumbers = {type="toggle", name="shortNumbers", label=L["Short numbers"], tooltip=L["Display short numbers like 123K instead of 123000"]},
+
+	showAllFactions = { type="toggle", name="showAllFactions", label=L["Show all factions"], tooltip=L["Show characters from all factions (alliance, horde and neutral) in tooltip"]},
+	showRealmNames = { type="toggle", name="showRealmNames", label=L["Show realm names"], tooltip=L["Show realm names behind charater names in tooltip"]},
+	showCharsFrom = { type="select", name="showCharsFrom", label=L["Show chars from"], tooltip=L["Show characters from connected realms, same battlegroup or all realms in tooltip"],
+		values=ns.showCharsFrom_Values,
+		default=1
+	}
 }
 local separator1,separator2 = {type="separator", alpha=0},{type="separator", inMenuInvisible=true};
 
@@ -252,4 +259,3 @@ ns.moduleCoexist = function()
 		end
 	end
 end
-

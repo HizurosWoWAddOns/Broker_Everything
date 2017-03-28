@@ -32,7 +32,18 @@ local frequencies = {
 	[LE_QUEST_FREQUENCY_DAILY] = {"*",DAILY},
 	[LE_QUEST_FREQUENCY_WEEKLY] = {"**",WEEKLY},
 };
-local questZones = {};
+local MATCH_DUNGEON_DIFFICULTY = DUNGEON_DIFFICULTY.." '(.*)'";
+local difficulties = {
+	[PLAYER_DIFFICULTY1] = {"N"},
+	[PLAYER_DIFFICULTY2] = {"HC"},
+	[PLAYER_DIFFICULTY3] = {"RB"},
+	[PLAYER_DIFFICULTY4] = {"FL"},
+	[PLAYER_DIFFICULTY5] = {"CM"},
+	[PLAYER_DIFFICULTY6] = {"M"},
+	[PLAYER_DIFFICULTY_TIMEWALKER] = {"TW"}
+}
+local _PLAYER_DIFFICULTY6="'"..PLAYER_DIFFICULTY6.."'";
+local questZones,hide = {},{};
 
 StaticPopupDialogs["BE_URL_DIALOG"] = {
 	text = "URL",
@@ -80,12 +91,13 @@ ns.modules[name] = {
 		showQuestOptions = true,
 		questIdUrl = "WoWHead",
 		separateBy = "status",
+		showPvPWeeklys = true,
 		-- second tooltip options
 		tooltip2QuestText = true,
 		tooltip2QuestLevel = true,
 		tooltip2QuestZone = true,
 		tooltip2QuestTag = true,
-		tooltip2QuestID = true
+		tooltip2QuestID = true,
 	},
 	config_allowed = nil,
 	config_header = {type="header", label=QUESTLOG_BUTTON, align="left", icon=I[name]},
@@ -96,6 +108,7 @@ ns.modules[name] = {
 		{ type="toggle", name="showQuestTags",      label=L["Show quest tags"], tooltip=L["Show quest tags in tooltip."] },
 		{ type="toggle", name="showQuestTagsShort", label=L["Show short quest tags"], tooltip=L["Show short quest tags in tooltip."] },
 		{ type="toggle", name="showQuestOptions",   label=L["Show quest option"], tooltip=L["Show quest options like track, untrack, share and cancel in tooltip."] },
+		{ type="toggle", name="showPvPWeeklys",     label=L["Show PvP weeklys"], tooltip=L["Show PvP weekly quests in tooltip"]},
 		{ type="select", name="questIdUrl",         label=L["Fav. website"], tooltip=L["Choose your favorite website for further informations to a quest."], event=true,
 			default = "WoWHead",
 			values = {
@@ -247,6 +260,7 @@ end
 
 local function ttAddLine(obj)
 	assert(type(obj)=="table","object must be a table, got "..type(obj));
+	if hide[obj[QuestId]] then return end
 	local l,c = tt:AddLine();
 	local cell, color,GroupQuest = 1,"red",{};
 
@@ -332,6 +346,13 @@ function createTooltip(tt, update, from)
 	tt:Clear();
 	tt:SetCell(select(1,tt:AddLine()),1,C("dkyellow",name),tt:GetHeaderFont(),"LEFT",ttColumns)
 	local GroupQuestCount=0;
+
+	wipe(hide);
+	if ns.profile[name].showPvPWeeklys then
+		hide[44891] = true; -- PvP 2vs2
+		hide[44908] = true; -- PvP 3vs3
+		hide[44909] = true; -- PvP battlefield
+	end
 
 	if sum==0 then
 		tt:AddSeparator();
@@ -425,12 +446,12 @@ ns.modules[name].onevent = function(self,event,msg)
 	elseif event == "PLAYER_ENTERING_WORLD" or event == "QUEST_LOG_UPDATE" then
 		local numEntries, numQuests = GetNumQuestLogEntries()
 		local header, status, isBounty, _ = false;
-		local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, qText = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15; -- GetQuestLogTitle(index)
+		local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, qText,qObjectives = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- GetQuestLogTitle(index)
 		sum,quests,numQuestStatus = numQuests,{},{fail=0,complete=0,active=0};
 
 		for index=1, numEntries do
 			local q = {GetQuestLogTitle(index)};
-			q[qText] = GetQuestLogQuestText(index);
+			q[qText],q[qObjectives] = GetQuestLogQuestText(index);
 			if q[isHeader]==true then
 				header = q[title];
 			elseif header then
@@ -442,7 +463,10 @@ ns.modules[name].onevent = function(self,event,msg)
 					tagNameLong = LFG_TYPE_DUNGEON.." ("..tagName..")";
 				end
 				local tags,shortTags = {},{};
-				if ns.questTags[tagID] then
+				if q[qText]:find(_PLAYER_DIFFICULTY6) or q[qObjectives]:find(_PLAYER_DIFFICULTY6) then
+					tinsert(tags,LFG_TYPE_DUNGEON.." ("..PLAYER_DIFFICULTY6..")");
+					tinsert(shortTags,C(ns.questTags.DUNGEON_MYTHIC[2],ns.questTags.DUNGEON_MYTHIC[1]));
+				elseif ns.questTags[tagID] then
 					tinsert(tags,tagNameLong);
 					if type(ns.questTags[tagID])=="table" then
 						tinsert(shortTags,C(ns.questTags[tagID][2],ns.questTags[tagID][1]));
@@ -453,8 +477,7 @@ ns.modules[name].onevent = function(self,event,msg)
 				if ns.tradeskills[header] then
 					tinsert(tags,TRADE_SKILLS);
 					tinsert(shortTags,C(ns.questTags.TRADE_SKILLS[2],ns.questTags.TRADE_SKILLS[1]));
-				end
-				if q[qText]:find(TRACKER_HEADER_WORLD_QUESTS) then
+				elseif q[qText]:find(TRACKER_HEADER_WORLD_QUESTS) then
 					tinsert(tags,TRACKER_HEADER_WORLD_QUESTS);
 					tinsert(shortTags,C(ns.questTags.WORLD_QUESTS[2],ns.questTags.WORLD_QUESTS[1]));
 				end
