@@ -437,7 +437,11 @@ local function createTooltip(tt)
 								end
 								-- realm (own column)
 								if ns.profile[name].showRealm=="1" then
-									tt:SetCell(l,6,C("white",ti[realmName]));			-- 6
+									local realm,_ = ti[realmName];
+									if type(realm)=="string" and realm:len()>0 then
+										_,realm = ns.LRI:GetRealmInfo(realm);
+									end
+									tt:SetCell(l,6,C("white",realm));			-- 6
 								end
 								-- faction (own column)
 								if ns.profile[name].showFaction=="2" then
@@ -492,7 +496,11 @@ local function createTooltip(tt)
 					local nameStr = _status((status=="AFK"),(status=="DND")) .. C(v[class]:upper(),ns.scm(v[cName]));
 					if tonumber(ns.profile[name].showRealm)>1 and cRealm~=ns.realm then
 						if ns.profile[name].showRealm=="2" then
-							nameStr = nameStr..C("dkyellow","-"..ns.scm(v[cRealm]:gsub(" ","")));
+							local realm,_ = v[cRealm];
+							if type(realm)=="string" and realm:len()>0 then
+								_,realm = ns.LRI:GetRealmInfo(realm);
+							end
+							nameStr = nameStr..C("dkyellow","-"..ns.scm(realm));
 						else
 							nameStr = nameStr..C("dkyellow","*");
 						end
@@ -515,7 +523,11 @@ local function createTooltip(tt)
 					end
 					-- realm
 					if ns.profile[name].showRealm=="1" then
-						tt:SetCell(l,6,C("white",v[cRealm]));
+						local realm = v[cRealm];
+						if type(realm)=="string" and realm:len()>0 then
+							_,realm = ns.LRI:GetRealmInfo(realm);
+						end
+						tt:SetCell(l,6,C("white",realm));
 					end
 					-- faction
 					if ns.profile[name].showFaction=="2" then
