@@ -224,13 +224,19 @@ ns.modules[name] = {
 		showCooldowns = true,
 		showDigSiteStatus = true,
 		showLegionFactionRespices = true,
-		inTitle = {}
+		inTitle = {},
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4
 	},
 	config_allowed = nil,
 	config_header = {type="header", label=TRADE_SKILLS, align="left", icon=I[name]},
 	config_broker = {"minimapButton"},
 	config_tooltip = {
 		{ type="toggle", name="showCooldowns", label=L["Show cooldowns"], tooltip=L["Show/Hide profession cooldowns from all characters."] },
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom",
 		{ type="toggle", name="showLegionFactionRespices", label=L["Show legion recipes"], tooltip=L["Display a list of legion respices with neccessary faction repution"] }
 	},
 	config_misc = nil,
@@ -346,7 +352,7 @@ local function createTooltip(tt)
 			tt:AddLine(C("ltblue",L["Legion recipes from faction vendors"]));
 			tt:AddSeparator();
 
-			local faction,trade_skill = false,false;
+			local faction,trade_skill,factionName,standingID,_ = 0,0;
 			for _, recipeData in ipairs(legion_faction_recipes) do
 				if ts[recipeData[1]] then
 					local Name = GetSpellInfo(recipeData[5]);
@@ -393,7 +399,7 @@ local function createTooltip(tt)
 		end
 
 		for i=1, #Broker_Everything_CharacterDB.order do
-			local charName,charRealm = strsplit("-",Broker_Everything_CharacterDB.order[i]);
+			local charName,charRealm,_ = strsplit("-",Broker_Everything_CharacterDB.order[i]);
 			local charData = Broker_Everything_CharacterDB[Broker_Everything_CharacterDB.order[i]];
 			local char_header=false;
 			if (not (charRealm==ns.realm and charName==ns.player.name)) and (charData.professions) and (charData.professions.cooldowns) and (charData.professions.hasCooldowns==true) then
@@ -403,6 +409,9 @@ local function createTooltip(tt)
 						if (not char_header) then
 							if (cd1>0) or (sep) then
 								tinsert(lst,{type="sep",data={4,0,0,0,0}});
+							end
+							if type(charRealm)=="string" and charRealm:len()>0 then
+								_,charRealm = ns.LRI:GetRealmInfo(charRealm);
 							end
 							tinsert(lst,{type="line",data={C("ltblue",ns.scm(charName).." - "..ns.scm(charRealm)),C("ltblue",L[durationHeader])}});
 							tinsert(lst,{type="sep",data={nil}});
@@ -541,6 +550,12 @@ end
 ns.modules[name].onevent = function(self,event,arg1)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+		return;
+	elseif event=="ADDON_LOADED" and arg1==addon then
+		if ns.profile[name].showAllRealms~=nil then
+			ns.profile[name].showCharsFrom = 4;
+			ns.profile[name].showAllRealms = nil;
+		end
 		return;
 	elseif event=="ADDON_LOADED" and arg1=="Blizzard_TradeSkillUI" then
 		hooksecurefunc(TradeSkillFrame,"RefreshTitle",updateTradeSkill);
