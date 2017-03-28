@@ -34,6 +34,7 @@ ns.modules[name] = {
 	label = GARRISON_MISSIONS,
 	--icon_suffix = "_Neutral",
 	events = {
+		"ADDON_LOADED",
 		"PLAYER_ENTERING_WORLD",
 		"GARRISON_MISSION_LIST_UPDATE",
 		"GARRISON_MISSION_STARTED",
@@ -44,9 +45,12 @@ ns.modules[name] = {
 		showAvailable = true,
 		showActive = true,
 		showReady = true,
+
 		showChars = true,
-		showAllRealms = false,
-		showAllFactions = true,
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4,
+
 		showMissionType = true,
 		showMissionLevel = true,
 		showMissionItemLevel = true,
@@ -57,6 +61,9 @@ ns.modules[name] = {
 	config_broker = {"minimapButton"},
 	config_tooltip = {
 		{ type="toggle", name="showChars",       label=L["Show characters"],          tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom",
 
 		{ type="toggle", name="showReady",     label=L["Show ready missions"],     tooltip=L["Show ready missions in tooltip"] },
 		{ type="toggle", name="showActive",    label=L["Show active missions"],    tooltip=L["Show active missions in tooltip"] },
@@ -136,9 +143,18 @@ local function createTooltip(tt)
 			local name_realm = Broker_Everything_CharacterDB.order[i];
 			local v = Broker_Everything_CharacterDB[name_realm];
 			local charName,realm=strsplit("-",name_realm);
-			if (v.missions and v.missions.followers) and not ((ns.profile[name].showAllRealms~=true and realm~=ns.realm) or (ns.profile[name].showAllFactions~=true and v.faction~=ns.player.faction)) then
+			if v.missions and v.missions.followers and ns.showThisChar(name,realm,v.faction) then
 				local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-				realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or "";
+				if ns.profile[name].showRealmNames and realm~=ns.realm then
+					if type(realm)=="string" and realm:len()>0 then
+						_,realm = ns.LRI:GetRealmInfo(realm);
+					end
+					realm = C("dkyellow"," - "..ns.scm(realm));
+				elseif realm~=ns.realm then
+					realm = C("dkyellow"," *");
+				else
+					realm = "";
+				end
 				local l=tt:AddLine(C(v.class,ns.scm(charName)) .. realm .. faction );
 				local get = function(Type)
 					local c,p,n,l=0,0,0,0; -- completed, progress, time next, time last
@@ -348,7 +364,12 @@ end
 -- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,msg)
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
+	if event=="ADDON_LOADED" then
+		if ns.profile[name].showAllRealms~=nil then
+			ns.profile[name].showCharsFrom = 4;
+			ns.profile[name].showAllRealms = nil;
+		end
+	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	elseif ns.pastPEW then
 		update();

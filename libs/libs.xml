@@ -6,6 +6,7 @@
 	<Script file="LibQTip-1.0\LibQTip-1.0.lua" />
 	<Script file="LibDBIcon-1.0\LibDBIcon-1.0.lua" />
 	<Script file="LibSharedMedia-3.0\LibSharedMedia-3.0.lua" />
+	<Script file="LibRealmInfo\LibRealmInfo.lua" />
 	<Include file="LibTime-1.0\LibTime-1.0.xml" />
 	<Include file="LibColors-1.0\LibColors-1.0.xml" />
 	<Include file="LibDropDownMenu\LibDropDownMenu.xml"/>
