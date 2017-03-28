@@ -19,8 +19,7 @@ local riding_skills = { -- <spellid>, <skill>, <minLevel>, <air speed increase>,
 	{33388, 20,  60},
 };
 local licences = { -- <spellid>, <minLevel>, <mapIds>
-	{L["Broken Isles Flying"], nil, L["Patch 7.2"], {L["Broken Isles Pathfinder, Part Two"]," ","a11190",L["Explore Broken Shore"],L["Defender of the Broken Isles"],L["Breaching the Tomb"],L["Legionfall Commander"]," ",L["Reward: Broken Isles Flying"]}}, --{"a?`", 100},
-
+	{"a11446", 100, {}},
 	{"a10018", 90, { --[[ draenor map ids? ]] }},
 	{115913,   85, {[862]=1,[858]=1,[929]=1,[928]=1,[857]=1,[809]=1,[905]=1,[903]=1,[806]=1,[873]=1,[808]=1,[951]=1,[810]=1,[811]=1,[807]=1}},
 	{54197,    68, {[485]=1,[486]=1,[510]=1,[504]=1,[488]=1,[490]=1,[491]=1,[541]=1,[492]=1,[493]=1,[495]=1,[501]=1,[496]=1}},
@@ -46,6 +45,14 @@ local bonus_spells = { -- <spellid>, <chkActive[bool]>, <type>, <typeValue>, <cu
 }
 -- note: little problem with not stagging speed increasement spells...
 
+local replace_unknown = {
+	a11446 = {L["Broken Isles Flying"], nil, L["Patch 7.2"], {L["Broken Isles Pathfinder, Part Two"]," ","a11190","a11543","a11544",--[["a11546",]]"a11545"," ",L["Reward: Broken Isles Flying"]}},
+	a11543 = L["Explore the broken shore"],
+	a11544 = L["Defender of the broken isles"],
+	a11545 = L["Legionfall Commander"],
+	--a11546 = L["Breaching the Tomb "] -- requirement canceled by blizzard
+}
+
 
 -------------------------------------------
 -- register icon names and default files --
@@ -62,15 +69,13 @@ ns.modules[name] = {
 	events = {"ADDON_LOADED"},
 	updateinterval = 0.1, -- false or integer
 	config_defaults = {
-		precision = 0
+		precision = 0,
 	},
-	config_allowed = {
-	},
-	config = {
-		{ type="header", label=SPEED, align="left", icon=I[name] },
-		{ type="separator" },
-		{ type="slider", name="precision", label=L["Precision"], tooltip=L["Adjust the count of numbers behind the dot."], min = 0, max = 3, default = 0, format="%d" }
-	}
+	config_allowed = {},
+	config_header = {type="header", label=SPEED, align="left", icon=I[name]},
+	config_broker = {"minimapButton"},
+	config_tooltip = { { type="slider", name="precision", label=L["Precision"], tooltip=L["Adjust the count of numbers behind the dot."], min = 0, max = 3, default = 0, format="%d" } },
+	config_misc = nil,
 }
 -- possible click option
 	--if not PetJournalParent then PetJournal_LoadUI() end 
@@ -95,6 +100,8 @@ local function tooltipOnEnter(self)
 				_, Name, _, completed = GetAchievementInfo(aid);
 				if completed then
 					color = {.1,.95,.1,false};
+				elseif not Name and replace_unknown[self.info[i]] then
+					Name = replace_unknown[self.info[i]];
 				end
 			end
 			GameTooltip:AddLine(Name,unpack(color));
@@ -232,46 +239,64 @@ local function createTooltip(tt)
 		tt:AddLine(C("ltblue",L["Flight licences"]));
 		tt:AddSeparator();
 		for i,v in ipairs(licences) do
-			local Name, rank, icon, castTime, minRange, maxRange, completed, wasEarnedByMe, ready, link, l, tt2, _;
+			local Name, rank, icon, castTime, minRange, maxRange, completed, ready, link, l, tt2, _;
+			local achievement = false;
 			if v[2]==nil then
 				Name = v[1];
 			elseif(type(v[1])=="string")then
 				local id = tonumber(v[1]:match("a(%d+)"));
+				achievement = true;
 				if id then
-					_, Name, _, completed, _, _, _, _, _, _, _, _, wasEarnedByMe = GetAchievementInfo(id);
 					link = GetAchievementLink(id);
-					ready = completed;
+					if link then
+						_, Name, _, completed = GetAchievementInfo(id);
+						ready = completed;
+					elseif type(replace_unknown[v[1]])=="table" then
+						v = replace_unknown[v[1]];
+						Name = v[1];
+					elseif replace_unknown[v[1]] then
+						Name = replace_unknown[v[1]];
+					end
 				end
 			else
-				Name, rank, icon, castTime, minRange, maxRange = GetSpellInfo(v[1]);
 				link = GetSpellLink(v[1]);
-				ready = IsSpellKnown(v[1]);
-			end
-			if(Name)then
-				if v[2]==nil then
-					l=tt:AddLine(C("ltgray",Name),type(v[3])=="string" and C("ltgray",v[3]));
-				elseif(ready and lvl<v[2])then
-					l=tt:AddLine(C("yellow",Name),C("ltgray",L["Need level"].." "..v[2]));
-				elseif(ready) then
-					l=tt:AddLine(C("green",Name));
-				elseif(lvl>=v[2])then
-					l=tt:AddLine(C("yellow",Name),C("ltgray",L["Learnable"]));
-				else
-					l=tt:AddLine(C("red",Name),C("ltgray",L["Need level"].." "..v[2]));
+				if link then
+					Name, rank, icon, castTime, minRange, maxRange = GetSpellInfo(v[1]);
+					ready = IsSpellKnown(v[1]);
+				elseif type(replace_unknown["s"..v[1]])=="table" then
+					v = replace_unknown["s"..v[1]];
+					Name = v[1];
+				elseif replace_unknown["s"..v[1]] then
+					Name = replace_unknown["s"..v[1]];
 				end
 			end
-			if type(v[4])=="table" then
-				tt.lines[l].info = v[4];
-				tt.lines[l].link = nil;
-				tt2=true;
-			elseif link then
-				tt.lines[l].info = nil;
-				tt.lines[l].link = link;
-				tt2=true
-			end
-			if tt2 then
-				tt:SetLineScript(l,"OnEnter",tooltipOnEnter);
-				tt:SetLineScript(l,"OnLeave",tooltipOnLeave);
+			if(Name)then
+				local color1,color2,info = "yellow","ltgray"," ";
+				if v[2]==nil then
+					color1,info = "ltgray",v[3] or " ";
+				elseif(ready and lvl>=v[2])then
+					color1 = "green";
+				elseif achievement then
+					info = L["Need achievement"];
+				elseif(lvl>=v[2])then
+					info = L["Learnable"];
+				else
+					color1,info = ready and color1 or "red",L["Need level"].." "..v[2];
+				end
+				l=tt:AddLine(C(color1,Name),info==" " and info or C(color2,info));
+				if type(v[4])=="table" then
+					tt.lines[l].info = v[4];
+					tt.lines[l].link = nil;
+					tt2=true;
+				elseif link then
+					tt.lines[l].info = nil;
+					tt.lines[l].link = link;
+					tt2=true
+				end
+				if tt2 then
+					tt:SetLineScript(l,"OnEnter",tooltipOnEnter);
+					tt:SetLineScript(l,"OnLeave",tooltipOnLeave);
+				end
 			end
 		end
 	end
@@ -314,4 +339,3 @@ end
 -- ns.modules[name].onleave = function(self) end
 -- ns.modules[name].onclick = function(self,button) end
 -- ns.modules[name].ondblclick = function(self,button) end
-
