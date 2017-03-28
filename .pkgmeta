@@ -25,6 +25,9 @@ externals:
 	libs/LibDropDownMenu:
 		url: git://github.com/hizuro/LibDropDownMenu.git
 		tag: latest
+	libs/LibRealmInfo:
+		url: git://github.com/Phanx/LibRealmInfo.git
+		tag: latest
 
 enable-nolib-creation: no
 

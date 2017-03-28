@@ -58,8 +58,9 @@ ns.modules[name] = {
 		showCacheForcastInBroker = true,
 		showRealms = true,
 		showChars = true,
-		showAllRealms = false,
-		showAllFactions = true
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4
 	},
 	config_allowed = nil,
 	config_header = {type="header", label=GARRISON_LOCATION_TOOLTIP, align="left", icon=I[name]},
@@ -73,6 +74,9 @@ ns.modules[name] = {
 		{ type="toggle", name="showAchievements",         label=L["Show archievements"],          tooltip=L["Show necessary archievements to unlock blueprints in tooltip"] },
 		{ type="toggle", name="showCacheForcast",         label=L["Show cache forcast"],          tooltip=L["Show garrison cache forecast for all your characters in tooltip"] },
 		{ type="toggle", name="showChars",                label=L["Show characters"],             tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom"
 	},
 	config_misc = nil,
 	clickOptions = {
@@ -196,12 +200,17 @@ local function createTooltip(tt)
 			for i=1, #Broker_Everything_CharacterDB.order do
 				local name_realm = Broker_Everything_CharacterDB.order[i];
 				local v = Broker_Everything_CharacterDB[name_realm];
-				local charName,realm=strsplit("-",name_realm);
+				local charName,realm,_=strsplit("-",name_realm);
 				if (ns.profile[name].showAllRealms~=true and realm~=ns.realm) or (ns.profile[name].showAllFactions~=true and v.faction~=ns.player.faction) then
 					-- do nothing
 				elseif(v.missions)then
 					local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-					realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or "";
+					if type(realm)=="string" and realm:len()>0 then
+						_,realm = ns.LRI:GetRealmInfo(realm);
+						realm = C("dkyellow"," - "..ns.scm(realm));
+					else
+						realm="";
+					end
 					local l=tt:AddLine(C(v.class,ns.scm(charName)) .. realm .. faction );
 					if(name_realm==ns.player.name_realm)then
 						--- background highlight
@@ -312,32 +321,6 @@ local function createTooltip(tt)
 
 	-- garrison cache forecast
 	if (ns.profile[name].showCacheForcast) then
-		local _ = function(k,v)
-			local l=tt:AddLine();
-			local x,y = strsplit("-",k);
-			if (not ns.profile[name].showRealms) then
-				y = (y~=ns.realm) and C("dkyellow","*") or "";
-			else
-				y = (y~=ns.realm) and C("gray"," - ")..C("dkyellow",y) or "";
-			end
-			tt:SetCell(l,1,C(v.class or "white", x)..y,nil,nil,ttColumns-1);
-			if(v.garrison_cache[1]==0)then
-				tt:SetCell(l,ttColumns, C("orange","n/a"));
-			else
-				local cache = floor((time()-v.garrison_cache[1])/600);
-				local cap = (v.garrison_cache[2]) and 1000 or 500;
-				if(v.garrison_cache[2]~=nil and cache>=cap)then
-					cache = C("red",cap);
-					cap = C("red",cap);
-				elseif(v.garrison_cache[2]==nil)then
-					cap = C("dkyellow",cap);
-				end
-				tt:SetCell(l,ttColumns, ("~ %s/%s"):format(cache,cap)); -- 10 minutes = 1 garrison resource
-			end
-			if(k==ns.player.name_realm)then
-				tt:SetLineColor(l, 0.1, 0.3, 0.6);
-			end
-		end
 		tt:AddSeparator(4,0,0,0,0);
 		local l = tt:AddLine();
 		local None=true;
@@ -346,10 +329,41 @@ local function createTooltip(tt)
 		for i=1, #Broker_Everything_CharacterDB.order do
 			local v = Broker_Everything_CharacterDB[Broker_Everything_CharacterDB.order[i]];
 			local c,r = strsplit("-",Broker_Everything_CharacterDB.order[i]);
-			if (ns.profile[name].showAllRealms~=true and r~=ns.realm) or (ns.profile[name].showAllFactions~=true and v.faction~=ns.player.faction) or v.garrison==nil or (v.garrison~=nil and (v.garrison[1]==nil) or (v.garrison[1]==0))then
+			if not ns.showThisChar(name,r,v.faction) or v.garrison==nil or (v.garrison~=nil and (v.garrison[1]==nil) or (v.garrison[1]==0))then
 				-- do nothing
 			elseif (v.garrison_cache and v.garrison_cache[1]) then
-				_(Broker_Everything_CharacterDB.order[i],v);
+				local k=Broker_Everything_CharacterDB.order[i];
+				local l,_=tt:AddLine();
+				local charName,realm = strsplit("-",k);
+				if not ns.profile[name].showRealms and realm and realm~=ns.realm then
+					realm = C("dkyellow","*");
+				else
+					_, realm = ns.LRI:GetRealmInfo(realm);
+					if realm then
+						realm = C("gray"," - ")..C("dkyellow",realm);
+					end
+				end
+				local factionSymbol="";
+				if v.faction and v.faction~="Neutral" then
+					factionSymbol = " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t";
+				end
+				tt:SetCell(l,1,C(v.class or "white", charName)..(realm or "")..factionSymbol,nil,nil,ttColumns-1);
+				if(v.garrison_cache[1]==0)then
+					tt:SetCell(l,ttColumns, C("orange","n/a"));
+				else
+					local cache = floor((time()-v.garrison_cache[1])/600);
+					local cap = (v.garrison_cache[2]) and 1000 or 500;
+					if(v.garrison_cache[2]~=nil and cache>=cap)then
+						cache = C("red",cap);
+						cap = C("red",cap);
+					elseif(v.garrison_cache[2]==nil)then
+						cap = C("dkyellow",cap);
+					end
+					tt:SetCell(l,ttColumns, ("~ %s/%s"):format(cache,cap)); -- 10 minutes = 1 garrison resource
+				end
+				if(k==ns.player.name_realm)then
+					tt:SetLineColor(l, 0.1, 0.3, 0.6);
+				end
 				None=false;
 			end
 		end
@@ -400,12 +414,15 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
-end
-
+-- ns.modules[name].init = function() end
 ns.modules[name].onevent = function(self,event,...)
-	if(event=="PLAYER_ENTERING_WORLD")then
+	if event=="ADDON_LOADED" then
+		if ns.profile[name].showAllRealms~=nil then
+			ns.profile[name].showCharsFrom = 4;
+			ns.profile[name].showAllRealms = nil;
+		end
+		return;
+	elseif(event=="PLAYER_ENTERING_WORLD")then
 
 		if ns.toon.garrison and ns.toon.garrison.cache then
 			for i=1, #Broker_Everything_CharacterDB.order do

@@ -43,6 +43,7 @@ ns.modules[name] = {
 	desc = L["Broker to show incoming mails and stored mails on all your chars"],
 	label = BUTTON_LAG_MAIL,
 	events = {
+		"ADDON_LOADED",
 		"PLAYER_ENTERING_WORLD",
 		"UPDATE_PENDING_MAIL",
 		"MAIL_CLOSED",
@@ -53,16 +54,18 @@ ns.modules[name] = {
 		playsound = false,
 		showDaysLeft = true,
 		hideMinimapMail = false,
-		showAllRealms = false,
-		showAllFactions = true,
-	},
-	config_allowed = {
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4
 	},
 	config_allowed = nil,
 	config_header = {type="header", label=BUTTON_LAG_MAIL, align="left", icon=I[name]},
 	config_broker = {"minimapButton"},
 	config_tooltip = {
 		{ type="toggle", name="showDaysLeft", label=L["List mails on chars"], tooltip=L["Display a list of chars on all realms with there mail counts and 3 lowest days before return to sender. Chars with empty mail box aren't displayed."] },
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom"
 	},
 	config_misc = {
 		{ type="toggle", name="playsound", label=L["Play sound on new mail"], tooltip=L["Enable to play a sound on receiving a new mail message. Default is off"] },
@@ -271,7 +274,12 @@ end
 -- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,msg)
-	if (event=="BE_HIDE_MINIMAPMAIL") and (not ns.coexist.found) then
+	if event=="ADDON_LOADED" then
+		if ns.profile[name].showAllRealms~=nil then
+			ns.profile[name].showCharsFrom = 4;
+			ns.profile[name].showAllRealms = nil;
+		end
+	elseif (event=="BE_HIDE_MINIMAPMAIL") and (not ns.coexist.found) then
 		if (ns.profile[name].hideMinimapMail) then
 			ns.hideFrame("MiniMapMailFrame")
 		else
@@ -279,11 +287,11 @@ ns.modules[name].onevent = function(self,event,msg)
 		end
 	elseif event=="PLAYER_ENTERING_WORLD" then
 		hooksecurefunc("SendMail",function(targetName)
-			local n,r = strsplit("-",targetName);
+			local n,r,_ = strsplit("-",targetName);
 			if r==nil then
 				r=ns.realm;
-			elseif Broker_Everything_DataDB.realms[r] then
-				r = Broker_Everything_DataDB.realms[r];
+			elseif type(r)=="string" and r:len()>0 then
+				_,r = ns.LRI:GetRealmInfo(r);
 			end
 			targetName = n.."-"..r;
 			if Broker_Everything_CharacterDB[targetName] then

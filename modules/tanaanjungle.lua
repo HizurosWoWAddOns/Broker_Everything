@@ -102,6 +102,7 @@ ns.modules[name] = {
 	desc = L["Broker to show a list of solved/solvable tanaan jungle bosses, dailys, weeklys and bonus zones"],
 	--icon_suffix = "",
 	events = {
+		"ADDON_LOADED",
 		"PLAYER_ENTERING_WORLD",
 		"PLAYER_REGEN_ENABLED",
 		"QUEST_LOG_UPDATE"
@@ -110,8 +111,9 @@ ns.modules[name] = {
 	config_defaults = {
 		showQuestIDs = false,
 		showChars = true,
-		showAllRealms = true,
-		showAllFactions = true
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4
 	},
 	config_allowed = nil,
 	config_header = nil, -- use default header
@@ -119,6 +121,9 @@ ns.modules[name] = {
 	config_tooltip = {
 		{ type="toggle", name="showQuestIDs", label=L["Show QuestIDs"],   tooltip=L["Show/Hide QuestIDs in tooltip"] },
 		{ type="toggle", name="showChars",    label=L["Show characters"], tooltip=L["Show a list of your characters with count of ready and available targets in tooltip"] },
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom"
 	},
 	config_misc = nil,
 	clickOptions = {
@@ -319,9 +324,12 @@ local function createTooltip(tt)
 		for i=1, #Broker_Everything_CharacterDB.order do
 			local name_realm = Broker_Everything_CharacterDB.order[i];
 			local v = Broker_Everything_CharacterDB[name_realm];
-			local c,r = strsplit("-",name_realm);
-			if (v.level>=100 and v.tanaanjungle) and not ((ns.profile[name].showAllRealms~=true and realm~=ns.realm) or (ns.profile[name].showAllFactions~=true and v.faction~=ns.player.faction)) then
+			local c,r,_ = strsplit("-",name_realm);
+			if v.level>=100 and v.tanaanjungle and ns.showThisChar(name,r,v.faction) then -- not ((ns.profile[name].showAllRealms~=true and realm~=ns.realm) or (ns.profile[name].showAllFactions~=true and v.faction~=ns.player.faction)) then
 				local bbt = {}; -- broker button text
+				if type(r)=="string" and r:len()>0 then
+					_,r = ns.LRI:GetRealmInfo(r);
+				end
 				for _,i in ipairs(typeOrder) do
 					local num = 0;
 					if v.tanaanjungle.completed then
@@ -355,12 +363,15 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
-end
+-- ns.modules[name].init = function() end
 
 ns.modules[name].onevent = function(self,event,...)
-	if event=="PLAYER_ENTERING_WORLD" then
+	if event=="ADDON_LOADED" then
+		if ns.profile[name].showAllRealms~=nil then
+			ns.profile[name].showCharsFrom = 4;
+			ns.profile[name].showAllRealms = nil;
+		end
+	elseif event=="PLAYER_ENTERING_WORLD" then
 		updateResetTimes();
 
 		if ns.toon==nil then

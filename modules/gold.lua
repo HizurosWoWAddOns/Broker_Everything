@@ -39,12 +39,12 @@ ns.modules[name] = {
 	updateinterval = nil, -- 10
 	config_defaults = {
 		goldColor = nil,
-		showAllRealms = true,
-		showAllFactions = true,
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4,
 		showCharGold = true,
 		showSessionProfit = true
 	},
-	config_allowed = {},
 	config_allowed = nil,
 	config_header = {type="header", label=BONUS_ROLL_REWARD_MONEY, align="left", icon=I[name]},
 	config_broker = {
@@ -52,7 +52,11 @@ ns.modules[name] = {
 		{ type="toggle", name="showCharGold",      label=L["Show character gold"], tooltip=L["Show character gold on broker button"], event=true },
 		{ type="toggle", name="showSessionProfit", label=L["Show session profit"], tooltip=L["Show session profit on broker button"], event=true },
 	},
-	config_tooltip = nil,
+	config_tooltip = {
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom"
+	},
 	config_misc = nil,
 	clickOptions = {
 		["1_open_tokenframe"] = {
@@ -158,11 +162,14 @@ function createTooltip(tt,update)
 	local lineCount=0;
 	for i=1, #Broker_Everything_CharacterDB.order do
 		local name_realm = Broker_Everything_CharacterDB.order[i];
-		local charName,realm=strsplit("-",name_realm);
+		local charName,realm,_=strsplit("-",name_realm);
 		local v = Broker_Everything_CharacterDB[name_realm];
 
 		if (v.gold) and (sAR==true or (sAR==false and realm==ns.realm)) and (sAF==true or (sAF==false and v.faction==ns.player.faction)) and (ns.player.name_realm~=name_realm) then
 			local faction = v.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+			if type(realm)=="string" and realm:len()>0 then
+				_,realm = ns.LRI:GetRealmInfo(realm);
+			end
 			local realm = sAR==true and C("dkyellow"," - "..ns.scm(realm)) or "";
 			local line, column = tt:AddLine( C(v.class,ns.scm(charName)) .. realm .. faction, ns.GetCoinColorOrTextureString(name,v.gold,{inTooltip=true}));
 
@@ -217,6 +224,10 @@ ns.modules[name].onevent = function(self,event,msg)
 
 	if event=="PLAYER_LOGIN" then
 		login_money = current_money;
+		if ns.profile[name].showAllRealms~=nil then
+			ns.profile[name].showCharsFrom = 4;
+			ns.profile[name].showAllRealms = nil;
+		end
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
@@ -233,7 +244,7 @@ ns.modules[name].onevent = function(self,event,msg)
 	if #broker==0 then
 		broker = {BONUS_ROLL_REWARD_MONEY};
 	end
-	ns.LDB:GetDataObjectByName(ldbName).text = table.concat(broker,", ");
+	ns.LDB:GetDataObjectByName(ns.modules[name].ldbName).text = table.concat(broker,", ");
 end
 
 -- ns.modules[name].optionspanel = function(panel) end

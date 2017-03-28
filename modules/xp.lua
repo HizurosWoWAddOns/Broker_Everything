@@ -73,6 +73,7 @@ ns.modules[name] = {
 	desc = L["Broker to show experience from all chars in tooltip and the current character in broker button"],
 	label = XP,
 	events = {
+		"ADDON_LOADED",
 		"PLAYER_XP_UPDATE",
 		"PLAYER_LOGIN",
 		"DISABLE_XP_GAIN",
@@ -84,12 +85,15 @@ ns.modules[name] = {
 		display = "1",
 		showMyOtherChars = true,
 		showNonMaxLevelOnly = false,
-		showAllRealms = true,
 		textBarCharacter = "=",
-		textBarCharCount = 20
+		textBarCharCount = 20,
+
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4
 	},
 	config_allowed = {
-		display = {["1"]=true,["2"]=true,["3"]=true,["4"]=true,["5"]=true}
+		display = {["1"]=true,["2"]=true,["3"]=true,["4"]=true,["5"]=true},
 	},
 	config_header = {type="header", label=XP, align="left", icon=I[name]},
 	config_broker = {
@@ -118,6 +122,9 @@ ns.modules[name] = {
 	config_tooltip = {
 		{ type="toggle", name="showMyOtherChars", label=L["Show other chars xp"], tooltip=L["Display a list of my chars on same realm with her level and xp"] },
 		{ type="toggle", name="showNonMaxLevelOnly", label=L["Hide characters at maximum level"], tooltip=L["Hide all characters who have reached the level cap."] },
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom"
 	},
 	config_misc = "shortNumbers",
 	clickOptions = {
@@ -164,6 +171,17 @@ end
 local function deleteCharacterXP(self,button)
 	Broker_Everything_CharacterDB[self.name_realm].xp = nil;
 	createTooltip(tt);
+end
+
+local function showThisChar(name_realm,data)
+	if data.xp==nil then
+		return false;
+	end
+	if ns.profile[name].showNonMaxLevelOnly and data.level==MAX_PLAYER_LEVEL then
+		return false;
+	end
+	local _,realm = strsplit("-",name_realm);
+	return ns.showThisChar(name,realm,data.faction);
 end
 
 local function createTooltip2(parentLine)
@@ -239,10 +257,10 @@ function createTooltip(tt)
 	end
 
 	if ns.profile[name].showMyOtherChars then
-		local allRealms = (ns.profile[name].showAllRealms==true);
 		tt:AddSeparator(4,0,0,0,0);
 		local l = tt:AddLine();
-		tt:SetCell(l,1,C("ltblue",L["Your other chars (%s)"]:format(allRealms and L["all realms"] or ns.realm)),nil,nil,3);
+		local showFactions = (ns.profile[name].showAllFactions and L["All factions"]) or ns.player.factionL;
+		tt:SetCell(l,1,C("ltblue",L["Your other chars (%s)"]:format(ns.showCharsFrom_Values[ns.profile[name].showCharsFrom].."/"..showFactions)),nil,nil,3);
 		tt:AddSeparator();
 		local count = 0;
 		for i=1, #Broker_Everything_CharacterDB.order do
@@ -255,11 +273,18 @@ function createTooltip(tt)
 					end
 				end
 			end
-			if( (name_realm:match(ns.realm) or allRealms) and (name_realm~=ns.player.name_realm) and v.xp~=nil and not (ns.profile[name].showNonMaxLevelOnly and v.level==MAX_PLAYER_LEVEL) )then
-				local Name,Realm = strsplit("-",name_realm);
-				Realm = allRealms and " "..C("dkyellow","- "..ns.scm(Realm)) or "";
+			if showThisChar(name_realm,v) then
+				local Name,Realm,_ = strsplit("-",name_realm);
+				if type(Realm)=="string" and Realm:len()>0 then
+					_,Realm = ns.LRI:GetRealmInfo(Realm);
+				end
+				local factionSymbol = "";
+				if v.faction and v.faction~="Neutral" then
+					factionSymbol = "|TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t";
+				end
+				Realm = (Realm and " "..C("dkyellow","- "..ns.scm(Realm))) or "";
 				local l = tt:AddLine(
-					("(%d) %s %s"):format(v.level,C(v.class,ns.scm(Name))..Realm, v.faction and "|TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or ""),
+					("(%d) %s %s"):format(v.level,C(v.class,ns.scm(Name))..Realm, factionSymbol),
 					("%s "..C("cyan","%s")):format(v.xp.percent or 0,v.xp.restStr or "> ?%"),
 					("(%s/%s)"):format(ns.FormatLargeNumber(name,v.xp.cur,true),ns.FormatLargeNumber(name,v.xp.max,true))
 				);
@@ -293,15 +318,21 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
 	if(ns.toon.xp==nil)then
 		ns.toon.xp={};
 	end
 end
 
 ns.modules[name].onevent = function(self,event,msg)
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
+	if event=="ADDON_LOADED" then
+		if ns.profile[name].showAllRealms~=nil then
+			ns.profile[name].showCharsFrom = 4;
+			ns.profile[name].showAllRealms = nil;
+		end
+		return;
+	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+		return;
 	elseif (event=="UNIT_INVENTORY_CHANGED" and msg~="player") then
 		return;
 	end

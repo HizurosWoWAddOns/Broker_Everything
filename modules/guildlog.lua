@@ -118,9 +118,12 @@ function createMenu(parent)
 end
 
 local function showRealm(Char)
-	local Name, Realm = strsplit("-", Char);
-	if (ns.profile[name].showRealm) then
-		return Name..(Realm and C("ltgray","-")..C("dkyellow",Realm) or "");
+	local Name,Realm,_ = strsplit("-", Char);
+	if ns.profile[name].showRealm and Realm then
+		if type(Realm)=="string" and Realm:len()>0 then
+			_,Realm = ns.LRI:GetRealmInfo(Realm);
+		end
+		return Name..C("ltgray","-")..C("dkyellow",Realm);
 	end
 	return Name..(Realm and C("dkyellow","*") or "");
 end

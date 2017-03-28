@@ -11,7 +11,6 @@ local C,L,I=ns.LC.color,ns.L,ns.I;
 -----------------------------------------------------------
 local name = "Guild"; -- GUILD
 local ttName, ttName2,ttColumns,ttColumns2,tt,tt2,createMenu,db = name.."TT", name.."TT2",9,2;
-local tt,tt2,createMenu,db;
 local off, on = strtrim(gsub(ERR_FRIEND_OFFLINE_S,"%%s","(.*)")), strtrim(gsub(ERR_FRIEND_ONLINE_SS,"\124Hplayer:%%s\124h%[%%s%]\124h","(.*)"));
 local tradeskillsLockUpdate,tradeskillsLastUpdate,tradeskillsUpdateTimeout = false,0,20;
 local guild, player, members, membersName2Index, mobile, tradeskills, applicants = {},{},{},{},{},{},{};
@@ -23,7 +22,7 @@ local tsName, tsIcon, tsValue, tsID = 1,2,3,4;
 local app_index, app_name, app_realm, app_level, app_class, app_bQuest, app_bDungeon, app_bRaid, app_bPvP, app_bRP, app_bWeekdays, app_bWeekends, app_bTank, app_bHealer, app_bDamage, app_comment, app_timeSince, app_timeLeft = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18; -- applicants table entry indexes
 local MOBILE_BUSY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-BusyMobile:14:14:0:0:16:16:0:16:0:16|t";
 local MOBILE_AWAY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-AwayMobile:14:14:0:0:16:16:0:16:0:16|t";
-local eventLock=false;
+
 
 -------------------------------------------
 -- register icon names and default files --
@@ -315,11 +314,14 @@ local function createTooltip2(self)
 		{true,true},
 		{self, "horizontal", tt}
 	);
-	local v,s,t=self.info,"";
+	local v,s,realm,t,_=self.info,"",v[mRealm];
 	tt2:Clear();
 	tt2:AddHeader(C("dkyellow",NAME), C(v[mClassFile],ns.scm(v[mName])));
 	tt2:AddSeparator();
-	tt2:AddLine(C("ltblue",L["Realm"]),C("dkyellow",ns.scm(v[mRealm])));
+	if type(realm)=="string" and realm:len()>0 then
+		_,realm = ns.LRI:GetRealmInfo(realm);
+	end
+	tt2:AddLine(C("ltblue",L["Realm"]),C("dkyellow",ns.scm(realm)));
 	if ns.profile[name].showZoneInTT2 then
 		tt2:AddLine(C("ltblue",ZONE),v[mZone]);
 	end
@@ -352,10 +354,14 @@ local function tooltipAddLine(v,me)
 	if not (tt and tt.key and tt.key==ttName) then return end
 
 	local status = ( (v[mIsAway]==1) and C("gold","[AFK] ") ) or ( (v[mIsAway]==2) and C("ltred","[DND] ") ) or "";
-	local realm = "";
+	local realm,_ = "";
 	if guild[gRealmNoSpacer]~=v[mRealm] then
 		if (db.showRealmname) then
-			realm = C("white","-")..C("dkyellow", ns.scm(v[mRealm]));
+			realm = v[mRealm];
+			if type(realm)=="string" and realm:len()>0 then
+				_,realm = ns.LRI:GetRealmInfo(realm);
+			end
+			realm = C("white","-")..C("dkyellow", ns.scm(realm));
 		else
 			realm = C("dkyellow","*");
 		end
@@ -431,11 +437,15 @@ local function createTooltip(tt,update)
 		return;
 	end
 
-	local realm = "";
+	local realm,_ = "";
 
 	if ns.realm~=guild[gRealm] then
+		realm = guild[gRealm];
 		if (db.showRealmname) then
-			realm = C("gray"," - ")..C("dkyellow",ns.scm(guild[gRealm]));
+			if type(realm)=="string" and realm:len()>0 then
+				_,realm = ns.LRI:GetRealmInfo(realm);
+			end
+			realm = C("gray"," - ")..C("dkyellow",ns.scm(realm));
 		else
 			realm = C("dkyellow","*");
 		end
@@ -468,10 +478,13 @@ local function createTooltip(tt,update)
 		tt:AddSeparator();
 		for i, a in ipairs(applicants) do
 			if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
-			local realm = "";
+			local realm,_ = a[app_realm];
 			if guild[gRealmNoSpacer]~=a[app_realm] then
 				if (db.showRealmname) then
-					realm = C("white","-")..C("dkyellow", ns.scm(a[app_realm]));
+					if type(realm)=="string" and realm:len()>0 then
+						_,realm = ns.LRI:GetRealmInfo(realm);
+					end
+					realm = C("white","-")..C("dkyellow", ns.scm(realm));
 				else
 					realm = C("dkyellow","*");
 				end

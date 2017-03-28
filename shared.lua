@@ -18,6 +18,7 @@ ns.LSM = LibStub("LibSharedMedia-3.0");
 ns.LT = LibStub("LibTime-1.0");
 ns.LC = LibStub("LibColors-1.0");
 ns.LDDM = LibStub("LibDropDownMenu");
+ns.LRI = LibStub("LibRealmInfo");
 
 -- broker_everything colors
 ns.LC.colorset({
@@ -66,6 +67,7 @@ ns.media = "Interface\\AddOns\\"..addon.."\\media\\";
 ns.locale = GetLocale();
 ns.ui = {size={UIParent:GetSize()},center={UIParent:GetCenter()}};
 
+
   ---------------------------------------
 --- player and twinks dependent data    ---
   ---------------------------------------
@@ -81,6 +83,43 @@ L[ns.player.faction] = ns.player.factionL;
 ns.player.classLocale = ns.player.female and _G.LOCALIZED_CLASS_NAMES_FEMALE[ns.player.class] or _G.LOCALIZED_CLASS_NAMES_MALE[ns.player.class];
 ns.player.raceLocale,ns.player.race = UnitRace("player");
 ns.LC.colorset("suffix",ns.LC.colorset[ns.player.class:lower()]);
+ns.realms = {};
+do
+	local function Init()
+		local _,_,_,_,_,_,_,_,ids = ns.LRI:GetRealmInfoByGUID(UnitGUID("player"));
+		for i=1, #ids do
+			local _,name,apiName = ns.LRI:GetRealmInfoByID(ids[i]);
+			ns.realms[name] = apiName;
+			ns.realms[apiName] = name;
+		end
+	end
+	ns.realms = setmetatable({},{
+		__index = function(t,k)
+			if Init then Init(); Init=nil; end
+			return rawget(t,k) or false;
+		end
+	});
+end
+
+function ns.showThisChar(modName,realm,faction)
+	if not ns.profile[modName].showAllFactions and ns.player.faction~=faction then
+		return false;
+	end
+	if ns.profile[modName].showCharsFrom==1 and realm~=ns.realm then -- same realm
+		return false;
+	elseif ns.profile[modName].showCharsFrom==2 and not ns.realms[realm] then -- connected realms
+		return false;
+	elseif ns.profile[modName].showCharsFrom==3 then -- battlegroup
+		local _,_,_,_,_,battlegroup = ns.LRI:GetRealmInfo(realm);
+		if not ns.player.battlegroup then
+			_,_,_,_,_,ns.player.battlegroup = ns.LRI:GetRealmInfoByGUID(UnitGUID("player"));
+		end
+		if ns.player.battlegroup~=battlegroup then
+			return false;
+		end
+	end
+	return true;
+end
 
 
   ---------------------------------------
