@@ -228,7 +228,6 @@ local function updateBroker()
 				if ns.build>72000000 then
 					-- Ha Ha. Very funny Blizzard. setID starts with 0 instead of 1.
 					equipName, iconFile, setID, isEquipped, _, _, _, numMissing = C_EquipmentSet.GetEquipmentSetInfo(i-1);
-					ns.debug("<set>",setID);
 				else
 					equipName, iconFile, setID, isEquipped, _, _, _, numMissing = GetEquipmentSetInfo(i)
 				end
@@ -269,7 +268,7 @@ end
 local function UpdateInventory()
 	local lst,data = {iLevelMin=0,iLevelMax=0},ns.items.GetInventoryItems();
 	for _, d in pairs(data) do
-		if d and d.slotIndex and (d.itemType==ARMOR or d.itemType==WEAPON) and d.slotIndex~=4 and d.slotIndex~=19 then
+		if d and d.slotIndex and d.slotIndex~=4 and d.slotIndex~=19 then
 			lst[d.slotIndex] = d;
 			if lst.iLevelMin==0 or d.level<lst.iLevelMin then
 				lst.iLevelMin=d.level;
@@ -355,7 +354,7 @@ end
 
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
-	
+
 	local line, column
 	tt:Clear()
 	tt:AddHeader(C("dkyellow",BAG_FILTER_EQUIPMENT))
@@ -410,7 +409,7 @@ local function createTooltip(tt)
 		);
 		tt:AddSeparator();
 		local none,miss=true,false;
-		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do
+		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17,18}) do
 			if inventory[i] then
 				none=false;
 				local tSetItem,setName,enchanted,greenline,upgrades,gems = "","","","","","";
