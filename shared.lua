@@ -141,7 +141,7 @@ ns.print = function (...)
 	print(unpack(t));
 end
 
-if GetAddOnMetadata(addon,"Version")=="@"."project-version"."@" then
+if GetAddOnMetadata(addon,"Version")=="@".."project-version".."@" then
 	ns.debug = function(...)
 		ns.print("debug",...);
 	end
@@ -748,7 +748,8 @@ do
 					obj.durability,obj.durability_max = GetContainerItemDurability(bag, slot);
 					if obj.name then
 						GetObjectLinkData(obj);
-						if obj.itemType==ARMOR or obj.itemType==WEAPON or (ns.artifactpower_items and ns.artifactpower_items[id]) or d.NeedTooltip[id] then
+						--if obj.itemType==ARMOR or obj.itemType==WEAPON or (ns.artifactpower_items and ns.artifactpower_items[id]) or d.NeedTooltip[id] then
+						if IsEquippableItem(obj.link) or d.NeedTooltip[id] then -- 7.2 GetItemInfo invalid itemType Bug. @Blizzard: Ha Ha. Stupid trick. Try again :P
 							GetObjectTooltipData(obj,{type="bag",bag=bag,slot=slot});
 						end
 						tinsert(items[id],obj);
