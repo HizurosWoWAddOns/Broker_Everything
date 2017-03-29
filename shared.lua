@@ -141,7 +141,7 @@ ns.print = function (...)
 	print(unpack(t));
 end
 
-if GetAddOnMetadata(addon,"Version")=="@project-version@" then
+if GetAddOnMetadata(addon,"Version")=="@"."project-version"."@" then
 	ns.debug = function(...)
 		ns.print("debug",...);
 	end
