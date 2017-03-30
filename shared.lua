@@ -1457,7 +1457,7 @@ do
 		if (separator) then
 			self.addEntry({ separator = true });
 		end
-		if not noTitle and ns.modules[modName].config[3].type~="header" then
+		if not noTitle and #ns.modules[modName].config>=3 and ns.modules[modName].config[3].type~="header" then
 			self.addEntry({ label = OPTIONS, title = true });
 		end
 		for i,v in ipairs(ns.modules[modName].config) do
