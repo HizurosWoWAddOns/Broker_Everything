@@ -7,16 +7,25 @@ local L = ns.L;
 -- ------------------------------- --
 ns.modules = {};
 local counters = {};
-ns.allModDefaults = {
-	minimap = {hide=true}, -- LibDBIcon
-	shortNumbers = true
-};
 ns.showCharsFrom_Values = {
 	ns.realm,
 	L["Connected realms"],
 	L["Same battlegroup"],
 	L["All realms"]
 }
+local allModsOptions_defaults = {
+	config_broker = {
+		minimapButton = {hide=true}, -- LibDBIcon
+	},
+	config_tooltip = {
+		showAllFactions = true,
+		showRealmNames = true,
+		showCharsFrom = 4,
+	},
+	config_misc = {
+		shortNumbers = false,
+	},
+};
 local allModsOptions = {
 	minimapButton = {type="toggle", name="minimap", label=L["Broker as Minimap Button"], tooltip=L["Create a minimap button for this broker"]},
 	shortNumbers = {type="toggle", name="shortNumbers", label=L["Short numbers"], tooltip=L["Display short numbers like 123K instead of 123000"]},
@@ -28,7 +37,23 @@ local allModsOptions = {
 		default=1
 	}
 }
+
 local separator1,separator2 = {type="separator", alpha=0},{type="separator", inMenuInvisible=true};
+
+-- data table <ns.modules[name]>, values from <allModsOptions_defaults[config_table]>, name of the option entry
+local function addConfigDefault(data,values,name,mod)
+	local name2,ignore = (name=="minimapButton" and "minimap") or name,false;
+	if values[name]~=nil  then
+		if data.config_defaults==nil then
+			data.config_defaults={};
+		elseif data.config_defaults[name2]~=nil then
+			ignore=true; -- is already set in module file = ignore
+		end
+		if not ignore then
+			data.config_defaults[name2] = values[name];
+		end
+	end
+end
 
 local function moduleInit(name)
 	local data = ns.modules[name];
@@ -45,24 +70,30 @@ local function moduleInit(name)
 		ns.profile[name].enabled = data.enabled;
 	end
 
+	-- add allModsOptions_defaults to config_defaults
+	local t;
+	for config_table,values in pairs(allModsOptions_defaults)do
+		if data[config_table] then
+			for i=1, #data[config_table] do
+				t=type(data[config_table][i]);
+				if t=="string" and values[data[config_table][i]]~=nil then
+					addConfigDefault(data,values,data[config_table][i],name);
+				elseif t=="table" then
+					for _,optionEntry in ipairs(data[config_table][i])do
+						addConfigDefault(data,values,optionEntry.name,name);
+					end
+				end
+			end
+		end
+	end
+
+	-- check current config
 	if (data.config_defaults) then
 		for k,v in pairs(data.config_defaults) do
 			if ns.profile[name][k]==nil then
-				ns.profile[name][k] = v;
+				ns.profile[name][k] = v; -- nil = copy default value
 			elseif (data.config_allowed~=nil) and type(data.config_allowed[k])=="table" and (data.config_allowed[k][ns.profile[name][k]]~=true) then
-				ns.profile[name][k] = v;
-			end
-		end
-		-- default options for all modules
-		for k,v in pairs(ns.allModDefaults)do
-			if k=="minimap" and ns.profile[name].dbi~=nil then
-				if ns.profile.GeneralOptions.libdbicon==true then
-					ns.profile[name].dbi.hide = false;
-				end
-				ns.profile[name][k] = ns.profile[name].dbi;
-				ns.profile[name].dbi = nil;
-			elseif ns.profile[name][k]==nil then
-				ns.profile[name][k] = v;
+				ns.profile[name][k] = v; -- mismatching allowed type = copy default value
 			end
 		end
 	end

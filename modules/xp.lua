@@ -126,7 +126,7 @@ ns.modules[name] = {
 		"showRealmNames",
 		"showCharsFrom"
 	},
-	config_misc = "shortNumbers",
+	config_misc = {"shortNumbers"},
 	clickOptions = {
 		["1_switch_mode"] = {
 			cfg_label = "Switch mode", -- L["Switch mode"]

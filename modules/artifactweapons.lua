@@ -107,7 +107,7 @@ local FISHING_AP_MATCH_STRINGS = {
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile=1109508 or ns.icon_fallback,coords={0.05,0.95,0.05,0.95}}
+I[name] = {iconfile=1109508 or ns.icon_fallback,coords={0.05,0.95,0.05,0.95}} --IconName::Artifact weapon--
 
 
 ---------------------------------------
@@ -162,7 +162,7 @@ ns.modules[name] = {
 		{ type="toggle", name="showItems",                  label=L["Show artifact power items"],         tooltip=L["Display a list of artifact power items found in your bag in tooltip"]},
 		{ type="toggle", name="showTotalAP",                label=L["Show total used artifact power"],    tooltip=L["Display amount of total used artifact power on current equipped artifact weapon. That doesn't includes point resets!"]},
 	},
-	config_misc = "shortNumbers",
+	config_misc = {"shortNumbers"},
 	clickOptions = {
 		["1_open_character_info"] = {
 			cfg_label = "Open character info", -- L["Open character info"]

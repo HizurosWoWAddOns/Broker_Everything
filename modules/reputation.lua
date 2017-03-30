@@ -33,7 +33,7 @@ local formats = {
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile="Interface\\Icons\\Achievement_Reputation_01", coords={0.1,0.9,0.1,0.9}}
+I[name] = {iconfile="Interface\\Icons\\Achievement_Reputation_01", coords={0.1,0.9,0.1,0.9}} --IconName::Reputation--
 
 
 ---------------------------------------
@@ -96,7 +96,7 @@ ns.modules[name] = {
 		},
 		{ type="toggle", name="showID", label=L["Show id's"], tooltip=L["Display faction and standing id's in tooltip"]},
 	},
-	config_misc = "shortNumbers",
+	config_misc = {"shortNumbers"},
 	clickOptions = {
 		["1_open_reputation"] = {
 			cfg_label = "Open reputation pane", -- L["Open reputation pane"]

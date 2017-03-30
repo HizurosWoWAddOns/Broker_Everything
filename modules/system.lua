@@ -102,7 +102,7 @@ I[name_fps..'_blue']   = {iconfile="Interface\\Addons\\"..addon.."\\media\\fps_b
 I[name_fps..'_green']  = {iconfile="Interface\\Addons\\"..addon.."\\media\\fps_green.png"}	--IconName::FPS_green--
 I[name_lat] = {iconfile="Interface\\Addons\\"..addon.."\\media\\latency"}; --IconName::Latency--
 I[name_mem] = {iconfile="Interface\\Addons\\"..addon.."\\media\\memory"}; --IconName::Memory--
-I[name_traf] = {iconfile="Interface\\Addons\\"..addon.."\\media\\memory"}; --IconName::Memory--
+I[name_traf] = {iconfile="Interface\\Addons\\"..addon.."\\media\\memory"}; --IconName::Traffic--
 
 
 ---------------------------------------
@@ -313,7 +313,7 @@ ns.modules[name_traf] = {
 	config_header = {type="header", label=L[name_traf], align="left", icon=I[name_traf..'_blue']},
 	config_broker = {"minimapButton"},
 	config_tooltip = nil,
-	config_misc = nil,
+	config_misc = {"shortNumbers"},
 }
 
 
@@ -389,7 +389,7 @@ local function fpsStr(k)
 end
 
 local function latencyStr(a,b)
-	latency[a][b.."Str"] =  C( (latency[a][b]<40 and "ltblue") or (latency[a][b]<120 and "green") or (latency[a][b]<250 and "dkyellow") or (latency[a][b]<400 and "orange") or (latency[a][b]<1200 and "red") or "violet", ns.FormatLargeNumber(name,latency[a][b]) ) .. ns.suffixColour("ms");
+	latency[a][b.."Str"] =  C( (latency[a][b]<40 and "ltblue") or (latency[a][b]<120 and "green") or (latency[a][b]<250 and "dkyellow") or (latency[a][b]<400 and "orange") or (latency[a][b]<1200 and "red") or "violet", ns.FormatLargeNumber(name_traf,latency[a][b]) ) .. ns.suffixColour("ms");
 end
 
 local function trafficStr(k)

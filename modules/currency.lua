@@ -97,7 +97,7 @@ ns.modules[name] = {
 		},
 		{ type="toggle", name="showIDs", label=L["Show currency id's"], tooltip=L["Display the currency id's in tooltip"] },
 	},
-	config_misc = "shortNumbers",
+	config_misc = {"shortNumbers"},
 	clickOptions = {
 		["1_open_character_info"] = {
 			cfg_label = "Open currency pane", -- L["Open currency pane"]

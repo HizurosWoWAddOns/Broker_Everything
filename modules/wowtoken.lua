@@ -42,7 +42,7 @@ ns.modules[name] = {
 		{ type="toggle", name="diff",    label=L["Show difference"], tooltip=L["Show difference of last change in tooltip"]},
 		{ type="toggle", name="history", label=L["Show history"],    tooltip=L["Show history of the 5 last changes in tooltip"]},
 	},
-	config_misc = "shortNumbers",
+	config_misc = {"shortNumbers"},
 }
 
 

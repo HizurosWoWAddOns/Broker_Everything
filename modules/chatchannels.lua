@@ -36,7 +36,7 @@ local events={PLAYER_ENTERING_WORLD=1,CHANNEL_UI_UPDATE=1,PARTY_LEADER_CHANGED=1
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile="Interface\\chatframe\\ui-chatwhispericon"}
+I[name] = {iconfile="Interface\\chatframe\\ui-chatwhispericon",coords={0.05,0.95,0.05,0.95}} --IconName::ChatChannels--
 
 
 ---------------------------------------
@@ -61,7 +61,7 @@ ns.modules[name] = {
 	config_header = {type="header", label=CHAT_CHANNELS, align="left", icon=I[name]},
 	config_broker = {"minimapButton"},
 	config_tooltip = nil,
-	config_misc = "shortNumbers",
+	config_misc = {"shortNumbers"},
 	clickOptions = {
 		["1_open_chats"] = {
 			cfg_label = "Open chat channels window", -- L["Open chat channels window"]
