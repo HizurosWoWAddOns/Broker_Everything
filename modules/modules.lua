@@ -93,7 +93,9 @@ local function moduleInit(name)
 			if ns.profile[name][k]==nil then
 				ns.profile[name][k] = v; -- nil = copy default value
 			elseif (data.config_allowed~=nil) and type(data.config_allowed[k])=="table" and (data.config_allowed[k][ns.profile[name][k]]~=true) then
-				ns.profile[name][k] = v; -- mismatching allowed type = copy default value
+				ns.profile[name][k] = v; -- mismatching allowed type
+			elseif type(ns.profile[name][k])~=type(v) then
+				ns.profile[name][k] = v; -- mismatching current/default value type
 			end
 		end
 	end
