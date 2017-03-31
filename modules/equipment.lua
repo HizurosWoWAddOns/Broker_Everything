@@ -203,14 +203,12 @@ function createMenu(self)
 end
 
 -- defined in addon namespace for chatcommand.lua
-ns.toggleEquipment = function(eName,eSetID)
+ns.toggleEquipment = function(eSetID)
 	if InCombatLockdown() or UnitIsDeadOrGhost("player") then
-		equipPending = eName
+		equipPending = eSetID
 		ns.modules[name].onevent("BE_DUMMY_EVENT")
-	elseif C_EquipmentSet then
-		securecall(C_EquipmentSet.UseEquipmentSet,eSetID);
 	else
-		securecall("UseEquipmentSet",eName);
+		C_EquipmentSet.UseEquipmentSet(eSetID);
 	end
 	ns.hideTooltip(tt);
 end
@@ -224,14 +222,9 @@ local function updateBroker()
 
 		if numEquipSets > 0 then 
 			local equipName, iconFile, setID, isEquipped, _, _, _, numMissing;
-			for i=1, numEquipSets do 
-				if ns.build>72000000 then
-					-- Ha Ha. Very funny Blizzard. setID starts with 0 instead of 1.
-					equipName, iconFile, setID, isEquipped, _, _, _, numMissing = C_EquipmentSet.GetEquipmentSetInfo(i-1);
-				else
-					equipName, iconFile, setID, isEquipped, _, _, _, numMissing = GetEquipmentSetInfo(i)
-				end
-				local pending = (equipPending~=nil and C("orange",equipPending)) or false
+			for i=0, numEquipSets-1 do 
+				equipName, iconFile, setID, isEquipped, _, _, _, numMissing = C_EquipmentSet.GetEquipmentSetInfo(i);
+				local pending = (equipPending and C("orange",equipPending)) or false
 				if isEquipped then 
 					iconCoords = {0.05,0.95,0.05,0.95}
 					icon = iconFile;
@@ -335,20 +328,26 @@ local function equipOnClick(self)
 		if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
 		local main = ns.items.GetInventoryItemBySlotIndex(16);
 		if main and main.level>=750 and main.rarity==6 then
-			(EquipmentManagerIgnoreSlotForSave or C_EquipmentSet.IgnoreSlotForSave)(16);
+			C_EquipmentSet.IgnoreSlotForSave(16);
 		end
 		local off = ns.items.GetInventoryItemBySlotIndex(17);
 		if off and off.level>=750 and main.rarity==6 then
-			(EquipmentManagerIgnoreSlotForSave or C_EquipmentSet.IgnoreSlotForSave)(17);
+			C_EquipmentSet.IgnoreSlotForSave(17);
 		end
-		local dialog = StaticPopup_Show('CONFIRM_SAVE_EQUIPMENT_SET', self.equipName);
-		dialog.data = self.equipName;
+		local setName = C_EquipmentSet.GetEquipmentSetInfo(self.equipSetID);
+		local dialog = StaticPopup_Show('CONFIRM_SAVE_EQUIPMENT_SET', setName);
+		if dialog then
+			dialog.data = self.equipSetID;
+		end
 	elseif (IsControlKeyDown()) then
 		if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
-		local dialog = StaticPopup_Show('CONFIRM_DELETE_EQUIPMENT_SET', self.equipName);
-		dialog.data = self.equipName;
+		local setName = C_EquipmentSet.GetEquipmentSetInfo(self.equipSetID);
+		local dialog = StaticPopup_Show('CONFIRM_DELETE_EQUIPMENT_SET', setName);
+		if dialog then
+			dialog.data = self.equipSetID;
+		end
 	else
-		ns.toggleEquipment(self.equipName,self.equipSetID);
+		ns.toggleEquipment(self.equipSetID);
 	end 
 end
 
@@ -368,26 +367,18 @@ local function createTooltip(tt)
 			ns.AddSpannedLine(tt,L["Equipment manager is not enabled"]);
 			ns.AddSpannedLine(tt,L["Enable it from the character info"]);
 		else
-			local numEquipSets = (GetNumEquipmentSets or C_EquipmentSet.GetNumEquipmentSets)()
-
+			local numEquipSets = C_EquipmentSet.GetNumEquipmentSets()
 			if (numEquipSets>0) then
-				local eName, icon, setID, isEquipped, _, _, _, numMissing;
-				for i = 1, numEquipSets do 
-					if ns.build>72000000 then
-						-- Ha Ha. Very funny Blizzard. setID starts with 0 instead of 1.
-						eName, icon, setID, isEquipped, _, _, _, numMissing = C_EquipmentSet.GetEquipmentSetInfo(i-1);
-					else
-						eName, icon, _, isEquipped, _, _, _, numMissing = GetEquipmentSetInfo(i)
-					end
-					local color = (equipPending==eName and "orange") or (numMissing>0 and "red") or (isEquipped and "ltyellow") or false
+				local eName, icon, setID, isEquipped, numMissing, _;
+				for i=0, numEquipSets-1 do 
+					eName, icon, setID, isEquipped, _, _, _, numMissing = C_EquipmentSet.GetEquipmentSetInfo(i);
+					local color = (equipPending and equipPending==i and "orange") or (numMissing>0 and "red") or (isEquipped and "ltyellow") or false
 					local formatName = color~=false and C(color,eName) or eName
 
 					local line = ns.AddSpannedLine(tt, "|T"..(icon or ns.icon_fallback)..":0|t "..formatName);
-					tt.lines[line].equipName = eName;
 					tt.lines[line].equipSetID = setID;
 					tt:SetLineScript(line, "OnMouseUp", equipOnClick);
 				end
-
 				if (ns.profile.GeneralOptions.showHints) then
 					tt:AddSeparator();
 					ns.AddSpannedLine(tt, C("ltblue",L["Click"]).." "..C("green",L["to equip"]) .." - ".. C("ltblue",L["Ctrl+Click"]).." "..C("green",L["to delete"]));
@@ -484,7 +475,7 @@ ns.modules[name].onevent = function(self,event,arg1,...)
 		self.PEW=true;
 	elseif self.PEW then
 		if (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and equipPending~=nil then
-			(UseEquipmentSet or C_EquipmentSet.UseEquipmentSet)(equipPending);
+			C_EquipmentSet.UseEquipmentSet(equipPending);
 			equipPending = nil
 			updateBroker();
 		end
