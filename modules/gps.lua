@@ -164,7 +164,7 @@ ns.modules[name2] = {
 	config_defaults = {},
 	config_prepend = name0,
 	config_header = {type="header", label=L[name2], align="left", icon=I[name2]},
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = nil,
 	config_misc = nil,
 	clickOptions = sharedClickOptions

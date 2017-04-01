@@ -42,7 +42,6 @@ ns.modules[name] = {
 	config_allowed = nil,
 	config_header = {type="header", label=TIMEMANAGER_TITLE, align="left", icon=I[name]},
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="timeLocal",   label=L["Local or realm time"], tooltip=L["Switch between local and realm time in broker button"] },
 	},
 	config_tooltip = {

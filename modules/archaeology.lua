@@ -110,7 +110,7 @@ ns.modules[name] = {
 		subTTposition = {["AUTO"]=true,["TOP"]=true,["LEFT"]=true,["RIGHT"]=true,["BOTTOM"]=true}
 	},
 	config_header = {type="header", label=PROFESSIONS_ARCHAEOLOGY, align="left", icon=true},
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = { { type="toggle", name="continentOrder", label=L["Order by continent"], tooltip=L["Order archaeology races by continent"] } },
 	config_misc = nil,
 	clickOptions = {

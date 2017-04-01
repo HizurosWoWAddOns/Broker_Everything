@@ -25,7 +25,7 @@ local logs = {};
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile="Interface\\icons\\inv_misc_note_05",coords={0.05,0.95,0.05,0.95}}
+I[name] = {iconfile="Interface\\icons\\inv_misc_note_05",coords={0.05,0.95,0.05,0.95}} --IconName::GuildLog--
 
 
 ---------------------------------------
@@ -53,7 +53,7 @@ ns.modules[name] = {
 	},
 	config_allowed = nil,
 	config_header = nil, -- use default header
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = {
 		{ type="toggle", name="hideInvite",  label=L["Hide invites"],    tooltip=L["Hide all entries with 'Invite' as action."] },
 		{ type="toggle", name="hideJoin",    label=L["Hide joins"],      tooltip=L["Hide all entries with 'Join' as action."] },

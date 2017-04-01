@@ -48,7 +48,6 @@ ns.modules[name] = {
 	config_allowed = nil,
 	config_header = nil, -- use default header
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="showPvPHonorOnBroker", label=L["Show PvP honor"], tooltip=L["Show PvP honor on broker button"]}
 	},
 	config_tooltip = {

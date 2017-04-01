@@ -67,7 +67,6 @@ ns.modules[nameF] = {
 	config_allowed = nil,
 	config_header = {type="header", label=GARRISON_FOLLOWERS, align="left", icon=I[nameF]},
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="showAllInOne",          label=L["Show all in one"],       tooltip=L["Show all counts of followers, champions and troops as overall summary on broker button. You can disable single types with following toggles."], event="BE_DUMMY_EVENT"},
 		{ type="toggle", name="showFollowersOnBroker", label=L["Show followers"],        tooltip=L["Show followers summary on broker button"], event="BE_DUMMY_EVENT"},
 		{ type="toggle", name="showChampionsOnBroker",  label=L["Show champions"],        tooltip=L["Show champions summary on broker button"], event="BE_DUMMY_EVENT"},
@@ -123,7 +122,7 @@ ns.modules[nameS] = {
 	},
 	config_allowed = nil,
 	config_header = {type="header", label=GARRISON_SHIPYARD_FOLLOWERS, align="left", icon=I[nameS]},
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = {
 		{ type="toggle", name="showChars",       label=L["Show characters"],          tooltip=L["Show a list of your characters with count of chilling, working and ships on missions in tooltip"] },
 		{ type="toggle", name="showAllRealms",   label=L["Show all realms"],          tooltip=L["Show characters from all realms in tooltip."] },

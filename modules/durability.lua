@@ -97,7 +97,6 @@ ns.modules[name] = {
 	},
 	config_header = {type="header", label=DURABILITY, align="left", icon=I[name]},
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="lowestItem", label=L["Lowest durability"], tooltip=L["Display the lowest item durability in broker."], event=true },
 		{ type="select", name="inBroker", label=L["Broker format"], tooltip=L["Choose your favorite display format for the broker button."], default="percent", event=true,
 			values={

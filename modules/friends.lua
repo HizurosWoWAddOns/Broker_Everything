@@ -97,7 +97,6 @@ ns.modules[name] = {
 	config_allowed = nil,
 	config_header = nil, -- use default header
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="splitFriendsBroker",  label=L["Split friends on Broker"], tooltip=L["Split Characters and BattleNet-Friends on Broker Button"], event=true },
 		{ type="toggle", name="showFriendsBroker",   label=L["Show friends"], tooltip=L["Display count of friends if 'Split friends on Broker' enabled otherwise add friends to summary count."], event=true },
 		{ type="toggle", name="showBNFriendsBroker", label=L["Show BattleNet friends"], tooltip=L["Display count of BattleNet friends on Broker if 'Split friends on Broker' enabled otherwise add BattleNet friends to summary count."], event=true },

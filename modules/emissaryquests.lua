@@ -29,7 +29,7 @@ end
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile="Interface\\QuestFrame\\UI-QuestLog-BookIcon",coords={0.05,0.95,0.05,0.95}}; --IconName::Archaeology--
+I[name] = {iconfile="Interface\\QuestFrame\\UI-QuestLog-BookIcon",coords={0.05,0.95,0.05,0.95}}; --IconName::Emissary Quests--
 
 
 ---------------------------------------
@@ -52,7 +52,6 @@ ns.modules[name] = {
 	config_allowed = nil,
 	config_header = nil,
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="shortTitle", label="Show shorter title", tooltip=L["Display '%s' instead of '%s' on chars under level 110 on broker button"]:format(L["Emissary Quests-ShortCut"],L["Emissary Quests"]), event=true }
 	},
 	config_tooltip = {

@@ -77,7 +77,7 @@ ns.modules[name] = {
 	config_allowed = {
 	},
 	config_header = {type="header", label=VOLUME, align="left", icon=I[name..'_100']},
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = {
 		{ type="toggle", name="listHardware", label=L["List of hardware"], tooltip=L["Display in tooltip a list of your sound output hardware."] },
 	},

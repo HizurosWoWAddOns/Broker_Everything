@@ -132,7 +132,6 @@ ns.modules[name] = {
 	},
 	config_header = nil, -- use default header
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="freespace",         label=L["Show freespace"],                  tooltip=L["Show bagspace instead used and max. bagslots in broker button"], event=true },
 	},
 	config_tooltip = {

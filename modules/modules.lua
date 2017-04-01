@@ -14,9 +14,6 @@ ns.showCharsFrom_Values = {
 	L["All realms"]
 }
 local allModsOptions_defaults = {
-	config_broker = {
-		minimapButton = {hide=true}, -- LibDBIcon
-	},
 	config_tooltip = {
 		showAllFactions = true,
 		showRealmNames = true,
@@ -27,7 +24,6 @@ local allModsOptions_defaults = {
 	},
 };
 local allModsOptions = {
-	minimapButton = {type="toggle", name="minimap", label=L["Broker as Minimap Button"], tooltip=L["Create a minimap button for this broker"]},
 	shortNumbers = {type="toggle", name="shortNumbers", label=L["Short numbers"], tooltip=L["Display short numbers like 123K instead of 123000"]},
 
 	showAllFactions = { type="toggle", name="showAllFactions", label=L["Show all factions"], tooltip=L["Show characters from all factions (alliance, horde and neutral) in tooltip"]},
@@ -39,6 +35,24 @@ local allModsOptions = {
 }
 
 local separator1,separator2 = {type="separator", alpha=0},{type="separator", inMenuInvisible=true};
+
+function ns.toggleMinimapButton(modName,setValue)
+	local mod = ns.modules[modName];
+	local cfg = ns.profile[modName];
+	local isReg = ns.LDBI:IsRegistered(mod.ldbName);
+
+	if setValue~=nil then
+		-- change config if setValue not nil
+		cfg.minimap.hide = not setValue;
+	end
+	if not isReg and cfg.minimap.hide==false then
+		-- register minimap button if not exists
+		ns.LDBI:Register(mod.ldbName,mod.obj,cfg.minimap);
+	elseif isReg then
+		-- perform refresh on minimap button if already exists
+		ns.LDBI:Refresh(mod.ldbName,cfg.minimap);
+	end
+end
 
 -- data table <ns.modules[name]>, values from <allModsOptions_defaults[config_table]>, name of the option entry
 local function addConfigDefault(data,values,name,mod)
@@ -70,17 +84,26 @@ local function moduleInit(name)
 		ns.profile[name].enabled = data.enabled;
 	end
 
+	-- prepend minimapButton to all modules
+	if type(data.config_broker)~="table" then
+		data.config_broker = {};
+	end
+	tinsert(data.config_broker,1,{type="toggle", name="minimap", label=L["Broker as Minimap Button"], tooltip=L["Create a minimap button for this broker"]});
+	if type(ns.profile[name].minimap)~="table" then
+		ns.profile[name].minimap = {hide=true};
+	end
+
 	-- add allModsOptions_defaults to config_defaults
 	local t;
-	for config_table,values in pairs(allModsOptions_defaults)do
-		if data[config_table] then
+	for config_table, entries in pairs(allModsOptions_defaults)do
+		if type(data[config_table])=="table" then
 			for i=1, #data[config_table] do
 				t=type(data[config_table][i]);
-				if t=="string" and values[data[config_table][i]]~=nil then
-					addConfigDefault(data,values,data[config_table][i],name);
+				if t=="string" and entries[data[config_table][i]]~=nil then
+					addConfigDefault(data,entries,data[config_table][i],name);
 				elseif t=="table" then
 					for _,optionEntry in ipairs(data[config_table][i])do
-						addConfigDefault(data,values,optionEntry.name,name);
+						addConfigDefault(data,entries,optionEntry.name,name);
 					end
 				end
 			end
@@ -151,7 +174,8 @@ local function moduleInit(name)
 
 			ns.updateIconColor(name);
 
-			data.dbi = ns.LDBI:Register(data.ldbName,data.obj,ns.profile[name].minimap);
+			-- register minimap button on demand
+			ns.toggleMinimapButton(name);
 		end
 
 		-- event/update handling

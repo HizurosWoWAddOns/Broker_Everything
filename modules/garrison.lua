@@ -65,7 +65,6 @@ ns.modules[name] = {
 	config_allowed = nil,
 	config_header = {type="header", label=GARRISON_LOCATION_TOOLTIP, align="left", icon=I[name]},
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="showCacheForcastInBroker", label=L["Show cache forcast in title"], tooltip=L["Show garrison cache forecast for your current char in broker button"] },
 	},
 	config_tooltip = {

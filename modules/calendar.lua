@@ -53,7 +53,6 @@ ns.modules[name] = {
 	config_allowed = nil,
 	config_header = nil, -- use default header
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="shortBroker", label=L["Shorter Broker"], tooltip=L["Reduce the broker text to a number without text"], event=true },
 	},
 	config_tooltip = {

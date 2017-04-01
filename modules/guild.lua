@@ -66,7 +66,6 @@ ns.modules[name] = {
 	config_allowed = nil,
 	config_header = {type="header", label=GUILD, align="left", icon=I[name]},
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="showApplicantsBroker",	label=L["Show applicants on broker"],			tooltip=L["Show applicants on broker button"], event = true },
 		{ type="toggle", name="showMobileChatterBroker",label=L["Show mobile chatter on broker"],		tooltip=L["Show count of mobile chatter on broker button"], event = true },
 		{ type="toggle", name="showTotalMembersBroker",	label=L["Show total members count on broker"],	tooltip=L["Show total members count on broker button"], event = true },

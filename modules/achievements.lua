@@ -17,7 +17,7 @@ local categoryIds,bars,count = {92, 96, 97, 95, 168, 169, 201, 15165, 155, 15117
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile="interface\\achievementframe\\UI-Achievement-Progressive-Shield-NoPoints", coords={.15,.55,.15,.55}, size={64,64}};
+I[name] = {iconfile="interface\\achievementframe\\UI-Achievement-Progressive-Shield-NoPoints", coords={.15,.55,.15,.55}, size={64,64}}; --IconName::Achievements--
 
 
 ---------------------------------------
@@ -38,7 +38,7 @@ ns.modules[name] = {
 	},
 	config_allowed = nil,
 	config_header = { type="header", label=ACHIEVEMENTS, align="left", icon=true },
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = {
 		{ type="toggle", name="showLatest",       label=L["Show latest achievements"],    tooltip=L["Show 5 latest earned achievements in tooltip"]},
 		{ type="toggle", name="showCategory",     label=L["Show achievement categories"], tooltip=L["Show achievement categories in tooltip"]},

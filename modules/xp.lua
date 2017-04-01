@@ -97,7 +97,6 @@ ns.modules[name] = {
 	},
 	config_header = {type="header", label=XP, align="left", icon=I[name]},
 	config_broker = {
-		"minimapButton",
 		{ type="select", name="display", label=L["Display XP in broker"], tooltip=L["Select to show XP as an absolute value; Deselected will show it as a percentage."],
 			default="1",
 			values={
@@ -155,7 +154,7 @@ ns.modules[name] = {
 };
 -- add values to config.textBarCharacter
 for _,v in ipairs(textbarSigns)do
-	ns.modules[name].config_broker[3].values[v]=v;
+	ns.modules[name].config_broker[2].values[v]=v;
 end
 
 --------------------------

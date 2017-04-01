@@ -139,7 +139,6 @@ ns.modules[name] = {
 	config_allowed = nil,
 	config_header = {type="header", label=BAG_FILTER_EQUIPMENT, align="left", icon=I[name]},
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="showCurrentSet",      label=L["Show current set"],                             tooltip=L["Display your current equipment set on broker button"], event=true},
 		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],                      tooltip=L["Display your average item level on broker button"], event=true},
 		{ type="toggle", name="showShorterInfo",     label=L["Show shorter Info for 'Unknown set' and more"], tooltip=L["Display shorter Info on broker button. 'Set?' instead of 'Unknown set'. 'No sets' instead of 'No sets found'."], event=true}

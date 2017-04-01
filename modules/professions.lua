@@ -231,7 +231,7 @@ ns.modules[name] = {
 	},
 	config_allowed = nil,
 	config_header = {type="header", label=TRADE_SKILLS, align="left", icon=I[name]},
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = {
 		{ type="toggle", name="showCooldowns", label=L["Show cooldowns"], tooltip=L["Show/Hide profession cooldowns from all characters."] },
 		"showAllFactions",

@@ -91,8 +91,7 @@ local titles = { -- {"<title>", <maxQuestCount>}
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
---I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\LFG-Eye-Green", coords={0.5 , 0.625 , 0 , 0.25}}
-I[name] = {iconfile="interface\\icons\\Achievement_Zone_Tanaanjungle", coords={.15,.55,.15,.55}, size={64,64}};
+I[name] = {iconfile="interface\\icons\\Achievement_Zone_Tanaanjungle", coords={.15,.55,.15,.55}, size={64,64}}; --IconName::Tanaan Jungle Dailies--
 
 
 ---------------------------------------
@@ -117,7 +116,7 @@ ns.modules[name] = {
 	},
 	config_allowed = nil,
 	config_header = nil, -- use default header
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = {
 		{ type="toggle", name="showQuestIDs", label=L["Show QuestIDs"],   tooltip=L["Show/Hide QuestIDs in tooltip"] },
 		{ type="toggle", name="showChars",    label=L["Show characters"], tooltip=L["Show a list of your characters with count of ready and available targets in tooltip"] },

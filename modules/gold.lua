@@ -48,7 +48,6 @@ ns.modules[name] = {
 	config_allowed = nil,
 	config_header = {type="header", label=BONUS_ROLL_REWARD_MONEY, align="left", icon=I[name]},
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="showCharGold",      label=L["Show character gold"], tooltip=L["Show character gold on broker button"], event=true },
 		{ type="toggle", name="showSessionProfit", label=L["Show session profit"], tooltip=L["Show session profit on broker button"], event=true },
 	},
@@ -57,7 +56,7 @@ ns.modules[name] = {
 		"showRealmNames",
 		"showCharsFrom"
 	},
-	config_misc = nil,
+	config_misc = {"shortNumbers"},
 	clickOptions = {
 		["1_open_tokenframe"] = {
 			cfg_label = "Open currency pane", -- L["Open currency pane"]

@@ -89,7 +89,7 @@ ns.modules[name] = {
 	},
 	config_allowed = nil,
 	config_header = nil, -- use default header
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = {
 		{ type="toggle", name="showBosses",              label=L["Show world bosses"],          tooltip=L["Display list of world boss IDs in tooltip"] },
 		{ type="toggle", name="showDungeons",            label=L["Show dungeons"],              tooltip=L["Display list of dungeon IDs in tooltip"] },

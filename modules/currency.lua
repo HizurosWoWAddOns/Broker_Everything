@@ -68,7 +68,6 @@ ns.modules[name] = {
 	},
 	config_header = {type="header", label=CURRENCY, align="left", icon=true},
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="showCapBroker", label=L["Show total/weekly cap"], tooltip=L["Display currency total cap in tooltip."], event=true },
 		{ type="toggle", name="showCapColorBroker", label=L["Coloring total/weekly cap"], tooltip=L["..."], event=true },
 		{ type="slider", name="spacer",     label=L["Space between currencies"], tooltip=L["Add more space between displayed currencies on broker button"],

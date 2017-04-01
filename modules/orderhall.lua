@@ -26,7 +26,7 @@ COMPLETED,BACK_TO_ORDER_HALL=COMPLETED:trim(),BACK_TO_ORDER_HALL:trim();
 -------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile="Interface\\Icons\\inv_garrison_resource", coords={0.05,0.95,0.05,0.95}}; --IconName::Garrison--
+I[name] = {iconfile="Interface\\Icons\\inv_garrison_resource", coords={0.05,0.95,0.05,0.95}}; --IconName::Order hall--
 
 
 ---------------------------------------
@@ -39,9 +39,7 @@ ns.modules[name] = {
 	config_defaults = {},
 	config_allowed = {},
 	config_header = { type="header", label=L[name], align="left", icon=I[name] },
-	config_broker = {
-		{type="toggle", name="minimap", label=L["Broker as Minimap Button"], tooltip=L["Create a minimap button for this broker"]},
-	},
+	config_broker = nil,
 	config_tooltip = {},
 	config_misc = {},
 	clickOptions = {

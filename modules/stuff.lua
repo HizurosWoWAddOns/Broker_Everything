@@ -40,7 +40,7 @@ ns.modules[name] = {
 	config_defaults = {},
 	config_allowed = nil,
 	config_header = nil, -- use default header
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = nil,
 	config_misc = nil,
 }

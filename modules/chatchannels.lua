@@ -59,7 +59,7 @@ ns.modules[name] = {
 	},
 	config_allowed = nil,
 	config_header = {type="header", label=CHAT_CHANNELS, align="left", icon=I[name]},
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = nil,
 	config_misc = {"shortNumbers"},
 	clickOptions = {

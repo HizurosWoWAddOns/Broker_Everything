@@ -210,7 +210,7 @@ ns.modules[name_fps] = {
 	},
 	config_allowed = nil,
 	config_header = nil, -- use default header
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = nil,
 	config_misc = {
 		{ type="select", name="fillCharacter", label=L["Prepend character"], tooltip=L["Prepend a character to fill displayed fps up to 3 character."],
@@ -258,7 +258,7 @@ ns.modules[name_mem] = {
 		updateInterval = {[0]=true,[30]=true,[60]=true,[300]=true,[600]=true,[1200]=true,[2400]=true,[3600]=true}
 	},
 	config_header = { type="header", label=L[name_mem], align="left", icon=I[name_mem] },
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = {
 		{ type="slider", name="mem_max_addons", label=L["Show addons in tooltip"], tooltip=L["Select the maximum number of addons to display, otherwise drag to 'All'."],
 			minText = ACHIEVEMENTFRAME_FILTER_ALL,
@@ -311,7 +311,7 @@ ns.modules[name_traf] = {
 	},
 	config_allowed = nil,
 	config_header = {type="header", label=L[name_traf], align="left", icon=I[name_traf..'_blue']},
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = nil,
 	config_misc = {"shortNumbers"},
 }

@@ -60,7 +60,7 @@ ns.modules[name] = {
 	},
 	config_allowed = nil,
 	config_header = {type="header", label=BUTTON_LAG_MAIL, align="left", icon=I[name]},
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = {
 		{ type="toggle", name="showDaysLeft", label=L["List mails on chars"], tooltip=L["Display a list of chars on all realms with there mail counts and 3 lowest days before return to sender. Chars with empty mail box aren't displayed."] },
 		"showAllFactions",

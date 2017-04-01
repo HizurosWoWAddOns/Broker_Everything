@@ -62,7 +62,6 @@ ns.modules[name] = {
 	config_allowed = nil,
 	config_header = {type="header", label=REPUTATION, align="left", icon=true},
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="watchedNameOnBroker", label=L["Name of watched faction"], tooltip=L["Display name of watched faction on broker button"], event="UPDATE_FACTION" },
 		{ type="toggle", name="watchedStandingOnBroker", label=L["Standing of watched faction"], tooltip=L["Display standing of watched faction on broker button"], event="UPDATE_FACTION" },
 		{ type="toggle", name="watchedSessionBroker", label=L["Earn/loss of watched faction"], tooltip=L["Display earn/loss reputation of watched faction on broker button"], event="UPDATE_FACTION" },

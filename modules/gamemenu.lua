@@ -115,8 +115,6 @@ local ClassIconCoords={
 }
 
 I["gm_Character-neutral"] = {iconfile="Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes", coordsStr=ClassIconCoords[ns.player.class]};						--IconName::gm_Character-neutral--
---I["gm_Character-neutral"] = {iconfile="Interface\\buttons\\ui-microbutton-"..ns.player.class, coordsStr="16:16:0:-1:64:64:5:54:32:59"};						--IconName::gm_Character-neutral--
-
 I["gm_Spellbook"]         = {iconfile="Interface\\ICONS\\inv_misc_book_09"}																					--IconName::gm_Spellbook--
 I["gm_Talents"]           = {iconfile="Interface\\ICONS\\ability_marksmanship"}																				--IconName::gm_Talents--
 I["gm_Achievments"]       = {iconfile="Interface\\buttons\\ui-microbutton-achievement-up", coordsStr="16:16:0:-1:64:64:5:54:32:59"}							--IconName::gm_Achievments--
@@ -176,7 +174,6 @@ ns.modules[name] = {
 	config_allowed = nil,
 	config_header = {type="header", label=MAINMENU_BUTTON, align="left", icon=I[name]},
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="disableOnClick", label=L["Disable Click options"], tooltip=L["Disable the click options on broker button"] },
 		{ type="input",  name="customTitle", label=L["Custom title"], tooltip=L["Set your own Title instead of 'Game Menu'"], event=true },
 	},

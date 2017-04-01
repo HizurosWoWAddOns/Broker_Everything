@@ -35,7 +35,6 @@ ns.modules[name] = {
 	config_allowed = nil,
 	config_header = nil, -- use default header
 	config_broker = {
-		"minimapButton",
 		{ type="select", name="ownership", label=L["Show ownership"], tooltip=L["Display ownership on broker button"], values={none=ADDON_DISABLED, shift=L["On hold shift key"], always=ALWAYS }, default="shift" },
 		{ type="select", name="creatureid", label=L["Show ownership"], tooltip=L["Display creature id on broker button"], values={none=ADDON_DISABLED, shift=L["On hold shift key"], always=ALWAYS }, default="shift" },
 	},

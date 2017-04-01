@@ -58,7 +58,7 @@ ns.modules[name] = {
 	},
 	config_allowed = nil,
 	config_header = {type="header", label=GARRISON_MISSIONS, align="left", icon=I[name]},
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = {
 		{ type="toggle", name="showChars",       label=L["Show characters"],          tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
 		"showAllFactions",

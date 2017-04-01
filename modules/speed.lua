@@ -73,7 +73,7 @@ ns.modules[name] = {
 	},
 	config_allowed = {},
 	config_header = {type="header", label=SPEED, align="left", icon=I[name]},
-	config_broker = {"minimapButton"},
+	config_broker = nil,
 	config_tooltip = { { type="slider", name="precision", label=L["Precision"], tooltip=L["Adjust the count of numbers behind the dot."], min = 0, max = 3, default = 0, format="%d" } },
 	config_misc = nil,
 }

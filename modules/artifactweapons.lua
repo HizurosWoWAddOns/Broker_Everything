@@ -140,7 +140,6 @@ ns.modules[name] = {
 	config_allowed = nil,
 	config_header = nil, -- use default header
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="showName", label=L["Show weapon name"], tooltip=L["Show artifact weapon name in broker button"], event="ARTIFACT_UPDATE"},
 		{ type="toggle", name="showPoints", label=L["Show points"], tooltip=L["Show spent/available points in broker button"], event="ARTIFACT_UPDATE"},
 		{ type="select", name="showXP", label=L["Show artifact power"], tooltip=L["Show artifact weapon expierence (artifact power) in broker button"], event="ARTIFACT_UPDATE",

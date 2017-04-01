@@ -53,7 +53,6 @@ ns.modules[name] = {
 	},
 	config_header = {type="header", label=TRACKING, align="left", icon=I[name]},
 	config_broker = {
-		"minimapButton",
 		{ type="toggle", name="displaySelection", label=L["Display selection"], tooltip=L["Display one of the selected tracking options in broker text."], event=true },
 	},
 	config_tooltip = nil,
