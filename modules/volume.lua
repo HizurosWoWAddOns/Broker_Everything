@@ -15,37 +15,7 @@ local updateBrokerButton,getSoundHardware,setSoundHardware
 local icon = "Interface\\AddOns\\"..addon.."\\media\\volume_"
 local VIDEO_VOLUME_TITLE = L["Video Volume"];
 local volume,cvars,updateBroker = {},{};
-local vol = {
-	{inset=0,locale="MASTER_VOLUME",			toggle="Sound_EnableAllSound",									percent="Sound_MasterVolume"},
-	{inset=1,locale="ENABLE_SOUNDFX",			toggle="Sound_EnableSFX",						depend={1},		percent="Sound_SFXVolume"},
-	{inset=2,locale="ENABLE_ERROR_SPEECH",		toggle="Sound_EnableErrorSpeech",				depend={1,2}	},
-	{inset=2,locale="ENABLE_EMOTE_SOUNDS",		toggle="Sound_EnableEmoteSounds",				depend={1,2}	},
-	{inset=2,locale="ENABLE_PET_SOUNDS",		toggle="Sound_EnablePetSounds",					depend={1,2}	},
-	{inset=1,locale="MUSIC_VOLUME",				toggle="Sound_EnableMusic",						depend={1},		percent="Sound_MusicVolume"},
-	{inset=2,locale="ENABLE_MUSIC_LOOPING",		toggle="Sound_ZoneMusicNoDelay",				depend={1,6}	},
-	{inset=2,locale="ENABLE_PET_BATTLE_MUSIC",	toggle="Sound_EnablePetBattleMusic",			depend={1,6}	},
-	{inset=1,locale="ENABLE_AMBIENCE",			toggle="Sound_EnableAmbience",					depend={1},		percent="Sound_AmbienceVolume"},
-	{inset=1,locale="DIALOG_VOLUME",			toggle="Sound_EnableDialog",					depend={1},		percent="Sound_DialogVolume", hide=(select(4,GetBuildInfo())<60000)},
-	{inset=1,locale="ENABLE_BGSOUND",			toggle="Sound_EnableSoundWhenGameIsInBG",		depend={1}		},
-	{inset=1,locale="ENABLE_SOUND_AT_CHARACTER",toggle="Sound_ListenerAtCharacter",				depend={1}		},
-	{inset=1,locale="ENABLE_REVERB",			toggle="Sound_EnableReverb",					depend={1}		},
-	{inset=1,locale="ENABLE_SOFTWARE_HRTF",		toggle="Sound_EnablePositionalLowPassFilter",	depend={1}		},
-	{inset=1,locale="ENABLE_DSP_EFFECTS",		toggle="Sound_EnableDSPEffects",				depend={1}		},
-	--{inset=0,locale="VIDEO_VOLUME_TITLE",		toggle=false,									special="video"},
-	{inset=0,locale="HARDWARE",					toggle=false,									special="hardware"},
-}
-for i=1,#vol do
-	if vol[i].locale then
-		cvars[vol[i].locale:lower()]=true;
-	end
-	if vol[i].toggle then
-		cvars[vol[i].toggle:lower()]=true;
-	end
-	if vol[i].percent then
-		cvars[vol[i].percent:lower()]=true;
-	end
-end
-
+local vol;
 
 -- ------------------------------------- --
 -- register icon names and default files --
@@ -145,6 +115,39 @@ ns.modules[name] = {
 --------------------------
 -- some local functions --
 --------------------------
+local function initData()
+	vol = {
+		{inset=0,locale="MASTER_VOLUME",			toggle="Sound_EnableAllSound",									percent="Sound_MasterVolume"},
+		{inset=1,locale="ENABLE_SOUNDFX",			toggle="Sound_EnableSFX",						depend={1},		percent="Sound_SFXVolume"},
+		{inset=2,locale="ENABLE_ERROR_SPEECH",		toggle="Sound_EnableErrorSpeech",				depend={1,2}	},
+		{inset=2,locale="ENABLE_EMOTE_SOUNDS",		toggle="Sound_EnableEmoteSounds",				depend={1,2}	},
+		{inset=2,locale="ENABLE_PET_SOUNDS",		toggle="Sound_EnablePetSounds",					depend={1,2}	},
+		{inset=1,locale="MUSIC_VOLUME",				toggle="Sound_EnableMusic",						depend={1},		percent="Sound_MusicVolume"},
+		{inset=2,locale="ENABLE_MUSIC_LOOPING",		toggle="Sound_ZoneMusicNoDelay",				depend={1,6}	},
+		{inset=2,locale="ENABLE_PET_BATTLE_MUSIC",	toggle="Sound_EnablePetBattleMusic",			depend={1,6}	},
+		{inset=1,locale="ENABLE_AMBIENCE",			toggle="Sound_EnableAmbience",					depend={1},		percent="Sound_AmbienceVolume"},
+		{inset=1,locale="DIALOG_VOLUME",			toggle="Sound_EnableDialog",					depend={1},		percent="Sound_DialogVolume", hide=(select(4,GetBuildInfo())<60000)},
+		{inset=1,locale="ENABLE_BGSOUND",			toggle="Sound_EnableSoundWhenGameIsInBG",		depend={1}		},
+		{inset=1,locale="ENABLE_SOUND_AT_CHARACTER",toggle="Sound_ListenerAtCharacter",				depend={1}		},
+		{inset=1,locale="ENABLE_REVERB",			toggle="Sound_EnableReverb",					depend={1}		},
+		{inset=1,locale="ENABLE_SOFTWARE_HRTF",		toggle="Sound_EnablePositionalLowPassFilter",	depend={1}		},
+		{inset=1,locale="ENABLE_DSP_EFFECTS",		toggle="Sound_EnableDSPEffects",				depend={1}		},
+		--{inset=0,locale="VIDEO_VOLUME_TITLE",		toggle=false,									special="video"},
+		{inset=0,locale="HARDWARE",					toggle=false,									special="hardware"},
+	}
+	for i=1,#vol do
+		if vol[i].locale then
+			cvars[vol[i].locale:lower()]=true;
+		end
+		if vol[i].toggle then
+			cvars[vol[i].toggle:lower()]=true;
+		end
+		if vol[i].percent then
+			cvars[vol[i].percent:lower()]=true;
+		end
+	end
+end
+
 function createMenu(self)
 	if (tt~=nil) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
@@ -357,7 +360,12 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
--- ns.modules[name].init = function() end
+ns.modules[name].init = function()
+	if initData then
+		initData();
+		initData=nil;
+	end
+end
 
 ns.modules[name].onevent = function(self,event,arg1)
 	if event=="PLAYER_ENTERING_WORLD" or event=="SOUND_DEVICE_UPDATE" or (event=="CVAR_UPDATE" and cvars[arg1:lower()]) then

@@ -11,47 +11,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Speed"; -- SPEED
 local ttName, ttColumns, tt = name.."TT", 2
-local riding_skills = { -- <spellid>, <skill>, <minLevel>, <air speed increase>, <ground speed increase>
-	{90265, 80, 310},
-	{34091, 70, 280},
-	{34090, 60, 150},
-	{33391, 40, 100},
-	{33388, 20,  60},
-};
-local licences = { -- <spellid>, <minLevel>, <mapIds>
-	{"a11446", 100, {}},
-	{"a10018", 90, { --[[ draenor map ids? ]] }},
-	{115913,   85, {[862]=1,[858]=1,[929]=1,[928]=1,[857]=1,[809]=1,[905]=1,[903]=1,[806]=1,[873]=1,[808]=1,[951]=1,[810]=1,[811]=1,[807]=1}},
-	{54197,    68, {[485]=1,[486]=1,[510]=1,[504]=1,[488]=1,[490]=1,[491]=1,[541]=1,[492]=1,[493]=1,[495]=1,[501]=1,[496]=1}},
-	{90267,    60, {[4]=1,[9]=1,[11]=1,[13]=1,[14]=1,[16]=1,[17]=1,[19]=1,[20]=1,[21]=1,[22]=1,[23]=1,[24]=1,[26]=1,[27]=1,[28]=1,[29]=1,[30]=1,[32]=1,[34]=1,[35]=1,[36]=1,[37]=1,[38]=1,[39]=1,[40]=1,[41]=1,[42]=1,[43]=1,[61]=1,[81]=1,[101]=1,[121]=1,[141]=1,[161]=1,[181]=1,[182]=1,[201]=1,[241]=1,[261]=1,[281]=1,[301]=1,[321]=1,[341]=1,[362]=1,[381]=1,[382]=1,[462]=1,[463]=1,[464]=1,[471]=1,[476]=1,[480]=1,[499]=1,[502]=1,[545]=1,[606]=1,[607]=1,[610]=1,[611]=1,[613]=1,[614]=1,[615]=1,[640]=1,[673]=1,[684]=1,[685]=1,[689]=1,[700]=1,[708]=1,[709]=1,[720]=1,[772]=1,[795]=1,[864]=1,[866]=1,[888]=1,[889]=1,[890]=1,[891]=1,[892]=1,[893]=1,[894]=1,[895]=1}},
-}
-local bonus_spells = { -- <spellid>, <chkActive[bool]>, <type>, <typeValue>, <customText>, <speed increase>, <special>
-	-- race spells
-	{154748,  true, "race", "NIGHTELF", true,  1, {"TIME", {18,24}, {0,6}} },
-	{ 20582,  true, "race", "NIGHTELF", true,  2},
-	{ 20585,  true, "race", "NIGHTELF", true, 75, {"SPELL", 8326}},
-	{ 68992,  true, "race",     "WORG", true, 40},
-	{ 69042,  true, "race",   "GOBLIN", true,  1},
-
-	-- class spells
-	-- class: druid, id: 11
-	{  5215,  true, "class",        11, LOCALIZED_CLASS_NAMES_MALE.DRUID, 30},
-	-- glyphes
-
-	-- misc
-	{ 78633, false,    nil,        nil, true, 10}, -- guild perk
-	{ 220510, true,    nil,        nil, false, UNKNOWN}, -- Bloodtotem Saddle Blanket (Tailoring 800)
-	{ 226342, true,    nil,        nil, false, 20}
-}
--- note: little problem with not stagging speed increasement spells...
-
-local replace_unknown = {
-	a11446 = {L["Broken Isles Flying"], nil, L["Patch 7.2"], {L["Broken Isles Pathfinder, Part Two"]," ","a11190","a11543","a11544",--[["a11546",]]"a11545"," ",L["Reward: Broken Isles Flying"]}},
-	a11543 = L["Explore the broken shore"],
-	a11544 = L["Defender of the broken isles"],
-	a11545 = L["Legionfall Commander"],
-	--a11546 = L["Breaching the Tomb "] -- requirement canceled by blizzard
-}
+local riding_skills,licences,bonus_spells,replace_unknown = {},{},{},{};
 
 
 -------------------------------------------
@@ -86,6 +46,50 @@ ns.modules[name] = {
 --------------------------
 -- some local functions --
 --------------------------
+local function initData()
+	riding_skills = { -- <spellid>, <skill>, <minLevel>, <air speed increase>, <ground speed increase>
+		{90265, 80, 310},
+		{34091, 70, 280},
+		{34090, 60, 150},
+		{33391, 40, 100},
+		{33388, 20,  60},
+	};
+	licences = { -- <spellid>, <minLevel>, <mapIds>
+		{"a11446", 100, {}},
+		{"a10018", 90, { --[[ draenor map ids? ]] }},
+		{115913,   85, {[862]=1,[858]=1,[929]=1,[928]=1,[857]=1,[809]=1,[905]=1,[903]=1,[806]=1,[873]=1,[808]=1,[951]=1,[810]=1,[811]=1,[807]=1}},
+		{54197,    68, {[485]=1,[486]=1,[510]=1,[504]=1,[488]=1,[490]=1,[491]=1,[541]=1,[492]=1,[493]=1,[495]=1,[501]=1,[496]=1}},
+		{90267,    60, {[4]=1,[9]=1,[11]=1,[13]=1,[14]=1,[16]=1,[17]=1,[19]=1,[20]=1,[21]=1,[22]=1,[23]=1,[24]=1,[26]=1,[27]=1,[28]=1,[29]=1,[30]=1,[32]=1,[34]=1,[35]=1,[36]=1,[37]=1,[38]=1,[39]=1,[40]=1,[41]=1,[42]=1,[43]=1,[61]=1,[81]=1,[101]=1,[121]=1,[141]=1,[161]=1,[181]=1,[182]=1,[201]=1,[241]=1,[261]=1,[281]=1,[301]=1,[321]=1,[341]=1,[362]=1,[381]=1,[382]=1,[462]=1,[463]=1,[464]=1,[471]=1,[476]=1,[480]=1,[499]=1,[502]=1,[545]=1,[606]=1,[607]=1,[610]=1,[611]=1,[613]=1,[614]=1,[615]=1,[640]=1,[673]=1,[684]=1,[685]=1,[689]=1,[700]=1,[708]=1,[709]=1,[720]=1,[772]=1,[795]=1,[864]=1,[866]=1,[888]=1,[889]=1,[890]=1,[891]=1,[892]=1,[893]=1,[894]=1,[895]=1}},
+	}
+	bonus_spells = { -- <spellid>, <chkActive[bool]>, <type>, <typeValue>, <customText>, <speed increase>, <special>
+		-- race spells
+		{154748,  true, "race", "NIGHTELF", true,  1, {"TIME", {18,24}, {0,6}} },
+		{ 20582,  true, "race", "NIGHTELF", true,  2},
+		{ 20585,  true, "race", "NIGHTELF", true, 75, {"SPELL", 8326}},
+		{ 68992,  true, "race",     "WORG", true, 40},
+		{ 69042,  true, "race",   "GOBLIN", true,  1},
+
+		-- class spells
+		-- class: druid, id: 11
+		{  5215,  true, "class",        11, LOCALIZED_CLASS_NAMES_MALE.DRUID, 30},
+		-- glyphes
+
+		-- misc
+		{ 78633, false,    nil,        nil, true, 10}, -- guild perk
+		{ 220510, true,    nil,        nil, false, UNKNOWN}, -- Bloodtotem Saddle Blanket (Tailoring 800)
+		{ 226342, true,    nil,        nil, false, 20}
+	}
+	-- note: little problem with not stagging speed increasement spells...
+
+	replace_unknown = {
+		a11446 = {L["Broken Isles Flying"], nil, L["Patch 7.2"], {L["Broken Isles Pathfinder, Part Two"]," ","a11190","a11543","a11544",--[["a11546",]]"a11545"," ",L["Reward: Broken Isles Flying"]}},
+		a11543 = L["Explore the broken shore"],
+		a11544 = L["Defender of the broken isles"],
+		a11545 = L["Legionfall Commander"],
+		--a11546 = L["Breaching the Tomb "] -- requirement canceled by blizzard
+	}
+end
+
 local function tooltipOnEnter(self)
 	GameTooltip:SetOwner(tt,"ANCHOR_NONE");
 	GameTooltip:SetPoint("TOP",tt,"BOTTOM");
@@ -307,7 +311,12 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
--- ns.modules[name].init = function() end
+ns.modules[name].init = function()
+	if initData then
+		initData();
+		initData=nil;
+	end
+end
 
 ns.modules[name].onevent = function(self,event,msg)
 	if event=="ADDON_LOADED" and msg==addon then

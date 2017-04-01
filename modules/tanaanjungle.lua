@@ -21,70 +21,7 @@ if you have the zone daily in your log and fly into the zone you will automatica
 you can see it through blizzards objective tracker under the minimap. note: the hidden quest contains all subtargets to complete the quest.
 the bonus quest you get by fly or walk into zone without a active zone daily in questlog.
 --]=]
-local ids = ns.player.faction=="Alliance" and {
-	[39287]=1,[39288]=1,[39289]=1,[39290]=1, -- bosses
-	[38585]=2,[38587]=3,[39453]=4,-- Assault on the Throne of Kil'jaeden
-	[38441]=2,[37970]=3,[39445]=4,-- Assault on the Fel Forge
-	[37891]=2,[37865]=3,[39451]=4,-- Assault on Ironhold Harbor
-	[38250]=2,[37938]=3,[39447]=4,-- Assault on the Ruins of Kra'nak
-	[38045]=2,[38043]=3,[39441]=4,-- Bleeding the Bleeding Hollow
-	[38046]=2,[38051]=3,[39443]=4,-- Battle at the Iron Front
-	[37968]=2,[37966]=3,[39450]=4,-- Assault on the Temple of Sha'naar
-	[39433]=5,-- npc 95424
-	[39581]=5,[39582]=5,[39586]=5, -- npc 96147
-	[39567]=5,[39568]=5,[39570]=5,[39574]=5,[39573]=5,[39571]=5,[39569]=5, -- npc 90974
-	[39565]=6 -- npc 92805
-} or {
-	[39287]=1,[39288]=1,[39289]=1,[39290]=1,-- bosses
-	[38586]=2,[38588]=3,[39454]=4,-- Assault on the Throne of Kil'jaeden
-	[38440]=2,[38439]=3,[39446]=4,-- Assault on the Fel Forge
-	[37940]=2,[37866]=3,[39452]=4,-- Assault on Ironhold Harbor
-	[38252]=2,[38009]=3,[39448]=4,-- Assault on the Ruins of Kra'nak
-	[38044]=2,[38040]=3,[39442]=4,-- Bleeding the Bleeding Hollow
-	[38047]=2,[38054]=3,[39444]=4,-- Battle at the Iron Front
-	[38449]=2,[38020]=3,[39449]=4,-- Assault on the Temple of Sha'naar
-	[39433]=5,-- npc 95424
-	[39519]=5,[39529]=5,[39532]=5,-- npc 93396
-	[39511]=5,[39509]=5,[39510]=5,[39512]=5,[39526]=5,[39514]=5,[39513]=5,-- npc 96014
-	[39565]=6-- npc 92805
-};
-local zone2hidden = {
-	[38585]=38587,[38441]=37970,[37891]=37865,[38250]=37938,
-	[38045]=38043,[38046]=38051,[37968]=37966,[38586]=38588,
-	[38440]=38439,[37940]=37866,[38252]=38009,[38044]=38040,
-	[38047]=38054,[38449]=38020,
-};
-local numIDTypes = {
-	4, -- bosses
-	1, -- random zone daily
-	1, -- hidden zone daily
-	7, -- bonus dailies
-	4, -- random dailies
-	1, -- weeklies
-};
-local colorIDTypes = {
-	"ltblue",
-	"green",
-	"red",
-	"yellow",
-	"orange",
-	"violet",
-}
-local typeOrder = {1,6,5,2,4};
-local npcs = { -- [<npcID>] = <questID>
-	[95053]=39287,[95044]=39288,[95056]=39289,[95054]=39290
-};
-local groupIds = {
-	--[39432] = 
-};
-local titles = { -- {"<title>", <maxQuestCount>}
-	{"Rare bosses",4}, -- L["Rare bosses"]
-	{"Random zone daily",1}, -- L["Random zone dailies"]
-	{"Hidden random zone dailies",3}, -- L["Hidden random zone dailies"]
-	{"Daily zone bonus",7}, -- L["Daily zone bonus"]
-	{"Reputation dailies",4}, -- L["Reputation dailies"]
-	{"Reputation weeklies",1} -- L["Reputation weeklies"]
-}
+local ids,zone2hidden,numIDTypes,colorIDTypes,typeOrder,npcs,groupIds,titles;
 
 
 
@@ -151,6 +88,73 @@ ns.modules[name] = {
 --------------------------
 -- some local functions --
 --------------------------
+local function initData()
+	ids = ns.player.faction=="Alliance" and {
+		[39287]=1,[39288]=1,[39289]=1,[39290]=1, -- bosses
+		[38585]=2,[38587]=3,[39453]=4,-- Assault on the Throne of Kil'jaeden
+		[38441]=2,[37970]=3,[39445]=4,-- Assault on the Fel Forge
+		[37891]=2,[37865]=3,[39451]=4,-- Assault on Ironhold Harbor
+		[38250]=2,[37938]=3,[39447]=4,-- Assault on the Ruins of Kra'nak
+		[38045]=2,[38043]=3,[39441]=4,-- Bleeding the Bleeding Hollow
+		[38046]=2,[38051]=3,[39443]=4,-- Battle at the Iron Front
+		[37968]=2,[37966]=3,[39450]=4,-- Assault on the Temple of Sha'naar
+		[39433]=5,-- npc 95424
+		[39581]=5,[39582]=5,[39586]=5, -- npc 96147
+		[39567]=5,[39568]=5,[39570]=5,[39574]=5,[39573]=5,[39571]=5,[39569]=5, -- npc 90974
+		[39565]=6 -- npc 92805
+	} or {
+		[39287]=1,[39288]=1,[39289]=1,[39290]=1,-- bosses
+		[38586]=2,[38588]=3,[39454]=4,-- Assault on the Throne of Kil'jaeden
+		[38440]=2,[38439]=3,[39446]=4,-- Assault on the Fel Forge
+		[37940]=2,[37866]=3,[39452]=4,-- Assault on Ironhold Harbor
+		[38252]=2,[38009]=3,[39448]=4,-- Assault on the Ruins of Kra'nak
+		[38044]=2,[38040]=3,[39442]=4,-- Bleeding the Bleeding Hollow
+		[38047]=2,[38054]=3,[39444]=4,-- Battle at the Iron Front
+		[38449]=2,[38020]=3,[39449]=4,-- Assault on the Temple of Sha'naar
+		[39433]=5,-- npc 95424
+		[39519]=5,[39529]=5,[39532]=5,-- npc 93396
+		[39511]=5,[39509]=5,[39510]=5,[39512]=5,[39526]=5,[39514]=5,[39513]=5,-- npc 96014
+		[39565]=6-- npc 92805
+	};
+	zone2hidden = {
+		[38585]=38587,[38441]=37970,[37891]=37865,[38250]=37938,
+		[38045]=38043,[38046]=38051,[37968]=37966,[38586]=38588,
+		[38440]=38439,[37940]=37866,[38252]=38009,[38044]=38040,
+		[38047]=38054,[38449]=38020,
+	};
+	numIDTypes = {
+		4, -- bosses
+		1, -- random zone daily
+		1, -- hidden zone daily
+		7, -- bonus dailies
+		4, -- random dailies
+		1, -- weeklies
+	};
+	colorIDTypes = {
+		"ltblue",
+		"green",
+		"red",
+		"yellow",
+		"orange",
+		"violet",
+	}
+	typeOrder = {1,6,5,2,4};
+	npcs = { -- [<npcID>] = <questID>
+		[95053]=39287,[95044]=39288,[95056]=39289,[95054]=39290
+	};
+	groupIds = {
+		--[39432] = 
+	};
+	titles = { -- {"<title>", <maxQuestCount>}
+		{"Rare bosses",4}, -- L["Rare bosses"]
+		{"Random zone daily",1}, -- L["Random zone dailies"]
+		{"Hidden random zone dailies",3}, -- L["Hidden random zone dailies"]
+		{"Daily zone bonus",7}, -- L["Daily zone bonus"]
+		{"Reputation dailies",4}, -- L["Reputation dailies"]
+		{"Reputation weeklies",1} -- L["Reputation weeklies"]
+	}
+end
+
 function createMenu(self)
 	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
@@ -362,7 +366,12 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
--- ns.modules[name].init = function() end
+ns.modules[name].init = function()
+	if initData then
+		initData();
+		initData=nil;
+	end
+end
 
 ns.modules[name].onevent = function(self,event,...)
 	if event=="ADDON_LOADED" then

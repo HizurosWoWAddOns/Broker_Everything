@@ -27,70 +27,7 @@ local timeout=5;
 local timeout_counter=0;
 local IsBlizzCon = IsBlizzCon or function() return false; end -- Legion Fix
 
-local menu = { --section 1
-	{name=CHARACTER_BUTTON,		iconName="Character-{class}",	func=function() securecall("ToggleCharacter", "PaperDollFrame") end },
-	{name=SPELLBOOK,			iconName="Spellbook",			click='SpellbookMicroButton',			disabled=IsBlizzCon(), taint=true},
-	{name=TALENTS,				iconName="Talents",				click='TalentMicroButton',				disabled=UnitLevel("player")<10, taint=true},
-	{name=ACHIEVEMENT_BUTTON,	iconName="Achievments",			click='AchievementMicroButton',		taint=true},
-	{name=QUESTLOG_BUTTON,		iconName="Questlog",			click='QuestLogMicroButton',			taint=true},
-	{
-		name=LOOKINGFORGUILD,
-		iconName="LFGuild",
-		click='GuildMicroButton',
-		disabled=(IsTrialAccount() or IsBlizzCon()),
-		get=function(v)
-			if ns.player.faction=="Neutral" then
-				v.disabled=true;
-				v.iconName="Help";
-			end
-			if not v.disabled and IsInGuild() then
-				v.name=GUILD;
-				v.iconName = "Guild";
-			end
-		end,
-		taint=true
-	},
-	{name=SOCIAL_BUTTON,		iconName="Friends",			func=function() securecall("ToggleFriendsFrame", 1) end,		disabled=IsTrialAccount()},
-
-	{name=GROUP_FINDER,			iconName="PvP-{faction}",	func=function() securecall("PVEFrame_ToggleFrame","GroupFinderFrame"); end, disabled=(UnitLevel("player")<SHOW_LFD_LEVEL or IsBlizzCon())},
-	{name=PLAYER_V_PLAYER,		iconName="LFDungeon",		func=function() securecall("PVEFrame_ToggleFrame","PVPUIFrame"); end, disabled=(UnitLevel("player")<SHOW_PVP_LEVEL or IsBlizzCon())},
-	{name=CHALLENGES,			iconName="Challenges",		func=function() securecall("PVEFrame_ToggleFrame","ChallengesFrame"); end, disabled=(UnitLevel("player")<SHOW_LFD_LEVEL or IsBlizzCon())},
-
-	{name=MOUNTS,				iconName="Mounts",			func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 1) end,		taint=true},
-	{name=PET_JOURNAL,			iconName="Pets",			func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 2) end,		taint=true},
-	{name=TOY_BOX,				iconName="ToyBox",			func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 3) end,		taint=true},
-	{name=HEIRLOOMS,			iconName="Heirlooms",		func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 4) end,		taint=true},
-
-	{name=ENCOUNTER_JOURNAL,	iconName="EJ",				func=function() securecall("ToggleEncounterJournal") end,														iconCoords=""},
-	{name=BLIZZARD_STORE,		iconName="Store",			click='StoreMicroButton',															disabled=IsTrialAccount(), taint=true},
-	{sep=true}, -- section 2
-	{name=GAMEMENU_HELP,		iconName="Help",			func=function() securecall("ToggleHelpFrame") end,		},
-	{name=SYSTEMOPTIONS_MENU,	iconName="SysOpts",			func=function() securecall("VideoOptionsFrame_Toggle") end,		},
-	{name=KEY_BINDINGS,			iconName="KeyBinds",		func=function() securecall("KeyBindingFrame_LoadUI") securecall("ShowUIPanel", KeyBindingFrame) end,		taint=true},
-	{name=UIOPTIONS_MENU,		iconName="UiOpts",			func=function() securecall("InterfaceOptionsFrame_Show") end,		},
-	{name=MACROS,				iconName="Macros",			func=function() securecall("ShowMacroFrame") end,		},
-	{name=MAC_OPTIONS,			iconName="MacOpts",			func=function() securecall("ShowUIPanel", MacOptionsFrame) end,		 view=IsMacClient()==true},
-	{name=ADDONS,				iconName="Addons",			view=( (IsAddOnLoaded("OptionHouse")) or (IsAddOnLoaded("ACP")) or (IsAddOnLoaded("Ampere")) or (IsAddOnLoaded("stAddonManager")) or (_G.AddonList) ),
-	func=function()
-		if (IsAddOnLoaded("OptionHouse")) then
-			OptionHouse:Open(1);
-		elseif (IsAddOnLoaded("ACP")) then
-			ACP:ToggleUI();
-		elseif (IsAddOnLoaded("Ampere")) then
-			InterfaceOptionsFrame_OpenToCategory("Ampere");
-		elseif (IsAddOnLoaded("stAddonManager")) then
-			stAddonManager:LoadWindow()
-		elseif (_G.AddonList) then
-			AddonList:Show();
-		end
-	end},
-	{sep=true, taint=true}, -- section 3
-	{name=VIDEO_OPTIONS_WINDOWED.."/"..VIDEO_OPTIONS_FULLSCREEN, 				iconName="Fullscreen",			macro="/script SetCVar('gxWindow', 1 - GetCVar('gxWindow')) RestartGx()",	taint=true,	--[[, view=IsMacClient()~=true]]},
-	{name=L["Reload UI"],			iconName="ReloadUi",			macro="/reload",																taint=true},
-	{name=LOGOUT,					iconName="Logout",				macro="/logout",																taint=true},
-	{name=EXIT_GAME,				iconName="ExitGame",			macro="/quit",																	taint=true}
-}
-
+local menu = {};
 
 -------------------------------------------
 -- register icon names and default files --
@@ -191,6 +128,72 @@ ns.modules[name] = {
 --------------------------
 -- some local functions --
 --------------------------
+local function initData()
+	menu = { --section 1
+		{name=CHARACTER_BUTTON,		iconName="Character-{class}",	func=function() securecall("ToggleCharacter", "PaperDollFrame") end },
+		{name=SPELLBOOK,			iconName="Spellbook",			click='SpellbookMicroButton',			disabled=IsBlizzCon(), taint=true},
+		{name=TALENTS,				iconName="Talents",				click='TalentMicroButton',				disabled=UnitLevel("player")<10, taint=true},
+		{name=ACHIEVEMENT_BUTTON,	iconName="Achievments",			click='AchievementMicroButton',		taint=true},
+		{name=QUESTLOG_BUTTON,		iconName="Questlog",			click='QuestLogMicroButton',			taint=true},
+		{
+			name=LOOKINGFORGUILD,
+			iconName="LFGuild",
+			click='GuildMicroButton',
+			disabled=(IsTrialAccount() or IsBlizzCon()),
+			get=function(v)
+				if ns.player.faction=="Neutral" then
+					v.disabled=true;
+					v.iconName="Help";
+				end
+				if not v.disabled and IsInGuild() then
+					v.name=GUILD;
+					v.iconName = "Guild";
+				end
+			end,
+			taint=true
+		},
+		{name=SOCIAL_BUTTON,		iconName="Friends",			func=function() securecall("ToggleFriendsFrame", 1) end,		disabled=IsTrialAccount()},
+
+		{name=GROUP_FINDER,			iconName="PvP-{faction}",	func=function() securecall("PVEFrame_ToggleFrame","GroupFinderFrame"); end, disabled=(UnitLevel("player")<SHOW_LFD_LEVEL or IsBlizzCon())},
+		{name=PLAYER_V_PLAYER,		iconName="LFDungeon",		func=function() securecall("PVEFrame_ToggleFrame","PVPUIFrame"); end, disabled=(UnitLevel("player")<SHOW_PVP_LEVEL or IsBlizzCon())},
+		{name=CHALLENGES,			iconName="Challenges",		func=function() securecall("PVEFrame_ToggleFrame","ChallengesFrame"); end, disabled=(UnitLevel("player")<SHOW_LFD_LEVEL or IsBlizzCon())},
+
+		{name=MOUNTS,				iconName="Mounts",			func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 1) end,		taint=true},
+		{name=PET_JOURNAL,			iconName="Pets",			func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 2) end,		taint=true},
+		{name=TOY_BOX,				iconName="ToyBox",			func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 3) end,		taint=true},
+		{name=HEIRLOOMS,			iconName="Heirlooms",		func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 4) end,		taint=true},
+
+		{name=ENCOUNTER_JOURNAL,	iconName="EJ",				func=function() securecall("ToggleEncounterJournal") end,														iconCoords=""},
+		{name=BLIZZARD_STORE,		iconName="Store",			click='StoreMicroButton',															disabled=IsTrialAccount(), taint=true},
+		{sep=true}, -- section 2
+		{name=GAMEMENU_HELP,		iconName="Help",			func=function() securecall("ToggleHelpFrame") end,		},
+		{name=SYSTEMOPTIONS_MENU,	iconName="SysOpts",			func=function() securecall("VideoOptionsFrame_Toggle") end,		},
+		{name=KEY_BINDINGS,			iconName="KeyBinds",		func=function() securecall("KeyBindingFrame_LoadUI") securecall("ShowUIPanel", KeyBindingFrame) end,		taint=true},
+		{name=UIOPTIONS_MENU,		iconName="UiOpts",			func=function() securecall("InterfaceOptionsFrame_Show") end,		},
+		{name=MACROS,				iconName="Macros",			func=function() securecall("ShowMacroFrame") end,		},
+		{name=MAC_OPTIONS,			iconName="MacOpts",			func=function() securecall("ShowUIPanel", MacOptionsFrame) end,		 view=IsMacClient()==true},
+		{name=ADDONS,				iconName="Addons",			view=( (IsAddOnLoaded("OptionHouse")) or (IsAddOnLoaded("ACP")) or (IsAddOnLoaded("Ampere")) or (IsAddOnLoaded("stAddonManager")) or (_G.AddonList) ),
+		func=function()
+			if (IsAddOnLoaded("OptionHouse")) then
+				OptionHouse:Open(1);
+			elseif (IsAddOnLoaded("ACP")) then
+				ACP:ToggleUI();
+			elseif (IsAddOnLoaded("Ampere")) then
+				InterfaceOptionsFrame_OpenToCategory("Ampere");
+			elseif (IsAddOnLoaded("stAddonManager")) then
+				stAddonManager:LoadWindow()
+			elseif (_G.AddonList) then
+				AddonList:Show();
+			end
+		end},
+		{sep=true, taint=true}, -- section 3
+		{name=VIDEO_OPTIONS_WINDOWED.."/"..VIDEO_OPTIONS_FULLSCREEN, 				iconName="Fullscreen",			macro="/script SetCVar('gxWindow', 1 - GetCVar('gxWindow')) RestartGx()",	taint=true,	--[[, view=IsMacClient()~=true]]},
+		{name=L["Reload UI"],			iconName="ReloadUi",			macro="/reload",																taint=true},
+		{name=LOGOUT,					iconName="Logout",				macro="/logout",																taint=true},
+		{name=EXIT_GAME,				iconName="ExitGame",			macro="/quit",																	taint=true}
+	}
+end
+
 local function updateGMTicket()
 	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName)
 	if ns.profile[name].showGMTicket and gmticket.hasTicket and gmticket.ticketStatus~=LE_TICKET_STATUS_OPEN then
@@ -365,8 +368,13 @@ end
 ------------------------------------
 -- module (BE internal) functions --
 ------------------------------------
+ns.modules[name].init = function()
+	if initDatat then
+		initData();
+		initData=nil;
+	end
+end
 
--- ns.modules[name].init = function() end
 ns.modules[name].onevent = function(self, event, arg1, ...)
 	local _
 	if event=="PLAYER_ENTERING_WORLD" or event=="BE_DUMMY_EVENT" then
