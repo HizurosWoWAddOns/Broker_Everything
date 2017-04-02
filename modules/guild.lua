@@ -656,7 +656,9 @@ ns.modules[name].onevent = function(self,event,msg,...)
 		if not membersName2Index[name] then
 			return; -- it is not a guild member. don't update for toons from friendlist.
 		end
-		securecall("GuildRoster"); -- trigger
+		GuildRoster();
+		doGuildUpdate = true;
+		doMembersUpdate = true;
 		return;
 	elseif event=="GUILD_ROSTER_UPDATE" or event=="LF_GUILD_RECRUITS_UPDATED" or event=="BE_DUMMY_EVENT" then
 		doGuildUpdate = true;
