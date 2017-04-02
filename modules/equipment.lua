@@ -466,7 +466,7 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function()
-	if initDatat then
+	if initData then
 		initData();
 		initData=nil;
 	end

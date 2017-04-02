@@ -16,7 +16,6 @@ local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rank
 local nameEnglish,spellId,skillId,disabled = 11, 12, 13, 14; -- custom after GetProfessionInfo
 local spellName,spellLocaleName,spellIcon,spellId = 1,2,3,4;
 local legion_faction_recipes,cdSpells = {},{};
-}
 local cd_groups = { -- %s cooldown group
 	"Transmutation",	-- L["Transmutation cooldown group"]
 	"Jewels",			-- L["Jewels cooldown group"]

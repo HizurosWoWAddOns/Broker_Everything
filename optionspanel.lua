@@ -596,13 +596,7 @@ ns.optionpanel = function()
 		for name1,value1 in pairs(f.changes) do
 			if (type(value1)=="table") and (name1~="iconcolor") then
 				for name2,value2 in pairs(value1) do
-					if action=="defaults" then
-						if ns.allModDefaults[name2] then
-							ns.profile[name1][name2] = ns.allModDefaults[name2]; -- table defined in modules/modules.lua
-						else
-							ns.profile[name1][name2] = ns.modules[name1].defaults[name2];
-						end
-					elseif action~="none" and name2~="minimap" then
+					if action~="none" and name2~="minimap" then
 						ns.profile[name1][name2] = value2;
 					end
 					if (mods.events[name1]) and (mods.events[name1][name2]) then
@@ -628,12 +622,7 @@ ns.optionpanel = function()
 						end
 					end
 					if name2=="minimap" then
-						if value2 then
-							ns.LDBI:Show(ns.modules[name1].ldbName);
-						else
-							ns.LDBI:Hide(ns.modules[name1].ldbName);
-						end
-						ns.profile[name1].minimap.hide=not value2;
+						ns.toggleMinimapButton(name1, value2);
 					end
 				end
 			else
@@ -668,6 +657,8 @@ ns.optionpanel = function()
 		wipe(Broker_Everything_ProfileDB);
 		wipe(f.changes);
 		f.Apply:Disable();
+		f.Needs:SetText(L["An UI reload is necessary to apply all changes."]);
+		f.Needs:Show();
 	end
 
 	function f:refresh()

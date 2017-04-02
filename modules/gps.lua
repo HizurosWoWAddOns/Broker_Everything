@@ -538,19 +538,19 @@ end
 -- ns.modules[name0].init = function(self) end
 
 ns.modules[name1].init = function(self)
-	if initDatat then
+	if initData then
 		initData();
 		initData=nil;
 	end
 end
 ns.modules[name2].init = function(self)
-	if initDatat then
+	if initData then
 		initData();
 		initData=nil;
 	end
 end
 ns.modules[name3].init = function(self)
-	if initDatat then
+	if initData then
 		initData();
 		initData=nil;
 	end

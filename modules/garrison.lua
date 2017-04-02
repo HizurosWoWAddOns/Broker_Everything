@@ -418,7 +418,7 @@ end
 -- module (BE internal) functions --
 ------------------------------------
 ns.modules[name].init = function()
-	if initDatat then
+	if initData then
 		initData();
 		initData=nil;
 	end
@@ -462,7 +462,7 @@ ns.modules[name].onevent = function(self,event,...)
 		end
 	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-	else
+	elseif ns.pastPEW then
 		local progress,ready=0,0;
 		local garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0;
 		local tmp, names, _, bName, texture, shipmentCapacity, shipmentsReady, shipmentsTotal, creationTime, duration, timeleftString, shipmentsCurrent = {}, {};
