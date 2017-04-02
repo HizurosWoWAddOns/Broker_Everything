@@ -100,6 +100,7 @@ ns.modules[name] = {
 		{ type="toggle", name="splitFriendsBroker",  label=L["Split friends on Broker"], tooltip=L["Split Characters and BattleNet-Friends on Broker Button"], event=true },
 		{ type="toggle", name="showFriendsBroker",   label=L["Show friends"], tooltip=L["Display count of friends if 'Split friends on Broker' enabled otherwise add friends to summary count."], event=true },
 		{ type="toggle", name="showBNFriendsBroker", label=L["Show BattleNet friends"], tooltip=L["Display count of BattleNet friends on Broker if 'Split friends on Broker' enabled otherwise add BattleNet friends to summary count."], event=true },
+		{ type="toggle", name="showTotalCount",      label=L["Show total count"], tooltip=L["Display total count of friens and/or BattleNet friends on broker button"], event=true },
 	},
 	config_tooltip = {
 		{ type="toggle", name="showFriends",    label=L["Show friends"],           tooltip=L["Display friends in tooltip"] },
@@ -583,7 +584,8 @@ ns.modules[name].onevent = function(self,event,msg)
 			ns.profile[name].splitFriendsTT = nil;
 		end
 		return;
-	elseif even=="CHAT_MSG_SYSTEM" and not (msg:find(off) or msg:find(on)) then
+	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
+		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 		return;
 	end
 	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
@@ -594,14 +596,21 @@ ns.modules[name].onevent = function(self,event,msg)
 	local numFriends, friendsOnline = GetNumFriends();
 	local broadcastText = select(4,BNGetInfo());
 
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-	end
 
-	if (ns.profile[name].splitFriendsBroker) then
-		dataobj.text = format("%s/%s "..C(BNConnected() and "ltblue" or "red","%s/%s"),friendsOnline, numFriends, numOnlineBNFriends, numBNFriends);
+	if ns.profile[name].splitFriendsBroker then
+		local friends = friendsOnline;
+		local bnfriends = numOnleinBNFriends;
+		if ns.profile[name].showTotalCount then
+			friends = friends.."/"..numFriends;
+			bnfriends = bnfriends.."/"..numBNFriends;
+		end
+		dataobj.text = friends .." ".. C(BNConnected() and "ltblue" or "red",bnfriends);
 	else
-		dataobj.text = (numOnlineBNFriends + friendsOnline) .. "/" .. (numBNFriends + numFriends) .. (BNConnected()==false and "("..C("red","BNet Off")..")" or "");
+		local txt = numOnlineBNFriends + friendsOnline;
+		if ns.profile[name].showTotalCount then
+			txt = txt .."/".. (numBNFriends + numFriends);
+		end
+		dataobj.text = txt .. (BNConnected()==false and "("..C("red","BNet Off")..")" or "");
 	end
 
 	if (broadcastText) and (strlen(broadcastText)>0) then
