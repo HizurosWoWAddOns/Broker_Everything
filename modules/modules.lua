@@ -88,7 +88,7 @@ local function moduleInit(name)
 	if type(data.config_broker)~="table" then
 		data.config_broker = {};
 	end
-	tinsert(data.config_broker,1,{type="toggle", name="minimap", label=L["Broker as Minimap Button"], tooltip=L["Create a minimap button for this broker"]});
+	tinsert(data.config_broker,1,{type="toggle", name="minimap", label=L["Broker as Minimap Button"], tooltip=L["Create a minimap button for this broker"], event=true});
 	if type(ns.profile[name].minimap)~="table" then
 		ns.profile[name].minimap = {hide=true};
 	end
@@ -234,6 +234,9 @@ local function moduleInit(name)
 					tinsert(config,allModsOptions[data.config_broker[i]]);
 				end
 			else
+				if data.config_broker[i].event==nil then
+					data.config_broker[i].event = true;
+				end
 				tinsert(config,data.config_broker[i]);
 			end
 		end
