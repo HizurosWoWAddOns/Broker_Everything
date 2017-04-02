@@ -599,7 +599,7 @@ ns.modules[name].onevent = function(self,event,msg)
 
 	if ns.profile[name].splitFriendsBroker then
 		local friends = friendsOnline;
-		local bnfriends = numOnleinBNFriends;
+		local bnfriends = numOnlineBNFriends;
 		if ns.profile[name].showTotalCount then
 			friends = friends.."/"..numFriends;
 			bnfriends = bnfriends.."/"..numBNFriends;
