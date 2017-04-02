@@ -237,7 +237,7 @@ local function addItem(id,loc)
 	elseif items[id] and items[id][1] then
 		local v=items[id][1];
 		if type(v)=="table" and v.name then
-			table.insert(foundItems,{id=id,icon=v.icon,name=v.name,name2=v.name,mustBeEquipped=_itemMustBeEquipped[id]==1,equipped=v.type=="inv"});
+			table.insert(foundItems,{id=id,icon=v.icon,name=v.name,name2=v.name,mustBeEquipped=_itemMustBeEquipped[id]==1,equipped=v.type=="inventory"});
 		end
 	end
 end

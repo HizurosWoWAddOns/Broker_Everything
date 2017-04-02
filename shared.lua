@@ -672,10 +672,10 @@ do
 		obj.linkData = d.linkData[obj.link];
 	end
 
-	local function GetObjectTooltipData(obj,query,instantMode)
+	local function GetObjectTooltipData(obj,instantMode)
 		if instantMode==true then
 			if not d.tooltipData[obj.link] then
-				local data = ns.ScanTT.query(query,true);
+				local data = ns.ScanTT.query({type="link",link=obj.link,obj=obj},true);
 				if #data.lines>0 then
 					d.tooltipData[obj.link] = CopyTable(data.lines);
 				end
@@ -748,9 +748,8 @@ do
 					obj.durability,obj.durability_max = GetContainerItemDurability(bag, slot);
 					if obj.name then
 						GetObjectLinkData(obj);
-						--if obj.itemType==ARMOR or obj.itemType==WEAPON or (ns.artifactpower_items and ns.artifactpower_items[id]) or d.NeedTooltip[id] then
-						if IsEquippableItem(obj.link) or d.NeedTooltip[id] then -- 7.2 GetItemInfo invalid itemType Bug. @Blizzard: Ha Ha. Stupid trick. Try again :P
-							GetObjectTooltipData(obj,{type="bag",bag=bag,slot=slot});
+						if IsEquippableItem(obj.link) or d.NeedTooltip[id] or (ns.artifactpower_items and ns.artifactpower_items[id]) then -- 7.2 GetItemInfo invalid itemType Bug. @Blizzard: Ha Ha. Dirty trick. Try again :P
+							GetObjectTooltipData(obj);
 						end
 						tinsert(items[id],obj);
 						seen[id]=true; bags[bag..":"..slot]=id;
@@ -781,13 +780,13 @@ do
 			local id, unknown1 = GetInventoryItemID("player",slotIndex);
 			if type(id)=="number" then
 				if(items[id]==nil)then items[id]={}; end
-				local obj,lvl = {type="inv",slotName=slotNames[slotIndex],slotIndex=slotIndex,durability={},id=id,unknown1=unknown1,gems={},empty_gem=false};
+				local obj,lvl = {type="inventory",slotName=slotNames[slotIndex],slotIndex=slotIndex,slot=slotIndex,durability={},id=id,unknown1=unknown1,gems={},empty_gem=false};
 				obj.link = GetInventoryItemLink("player",slotIndex);
 				obj.name, _, obj.rarity, obj.level, _, obj.itemType, obj.subType, _, _, obj.icon, obj.price = GetItemInfo(obj.link);
 				obj.isBroken = GetInventoryItemBroken("player",slotIndex);
 				obj.durability, obj.durability_max = GetInventoryItemDurability(slotIndex);
 				GetObjectLinkData(obj);
-				GetObjectTooltipData(obj,{type="inventory",slot=slotIndex,link=obj.link});
+				GetObjectTooltipData(obj);
 				tinsert(items[id],obj);
 				seen[id]=true;
 				inv[slotIndex]=obj;
@@ -972,6 +971,11 @@ do
 	end
 	ns.items.GetInventoryItemBySlotIndex = function(index)
 		return d.inv[index] or false;
+	end
+	ns.items.GetItemTooltip = function(obj)
+		if obj then
+			GetObjectTooltipData(obj,true);
+		end
 	end
 end
 

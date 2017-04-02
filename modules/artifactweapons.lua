@@ -236,16 +236,16 @@ end
 
 local updateItemStateTry,updateItemState=0;
 local function ttMatchString(line,matchString)
-	local AP;
+	local artefact_power;
 	if type(matchString)=="table" then
-		AP = tonumber(line:gsub("%.",""):match(matchString[1]));
-		if not AP then
-			AP = tonumber(line:gsub("%.",""):match(matchString[2]));
+		artefact_power = tonumber(line:gsub("%.",""):match(matchString[1]));
+		if not artefact_power then
+			artefact_power = tonumber(line:gsub("%.",""):match(matchString[2]));
 		end
 	else
-		AP = tonumber(line:gsub("%.",""):match(matchString));
+		artefact_power = tonumber(line:gsub("%.",""):match(matchString));
 	end
-	return AP;
+	return artefact_power;
 end
 
 function updateItemState()
@@ -256,50 +256,45 @@ function updateItemState()
 	local isFishing = false;
 	for id,v in pairs(lst) do
 		if ns.artifactpower_items[id]~=nil then
-			-- group items by knowledge levels
-			local kl = {};
-			for I,V in ipairs(v)do
-				local knowledge = V.linkData[#V.linkData-3];
+			-- group items with same item id by knowledge levels
+			local klvls = {};
+			for _,item in ipairs(v)do
+				local knowledge = item.linkData[#item.linkData-3];
 				if knowledge then
-					if kl[knowledge]==nil then kl[knowledge]={}; end
-					tinsert(kl[knowledge],V);
+					if klvls[knowledge]==nil then klvls[knowledge]={}; end
+					tinsert(klvls[knowledge],item);
 				end
 			end
-			for klvl,V in pairs(kl)do
+			for klvl,items in pairs(klvls)do
 				local knowledgeLevel = klvl-1;
-				local AP = nil;
-				-- try to get artifact power from tooltip
-				if v[1].tooltip then
-					for i=2, #v[1].tooltip do
-						AP = ttMatchString(v[1].tooltip[i],matchString1);
-						if not AP then
-							AP = ttMatchString(v[1].tooltip[i],matchString2);
-							if AP then
+				local artefact_power = nil;
+				-- missing item tooltip?
+				if not items[1].tooltip then
+					ns.items.GetItemTooltip(items[1]);
+				end
+				-- read artefact power from single item tooltip with same item id and knowledge level
+				if items[1].tooltip then
+					for i=2, #items[1].tooltip do
+						artefact_power = ttMatchString(items[1].tooltip[i],matchString1); -- artefact power for artefact weapons?
+						if not artefact_power then
+							artefact_power = ttMatchString(items[1].tooltip[i],matchString2); -- artefact power for artefact pole?
+							if artefact_power then
 								isFishing = true;
 							end
 						end
-						if AP then
+						if artefact_power then
 							break;
 						end
 					end
 				end
-				-- second, calculate from ground value with knowledge level multiplier.
-				-- sometimes not really accurate because blizzard does not really use its own multiplier.
-				-- all values comes from database. 
-				-- for example: item 141708 > 545 artifact power without knowledge level. 1025 instead of 1035 with knowledge level 3.
-				-- /run print("\124cff0070dd\124Hitem:141708::::::::110:62:8388608:30::1:::\124h[Item 141708]\124h\124r")
-				-- /run print("\124cff0070dd\124Hitem:141708::::::::110:62:8388608:30::4:::\124h[Item 141708]\124h\124r")
-				if not isFishing and not AP and ns.artifactpower_items[id]~=-1 then
-					AP = CalculateArtifactPower(ns.artifactpower_items[id],knowledgeLevel);
-				end
 				tinsert(ap_items_found,{
 					id=id,
-					count=#V,
-					name=v[1].name,
-					link=v[1].link,
-					icon=v[1].icon,
-					artifact_power=AP or -1,
-					quality=v[1].rarity,
+					count=#items,
+					name=items[1].name,
+					link=items[1].link,
+					icon=items[1].icon,
+					artifact_power=artefact_power or -1,
+					quality=items[1].rarity,
 					isFishing = isFishing
 				});
 			end
