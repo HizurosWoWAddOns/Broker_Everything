@@ -598,7 +598,7 @@ ns.modules[name].onevent = function(self,event,msg)
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 
-	if (ns.profile[name].splitFriends) then
+	if (ns.profile[name].splitFriendsBroker) then
 		dataobj.text = format("%s/%s "..C(BNConnected() and "ltblue" or "red","%s/%s"),friendsOnline, numFriends, numOnlineBNFriends, numBNFriends);
 	else
 		dataobj.text = (numOnlineBNFriends + friendsOnline) .. "/" .. (numBNFriends + numFriends) .. (BNConnected()==false and "("..C("red","BNet Off")..")" or "");
