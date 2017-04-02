@@ -19,8 +19,6 @@ local TalentUnavailableReasons = {
 	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_NOT_ENOUGH_GOLD] = ORDER_HALL_TALENT_UNAVAILABLE_NOT_ENOUGH_GOLD,
 	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_TIER_UNAVAILABLE] = ORDER_HALL_TALENT_UNAVAILABLE_TIER_UNAVAILABLE,
 };
-local COMPLETED,BACK_TO_ORDER_HALL = strsplit("-",ORDER_HALL_LANDING_COMPLETE);
-COMPLETED,BACK_TO_ORDER_HALL=COMPLETED:trim(),BACK_TO_ORDER_HALL:trim();
 
 
 -------------------------------------------
@@ -144,7 +142,7 @@ local function addShipment(tt,...)
 					line = "     "..line .." ".. SecondsToTime((creationTime+(duration+(nextShipments*duration)))-now);
 				end
 			else
-				line = line .. " ("..COMPLETED..")";
+				line = line .. " ("..L["Completed"]..")";
 			end
 			tt:SetCell(l,1,line,nil,"CENTER",0);
 		end
