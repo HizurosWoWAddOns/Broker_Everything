@@ -220,17 +220,19 @@ local function updateBroker()
 	local icon,iconCoords,text = I[name].iconfile,{0,1,0,1},{};
 
 	if ns.profile[name].showCurrentSet then
-		local numEquipSets = (GetNumEquipmentSets or C_EquipmentSet.GetNumEquipmentSets)()
+		local numEquipSets = C_EquipmentSet.GetNumEquipmentSets();
 
 		if numEquipSets > 0 then 
 			local equipName, iconFile, setID, isEquipped, _, _, _, numMissing;
-			for i=0, numEquipSets-1 do 
+			for i=0, numEquipSets do 
 				equipName, iconFile, setID, isEquipped, _, _, _, numMissing = C_EquipmentSet.GetEquipmentSetInfo(i);
-				local pending = (equipPending and C("orange",equipPending)) or false
-				if isEquipped then 
-					iconCoords = {0.05,0.95,0.05,0.95}
-					icon = iconFile;
-					tinsert(text,pending~=false and pending or equipName);
+				if equipName then
+					local pending = (equipPending and C("orange",equipPending)) or false;
+					if isEquipped then 
+						iconCoords = {0.05,0.95,0.05,0.95}
+						icon = iconFile;
+						tinsert(text,pending~=false and pending or equipName);
+					end
 				end
 			end
 			if(#text==0)then
@@ -261,15 +263,16 @@ local function updateBroker()
 end
 
 local function UpdateInventory()
-	local lst,data = {iLevelMin=0,iLevelMax=0},ns.items.GetInventoryItems();
+	local lst,data,lvl = {iLevelMin=0,iLevelMax=0},ns.items.GetInventoryItems();
 	for _, d in pairs(data) do
-		if d and d.slotIndex and d.slotIndex~=4 and d.slotIndex~=19 then
+		if d and tonumber(d.slotIndex) and d.slotIndex~=4 and d.slotIndex~=19 then
+			lvl = not tonumber(d.level) or 0;
 			lst[d.slotIndex] = d;
-			if lst.iLevelMin==0 or d.level<lst.iLevelMin then
-				lst.iLevelMin=d.level;
+			if lst.iLevelMin==0 or lvl<lst.iLevelMin then
+				lst.iLevelMin=lvl;
 			end
-			if d.level>lst.iLevelMax then
-				lst.iLevelMax=d.level;
+			if lvl>lst.iLevelMax then
+				lst.iLevelMax=lvl;
 			end
 		end
 	end
@@ -307,12 +310,7 @@ end
 
 local function InventoryTooltipShow(self)
 	GameTooltip:SetOwner(self,"ANCHOR_NONE");
-	if (select(1,self:GetCenter()) > (select(1,UIParent:GetWidth()) / 2)) then
-		GameTooltip:SetPoint("RIGHT",tt,"LEFT",-2,0);
-	else
-		GameTooltip:SetPoint("LEFT",tt,"RIGHT",2,0);
-	end
-	GameTooltip:SetPoint("TOP",self,"TOP", 0, 4);
+	GameTooltip:SetPoint(ns.GetTipAnchor(self,"horizontal",tt));
 
 	GameTooltip:ClearLines();
 	GameTooltip:SetHyperlink(self.invLink);
@@ -353,6 +351,19 @@ local function equipOnClick(self)
 	end 
 end
 
+local function equipOnEnter(self)
+	if self.equipSetID then
+		GameTooltip:SetOwner(self,"ANCHOR_NONE");
+		GameTooltip:SetPoint(ns.GetTipAnchor(self,"horizontal",tt));
+		GameTooltip:SetEquipmentSet(self.equipSetID);
+		GameTooltip:Show();
+	end
+end
+
+local function equipOnLeave(self)
+	GameTooltip:Hide();
+end
+
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
@@ -372,14 +383,18 @@ local function createTooltip(tt)
 			local numEquipSets = C_EquipmentSet.GetNumEquipmentSets()
 			if (numEquipSets>0) then
 				local eName, icon, setID, isEquipped, numMissing, _;
-				for i=0, numEquipSets-1 do 
+				for i=0, numEquipSets do 
 					eName, icon, setID, isEquipped, _, _, _, numMissing = C_EquipmentSet.GetEquipmentSetInfo(i);
-					local color = (equipPending and equipPending==i and "orange") or (numMissing>0 and "red") or (isEquipped and "ltyellow") or false
-					local formatName = color~=false and C(color,eName) or eName
+					if eName then
+						local color = (equipPending and equipPending==i and "orange") or (numMissing>0 and "red") or (isEquipped and "ltyellow") or false
+						local formatName = color~=false and C(color,eName) or eName;
 
-					local line = ns.AddSpannedLine(tt, "|T"..(icon or ns.icon_fallback)..":0|t "..formatName);
-					tt.lines[line].equipSetID = setID;
-					tt:SetLineScript(line, "OnMouseUp", equipOnClick);
+						local line = ns.AddSpannedLine(tt, "|T"..(icon or ns.icon_fallback)..":0|t "..formatName);
+						tt.lines[line].equipSetID = setID;
+						tt:SetLineScript(line, "OnMouseUp", equipOnClick);
+						tt:SetLineScript(line, "OnEnter", equipOnEnter);
+						tt:SetLineScript(line, "OnLeave", equipOnLeave);
+					end
 				end
 				if (ns.profile.GeneralOptions.showHints) then
 					tt:AddSeparator();
@@ -393,7 +408,9 @@ local function createTooltip(tt)
 	end
 
 	if (ns.profile[name].showInventory) then
-		UpdateInventory();
+		if not inventory then
+			UpdateInventory();
+		end
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(
 			C("ltblue",TRADESKILL_FILTER_SLOTS),
