@@ -186,7 +186,7 @@ ns.coreOptions = { -- option panel builder table
 	{type="toggle",    name="goldHideCopper",     label=L["Hide copper"],        tooltip=L["Hide copper values of your money"], event=true},
 	{type="toggle",    name="goldHideSilver",     label=L["Hide silver"],        tooltip=L["Hide copper and silver values of your money"], event=true},
 	{type="toggle",    name="goldHideLowerZeros", label=L["Hide lower zeros"],   tooltip=L["Hide lower zero values of your money"], event=true},
-	{type="toggle",    name="separateThousands",  label=L["Separate thousands"], tooltip=L["Separate thousands on displayed gold and other numeric values"]},
+	{type="toggle",    name="separateThousands",  label=L["Digit grouping"],     tooltip=L["Displays large numbers with digit group symbols to make it easily readable"], event=true},
 
 	{type="separator", alpha=0 },
 
