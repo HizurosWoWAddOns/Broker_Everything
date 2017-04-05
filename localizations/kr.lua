@@ -4,6 +4,9 @@ if not LOCALE_koKR then return end
 local _, ns = ...;
 local L = ns.L;
 
+-- Hi. I need your help for localization.
+-- https://wow.curseforge.com/projects/broker-everything/localization
+
 L["(current)"] = "(현재)"
 L["(soon)"] = "(곧)"
 L["_ (undercore) > [_60 fps]"] = "_ (밑줄) > [_60 fps]"

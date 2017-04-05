@@ -4,6 +4,9 @@ if not LOCALE_deDE then return end
 local _, ns = ...;
 local L = ns.L;
 
+-- Hi. I need your help for localization.
+-- https://wow.curseforge.com/projects/broker-everything/localization
+
 L["%d unspent talent"] = "%d unverteiltes Talent"
 L["%d unspent talents"] = "%s unverteilte Talente"
 L["%s found. It's unsave to hide the minimap mail icon without errors."] = "%s gefunden. Es ist unsicher, das Minikarten-Postsymbol zu verstecken ohne Fehlermeldungen."
@@ -81,6 +84,7 @@ L["Bags"] = "Taschen"
 L["BattleNet friends"] = "Battle.net-Freunde"
 L["blank > [ 60 fps]"] = "Leerzeichen > [ 60 fps]"
 L["Bosses"] = "Bosse"
+L["Breaching the Tomb"] = "Sturm auf das Grabmal"
 L["Broken Isles Flying"] = "Fliegen auf den Verheerten Inseln"
 L["Broken Isles Pathfinder, Part Two"] = "Verheerte Inseln Pfadfinder, Teil Zwei"
 L["Broker as Minimap Buttons"] = "Broker als Minikartenbuttons"
@@ -211,6 +215,7 @@ L["Delete a character from the list"] = "Einen Charakter von der Liste löschen"
 L["Delete a profile"] = "Ein Profil löschen"
 L["Delete all character data"] = "Alle Charakterdaten löschen"
 L["Demoted"] = "Degradiert"
+L["Digit grouping"] = "Zahlengruppierung"
 L["Disable all modules"] = "Deaktiviert alle Module"
 L["Disable Click options"] = "Klickoptionen deaktivieren"
 L["Disable the click options on broker button"] = "Deaktiviert Klickoptionen auf Broker-Buttons"
@@ -304,6 +309,7 @@ L["Display your current equipment set on broker button"] = "Zeigt dein momentane
 L["Display zone in second tooltip"] = "Zeigt die Zone im zweiten Tooltip"
 L["Display zone in tooltip"] = "Zeigt die Zone im Tooltip"
 L["Display zone names"] = "Gebietsnamen zeigen"
+L["Displays large numbers with digit group symbols to make it easily readable"] = "Zeigt große Zahlen mit Zifferngruppensymbolen an, um sie leicht lesbar zu machen"
 L["Do you really want to left the game?"] = "Willst du wirklich das Spiel verlassen?"
 L["Do you really want to logout from this character?"] = "Bist du sicher, dass du dich von diesem Charakter ausloggen möchtest?"
 L["Do you really want to reload the UI?"] = "Bist du sicher, dass du das UI neu laden möchtest?"
@@ -439,6 +445,7 @@ L["Left in mailbox"] = "Zurückgelassen im Briefkasten"
 L["Left shift"] = "Links Umschalt"
 L["Left the guild"] = "Verließ die Gilde"
 L["Left-click"] = "Linksklick"
+L["Legionfall Commander"] = "Kommandant der Legionsrichter"
 L["List mails on chars"] = "Nachrichten an Charaktere auflisten"
 L["List of available modules with his status"] = "Liste aller verfügbaren Module mit deren Status"
 L["List of hardware"] = "Hardwareliste"

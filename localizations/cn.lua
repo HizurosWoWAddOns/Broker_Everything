@@ -4,6 +4,9 @@ if not LOCALE_zhCN then return end
 local _, ns = ...;
 local L = ns.L;
 
+-- Hi. I need your help for localization.
+-- https://wow.curseforge.com/projects/broker-everything/localization
+
 L["%d unspent talent"] = "%d 未使用天赋"
 L["%d unspent talents"] = "%d 未使用天赋"
 L["Active"] = "激活"

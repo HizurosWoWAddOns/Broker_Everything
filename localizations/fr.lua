@@ -4,6 +4,9 @@ if not LOCALE_frFR then return end
 local _, ns = ...;
 local L = ns.L;
 
+-- Hi. I need your help for localization.
+-- https://wow.curseforge.com/projects/broker-everything/localization
+
 L["Addon"] = "Addons"
 L["all"] = "Tout"
 L["Allows you to adjust the display options."] = "Vous permet de modifier les options."
