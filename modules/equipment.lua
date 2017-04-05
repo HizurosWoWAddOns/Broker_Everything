@@ -266,7 +266,7 @@ local function UpdateInventory()
 	local lst,data,lvl = {iLevelMin=0,iLevelMax=0},ns.items.GetInventoryItems();
 	for _, d in pairs(data) do
 		if d and tonumber(d.slotIndex) and d.slotIndex~=4 and d.slotIndex~=19 then
-			lvl = not tonumber(d.level) or 0;
+			lvl = tonumber(d.level) or 0;
 			lst[d.slotIndex] = d;
 			if lst.iLevelMin==0 or lvl<lst.iLevelMin then
 				lst.iLevelMin=lvl;
