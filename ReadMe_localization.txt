@@ -1,8 +1,9 @@
-Anyone who is interested to help translate this addon into other languages
-can found a list of current localization strings in the scripts folder.
 
-Please don't post the list as comment on curse or wow interface.
-The best way are attached on a email or a pm on curse, curseforge or wow interface.
+For anyone who is interested to help translate this addon into other languages.
+
+Curse localization tool for broker_everything is available under:
+https://wow.curseforge.com/projects/broker-everything/localization
 
 Greetings
-Hizuro (hizuro@gmx.net)
+Hizuro ^_^
+<hizuro[at]gmx[dot]net>
