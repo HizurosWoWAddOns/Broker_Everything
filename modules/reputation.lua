@@ -49,7 +49,7 @@ ns.modules[name] = {
 	},
 	updateinterval = nil, --0.5, -- 10
 	config_defaults = {
-		bgBars = true,
+		bgBars = "single",
 		standingText = true,
 		showSession = true,
 		showID = false,
