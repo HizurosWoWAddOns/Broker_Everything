@@ -12,7 +12,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Order hall" -- GARRISON_LOCATION_TOOLTIP
 local ldbName,ttName,ttColumns,tt,createMenu = name, name.."TT",3;
-local ohLevel,now = 0,0;
+local now = 0;
 local TalentUnavailableReasons = {
 	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_ANOTHER_IS_RESEARCHING] = ORDER_HALL_TALENT_UNAVAILABLE_ANOTHER_IS_RESEARCHING,
 	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_NOT_ENOUGH_RESOURCES] = ORDER_HALL_TALENT_UNAVAILABLE_NOT_ENOUGH_RESOURCES,
@@ -31,9 +31,9 @@ I[name] = {iconfile="Interface\\Icons\\inv_garrison_resource", coords={0.05,0.95
 -- module variables for registration --
 ---------------------------------------
 ns.modules[name] = {
-	desc = L["..."],
+	desc = L["Display order hall upgrade tree and work orders from order hall and kitchen"],
 	events = {},
-	updateinterval = 30, -- 10
+	updateinterval = nil, -- 10
 	config_defaults = {},
 	config_allowed = {},
 	config_header = { type="header", label=L[name], align="left", icon=I[name] },
@@ -157,14 +157,20 @@ local function createTooltip(tt)
 
 	tt:AddSeparator(4,0,0,0,0);
 
+	local ohLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
 	if ohLevel>0 then
 		now = time();
 		local tree = C_Garrison.GetTalentTrees(LE_GARRISON_TYPE_7_0, ns.player.classId);
 		if tree and tree[1] then
 			local t,l={},tt:AddLine(C("ltblue",ORDER_HALL_TALENT_TITLE));
 			tt:AddSeparator();
-			for i=1,5 do
-				tt:AddLine("","|","");
+			local tiers = {};
+			for i,v in ipairs(tree[1])do
+				if tiers[v.tier]==nil then
+					tiers[v.tier] = 0;
+					tt:AddLine("","|","");
+				end
+				tiers[v.tier] = tiers[v.tier]+1;
 			end
 			tt:AddLine();
 
@@ -176,7 +182,7 @@ local function createTooltip(tt)
 				end
 
 				local line,cell,align = l+v.tier+2,1,"RIGHT";
-				if v.tier<5 then
+				if tiers[v.tier]==2 then
 					if v.uiOrder==1 then
 						cell,align = 3,"LEFT";
 					end
@@ -266,7 +272,6 @@ ns.modules[name].init = function()
 end
 
 ns.modules[name].onevent = function(self,event,...)
-	ohLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
