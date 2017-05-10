@@ -16,7 +16,13 @@ local ttName,ttColumns,tt,createMenu,createTooltip = name.."TT", 3;
 local ap_items_found,spec2weapon,knowledgeLevel,obtained,updateBroker, _ = {},{},0,0;
 local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d*)");
 local PATTERN_ARTIFACT_XP_GAIN = gsub(ARTIFACT_XP_GAIN,"%s",".*");
-local artifactKnowledgeMultiplier_len, artifactLocked = 30;
+local PATTERN_SECOND_NUMBERS = {};
+PATTERN_SECOND_NUMBERS[1] = SECOND_NUMBER:gsub("%|7(.*):(.*);","%1");
+PATTERN_SECOND_NUMBERS[2] = SECOND_NUMBER:gsub("%|7(.*):(.*);","%2");
+if PATTERN_SECOND_NUMBERS[1]:len()<PATTERN_SECOND_NUMBERS[2]:len() then
+	PATTERN_SECOND_NUMBERS[1],PATTERN_SECOND_NUMBERS[2] = PATTERN_SECOND_NUMBERS[2],PATTERN_SECOND_NUMBERS[1];
+end
+local artifactKnowledgeMultiplier_len, artifactLocked = 50;
 local artifactKnowledgeMultiplier = {}
 local AP_MATCH_STRINGS,FISHING_AP_MATCH_STRINGS = {},{};
 ns.artifactpower_items = {};
@@ -183,33 +189,33 @@ local function initData()
 	}
 
 	AP_MATCH_STRINGS = {
-		deDE = "Gewährt Eurem derzeit ausgerüsteten Artefakt (%d*) Artefaktmacht",
-		enUS = "Grants (%d*) Artifact Power to your currently equipped Artifact",
-		esES = "Otorga (%d*) p. de poder de artefacto al artefacto que lleves equipado",
-		esMX = "Otorga (%d*) p. de Poder de artefacto para el artefacto que llevas equipado",
-		frFR = "Confère (%d*) point* de puissance à l’arme prodigieuse que vous brandissez",
-		itIT = {"Fornisce (%d*) Potere Artefatto all'Artefatto attualmente equipaggiato.","(%d*) Potere Artefatto fornito all'Artefatto attualmente equipaggiato"},
-		koKR = {"현재 장착한 유물에 (%d*)의 유물력을 부여합니다.","현재 장착한 유물에 (%d*)의 유물력 부여"},
-		ptBR = "Concede (%d*) de Poder do Artefato ao artefato equipado",
-		ptPT = "Concede (%d*) de Poder do Artefato ao artefato equipado",
-		ruRU = {"Добавляет используемому в данный момент артефакту (%d*) ед. силы артефакта.","Добавление используемому в данный момент артефакту (%d*) ед. силы артефакта"},
-		zhCN = "将(%d*)点神器能量注入到你当前装备的神器之中",
-		zhTW = "賦予你目前裝備的神兵武器(%d*)點神兵之力",
+		deDE = "Gewährt Eurem derzeit ausgerüsteten Artefakt (.*) Artefaktmacht",
+		enUS = "Grants (.*) Artifact Power to your currently equipped Artifact",
+		esES = "Otorga (.*) p. de poder de artefacto al artefacto que lleves equipado",
+		esMX = "Otorga (.*) p. de Poder de artefacto para el artefacto que llevas equipado",
+		frFR = "Confère (.*) point* de puissance à l’arme prodigieuse que vous brandissez",
+		itIT = {"Fornisce (.*) Potere Artefatto all'Artefatto attualmente equipaggiato.","(.*) Potere Artefatto fornito all'Artefatto attualmente equipaggiato"},
+		koKR = {"현재 장착한 유물에 (.*)의 유물력을 부여합니다.","현재 장착한 유물에 (.*)의 유물력 부여"},
+		ptBR = "Concede (.*) de Poder do Artefato ao artefato equipado",
+		ptPT = "Concede (.*) de Poder do Artefato ao artefato equipado",
+		ruRU = {"Добавляет используемому в данный момент артефакту (.*) ед. силы артефакта.","Добавление используемому в данный момент артефакту (.*) ед. силы артефакта"},
+		zhCN = "将(.*)点神器能量注入到你当前装备的神器之中",
+		zhTW = "賦予你目前裝備的神兵武器(.*)點神兵之力",
 	}
 
 	FISHING_AP_MATCH_STRINGS = {
-		deDE = "Wirft den Fisch zurück ins Wasser und gewährt Eurem Angelartefakt (%d*) Artefaktmacht",
-		enUS = "Toss the fish back into the water, granting (%d*) Artifact Power to your fishing artifact",
-		esES = "Lanza el pez de nuevo al agua, lo que otorga (%d*) p. de poder de artefacto a tu artefacto de pesca",
-		esMX = "Devuelve el pez al agua, lo que otorga (%d*) de poder de artefacto a tu artefacto de pesca",
-		frFR = "Vous rejetez le poisson à l’eau, ce qui confère (%d*) $lpoint:points; de puissance prodigieuse à votre ustensile de pêche prodigieux",
-		itIT = "Rilancia il pesce in acqua, fornendo (%d*) Potere Artefatto al tuo artefatto da pesca",
-		koKR = "물고기를 다시 물에 던져 낚시 유물에 (%d*)의 유물력을 추가합니다.",
-		ptBR = "Joga o peixe de volta na água, concedendo (%d*) de Poder do Artefato ao seu artefato de pesca",
-		ptPT = "Joga o peixe de volta na água, concedendo (%d*) de Poder do Artefato ao seu artefato de pesca",
-		ruRU = "Бросить рыбу обратно в воду, добавив вашему рыболовному артефакту (%d*) ед. силы артефакта",
-		zhCN = "将鱼扔回到水中，使你的钓鱼神器获得(%d*)点神器能量",
-		zhTW = "將魚丟回水中，為你的釣魚神器取得(%d*)點神兵之力",
+		deDE = "Wirft den Fisch zurück ins Wasser und gewährt Eurem Angelartefakt (.*) Artefaktmacht",
+		enUS = "Toss the fish back into the water, granting (.*) Artifact Power to your fishing artifact",
+		esES = "Lanza el pez de nuevo al agua, lo que otorga (.*) p. de poder de artefacto a tu artefacto de pesca",
+		esMX = "Devuelve el pez al agua, lo que otorga (.*) de poder de artefacto a tu artefacto de pesca",
+		frFR = "Vous rejetez le poisson à l’eau, ce qui confère (.*) $lpoint:points; de puissance prodigieuse à votre ustensile de pêche prodigieux",
+		itIT = "Rilancia il pesce in acqua, fornendo (.*) Potere Artefatto al tuo artefatto da pesca",
+		koKR = "물고기를 다시 물에 던져 낚시 유물에 (.*)의 유물력을 추가합니다.",
+		ptBR = "Joga o peixe de volta na água, concedendo (.*) de Poder do Artefato ao seu artefato de pesca",
+		ptPT = "Joga o peixe de volta na água, concedendo (.*) de Poder do Artefato ao seu artefato de pesca",
+		ruRU = "Бросить рыбу обратно в воду, добавив вашему рыболовному артефакту (.*) ед. силы артефакта",
+		zhCN = "将鱼扔回到水中，使你的钓鱼神器获得(.*)点神器能量",
+		zhTW = "將魚丟回水中，為你的釣魚神器取得(.*)點神兵之力",
 	}
 end
 
@@ -238,14 +244,28 @@ local updateItemStateTry,updateItemState=0;
 local function ttMatchString(line,matchString)
 	local artefact_power;
 	if type(matchString)=="table" then
-		artefact_power = tonumber(line:gsub("%.",""):match(matchString[1]));
+		artefact_power = line:match(matchString[1]);
 		if not artefact_power then
-			artefact_power = tonumber(line:gsub("%.",""):match(matchString[2]));
+			artefact_power = line:match(matchString[2]);
 		end
 	else
-		artefact_power = tonumber(line:gsub("%.",""):match(matchString));
+		artefact_power = line:match(matchString);
 	end
-	return artefact_power;
+
+	if artefact_power then
+		local pat;
+		if artefact_power:find(PATTERN_SECOND_NUMBERS[1]) then
+			pat = PATTERN_SECOND_NUMBERS[1];
+		elseif artefact_power:find(PATTERN_SECOND_NUMBERS[2]) then
+			pat = PATTERN_SECOND_NUMBERS[2];
+		end
+		if pat then
+			artefact_power = artefact_power:gsub("(%d*)[,%.](%d)[ ]?"..pat,"%1%200000");
+		end
+		artefact_power = artefact_power:gsub("[,%.]","");
+	end
+
+	return tonumber(artefact_power);
 end
 
 function updateItemState()
@@ -484,7 +504,7 @@ function createTooltip(tt)
 				local _,_,_,_,xp,ps=C_ArtifactUI.GetEquippedArtifactInfo();
 				for i=1,ps-1 do
 					xp=xp+C_ArtifactUI.GetCostForPointAtRank(i,artifactTier);
-				end 
+				end
 				l=tt:AddLine();
 				tt:SetCell(l,1,C("ltgreen",L["Total spend power"]),nil,nil,2);
 				tt:SetCell(l,3,C("ltyellow",ns.FormatLargeNumber(name,xp,true)));
