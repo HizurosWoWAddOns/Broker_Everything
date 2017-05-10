@@ -11,7 +11,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Reputation"; -- REPUTATION
 local ttName, ttColumns, tt, createMenu,createTooltip,updateBroker = name.."TT", 6;
-local Name,description,standingID,barMin,barMax,barValue,atWarWith,canToggleAtWar,isHeader,isCollapsed,hasRep,isWatched,isChild,factionID,hasBonusRepGain,canBeLFGBonus,factionStandingText=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17;
+local Name,description,standingID,barMin,barMax,barValue,atWarWith,canToggleAtWar,isHeader,isCollapsed,hasRep,isWatched,isChild,factionID,hasBonusRepGain,canBeLFGBonus,factionStandingText,rewardPercent=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18;
 
 local bars,wasShown = {},false;
 local allinone = 85000;
@@ -272,6 +272,7 @@ local function ttAddLine(tt,mode,data,count,childLevel)
 	if ns.profile[name].showID then
 		id = idStr:format(data[factionID]);
 	end
+
 	tinsert(line,
 		strrep("    ",inset)..icon..
 		C(color,ns.strCut(tostring(data[Name]),24))..id..
@@ -296,8 +297,13 @@ local function ttAddLine(tt,mode,data,count,childLevel)
 		tinsert(line,ns.FormatLargeNumber(name,_barMax-_barValue,true).." "..L["need"]);
 	end
 
-	if ns.profile[name].showSession and data[barValue] and session[data[factionID]] then
+	if not data[rewardPercent] and ns.profile[name].showSession and data[barValue] and session[data[factionID]] then
 		tinsert(line,GetSession(data[factionID],data[barValue]));
+	end
+
+	if data[rewardPercent] then
+		tinsert(line," ");
+		tinsert(line,("%1.1f%%"):format(data[rewardPercent]).." |TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t");
 	end
 
 	for i=#line, ttColumns do
@@ -414,16 +420,62 @@ function createTooltip(tt)
 		if i==1 and data[isHeader] then
 			firstHeader = data[isCollapsed];
 		end
-		if margoss~=nil and data[isHeader] then
-			countHeader = countHeader + 1;
-			if countHeader==2 and firstHeader==false then
-				count,childLevel = ttFaction(tt,margoss,count,childLevel);
-				margoss = false;
+
+		if data[Name] and data[barMax]>0 then
+			data[factionStandingText] = _G["FACTION_STANDING_LABEL"..data[standingID]];
+
+			if data[factionID] and data[barValue] and session[data[factionID]]==nil then
+				session[data[factionID]] = data[barValue];
+			end
+
+			local friendID,friendRep,friendMaxRep,friendName,friendText,friendTexture,friendTextLevel,friendThreshold,nextFriendThreshold = GetFriendshipReputation(data[factionID]);
+			if friendID~=nil then
+				data[factionStandingText] = friendTextLevel;
+				if ( nextFriendThreshold ) then
+					data[barMin], data[barMax], data[barValue] = friendThreshold, nextFriendThreshold, friendRep;
+				else
+					data[barMin], data[barMax], data[barValue] = 0, 1, 1;
+				end
+			end
+
+			if data[factionID] then
+				local rewardCurrentValue, rewardThreshold, rewardQuestID, hasRewardPending = C_Reputation.GetFactionParagonInfo(data[factionID]);
+				if rewardCurrentValue~=nil then
+					if rewardCurrentValue > rewardThreshold then
+						rewardCurrentValue = rewardCurrentValue - rewardThreshold;
+					end
+					data[rewardPercent] = (rewardCurrentValue/rewardThreshold)*100;
+					data[barValue] = data[barValue]+999;
+				end
+			end
+
+			if data[isHeader] then
+				tt:AddSeparator(4,0,0,0,0);
+				childLevel = data[isChild] and 1 or 0;
+				if data[hasRep] then
+					count=count+1;
+					ttAddLine(tt,ns.profile[name].numbers,data,count,childLevel);
+				else
+					local color,icon,prefix = "ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t ",strrep("    ",childLevel);
+					if data[isCollapsed] then
+						color,icon = "gray","|Tinterface\\buttons\\UI-PlusButton-Up:0|t ";
+					end
+					local l=tt:AddLine(C(color,prefix..icon..data[Name]));
+					if data[isHeader] then
+						tt.lines[l].isCollapsed = data[isCollapsed];
+						tt.lines[l].index = data.index;
+						tt:SetLineScript(l,"OnMouseUp",toggleHeader);
+					end
+				end
+				if not data[isCollapsed] then
+					tt:AddSeparator();
+				end
+			else
+				count=count+1;
+				ttAddLine(tt,ns.profile[name].numbers,data,count,childLevel);
 			end
 		end
-		if not (margoss==false and data[factionID]==1975) then
-			count,childLevel = ttFaction(tt,data,count,childLevel);
-		end
+
 	end
 	wasShown=true;
 
@@ -432,7 +484,7 @@ function createTooltip(tt)
 		ns.clickOptions.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
-	
+
 	if #bars>0 then
 		tt:SetScript("OnHide", tooltipOnHide);
 	end
@@ -502,7 +554,7 @@ end
 -------------------------------------------
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "LEFT", "RIGHT", "CENTER", "LEFT"},{false},{self},{OnHide=tooltipOnHide});
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "LEFT", "RIGHT", "CENTER", "RIGHT", "RIGHT", "RIGHT"},{false},{self},{OnHide=tooltipOnHide});
 	createTooltip(tt);
 end
 
