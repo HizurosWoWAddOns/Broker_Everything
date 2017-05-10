@@ -129,22 +129,21 @@ end
 local function addShipment(tt,...)
 	local name, texture, shipmentCapacity, shipmentsReady, shipmentsTotal, creationTime, duration, timeleftString = ...;
 	if name then
-		local l=tt:AddLine();
-		tt:SetCell(l,1,"  |T"..texture..":14:14:0:0:64:64:4:58:4:58|t "..C("ltyellow",name),nil,"LEFT",0);
+		tt:SetCell(tt:AddLine(),1,"  |T"..texture..":14:14:0:0:64:64:4:58:4:58|t "..C("ltyellow",name),nil,"LEFT",0);
 		if shipmentCapacity>0 then
-			l=tt:AddLine();
-			local line = C("green",shipmentsReady).."/"..C("yellow",shipmentsTotal)
-			local remain = (creationTime+duration)-now;
+			local delim,line,remain = C("gray"," \| "),{},(creationTime+duration)-now;
+			tinsert(line,C("green",shipmentsReady).."/"..C("yellow",shipmentsTotal));
 			if remain>0 then
-				line = line.." "..SecondsToTime((creationTime+duration)-now);
+				tinsert(line,SecondsToTime((creationTime+duration)-now));
 				local nextShipments = shipmentsTotal-shipmentsReady-1;
 				if nextShipments>0 then
-					line = "     "..line .." ".. SecondsToTime((creationTime+(duration+(nextShipments*duration)))-now);
+					tinsert(line,SecondsToTime((creationTime+(duration+(nextShipments*duration)))-now));
 				end
 			else
-				line = line .. " ("..L["Completed"]..")";
+				tinsert(line,"("..L["Completed"]..")");
+				delim = " ";
 			end
-			tt:SetCell(l,1,line,nil,"CENTER",0);
+			tt:SetCell(tt:AddLine(),1,table.concat(line,delim),nil,"CENTER",0);
 		end
 	end
 end
