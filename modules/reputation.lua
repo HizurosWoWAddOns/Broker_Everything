@@ -342,53 +342,6 @@ local function ttAddLine(tt,mode,data,count,childLevel)
 	end
 end
 
-local function ttFaction(tt,data,count,childLevel)
-	if data[Name] and data[barMax]>0 then
-		data[factionStandingText] = _G["FACTION_STANDING_LABEL"..data[standingID]];
-
-		if data[factionID] and data[barValue] and session[data[factionID]]==nil then
-			session[data[factionID]] = data[barValue];
-		end
-
-		local friendID,friendRep,friendMaxRep,friendName,friendText,friendTexture,friendTextLevel,friendThreshold,nextFriendThreshold = GetFriendshipReputation(data[factionID]);
-		if friendID~=nil then
-			data[factionStandingText] = friendTextLevel;
-			if ( nextFriendThreshold ) then
-				data[barMin], data[barMax], data[barValue] = friendThreshold, nextFriendThreshold, friendRep;
-			else
-				data[barMin], data[barMax], data[barValue] = 0, 1, 1;
-			end
-		end
-
-		if data[isHeader] then
-			tt:AddSeparator(4,0,0,0,0);
-			childLevel = data[isChild] and 1 or 0;
-			if data[hasRep] then
-				count=count+1;
-				ttAddLine(tt,ns.profile[name].numbers,data,count,childLevel);
-			else
-				local color,icon,prefix = "ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t ",strrep("    ",childLevel);
-				if data[isCollapsed] then
-					color,icon = "gray","|Tinterface\\buttons\\UI-PlusButton-Up:0|t ";
-				end
-				local l=tt:AddLine(C(color,prefix..icon..data[Name]));
-				if data[isHeader] then
-					tt.lines[l].isCollapsed = data[isCollapsed];
-					tt.lines[l].index = data.index;
-					tt:SetLineScript(l,"OnMouseUp",toggleHeader);
-				end
-			end
-			if --[[not data[isChild] and]] not data[isCollapsed] then
-				tt:AddSeparator();
-			end
-		else
-			count=count+1;
-			ttAddLine(tt,ns.profile[name].numbers,data,count,childLevel);
-		end
-	end
-	return count,childLevel;
-end
-
 local function tooltipOnHide(self)
 	for i,v in ipairs(bars)do
 		v:SetParent(nil);
@@ -405,14 +358,6 @@ function createTooltip(tt)
 	tt:AddHeader(C("dkyellow",REPUTATION));
 
 	local count,countHeader,childLevel,num,margoss,firstHeader = 0,0,0,GetNumFactions();
-
-	-- first search margoss (game bug fix)
-	for i=9, num do
-		local tmp = {GetFactionInfo(i)};
-		if tmp[factionID]==1975 then
-			margoss = tmp;
-		end
-	end
 
 	for i=1, num do
 		local data = {GetFactionInfo(i)};
