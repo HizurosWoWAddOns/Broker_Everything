@@ -22,7 +22,7 @@ PATTERN_SECOND_NUMBERS[2] = SECOND_NUMBER:gsub("%|7(.*):(.*);","%2");
 if PATTERN_SECOND_NUMBERS[1]:len()<PATTERN_SECOND_NUMBERS[2]:len() then
 	PATTERN_SECOND_NUMBERS[1],PATTERN_SECOND_NUMBERS[2] = PATTERN_SECOND_NUMBERS[2],PATTERN_SECOND_NUMBERS[1];
 end
-local artifactKnowledgeMultiplier_len, artifactLocked = 50;
+local artifactKnowledgeMultiplier_cap, artifactLocked = 40; -- 50
 local artifactKnowledgeMultiplier = {}
 local AP_MATCH_STRINGS,FISHING_AP_MATCH_STRINGS = {},{};
 ns.artifactpower_items = {};
@@ -516,7 +516,7 @@ function createTooltip(tt)
 				tt:SetCell(l,1,C("ltgreen",ak or L["Artifact knowledge"]),nil,nil,2);
 				tt:SetCell(l,3,C("ltyellow",("%d (+%s%%)"):format(ns.toon[name].knowledgeLevel,ns.FormatLargeNumber(name,math.ceil(artifactKnowledgeMultiplier[ns.toon[name].knowledgeLevel]*10)*10,true))));
 				local nextKL = ns.toon[name].knowledgeLevel+1;
-				if nextKL<=artifactKnowledgeMultiplier_len then
+				if nextKL<=artifactKnowledgeMultiplier_cap then
 					l=tt:AddLine();
 					tt:SetCell(l,1,C("gray2",L["Next artifact knowledge"]),nil,nil,2);
 					tt:SetCell(l,3,C("gray2",("%d (+%s%%)"):format(nextKL,ns.FormatLargeNumber(name,math.ceil(artifactKnowledgeMultiplier[nextKL]*10)*10,true))));
