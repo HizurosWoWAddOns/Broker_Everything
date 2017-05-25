@@ -11,7 +11,8 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Reputation"; -- REPUTATION
 local ttName, ttColumns, tt, createMenu,createTooltip,updateBroker = name.."TT", 6;
-local Name,description,standingID,barMin,barMax,barValue,atWarWith,canToggleAtWar,isHeader,isCollapsed,hasRep,isWatched,isChild,factionID,hasBonusRepGain,canBeLFGBonus,factionStandingText,rewardPercent=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18;
+local Name,description,standingID,barMin,barMax,barValue,atWarWith,canToggleAtWar,isHeader,isCollapsed,hasRep,isWatched,isChild,factionID,hasBonusRepGain,canBeLFGBonus=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- index list for GetFactionInfo
+local factionStandingText,rewardPercent,rewardValue,rewardMax,hasRewardPending,rewardCount=17,18,19,20,21,22;
 
 local bars,wasShown = {},false;
 local allinone = 85000;
@@ -57,7 +58,8 @@ ns.modules[name] = {
 		watchedNameOnBroker = true,
 		watchedStandingOnBroker = true,
 		watchedSessionBroker = true,
-		watchedFormatOnBroker = "Percent"
+		watchedFormatOnBroker = "Percent",
+		rewardBeyondExalted = "value_max"
 	},
 	config_allowed = nil,
 	config_header = {type="header", label=REPUTATION, align="left", icon=true},
@@ -94,6 +96,16 @@ ns.modules[name] = {
 			default = "single",
 		},
 		{ type="toggle", name="showID", label=L["Show id's"], tooltip=L["Display faction and standing id's in tooltip"]},
+		{ type="select",
+			name = "rewardBeyondExalted",
+			label = L["Reward beyond exalted"],
+			tooltip = L["Display reputation collecting for rewards beyond exalted"],
+			values = {
+				["_NONE"] = "None",
+				["percent"] = L["Percent"],
+				["value_max"] = L["Value/Cap"]
+			}
+		}
 	},
 	config_misc = {"shortNumbers"},
 	clickOptions = {
@@ -301,9 +313,13 @@ local function ttAddLine(tt,mode,data,count,childLevel)
 		tinsert(line,GetSession(data[factionID],data[barValue]));
 	end
 
-	if data[rewardPercent] then
+	if data[rewardPercent] and ns.profile[name].rewardBeyondExalted~="_NONE" then
 		tinsert(line," ");
-		tinsert(line,("%1.1f%%"):format(data[rewardPercent]).." |TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t");
+		if ns.profile[name].rewardBeyondExalted=="percent" then
+			tinsert(line,("%1.1f%%"):format(data[rewardPercent]).." |TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t");
+		else
+			tinsert(line,("%d/%d %s"):format(data[rewardValue],data[rewardMax],"|TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t"));
+		end
 	end
 
 	for i=#line, ttColumns do
@@ -383,13 +399,16 @@ function createTooltip(tt)
 				end
 			end
 
-			if data[factionID] then
+			if data[factionID] and C_Reputation.IsFactionParagon(data[factionID]) then
 				local rewardCurrentValue, rewardThreshold, rewardQuestID, hasRewardPending = C_Reputation.GetFactionParagonInfo(data[factionID]);
 				if rewardCurrentValue~=nil then
 					if rewardCurrentValue > rewardThreshold then
 						rewardCurrentValue = rewardCurrentValue - rewardThreshold;
 					end
-					data[rewardPercent] = (rewardCurrentValue/rewardThreshold)*100;
+					data[rewardMax] = rewardThreshold;
+					data[rewardValue] = mod(rewardCurrentValue, rewardThreshold);
+					data[rewardPercent] = (data[rewardValue]/data[rewardMax])*100;
+					data[hasRewardPending] = hasRewardPending;
 					data[barValue] = data[barValue]+999;
 				end
 			end
