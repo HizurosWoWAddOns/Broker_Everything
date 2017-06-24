@@ -353,12 +353,14 @@ local function createTooltip(tt)
 			tt:AddSeparator(4,0,0,0,0);
 			tt:AddLine(C("ltblue",L["Legion recipes from faction vendors"]));
 			tt:AddSeparator();
+			local legende = false;
 
 			local faction,trade_skill,factionName,standingID,_ = 0,0;
 			for _, recipeData in ipairs(legion_faction_recipes) do
 				if ts[recipeData[1]] then
 					local Name = GetSpellInfo(recipeData[5]);
 					if Name and ns.toon[name].learnedRecipes[recipeData[5]]~=true then
+						legende=true
 						-- trade skill header
 						if trade_skill~=recipeData[1] then
 							tt:AddLine(C("gray",L[ts[recipeData[1]]]));
@@ -376,8 +378,12 @@ local function createTooltip(tt)
 					end
 				end
 			end
-			tt:AddSeparator(1,1,1,1,.7);
-			tt:AddLine(C("ltgray",L["Legende"])..": "..C("red",L["Standing to low"])..", "..C("green",L["Buyable"]));
+			if legende then
+				tt:AddSeparator(1,1,1,1,.7);
+				tt:AddLine(C("ltgray",L["Legende"])..": "..C("red",L["Standing to low"])..", "..C("green",L["Buyable"]));
+			else
+				tt:SetCell(tt:AddLine(),1,C("gray","You have already learned all buyable legion recipes"),nil,nil,0);
+			end
 		end
 	else
 		tt:AddLine(C("gray",L["No professions learned..."]));
