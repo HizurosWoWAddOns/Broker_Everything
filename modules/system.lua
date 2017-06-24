@@ -576,6 +576,7 @@ local function createTooltip(tt, name, ttName, update)
 			tt:AddLine(C("ltyellow",L["Build version"]..":"),build);
 			tt:AddLine(C("ltyellow",L["Build date"]..":"),buildDate);
 			tt:AddLine(C("ltyellow",L["Interface version"]..":"),interfaceVersion);
+			tt:AddLine(C("ltyellow",L["Locale string"]..":"),ns.locale);
 			allHidden=false;
 		end
 		if allHidden then
