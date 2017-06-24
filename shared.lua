@@ -293,7 +293,7 @@ ns.hideTooltip = function(tooltip)
 	if type(tooltip.secureButtons)=="table" then
 		local f = GetMouseFocus()
 		if f and not f:IsForbidden() and (not f:IsProtected() and InCombatLockdown()) and type(f.key)=="string" and type(ttName)=="string" and f.key==ttName then
-			return; -- why that? tooltip can't be closed in combat with securebuttons as child elements. results in addon_action_blocked... 
+			return; -- why that? tooltip can't be closed in combat with securebuttons as child elements. results in addon_action_blocked...
 		end
 		ns.secureButton(false);
 	end
@@ -409,7 +409,7 @@ do
 	ns.updateIcons = function()
 		for i,v in pairs(ns.modules) do
 			local obj = ns.LDB:GetDataObjectByName(i)
-			if obj~=nil then 
+			if obj~=nil then
 				local d = ns.I(i .. (v.icon_suffix or ""))
 				obj.iconCoords = d.coords or {0,1,0,1}
 				obj.icon = d.iconfile
@@ -574,15 +574,15 @@ end
 -- secure button as transparent overlay
 -- http://wowpedia.org/SecureActionButtonTemplate
 -- be careful...
--- 
--- @param self UI_ELEMENT 
+--
+-- @param self UI_ELEMENT
 -- @param obj  TABLE
 --		obj = {
 --			{
 --				typeName  STRING  | see "Modified attributes"
 --				typeValue STRING  | see "Action types" "Type"-column
 --				attrName  STRING  | see "Action types" "Used attributes"-column
---				attrValue ~mixed~ | see "Action types" "Behavior"-column. 
+--				attrValue ~mixed~ | see "Action types" "Behavior"-column.
 --				                  | Note: if typeValue is click then attrValue must
 --										  be a ui element with :Click() function like
 --										  buttons. thats a good way to open frames
@@ -646,6 +646,13 @@ do
 	local GetItemInfoFailed,IsEnabled = false,false;
 	local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d*)");
 	local _UPGRADES = gsub(ITEM_UPGRADE_TOOLTIP_FORMAT,": %%d/%%d","");
+	local INVTYPES = { -- since 7.1 - GetItemInfo response incorrect itemType for armor and weapons
+		INVTYPE_THROWN = WEAPON,INVTYPE_HOLDABLE = WEAPON,INVTYPE_RANGED = WEAPON,INVTYPE_RANGEDRIGHT = WEAPON,INVTYPE_WEAPON = WEAPON,
+		INVTYPE_WEAPONMAINHAND = WEAPON,INVTYPE_WEAPONMAINHAND_PET = WEAPON,INVTYPE_WEAPONOFFHAND = WEAPON,INVTYPE_2HWEAPON = WEAPON,
+		INVTYPE_BODY = ARMOR,INVTYPE_CHEST = ARMOR,INVTYPE_CLOAK = ARMOR,INVTYPE_FEET = ARMOR,INVTYPE_FINGER = ARMOR,INVTYPE_HAND = ARMOR,
+		INVTYPE_HEAD = ARMOR,INVTYPE_LEGS = ARMOR,INVTYPE_NECK = ARMOR,INVTYPE_QUIVER = ARMOR,INVTYPE_ROBE = ARMOR,INVTYPE_SHIELD = ARMOR,
+		INVTYPE_SHOULDER = ARMOR,INVTYPE_TABARD = ARMOR,INVTYPE_TRINKET = ARMOR,INVTYPE_WAIST = ARMOR,INVTYPE_WRIST = ARMOR
+	}
 
 	-- EMPTY_SOCKET_PRISMATIC and EMPTY_SOCKET_NO_COLOR are identical in some languages... Need only one of it.
 	local EMPTY_SOCKETS = {"RED","YELLOW","META","HYDRAULIC","BLUE","PRISMATIC","COGWHEEL","NO_COLOR"};
@@ -697,6 +704,7 @@ do
 				end
 			end
 		end
+
 		obj.tooltip = d.tooltipData[obj.link] or {};
 		if obj.itemType==ARMOR or obj.itemType==WEAPON then
 			for i=2, _G.min(#obj.tooltip,20) do
@@ -744,7 +752,10 @@ do
 					if(items[id]==nil)then items[id]={}; end
 					local obj = {type="bag", bag=bag, slot=slot, id=id, gems={},empty_gem=false};
 					obj.icon, obj.count, obj.locked, _, obj.readable, obj.lootable, obj.link = GetContainerItemInfo(bag, slot);
-					obj.name, _, obj.rarity, obj.level, _, obj.itemType, obj.subType, obj.stackCount, _, _, obj.price = GetItemInfo(obj.link);
+					obj.name, _, obj.rarity, obj.level, _, obj.itemType, obj.subType, obj.stackCount, obj.itemEquipLoc, _, obj.price = GetItemInfo(obj.link);
+					if INVTYPES[obj.itemEquipLoc]~=obj.itemType then
+						obj.itemType=INVTYPES[obj.itemEquipLoc]; -- since 7.1 - GetItemInfo response incorrect itemType for armor and weapons
+					end
 					obj.durability,obj.durability_max = GetContainerItemDurability(bag, slot);
 					if obj.name then
 						GetObjectLinkData(obj);
@@ -782,7 +793,10 @@ do
 				if(items[id]==nil)then items[id]={}; end
 				local obj,lvl = {type="inventory",slotName=slotNames[slotIndex],slotIndex=slotIndex,slot=slotIndex,durability={},id=id,unknown1=unknown1,gems={},empty_gem=false};
 				obj.link = GetInventoryItemLink("player",slotIndex);
-				obj.name, _, obj.rarity, obj.level, _, obj.itemType, obj.subType, _, _, obj.icon, obj.price = GetItemInfo(obj.link);
+				obj.name, _, obj.rarity, obj.level, _, obj.itemType, obj.subType, _, obj.itemEquipLoc, obj.icon, obj.price = GetItemInfo(obj.link);
+				if INVTYPES[obj.itemEquipLoc]~=obj.itemType then
+					obj.itemType=INVTYPES[obj.itemEquipLoc]; -- since 7.1 - GetItemInfo response incorrect itemType for armor and weapons
+				end
 				obj.isBroken = GetInventoryItemBroken("player",slotIndex);
 				obj.durability, obj.durability_max = GetInventoryItemDurability(slotIndex);
 				GetObjectLinkData(obj);
@@ -981,7 +995,7 @@ end
 
 
 -- -------------------------------------------------------------- --
--- UseContainerItem hook 
+-- UseContainerItem hook
 -- -------------------------------------------------------------- --
 do
 	local callback = {};
@@ -1291,7 +1305,7 @@ do
 		slider = function(...)
 		end,
 		num = function(...)
-			
+
 		end,
 		str = function(...)
 		end
@@ -1312,7 +1326,7 @@ do
 		num = function(D)
 			if (D.cvarKey) then
 			elseif (D.cvars) and (type(cvars)=="table") then
-				
+
 			end
 		end,
 		str = function(...)
@@ -1617,7 +1631,7 @@ do
 			if (button=="LeftButton") then
 				clickA=clickA.."LEFT";
 			elseif (button=="RightButton") then
-				clickA=clickA.."RIGHT"; 
+				clickA=clickA.."RIGHT";
 			--elseif () then
 			--	clickA=clickA.."";
 			-- more mouse buttons?
