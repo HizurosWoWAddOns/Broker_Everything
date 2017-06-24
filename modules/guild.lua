@@ -53,7 +53,7 @@ ns.modules[name] = {
 		showONotes = true,		showONotesInTT2 = false,
 		showRank = true,		showRankInTT2 = false,
 		showProfessions = true,	showProfessionsInTT2 = false,
-		
+
 		-- misc
 		showApplicants = true,
 		showApplicantsBroker = true,
@@ -235,7 +235,7 @@ local function updateTradeSkills()
 	for i=1, #collapsed do
 		CollapseGuildTradeSkillHeader(collapsed[i]);
 	end
-	
+
 	tradeskillsLastUpdate = time();
 	tradeskillsLockUpdate = false;
 end
@@ -308,12 +308,16 @@ local function showApplication(self)
 end
 
 local function createTooltip2(self)
+	local v,s,t,_ = self.info,"";
+	local realm = v[mRealm] or "";
+	ns.debug(type(v),type(realm));
+
 	tt2 = ns.acquireTooltip(
 		{ttName2, ttColumns2, "LEFT","RIGHT"},
 		{true,true},
 		{self, "horizontal", tt}
 	);
-	local v,s,realm,t,_=self.info,"",v[mRealm];
+
 	tt2:Clear();
 	tt2:AddHeader(C("dkyellow",NAME), C(v[mClassFile],ns.scm(v[mName])));
 	tt2:AddSeparator();
