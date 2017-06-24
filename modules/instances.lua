@@ -243,7 +243,6 @@ function createTooltip(tt,name,mode)
 	tt:Clear();
 
 	tt:AddHeader(C("dkyellow",name==name1 and RAIDS or DUNGEONS));
-	tt:SetCell(tt:AddLine(),1,C("gray",L["Reset in"]..":"..SecondsToTime(GetQuestResetTime())),nil,"RIGHT",0);
 
 	updateInstances(name,mode);
 
