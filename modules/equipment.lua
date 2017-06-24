@@ -15,7 +15,7 @@ local objLink,objColor,objType,objId,objData,objName,objInfo,objTooltip=1,2,3,4,
 local itemEnchant,itemGem1,itemGem2,itemGem3,itemGem4=1,2,3,4,5;
 local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice=1,2,3,4,5,6,7,8,9,10,11;
 local slots = {"HEAD","NECK","SHOULDER","SHIRT","CHEST","WAIST","LEGS","FEET","WRIST","HANDS","FINGER0","FINGER1","TRINKET0","TRINKET1","BACK","MAINHAND","SECONDARYHAND","RANGED"};
-local inventory,enchantSlots = {},{}; -- (enchantSlots) -1 = [iLevel<600], 0 = both, 1 = [iLevel=>600]
+local inventory,enchantSlots = {iLevelMin=0,iLevelMax=0},{}; -- (enchantSlots) -1 = [iLevel<600], 0 = both, 1 = [iLevel=>600]
 local warlords_crafted,tSetItems = {},{};
 
 -------------------------------------------
@@ -222,13 +222,13 @@ local function updateBroker()
 	if ns.profile[name].showCurrentSet then
 		local numEquipSets = C_EquipmentSet.GetNumEquipmentSets();
 
-		if numEquipSets > 0 then 
+		if numEquipSets > 0 then
 			local equipName, iconFile, setID, isEquipped, _, _, _, numMissing;
-			for i=0, numEquipSets do 
+			for i=0, numEquipSets do
 				equipName, iconFile, setID, isEquipped, _, _, _, numMissing = C_EquipmentSet.GetEquipmentSetInfo(i);
 				if equipName then
 					local pending = (equipPending and C("orange",equipPending)) or false;
-					if isEquipped then 
+					if isEquipped then
 						iconCoords = {0.05,0.95,0.05,0.95}
 						icon = iconFile;
 						tinsert(text,pending~=false and pending or equipName);
@@ -324,7 +324,7 @@ local function InventoryTooltipHide()
 end
 
 local function equipOnClick(self)
-	if (IsShiftKeyDown()) then 
+	if (IsShiftKeyDown()) then
 		if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
 		local main = ns.items.GetInventoryItemBySlotIndex(16);
 		if main and main.level>=750 and main.rarity==6 then
@@ -348,7 +348,7 @@ local function equipOnClick(self)
 		end
 	else
 		ns.toggleEquipment(self.equipSetID);
-	end 
+	end
 end
 
 local function equipOnEnter(self)
@@ -383,7 +383,7 @@ local function createTooltip(tt)
 			local numEquipSets = C_EquipmentSet.GetNumEquipmentSets()
 			if (numEquipSets>0) then
 				local eName, icon, setID, isEquipped, numMissing, _;
-				for i=0, numEquipSets do 
+				for i=0, numEquipSets do
 					eName, icon, setID, isEquipped, _, _, _, numMissing = C_EquipmentSet.GetEquipmentSetInfo(i);
 					if eName then
 						local color = (equipPending and equipPending==i and "orange") or (numMissing>0 and "red") or (isEquipped and "ltyellow") or false
