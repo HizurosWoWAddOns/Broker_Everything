@@ -241,7 +241,7 @@ local function getFollowers(tableName)
 				maxDurability=v.maxDurability,
 				status=s, -- status (reduced)
 				missionEnd=m -- missionEndTime
-			}); 
+			});
 			Table.num = Table.num + 1;
 		end
 	end
@@ -334,13 +334,13 @@ local function charSummary(lst,c,v,t,a)
 		tinsert(cMissions, (c[l].aftermission==0 and "−" or C("green",c[l].aftermission)) .."/".. (c[l].onmission==0 and "−" or C("yellow",c[l].onmission)));
 		tinsert(cWorking,  (c[l].chilling==0 and "−" or C("green",c[l].chilling)) .."/".. (c[l].working==0 and "−" or C("yellow",c[l].working)));
 		tinsert(cCollected,C("cyan",collected[l]) .. "/" .. C("green",collected[l]-c[l].disabled) .. "/" .. C("yellow",c[l].disabled));
-	end	
+	end
 	return cMissions, cWorking, cCollected,n,a;
 end
 
 local function createTooltip(tt, name)
 	--if (tt) and (tt.key) and (tt.key~=name) then return end -- don't override other LibQTip tooltips...
-	local colors,qualities,count = {"ltblue","yellow","yellow","green","red"},{"white","ff1eaa00","ff0070dd","ffa335ee","ffff8000"},0
+	local colors,qualities,count = {"ltblue","yellow","yellow","green","red"},{"white","ff1eaa00","ff0070dd","ffa335ee","ffff8000","ffB3965D"},0
 	local statuscolors = {["onresting"]="ltblue",["onwork"]="orange",["onmission"]="yellow",["available"]="green",["disabled"]="red"};
 	local none=true;
 
@@ -512,7 +512,7 @@ local function createTooltip(tt, name)
 								v["name"] = "["..UNKNOWN.."]";
 							end
 							local a,t,l = "","";
-								
+
 							if name==nameF then
 								if x[1]=="troops" then
 									for _,at in ipairs(v.AbilitiesAndTraits) do
