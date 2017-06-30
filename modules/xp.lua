@@ -362,14 +362,14 @@ ns.modules[name].onevent = function(self,event,msg)
 			local itemId = GetInventoryItemID("player",slotId);
 			if itemId and items[itemId] then
 				local _,_,_,_,_,_,_,_,_,_,_,_,_,_,upgrade = strsplit(":",GetInventoryItemLink("player",slotId));
-				local maxLevel = items[itemId][2];
+				local maxLevel = items[itemId][2]; upgrade=tonumber(upgrade);
 				if upgrade==0 then
 					maxLevel = 60;
 				elseif upgrade==582 then
 					maxLevel = 90;
 				elseif upgrade==583 then
 					maxLevel = 100;
-				elseif upgrade==584 then -- maybe used by blizzard in future... ^^
+				elseif upgrade==3592 then
 					maxLevel = 110;
 				end
 				data.bonus[slotId] = {percent=items[itemId][1], outOfLevel=(UnitLevel("player")>maxLevel) and true or nil, maxLevel=maxLevel};
