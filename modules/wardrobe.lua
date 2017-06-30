@@ -9,11 +9,11 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = WARDROBE;
+local name = "Wardrobe"; -- WARDROBE
 local ldbName, ttName, ttColumns, tt, createMenu = name, name.."TT", 4
 local illusions,weapons = {0,0},{};
 local session = {};
-XXX = session
+
 
 -------------------------------------------
 -- register icon names and default files --
@@ -94,13 +94,7 @@ end
 
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
-	if(#solvables==1)then
-		obj.text = C("green",table.concat(solvables,", "));
-	elseif(#solvables>1)then
-		obj.text = C("green",solvables[1].." " ..L["and %d more"]:format(#solvables-1));
-	else
-		obj.text = PROFESSIONS_ARCHAEOLOGY;
-	end
+	obj.text = WARDROBE;
 end
 
 local function sortWeapons(a,b)
@@ -122,7 +116,7 @@ end
 
 local function createTooltip(tt)
 	tt:Clear()
-	tt:AddHeader(C("dkyellow",L[name]));
+	tt:AddHeader(C("dkyellow",WARDROBE));
 
 	updateData();
 
@@ -223,6 +217,7 @@ ns.modules[name].onevent = function(self,event,...)
 			illusions = count,
 			sets = (C_TransmogSets.GetBaseSetsCounts())
 		}
+		updateBroker();
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
