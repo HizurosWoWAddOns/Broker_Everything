@@ -162,14 +162,19 @@ local function moduleInit(name)
 				label         = data.label or L[name],
 				text          = data.text or L[name],
 				icon          = icon.iconfile, -- default or custom icon
-				staticIcon    = icon.iconfile, -- default icon only
+				staticIcon    = icon.staticIcon or icon.iconfile, -- default icon only
 				iconCoords    = icon.coords or {0, 1, 0, 1},
 
 				-- button event functions
 				OnEnter       = data.onenter or nil,
 				OnLeave       = data.onleave or nil,
 				OnClick       = onclick,
-				OnTooltipShow = data.ontooltipshow or nil
+				OnTooltipShow = data.ontooltipshow or nil,
+
+				-- let user know who registered the broker
+				-- displayable by broker dispay addons...
+				-- DataBrokerGroups using it in option panel.
+				parent        = addon
 			});
 
 			ns.updateIconColor(name);
