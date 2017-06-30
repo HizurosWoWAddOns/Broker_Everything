@@ -31,7 +31,6 @@ ns.modules[name] = {
 	desc = L["Broker to show experience from all chars in tooltip and the current character in broker button"],
 	label = XP,
 	events = {
-		"ADDON_LOADED",
 		"PLAYER_XP_UPDATE",
 		"PLAYER_LOGIN",
 		"DISABLE_XP_GAIN",
@@ -123,7 +122,7 @@ local function initData()
 		-- SoO Weapons
 		[104399] = {0,100}, [104400] = {0,100}, [104401] = {0,100}, [104402] = {0,100}, [104403] = {0,100}, [104404] = {0,100}, [104405] = {0,100},
 		[104406] = {0,100}, [104407] = {0,100}, [104408] = {0,100}, [104409] = {0,100}, [105670] = {0,100}, [105671] = {0,100}, [105672] = {0,100},
-		[105673] = {0,100}, [105674] = {0,100}, [105675] = {0,100}, [105676] = {0,100}, [105677] = {0,100}, [105678] = {0,100}, [105679] = {0,100}, 
+		[105673] = {0,100}, [105674] = {0,100}, [105675] = {0,100}, [105676] = {0,100}, [105677] = {0,100}, [105678] = {0,100}, [105679] = {0,100},
 		[105680] = {0,100}, [105683] = {0,100}, [105684] = {0,100}, [105685] = {0,100}, [105686] = {0,100}, [105687] = {0,100}, [105688] = {0,100},
 		[105689] = {0,100}, [105690] = {0,100}, [105691] = {0,100}, [105692] = {0,100}, [105693] = {0,100},
 
@@ -145,7 +144,7 @@ local function initData()
 		[48677] = {10,80}, [48683] = {10,80}, [48685] = {10,80}, [48687] = {10,80}, [48689] = {10,80}, [48691] = {10,80}, [69889] = {10,80},
 		[93860] = {10,85}, [93863] = {10,85}, [93865] = {10,85}, [93885] = {10,85}, [93888] = {10,85}, [93891] = {10,85}, [93892] = {10,85},
 		--- (new since wod 6.0)
-		[122384] = {10,100,1}, [122382] = {10,100,1}, [122383] = {10,100,1}, [122379] = {10,100,1}, [122380] = {10,100,1}, [122381] = {10,100,1}, [122387] = {10,100,1}, [127010] = {10,100,1}, 
+		[122384] = {10,100,1}, [122382] = {10,100,1}, [122383] = {10,100,1}, [122379] = {10,100,1}, [122380] = {10,100,1}, [122381] = {10,100,1}, [122387] = {10,100,1}, [127010] = {10,100,1},
 
 		-- legs
 		[62029] = {10,85}, [62026] = {10,85}, [62027] = {10,85}, [62024] = {10,85}, [62025] = {10,85}, [62023] = {10,85}, [69888] = {10,85},
@@ -229,7 +228,7 @@ function createTooltip(tt)
 		tt:AddSeparator();
 		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE),"",C("white",("(%s/%s)"):format(ns.FormatLargeNumber(name,data.cur,true),ns.FormatLargeNumber(name,data.max,true))));
 		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE.." ("..L["Percent"]..")"), "",data.percentStr);
-		tt:AddLine(C("ltyellow",GARRISON_FOLLOWER_XP_STRING),"",C("white",data.need));
+		tt:AddLine(C("ltyellow",GARRISON_FOLLOWER_XP_STRING),"",C("white",ns.FormatLargeNumber(name,data.need,true)));
 		if (data.restStr) then
 			tt:AddLine(C("ltyellow",L["Rest"]),"",C("cyan",data.restStr));
 		end
@@ -331,13 +330,7 @@ ns.modules[name].init = function()
 end
 
 ns.modules[name].onevent = function(self,event,msg)
-	if event=="ADDON_LOADED" then
-		if ns.profile[name].showAllRealms~=nil then
-			ns.profile[name].showCharsFrom = 4;
-			ns.profile[name].showAllRealms = nil;
-		end
-		return;
-	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
+	if (event=="BE_UPDATE_CLICKOPTIONS") then
 		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 		return;
 	elseif (event=="UNIT_INVENTORY_CHANGED" and msg~="player") then
@@ -421,7 +414,7 @@ ns.modules[name].onevent = function(self,event,msg)
 	elseif ns.profile[name].display == "2" then
 		dataobj.text = ns.FormatLargeNumber(name,data.cur).."/"..ns.FormatLargeNumber(name,data.max);
 	elseif ns.profile[name].display == "3" then
-		dataobj.text = data.need;
+		dataobj.text = ns.FormatLargeNumber(name,data.need);
 	elseif ns.profile[name].display == "4" then
 		dataobj.text = data.percentStr.." ("..data.restStr..")";
 	elseif ns.profile[name].display == "5" then
