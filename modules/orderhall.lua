@@ -100,11 +100,11 @@ local function createTalentTooltip(self)
 		GameTooltip:AddLine(NORMAL_FONT_COLOR_CODE..TIME_REMAINING..FONT_COLOR_CODE_CLOSE.." "..SecondsToTime(talent.researchTimeRemaining), 1, 1, 1);
 	elseif not talent.selected then
 		GameTooltip:AddLine(" ");
-		
+
 		GameTooltip:AddLine(RESEARCH_TIME_LABEL.." "..HIGHLIGHT_FONT_COLOR_CODE..SecondsToTime(talent.researchDuration)..FONT_COLOR_CODE_CLOSE);
 		if ((talent.researchCost and talent.researchCurrency) or talent.researchGoldCost) then
 			local str = NORMAL_FONT_COLOR_CODE..COSTS_LABEL..FONT_COLOR_CODE_CLOSE;
-			
+
 			if (talent.researchCost and talent.researchCurrency) then
 				local _, _, currencyTexture = GetCurrencyInfo(talent.researchCurrency);
 				str = str.." "..BreakUpLargeNumbers(talent.researchCost).."|T"..currencyTexture..":0:0:2:0|t";
@@ -159,7 +159,7 @@ local function createTooltip(tt)
 	local ohLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
 	if ohLevel>0 then
 		now = time();
-		local tree = C_Garrison.GetTalentTrees(LE_GARRISON_TYPE_7_0, ns.player.classId);
+		local _, _, tree = C_Garrison.GetTalentTreeInfoForID(LE_GARRISON_TYPE_7_0, 0);
 		if tree and tree[1] then
 			local t,l={},tt:AddLine(C("ltblue",ORDER_HALL_TALENT_TITLE));
 			tt:AddSeparator();
