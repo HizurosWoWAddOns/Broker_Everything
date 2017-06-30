@@ -24,7 +24,42 @@ local coexist_tooltip = {
 	["SexyMap"]				= similar,
 	["SquareMap"]			= unsave,
 };
-
+local calendar_weekend_texture_ids = { -- Calendar_Weekend(.*)
+	[1129666] = "ApexisEnd",
+	[1129667] = "ApexisOngoing",
+	[1129668] = "ApexisStart",
+	[1129669] = "BattlegroundsEnd",
+	[1129670] = "BattlegroundsOngoing",
+	[1129671] = "BattlegroundsStart",
+	[1663861] = "BlackTempleStart",
+	[1129672] = "BurningCrusadeEnd",
+	[1129673] = "BurningCrusadeOngoing",
+	[1129674] = "BurningCrusadeStart",
+	[1304686] = "CataclysmEnd",
+	[1304687] = "CataclysmOngoing",
+	[1304688] = "CataclysmStart",
+	[1467045] = "LegionEnd",
+	[1467046] = "LegionOngoing",
+	[1467047] = "LegionStart",
+	[1530588] = "MistsofPandariaEnd",
+	[1530589] = "MistsofPandariaOngoing",
+	[1530590] = "MistsofPandariaStart",
+	[1129675] = "PetBattlesEnd",
+	[1129676] = "PetBattlesOngoing",
+	[1129677] = "PetBattlesStart",
+	[1129678] = "PvPSkirmishEnd",
+	[1129679] = "PvPSkirmishOngoing",
+	[1129680] = "PvPSkirmishStart",
+	[1129681] = "WarlordsOfDraenorEnd",
+	[1129682] = "WarlordsOfDraenorOngoing",
+	[1129683] = "WarlordsOfDraenorStart",
+	[1467048] = "WorldQuestEnd",
+	[1467049] = "WorldQuestOngoing",
+	[1467050] = "WorldQuestStart",
+	[1129684] = "WrathOfTheLichKingEnd",
+	[1129685] = "WrathOfTheLichKingOngoing",
+	[1129686] = "WrathOfTheLichKingStart",
+}
 
 -- ------------------------------------- --
 -- register icon names and default files --
@@ -137,7 +172,9 @@ local function createTooltip(tt)
 				for eIndex=1, numEvents do
 					local title, hour, minute, calendarType, sequenceType, eventType, eventTexture = CalendarGetDayEvent(monthOffset, day, eIndex);
 					if(title)then
-						local u = eventTexture:match("calendar_weekend(.*)");
+						local u = (type(eventTexture)=="string" and eventTexture:match("calendar_weekend(.*)"))
+							or calendar_weekend_texture_ids[eventTexture]
+							or false;
 						local unique = u and title..u or false;
 						if(sequenceType=="START")then
 							tinsert(holidays,{
