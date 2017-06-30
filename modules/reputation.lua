@@ -315,11 +315,18 @@ local function ttAddLine(tt,mode,data,count,childLevel)
 
 	if data[rewardPercent] and ns.profile[name].rewardBeyondExalted~="_NONE" then
 		tinsert(line," ");
+		local field = "";
 		if ns.profile[name].rewardBeyondExalted=="percent" then
-			tinsert(line,("%1.1f%%"):format(data[rewardPercent]).." |TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t");
+			field = ("%1.1f%%"):format(data[rewardPercent]);
 		else
-			tinsert(line,("%d/%d %s"):format(data[rewardValue],data[rewardMax],"|TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t"));
+			field = ("%d/%d"):format(data[rewardValue],data[rewardMax]);
 		end
+		if data[hasRewardPending] then
+			field = field.." |TInterface/GossipFrame/ActiveQuestIcon:14:14:0:0|t";
+		else
+			field = field.." |TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t";
+		end
+		tinsert(line,field);
 	end
 
 	for i=#line, ttColumns do
@@ -397,10 +404,12 @@ function createTooltip(tt)
 				else
 					data[barMin], data[barMax], data[barValue] = 0, 1, 1;
 				end
+			elseif data[standingID]==8 then
+				data[barValue] = data[barValue]+999;
 			end
 
 			if data[factionID] and C_Reputation.IsFactionParagon(data[factionID]) then
-				local rewardCurrentValue, rewardThreshold, rewardQuestID, hasRewardPending = C_Reputation.GetFactionParagonInfo(data[factionID]);
+				local rewardCurrentValue, rewardThreshold, rewardQuestID, _hasRewardPending = C_Reputation.GetFactionParagonInfo(data[factionID]);
 				if rewardCurrentValue~=nil then
 					if rewardCurrentValue > rewardThreshold then
 						rewardCurrentValue = rewardCurrentValue - rewardThreshold;
@@ -408,8 +417,7 @@ function createTooltip(tt)
 					data[rewardMax] = rewardThreshold;
 					data[rewardValue] = mod(rewardCurrentValue, rewardThreshold);
 					data[rewardPercent] = (data[rewardValue]/data[rewardMax])*100;
-					data[hasRewardPending] = hasRewardPending;
-					data[barValue] = data[barValue]+999;
+					data[hasRewardPending] = _hasRewardPending;
 				end
 			end
 
@@ -466,9 +474,9 @@ local function initSessionCurrencies()
 		end
 	elseif round==0 then
 		for i=1, GetNumFactions() do
-			local _, _, _, _, _, barValue, _, _, _, _, _, _, _, factionID = GetFactionInfo(i);
+			local _, _, standingID, _, _, barValue, _, _, _, _, _, _, _, factionID = GetFactionInfo(i);
 			if factionID and barValue and session[factionID]==nil then
-				session[factionID] = barValue;
+				session[factionID] = barValue + (standingID==8 and 999 or 0);
 			end
 		end
 	else
