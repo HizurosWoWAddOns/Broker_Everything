@@ -162,9 +162,6 @@ local function updateInstances(name,mode)
 			activeRaids[name] = {data[instanceReset],currentTime,data[encounterProgress],data[numEncounters],data[difficultyName]};
 		end
 	end
-end
-
-local function updateToonDB(name,mode)
 	for i=1, (NUM_LE_EXPANSION_LEVELS+1) do
 		EJ_SelectTier(i);
 		local index, instance_id, instance_name, _ = 1;
@@ -345,7 +342,6 @@ local function OnEvent(self,event,...)
 			mode,name = true,name1;
 		end
 		updateInstances(name,mode);
-		updateToonDB(name,mode);
 	end
 end
 
