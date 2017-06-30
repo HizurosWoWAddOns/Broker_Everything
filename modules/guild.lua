@@ -547,7 +547,7 @@ local function createTooltip(tt,update)
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0);
 
-		if (db.showApplicants) and (guild[gNumApplicants]>0) then
+		if (db.showApplicants) and guild[gNumApplicants] and (guild[gNumApplicants]>0) then
 			local l = tt:AddLine();
 			tt:SetCell(l,1,C("orange",L["Click"]).." || "..C("green","Open guild applications"),nil,"LEFT",ttColumns);
 		end
