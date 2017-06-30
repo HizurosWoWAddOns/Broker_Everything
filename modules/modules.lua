@@ -39,18 +39,18 @@ local separator1,separator2 = {type="separator", alpha=0},{type="separator", inM
 function ns.toggleMinimapButton(modName,setValue)
 	local mod = ns.modules[modName];
 	local cfg = ns.profile[modName];
-	local isReg = ns.LDBI:IsRegistered(mod.ldbName);
 
 	if setValue~=nil then
 		-- change config if setValue not nil
 		cfg.minimap.hide = not setValue;
 	end
-	if not isReg and cfg.minimap.hide==false then
-		-- register minimap button if not exists
-		ns.LDBI:Register(mod.ldbName,mod.obj,cfg.minimap);
-	elseif isReg then
+
+	if ns.LDBI:IsRegistered(mod.ldbName) then
 		-- perform refresh on minimap button if already exists
 		ns.LDBI:Refresh(mod.ldbName,cfg.minimap);
+	elseif cfg.minimap.hide==false then
+		-- register minimap button if not exists
+		ns.LDBI:Register(mod.ldbName,mod.obj,cfg.minimap);
 	end
 end
 
