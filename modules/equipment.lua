@@ -44,6 +44,7 @@ ns.modules[name] = {
 	config_defaults = {
 		showSets = true,
 		showInventory = true,
+		showEmptySlots = false,
 		showItemLevel = true,
 		showCurrentSet = true,
 		fullyUpgraded = true,
@@ -66,6 +67,7 @@ ns.modules[name] = {
 	config_tooltip = {
 		{ type="toggle", name="showSets",            label=L["Show equipment sets"],               tooltip=L["Display a list of your equipment sets"]},
 		{ type="toggle", name="showInventory" ,      label=L["Show inventory"],                    tooltip=L["Display a list of currently equipped items"]},
+		{ type="toggle", name="showEmptySlots",      label=L["Show emtpy slots"],                  tooltip=L["Display empty equipment slots"]},
 		{ type="toggle", name="showNotEnchanted" ,   label=L["Show 'not enchanted' mark"],         tooltip=L["Display a red # on not enchanted/enchantable items"]},
 		{ type="toggle", name="showEmptyGems" ,      label=L["Show 'empty socket' mark"],          tooltip=L["Display a yellow # on items with empty sockets"]},
 		{ type="toggle", name="showTSet" ,           label=L["Show T-Set"],                        tooltip=L["Display a T-Set label on items"]},
@@ -455,6 +457,11 @@ local function createTooltip(tt)
 				tt.lines[l].invLink = inventory[i].link;
 				tt:SetLineScript(l,"OnEnter",InventoryTooltipShow);
 				tt:SetLineScript(l,"OnLeave",InventoryTooltipHide);
+			elseif ns.profile[name].showEmptySlots then
+				tt:AddLine(
+					C("ltyellow",_G[slots[i].."SLOT"]),
+					C("gray",EMPTY)
+				);
 			end
 		end
 		if (none) then
