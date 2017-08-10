@@ -159,6 +159,8 @@ local function createTooltip(tt)
 	local ohLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
 	if ohLevel>0 then
 		now = time();
+
+		-- create order hall talent tree
 		local _, _, tree = C_Garrison.GetTalentTreeInfoForID(LE_GARRISON_TYPE_7_0, 0);
 		if tree and tree[1] then
 			local t,l={},tt:AddLine(C("ltblue",ORDER_HALL_TALENT_TITLE));
@@ -215,37 +217,36 @@ local function createTooltip(tt)
 			end
 		end
 
+		-- create shipment list
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",L["Shipments"]));
 		tt:AddSeparator();
-		local noShipments=true;
 		local buildings = C_Garrison.GetBuildings(LE_GARRISON_TYPE_7_0);
-		if #buildings>0 then
-			tt:AddLine(C("gray","Buildings"));
-			for i = 1, #buildings do
-				if buildings[i].buildingID then
-					addShipment(tt,C_Garrison.GetLandingPageShipmentInfo(buildings[i].buildingID));
-					noShipments=false;
+		local followerShipments = C_Garrison.GetFollowerShipments(LE_GARRISON_TYPE_7_0);
+		local looseShipments = C_Garrison.GetLooseShipments(LE_GARRISON_TYPE_7_0);
+		if (#looseShipments+#followerShipments+#buildings)>0 then
+			if #buildings>0 then
+				tt:AddLine(C("gray","Buildings"));
+				for i = 1, #buildings do
+					if buildings[i].buildingID then
+						addShipment(tt,C_Garrison.GetLandingPageShipmentInfo(buildings[i].buildingID));
+					end
 				end
 			end
-		end
-
-		local followerShipments = C_Garrison.GetFollowerShipments(LE_GARRISON_TYPE_7_0);
-		if #followerShipments>0 then
-			tt:AddLine(C("gray","Troops"));
-			for i = 1, #followerShipments do
-				addShipment(tt,C_Garrison.GetLandingPageShipmentInfoByContainerID(followerShipments[i]));
-				noShipments=false;
+			if #followerShipments>0 then
+				tt:AddLine(C("gray","Troops"));
+				for i = 1, #followerShipments do
+					addShipment(tt,C_Garrison.GetLandingPageShipmentInfoByContainerID(followerShipments[i]));
+				end
 			end
-		end
-
-		local looseShipments = C_Garrison.GetLooseShipments(LE_GARRISON_TYPE_7_0);
-		if #looseShipments>0 then
-			tt:AddLine(C("gray","Misc"));
-			for i = 1, #looseShipments do
-				addShipment(tt,C_Garrison.GetLandingPageShipmentInfoByContainerID(looseShipments[i]));
-				noShipments=false;
+			if #looseShipments>0 then
+				tt:AddLine(C("gray","Misc"));
+				for i = 1, #looseShipments do
+					addShipment(tt,C_Garrison.GetLandingPageShipmentInfoByContainerID(looseShipments[i]));
+				end
 			end
+		else
+			tt:SetCell(tt:AddLine(),1,C("gray",L["No active shipments found..."]),nil,"CENTER",0);
 		end
 
 		if noShipments then
