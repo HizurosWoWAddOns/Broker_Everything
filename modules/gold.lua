@@ -134,7 +134,7 @@ local function deleteCharacterGoldData(self,_,button)
 		Broker_Everything_CharacterDB[self.name_realm].gold = nil;
 		tt:Clear();
 		createTooltip(tt,true);
-	end 
+	end
 end
 
 function createTooltip(tt,update)
@@ -144,7 +144,7 @@ function createTooltip(tt,update)
 	local totalGold = current_money;
 	local diff_money
 
-	tt:Clear()
+	if tt.lines~=nil then tt:Clear(); end
 
 	tt:AddHeader(C("dkyellow",L["Gold information"]));
 	tt:AddSeparator(4,0,0,0,0);
@@ -175,7 +175,7 @@ function createTooltip(tt,update)
 			tt.lines[line].name_realm = name_realm;
 			tt:SetLineScript(line, "OnMouseUp", deleteCharacterGoldData);
 
-			totalGold = totalGold + v.gold;
+			totalGold[v.faction] = totalGold[v.faction] + v.gold;
 
 			line, column = nil, nil;
 			lineCount=lineCount+1;

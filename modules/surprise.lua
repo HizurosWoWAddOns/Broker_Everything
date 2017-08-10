@@ -99,7 +99,7 @@ end
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
-	tt:Clear();
+	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",L[name]))
 	tt:AddSeparator(4,0,0,0,0)
 

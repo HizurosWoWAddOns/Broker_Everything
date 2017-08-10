@@ -368,7 +368,7 @@ local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local line, column
-	tt:Clear()
+	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",BAG_FILTER_EQUIPMENT))
 
 	if (ns.profile[name].showSets) then

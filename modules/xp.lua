@@ -217,7 +217,7 @@ end
 function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
-	tt:Clear();
+	if tt.lines~=nil then tt:Clear(); end
 	if (IsXPUserDisabled()) then
 		tt:AddHeader(C("orange",L["XP gain disabled"]));
 	else

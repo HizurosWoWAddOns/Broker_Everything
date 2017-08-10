@@ -99,23 +99,23 @@ local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local line, column
-	
-	tt:Clear()
-	tt:AddHeader(C("dkyellow",L[name])) 
+
+	if tt.lines~=nil then tt:Clear(); end
+	tt:AddHeader(C("dkyellow",L[name]))
 	tt:AddLine (" ")
-	
+
 	line, column = tt:AddLine(L["Windowed / Fullscreen"])
 	tt:SetLineScript(line, "OnMouseUp", toggleWindowMode);
-	
+
 	line, column = tt:AddLine(L["Reload UI"])
 	tt:SetLineScript(line, "OnMouseUp", reloadUI); -- Use static Popup to avoid taint.
-	
+
 	line, column = tt:AddLine(LOGOUT)
 	tt:SetLineScript(line, "OnMouseUp", Logout);
-	
+
 	line, column = tt:AddLine(L["Quit Game"])
-	tt:SetLineScript(line, "OnMouseUp", Quit); 
-	
+	tt:SetLineScript(line, "OnMouseUp", Quit);
+
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddLine(" ")
 		line, column = nil, nil

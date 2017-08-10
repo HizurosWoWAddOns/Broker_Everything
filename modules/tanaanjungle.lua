@@ -167,7 +167,7 @@ local function updateResetTimes()
 
 	dailiesReset = time() + GetQuestResetTime() - 86400;
 	local wday,reset = tonumber(date("%w"));
-	
+
 	if(wday==0)then
 		reset = 4*86400;
 	elseif(wday>3)then
@@ -297,7 +297,7 @@ end
 local function createTooltip2(self,tt2,Class,Name,Realm,Data)
 	if (tt2) and (tt2.key) and (tt2.key~=ttName2) then return end -- don't override other LibQTip tooltips...
 	tt2 = ns.acquireTooltip({ttName2, ttColumns2, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT"},{true},{self,"horizontal",tt});
-	tt2:Clear();
+	if tt2.lines~=nil then tt2:Clear(); end
 	listQuests(tt2,{},Data.completed,Data.numCompleted);
 	ns.roundupTooltip(tt2);
 end
@@ -305,7 +305,7 @@ end
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
-	tt:Clear();
+	if tt.lines~=nil then tt:Clear(); end
 	local l = tt:AddHeader();
 	tt:SetCell(l,1,C("dkyellow",L[name]),nil,nil,ttColumns);
 

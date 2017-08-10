@@ -318,7 +318,7 @@ local function createTooltip2(self)
 		{self, "horizontal", tt}
 	);
 
-	tt2:Clear();
+	if tt2.lines~=nil then tt2:Clear(); end
 	tt2:AddHeader(C("dkyellow",NAME), C(v[mClassFile],ns.scm(v[mName])));
 	tt2:AddSeparator();
 	if type(realm)=="string" and realm:len()>0 then
@@ -430,7 +430,7 @@ end
 
 local function createTooltip(tt,update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
-	tt:Clear()
+	if tt.lines~=nil then tt:Clear(); end
 
 	if (not IsInGuild()) then
 		tt:AddHeader(C("dkyellow",GUILD));

@@ -241,9 +241,10 @@ local function volumeClick(self,_,button)
 end
 
 function createTooltip(tt, update)
-	if (tt) and (tt.Clear) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+	if (tt) and (tt.Clear) and (tt.key) and (tt.key~=ttName) and (tt.lines~=nil) and (tt.columns~=nil) then return end -- don't override other LibQTip tooltips...
 	local wheels,l,c={};
-	tt:Clear()
+
+	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",VOLUME))
 	tt:AddSeparator()
 

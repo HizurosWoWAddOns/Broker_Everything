@@ -144,7 +144,7 @@ local function createTooltip(tt)
 	if (limit==0) then limit = #logs; nolimit=true; end
 	if (limit > #logs) then limit = #logs; end
 
-	tt:Clear();
+	if tt.lines~=nil then tt:Clear(); end
 	if (ns.profile[name].displayMode=="NORMAL") then
 
 		local l=tt:AddHeader(C("dkyellow",L[name]));

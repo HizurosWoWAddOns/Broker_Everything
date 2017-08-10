@@ -30,7 +30,7 @@ local races = { -- <raceIndex>, <currencyId>, <raceKeystone2FragmentsCount>
 	Orc			= {nil, 397, 20},
 	Northend	= {nil, true},
 	Vrykul		= {nil, 399, 20},
-	Nerubian	= {nil, 400, 20}, 
+	Nerubian	= {nil, 400, 20},
 };
 local racesOrder = {
 	"Azeroth", -- continent header
@@ -242,7 +242,7 @@ local function updateRaces(firstUpdate)
 			t[raceName],t[raceTexture],t[raceKeystoneItemID],t[raceFragmentsCollected],t[raceNumFragmentsRequired],t[raceFragmentsMax] = unpack(info);
 			t[raceTexture] = icon2:format(t[raceTexture]);
 
-			
+
 			if t[raceCurrencyId]~=0 then
 				_,_,iconFile = GetCurrencyInfo(t[raceCurrencyId]);
 			end
@@ -300,7 +300,7 @@ end
 
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
-	tt:Clear()
+	if tt.lines~=nil then tt:Clear(); end
 	local ts,l = C("gray",L["Not learned"]),tt:AddHeader(C("dkyellow",PROFESSIONS_ARCHAEOLOGY))
 	if tradeskill.maxSkill>0 then
 		ts = tradeskill.skill.." / "..tradeskill.maxSkill;

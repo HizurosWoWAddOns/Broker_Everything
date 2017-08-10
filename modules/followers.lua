@@ -344,7 +344,7 @@ local function createTooltip(tt, name)
 	local statuscolors = {["onresting"]="ltblue",["onwork"]="orange",["onmission"]="yellow",["available"]="green",["disabled"]="red"};
 	local none=true;
 
-	tt:Clear();
+	if tt.lines~=nil then tt:Clear(); end
 	if name==nameS then
 		tt:AddHeader(C("dkyellow",GARRISON_SHIPYARD_FOLLOWERS));
 	elseif ns.build>70000000 then

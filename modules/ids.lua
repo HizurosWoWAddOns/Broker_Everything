@@ -143,7 +143,7 @@ local function createTooltip(tt)
 		return (IsShiftKeyDown()) and ( (num==true) and "Expire date" or date("%Y-%m-%d %H:%M",time()+num) ) or ( (num==true) and "Duration" or SecondsToTime(num) );
 	end
 
-	tt:Clear();
+	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",L[name]));
 
 	if ns.profile[name].showBosses then

@@ -321,7 +321,7 @@ local function createTooltip(tt,ttName,modName)
 
 	if buttonFrame then buttonFrame:ClearAllPoints() buttonFrame:Hide() end
 
-	tt:Clear()
+	if tt.lines~=nil then tt:Clear(); end
 
 	tt:AddHeader(C("dkyellow",L[modName]))
 

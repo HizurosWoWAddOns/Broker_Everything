@@ -24,7 +24,7 @@ local urls = {
 	WoWDB = function(id)
 		return ("http://www.wowdb.com/quests/%d"):format(id)
 	end
-	-- 
+	--
 }
 local Level, LevelPrefix, Title, Header, Color, Status, Type, ShortType, QuestId, Index, Title2, Text = 1,2,3,4,5,6,7,8,9,10,11,12;
 local Zone = 13;
@@ -200,7 +200,7 @@ local function deleteQuest(self)
 	else
 		requested = questId;
 		createTooltip(tt,true,"deleteQuest");
-	end	
+	end
 end
 
 local function trackQuest(self)
@@ -214,7 +214,7 @@ local function createTooltip2(self, obj)
 
 	tt2 = ns.acquireTooltip({ttName2,ttColumns2,"LEFT","RIGHT"},{true},{self,"horizontal",tt});
 
-	tt2:Clear();
+	if tt2.lines~=nil then tt2:Clear(); end
 	tt2:SetCell(tt2:AddLine(),1,C("dkyellow",obj[Title]),tt2:GetHeaderFont(),"LEFT",2);
 
 	if ns.profile[name].tooltip2QuestText then
@@ -342,8 +342,7 @@ function createTooltip(tt, update, from)
 	local header = false;
 	if self then requested=false; end
 
-	tt:AddLine(" "); --dummy
-	tt:Clear();
+	if tt.lines~=nil then tt:Clear(); end
 	tt:SetCell(select(1,tt:AddLine()),1,C("dkyellow",name),tt:GetHeaderFont(),"LEFT",ttColumns)
 	local GroupQuestCount=0;
 
@@ -494,7 +493,7 @@ ns.modules[name].onevent = function(self,event,msg)
 				if #tags==0 then
 					tinsert(tags," ");
 				end
-				
+
 				status = (q[isComplete]==-1 and "fail") or (q[isComplete==1] and "complete") or "active";
 				table.insert(quests,{
 					q[level],

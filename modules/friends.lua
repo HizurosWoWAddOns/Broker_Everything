@@ -196,7 +196,7 @@ function createMenu(self)
 	if (tt~=nil) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);	
+	ns.EasyMenu.ShowMenu(self);
 end
 
 local function BNet_GetClientTexture(game,tt2)
@@ -212,7 +212,7 @@ end
 local _status = function(afk,dnd)
 	if ns.profile[name].showStatus=="1" then
 		return ("|T%s:0|t"):format(_G["FRIENDS_TEXTURE_"  .. ((afk==true and "AFK") or (dnd==true and "DND") or "ONLINE")]);
-	elseif ns.profile[name].showStatus=="2" then 
+	elseif ns.profile[name].showStatus=="2" then
 		return (afk==true and C("gold","[AFK]")) or (dnd==true and C("ltred","[DND]")) or "";
 	end
 	return "";
@@ -250,7 +250,7 @@ local function createTooltip2(self)
 		{true,true},
 		{self, "horizontal", tt}
 	);
-	tt2:Clear();
+	if tt2.lines~=nil then tt2:Clear(); end
 	local l=tt2:AddHeader(C("dkyellow",NAME));
 	tt2:SetCell(l,2,C( self.toonInfo[3]~=BNET_CLIENT_WOW and color1 or self.toonInfo[8] or self.realmFriendInfo[3],ns.scm(self.toonInfo[2] or self.realmFriendInfo[18])),nil,nil,0);
 	tt2:AddSeparator();
@@ -331,7 +331,7 @@ local function createTooltip(tt)
 	local columns,split,l,c=8,ns.profile[name].splitFriendsTT;
 	local numFriends, friendsOnline = GetNumFriends();
 	local numBNFriends, numOnlineBNFriends = BNGetNumFriends();
-	tt:Clear();
+	if tt.lines~=nil then tt:Clear(); end
 	tt:SetCell(tt:AddLine(),1,C("dkyellow",L[name]),tt:GetHeaderFont(),"LEFT",0);
 
 	local _, _, _, broadcastText = BNGetInfo();
@@ -387,7 +387,7 @@ local function createTooltip(tt)
 									ti[toonName] = strsplit("#",fi[battleTag]);
 								end
 								isBNColor=true;
-							end 
+							end
 							local l = tt:AddLine();
 							-- battle tags / realids
 							if ns.profile[name].showBattleTags~="0" then

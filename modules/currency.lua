@@ -374,7 +374,7 @@ end
 function createTooltip(tt,update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
-	tt:Clear()
+	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",CURRENCY))
 	if ns.profile[name].shortTT == true then
 		tt:AddSeparator(4,0,0,0,0);

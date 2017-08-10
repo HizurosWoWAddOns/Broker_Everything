@@ -246,7 +246,7 @@ end
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
-	tt:Clear()
+	if tt.lines~=nil then tt:Clear(); end
 	local repairCost, equipCost, bagCost, durabilityA, durabilityL, durabilityLslot = scanAll();
 	local repairCostN = repairCost;
 	local reputation = UnitReaction("npc", "player");
@@ -443,7 +443,7 @@ ns.modules[name].onevent = function(self,event,msg)
 		end
 	end
 
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ns.modules[name].ldbName) 
+	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ns.modules[name].ldbName)
 	local repairCosts, equipCost, bagCost, dA, dL, dLSlot, d = scanAll();
 
 	if (ns.profile[name].inBroker=="costs") then

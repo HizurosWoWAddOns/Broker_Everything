@@ -327,7 +327,7 @@ local function createTooltip(tt)
 	local iconnameLocale = "|T%s:12:12:0:0:64:64:2:62:4:62|t %s";
 	local function item_icon(name,icon) return select(10,GetItemInfo(name)) or icon or ns.icon_fallback; end
 
-	tt:Clear();
+	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",TRADE_SKILLS));
 
 	tt:AddLine(C("ltblue","Name"),C("ltblue","Skill"),C("ltblue","Abilities"));

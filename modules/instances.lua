@@ -237,7 +237,7 @@ function createTooltip(tt,name,mode)
 	local ttName = name==name1 and ttName1 or ttName2;
 	if not (tt and tt.key and tt.key==ttName) then return end
 
-	tt:Clear();
+	if tt.lines~=nil then tt:Clear(); end
 
 	tt:AddHeader(C("dkyellow",name==name1 and RAIDS or DUNGEONS));
 

@@ -186,7 +186,7 @@ end
 function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
-	tt:Clear()
+	if tt.lines~=nil then tt:Clear(); end
 	local l = tt:AddHeader()
 	tt:SetCell(l, 1, C("dkyellow",L[name]), nil, nil, ttColumns);
 	tt:AddSeparator(1,0,0,0,0) -- transparent

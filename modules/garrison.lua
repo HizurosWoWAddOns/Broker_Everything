@@ -148,7 +148,7 @@ local function toggleAchievementFrame()
 	if ( not AchievementFrame ) then
 		AchievementFrame_LoadUI();
 	end
-	
+
 	if ( not AchievementFrame:IsShown() ) then
 		AchievementFrame_ToggleAchievementFrame();
 		AchievementFrame_SelectAchievement(v.id);
@@ -176,7 +176,7 @@ local function createTooltip(tt)
 		return SecondsToTime(n,true);
 	end;
 
-	tt:Clear();
+	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",GARRISON_LOCATION_TOOLTIP));
 
 	if (garrLevel>0) then
@@ -187,14 +187,14 @@ local function createTooltip(tt)
 			-- Garrison /n level, buildings
 			-- Jobs /n available, worker
 			-- shipments /n finished, progress // duration /n next, all
-			-- 
+			--
 
 			if(IsShiftKeyDown())then
-				tt:SetCell(l, 2, C("ltblue",GARRISON_LOCATION_TOOLTIP..		"|n"..C("green",LEVEL)..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2 
+				tt:SetCell(l, 2, C("ltblue",GARRISON_LOCATION_TOOLTIP..		"|n"..C("green",LEVEL)..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2
 				tt:SetCell(l, 3, C("ltblue",L["Shipments"]..	"|n"..C("green",L["finished"])..	" / "..C("yellow",L["in progress"])), nil, "RIGHT", 3); -- 3,4,5
 				tt:SetCell(l, 6, C("ltblue",L["Jobs"]..			"|n"..C("green",L["available"])..	" / "..C("yellow",L["worker"])), nil, "RIGHT", 2); -- 6,7
 			else
-				tt:SetCell(l, 2, C("ltblue",GARRISON_LOCATION_TOOLTIP..		"|n"..C("green",LEVEL)..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2 
+				tt:SetCell(l, 2, C("ltblue",GARRISON_LOCATION_TOOLTIP..		"|n"..C("green",LEVEL)..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2
 				tt:SetCell(l, 3, C("ltblue",L["Shipments"]..	"|n"..C("green",L["finished"])..	" / "..C("yellow",L["in progress"])), nil, "RIGHT", 3); -- 3,4,5
 				tt:SetCell(l, 6, C("ltblue",L["Jobs"]..			"|n"..C("green",L["available"])..	" / "..C("yellow",L["worker"])), nil, "RIGHT", 2); -- 6,7
 			end
@@ -251,7 +251,7 @@ local function createTooltip(tt)
 						(building):format(
 							v.texture,
 							v.rank,
-							((v.canUpgrade) and "|T"..ns.media.."GarrUpgrade:12:12:0:0:32:32:4:24:4:24|t") or  "", 
+							((v.canUpgrade) and "|T"..ns.media.."GarrUpgrade:12:12:0:0:32:32:4:24:4:24|t") or  "",
 							v.name .. ((v.canActivate) and C("orange"," ("..L["Upgrade finished"]..")") or "")
 						),
 						((v.follower) and C(v.follower.class,v.follower.name) .. C(qualities[v.follower.quality], " ("..v.follower.level..")")) or ((jobslots[v.buildingID]~=nil) and C("gray","< "..L["free job"].." >")) or "",

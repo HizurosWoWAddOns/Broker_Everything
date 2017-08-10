@@ -115,7 +115,9 @@ local function addLine(name,collected,total,session)
 end
 
 local function createTooltip(tt)
-	tt:Clear()
+	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+
+	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",WARDROBE));
 
 	updateData();

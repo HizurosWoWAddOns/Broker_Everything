@@ -180,7 +180,7 @@ end
 function createTooltip(tt,update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
-	tt:Clear()
+	if tt.lines~=nil then tt:Clear(); end
 	tt:SetCell(tt:AddLine(),1,C("dkyellow",SPECIALIZATION.." & "..TALENTS),tt:GetHeaderFont(),"LEFT",ttColumns);
 
 	local spec,active = {},{index=GetSpecialization(),id=nil,name=nil,icon=nil};
@@ -340,7 +340,7 @@ function createTooltip(tt,update)
 			for row=1, MAX_PVP_TALENT_TIERS do
 				local selected,isUnlocked = false,false;
 				local l=tt:AddLine(C("ltyellow",row));
-				for col=1, MAX_PVP_TALENT_COLUMNS do 
+				for col=1, MAX_PVP_TALENT_COLUMNS do
 					local tmp={GetPvpTalentInfo(row,col,talentGroup)};
 					if ns.profile[name].showPvPTalentsShort then
 						if tmp[Selected]==true then

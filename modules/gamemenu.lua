@@ -210,7 +210,7 @@ local function pushedTooltip(parent,id,msg)
 	tt2 = ns.acquireTooltip({tt2Name, 1, "LEFT"},{true},{parent});
 	ns.roundupTooltip(tt2);
 
-	tt2:Clear();
+	if tt2.lines~=nil then tt2:Clear(); end
 	tt2:AddLine(C("orange",L[msg]));
 	tt2:AddSeparator();
 	tt2:AddLine(C("yellow",L["Then push again..."]).." "..timeout_counter);
@@ -238,7 +238,7 @@ local function tooltipCellScript_OnAction(self)
 	elseif type(self.info.func)=="function" then
 		ns.hideTooltip(tt);
 		self.info.func();
-	end	
+	end
 end
 
 local function showGMTicket()
@@ -264,7 +264,7 @@ local function createTooltip(tt)
 
 	tt.secureButtons = {}
 
-	tt:Clear()
+	if tt.lines~=nil then tt:Clear(); end
 
 	if ns.profile[name].customTooltipTitle then
 		tt:AddHeader(C("dkyellow", customTitle))
@@ -345,7 +345,7 @@ local function createTooltip(tt)
 			end
 		elseif (ticketStatus == LE_TICKET_STATUS_SURVEY) then -- ticketStatus = 2
 		elseif (ticketStatus == LE_TICKET_STATUS_RESPONSE) then -- ticketStatus = 4
-			
+
 		end
 	end
 	--

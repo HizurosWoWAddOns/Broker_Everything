@@ -194,7 +194,7 @@ local function createTooltip(tt)
 		newMails = {GetLatestThreeSenders()}; -- this function is unreliable after clearing and closing mail box. must be captured by HasNewMail().
 	end
 	local l,c
-	tt:Clear()
+	if tt.lines~=nil then tt:Clear(); end
 
 	tt:AddHeader(C("dkyellow",BUTTON_LAG_MAIL))
 	tt:AddSeparator()

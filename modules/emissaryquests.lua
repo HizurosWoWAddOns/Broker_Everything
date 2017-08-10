@@ -93,7 +93,7 @@ local function updateBroker()
 	local lst,obj = {},ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 	if UnitLevel("player")<110 then
 		obj.text = ns.profile[name].shortTitle and L["Emissary Quests-ShortCut"] or L[name];
-		return 
+		return
 	end
 
 	local Time = time();
@@ -193,7 +193,7 @@ local function createTooltip(tt)
 	local Time = time();
 	table.sort(factions,sortFactions);
 
-	tt:Clear()
+	if tt.lines~=nil then tt:Clear(); end
 	local l=tt:AddLine();
 	tt:SetCell(l,1,C("dkyellow",BOUNTY_BOARD_LOCKED_TITLE),tt:GetHeaderFont(),"LEFT",0);
 

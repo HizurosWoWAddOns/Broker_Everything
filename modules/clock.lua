@@ -149,10 +149,10 @@ local function createTooltip(tt,update)
 	local dSec = ns.profile[name].showSeconds;
 	local pT,pL,pS = ns.LT.GetPlayedTime();
 
-	tt:Clear();
+	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",TIMEMANAGER_TITLE));
 	tt:AddSeparator();
-	
+
 	if ns.profile[name].showDate then
 		tt:AddLine(C("ltyellow",L["Date"]),		C("white",date(ns.profile[name].dateFormat)));
 	end

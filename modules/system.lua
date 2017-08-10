@@ -510,7 +510,7 @@ end
 local function createTooltip(tt, name, ttName, update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local allHidden=true;
-	tt:Clear();
+	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",L[name]))
 	if name_sys==name then
 		if ns.profile[name].showFpsInTooltip then

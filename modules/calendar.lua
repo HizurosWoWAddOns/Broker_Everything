@@ -150,7 +150,7 @@ local function createTooltip(tt)
 	local weekday, month, day, year = CalendarGetDate();
 	local today=_(year,month,day);
 
-	tt:Clear()
+	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",L[name]),C("ltgreen",(" %d-%02d-%02d"):format(year,month,day)));
 	tt:AddSeparator();
 
