@@ -23,6 +23,9 @@ if PATTERN_SECOND_NUMBERS[1]:len()<PATTERN_SECOND_NUMBERS[2]:len() then
 	PATTERN_SECOND_NUMBERS[1],PATTERN_SECOND_NUMBERS[2] = PATTERN_SECOND_NUMBERS[2],PATTERN_SECOND_NUMBERS[1];
 end
 local artifactKnowledgeMultiplier_cap, artifactLocked = 40; -- 50
+if ns.build>=73000000 then
+	artifactKnowledgeMultiplier_cap = 50; -- 7.3
+end
 local artifactKnowledgeMultiplier = {}
 local AP_MATCH_STRINGS,FISHING_AP_MATCH_STRINGS = {},{};
 ns.artifactpower_items = {};
