@@ -22,7 +22,25 @@ local tsName, tsIcon, tsValue, tsID = 1,2,3,4;
 local app_index, app_name, app_realm, app_level, app_class, app_bQuest, app_bDungeon, app_bRaid, app_bPvP, app_bRP, app_bWeekdays, app_bWeekends, app_bTank, app_bHealer, app_bDamage, app_comment, app_timeSince, app_timeLeft = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18; -- applicants table entry indexes
 local MOBILE_BUSY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-BusyMobile:14:14:0:0:16:16:0:16:0:16|t";
 local MOBILE_AWAY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-AwayMobile:14:14:0:0:16:16:0:16:0:16|t";
-
+local last,membersUpdateTicker = {};
+local IsOnline = setmetatable({},{
+	__index = function(t,k) return 0; end,
+	__call = function(t,act,name)
+		if act=="#" then
+			return rawget(t,"#") or 1; -- missing __len
+		elseif act>=1 then
+			if not rawget(t,name) then
+				t['#']=t['#']+1;
+			end
+			t[name] = act;
+		elseif act==0 and rawget(t,name) then
+			t[name] = nil;
+			if t['#']>1 then
+				t['#']=t['#']-1;
+			end
+		end
+	end
+});
 
 -------------------------------------------
 -- register icon names and default files --
@@ -167,6 +185,9 @@ local function updateMembers()
 		tmpNames[m[mFullName]]=i;
 		m[mName], m[mRealm] = strsplit("-",m[mFullName]);
 		m[mStandingText] = _G["FACTION_STANDING_LABEL"..m[mStanding]];
+		if IsOnline[m[mFullName]]==0 and m[mOnline] then
+			IsOnline(1,m[mFullName]);
+		end
 		if m[mIsMobile] and m[mOnline] then
 			guild[gNumMobile] = guild[gNumMobile]+1;
 		end
@@ -310,7 +331,6 @@ end
 local function createTooltip2(self)
 	local v,s,t,_ = self.info,"";
 	local realm = v[mRealm] or "";
-	ns.debug(type(v),type(realm));
 
 	tt2 = ns.acquireTooltip(
 		{ttName2, ttColumns2, "LEFT","RIGHT"},
@@ -653,16 +673,27 @@ ns.modules[name].onevent = function(self,event,msg,...)
 		end
 		self:UnregisterEvent("PLAYER_ENTERING_WORLD");
 	elseif event=="CHAT_MSG_SYSTEM" then
-		local name = tostring(msg:match(off) or msg:match(on)):gsub("\124Hplayer:%%s\124h%[",""):gsub("%]\124h","");
-		if not name:find("-") then
-			name = name .."-".. ns.realm:gsub(" ","");
+		local On,Off = msg:match(on), msg:match(off);
+		if On or Off then
+			--ns.debug("<ChatMsg>",On and "<On>" or "<Off>",(On or Off):gsub("\124","\\124"));
+			if On then
+				On = On:gsub("\124Hplayer:%%s\124h%[",""):gsub("%]\124h","");
+			end
+			local Name = tostring(On or Off);
+			if not Name:find("-") then
+				Name = Name .."-".. ns.realm:gsub(" ","");
+			end
+			if not membersName2Index[Name] then
+				return; -- it is not a guild member. don't update for toons from friendlist.
+			end
+			if On then
+				IsOnline(time(),Name);
+			elseif Off then
+				IsOnline(0,Name);
+			end
+			doGuildUpdate = true;
+			doMembersUpdate = true;
 		end
-		if not membersName2Index[name] then
-			return; -- it is not a guild member. don't update for toons from friendlist.
-		end
-		GuildRoster();
-		doGuildUpdate = true;
-		doMembersUpdate = true;
 		return;
 	elseif event=="GUILD_ROSTER_UPDATE" or event=="LF_GUILD_RECRUITS_UPDATED" or event=="BE_DUMMY_EVENT" then
 		doGuildUpdate = true;
@@ -674,6 +705,7 @@ ns.modules[name].onevent = function(self,event,msg,...)
 	end
 	if updaterLocked==false and (doGuildUpdate or doMembersUpdate or doTradeskillsUpdate or doApplicantsUpdate or doUpdateTooltip) then
 		updaterLocked = true;
+		GuildRoster();
 		C_Timer.After(0.1570595,updater); -- sometimes blizzard firing GUILD_ROSTER_UPDATE twice.
 	end
 end
