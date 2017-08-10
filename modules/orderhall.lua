@@ -248,10 +248,6 @@ local function createTooltip(tt)
 		else
 			tt:SetCell(tt:AddLine(),1,C("gray",L["No active shipments found..."]),nil,"CENTER",0);
 		end
-
-		if noShipments then
-			tt:SetCell(tt:AddLine(),1,C("gray",L["No active shipments found..."]),nil,"CENTER",0);
-		end
 	else
 		tt:AddLine(L["You have not unlocked your order hall"]);
 	end
