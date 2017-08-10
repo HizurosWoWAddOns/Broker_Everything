@@ -260,7 +260,7 @@ local function ttMatchString(line,matchString)
 			pat = PATTERN_SECOND_NUMBERS[2];
 		end
 		if pat then
-			artefact_power = artefact_power:gsub("(%d*)[,%.](%d)[ ]?"..pat,"%1%200000");
+			artefact_power = artefact_power:gsub("(%d*)[,%.](%d)[ ]?"..pat,"%1%200000"):gsub("(%d*)[ ]?"..pat,"%1000000");
 		end
 		artefact_power = artefact_power:gsub("[,%.]","");
 	end
