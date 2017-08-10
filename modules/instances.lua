@@ -311,37 +311,41 @@ function createTooltip(tt,name,mode)
 	ns.roundupTooltip(tt);
 end
 
-local function OnEvent(self,event,...)
-	if event=="PLAYER_ENTERING_WORLD" then
-		if #renameIt>0 then
-			for _,v in ipairs(renameIt)do
-				local B,A = (EJ_GetInstanceInfo(v[3]));
-				if v[2]>0 then
-					local res = ns.ScanTT.query({type="link",link="instancelock:0:"..v[2]},true);
-					if res and res.lines and res.lines[1] then
-						local name = {strsplit('"',res.lines[1])};
-						if name[2] then
-							A = name[2];
-						end
-					end
-				end
-				if A and B and A~=B then
-					if v[1]=="IL" then
-						rename_il[A] = B;
-					elseif v[1]=="EJ" then
-						rename_ej[B] = A;
-					elseif v[1]=="XX" then
-						ignore_ej[B] = true;
+local function update()
+	if #renameIt>0 then
+		for _,v in ipairs(renameIt)do
+			local B,A = (EJ_GetInstanceInfo(v[3]));
+			if v[2]>0 then
+				local res = ns.ScanTT.query({type="link",link="instancelock:0:"..v[2]},true);
+				if res and res.lines and res.lines[1] then
+					local name = {strsplit('"',res.lines[1])};
+					if name[2] then
+						A = name[2];
 					end
 				end
 			end
-			wipe(renameIt);
+			if A and B and A~=B then
+				if v[1]=="IL" then
+					rename_il[A] = B;
+				elseif v[1]=="EJ" then
+					rename_ej[B] = A;
+				elseif v[1]=="XX" then
+					ignore_ej[B] = true;
+				end
+			end
 		end
-		local mode,name = false,name2;
-		if self==ns.modules[name1].eventFrame then
-			mode,name = true,name1;
-		end
-		updateInstances(name,mode);
+		wipe(renameIt);
+	end
+	local mode,name = false,name2;
+	if self==ns.modules[name1].eventFrame then
+		mode,name = true,name1;
+	end
+	updateInstances(name,mode);
+end
+
+local function OnEvent(self,event,...)
+	if event=="PLAYER_ENTERING_WORLD" then
+		C_Timer.After(5, update);
 	end
 end
 
