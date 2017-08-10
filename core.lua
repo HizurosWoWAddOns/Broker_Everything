@@ -384,7 +384,9 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 
 		self:UnregisterEvent(event);
 	elseif(event=="PLAYER_LEVEL_UP")then
-		ns.toon.level = UnitLevel("player");
+		C_Timer.After(2,function()
+			ns.toon.level = UnitLevel("player");
+		end);
 	elseif (event=="NEUTRAL_FACTION_SELECT_RESULT") then
 		ns.player.faction, ns.player.factionL  = UnitFactionGroup("player");
 		L[ns.player.faction] = ns.player.factionL;
