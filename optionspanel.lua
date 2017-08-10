@@ -558,7 +558,7 @@ ns.optionpanel = function()
 		if BrokerEverythingOptionPanel.change_profile then
 			local pName,pAct = unpack(BrokerEverythingOptionPanel.change_profile);
 			action = "none";
-		
+
 			if pAct=="new" then
 				Broker_Everything_ProfileDB.profiles[pName] = {};
 				for i,v in pairs(ns.defaultGeneralOptions)do
@@ -1080,7 +1080,7 @@ ns.datapanel = function()
 		end
 		ns.toon.level = UnitLevel("player");
 	end
-	
+
 	local function CharList_Change(self)
 		local parent=self:GetParent();
 		local name = parent.name_realm;
@@ -1092,6 +1092,7 @@ ns.datapanel = function()
 			tinsert(f.tmpCharCache.order,f.tmpCharCache[name].orderId+1,name);
 		elseif self==parent.Delete then
 			tremove(f.tmpCharCache.order,f.tmpCharCache[name].orderId);
+			f.tmpCharCache[name]=nil;
 		end
 		CharList_Update();
 	end
@@ -1173,7 +1174,13 @@ ns.datapanel = function()
 		f.InfoLine2Sub:SetText(L["You can delete all collected data about your characters with a single click."]);
 
 		_G[f:GetName().."DeleteAllText"]:SetText(L["Delete all character data"]);
-		f.DeleteAll:SetScript("OnClick",function()  end);
+		f.DeleteAll:SetScript("OnClick",function()
+			Broker_Everything_CharacterDB = nil;
+			ReloadUI();
+		end);
+		f.DeleteAll.tooltip = {L["Delete all character data"],L["All data will be delete."]};
+		f.DeleteAll:SetScript("OnEnter",tooltipOnEnter);
+		f.DeleteAll:SetScript("OnLeave",tooltipOnLeave);
 
 		f.CharList.scrollBar:SetScale(0.725);
 		CharList_Update();

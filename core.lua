@@ -327,6 +327,15 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 		if(Broker_Everything_CharacterDB.order==nil)then
 			Broker_Everything_CharacterDB.order={};
 		end
+		local names = {};
+		for i=1, #Broker_Everything_CharacterDB.order do
+			names[Broker_Everything_CharacterDB.order[i]]=1;
+		end
+		for name,v in pairs(Broker_Everything_CharacterDB)do
+			if name~="order" and not names[name] then
+				Broker_Everything_CharacterDB[name] = nil;
+			end
+		end
 		if(not Broker_Everything_CharacterDB[ns.player.name_realm])then
 			tinsert(Broker_Everything_CharacterDB.order,ns.player.name_realm);
 			Broker_Everything_CharacterDB[ns.player.name_realm] = {orderId=#Broker_Everything_CharacterDB.order};
