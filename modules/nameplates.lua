@@ -359,7 +359,7 @@ ns.modules[name].init = function()
 end
 
 ns.modules[name].onevent = function(self,event,msg,msg2)
-	local dataobj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName) 
+	local dataobj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName)
 	local allFriends, friends = GetCVar("nameplateShowFriends"), GetCVar("UnitNameFriendlyPlayerName")
 	local allEnemies, enemy = GetCVar("nameplateShowEnemies"), GetCVar("UnitNameEnemyPlayerName")
 

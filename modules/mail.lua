@@ -288,12 +288,10 @@ ns.modules[name].onevent = function(self,event,msg)
 	elseif event=="PLAYER_ENTERING_WORLD" then
 		hooksecurefunc("SendMail",function(targetName)
 			local n,r,_ = strsplit("-",targetName);
-			if r==nil then
-				r=ns.realm;
-			elseif type(r)=="string" and r:len()>0 then
-				_,r = ns.LRI:GetRealmInfo(r);
+			if type(r)=="string" and r:len()>0 then
+				r = ns.realms[r];
 			end
-			targetName = n.."-"..r;
+			targetName = n.."-"..(r or ns.realm);
 			if Broker_Everything_CharacterDB[targetName] then
 				if Broker_Everything_CharacterDB[targetName].mail==nil then
 					Broker_Everything_CharacterDB[targetName].mail = { new={}, stored={} };
