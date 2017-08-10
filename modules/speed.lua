@@ -38,7 +38,7 @@ ns.modules[name] = {
 	config_misc = nil,
 }
 -- possible click option
-	--if not PetJournalParent then PetJournal_LoadUI() end 
+	--if not PetJournalParent then PetJournal_LoadUI() end
 	--securecall("TogglePetJournal",1)
 
 
@@ -338,7 +338,7 @@ end
 ns.modules[name].onenter = function(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip(
-		{ttName, ttColumns, "LEFT","RIGHT", "RIGHT", "CENTER", "LEFT", "LEFT", "LEFT", "LEFT"}, -- for LibQTip:Aquire 
+		{ttName, ttColumns, "LEFT","RIGHT", "RIGHT", "CENTER", "LEFT", "LEFT", "LEFT", "LEFT"}, -- for LibQTip:Aquire
 		{false}, -- show/hide mode
 		{self} -- anchor data
 	);

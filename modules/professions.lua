@@ -349,7 +349,7 @@ local function createTooltip(tt)
 			end
 		end
 
-		if ns.profile[name].showLegionFactionRespices then
+		if ns.profile[name].showLegionFactionRespices and UnitLevel("player")>=110 then
 			tt:AddSeparator(4,0,0,0,0);
 			tt:AddLine(C("ltblue",L["Legion recipes from faction vendors"]));
 			tt:AddSeparator();

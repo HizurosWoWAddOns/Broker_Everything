@@ -143,7 +143,7 @@ local function initData()
 		[95053]=39287,[95044]=39288,[95056]=39289,[95054]=39290
 	};
 	groupIds = {
-		--[39432] = 
+		--[39432] =
 	};
 	titles = { -- {"<title>", <maxQuestCount>}
 		{"Rare bosses",4}, -- L["Rare bosses"]
@@ -179,7 +179,7 @@ local function updateResetTimes()
 end
 
 local function callbackLocaleNames(data)
-	if data.type=="quest" or data.type=="unit" then 
+	if data.type=="quest" or data.type=="unit" then
 		if type(data.lines[1])=="string" and strlen(data.lines[1])>0 then
 			if data.type=="unit" then
 				names[data.id2] = data.lines[1];
