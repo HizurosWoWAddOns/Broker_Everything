@@ -285,9 +285,13 @@ function createTooltip(tt)
 					factionSymbol = "|TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t";
 				end
 				Realm = (Realm and " "..C("dkyellow","- "..ns.scm(Realm))) or "";
+				local restState = "";
+				if v.xp.restStr then
+					restState = " "..C("cyan",v.xp.restStr);
+				end
 				local l = tt:AddLine(
 					("(%d) %s %s"):format(v.level,C(v.class,ns.scm(Name))..Realm, factionSymbol),
-					("%s "..C("cyan","%s")):format(v.xp.percent or 0,v.xp.restStr or "> ?%"),
+					(v.xp.percentStr or 0)..restState,
 					("(%s/%s)"):format(ns.FormatLargeNumber(name,v.xp.cur,true),ns.FormatLargeNumber(name,v.xp.max,true))
 				);
 				tt.lines[l].name_realm = name_realm;
