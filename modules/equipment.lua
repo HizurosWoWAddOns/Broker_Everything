@@ -410,9 +410,7 @@ local function createTooltip(tt)
 	end
 
 	if (ns.profile[name].showInventory) then
-		if not inventory then
-			UpdateInventory();
-		end
+		UpdateInventory();
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(
 			C("ltblue",TRADESKILL_FILTER_SLOTS),
@@ -421,8 +419,8 @@ local function createTooltip(tt)
 		);
 		tt:AddSeparator();
 		local none,miss=true,false;
-		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17,18}) do
-			if inventory[i] then
+		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do
+			if inventory[i] and inventory[i].rarity then
 				none=false;
 				local tSetItem,setName,enchanted,greenline,upgrades,gems = "","","","","","";
 				if ns.profile[name].showNotEnchanted and enchantSlots[i] and (tonumber(inventory[i].linkData[1]) or 0)==0 then
