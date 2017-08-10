@@ -43,13 +43,15 @@ ns.modules[name] = {
 		showRealmNames=true,
 		showCharsFrom=4,
 		showCharGold = true,
-		showSessionProfit = true
+		showSessionProfit = true,
+		splitSummaryByFaction = true,
 	},
 	config_allowed = nil,
 	config_header = {type="header", label=BONUS_ROLL_REWARD_MONEY, align="left", icon=I[name]},
 	config_broker = {
-		{ type="toggle", name="showCharGold",      label=L["Show character gold"], tooltip=L["Show character gold on broker button"], event=true },
-		{ type="toggle", name="showSessionProfit", label=L["Show session profit"], tooltip=L["Show session profit on broker button"], event=true },
+		{ type="toggle", name="showCharGold",         label=L["Show character gold"],     tooltip=L["Show character gold on broker button"], event=true },
+		{ type="toggle", name="showSessionProfit",    label=L["Show session profit"],     tooltip=L["Show session profit on broker button"], event=true },
+		{ type="toggle", name="splitSummaryByFaction", label=L["Split summary by faction"], tooltip=L["Separate summary by faction (Alliance/Horde)"], event=true }
 	},
 	config_tooltip = {
 		"showAllFactions",
@@ -141,8 +143,8 @@ function createTooltip(tt,update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local sAR,sAF = ns.profile[name].showAllRealms==true,ns.profile[name].showAllFactions==true;
-	local totalGold = current_money;
-	local diff_money
+	local totalGold,diff_money = {Alliance=0,Horde=0,Neutral=0};
+	totalGold[ns.player.faction] = current_money;
 
 	if tt.lines~=nil then tt:Clear(); end
 
@@ -164,7 +166,7 @@ function createTooltip(tt,update)
 		local charName,realm,_=strsplit("-",name_realm);
 		local v = Broker_Everything_CharacterDB[name_realm];
 
-		if (v.gold) and (sAR==true or (sAR==false and realm==ns.realm)) and (sAF==true or (sAF==false and v.faction==ns.player.faction)) and (ns.player.name_realm~=name_realm) then
+		if (v.gold) and ns.showThisChar(name,realm,v.faction) then --(sAR==true or (sAR==false and realm==ns.realm)) and (sAF==true or (sAF==false and v.faction==ns.player.faction)) and (ns.player.name_realm~=name_realm) then
 			local faction = v.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 			if type(realm)=="string" and realm:len()>0 then
 				_,realm = ns.LRI:GetRealmInfo(realm);
@@ -184,7 +186,12 @@ function createTooltip(tt,update)
 
 	if(lineCount>0)then
 		tt:AddSeparator()
-		tt:AddLine(L["Total Gold"], ns.GetCoinColorOrTextureString(name,totalGold,{inTooltip=true}))
+		if ns.profile[name].splitSummaryByFaction then
+			tt:AddLine(L["Total Gold"].." |TInterface\\PVPFrame\\PVP-Currency-Alliance:16:16:0:-1:16:16:0:16:0:16|t", ns.GetCoinColorOrTextureString(name,totalGold.Alliance,{inTooltip=true}));
+			tt:AddLine(L["Total Gold"].." |TInterface\\PVPFrame\\PVP-Currency-Horde:16:16:0:-1:16:16:0:16:0:16|t", ns.GetCoinColorOrTextureString(name,totalGold.Horde,{inTooltip=true}));
+		else
+			tt:AddLine(L["Total Gold"], ns.GetCoinColorOrTextureString(name,totalGold.Alliance+totalGold.Horde+totalGold.Neutral,{inTooltip=true}))
+		end
 	end
 	tt:AddSeparator(3,0,0,0,0)
 
