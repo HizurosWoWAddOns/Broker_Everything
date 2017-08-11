@@ -3,9 +3,6 @@
 Broker_Everything_ProfileDB = {}; -- config data
 Broker_Everything_CharacterDB = {}; -- per character data
 Broker_Everything_DataDB = {}; -- global data
-Broker_EverythingDB = nil;  -- deprecated
-Broker_EverythingGlobalDB = nil; -- deprecated
-be_character_cache = nil; -- deprecated
 
 -- some usefull namespace to locals
 local addon, ns = ...;
@@ -230,20 +227,12 @@ function ns.resetAllSavedVariables()
 end
 
 function ns.resetConfigs()
-	if Broker_EverythingDB~=nil then
-		wipe(Broker_EverythingDB);
-	end
-	if Broker_EverythingGlobalDB~=nil then
-		wipe(Broker_EverythingGlobalDB);
-	end
 	wipe(Broker_Everything_ProfileDB);
 	wipe(Broker_Everything_DataDB);
 end
 
 Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 	if event == "ADDON_LOADED" and addonName == addon then
-		local migrate = false;
-
 		if Broker_Everything_ProfileDB==nil then
 			Broker_Everything_ProfileDB = {};
 		end
@@ -256,34 +245,8 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 		})do
 			if Broker_Everything_ProfileDB[k]==nil or type(Broker_Everything_ProfileDB[k])~=type(v) then
 				Broker_Everything_ProfileDB[k]=v;
-				if k=="profiles" then
-					migrate = true;
-				end
 			end
 		end
-
-		--- migration from old saved variables ---
-		if migrate then
-			if(type(Broker_EverythingGlobalDB)=="table" and Broker_EverythingGlobalDB.global==true)then
-				Broker_Everything_ProfileDB.use_default_profile=true;
-				Broker_Everything_ProfileDB.profiles[Broker_Everything_ProfileDB.default_profile] = CopyTable(Broker_EverythingGlobalDB);
-				Broker_Everything_ProfileDB.use_profile[ns.player.name_realm] = DEFAULT;
-			elseif Broker_Everything_ProfileDB.profiles[ns.player.name_realm]==nil then
-				if type(Broker_EverythingDB)=="table" then
-					Broker_Everything_ProfileDB.profiles[ns.player.name_realm] = CopyTable(Broker_EverythingDB);
-				else
-					Broker_Everything_ProfileDB.profiles[ns.player.name_realm] = {};
-				end
-				Broker_Everything_ProfileDB.use_profile[ns.player.name_realm] = ns.player.name_realm;
-			end
-		end
-		if Broker_EverythingDB~=nil then
-			Broker_EverythingDB=nil;
-		end
-		if Broker_EverythingGlobalDB~=nil then
-			Broker_EverythingGlobalDB=nil;
-		end
-		---
 
 		if Broker_Everything_ProfileDB.use_profile[ns.player.name_realm]==nil then
 			Broker_Everything_ProfileDB.use_profile[ns.player.name_realm] = Broker_Everything_ProfileDB.use_default_profile and Broker_Everything_ProfileDB.default_profile or ns.player.name_realm;
@@ -317,10 +280,6 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 
 		-- character cache
 		local baseData={"name","class","faction","race"};
-		if be_character_cache~=nil then
-			Broker_Everything_CharacterDB = be_character_cache;
-			be_character_cache=nil;
-		end
 		if(Broker_Everything_CharacterDB==nil)then
 			Broker_Everything_CharacterDB={order={}};
 		end

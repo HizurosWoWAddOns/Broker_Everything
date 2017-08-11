@@ -1,6 +1,5 @@
 
 local addon, ns = ...
-Broker_EverythingDB = {}
 -- ----------------------------------------------------------------- --
 -- Localization metatable function                                   --
 -- Instructions for Non-Ace3 method taken from Phanx at WowInterface --

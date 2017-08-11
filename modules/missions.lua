@@ -141,7 +141,7 @@ local function createTooltip(tt)
 		local t=time();
 		for i=1, #Broker_Everything_CharacterDB.order do
 			local name_realm = Broker_Everything_CharacterDB.order[i];
-			local v = Broker_Everything_CharacterDB[name_realm];
+			local v,_ = Broker_Everything_CharacterDB[name_realm];
 			local charName,realm=strsplit("-",name_realm);
 			if v.missions and v.missions.followers and ns.showThisChar(name,realm,v.faction) then
 				local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
