@@ -275,17 +275,20 @@ local function createTooltip(tt)
 				end
 			end
 			if(Name)then
-				local color1,color2,info = "yellow","ltgray"," ";
-				if v[2]==nil then
-					color1,info = "ltgray",v[3] or " ";
-				elseif(ready and lvl>=v[2])then
-					color1 = "green";
-				elseif achievement then
-					info = L["Need achievement"];
-				elseif(lvl>=v[2])then
-					info = L["Learnable"];
-				else
-					color1,info = ready and color1 or "red",L["Need level"].." "..v[2];
+				-- learned
+				local color1, color2, info = "green", "ltgray", " ";
+				if lvl<v[2] then
+					-- need level
+					color1,info = "red", L["Need level"].." "..v[2];
+				elseif achievement and not ready then
+					-- need achievement
+					color1,info = "yellow",L["Need achievement"];
+				elseif not ready then
+					-- learnable
+					color1,info = "yellow",L["Learnable"];
+				elseif v[2]==nil then
+					-- obsolete, higher version active
+					color1 = "dkgreen";
 				end
 				l=tt:AddLine(C(color1,Name),info==" " and info or C(color2,info));
 				if type(v[4])=="table" then
