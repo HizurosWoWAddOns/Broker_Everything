@@ -84,7 +84,7 @@ local function updateTracking()
 	end
 
 	return tActive, n
-end 
+end
 
 local function menuClosed()
 	menuOpened=true;
@@ -137,9 +137,8 @@ ns.modules[name].ontooltip = function(tooltip)
 	if numActive == 0 then
 		tt:AddLine(C("white",L["No tracking option active."]))
 	else
-		for i = 1, numActive do 
-			tt:AddDoubleLine(C("white",trackActive[i]["Name"]))
-			tt:AddTexture(trackActive[i]["Texture"])
+		for i = 1, numActive do
+			tt:AddDoubleLine("|T"..trackActive[i]["Texture"]..":16:16:0:0:64:64:4:60:4:60|t "..C("white",trackActive[i]["Name"]))
 		end
 	end
 
@@ -193,7 +192,7 @@ ns.modules[name].onclick = function(self,button)
 				ns.EasyMenu.addEntries({label=HUNTER_TRACKING_TEXT, title=true});
 				hunterHeader=true;
 			end
-			
+
 			entry = {label=Name,icon=texture, arg1=id, checked=MiniMapTrackingDropDownButton_IsActive, func=function() SetTracking(id,not select(3,GetTrackingInfo(id))); end};
 		elseif nested == TOWNSFOLK then
 			if not townHeader then
