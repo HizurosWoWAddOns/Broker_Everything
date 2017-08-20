@@ -166,7 +166,7 @@ function createTooltip(tt,update)
 		local charName,realm,_=strsplit("-",name_realm);
 		local v = Broker_Everything_CharacterDB[name_realm];
 
-		if (v.gold) and ns.showThisChar(name,realm,v.faction) then --(sAR==true or (sAR==false and realm==ns.realm)) and (sAF==true or (sAF==false and v.faction==ns.player.faction)) and (ns.player.name_realm~=name_realm) then
+		if (v.gold) and (ns.player.name_realm~=name_realm) and ns.showThisChar(name,realm,v.faction) then
 			local faction = v.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 			if type(realm)=="string" and realm:len()>0 then
 				_,realm = ns.LRI:GetRealmInfo(realm);
