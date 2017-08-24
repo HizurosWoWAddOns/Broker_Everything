@@ -509,7 +509,7 @@ ns.modules[name].onevent = function(self,event,...)
 
 				local _,_,_,_,fID = C_Garrison.GetFollowerInfoForBuilding(buildings[i].plotID);
 				if (fID) then
-					buildings[i].follower = C_Garrison.GetFollowerInfo(fID);
+					buildings[i].follower = C_Garrison.GetFollowerInfo(tonumber(fID));
 					if buildings[i].follower then
 						buildings[i].follower.class = strsub(buildings[i].follower.classAtlas,23);
 						--(isBuilding or canActivate or not owned);
