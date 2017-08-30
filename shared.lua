@@ -1077,6 +1077,17 @@ do
 			data.startTime, data.duration, data.isEnabled = GetContainerItemCooldown(data.bag,data.slot);
 			data.hasCooldown, data.repairCost = tt:SetBagItem(data.bag,data.slot);
 			data.str = "bag"..data.bag..", slot"..data.slot;
+		elseif data._type=="unit" then
+			-- https://wow.gamepedia.com/API_UnitGUID
+			data._type = "link";
+			if data.unit=="Creature" or data.unit=="Pet" or data.unit=="GameObject" or data.unit=="Vehicle" then
+				-- unit:<Creature|Pet|GameObject|Vehicle>-0-<server>-<instance>-<zone>-<id>-<spawn>
+				data.link = "unit:"..data.unit.."-0-0-0-0-"..data.id.."-0";
+			elseif data.unit=="Player" then
+				-- unit:Player-<server>-<playerUniqueID>
+			elseif data.unit=="Vignette" then
+				-- unit:Vignette-0-<server>-<instance>-<zone>-0-<spawn>
+			end
 		elseif data._type=="inventory" then
 			data._type="link";
 			_,data.hasCooldown, data.repairCost = tt:SetInventoryItem("player", data.slot); -- repair costs
@@ -1084,15 +1095,12 @@ do
 		elseif data._type=="item" then
 			data._type="link";
 			data.link=data.link or "item:"..data.id;
-		elseif data._type=="unit" then
-			data._type="link";
-			data.link=data.link or "unit:Creature-0-0-0-0-"..data.id.."-0";
 		elseif data._type=="quest" then
 			data._type="link";
 			data.link=data.link or "quest:"..data.id..":"..data.level;
 		end
 
-		if data._type=="link" then
+		if data._type=="link" and data.link then
 			data.str = data.link;
 			tt:SetHyperlink(data.link);
 		end
@@ -1132,15 +1140,19 @@ do
 			type = "bag|link",
 			calllback = [func],
 
-			- if type bag
-				bag = <number>
-				slot = <number>
+			-- if type bag
+			bag = <number>
+			slot = <number>
 
-			- if type item
-				id = <number>
+			-- if type item
+			id = <number>
 
-			- if type link
-				link = <string>
+			-- if type link
+			link = <string>
+
+			-- if type unit
+			id = <number>
+			unit = <creature|player|?>
 		})
 	--]]
 	ns.ScanTT.query = function(data,instant)
@@ -1152,11 +1164,13 @@ do
 		elseif data.type=="link" then
 			assert(type(data.link)=="string","link must be a string, got "..type(data.link));
 		elseif data.type=="unit" then
-			--assert(type(data.id)=="number","unit
+			assert(type(data.id)=="number","id must be a number, got "..type(data.id));
+			assert(type(data.unit),"unit (type) must be a string, got "..type(data.unit));
 		end
 		if instant then
 			return collect(InstantModeScanTT,data);
 		else
+			assert(type(data.callback)=="function","callback must be a function. got "..type(data.callback));
 			tinsert(queries,data);
 			if ticker==nil then
 				ticker = C_Timer.NewTicker(duration,function() collect(QueueModeScanTT); end);
