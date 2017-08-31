@@ -79,6 +79,19 @@ end
 if ns.build>80000000 then -- ?
 end
 
+local iconID2Race = { -- 7.3 -- required since blizzard replaced iconFile with iconFileID
+	[461829]="Draenei",		[461831]="Dwarf",
+	[461833]="Fossil",		[462319]="Misc",
+	[461835]="Nerubian",	[461837]="NightElf",
+	[462321]="Orc",			[461839]="Tolvir",
+	[461841]="Troll",		[461843]="Vrykul",
+	[1030616]="Arakkoa",	[1445573]="Demons",
+	[1030617]="DraenorOrc",	[1445575]="HighborneNightElves",
+	[839111]="Mantid",		[1445577]="HighmountainTauren",
+	[633000]="Mogu",		[1030618]="Ogre",
+	[633002]="Pandaren",
+}
+
 
 -------------------------------------------
 -- register icon names and default files --
@@ -226,7 +239,7 @@ local function updateRaces(firstUpdate)
 		local unknownHeader = true;
 		for i=1, num do
 			local info,iconFile,_ = {GetArchaeologyRaceInfo(i)};
-			local k=select(3,strsplit("-",info[2]));
+			local k = iconID2Race[info[2]] or "UNKNOWN";
 			local t = races[k];
 			if t==nil then
 				if unknownHeader then
