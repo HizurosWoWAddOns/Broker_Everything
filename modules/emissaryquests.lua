@@ -12,7 +12,12 @@ local name = "Emissary Quests";
 local ttName, ttColumns, tt, createMenu = name.."TT", 4
 local factions,totalQuests,locked = {},{},false;
 local continents = {
-	1007 -- legion
+	1007, -- legion
+	1184, -- legion / argus
+};
+local icon2factionID = {
+	[1708507] = 2045,
+	[1708506] = 2165,
 };
 local factionName = setmetatable({},{__index=function(t,k)
 	local v = GetFactionInfoByID(k);
@@ -164,17 +169,22 @@ local function updateData()
 				bounties[i].eventEnding = Time+timeLeftSeconds-1;
 			end
 			bounties[i].continent = continents[c];
-			ns.data[name].factions[bounties[i].factionID] = bounties[i];
-			if ns.toon[name].factions[bounties[i].factionID]==nil then
-				ns.toon[name].factions[bounties[i].factionID] = {};
+			if bounties[i].factionID==0 then
+				bounties[i].factionID = icon2factionID[bounties[i].icon];
 			end
-			if ns.toon[name].factions[bounties[i].factionID].lastEnding==nil then
-				ns.toon[name].factions[bounties[i].factionID].lastEnding=bounties[i].eventEnding;
+			if bounties[i].factionID then
+				ns.data[name].factions[bounties[i].factionID] = bounties[i];
+				if ns.toon[name].factions[bounties[i].factionID]==nil then
+					ns.toon[name].factions[bounties[i].factionID] = {};
+				end
+				if ns.toon[name].factions[bounties[i].factionID].lastEnding==nil then
+					ns.toon[name].factions[bounties[i].factionID].lastEnding=bounties[i].eventEnding;
+				end
+				CalculateBountySubObjectives(
+					ns.data[name].factions[bounties[i].factionID],
+					ns.toon[name].factions[bounties[i].factionID]
+				);
 			end
-			CalculateBountySubObjectives(
-				ns.data[name].factions[bounties[i].factionID],
-				ns.toon[name].factions[bounties[i].factionID]
-			);
 		end
 	end
 
