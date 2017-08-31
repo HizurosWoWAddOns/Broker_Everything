@@ -275,7 +275,7 @@ function createMenu(parent)
 	ns.EasyMenu.addEntry({ label=L["Currency in title - menu"], title=true});
 
 	for place=1, BrokerPlacesMax do
-		local pList,d;
+		local pList,pList2,d;
 		local id = ns.profile[name].currenciesInTitle[place];
 
 		if type(id)=="string" then
@@ -312,12 +312,12 @@ function createMenu(parent)
 					icon = currencyCache[v][cIcon],
 					disabled = d,
 					func = function() setInTitle(place,v); end
-				}, pList);
+				}, pList2);
 			else
 				if i>1 then
-					ns.EasyMenu.addEntry({separator=true},pList);
+					--ns.EasyMenu.addEntry({separator=true},pList);
 				end
-				ns.EasyMenu.addEntry({label=C("ltblue",v),title=true}, pList);
+				pList2 = ns.EasyMenu.addEntry({label=C("ltblue",v), arrow=true}, pList);
 			end
 		end
 	end
