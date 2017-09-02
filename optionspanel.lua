@@ -220,7 +220,7 @@ local functions = {
 			end
 		end
 		ns.EasyMenu.ShowMenu(self);
-		PlaySound("igMainMenuOptionCheckBoxOn");
+		PlaySound(SOUNDKIT.IG_MAINMENU_OPTION_CHECKBOX_ON);
 	end,
 	colorOnClick = function(self)
 		local data,cur=self.data;
