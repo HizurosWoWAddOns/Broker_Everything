@@ -40,6 +40,13 @@ function ns.toggleMinimapButton(modName,setValue)
 	local mod = ns.modules[modName];
 	local cfg = ns.profile[modName];
 
+	-- check config
+	if type(cfg.minimap)~="table" then
+		cfg.minimap = {hide=true};
+	end
+
+	ns.debug("<regMinimap>",modName,tostring(cfg.minimap.hide));
+
 	if setValue~=nil then
 		-- change config if setValue not nil
 		cfg.minimap.hide = not setValue;
@@ -47,8 +54,8 @@ function ns.toggleMinimapButton(modName,setValue)
 
 	if ns.LDBI:IsRegistered(mod.ldbName) then
 		-- perform refresh on minimap button if already exists
-		ns.LDBI:Refresh(mod.ldbName,cfg.minimap);
-	elseif cfg.minimap.hide==false then
+		ns.LDBI:Refresh(mod.ldbName);
+	elseif not cfg.minimap.hide then
 		-- register minimap button if not exists
 		ns.LDBI:Register(mod.ldbName,mod.obj,cfg.minimap);
 	end
@@ -88,10 +95,9 @@ local function moduleInit(name)
 	if type(data.config_broker)~="table" then
 		data.config_broker = {};
 	end
+
+	-- add option for minimap button
 	tinsert(data.config_broker,1,{type="toggle", name="minimap", label=L["Broker as Minimap Button"], tooltip=L["Create a minimap button for this broker"], event=true});
-	if type(ns.profile[name].minimap)~="table" then
-		ns.profile[name].minimap = {hide=true};
-	end
 
 	-- add allModsOptions_defaults to config_defaults
 	local t;

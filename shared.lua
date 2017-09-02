@@ -1512,11 +1512,21 @@ do
 				end
 				self.addEntry({
 					label = gsub(L[v.label],"|n"," "),
-					checked = function() return ns.profile[modName][v.name]; end,
+					checked = function()
+						if v.name=="minimap" then
+							return not ns.profile[modName][v.name].hide;
+						end
+						return ns.profile[modName][v.name];
+					end,
 					func  = function()
-						ns.profile[modName][v.name] = not ns.profile[modName][v.name];
-						if v.event and ns.modules[modName].onevent then
-							ns.modules[modName].onevent(ns.modules[modName].eventFrame,v.event~=true and v.event or "BE_DUMMY_EVENT");
+						if v.name=="minimap" then
+							ns.profile[modName].minimap.hide = not ns.profile[modName].minimap.hide;
+							ns.toggleMinimapButton(modName);
+						else
+							ns.profile[modName][v.name] = not ns.profile[modName][v.name];
+							if v.event and ns.modules[modName].onevent then
+								ns.modules[modName].onevent(ns.modules[modName].eventFrame,v.event~=true and v.event or "BE_DUMMY_EVENT");
+							end
 						end
 					end,
 					tooltip = {v.label,tooltip},
