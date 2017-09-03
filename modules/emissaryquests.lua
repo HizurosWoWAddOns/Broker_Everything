@@ -246,6 +246,7 @@ local function createTooltip(tt)
 
 	tt:AddSeparator();
 
+	local chars = 0;
 	for i=1, #Broker_Everything_CharacterDB.order do
 		local name_realm = Broker_Everything_CharacterDB.order[i];
 		local v,cell = Broker_Everything_CharacterDB[name_realm],2;
@@ -290,7 +291,11 @@ local function createTooltip(tt)
 			if name_realm==ns.player.name_realm then
 				tt:SetLineColor(l, 1, 1, 1, .4);
 			end
+			chars = chars+1;
 		end
+	end
+	if chars==0 then
+		tt:SetCell(tt:AddLine(), 1, C("gray",L["No chars found for this realm or realm group to display"]), nil, "CENTER", 0);
 	end
 
 	if ns.profile.GeneralOptions.showHints and false then
