@@ -1,7 +1,6 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\..\FrameXML\UI.xsd">
 
-	<Include file="libs\libs.xml" />
 	<Include file="localizations\localizations.xml" />
 	<Script file="shared.lua" />
 	<Include file="modules\modules.xml" />
@@ -67,7 +66,7 @@
 					</Anchors>
 				</FontString>
 				<FontString parentKey="Status" inherits="GameFontNormalSmall">
-					
+
 				</FontString>
 			</Layer>
 		</Layers>
@@ -467,7 +466,7 @@
 		</Backdrop>
 		<Layers>
 			<Layer level="ARTWORK">
-				
+
 				<FontString parentKey="Number" justifyH="RIGHT" inherits="GameFontNormalLarge">
 					<Size x="46"/>
 					<Anchors>

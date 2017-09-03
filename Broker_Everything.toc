@@ -9,16 +9,19 @@
 #@no-lib-strip@
 libs\LibStub\LibStub.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+#@end-no-lib-strip@
 
-libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
 libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
-libs\LibQTip-1.0\LibQTip-1.0.lua
 
+#@no-lib-strip@
+libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
+libs\LibQTip-1.0\LibQTip-1.0.lua
 libs\LibSharedMedia-3.0\LibSharedMedia-3.0.lua
+libs\LibColors-1.0\LibColors-1.0.xml
+#@end-no-lib-strip@
+
 libs\LibRealmInfo\LibRealmInfo.lua
 libs\LibTime-1.0\LibTime-1.0.xml
-libs\LibColors-1.0\LibColors-1.0.xml
 libs\LibDropDownMenu\LibDropDownMenu.xml
-#@end-no-lib-strip@
 
 Broker_Everything.xml
