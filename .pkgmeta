@@ -2,29 +2,37 @@ package-as: Broker_Everything
 
 externals:
 	libs/LibStub:
-		url: svn://svn.wowace.com/wow/libstub/mainline/trunk
+		url: https://repos.wowace.com/wow/libstub/trunk
 		tag: latest
+
 	libs/CallbackHandler-1.0:
-		url: svn://svn.wowace.com/wow/callbackhandler/mainline/trunk/CallbackHandler-1.0
+		url: https://repos.wowace.com/wow/callbackhandler/trunk/CallbackHandler-1.0
 		tag: latest
+
 	libs/LibDataBroker-1.1:
-		url: git://github.com/tekkub/libdatabroker-1-1.git
+		url: https://repos.wowace.com/wow/libdatabroker-1-1
 		tag: latest
+
 	libs/LibDBIcon-1.0:
-		url: svn://svn.wowace.com/wow/libdbicon-1-0/mainline/trunk/LibDBIcon-1.0
+		url: https://repos.wowace.com/wow/libdbicon-1-0/trunk/LibDBIcon-1.0
 		tag: latest
+
 	libs/LibQTip-1.0:
-		url: svn://svn.wowace.com/wow/libqtip-1-0/mainline/trunk
+		url: https://repos.wowace.com/wow/libqtip-1-0/trunk
 		tag: latest
+
 	libs/LibSharedMedia-3.0:
-		url: svn://svn.wowace.com/wow/libsharedmedia-3-0/mainline/trunk/LibSharedMedia-3.0
+		url: https://repos.wowace.com/wow/libsharedmedia-3-0/trunk/LibSharedMedia-3.0
 		tag: latest
+
 	libs/LibColors-1.0:
-		url: git://git.curseforge.net/wow/libstringcoloring-1-0/mainline.git
+		url: https://repos.curseforge.com/wow/libstringcoloring-1-0
 		tag: latest
+
 	libs/LibDropDownMenu:
 		url: git://github.com/hizuro/LibDropDownMenu.git
 		tag: latest
+
 	libs/LibRealmInfo:
 		url: git://github.com/Phanx/LibRealmInfo.git
 		tag: latest
@@ -32,5 +40,28 @@ externals:
 enable-nolib-creation: yes
 
 ignore:
-	- changelog.txt
+	- libs/LibStub/tests
+	- libs/LibStub/LibStub.toc
+	- libs/CallbackHandler-1.0/CallbackHandler-1.0.xml
+	- libs/LibDataBroker-1.0/README.textile
+	- libs/LibRealmInfo/.gitignore
+	- libs/LibRealmInfo/.pkgmeta
+	- libs/LibRealmInfo/LibRealmInfo.toc
+	- libs/LibRealmInfo/README.md
+	- libs/LibQTip-1.0/.pkgmeta
+	- libs/LibQTip-1.0/lib.xml
+	- libs/LibQTip-1.0/LibQTip-1.0.toc
+	- libs/LibColors-1.0/.pkgmeta
+	- libs/LibColors-1.0/colors_fed_standard_595.lua
+	- libs/LibColors-1.0/colors_web.lua
+	- libs/LibColors-1.0/colors_x11.lua
+	- libs/LibColors-1.0/LibColors-1.0-all.xml
+	- libs/LibColors-1.0/LibColors-1.0-fed595.xml
+	- libs/LibColors-1.0/LibColors-1.0-web.xml
+	- libs/LibColors-1.0/LibColors-1.0-x11.xml
+	- libs/LibColors-1.0/LibColors-1.0.toc
+	- libs/LibSharedMedia-3.0/lib.xml
 	- libs/LibDropDownMenu/README.md
+	- libs/LibDropDownMenu/LibDropDownMenu.toc
+
+license-output: LICENSE.txt
