@@ -18,6 +18,7 @@ local continents = {
 local icon2factionID = {
 	[1708507] = 2045,
 	[1708506] = 2165,
+	[1708505] = 2170,
 };
 local factionName = setmetatable({},{__index=function(t,k)
 	local v = GetFactionInfoByID(k);
