@@ -88,10 +88,15 @@ ns.realms = {};
 do
 	local function Init()
 		local _,_,_,_,_,_,_,_,ids = ns.LRI:GetRealmInfoByGUID(UnitGUID("player"));
-		for i=1, #ids do
-			local _,name,apiName = ns.LRI:GetRealmInfoByID(ids[i]);
-			ns.realms[name] = apiName;
-			ns.realms[apiName] = name;
+		if ids then
+			for i=1, #ids do
+				local _,name,apiName = ns.LRI:GetRealmInfoByID(ids[i]);
+				ns.realms[name] = apiName;
+				ns.realms[apiName] = name;
+			end
+		else
+			ns.realms[ns.realm] = ns.realm_short;
+			ns.realms[ns.realm_short] = ns.realm;
 		end
 	end
 	ns.realms = setmetatable({},{
