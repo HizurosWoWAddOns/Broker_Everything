@@ -164,12 +164,17 @@ local function createTooltip(tt)
 		now = time();
 
 		-- create order hall talent tree
-		local _, _, tree = C_Garrison.GetTalentTreeInfoForID(LE_GARRISON_TYPE_7_0, 0);
-		if tree and tree[1] then
+		local garrTalentTreeID = 0
+		local treeIDs = C_Garrison.GetTalentTreeIDsByClassID(LE_GARRISON_TYPE_7_0, select(3, UnitClass("player")));
+		if (treeIDs and #treeIDs > 0) then
+			garrTalentTreeID = treeIDs[1];
+		end
+		local _, _, tree = C_Garrison.GetTalentTreeInfoForID(garrTalentTreeID);
+		if tree and #tree>0 then
 			local t,l={},tt:AddLine(C("ltblue",ORDER_HALL_TALENT_TITLE));
 			tt:AddSeparator();
 			local tiers = {};
-			for i,v in ipairs(tree[1])do
+			for i,v in ipairs(tree)do
 				if tiers[v.tier]==nil then
 					tiers[v.tier] = 0;
 					tt:AddLine("","|","");
@@ -180,7 +185,7 @@ local function createTooltip(tt)
 
 			local activeResearch = false;
 
-			for i,v in ipairs(tree[1])do
+			for i,v in ipairs(tree)do
 				if v.researchStartTime>0 then
 					activeResearch = v;
 				end
