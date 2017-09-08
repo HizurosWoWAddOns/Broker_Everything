@@ -170,8 +170,8 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
-local function deleteCharacterXP(self,button)
-	Broker_Everything_CharacterDB[self.name_realm].xp = nil;
+local function deleteCharacterXP(self,name_realm)
+	Broker_Everything_CharacterDB[name_realm].xp = nil;
 	createTooltip(tt);
 end
 
@@ -186,8 +186,7 @@ local function showThisChar(name_realm,data)
 	return ns.showThisChar(name,realm,data.faction);
 end
 
-local function createTooltip2(parentLine)
-	local data = parentLine.info;
+local function createTooltip2(parentLine,data)
 	tt2 = ns.acquireTooltip({ttName2, 3, "LEFT", "RIGHT", "RIGHT"},{true},{parentLine,"horizontal",tt});
 
 	tt2:Clear();
@@ -294,11 +293,9 @@ function createTooltip(tt)
 					(v.xp.percentStr or 0)..restState,
 					("(%s/%s)"):format(ns.FormatLargeNumber(name,v.xp.cur,true),ns.FormatLargeNumber(name,v.xp.max,true))
 				);
-				tt.lines[l].name_realm = name_realm;
-				tt:SetLineScript(l,"OnMouseUp",deleteCharacterXP);
+				tt:SetLineScript(l,"OnMouseUp",deleteCharacterXP, name_realm);
 				if (v.xp.bonus and #v.xp.bonus>0) then
-					tt.lines[l].info = v.xp;
-					tt:SetLineScript(l,"OnEnter",createTooltip2);
+					tt:SetLineScript(l,"OnEnter",createTooltip2,v.xp);
 				end
 				count = count + 1;
 			end

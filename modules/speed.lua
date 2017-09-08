@@ -114,13 +114,13 @@ local function initData()
 	initData = nil;
 end
 
-local function tooltipOnEnter(self)
+local function tooltipOnEnter(self,data)
 	GameTooltip:SetOwner(tt,"ANCHOR_NONE");
 	GameTooltip:SetPoint("TOP",tt,"BOTTOM");
-	if self.info then
-		for i=1, #self.info do
-			local aid = self.info[i]:match("^a(%d+)$");
-			local Name, color, completed, _ = self.info[i],{.8,.8,.8,false};
+	if data.info then
+		for i=1, #data.info do
+			local aid = data.info[i]:match("^a(%d+)$");
+			local Name, color, completed, _ = data.info[i],{.8,.8,.8,false};
 			if i==1 then
 				color = {1,.8,0,false};
 			end
@@ -128,16 +128,16 @@ local function tooltipOnEnter(self)
 				_, Name, _, completed = GetAchievementInfo(aid);
 				if completed then
 					color = {.1,.95,.1,false};
-				elseif not Name and replace_unknown[self.info[i]] then
-					Name = replace_unknown[self.info[i]];
+				elseif not Name and replace_unknown[data.info[i]] then
+					Name = replace_unknown[data.info[i]];
 				end
 			end
 			GameTooltip:AddLine(Name,unpack(color));
 		end
-	elseif self.link then
-		GameTooltip:SetHyperlink(self.link);
+	elseif data.link then
+		GameTooltip:SetHyperlink(data.link);
 	end
-	if self.extend=="trainerfaction" then
+	if data.extend=="trainerfaction" then
 		GameTooltip:AddLine(" ");
 		GameTooltip:AddLine(C("ltblue",L["Trainer that offer dicount by reputation"]));
 		local faction,ttTrainerLine,ttFactionLine = false,"%s (%0.1f, %0.1f)","%s (%0.1f%%)";
@@ -196,12 +196,7 @@ local function createTooltip(tt)
 			l=tt:AddLine(C("dkgreen",Name), C("gray",_(v[3])) );
 		end
 		if l and Link then
-			tt.lines[l].link = Link;
-			tt.lines[l].info = nil;
-			if ttExtend then
-				tt.lines[l].extend = "trainerfaction";
-			end
-			tt:SetLineScript(l,"OnEnter",tooltipOnEnter);
+			tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {link=Link,extend=ttExtend and "trainerfaction" or nil});
 			tt:SetLineScript(l,"OnLeave",tooltipOnLeave);
 		end
 	end
@@ -271,9 +266,7 @@ local function createTooltip(tt)
 			if(active)then
 				local l=tt:AddLine(C("ltyellow",Name .. custom), _(spell[Speed]));
 				if Link then
-					tt.lines[l].link = Link;
-					tt.lines[l].info = nil;
-					tt:SetLineScript(l,"OnEnter",tooltipOnEnter);
+					tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {link=Link});
 					tt:SetLineScript(l,"OnLeave",tooltipOnLeave);
 				end
 				count=count+1;
@@ -339,17 +332,8 @@ local function createTooltip(tt)
 					color1 = "dkgreen";
 				end
 				l=tt:AddLine(C(color1,Name),info==" " and info or C(color2,info));
-				if type(v[4])=="table" then
-					tt.lines[l].info = v[4];
-					tt.lines[l].link = nil;
-					tt2=true;
-				elseif link then
-					tt.lines[l].info = nil;
-					tt.lines[l].link = link;
-					tt2=true
-				end
-				if tt2 then
-					tt:SetLineScript(l,"OnEnter",tooltipOnEnter);
+				if type(v[4])=="table" or link then
+					tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {link=link, info=v[4]});
 					tt:SetLineScript(l,"OnLeave",tooltipOnLeave);
 				end
 			end

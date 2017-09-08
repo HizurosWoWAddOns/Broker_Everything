@@ -274,7 +274,7 @@ local function updateRaces(firstUpdate)
 	updateBroker();
 end
 
-local function ItemTooltipShow(self,link)
+local function ItemTooltipShow(self,itemId)
 	if (self) then
 		GameTooltip:SetOwner(self,"ANCHOR_NONE");
 		if (select(1,self:GetCenter()) > (select(1,UIParent:GetWidth()) / 2)) then
@@ -285,7 +285,7 @@ local function ItemTooltipShow(self,link)
 		GameTooltip:SetPoint("TOP",self,"TOP", 0, 4);
 
 		GameTooltip:ClearLines();
-		GameTooltip:SetHyperlink("item:"..self.itemId);
+		GameTooltip:SetHyperlink("item:"..itemId);
 
 		GameTooltip:SetFrameLevel(self:GetFrameLevel()+1);
 		GameTooltip:Show();
@@ -298,7 +298,7 @@ local function ItemTooltipHide(self)
 	GameTooltip:Hide();
 end
 
-local function toggleArchaeologyFrame(self)
+local function toggleArchaeologyFrame(self,raceIndex)
 	if ( not ArchaeologyFrame ) then
 		securecall("ArchaeologyFrame_LoadUI");
 	end
@@ -307,7 +307,7 @@ local function toggleArchaeologyFrame(self)
 			securecall("ArchaeologyFrame_Show");
 		end
 		securecall("ArchaeologyFrame_OnTabClick",ArchaeologyFrame.tab1);
-		securecall("ArchaeologyFrame_ShowArtifact",self.raceIndex);
+		securecall("ArchaeologyFrame_ShowArtifact",raceIndex);
 	end
 end
 
@@ -342,12 +342,10 @@ local function createTooltip(tt)
 				C(v[raceArtifactSolvable]==true and "green" or "white",v[raceNumFragmentsRequired].." "..v[raceArtifactIcon])
 			);
 			if(v[raceKeystoneItemID]~=0)then
-				tt.lines[l].itemId=v[raceKeystoneItemID];
-				tt:SetLineScript(l,"OnEnter", ItemTooltipShow);
+				tt:SetLineScript(l,"OnEnter", ItemTooltipShow,v[raceKeystoneItemID]);
 				tt:SetLineScript(l,"OnLeave", ItemTooltipHide);
 			end
-			tt.lines[l].raceIndex = v[raceIndex];
-			tt:SetLineScript(l,"OnMouseUp", toggleArchaeologyFrame);
+			tt:SetLineScript(l,"OnMouseUp", toggleArchaeologyFrame, v[raceIndex]);
 		elseif v[raceName] then
 			local l=tt:AddLine(
 				v[raceTexture].." "..C("gray",v[raceName]),

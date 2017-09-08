@@ -242,7 +242,7 @@ local function broadcastTooltip(self)
 	end
 end
 
-local function createTooltip2(self)
+local function createTooltip2(self,data)
 	if not (ns.profile[name].showBroadcastTT2 or ns.profile[name].showBattleTagTT2 or ns.profile[name].showRealIDTT2 or ns.profile[name].showZoneTT2 or ns.profile[name].showGameTT2 or ns.profile[name].showNotesTT2) then return end
 	local color1 = "ltblue";
 	tt2 = ns.acquireTooltip(
@@ -252,30 +252,30 @@ local function createTooltip2(self)
 	);
 	if tt2.lines~=nil then tt2:Clear(); end
 	local l=tt2:AddHeader(C("dkyellow",NAME));
-	tt2:SetCell(l,2,C( self.toonInfo[3]~=BNET_CLIENT_WOW and color1 or self.toonInfo[8] or self.realmFriendInfo[3],ns.scm(self.toonInfo[2] or self.realmFriendInfo[18])),nil,nil,0);
+	tt2:SetCell(l,2,C( data.toon[3]~=BNET_CLIENT_WOW and color1 or data.toon[8] or data.info[3],ns.scm(data.toon[2] or data.info[18])),nil,nil,0);
 	tt2:AddSeparator();
 	-- game
 	if ns.profile[name].showGameTT2 then
-		tt2:SetCell(tt2:AddLine(C(color1,self.toonInfo[3]=="App" and L["Program"] or GAME)),2,gameNames[self.toonInfo[3] or self.realmFriendInfo[20]] .." ".. BNet_GetClientTexture(self.toonInfo[3] or self.realmFriendInfo[20],true),nil,"RIGHT",0);
+		tt2:SetCell(tt2:AddLine(C(color1,data.toon[3]=="App" and L["Program"] or GAME)),2,gameNames[data.toon[3] or data.info[20]] .." ".. BNet_GetClientTexture(data.toon[3] or data.info[20],true),nil,"RIGHT",0);
 	end
-	if self.toonInfo[3]==BNET_CLIENT_WOW or self.realmFriendInfo[20]==BNET_CLIENT_WOW then
+	if data.toon[3]==BNET_CLIENT_WOW or data.info[20]==BNET_CLIENT_WOW then
 		-- realm
-		if (self.toonInfo[4] or self.realmFriendInfo[19]) then
-			tt2:SetCell(tt2:AddLine(C(color1,L["Realm"])),2,self.toonInfo[4] or self.realmFriendInfo[19],nil,"RIGHT",0);
+		if (data.toon[4] or data.info[19]) then
+			tt2:SetCell(tt2:AddLine(C(color1,L["Realm"])),2,data.toon[4] or data.info[19],nil,"RIGHT",0);
 		end
 		-- faction
 		if ns.profile[name].showFactionTT2 then
-			local faction = (self.toonInfo[6]~=nil and _G["FACTION_"..self.toonInfo[6]:upper()]) or ns.player.factionL;
-			faction = faction .. " |TInterface\\PVPFrame\\PVP-Currency-"..(self.toonInfo[6] or ns.player.faction)..":14:14:0:-1:32:32:3:29:3:29|t";
+			local faction = (data.toon[6]~=nil and _G["FACTION_"..data.toon[6]:upper()]) or ns.player.factionL;
+			faction = faction .. " |TInterface\\PVPFrame\\PVP-Currency-"..(data.toon[6] or ns.player.faction)..":14:14:0:-1:32:32:3:29:3:29|t";
 			tt2:SetCell(tt2:AddLine(C(color1,FACTION)),2,faction,nil,"RIGHT",0);
 		end
 	end
 	-- zone
-	if ns.profile[name].showZoneTT2 and self.toonInfo[3]~="App" then
-		tt2:SetCell(tt2:AddLine(C(color1,ZONE)),2,self.toonInfo[10] or self.toonInfo[12] or self.realmFriendInfo[4],nil,"RIGHT",0);
+	if ns.profile[name].showZoneTT2 and data.toon[3]~="App" then
+		tt2:SetCell(tt2:AddLine(C(color1,ZONE)),2,data.toon[10] or data.toon[12] or data.info[4],nil,"RIGHT",0);
 	end
 	-- notes
-	local note = tostring(self.friendInfo[13] or self.realmFriendInfo[7] or ""):trim();
+	local note = tostring(data.friend[13] or data.info[7] or ""):trim();
 	if ns.profile[name].showNotesTT2 and note:len()>0 then
 		tt2:AddSeparator(4,0,0,0,0);
 		tt2:SetCell(tt2:AddLine(),1,C(color1,L["Note"]),nil,nil,0);
@@ -283,7 +283,7 @@ local function createTooltip2(self)
 		tt2:SetCell(tt2:AddLine(),1,ns.scm(note,true),nil,"LEFT",0);
 	end
 	-- broadcast
-	local broadcast = tostring(self.friendInfo[12] or ""):trim();
+	local broadcast = tostring(data.friend[12] or ""):trim();
 	if ns.profile[name].showBroadcastTT2 and broadcast:len()>0 then
 		tt2:AddSeparator(4,0,0,0,0);
 		tt2:SetCell(tt2:AddLine(),1,C(color1,BATTLENET_BROADCAST),nil,nil,0);
@@ -292,32 +292,32 @@ local function createTooltip2(self)
 			broadcast=ns.strWrap(broadcast,48);
 		end
 		tt2:SetCell(tt2:AddLine(),1,broadcast,nil,"LEFT",0);
-		if self.friendInfo[15] then
-			tt2:SetCell(tt2:AddLine(),1,C("ltgray","("..L["Active since"]..": "..SecondsToTime(time()-self.friendInfo[15])..")"),nil,"RIGHT",0);
+		if data.friend[15] then
+			tt2:SetCell(tt2:AddLine(),1,C("ltgray","("..L["Active since"]..": "..SecondsToTime(time()-data.friend[15])..")"),nil,"RIGHT",0);
 		end
 	end
 
 	ns.roundupTooltip(tt2);
 end
 
-local function tooltipLineScript_OnMouseUp(self,_,button)
-	if self.realmFriendInfo and self.realmFriendInfo[1] then
+local function tooltipLineScript_OnMouseUp(self,data,button)
+	if data.type=="realm" then
 		if IsAltKeyDown() then
-			InviteUnit(self.realmFriendInfo[1]);
+			InviteUnit(data.info[1]);
 		else
-			ChatFrame_SendTell(self.realmFriendInfo[1]);
+			ChatFrame_SendTell(data.info[1]);
 		end
-	elseif self.friendInfo and self.friendInfo[2] then
+	elseif data.type=="battlenet" then
 		if IsAltKeyDown() then
-			if self.toonInfo[3]=="WoW" then
-				BNInviteFriend(self.toonInfo[16]);
+			if self.toon[3]=="WoW" then
+				BNInviteFriend(data.toon[16]);
 			end
 		else
-			local name = self.friendInfo[2];
+			local name = data.friend[2];
 			if button=="RightButton" then
-				name = self.toonInfo[2];
-				if ns.realm~=self.toonInfo[4] then
-					name = name.."-"..self.toonInfo[4]:gsub(" ","");
+				name = data.toon[2];
+				if ns.realm~=data.toon[4] then
+					name = name.."-"..data.toon[4]:gsub(" ",""):gsub("%-",""):gsub("'","");
 				end
 			end
 			securecall("ChatFrame_SendSmartTell",name);
@@ -458,11 +458,9 @@ local function createTooltip(tt)
 								tt:SetCell(l,8,C("white",C("white",ns.scm(fi[noteText],true)))); -- 8
 							end
 
-							tt.lines[l].toonInfo=ti;
-							tt.lines[l].friendInfo=fi;
-							tt.lines[l].realmFriendInfo={};
-							tt:SetLineScript(l, "OnMouseUp", tooltipLineScript_OnMouseUp);
-							tt:SetLineScript(l, "OnEnter", createTooltip2);
+							local data = {type="battlenet",toon=ti,friend=fi};
+							tt:SetLineScript(l, "OnMouseUp", tooltipLineScript_OnMouseUp, data);
+							tt:SetLineScript(l, "OnEnter", createTooltip2, data);
 						end
 					end
 				end
@@ -540,11 +538,9 @@ local function createTooltip(tt)
 						tt:SetCell(l,8,C("white",ns.scm(v[note] or "")));
 					end
 
-					tt.lines[l].toonInfo={};
-					tt.lines[l].friendInfo={};
-					tt.lines[l].realmFriendInfo=v;
-					tt:SetLineScript(l, "OnMouseUp", tooltipLineScript_OnMouseUp);
-					tt:SetLineScript(l, "OnEnter", createTooltip2);
+					local data = {type="realm",info=v};
+					tt:SetLineScript(l, "OnMouseUp", tooltipLineScript_OnMouseUp, data);
+					tt:SetLineScript(l, "OnEnter", createTooltip2, data);
 				end
 			end
 		end

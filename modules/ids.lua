@@ -130,8 +130,8 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
-local function extendInstance(self)
-	securecall("SetSavedInstanceExtend", self.info.index, self.info.doExtend);
+local function extendInstance(self,info)
+	securecall("SetSavedInstanceExtend", info.index, info.doExtend);
 	securecall("RequestRaidInfo");
 end
 
@@ -243,8 +243,7 @@ local function createTooltip(tt)
 							duration or ""
 						);
 						if not duration then
-							tt.lines[l].cells[4].info = {index=v.index,doExtend=doExtend};
-							tt:SetCellScript(l,4,"OnMouseUp", extendInstance);
+							tt:SetCellScript(l,4,"OnMouseUp", extendInstance, {index=v.index,doExtend=doExtend});
 						end
 					end
 					allNothing = false;

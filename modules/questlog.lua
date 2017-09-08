@@ -177,21 +177,20 @@ local function updateBroker()
 	obj.text = (fail>0 and C("red",fail).."/" or "")..(complete>0 and C("ltblue",complete).."/" or "")..sum.."/"..MAX_QUESTS;
 end
 
-local function showQuest(self)
-	securecall("QuestMapFrame_OpenToQuestDetails",select(8, GetQuestLogTitle(self.questIndex)));
+local function showQuest(self,questIndex)
+	securecall("QuestMapFrame_OpenToQuestDetails",select(8, GetQuestLogTitle(questIndex)));
 end
 
-local function showQuestURL(self)
-	url = urls[ns.profile[name].questIdUrl](self.questId);
+local function showQuestURL(self,questId)
+	url = urls[ns.profile[name].questIdUrl](questId);
 	StaticPopup_Show("BE_URL_DIALOG");
 end
 
-local function pushQuest(self)
-	QuestLogPushQuest(self.questIndex);
+local function pushQuest(self,questIndex)
+	QuestLogPushQuest(questIndex);
 end
 
-local function deleteQuest(self)
-	local questId = self.questId;
+local function deleteQuest(self,questId)
 	if requested==questId then
 		SelectQuestLogEntry(GetQuestLogIndexByID(questId));
 		SetAbandonQuest();
@@ -203,8 +202,8 @@ local function deleteQuest(self)
 	end
 end
 
-local function trackQuest(self)
-	securecall("QuestMapQuestOptions_TrackQuest",self.questId);
+local function trackQuest(self,questId)
+	securecall("QuestMapQuestOptions_TrackQuest",questId);
 	createTooltip(tt,true,"trackQuest");
 end
 
@@ -248,11 +247,7 @@ local function createTooltip2(self, obj)
 	tt2:Show();
 end
 
-local function tt2ShowOnEnter(self)
-	createTooltip2(self,self.info);
-end
-
-local function tt2HideOnLeave()
+local function hideTooltip2()
 	if tt2 then
 		tt2created=false;
 	end
@@ -292,34 +287,29 @@ local function ttAddLine(obj)
 	if ns.profile[name].showQuestTags then
 		tt:SetCell(l,cell,C(color,obj[Type])); cell=cell+1; -- [5]
 	end
-	tt:SetLineScript(l,"OnMouseUp",showQuest);
-	tt.lines[l].questIndex = obj[Index];
+	tt:SetLineScript(l,"OnMouseUp",showQuest, obj[Index]);
 
 	if ns.profile[name].showQuestIds then
 		tt:SetCell(l,cell,obj[QuestId])
 		if (obj[QuestId]~=L["QuestId"]) then
-			tt:SetCellScript(l,cell,"OnMouseUp",showQuestURL);
-			tt.lines[l].cells[cell].questId = obj[QuestId];
+			tt:SetCellScript(l,cell,"OnMouseUp",showQuestURL,obj[QuestId]);
 		end
 		cell=cell+1; -- [6]
 	end
 
 	if ns.profile[name].showQuestOptions then
 		tt:SetCell(l,cell,IsQuestWatched(obj[Index]) and UNTRACK_QUEST_ABBREV or TRACK_QUEST_ABBREV);
-		tt:SetCellScript(l,cell,"OnMouseUp",trackQuest);
-		tt.lines[l].cells[cell].questId = obj[QuestId];
+		tt:SetCellScript(l,cell,"OnMouseUp",trackQuest,obj[QuestId]);
 		cell=cell+1; -- [7]
 
 		tt:SetCell(l,cell,CANCEL .. (requested==obj[QuestId] and C("orange"," ("..L["really?"]..")") or ""));
-		tt:SetCellScript(l,cell,"OnMouseUp",deleteQuest);
-		tt.lines[l].cells[cell].questId = obj[QuestId];
+		tt:SetCellScript(l,cell,"OnMouseUp",deleteQuest,obj[QuestId]);
 		cell=cell+1; -- [8]
 
 		if IsInGroup() then
 			if GetNumGroupMembers()>1 and GetQuestLogPushable(obj[Index]) then
 				tt:SetCell(l,cell,SHARE_QUEST_ABBREV);
-				tt:SetCellScript(l,cell,"OnMouseUp",pushQuest);
-				tt.lines[l].cells[cell].questIndex = obj[Index];
+				tt:SetCellScript(l,cell,"OnMouseUp",pushQuest,obj[Index]);
 				cell=cell+1 -- [9]
 			end
 			if #GroupQuest>0 and IsShiftKeyDown() then
@@ -330,9 +320,8 @@ local function ttAddLine(obj)
 		end
 	end
 
-	tt.lines[l].info = obj;
-	tt:SetLineScript(l,"OnEnter", tt2ShowOnEnter);
-	tt:SetLineScript(l,"OnLeave", tt2HideOnLeave);
+	tt:SetLineScript(l,"OnEnter", createTooltip2, obj);
+	tt:SetLineScript(l,"OnLeave", hideTooltip2);
 
 	return #GroupQuest;
 end

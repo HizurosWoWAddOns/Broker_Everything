@@ -371,8 +371,8 @@ local function hideTooltip3()
 end
 
 -- tooltip as transport menu
-local function tpmOnEnter(self)
-	local parent, v, t = unpack(self.info);
+local function tpmOnEnter(self,info)
+	local parent, v, t = unpack(info);
 	local data = {
 		attributes={type=t,[t]=v.name},
 		tooltip={parent=tt4,type=t,id=v.id},
@@ -391,8 +391,7 @@ local function tpmAddObject(tt,p,l,c,v,t)
 			l=tt:AddLine();
 		end
 		tt:SetCell(l, c, iStr32:format(v.icon), nil, nil, 1);
-		tt:SetCellScript(l,c,"OnEnter",tpmOnEnter);
-		tt.lines[l].cells[c].info = {p,v,t};
+		tt:SetCellScript(l,c,"OnEnter",tpmOnEnter, {p,v,t});
 		return l,c;
 	else
 		local info,doUpdate = "";
@@ -401,8 +400,7 @@ local function tpmAddObject(tt,p,l,c,v,t)
 			doUpdate=true
 		end
 		l = tt:AddLine(iStr16:format(v.icon)..(v.name2 or v.name)..info, "1","2","3");
-		tt:SetLineScript(l,"OnEnter",tpmOnEnter);
-		tt.lines[l].info = {p,v,t};
+		tt:SetLineScript(l,"OnEnter",tpmOnEnter,{p,v,t});
 	end
 end
 

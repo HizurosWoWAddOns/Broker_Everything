@@ -310,12 +310,12 @@ local function GetILevelColor(il)
 	return "white";
 end
 
-local function InventoryTooltipShow(self)
+local function InventoryTooltipShow(self,link)
 	GameTooltip:SetOwner(self,"ANCHOR_NONE");
 	GameTooltip:SetPoint(ns.GetTipAnchor(self,"horizontal",tt));
 
 	GameTooltip:ClearLines();
-	GameTooltip:SetHyperlink(self.invLink);
+	GameTooltip:SetHyperlink(link);
 
 	GameTooltip:SetFrameLevel(self:GetFrameLevel()+1);
 	GameTooltip:Show();
@@ -325,7 +325,7 @@ local function InventoryTooltipHide()
 	GameTooltip:Hide();
 end
 
-local function equipOnClick(self)
+local function equipOnClick(self,equipSetID)
 	if (IsShiftKeyDown()) then
 		if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
 		local main = ns.items.GetInventoryItemBySlotIndex(16);
@@ -336,28 +336,28 @@ local function equipOnClick(self)
 		if off and off.level>=750 and main.rarity==6 then
 			C_EquipmentSet.IgnoreSlotForSave(17);
 		end
-		local setName = C_EquipmentSet.GetEquipmentSetInfo(self.equipSetID);
+		local setName = C_EquipmentSet.GetEquipmentSetInfo(equipSetID);
 		local dialog = StaticPopup_Show('CONFIRM_SAVE_EQUIPMENT_SET', setName);
 		if dialog then
 			dialog.data = self.equipSetID;
 		end
 	elseif (IsControlKeyDown()) then
 		if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
-		local setName = C_EquipmentSet.GetEquipmentSetInfo(self.equipSetID);
+		local setName = C_EquipmentSet.GetEquipmentSetInfo(equipSetID);
 		local dialog = StaticPopup_Show('CONFIRM_DELETE_EQUIPMENT_SET', setName);
 		if dialog then
-			dialog.data = self.equipSetID;
+			dialog.data = equipSetID;
 		end
 	else
-		ns.toggleEquipment(self.equipSetID);
+		ns.toggleEquipment(equipSetID);
 	end
 end
 
-local function equipOnEnter(self)
-	if self.equipSetID then
+local function equipOnEnter(self,equipSetID)
+	if equipSetID then
 		GameTooltip:SetOwner(self,"ANCHOR_NONE");
 		GameTooltip:SetPoint(ns.GetTipAnchor(self,"horizontal",tt));
-		GameTooltip:SetEquipmentSet(self.equipSetID);
+		GameTooltip:SetEquipmentSet(equipSetID);
 		GameTooltip:Show();
 	end
 end
@@ -392,9 +392,8 @@ local function createTooltip(tt)
 						local formatName = color~=false and C(color,eName) or eName;
 
 						local line = ns.AddSpannedLine(tt, "|T"..(icon or ns.icon_fallback)..":0|t "..formatName);
-						tt.lines[line].equipSetID = setID;
-						tt:SetLineScript(line, "OnMouseUp", equipOnClick);
-						tt:SetLineScript(line, "OnEnter", equipOnEnter);
+						tt:SetLineScript(line, "OnMouseUp", equipOnClick,setID);
+						tt:SetLineScript(line, "OnEnter", equipOnEnter,setID);
 						tt:SetLineScript(line, "OnLeave", equipOnLeave);
 					end
 				end
@@ -452,8 +451,7 @@ local function createTooltip(tt)
 					C("quality"..inventory[i].rarity,inventory[i].name) .. greenline .. tSetItem .. setName .. upgrades .. enchanted .. gems,
 					C(GetILevelColor(inventory[i].level),inventory[i].level)
 				);
-				tt.lines[l].invLink = inventory[i].link;
-				tt:SetLineScript(l,"OnEnter",InventoryTooltipShow);
+				tt:SetLineScript(l,"OnEnter",InventoryTooltipShow, inventory[i].link);
 				tt:SetLineScript(l,"OnLeave",InventoryTooltipHide);
 			elseif ns.profile[name].showEmptySlots then
 				tt:AddLine(

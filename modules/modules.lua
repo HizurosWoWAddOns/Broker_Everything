@@ -45,8 +45,6 @@ function ns.toggleMinimapButton(modName,setValue)
 		cfg.minimap = {hide=true};
 	end
 
-	ns.debug("<regMinimap>",modName,tostring(cfg.minimap.hide));
-
 	if setValue~=nil then
 		-- change config if setValue not nil
 		cfg.minimap.hide = not setValue;

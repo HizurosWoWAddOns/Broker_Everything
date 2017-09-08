@@ -448,10 +448,8 @@ function updateBroker()
 	end
 end
 
-local function itemTooltipShow(self,data)
-	local info = self.info;
+local function itemTooltipShow(self,info)
 	if not info then return end
-
 	GameTooltip:SetOwner(tt,"ANCHOR_NONE");
 	GameTooltip:SetPoint("TOP",tt,"BOTTOM");
 	GameTooltip:SetClampedToScreen(true);
@@ -556,8 +554,7 @@ function createTooltip(tt)
 						local l=tt:AddLine(C("white",i..". ")..C("ltgreen",label));
 						tt:SetCell(l,2,icon .. n,nil,nil,0);
 						if v.locked or v.link then
-							tt.lines[l].info = v;
-							tt:SetLineScript(l,"OnEnter",itemTooltipShow);
+							tt:SetLineScript(l,"OnEnter",itemTooltipShow,v);
 							tt:SetLineScript(l,"OnLeave",itemTooltipHide);
 						end
 					end
@@ -587,8 +584,7 @@ function createTooltip(tt)
 						sum = sum + (v.count*v.artifact_power);
 					end
 					if v.link then
-						tt.lines[l].info = v;
-						tt:SetLineScript(l,"OnEnter",itemTooltipShow);
+						tt:SetLineScript(l,"OnEnter",itemTooltipShow,v);
 						tt:SetLineScript(l,"OnLeave",itemTooltipHide);
 					end
 					count=count+1;

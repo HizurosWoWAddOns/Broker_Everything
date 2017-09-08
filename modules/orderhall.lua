@@ -87,11 +87,10 @@ end
 local function createTooltip2(tt)
 end
 
-local function createTalentTooltip(self)
+local function createTalentTooltip(self,talent)
 	GameTooltip:SetOwner(tt, "ANCHOR_NONE");
 	GameTooltip:SetPoint(ns.GetTipAnchor(tt,"horizontal"));
 
-	local talent = self.talent;
 	GameTooltip:AddLine(talent.name, 1, 1, 1);
 	GameTooltip:AddLine(talent.description, nil, nil, nil, true);
 
@@ -124,6 +123,10 @@ local function createTalentTooltip(self)
 		end
 	end
 	GameTooltip:Show();
+end
+
+local function hideTalentTooltip()
+	GameTooltip:Hide();
 end
 
 local function addShipment(tt,...)
@@ -198,10 +201,8 @@ local function createTooltip(tt)
 					end
 				end
 
-				tt.lines[line].cells[cell].talent = v;
-				tt:SetCellScript(line,cell,"OnEnter",createTalentTooltip);
-				tt:SetCellScript(line,cell,"OnLeave",function() GameTooltip:Hide() end);
-				tt:SetCellScript(line,cell,"OnMouseUp",function() end);
+				tt:SetCellScript(line,cell,"OnEnter",createTalentTooltip, v);
+				tt:SetCellScript(line,cell,"OnLeave",hideTalentTooltip);
 			end
 
 			if activeResearch and activeResearch.show then

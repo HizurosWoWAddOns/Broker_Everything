@@ -124,7 +124,7 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
-local function AchievementTooltipShow(self)
+local function AchievementTooltipShow(self, achievementId)
 	GameTooltip:SetOwner(self,"ANCHOR_NONE");
 	if (select(1,self:GetCenter()) > (select(1,UIParent:GetWidth()) / 2)) then
 		GameTooltip:SetPoint("RIGHT",tt,"LEFT",-2,0);
@@ -134,7 +134,7 @@ local function AchievementTooltipShow(self)
 	GameTooltip:SetPoint("TOP",self,"TOP", 0, 4);
 
 	GameTooltip:ClearLines();
-	GameTooltip:SetHyperlink(GetAchievementLink(self.achievementId));
+	GameTooltip:SetHyperlink(GetAchievementLink(achievementId));
 
 	GameTooltip:SetFrameLevel(self:GetFrameLevel()+1);
 	GameTooltip:Show();
@@ -144,17 +144,17 @@ local function AchievementTooltipHide()
 	GameTooltip:Hide();
 end
 
-local function toggleAchievementFrame()
+local function toggleAchievementFrame(self,achievementId)
 	if ( not AchievementFrame ) then
 		AchievementFrame_LoadUI();
 	end
 
 	if ( not AchievementFrame:IsShown() ) then
 		AchievementFrame_ToggleAchievementFrame();
-		AchievementFrame_SelectAchievement(v.id);
+		AchievementFrame_SelectAchievement(achievementId);
 	else
-		if ( AchievementFrameAchievements.selection ~= v.id ) then
-			AchievementFrame_SelectAchievement(v.id);
+		if ( AchievementFrameAchievements.selection ~= achievementId ) then
+			AchievementFrame_SelectAchievement(achievementId);
 		else
 			AchievementFrame_ToggleAchievementFrame();
 		end
@@ -314,9 +314,8 @@ local function createTooltip(tt)
 					("|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltyellow","%s")):format(v.icon,v.name)
 				);
 				tt:SetCell(l,3, v.need, nil,"LEFT",5);
-				tt.lines[l].achievementId = v.id;
-				tt:SetLineScript(l,"OnMouseUp", toggleAchievementFrame);
-				tt:SetLineScript(l,"OnEnter", AchievementTooltipShow);
+				tt:SetLineScript(l,"OnMouseUp", toggleAchievementFrame,v.id);
+				tt:SetLineScript(l,"OnEnter", AchievementTooltipShow,v.id);
 				tt:SetLineScript(l,"OnLeave", AchievementTooltipHide);
 			end
 		end

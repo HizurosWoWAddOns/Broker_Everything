@@ -297,21 +297,21 @@ local function updateBroker()
 	end
 end
 
-local function GetMemberRecipes(self)
-	GetGuildMemberRecipes(self.info.name,self.info.id);
+local function GetMemberRecipes(self,info)
+	GetGuildMemberRecipes(info.name,info.id);
 end
 
-local function memberInviteOrWhisper(self)
+local function memberInviteOrWhisper(self,info)
 	if IsAltKeyDown() then
-		if not self.info[mIsMobile] then
-			InviteUnit(self.info[mFullName]);
+		if not info[mIsMobile] then
+			InviteUnit(info[mFullName]);
 		end
 	else
-		SetItemRef("player:"..self.info[mFullName], ("|Hplayer:%1$s|h[%1$s]|h"):format(self.info[mFullName]), "LeftButton");
+		SetItemRef("player:"..info[mFullName], ("|Hplayer:%1$s|h[%1$s]|h"):format(info[mFullName]), "LeftButton");
 	end
 end
 
-local function showApplication(self)
+local function showApplication(self,appIndex)
 	if IsInGuild() then
 		if (not GuildFrame) then
 			GuildFrame_LoadUI();
@@ -323,13 +323,13 @@ local function showApplication(self)
 			GuildFrameTab5:Click();
 			GuildInfoFrameTab3:Click();
 		end
-		SetGuildApplicantSelection(self.appIndex);
+		SetGuildApplicantSelection(appIndex);
 		GuildInfoFrameApplicants_Update();
 	end
 end
 
-local function createTooltip2(self)
-	local v,s,t,_ = self.info,"";
+local function createTooltip2(self,info)
+	local v,s,t,_ = info,"";
 	local realm = v[mRealm] or "";
 
 	tt2 = ns.acquireTooltip(
@@ -427,24 +427,21 @@ local function tooltipAddLine(v,me)
 	);
 
 	if ts1 and tradeskills[v[mFullName]] and tradeskills[v[mFullName]][1] then
-		tt.lines[l].cells[7].info = {name=v[mFullName],id=tradeskills[v[mFullName]][1][4]};
-		tt:SetCellScript(l, 7, "OnMouseUp", GetMemberRecipes);
+		tt:SetCellScript(l, 7, "OnMouseUp", GetMemberRecipes,{name=v[mFullName],id=tradeskills[v[mFullName]][1][4]});
 	end
 
 	if ts2 and tradeskills[v[mFullName]] and tradeskills[v[mFullName]][2] then
-		tt.lines[l].cells[8].info = {name=v[mFullName],id=tradeskills[v[mFullName]][2][4]};
-		tt:SetCellScript(l, 8, "OnMouseUp", GetMemberRecipes);
+		tt:SetCellScript(l, 8, "OnMouseUp", GetMemberRecipes,{name=v[mFullName],id=tradeskills[v[mFullName]][2][4]});
 	end
 
 	if v[mFullName]==ns.player.name_realm_short then
 		tt:SetLineColor(l, .5, .5, .5);
 	end
 
-	tt.lines[l].info = v;
-	tt:SetLineScript(l, "OnMouseUp", memberInviteOrWhisper);
+	tt:SetLineScript(l, "OnMouseUp", memberInviteOrWhisper, v);
 
 	if ns.profile[name].showZoneInTT2 or ns.profile[name].showNotesInTT2 or ns.profile[name].showONotesInTT2 or ns.profile[name].showRankInTT2 or ns.profile[name].showProfessionsInTT2 then
-		tt:SetLineScript(l,"OnEnter",createTooltip2);
+		tt:SetLineScript(l,"OnEnter",createTooltip2,v);
 	end
 end
 
@@ -526,8 +523,7 @@ local function createTooltip(tt,update)
 			);
 			tt:SetCell(l,5,(strlen(a[app_comment])>0 and ns.scm(ns.strCut(a[app_comment],60)) or L["No Text"]),nil,nil,ttColumns-4);
 
-			tt.lines[l].appIndex=a[app_index];
-			tt:SetLineScript(l,"OnMouseUp",showApplication);
+			tt:SetLineScript(l,"OnMouseUp",showApplication,a[app_index]);
 		end
 		tt:AddSeparator(4,0,0,0,0);
 	end

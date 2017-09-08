@@ -228,16 +228,16 @@ local function pushedTooltip(parent,id,msg)
 	end
 end
 
-local function tooltipCellScript_OnAction(self)
-	if self.info.click~=nil then
-		ns.secureButton(self, { attributes={type="click", clickbutton=_G[self.info.click]} }, self.info.name);
-		tinsert(tt.secureButtons,self.info.name);
-	elseif self.info.macro~=nil then
-		ns.secureButton(self, { attributes={type="macro", macrotext=self.info.macro} }, self.info.name);
-		tinsert(tt.secureButtons,self.info.name);
-	elseif type(self.info.func)=="function" then
+local function tooltipCellScript_OnAction(self,info)
+	if info.click~=nil then
+		ns.secureButton(self, { attributes={type="click", clickbutton=_G[info.click]} }, info.name);
+		tinsert(tt.secureButtons,info.name);
+	elseif info.macro~=nil then
+		ns.secureButton(self, { attributes={type="macro", macrotext=info.macro} }, info.name);
+		tinsert(tt.secureButtons,info.name);
+	elseif type(info.func)=="function" then
 		ns.hideTooltip(tt);
-		self.info.func();
+		info.func();
 	end
 end
 
@@ -303,8 +303,7 @@ local function createTooltip(tt)
 				local icon = I("gm_"..v.iconName)
 				tt:SetCell(line, cell, (v.disabled and link_disabled or link):format((icon.iconfile or ns.icon_fallback), (icon.coordsStr or iconCoords), v.name), nil, nil, oneCell and 2 or 1)
 				if (not v.disabled) or not (InCombatLockdown() and (v.click or v.macro)) then
-					tt.lines[line].cells[cell].info = v;
-					tt:SetCellScript(line,cell, (v.click or v.macro) and "OnEnter" or "OnMouseUp",tooltipCellScript_OnAction);
+					tt:SetCellScript(line,cell, (v.click or v.macro) and "OnEnter" or "OnMouseUp",tooltipCellScript_OnAction, v);
 				end
 				if not oneCell then
 					if cell==1 then cell=2 else cell=1 end

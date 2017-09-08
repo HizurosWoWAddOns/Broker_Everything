@@ -256,11 +256,11 @@ local function tooltipOnHide()
 	end
 end
 
-local function toggleHeader(self)
-	if (self.isCollapsed) then
-		ExpandFactionHeader(self.index);
+local function toggleHeader(self,data,button)
+	if (data[isCollapsed]) then
+		ExpandFactionHeader(data.index);
 	else
-		CollapseFactionHeader(self.index);
+		CollapseFactionHeader(data.index);
 	end
 	tooltipOnHide();
 	createTooltip(tt);
@@ -336,9 +336,7 @@ local function ttAddLine(tt,mode,data,count,childLevel)
 	local l=tt:AddLine(unpack(line));
 
 	if data[isHeader] then
-		tt.lines[l].isCollapsed = data[isCollapsed];
-		tt.lines[l].index = data.index;
-		tt:SetLineScript(l,"OnMouseUp",toggleHeader);
+		tt:SetLineScript(l,"OnMouseUp",toggleHeader,data);
 	end
 
 	if(ns.profile[name].bgBars=="single") or (ns.profile[name].bgBars=="allinone")then
@@ -434,9 +432,7 @@ function createTooltip(tt)
 					end
 					local l=tt:AddLine(C(color,prefix..icon..data[Name]));
 					if data[isHeader] then
-						tt.lines[l].isCollapsed = data[isCollapsed];
-						tt.lines[l].index = data.index;
-						tt:SetLineScript(l,"OnMouseUp",toggleHeader);
+						tt:SetLineScript(l,"OnMouseUp",toggleHeader,data);
 					end
 				end
 				if not data[isCollapsed] then

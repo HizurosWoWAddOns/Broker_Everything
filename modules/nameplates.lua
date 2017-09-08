@@ -178,8 +178,8 @@ local function getCVarSettings(cVarName)
 	return shown, toggle
 end
 
-local function ttSetCVar(self)
-	ns.SetCVar(unpack(self.info));
+local function ttSetCVar(self,info)
+	ns.SetCVar(unpack(info));
 	createTooltip(tt);
 end
 
@@ -305,9 +305,8 @@ function createTooltip(tt)
 					cell = 1
 					line = tt:AddLine()
 				end
-				tt.lines[line].cells[cell].info = {v[2], toggle, v[2]};
 				tt:SetCell(line, cell, C(toggle==1 and "gray" or "white",v[1]), nil, nil, v[3])
-				tt:SetCellScript(line, cell, "OnMouseUp", ttSetCVar);
+				tt:SetCellScript(line, cell, "OnMouseUp", ttSetCVar, {v[2], toggle, v[2]});
 				cell = cell + v[3];
 			else
 				local shown, toggle = getCVarSettings(v[2])
@@ -332,9 +331,8 @@ function createTooltip(tt)
 					elseif depend == 3 then
 						color = toggle==1 and "gray" or "white"
 					end
-					tt.lines[line].cells[cell].info = {v[2], toggle, v[2]};
 					tt:SetCell(line, cell, C(color,v[1]), nil, nil, 1)
-					tt:SetCellScript(line, cell, "OnMouseUp", ttSetCVar);
+					tt:SetCellScript(line, cell, "OnMouseUp", ttSetCVar, {v[2], toggle, v[2]});
 					cell = cell + 1
 				end
 			end

@@ -130,8 +130,8 @@ local function initEditor()
 	editor.text:SetScript("OnTextChanged",note_save);
 end
 
-function note_edit(self)
-	local index,title,text = self.note_index,"","";
+function note_edit(self,index)
+	local title,text = "","";
 	if index then
 		title = ns.data[name][index][1];
 		text = ns.data[name][index][2];
@@ -159,16 +159,15 @@ local function note_del(self)
 	createTooltip(tt);
 end
 
-local function note_options(self,_,button)
+local function note_options(self,index,button)
 	if button=="LeftButton" then
-		note_edit(self);
+		note_edit(self,index);
 	elseif button=="RightButton" then
-		note_del(self);
+		note_del(self,index);
 	end
 end
 
-local function note_show(self)
-	local index = self.note_index;
+local function note_show(self,index)
 	GameTooltip:SetOwner(tt,"ANCHOR_NONE");
 	GameTooltip:SetPoint(ns.GetTipAnchor(tt,"horizontal"));
 	GameTooltip:SetText(strlen(ns.data[name][index][1])>0 and ns.data[name][index][1] or L["Note"]);
@@ -200,9 +199,8 @@ function createTooltip(tt)
 		if delIndex==i then
 			tt:SetCell(l,2,C("orange","("..L["really?"]..")"));
 		end
-		tt.lines[l].note_index = i;
-		tt:SetLineScript(l,"OnMouseUp",note_options);
-		tt:SetLineScript(l,"OnEnter",note_show);
+		tt:SetLineScript(l,"OnMouseUp",note_options,i);
+		tt:SetLineScript(l,"OnEnter",note_show,i);
 		tt:SetLineScript(l,"OnLeave",note_hide);
 	end
 	if #ns.data[name]==0 then
@@ -212,7 +210,6 @@ function createTooltip(tt)
 
 	tt:AddSeparator(4,0,0,0,0);
 	local l=tt:AddLine();
-	tt.lines[l].note_index = nil;
 	tt:SetCell(l,1,C("ltgray",L["Add new note"]),nil,"CENTER",0);
 	tt:SetLineScript(l,"OnMouseUp",note_edit);
 

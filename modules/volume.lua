@@ -199,12 +199,12 @@ do
 		return hardware.list, hardware.num, hardware.selected
 	end
 
-	function setSoundHardware(self)
+	function setSoundHardware(self,hardwareIndex,button)
 		if InCombatLockdown() then
 			ns.print("("..VOLUME..")",C("orange",L["Sorry, In combat lockdown."]));
 		else
-			hardware.selected = self.hardwareIndex;
-			SetCVar(cvar,tostring(self.hardwareIndex-1) or 0);
+			hardware.selected = hardwareIndex;
+			SetCVar(cvar,tostring(hardwareIndex-1) or 0);
 			AudioOptionsFrame_AudioRestart();
 			createTooltip(tt,true);
 		end
@@ -215,7 +215,7 @@ local function updateTooltip()
 	createTooltip(tt, true);
 end
 
-local function toggleEntry(self, button)
+local function toggleEntry(self, v, button)
 	ns.SetCVar(self.info.toggle,tostring(self.info.inv),self.info.toggle);
 	updateBroker();
 	createTooltip(tt,true);
@@ -235,9 +235,8 @@ local function volumeWheel(self,direction)
 	percent(self,self.info.percent,self.info.pnow,direction);
 end
 
-local function volumeClick(self,_,button)
-	local direction = button=="RightButton" and -1 or 1;
-	percent(self,self.info.percent,self.info.pnow,direction);
+local function volumeClick(self,data,button)
+	percent(self,data.percent,data.pnow,button=="RightButton" and -1 or 1);
 end
 
 function createTooltip(tt, update)
@@ -258,18 +257,15 @@ function createTooltip(tt, update)
 			v.now = tonumber(GetCVar(v.toggle)); vol[i].now=v.now;
 			v.inv = v.now==1 and 0 or 1;
 			if (v.toggle~="no-toggle") then
-
 				if v.depend~=nil and ( (v.depend[1]~=nil and vol[v.depend[1]].now==0) or (v.depend[2]~=nil and vol[v.depend[2]].now==0) ) then
 					color = v.now==1 and "gray" or "dkgray";
 					disabled = color;
 				end
-
 				if color==nil then
 					color = v.now==1 and "green" or "red";
 					disabled = v.now==1 and "white" or "gray";
 				end
-				tt.lines[l].info = v;
-				tt:SetLineScript(l,"OnMouseUp",toggleEntry);
+				tt:SetLineScript(l,"OnMouseUp",toggleEntry,v);
 			else
 				if v.depend~=nil and ( (v.depend[1]~=nil and vol[v.depend[1]].now==0) or (v.depend[2]~=nil and vol[v.depend[2]].now==0) ) then
 					color = "gray";
@@ -293,8 +289,7 @@ function createTooltip(tt, update)
 
 				tt:SetCell(l,ttColumns,C(disabled,ceil(v.pnow*100).."%"));
 
-				tt.lines[l].cells[ttColumns].info = v;
-				tt:SetCellScript(l,ttColumns,"OnMouseUp",volumeClick);
+				tt:SetCellScript(l,ttColumns,"OnMouseUp",volumeClick,v);
 			else
 				tt:SetCell(l,ttColumns,"           ");
 			end
@@ -316,8 +311,7 @@ function createTooltip(tt, update)
 				l,c = tt:AddLine(strrep(" ",3 * (v.inset+1))..C(color,V).." ")
 
 				if not InCombatLockdown() then
-					tt.lines[l].hardwareIndex = I;
-					tt:SetLineScript(l,"OnMouseUp",setSoundHardware);
+					tt:SetLineScript(l,"OnMouseUp",setSoundHardware,I);
 				end
 			end
 		elseif (v.special=="video") then

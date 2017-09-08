@@ -327,15 +327,15 @@ function createMenu(parent)
 	ns.EasyMenu.ShowMenu(parent);
 end
 
-local function toggleCurrencyHeader(self)
-	ExpandCurrencyList(self.currency[1],self.currency[2]);
+local function toggleCurrencyHeader(self,currency)
+	ExpandCurrencyList(currency[1],currency[2]);
 	createTooltip(tt,true);
 	if TokenFrame:IsShown() and TokenFrame:IsVisible() then
 		TokenFrame_Update();
 	end
 end
 
-local function tooltip2Show(self)
+local function tooltip2Show(self,currencyIndex)
 	local pos = {};
 	if (not tt2) then
 		tt2=GameTooltip;
@@ -361,7 +361,7 @@ local function tooltip2Show(self)
 	tt2:SetPoint(pos.edgeSelf,tt,pos.edgeParent, pos.x , pos.y);
 	-- changes for user choosen direction
 	tt2:ClearLines();
-	tt2:SetCurrencyToken(self.currencyIndex); -- tokenId / the same index number if needed by GetCurrencyListInfo
+	tt2:SetCurrencyToken(currencyIndex); -- tokenId / the same index number if needed by GetCurrencyListInfo
 	tt2:Show();
 end
 
@@ -405,8 +405,7 @@ function createTooltip(tt,update)
 			if isExpanded then
 				tt:AddSeparator();
 			end
-			tt.lines[l].currency = {i,isExpanded and 0 or 1};
-			tt:SetLineScript(l,"OnMouseUp", toggleCurrencyHeader);
+			tt:SetLineScript(l,"OnMouseUp", toggleCurrencyHeader,{i,isExpanded and 0 or 1});
 		elseif currencyCache[v] then
 			local t,c = currencyCache[v],3;
 			local str = ns.FormatLargeNumber(name,t[cCount],true);
@@ -446,8 +445,7 @@ function createTooltip(tt,update)
 					tt:SetCell(l,c,C(color,num));
 				end
 			end
-			tt.lines[l].currencyIndex = i;
-			tt:SetLineScript(l, "OnEnter", tooltip2Show);
+			tt:SetLineScript(l, "OnEnter", tooltip2Show, i);
 			tt:SetLineScript(l, "OnLeave", tooltip2Hide);
 		end
 	end

@@ -182,8 +182,8 @@ local function updateInstances(name,mode)
 	end
 end
 
-local function createTooltip2(self)
-	local id,name,label = unpack(self.instance);
+local function createTooltip2(self,instance)
+	local id,name,label = unpack(instance);
 	local t = time();
 
 	GameTooltip:SetOwner(self,"ANCHOR_NONE");
@@ -228,9 +228,9 @@ local function hideTooltip2()
 	GameTooltip:Hide();
 end
 
-local function toggleExpansion(self)
-	ns.profile[self.tt_name]['showExpansion'..self.expansion] = not ns.profile[self.tt_name]['showExpansion'..self.expansion];
-	createTooltip(self.tt_name==name1 and tt1 or tt2,self.tt_name,self.tt_mode); -- force update tooltip?
+local function toggleExpansion(self,data)
+	ns.profile[data.name]['showExpansion'..data.expansion] = not ns.profile[data.name]['showExpansion'..data.expansion];
+	createTooltip(data.name==name1 and tt1 or tt2,data.name,data.mode); -- force update tooltip?
 end
 
 function createTooltip(tt,name,mode)
@@ -258,10 +258,7 @@ function createTooltip(tt,name,mode)
 		end
 		tt:AddSeparator(4,0,0,0,0);
 		local l=tt:AddLine(symbol:format(sState)..C(hColor,_G['EXPANSION_NAME'..(i-1)]),_status_,_mode_);
-		tt.lines[l].tt_name = name;
-		tt.lines[l].tt_mode = mode;
-		tt.lines[l].expansion = i;
-		tt:SetLineScript(l,"OnMouseUp",toggleExpansion);
+		tt:SetLineScript(l,"OnMouseUp",toggleExpansion, {name=name,mode=mode,expansion=i});
 
 		if ns.profile[name]['showExpansion'..i] then
 			tt:AddSeparator();
@@ -289,8 +286,7 @@ function createTooltip(tt,name,mode)
 					end
 					local l=tt:AddLine(C("ltyellow","    "..instance_name)..id, status, diff);
 
-					tt.lines[l].instance = {instance_id,name,instance_name};
-					tt:SetLineScript(l,"OnEnter",createTooltip2);
+					tt:SetLineScript(l,"OnEnter",createTooltip2,{instance_id,name,instance_name});
 					tt:SetLineScript(l,"OnLeave",hideTooltip2);
 
 					if ns.toon[name]==nil then
