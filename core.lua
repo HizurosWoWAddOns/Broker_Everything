@@ -352,9 +352,15 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 
 		self:UnregisterEvent(event);
 	elseif(event=="PLAYER_LEVEL_UP")then
-		C_Timer.After(2,function()
-			ns.toon.level = UnitLevel("player");
-		end);
+		local lvl = UnitLevel("player");
+		if lvl~=ns.toon.level then
+			ns.toon.level=lvl;
+		else
+			C_Timer.After(2,function()
+				-- sometimes this function return old level directly on levelup event
+				ns.toon.level = UnitLevel("player");
+			end);
+		end
 	elseif (event=="NEUTRAL_FACTION_SELECT_RESULT") then
 		ns.player.faction, ns.player.factionL  = UnitFactionGroup("player");
 		L[ns.player.faction] = ns.player.factionL;
