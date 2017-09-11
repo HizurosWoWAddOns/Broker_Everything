@@ -41,3 +41,13 @@ ns.L["ClassSpecs"] = "Class specs";
 ns.L["FOLLOWERS_ABBREV"] = "F";
 ns.L["SHIPS_ABBREV"] = "S";
 ns.L["CHAMPIONS_ABBREV"] = "C";
+
+
+
+
+
+
+-----------
+
+-- artifactweapons.lua
+ns.L.ArtifactMissingData = "There are some missing informations. Do you want to see all about this weapon it is necessary to temporary switch the spec.";
