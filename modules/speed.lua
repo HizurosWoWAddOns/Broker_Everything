@@ -139,7 +139,7 @@ local function tooltipOnEnter(self,data)
 	end
 	if data.extend=="trainerfaction" then
 		GameTooltip:AddLine(" ");
-		GameTooltip:AddLine(C("ltblue",L["Trainer that offer dicount by reputation"]));
+		GameTooltip:AddLine(C("ltblue",L["Trainer that offer reputation dicount"]));
 		local faction,ttTrainerLine,ttFactionLine = false,"%s (%0.1f, %0.1f)","%s (%0.1f%%)";
 		for i=1, #trainer_faction do
 			local v = trainer_faction[i];
