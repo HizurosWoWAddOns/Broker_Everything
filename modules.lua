@@ -320,11 +320,3 @@ ns.moduleInit = function(name)
 		end
 	end
 end
-
-ns.moduleCoexist = function()
-	for name,data in pairs(ns.modules) do
-		if (type(data.coexist)=="function") then
-			data.coexist();
-		end
-	end
-end

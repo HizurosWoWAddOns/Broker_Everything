@@ -12,19 +12,6 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Tracking" -- TRACKING
 local tt = nil
 local menuOpened = false;
-local similar, own, unsave = "%s has a similar option to hide the minimap tracking icon.","%s has its own tracking icon.","%s found. It's unsave to hide the minimap tracking icon without errors.";
--- L["%s has a similar option to hide the minimap tracking icon."] L["%s has its own tracking icon."] L["%s found. It's unsave to hide the minimap tracking icon without errors."]
-local coexist_tooltip = {
-	["Carbonite"]			= unsave,
-	["DejaMinimap"]			= unsave,
-	["Chinchilla"]			= similar,
-	["Dominos_MINIMAP"]		= similar,
-	["gUI4_Minimap"]		= own,
-	["LUI"]					= own,
-	["MinimapButtonFrame"]	= unsave,
-	["SexyMap"]				= similar,
-	["SquareMap"]			= unsave,
-};
 
 
 -------------------------------------------
@@ -58,8 +45,8 @@ ns.modules[name] = {
 	config_tooltip = nil,
 	config_misc = {
 		{ type="toggle", name="hideMinimapButton", label=L["Hide minimap button"], tooltip=L["Hide blizzard's tracking button on minimap"], event="BE_HIDE_TRACKING", disabled=function()
-				if (ns.coexist.found~=false) then
-					return L["This option is disabled"],L[coexist_tooltip[ns.coexist.found]]:format(ns.coexist.found);
+				if ns.coexist.check() then
+					return ns.coexist.optionInfo();
 				end
 				return false;
 			end
@@ -219,8 +206,3 @@ end
 
 -- ns.modules[name].ondblclick = function(self,button) end
 
-ns.modules[name].coexist = function()
-	if (not ns.coexist.found) and (ns.profile[name].hideMinimapButton) then
-		ns.hideFrame("MiniMapTracking");
-	end
-end

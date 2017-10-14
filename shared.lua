@@ -355,6 +355,46 @@ function ns.AddSpannedLine(tt,content,cells,align,font)
 end
 
 
+  --------------------------------------------------------------------------
+--- coexistence with other addons                                          ---
+--- sometimes it is better to let other addons the control about something ---
+  --------------------------------------------------------------------------
+do
+	local found,list = {},{
+		-- ["<addon name>"] = "<msg>",
+		["Carbonite"]			= "CoExistUnsave",
+		["DejaMinimap"]			= "CoExistUnsave",
+		["Chinchilla"]			= "CoExistSimilar",
+		["Dominos_MINIMAP"]		= "CoExistSimilar",
+		["gUI4_Minimap"]		= "CoExistOwn",
+		["LUI"]					= "CoExistOwn",
+		["MinimapButtonFrame"]	= "CoExistUnsave",
+		["SexyMap"]				= "CoExistSimilar",
+		["SquareMap"]			= "CoExistUnsave",
+	};
+
+	function ns.coexist.check()
+		wipe(ns.coexist.found);
+		for name in pairs(ns.coexist.list) do
+			if (GetAddOnInfo(name)) and (GetAddOnEnableState(ns.player.name,name)==2) then
+				tinsert(ns.coexist.found,name);
+			end
+		end
+		return #ns.coexist.found>0;
+	end
+
+	function ns.coexist.optionInfo()
+		-- This option is disabled because:
+		-- <addon> >> <msg>
+		local msgs = {};
+		for name in pairs(ns.coexist.found)do
+			tinsert(msgs, C("ltblue",name)..C("ltgray"," >> ")..ns.coexist.list[name]);
+		end
+		return C("orange",L["CoExistDisabled"]).."\n"
+			.. table.concat(msgs,"\n");
+	end
+end
+
   ---------------------------------------
 --- icon colouring function             ---
   ---------------------------------------

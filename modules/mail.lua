@@ -72,8 +72,8 @@ ns.modules[name] = {
 		{ type="toggle", name="hideMinimapMail", label=L["Hide minimap mail icon"], tooltip=L["Hide minimap mail icon"],
 			event = "BE_HIDE_MINIMAPMAIL",
 			disabled = function()
-				if (ns.coexist.found~=false) then
-					return L["This option is disabled"],L[coexist_tooltip[ns.coexist.found]]:format(ns.coexist.found);
+				if ns.coexist.check() then
+					return ns.coexist.optionInfo();
 				end
 				return false;
 			end

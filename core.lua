@@ -7,7 +7,6 @@ Broker_Everything_DataDB = {}; -- global data
 -- some usefull namespace to locals
 local addon, ns = ...;
 local C, L = ns.LC.color, ns.L;
-ns.coexist = { names = { "Carbonite", "DejaMinimap", "Chinchilla", "Dominos_MINIMAP", "gUI4_Minimap", "LUI", "MinimapButtonFrame", "SexyMap", "SquareMap" }, found = false };
 
 local function profile_change(name,action)
 	if action=="del" then
@@ -339,14 +338,6 @@ Broker_Everything:SetScript("OnEvent", function (self, event, addonName)
 			ns.be_option_panel = ns.optionpanel();
 			ns.be_data_panel = ns.datapanel();
 		end);
-
-		-- coexist with other addons
-		for _,name in pairs(ns.coexist.names) do
-			if (ns.coexist.found==false) and (GetAddOnInfo(name)) and (GetAddOnEnableState(ns.player.name,name)==2) then
-				ns.coexist.found = name;
-			end
-		end
-		ns.moduleCoexist();
 
 		ns.pastPEW = true;
 

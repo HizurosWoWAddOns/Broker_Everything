@@ -98,8 +98,8 @@ ns.modules[name] = {
 	config_misc = {
 		{ type="toggle", name="hideMinimapCalendar", label=L["Hide calendar button"], tooltip=L["Hide Blizzard's minimap calendar button"],
 			disabled = function()
-				if (ns.coexist.found~=false) then
-					return L["This option is disabled"],L[coexist_tooltip[ns.coexist.found]]:format(ns.coexist.found);
+				if ns.coexist.check() then
+					return ns.coexist.optionInfo();
 				end
 				return false;
 			end

@@ -44,6 +44,10 @@ ns.L["CHAMPIONS_ABBREV"] = "C";
 
 
 
+ns.L["CoExistDisabled"] = "This option is disabled because:"
+ns.L["CoExistOwn"]     = "Has it's own minimap icon."
+ns.L["CoExistSimilar"] = "Has similar option to hide the minimap icon."
+ns.L["CoExistUnsave"]  = "Produce error on try to hide the minimap icon."
 
 
 
