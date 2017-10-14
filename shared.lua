@@ -4,12 +4,8 @@
 -- ====================================== --
 local addon, ns = ...;
 local L,_ = ns.L;
-ns.debug = function() end
 ns.build = tonumber(gsub(({GetBuildInfo()})[1],"[|.]","")..({GetBuildInfo()})[2]);
 ns.icon_fallback = 134400; -- interface\\icons\\INV_MISC_QUESTIONMARK;
-
-BINDING_HEADER_BROKEREVERYTHING = "Broker_Everything";
-BINDING_NAME_BETOGGLEALLSOUND = L["Toggle all sound"];
 
 ns.LDB = LibStub("LibDataBroker-1.1");
 ns.LQT = LibStub("LibQTip-1.0");
@@ -63,7 +59,7 @@ ns.LC.colorset({
 --- misc shared data                    ---
   ---------------------------------------
 ns.realm = GetRealmName();
-ns.realm_short = ns.realm:gsub(" ","");
+ns.realm_short = ns.realm:gsub(" ",""):gsub("%-","");
 ns.media = "Interface\\AddOns\\"..addon.."\\media\\";
 ns.locale = GetLocale();
 ns.ui = {size={UIParent:GetSize()},center={UIParent:GetCenter()}};
@@ -102,7 +98,7 @@ do
 			ns.realms[ns.realm_short] = ns.realm;
 		end
 	end
-	ns.realms = setmetatable({},{
+	setmetatable(ns.realms,{
 		__index = function(t,k)
 			if Init then Init(); Init=nil; end
 			return rawget(t,k) or false;
@@ -134,7 +130,8 @@ end
   ---------------------------------------
 --- nice little print function          ---
   ---------------------------------------
-ns.print = function (...)
+ns.debugMode = ("@project-version@"=="@".."project-version".."@"); -- the first part will be replaced by packager.
+function ns.print(...)
 	local colors,t,c = {"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"},{},1;
 	for i,v in ipairs({...}) do
 		v = tostring(v);
@@ -150,7 +147,7 @@ ns.print = function (...)
 end
 
 function ns.debug(...)
-	if GetAddOnMetadata(addon,"Version")=="@".."project-version".."@" then
+	if ns.debugMode then
 		ns.print("debug",...);
 	end
 end
@@ -163,7 +160,7 @@ end
   -----------------------------------------
 do
 	local blacklist = {alwaysShowActionBars = true, bloatnameplates = true, bloatTest = true, bloatthreat = true, consolidateBuffs = true, fullSizeFocusFrame = true, maxAlgoplates = true, nameplateMotion = true, nameplateOverlapH = true, nameplateOverlapV = true, nameplateShowEnemies = true, nameplateShowEnemyGuardians = true, nameplateShowEnemyPets = true, nameplateShowEnemyTotems = true, nameplateShowFriendlyGuardians = true, nameplateShowFriendlyPets = true, nameplateShowFriendlyTotems = true, nameplateShowFriends = true, repositionfrequency = true, showArenaEnemyFrames = true, showArenaEnemyPets = true, showPartyPets = true, showTargetOfTarget = true, targetOfTargetMode = true, uiScale = true, useCompactPartyFrames = true, useUiScale = true}
-	ns.SetCVar = function(...)
+	function ns.SetCVar(...)
 		local cvar = ...
 		if ns.build>=54800000 and InCombatLockdown() and blacklist[cvar]==true then
 			local msg
@@ -186,7 +183,8 @@ end
 --- Helpful function for extra tooltips ---
   ---------------------------------------
 local openTooltip, hiddenMouseOver;
-ns.GetTipAnchor = function(frame, direction, parentTT)
+
+function ns.GetTipAnchor(frame, direction, parentTT)
 	if not frame then return end
 	local f,u,i,H,h,v,V = {frame:GetCenter()},{},0;
 	if f[1]==nil or ns.ui.center[1]==nil then
@@ -214,7 +212,7 @@ ns.GetTipAnchor = function(frame, direction, parentTT)
 	end
 end
 
-ns.tooltipScaling = function(tooltip)
+function ns.tooltipScaling(tooltip)
 	if ns.profile.GeneralOptions.tooltipScale == true then
 		tooltip:SetScale(tonumber(GetCVar("uiScale")))
 	end
@@ -248,7 +246,7 @@ local function hideOnUpdate(self, elapse)
 	end
 end
 
-ns.acquireTooltip = function(ttData,ttMode,ttParent,ttScripts)
+function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
 	if openTooltip and openTooltip.key~=ttData[1] and openTooltip.parent and not (ttParent[1]==openTooltip or (ttParent[3] and ttParent[3]==openTooltip)) then
 		ns.hideTooltip(openTooltip);
 	end
@@ -287,7 +285,7 @@ ns.acquireTooltip = function(ttData,ttMode,ttParent,ttScripts)
 	return tooltip;
 end
 
-ns.roundupTooltip = function(tooltip)
+function ns.roundupTooltip(tooltip)
 	if not tooltip then return end
 	tooltip:UpdateScrolling(GetScreenHeight() * (ns.profile.GeneralOptions.maxTooltipHeight/100));
 	tooltip:SetClampedToScreen(true);
@@ -296,7 +294,7 @@ ns.roundupTooltip = function(tooltip)
 	end
 end
 
-ns.hideTooltip = function(tooltip)
+function ns.hideTooltip(tooltip)
 	if type(tooltip)~="table" then return; end
 	if type(tooltip.secureButtons)=="table" then
 		local f = GetMouseFocus()
@@ -320,7 +318,7 @@ end
 
 ----------------------------------------
 
-ns.RegisterMouseWheel = function(self,func)
+function ns.RegisterMouseWheel(self,func)
 	self:EnableMouseWheel(1);
 	self:SetScript("OnMouseWheel", func);
 end
@@ -337,7 +335,7 @@ ns.tooltipModifiers = {
 	RIGHTCTRL  = {l=L["Right ctrl"],  f="RightControl"}
 }
 
-ns.tooltipChkOnShowModifier = function(bool)
+function ns.tooltipChkOnShowModifier(bool)
 	local modifier = ns.profile.GeneralOptions.ttModifierKey1;
 	if (modifier~="NONE") then
 		modifier = (ns.tooltipModifiers[modifier]) and _G["Is"..ns.tooltipModifiers[modifier].f.."KeyDown"]();
@@ -350,7 +348,7 @@ ns.tooltipChkOnShowModifier = function(bool)
 	return false;
 end
 
-ns.AddSpannedLine = function(tt,content,cells,align,font)
+function ns.AddSpannedLine(tt,content,cells,align,font)
 	local cells,l = cells or {},tt:AddLine();
 	tt:SetCell(l,cells.start or 1,content,font,align,cells.count or 0);
 	return l;
@@ -361,19 +359,20 @@ end
 --- icon colouring function             ---
   ---------------------------------------
 do
-	local objs = {}
-	ns.updateIconColor = function(name)
-		local f = function(n)
-			local obj = objs[n] or ns.LDB:GetDataObjectByName(n)
-			objs[n] = obj
-			if obj==nil then return false end
-			obj.iconR,obj.iconG,obj.iconB,obj.iconA = unpack(ns.profile.GeneralOptions.iconcolor or ns.LC.color("white","colortable"))
-			return true
-		end
+	local function updateColor(n)
+		local obj = objs[n] or ns.LDB:GetDataObjectByName(n)
+		objs[n] = obj
+		if obj==nil then return false end
+		obj.iconR,obj.iconG,obj.iconB,obj.iconA = unpack(ns.profile.GeneralOptions.iconcolor or ns.LC.color("white","colortable"))
+		return true
+	end
+	function ns.updateIconColor(name)
 		if name==true then
-			for i,v in pairs(ns.modules) do f(i) end
+			for i,v in pairs(ns.modules) do
+				updateColor(i);
+			end
 		elseif ns.modules[name]~=nil then
-			f(name)
+			updateColor(name)
 		end
 	end
 end
@@ -382,7 +381,7 @@ end
   ---------------------------------------
 --- suffix colour function              ---
   ---------------------------------------
-ns.suffixColour = function(str)
+function ns.suffixColour(str)
 	if (ns.profile.GeneralOptions.suffixColour) then
 		str = ns.LC.color("suffix",str);
 	end
@@ -414,7 +413,7 @@ do
 			return (type(iconset)=="table" and iconset[a]) or t[a]
 		end
 	})
-	ns.updateIcons = function()
+	function ns.updateIcons()
 		for i,v in pairs(ns.modules) do
 			local obj = ns.LDB:GetDataObjectByName(i)
 			if obj~=nil then
@@ -430,7 +429,7 @@ do
 		obj.iconR,obj.iconG,obj.iconB,obj.iconA = unpack(ns.profile.GeneralOptions.iconcolor or ns.LC.color("white","colortable"))
 		return true
 	end
-	ns.updateIconColor = function(name)
+	function ns.updateIconColor(name)
 		local result = true;
 		if (name==true) then
 			for i,v in pairs(ns.modules) do if (updateIconColor(i)==false) then result=false; end end
@@ -445,7 +444,7 @@ end
 -- ------------------------------ --
 -- missing real found function    --
 -- ------------------------------ --
-ns.round = function(num,precision)
+function ns.round(num,precision)
 	return tonumber(("%."..(tonumber(precision) or 0).."f"):format(num));
 end
 
@@ -454,14 +453,14 @@ end
 -- Function to Sort a table by the keys               --
 -- Sort function fom http://www.lua.org/pil/19.3.html --
 -- -------------------------------------------------- --
-ns.pairsByKeys = function(t, f)
+function ns.pairsByKeys(t, f)
 	local a = {}
 	for n in pairs(t) do
 		table.insert(a, n)
 	end
 	table.sort(a, f)
 	local i = 0      -- iterator variable
-	local iter = function ()   -- iterator function
+	local function iter()   -- iterator function
 		i = i + 1
 		if a[i] == nil then
 			return nil
@@ -472,14 +471,14 @@ ns.pairsByKeys = function(t, f)
 	return iter
 end
 
-ns.reversePairsByKeys = function(t, f)
+function ns.reversePairsByKeys(t, f)
 	local a = {}
 	for n in ipairs(t) do
 		table.insert(a,n)
 	end
 	table.sort(a, f)
 	local i = #a
-	local iter = function()
+	local function iter()
 		i = i - 1
 		if a[i] == nil then
 			return nil
@@ -495,9 +494,11 @@ end
 -- FormatLargeNumber function advanced  --
 -- ------------------------------------ --
 local suffixes1,suffixes2,floatformat = {"K","M","G","T","P","E"},{},"%0.1f";
-ns.FormatLargeNumber = function(modName,value,tooltip)
+function ns.FormatLargeNumber(modName,value,tooltip)
 	local shortNumbers,doShortcut = false,true;
-	if modName then
+	if type(modName)=="boolean" then
+		shortNumbers = modName;
+	elseif modName and ns.profile[modName] then
 		shortNumbers = ns.profile[modName].shortNumbers;
 	end
 	if tooltip and IsShiftKeyDown() then
@@ -528,7 +529,7 @@ end
 -- --------------------- --
 -- Some string  function --
 -- --------------------- --
-ns.strWrap = function(text, limit, insetCount, insetChr, insetLastChr)
+function ns.strWrap(text, limit, insetCount, insetChr, insetLastChr)
 	if not text then return ""; end
 	if text:match("\n") or text:match("%|n") then
 		local txt = gsub(text,"%|n","\n");
@@ -555,7 +556,7 @@ ns.strWrap = function(text, limit, insetCount, insetChr, insetLastChr)
 	return table.concat(result,"|n"..inset)
 end
 
-ns.getBorderPositions = function(f)
+function ns.getBorderPositions(f)
 	local us = UIParent:GetEffectiveScale();
 	local uw,uh = UIParent:GetWidth(), UIParent:GetHeight();
 	local fx,fy = f:GetCenter();
@@ -564,12 +565,12 @@ ns.getBorderPositions = function(f)
 	return fx-fw, uw-(fx+fw), uh-(fy+fh),fy-fh;
 end
 
-ns.strCut = function(str,limit)
+function ns.strCut(str,limit)
 	if strlen(str)>limit-3 then str = strsub(str,1,limit-3).."..." end
 	return str
 end
 
-ns.strFill = function(str,pat,count,append)
+function ns.strFill(str,pat,count,append)
 	local l = (count or 1) - strlen(str);
 	if l<=0 then return str; end
 	local p = strrep(pat or " ", l);
@@ -602,7 +603,7 @@ end
 -- ----------------------------------------
 do
 	local sbf_hooks,sbfObject,sbf,_sbf = false,{};
-	ns.secureButton = function(self,obj)
+	function ns.secureButton(self,obj)
 		if self==nil or InCombatLockdown() then
 			return;
 		end
@@ -927,7 +928,7 @@ do
 
 	--- namespace functions
 	ns.items = {};
-	ns.items.RegisterCallback = function(modName,func,mode,id)
+	function ns.items.RegisterCallback(modName,func,mode,id)
 		mode = tostring(mode):lower();
 		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
 		assert(type(func)=="function","argument #2 (function) must be a function, got "..type(func));
@@ -946,8 +947,8 @@ do
 		end
 		d.callbacks.active = true;
 		IsEnabled = true;
-	end;
-	ns.items.RegisterPreScanCallback  = function(modName,func)
+	end
+	function ns.items.RegisterPreScanCallback(modName,func)
 		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
 		assert(type(func)=="function","argument #3 (function) must be a function, got "..type(func));
 		if(d.preScanCallbacks==nil)then
@@ -955,11 +956,11 @@ do
 		end
 		d.preScanCallbacks[modName]=func;
 		IsEnabled = true;
-	end;
-	ns.items.Enable = function()
+	end
+	function ns.items.Enable()
 		IsEnabled = true;
-	end;
-	ns.items.RegisterNeedTooltip = function(id)
+	end
+	function ns.items.RegisterNeedTooltip(id)
 		if type(id)=="table" then
 			for i=1, #id do
 				ns.items.RegisterNeedTooltip(id[i]);
@@ -970,31 +971,31 @@ do
 				d.NeedTooltip[id]=true;
 			end
 		end
-	end;
-	ns.items.exist = function(itemId)
+	end
+	function ns.items.exist(itemId)
 		return d.ids[itemId] or false;
-	end;
-	ns.items.GetItemlist = function()
+	end
+	function ns.items.GetItemlist()
 		return d.ids;
-	end;
-	ns.items.UpdateNow = function()
+	end
+	function ns.items.UpdateNow()
 		if not IsEnabled and ns.pastPEW then return end
 		update = 1;
 	end
-	ns.items.GetBagItems = function()
+	function ns.items.GetBagItems()
 		local result = {};
 		for _,id in pairs(d.prev_bags)do
 			result[id]=d.ids[id];
 		end
 		return result;
 	end
-	ns.items.GetInventoryItems = function()
+	function ns.items.GetInventoryItems()
 		return d.inv;
 	end
-	ns.items.GetInventoryItemBySlotIndex = function(index)
+	function ns.items.GetInventoryItemBySlotIndex(index)
 		return d.inv[index] or false;
 	end
-	ns.items.GetItemTooltip = function(obj)
+	function ns.items.GetItemTooltip(obj)
 		if obj then
 			GetObjectTooltipData(obj,true);
 		end
@@ -1163,7 +1164,7 @@ do
 			unit = <creature|player|?>
 		})
 	--]]
-	ns.ScanTT.query = function(data,instant)
+	function ns.ScanTT.query(data,instant)
 		if data.type=="bag" then
 			assert(type(data.bag)=="number","bag must be a number, got "..type(data.bag));
 			assert(type(data.slot)=="number","slot must be a number, got "..type(data.slot));
@@ -1267,7 +1268,7 @@ end
 -- ----------------------------------------------------- --
 -- screen capture mode - string replacement function     --
 -- ----------------------------------------------------- --
-ns.scm = function(str,all)
+function ns.scm(str,all)
 	if (type(str)=="string") and (strlen(str)>0) and (ns.profile.GeneralOptions.scm==true) then
 		if (all) then
 			return strrep("*",(strlen(str)));
@@ -1288,7 +1289,7 @@ do
 	hidden.origParent = {}
 	hidden:Hide()
 
-	ns.hideFrame = function(frameName)
+	function ns.hideFrame(frameName)
 		local pName = _G[frameName]:GetParent():GetName()
 		if pName==nil then
 			return false
@@ -1297,7 +1298,7 @@ do
 		_G[frameName]:SetParent(hidden)
 	end
 
-	ns.unhideFrame = function(frameName)
+	function ns.unhideFrame(frameName)
 		if hidden.origParent[frameName]~=nil then
 			_G[frameName]:SetParent(hidden.origParent[frameName])
 			hidden.origParent[frameName] = nil
@@ -1320,8 +1321,8 @@ do
 			if (type(D.cvar)=="table") then
 				--?
 			elseif (type(D.cvar)=="string") then
-				D.checked = function() return (GetCVar(D.cvar)=="1") end;
-				D.func = function() SetCVar(D.cvar,GetCVar(D.cvar)=="1" and "0" or "1"); end;
+				function D.checked() return (GetCVar(D.cvar)=="1") end;
+				function D.func() SetCVar(D.cvar,GetCVar(D.cvar)=="1" and "0" or "1"); end;
 			end
 		end,
 		slider = function(...)
@@ -1336,11 +1337,11 @@ do
 	local beTypeFunc = {
 		bool = function(d)
 			if (d.beModName) then
-				d.checked = function() return (ns.profile[d.beModName][d.beKeyName]) end;
-				d.func = function() ns.profile[d.beModName][d.beKeyName] = not ns.profile[d.beModName][d.beKeyName]; end;
+				function d.checked() return (ns.profile[d.beModName][d.beKeyName]) end;
+				function d.func() ns.profile[d.beModName][d.beKeyName] = not ns.profile[d.beModName][d.beKeyName]; end;
 			else
-				d.checked = function() return (ns.profile.GeneralOptions[d.beKeyName]) end;
-				d.func = function() ns.profile.GeneralOptions[d.beKeyName] = not ns.profile.GeneralOptions[d.beKeyName]; end;
+				function d.checked() return (ns.profile.GeneralOptions[d.beKeyName]) end;
+				function d.func() ns.profile.GeneralOptions[d.beKeyName] = not ns.profile.GeneralOptions[d.beKeyName]; end;
 			end
 		end,
 		slider = function(...)
@@ -1355,7 +1356,7 @@ do
 		end
 	};
 
-	self.InitializeMenu = function()
+	function self.InitializeMenu()
 		if (not self.frame) then
 			self.frame = CreateFrame("Frame", addon.."EasyMenu", UIParent, "LibDropDownMenuTemplate");
 		end
@@ -1363,7 +1364,7 @@ do
 		return self.frame;
 	end
 
-	self.addEntry = function(D,P)
+	function self.addEntry(D,P)
 		local entry= {};
 
 		if (type(D)=="table") and (#D>0) then -- numeric table = multible entries
@@ -1461,7 +1462,7 @@ do
 			if (D.func) then
 				entry.arg1 = D.arg1;
 				entry.arg2 = D.arg2;
-				entry.func = function(...)
+				function entry.func(...)
 					D.func(...)
 					if (type(D.event)=="function") then
 						D.event();
@@ -1493,7 +1494,7 @@ do
 
 	self.addEntries = self.addEntry;
 
-	self.addConfigElements = function(modName,separator,noTitle)
+	function self.addConfigElements(modName,separator,noTitle)
 		if (separator) then
 			self.addEntry({ separator = true });
 		end
@@ -1568,7 +1569,7 @@ do
 		end
 	end
 
-	self.ShowMenu = function(parent, parentX, parentY, callbackOnClose)
+	function self.ShowMenu(parent, parentX, parentY, callbackOnClose)
 		local anchor, x, y, displayMode = "cursor", nil, nil, "MENU"
 
 		if (parent) then
@@ -1589,18 +1590,18 @@ do
 		ns.LDDM.ToggleDropDownMenu(1, nil, self.frame, anchor, x, y, self.menu, nil, nil);
 	end
 
-	self.ShowDropDown = function(parent)
+	function self.ShowDropDown(parent)
 		local displaymode = nil;
 
 		ns.LDDM.UIDropDownMenu_Initialize(self.frame, ns.LDDM.EasyMenu_Initialize);
 		ns.LDDM.ToggleDropDownMenu(nil, nil, self.frame);
 	end
 
-	self.Refresh = function(level)
+	function self.Refresh(level)
 		ns.LDDM.UIDropDownMenu_Refresh(self.frame,nil,level);
 	end
 
-	self.RefreshAll = function()
+	function self.RefreshAll()
 		ns.LDDM.UIDropDownMenu_RefreshAll(self.frame);
 	end
 end
@@ -1609,7 +1610,7 @@ end
 -- ----------------------- --
 -- DurationOrExpireDate    --
 -- ----------------------- --
-ns.DurationOrExpireDate = function(timeLeft,lastTime,durationTitle,expireTitle)
+function ns.DurationOrExpireDate(timeLeft,lastTime,durationTitle,expireTitle)
 	local mod = "shift";
 	timeLeft = timeLeft or 0;
 	if (type(lastTime)=="number") then
@@ -1626,7 +1627,6 @@ end
 -- clickOptions System      --
 -- ------------------------ --
 do
-	L.Disabled = ADDON_DISABLED;
 	local values = {
 		["__NONE"]     = "Disabled",			-- ADDON_DISABLED
 		["_CLICK"]     = "Click",				-- L["Click"]
@@ -1642,108 +1642,109 @@ do
 		["CTRLLEFT"]   = "Ctrl+Left-click",		-- L["Ctrl+Left-click"]
 		["CTRLRIGHT"]  = "Ctrl+Right-click",	-- L["Ctrl+Right-click"]
 	};
-	ns.clickOptions = {
-		func =  function(name,self,button)
-			if not ((ns.modules[name]) and (ns.modules[name].onclick)) then return; end
 
-			-- click(plan)A = combine modifier if pressed with named button (left,right)
-			-- click(panl)B = combine modifier if pressed with left or right mouse button without expliced check.
-			local clickA,clickB="","";
+	ns.clickOptions = {};
 
-			-- check modifier
-			if (IsAltKeyDown()) then		clickA=clickA.."ALT";   clickB=clickB.."ALT"; end
-			if (IsShiftKeyDown()) then		clickA=clickA.."SHIFT"; clickB=clickB.."SHIFT"; end
-			if (IsControlKeyDown()) then	clickA=clickA.."CTRL";  clickB=clickB.."CTRL"; end
+	function ns.clickOptions.func(name,self,button)
+		if not ((ns.modules[name]) and (ns.modules[name].onclick)) then return; end
 
-			-- no modifier used... add an undercore (for dropdown menu entry sorting)
-			if (clickA=="") then clickA=clickA.."_"; end
-			if (clickB=="") then clickB=clickB.."_"; end
+		-- click(plan)A = combine modifier if pressed with named button (left,right)
+		-- click(panl)B = combine modifier if pressed with left or right mouse button without expliced check.
+		local clickA,clickB="","";
 
-			-- check which mouse button is pressed
-			if (button=="LeftButton") then
-				clickA=clickA.."LEFT";
-			elseif (button=="RightButton") then
-				clickA=clickA.."RIGHT";
-			--elseif () then
-			--	clickA=clickA.."";
-			-- more mouse buttons?
-			end
+		-- check modifier
+		if (IsAltKeyDown()) then		clickA=clickA.."ALT";   clickB=clickB.."ALT"; end
+		if (IsShiftKeyDown()) then		clickA=clickA.."SHIFT"; clickB=clickB.."SHIFT"; end
+		if (IsControlKeyDown()) then	clickA=clickA.."CTRL";  clickB=clickB.."CTRL"; end
 
-			-- planB
-			clickB=clickB.."CLICK";
+		-- no modifier used... add an undercore (for dropdown menu entry sorting)
+		if (clickA=="") then clickA=clickA.."_"; end
+		if (clickB=="") then clickB=clickB.."_"; end
 
-			if (ns.modules[name].onclick[clickA]) then
-				ns.modules[name].onclick[clickA](self,button);
-			elseif (ns.modules[name].onclick[clickB]) then
-				ns.modules[name].onclick[clickB](self,button);
-			end
-		end,
-		update = function(mod,db) -- BE_UPDATE_CLICKOPTION
-			assert(type(mod)=="table","not a table");
-			assert(type(mod.clickOptions)=="table","missing clickOptions");
+		-- check which mouse button is pressed
+		if (button=="LeftButton") then
+			clickA=clickA.."LEFT";
+		elseif (button=="RightButton") then
+			clickA=clickA.."RIGHT";
+		--elseif () then
+		--	clickA=clickA.."";
+		-- more mouse buttons?
+		end
 
-			if (not mod.clickOptionsConfigNum) then
-				mod.clickOptionsConfigNum={};
-				mod.config_click_options={};
+		-- planB
+		clickB=clickB.."CLICK";
 
-				for cfgKey,clickOpts in ns.pairsByKeys(mod.clickOptions) do
-					local cfg_entry = {
-						type	= "select",
-						name	= "clickOptions::"..cfgKey,
-						label	= L[clickOpts.cfg_label],
-						tooltip	= L["Choose your fav. combination of modifier and mouse key to"].." "..L[clickOpts.cfg_desc],
-						values	= values,
-						default	= clickOpts.cfg_default or "__NONE",
-						event	= "BE_UPDATE_CLICKOPTIONS"
-					};
-					tinsert(mod.config_click_options,cfg_entry);
-					mod.clickOptionsConfigNum[cfgKey] = #mod.config_click_options;
+		if (ns.modules[name].onclick[clickA]) then
+			ns.modules[name].onclick[clickA](self,button);
+		elseif (ns.modules[name].onclick[clickB]) then
+			ns.modules[name].onclick[clickB](self,button);
+		end
+	end
 
-					if (db["clickOptions::"..cfgKey]==nil) then
-						db["clickOptions::"..cfgKey] = clickOpts.cfg_default or "__NONE";
-					end
+	function ns.clickOptions.update(modName) -- BE_UPDATE_CLICKOPTION
+		local mod = ns.modules[modName];
+		local db = ns.profile[modName];
+		if (not mod.clickOptionsConfigNum) then
+			mod.clickOptionsConfigNum={};
+			mod.config_click_options={};
+
+			for cfgKey,clickOpts in ns.pairsByKeys(mod.clickOptions) do
+				local cfg_entry = {
+					type	= "select",
+					name	= "clickOptions::"..cfgKey,
+					label	= L[clickOpts.cfg_label],
+					tooltip	= L["Choose your fav. combination of modifier and mouse key to"].." "..L[clickOpts.cfg_desc],
+					values	= values,
+					default	= clickOpts.cfg_default or "__NONE",
+					event	= "BE_UPDATE_CLICKOPTIONS"
+				};
+				tinsert(mod.config_click_options,cfg_entry);
+				mod.clickOptionsConfigNum[cfgKey] = #mod.config_click_options;
+
+				if (db["clickOptions::"..cfgKey]==nil) then
+					db["clickOptions::"..cfgKey] = clickOpts.cfg_default or "__NONE";
 				end
 			end
+		end
 
-			mod.onclick = {};
-			mod.clickHints = {};
-			for cfgKey,opts in ns.pairsByKeys(mod.clickOptions) do
-				if (db["clickOptions::"..cfgKey]) and (db["clickOptions::"..cfgKey]~="__NONE") then
-					mod.onclick[db["clickOptions::"..cfgKey]] = opts.func;
-					tinsert(mod.clickHints,ns.LC.color("copper",L[values[db["clickOptions::"..cfgKey]]]).." || "..ns.LC.color("green",L[opts.hint]));
-				end
+		mod.onclick = {};
+		mod.clickHints = {};
+		for cfgKey,opts in ns.pairsByKeys(mod.clickOptions) do
+			if (db["clickOptions::"..cfgKey]) and (db["clickOptions::"..cfgKey]~="__NONE") then
+				mod.onclick[db["clickOptions::"..cfgKey]] = opts.func;
+				tinsert(mod.clickHints,ns.LC.color("copper",L[values[db["clickOptions::"..cfgKey]]]).." || "..ns.LC.color("green",L[opts.hint]));
 			end
+		end
 
-			return (#mod.clickHints>0);
-		end,
-		ttAddHints=function(tt,name,ttColumns,entriesPerLine)
-			local _lines = {};
-			if (type(entriesPerLine)~="number") then entriesPerLine=1; end
-			if (ns.modules[name].clickHints) then
-				for i=1, #ns.modules[name].clickHints, entriesPerLine do
-					if (ns.modules[name].clickHints[i]) then
-						tinsert(_lines,{});
-						for I=1, entriesPerLine do
-							if (ns.modules[name].clickHints[i+I-1]) then
-								tinsert(_lines[#_lines],ns.modules[name].clickHints[i+I-1]);
-							end
+		return (#mod.clickHints>0);
+	end
+	function ns.clickOptions.ttAddHints(tt,name,ttColumns,entriesPerLine)
+		local _lines = {};
+		if (type(entriesPerLine)~="number") then entriesPerLine=1; end
+		if (ns.modules[name].clickHints) then
+			for i=1, #ns.modules[name].clickHints, entriesPerLine do
+				if (ns.modules[name].clickHints[i]) then
+					tinsert(_lines,{});
+					for I=1, entriesPerLine do
+						if (ns.modules[name].clickHints[i+I-1]) then
+							tinsert(_lines[#_lines],ns.modules[name].clickHints[i+I-1]);
 						end
 					end
 				end
 			end
-			for i,v in ipairs(_lines) do
-				if (v) then
-					v = table.concat(v," - ");
-					if (type(tt.SetCell)=="function") then
-						local line = tt:AddLine();
-						tt:SetCell(line,1,v,nil,"LEFT",ttColumns or 0);
-					else
-						tt:AddLine(v);
-					end
+		end
+		for i,v in ipairs(_lines) do
+			if (v) then
+				v = table.concat(v," - ");
+				if (type(tt.SetCell)=="function") then
+					local line = tt:AddLine();
+					tt:SetCell(line,1,v,nil,"LEFT",ttColumns or 0);
+				else
+					tt:AddLine(v);
 				end
 			end
 		end
-	};
+	end
 end
 
 
@@ -1810,7 +1811,7 @@ end
 -- text bar
 -- ----------------
 -- num, {<max>,<cur>[,<rest>]},{<max>,<cur>[,<rest>]}
-ns.textBar = function(num,values,colors,Char)
+function ns.textBar(num,values,colors,Char)
 	local iMax,iMin,iRest = 1,2,3;
 	local bar,chars,Char = "",{},Char or "=";
 	values[iRest] = values[iRest] or 0;
