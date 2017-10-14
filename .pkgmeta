@@ -29,6 +29,10 @@ externals:
 		url: https://repos.curseforge.com/wow/libstringcoloring-1-0
 		tag: latest
 
+	libs/LibTime-1.0:
+		url: https://repos.curseforge.com/wow/libtime-1-0
+		tag: latest
+
 	libs/LibDropDownMenu:
 		url: git://github.com/hizuro/LibDropDownMenu.git
 		tag: latest
@@ -60,6 +64,7 @@ ignore:
 	- libs/LibColors-1.0/LibColors-1.0-web.xml
 	- libs/LibColors-1.0/LibColors-1.0-x11.xml
 	- libs/LibColors-1.0/LibColors-1.0.toc
+	- libs/LibTime-1.0/LibTime-1.0.toc
 	- libs/LibSharedMedia-3.0/lib.xml
 	- libs/LibDropDownMenu/README.md
 	- libs/LibDropDownMenu/LibDropDownMenu.toc

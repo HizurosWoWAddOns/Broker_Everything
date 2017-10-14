@@ -156,9 +156,9 @@ local function createTooltip(tt,update)
 	if ns.profile[name].showDate then
 		tt:AddLine(C("ltyellow",L["Date"]),		C("white",date(ns.profile[name].dateFormat)));
 	end
-	tt:AddLine(C("ltyellow",L["Local time"]),	C("white",ns.LT.GetTimeString("GetLocalTime",h24,dSec)));
-	tt:AddLine(C("ltyellow",L["Realm time"]),	C("white",ns.LT.GetTimeString("GetGameTime",h24,dSec)));
-	tt:AddLine(C("ltyellow",L["UTC time"]),		C("white",ns.LT.GetTimeString("GetUTCTime",h24,dSec)));
+	tt:AddLine(C("ltyellow",L["Local time"]),	C("white",ns.LT.GetTimeString("LocalTime",h24,dSec)));
+	tt:AddLine(C("ltyellow",L["Realm time"]),	C("white",ns.LT.GetTimeString("GameTime",h24,dSec)));
+	tt:AddLine(C("ltyellow",L["UTC time"]),		C("white",ns.LT.GetTimeString("UTCTime",h24,dSec)));
 
 	--tt:AddSeparator(3,0,0,0,0);
 	--tt:AddLine(C("ltblue",L["Additional time zones"]));
@@ -185,7 +185,7 @@ local function updater(self)
 	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 	local h24 = ns.profile[name].format24;
 	local dSec = ns.profile[name].showSeconds;
-	obj.text = ns.profile[name].timeLocal and ns.LT.GetTimeString("GetLocalTime",h24,dSec) or ns.LT.GetTimeString("GetGameTime",h24,dSec)
+	obj.text = ns.profile[name].timeLocal and ns.LT.GetTimeString("LocalTime",h24,dSec) or ns.LT.GetTimeString("GameTime",h24,dSec)
 	if tt~=nil and tt.key==name.."TT" and tt:IsShown() then
 		createTooltip(tt,true);
 	end
