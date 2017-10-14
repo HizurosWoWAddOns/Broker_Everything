@@ -1,10 +1,76 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
 ..\..\FrameXML\UI.xsd">
 
-	<Include file="localizations\localizations.xml" />
+	<!-- localizations -->
+	<Script file="localizations/en.lua" />
+	<Script file="localizations/br.lua" />
+	<Script file="localizations/cn.lua" />
+	<Script file="localizations/de.lua" />
+	<Script file="localizations/es.lua" />
+	<Script file="localizations/fr.lua" />
+	<Script file="localizations/it.lua" />
+	<Script file="localizations/kr.lua" />
+	<Script file="localizations/mx.lua" />
+	<Script file="localizations/ru.lua" />
+	<Script file="localizations/tw.lua" />
+	<!-- /localizations -->
+
 	<Script file="shared.lua" />
-	<Include file="modules\modules.xml" />
-	<Script file="optionspanel.lua" />
+	<Script file="options.lua" />
+	<Script file="modules.lua" />
+
+	<!-- modules -->
+	<Script file="modules/achievements.lua"/>
+	<Script file="modules/archaeology.lua"/>
+	<Script file="modules/artifactweapons.lua"/>
+	<Script file="modules/bags.lua"/>
+	<Script file="modules/calendar.lua"/>
+	<Script file="modules/chatchannels.lua"/>
+	<Script file="modules/classspecs.lua"/>
+	<Script file="modules/clock.lua"/>
+	<Script file="modules/currency.lua"/>
+	<Script file="modules/dualspec.lua"/>
+	<Script file="modules/durability.lua"/>
+	<Script file="modules/emissaryquests.lua"/>
+	<Script file="modules/equipment.lua"/>
+	<Script file="modules/followers.lua"/>
+	<Script file="modules/framenames.lua"/>
+	<Script file="modules/friends.lua"/>
+	<Script file="modules/gamemenu.lua"/>
+	<Script file="modules/garrison.lua"/>
+	<Script file="modules/gold.lua"/>
+	<Script file="modules/gps.lua"/>
+	<Script file="modules/guildlog.lua"/>
+	<Script file="modules/guild.lua"/>
+	<Script file="modules/ids.lua"/>
+	<Script file="modules/instances.lua"/>
+	<Script file="modules/mail.lua"/>
+	<Script file="modules/missions.lua"/>
+	<Script file="modules/nameplates.lua"/>
+	<Script file="modules/notes.lua"/>
+	<Script file="modules/orderhall.lua"/>
+	<Script file="modules/professions.lua"/>
+	<Script file="modules/questlog.lua"/>
+	<Script file="modules/reputation.lua"/>
+	<Script file="modules/speed.lua"/>
+	<Script file="modules/stuff.lua"/>
+	<Script file="modules/surprise.lua"/>
+	<Script file="modules/system.lua"/>
+	<Script file="modules/tanaanjungle.lua"/>
+	<Script file="modules/tracking.lua"/>
+	<Script file="modules/volume.lua"/>
+	<Script file="modules/wardrobe.lua"/>
+	<Script file="modules/wowtoken.lua"/>
+	<Script file="modules/xp.lua"/>
+	<!--Script file="modules/under_construction/lookingfor.lua"/-->
+	<!--Script file="modules/unter_construction/difficulty.lua"/-->
+	<!--Script file="modules/under_construction/worldpvpareas.lua"/-->
+	<!-- Script file="modules/under_constriction/playerkills.lua"/-->
+	<!-- Script file="modules/under_construction/wardrobe.lua"/-->
+	<!-- Script file="modules/under_construction/events.lua"/-->
+	<!-- Script file="modules/under_construction/quickjoin.lua"/-->
+	<!-- modules -->
+
 	<Script file="chatcommand.lua" />
 	<Script file="core.lua"/>
 
