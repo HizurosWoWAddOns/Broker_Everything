@@ -1,11 +1,19 @@
 local addon, ns = ...;
 local L = ns.L;
 
--- ------------------------------- --
--- modules table and init function --
--- ~Hizuro                         --
--- ------------------------------- --
 ns.modules = {};
+
+setmetatable(ns.modules,{
+	__newindex = function(t,name,data)
+		rawset(t,name,data);
+		-- first step... register defaults
+		if type(data.config_defaults)=="table" then
+			--ns.Options_AddModuleDefaults(name);
+		end
+	end
+});
+
+
 local counters = {};
 ns.showCharsFrom_Values = {
 	ns.realm,
@@ -75,39 +83,37 @@ local function addConfigDefault(data,values,name,mod)
 end
 
 local function moduleInit(name)
-	local data = ns.modules[name];
+	local mod = ns.modules[name];
 
 	-- module load on demand like
-	if (data.enabled==nil) then
-		data.enabled = true;
+	if mod.noBroker or mod.enabled==nil then
+		mod.enabled=true;
 	end
 
 	-- check if savedvariables for module present?
-	if (ns.profile[name]==nil) then
-		ns.profile[name] = {enabled = data.enabled};
-	elseif (type(ns.profile[name].enabled)~="boolean") then
-		ns.profile[name].enabled = data.enabled;
+	if not mod.noOptions and ns.profile[name].enabled==nil then
+		ns.profile[name].enabled = mod.enabled;
 	end
 
 	-- prepend minimapButton to all modules
-	if type(data.config_broker)~="table" then
-		data.config_broker = {};
+	if type(mod.config_broker)~="table" then
+		mod.config_broker = {};
 	end
 
 	-- add option for minimap button
-	tinsert(data.config_broker,1,{type="toggle", name="minimap", label=L["Broker as Minimap Button"], tooltip=L["Create a minimap button for this broker"], event=true});
+	tinsert(mod.config_broker,1,{type="toggle", name="minimap", label=L["Broker as Minimap Button"], tooltip=L["Create a minimap button for this broker"], event=true});
 
 	-- add allModsOptions_defaults to config_defaults
 	local t;
 	for config_table, entries in pairs(allModsOptions_defaults)do
-		if type(data[config_table])=="table" then
-			for i=1, #data[config_table] do
-				t=type(data[config_table][i]);
-				if t=="string" and entries[data[config_table][i]]~=nil then
-					addConfigDefault(data,entries,data[config_table][i],name);
+		if type(mod[config_table])=="table" then
+			for i=1, #mod[config_table] do
+				t=type(mod[config_table][i]);
+				if t=="string" and entries[mod[config_table][i]]~=nil then
+					addConfigDefault(mod,entries,mod[config_table][i],name);
 				elseif t=="table" then
-					for _,optionEntry in ipairs(data[config_table][i])do
-						addConfigDefault(data,entries,optionEntry.name,name);
+					for _,optionEntry in ipairs(mod[config_table][i])do
+						addConfigDefault(mod,entries,optionEntry.name,name);
 					end
 				end
 			end
@@ -115,11 +121,11 @@ local function moduleInit(name)
 	end
 
 	-- check current config
-	if (data.config_defaults) then
-		for k,v in pairs(data.config_defaults) do
+	if (mod.config_defaults) then
+		for k,v in pairs(mod.config_defaults) do
 			if ns.profile[name][k]==nil then
 				ns.profile[name][k] = v; -- nil = copy default value
-			elseif (data.config_allowed~=nil) and type(data.config_allowed[k])=="table" and (data.config_allowed[k][ns.profile[name][k]]~=true) then
+			elseif (mod.config_allowed~=nil) and type(mod.config_allowed[k])=="table" and (mod.config_allowed[k][ns.profile[name][k]]~=true) then
 				ns.profile[name][k] = v; -- mismatching allowed type
 			elseif type(ns.profile[name][k])~=type(v) then
 				ns.profile[name][k] = v; -- mismatching current/default value type
@@ -128,52 +134,53 @@ local function moduleInit(name)
 	end
 
 	-- force enabled status of non Broker modules.
-	if (data.noBroker) then
-		data.enabled = true;
+	if (mod.noBroker) then
+		mod.enabled = true;
 		ns.profile[name].enabled = true;
 	end
 
 	if (ns.profile[name].enabled==true) then
 		local onclick;
 
-		-- pre LDB init
-		if data.init then
-			data.init();
+		-- module init
+		if mod.init then
+			mod.init();
+			mod.init = nil;
 		end
 
 		-- new clickOptions system
-		if (type(data.clickOptions)=="table") then
-			local active = ns.clickOptions.update(data,ns.profile[name]);
+		if (type(mod.clickOptions)=="table") then
+			local active = ns.clickOptions.update(mod,ns.profile[name]);
 			if (active) then
 				onclick = function(self,button) ns.clickOptions.func(name,self,button); end;
 			end
-		elseif (type(data.onclick)=="function") then
-			onclick = data.onclick;
+		elseif (type(mod.onclick)=="function") then
+			onclick = mod.onclick;
 		end
 
 		-- LDB init
-		if (not data.noBroker) then
-			if (not data.onenter) and data.ontooltip then
-				data.ontooltipshow = data.ontooltip;
+		if (not mod.noBroker) then
+			if (not mod.onenter) and mod.ontooltip then
+				mod.ontooltipshow = mod.ontooltip;
 			end
 
-			local icon = ns.I(name .. (data.icon_suffix or ""));
+			local icon = ns.I(name .. (mod.icon_suffix or ""));
 			local iColor = ns.profile.GeneralOptions.iconcolor;
-			data.ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
-			data.obj = ns.LDB:NewDataObject(data.ldbName, {
+			mod.ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
+			mod.obj = ns.LDB:NewDataObject(mod.ldbName, {
 				-- button data
 				type          = "data source",
-				label         = data.label or L[name],
-				text          = data.text or L[name],
+				label         = mod.label or L[name],
+				text          = mod.text or L[name],
 				icon          = icon.iconfile, -- default or custom icon
 				staticIcon    = icon.staticIcon or icon.iconfile, -- default icon only
 				iconCoords    = icon.coords or {0, 1, 0, 1},
 
 				-- button event functions
-				OnEnter       = data.onenter or nil,
-				OnLeave       = data.onleave or nil,
+				OnEnter       = mod.onenter or nil,
+				OnLeave       = mod.onleave or nil,
 				OnClick       = onclick,
-				OnTooltipShow = data.ontooltipshow or nil,
+				OnTooltipShow = mod.ontooltipshow or nil,
 
 				-- let user know who registered the broker
 				-- displayable by broker dispay addons...
@@ -188,42 +195,42 @@ local function moduleInit(name)
 		end
 
 		-- event/update handling
-		if (data.onevent) or (data.onupdate) then
-			data.eventFrame=CreateFrame("Frame");
-			data.eventFrame.modName = name;
-			if (type(data.onevent)=="function") then
-				data.eventFrame:SetScript("OnEvent",data.onevent);
-				for _, e in pairs(data.events) do
+		if (mod.onevent) or (mod.onupdate) then
+			mod.eventFrame=CreateFrame("Frame");
+			mod.eventFrame.modName = name;
+			if (type(mod.onevent)=="function") then
+				mod.eventFrame:SetScript("OnEvent",mod.onevent);
+				mod.onevent(mod.eventFrame,"BE_UPDATE_CFG");
+				mod.onevent(mod.eventFrame,"BE_UPDATE_CLICKOPTION");
+				for _, e in pairs(mod.events) do
 					if e=="ADDON_LOADED" then
-						data.onevent(data.eventFrame,e,addon);
-					elseif e=="PLAYER_ENTERING_WORLD" and ns.pastPEW then
-						data.onevent(data.eventFrame,e);
+						mod.onevent(mod.eventFrame,e,addon);
+					elseif e=="PLAYER_LOGIN" and ns.pastPEW then -- for later enabled modules
+						mod.onevent(mod.eventFrame,e);
 					end
-					data.eventFrame:RegisterEvent(e);
+					mod.eventFrame:RegisterEvent(e);
 					-- TODO: performance issue?
 				end
 			end
 		end
 
 		-- timeout function
-		if (type(data.ontimeout)=="function") and (type(data.timeout)=="number") and (data.timeout>0) then
-			if (data.afterEvent) then
-				C_Timer.After(data.timeout,data.ontimeout);
+		if (type(mod.ontimeout)=="function") and (type(mod.timeout)=="number") and (mod.timeout>0) then
+			if (mod.afterEvent) then
+				C_Timer.After(mod.timeout,mod.ontimeout);
 			else
-				C_Timer.After(data.timeout,data.ontimeout);
+				C_Timer.After(mod.timeout,mod.ontimeout);
 			end
 		end
 
 		-- chat command registration
-		if (data.chatcommands) then
-			for i,v in pairs(data.chatcommands) do
+		if (mod.chatcommands) then
+			for i,v in pairs(mod.chatcommands) do
 				if (type(i)=="string") and (ns.commands[i]==nil) then -- prevents overriding
 					ns.commands[i] = v;
 				end
 			end
 		end
-
-		data.init = nil;
 	end
 
 	-- module header
@@ -309,14 +316,12 @@ local function moduleInit(name)
 	data.config = config;
 end
 
-ns.moduleInit = function(name)
+function ns.moduleInit(name) -- in core.lua on event ADDON_LOADED or option panel
 	if (name) then
 		moduleInit(name);
 	else
-		local i=0;
 		for name, data in pairs(ns.modules) do
 			moduleInit(name);
-			i=i+1;
 		end
 	end
 end

@@ -1,16 +1,14 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Currency"; -- CURRENCY
-local ttName,ttColumns,tt,tt2,createMenu = name.."TT",5;
+local ttName,ttColumns,tt,tt2,createMenu,module = name.."TT",5;
 local tt2positions = {
 	["BOTTOM"] = {edgeSelf = "TOP",    edgeParent = "BOTTOM", x =  0, y = -2},
 	["LEFT"]   = {edgeSelf = "RIGHT",  edgeParent = "LEFT",   x = -2, y =  0},
@@ -19,15 +17,11 @@ local tt2positions = {
 }
 local cName, cIcon, cCount, cEarnedThisWeek, cWeeklyMax, cTotalMax, cIsUnused = 1,2,3,4,5,6,7,8,9,10,11;
 local currencies,currencyName2Id,createTooltip = {},{};
-local currencyCache = {};
-local currencySession = {};
-local currencyList = {}
-local currencyList2 = {}
-local last = 0;
-local BrokerPlacesMax = 4;
+local currencyCache,currencySession = {},{};
+local currencyList,currencyList2 = {},{};
+local last,BrokerPlacesMax = 0,4;
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name..'_Neutral']  = {iconfile="Interface\\minimap\\tracking\\BattleMaster", coords={0.1,0.9,0.1,0.9}}	--IconName::Currency_Neutral--
@@ -35,94 +29,6 @@ I[name..'_Horde']    = {iconfile="Interface\\PVPFrame\\PVP-Currency-Horde", coor
 I[name..'_Alliance'] = {iconfile="Interface\\PVPFrame\\PVP-Currency-Alliance", coords={0.1,0.9,0.1,0.9}}	--IconName::Currency_Alliance--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show your currencies"],
-	label = CURRENCY,
-	icon_suffix = "_Neutral",
-	events = {
-		"PLAYER_ENTERING_WORLD",
-		"CURRENCY_DISPLAY_UPDATE",
-		"CHAT_MSG_CURRENCY"
-	},
-	updateinterval = nil, -- 10
-	config_defaults = {
-		shortTT = false,
-		subTTposition = "AUTO",
-		currenciesInTitle = {false,false,false,false},
-		favCurrencies = {},
-		favMode=false,
-		showTotalCap = true,
-		showWeeklyCap = true,
-		showCapColor = true,
-		showCapBroker = true,
-		showCapColorBroker = true,
-		showSession = true,
-		spacer=0,
-		showIDs = false
-	},
-	config_allowed = {
-		subTTposition = {["AUTO"]=true,["TOP"]=true,["LEFT"]=true,["RIGHT"]=true,["BOTTOM"]=true}
-	},
-	config_header = {type="header", label=CURRENCY, align="left", icon=true},
-	config_broker = {
-		{ type="toggle", name="showCapBroker", label=L["Show total/weekly cap"], tooltip=L["Display currency total cap in tooltip."], event=true },
-		{ type="toggle", name="showCapColorBroker", label=L["Coloring total/weekly cap"], tooltip=L["..."], event=true },
-		{ type="slider", name="spacer",     label=L["Space between currencies"], tooltip=L["Add more space between displayed currencies on broker button"],
-			min			= 0,
-			max			= 10,
-			default		= 0,
-			format		= "%d",
-			event = "BE_DUMMY_EVENT"
-		},
-	},
-	config_tooltip = {
-		{ type="toggle", name="showTotalCap", label=L["Show total cap"], tooltip=L["Display currency total cap in tooltip."] },
-		{ type="toggle", name="showWeeklyCap", label=L["Show weekly cap"], tooltip=L["Display currency weekly earned and cap in tooltip."] },
-		{ type="toggle", name="showCapColor", label=L["Coloring total cap"], tooltip=L["Coloring limited currencies by total and/or weekly cap. If weekly cap not shown then will be colored total value by value which is near on cap."] },
-		{ type="toggle", name="showSession", label=L["Show session earn/loss"], tooltip=L["Display session profit in tooltip"] },
-		{ type="toggle", name="shortTT", label=L["Short Tooltip"], tooltip=L["Display the content of the tooltip shorter"] },
-		{ type="select", name="subTTposition", label=L["Second tooltip"], tooltip=L["Where does the second tooltip for a single currency are displayed from the first tooltip"],
-			values	= {
-				["AUTO"]    = L["Auto"],
-				["TOP"]     = L["Over"],
-				["LEFT"]    = L["Left"],
-				["RIGHT"]   = L["Right"],
-				["BOTTOM"]  = L["Under"]
-			},
-			default = "BOTTOM"
-		},
-		{ type="toggle", name="showIDs", label=L["Show currency id's"], tooltip=L["Display the currency id's in tooltip"] },
-	},
-	config_misc = {"shortNumbers"},
-	clickOptions = {
-		["1_open_character_info"] = {
-			cfg_label = "Open currency pane", -- L["Open currency pane"]
-			cfg_desc = "open the currency pane", -- L["open the currency pane"]
-			cfg_default = "_LEFT",
-			hint = "Open currency pane",
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","TokenFrame");
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
 local function GetSign(d)
@@ -219,7 +125,7 @@ local function updateCurrency(mode)
 end
 
 local function updateBroker()
-	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName)
+	local obj = ns.LDB:GetDataObjectByName(module.ldbName)
 	local elems = {};
 	local faction = UnitFactionGroup("player");
 	if faction~="Neutral" then
@@ -464,21 +370,101 @@ function createTooltip(tt,update)
 	end
 end
 
-
+-- module functions and variables --
 ------------------------------------
--- module (BE internal) functions --
-------------------------------------
--- ns.modules[name].init = function() end
+module = {
+	desc = L["Broker to show your currencies"],
+	label = CURRENCY,
+	icon_suffix = "_Neutral",
+	events = {
+		"PLAYER_LOGIN",
+		"CURRENCY_DISPLAY_UPDATE",
+		"CHAT_MSG_CURRENCY"
+	},
+	updateinterval = nil, -- 10
+	config_defaults = {
+		shortTT = false,
+		subTTposition = "AUTO",
+		currenciesInTitle = {false,false,false,false},
+		favCurrencies = {},
+		favMode=false,
+		showTotalCap = true,
+		showWeeklyCap = true,
+		showCapColor = true,
+		showCapBroker = true,
+		showCapColorBroker = true,
+		showSession = true,
+		spacer=0,
+		showIDs = false
+	},
+	config_allowed = {
+		subTTposition = {["AUTO"]=true,["TOP"]=true,["LEFT"]=true,["RIGHT"]=true,["BOTTOM"]=true}
+	},
+	config_header = {type="header", label=CURRENCY, align="left", icon=true},
+	config_broker = {
+		{ type="toggle", name="showCapBroker", label=L["Show total/weekly cap"], tooltip=L["Display currency total cap in tooltip."], event=true },
+		{ type="toggle", name="showCapColorBroker", label=L["Coloring total/weekly cap"], tooltip=L["..."], event=true },
+		{ type="slider", name="spacer",     label=L["Space between currencies"], tooltip=L["Add more space between displayed currencies on broker button"],
+			min			= 0,
+			max			= 10,
+			default		= 0,
+			format		= "%d",
+			event = "BE_DUMMY_EVENT"
+		},
+	},
+	config_tooltip = {
+		{ type="toggle", name="showTotalCap", label=L["Show total cap"], tooltip=L["Display currency total cap in tooltip."] },
+		{ type="toggle", name="showWeeklyCap", label=L["Show weekly cap"], tooltip=L["Display currency weekly earned and cap in tooltip."] },
+		{ type="toggle", name="showCapColor", label=L["Coloring total cap"], tooltip=L["Coloring limited currencies by total and/or weekly cap. If weekly cap not shown then will be colored total value by value which is near on cap."] },
+		{ type="toggle", name="showSession", label=L["Show session earn/loss"], tooltip=L["Display session profit in tooltip"] },
+		{ type="toggle", name="shortTT", label=L["Short Tooltip"], tooltip=L["Display the content of the tooltip shorter"] },
+		{ type="select", name="subTTposition", label=L["Second tooltip"], tooltip=L["Where does the second tooltip for a single currency are displayed from the first tooltip"],
+			values	= {
+				["AUTO"]    = L["Auto"],
+				["TOP"]     = L["Over"],
+				["LEFT"]    = L["Left"],
+				["RIGHT"]   = L["Right"],
+				["BOTTOM"]  = L["Under"]
+			},
+			default = "BOTTOM"
+		},
+		{ type="toggle", name="showIDs", label=L["Show currency id's"], tooltip=L["Display the currency id's in tooltip"] },
+	},
+	config_misc = {"shortNumbers"},
+	clickOptions = {
+		["1_open_character_info"] = {
+			cfg_label = "Open currency pane", -- L["Open currency pane"]
+			cfg_desc = "open the currency pane", -- L["open the currency pane"]
+			cfg_default = "_LEFT",
+			hint = "Open currency pane",
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleCharacter","TokenFrame");
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu",
+			cfg_desc = "open the option menu",
+			cfg_default = "_RIGHT",
+			hint = "Open option menu",
+			func = function(self,button)
+				local _mod=name;
+				createMenu(self)
+			end
+		}
+	}
+}
 
-ns.modules[name].onevent = function(self,event,msg)
-	if event=="PLAYER_ENTERING_WORLD" then
+-- function module.init() end
+
+function module.onevent(self,event,msg)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module,ns.profile[name]);
+	elseif event=="PLAYER_LOGIN" then
 		updateCurrency("full");
 		updateBroker();
 		hooksecurefunc("SetCurrencyUnused",updateCurrency);
 		hooksecurefunc("ExpandCurrencyList",updateCurrency);
-		self:UnregisterEvent(event);
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	else
 		local id;
 		if event=="CHAT_MSG_CURRENCY" then -- detecting new currencies
@@ -492,20 +478,21 @@ ns.modules[name].onevent = function(self,event,msg)
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tt) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tt) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "RIGHT", "RIGHT"},{false},{self});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

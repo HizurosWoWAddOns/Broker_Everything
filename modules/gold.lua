@@ -1,111 +1,25 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Gold"; -- BONUS_ROLL_REWARD_MONEY
-local ttName, tt, createMenu, createTooltip = name.."TT";
+local ttName, tt, createMenu, createTooltip,module = name.."TT";
 local login_money = nil;
 local next_try = false;
 local current_money = 0
 local faction = UnitFactionGroup("Player")
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="Interface\\Minimap\\TRACKING\\Auctioneer",coords={0.05,0.95,0.05,0.95}} --IconName::Gold--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show gold of all your chars and lost and earned money for the current session"],
-	label = BONUS_ROLL_REWARD_MONEY,
-	events = {
-		"PLAYER_LOGIN",
-		"PLAYER_MONEY",
-		"PLAYER_TRADE_MONEY",
-		"TRADE_MONEY_CHANGED",
-		"PLAYER_ENTERING_WORLD"
-	},
-	updateinterval = nil, -- 10
-	config_defaults = {
-		goldColor = nil,
-		showAllFactions=true,
-		showRealmNames=true,
-		showCharsFrom=4,
-		showCharGold = true,
-		showSessionProfit = true,
-		splitSummaryByFaction = true,
-	},
-	config_allowed = nil,
-	config_header = {type="header", label=BONUS_ROLL_REWARD_MONEY, align="left", icon=I[name]},
-	config_broker = {
-		{ type="toggle", name="showCharGold",         label=L["Show character gold"],     tooltip=L["Show character gold on broker button"], event=true },
-		{ type="toggle", name="showSessionProfit",    label=L["Show session profit"],     tooltip=L["Show session profit on broker button"], event=true },
-		{ type="toggle", name="splitSummaryByFaction", label=L["Split summary by faction"], tooltip=L["Separate summary by faction (Alliance/Horde)"], event=true }
-	},
-	config_tooltip = {
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom"
-	},
-	config_misc = {"shortNumbers"},
-	clickOptions = {
-		["1_open_tokenframe"] = {
-			cfg_label = "Open currency pane", -- L["Open currency pane"]
-			cfg_desc = "open the currency pane", -- L["open the currency pane"]
-			cfg_default = "_LEFT",
-			hint = "Open currency pane",
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","TokenFrame");
-			end
-		},
-		["2_open_character_info"] = {
-			cfg_label = "Open character info", -- L["Open character info"]
-			cfg_desc = "open the character info", -- L["open the character info"]
-			cfg_default = "__NONE",
-			hint = "Open character info", -- L["Open character info"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","PaperDollFrame");
-			end
-		},
-		["3_open_bags"] = {
-			cfg_label = "Open all bags", -- L["Open all bags"]
-			cfg_desc = "open your bags", -- L["open your bags"]
-			cfg_default = "__NONE",
-			hint = "Open all bags", -- L["Open all bags"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleAllBags");
-			end
-		},
-		["4_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
-	}
-}
-
--- [Abzeichen,Character,Bags,Option menu]
-
---------------------------
 -- some local functions --
 --------------------------
 function createMenu(self)
@@ -113,7 +27,7 @@ function createMenu(self)
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.addEntry({separator=true});
-	ns.EasyMenu.addEntry({ label = C("yellow",L["Reset session profit"]), func=function() ns.modules[name].onevent(nil,"PLAYER_LOGIN"); end, keepShown=false });
+	ns.EasyMenu.addEntry({ label = C("yellow",L["Reset session profit"]), func=function() module.onevent(nil,"PLAYER_LOGIN"); end, keepShown=false });
 	ns.EasyMenu.ShowMenu(self);
 end
 
@@ -137,6 +51,22 @@ local function deleteCharacterGoldData(self,name_realm,button)
 		tt:Clear();
 		createTooltip(tt,true);
 	end
+end
+
+local function updateBroker()
+	local broker = {};
+	if ns.profile[name].showCharGold then
+		tinsert(broker,ns.GetCoinColorOrTextureString(name,current_money));
+	end
+	if ns.profile[name].showSessionProfit and login_money then
+		local profit, direction = getProfit();
+		local sign = (direction==1 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (direction==-1 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
+		tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,profit));
+	end
+	if #broker==0 then
+		broker = {BONUS_ROLL_REWARD_MONEY};
+	end
+	ns.LDB:GetDataObjectByName(module.ldbName).text = table.concat(broker,", ");
 end
 
 function createTooltip(tt,update)
@@ -214,58 +144,118 @@ function createTooltip(tt,update)
 end
 
 
+-- module functions and variables --
 ------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules[name].init = function()
-	if(ns.toon.gold==nil)then
+module = {
+	desc = L["Broker to show gold of all your chars and lost and earned money for the current session"],
+	label = BONUS_ROLL_REWARD_MONEY,
+	events = {
+		"PLAYER_LOGIN",
+		"PLAYER_MONEY",
+		"PLAYER_TRADE_MONEY",
+		"TRADE_MONEY_CHANGED",
+	},
+	updateinterval = nil, -- 10
+	config_defaults = {
+		goldColor = nil,
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4,
+		showCharGold = true,
+		showSessionProfit = true,
+		splitSummaryByFaction = true,
+	},
+	config_allowed = nil,
+	config_header = {type="header", label=BONUS_ROLL_REWARD_MONEY, align="left", icon=I[name]},
+	config_broker = {
+		{ type="toggle", name="showCharGold",         label=L["Show character gold"],     tooltip=L["Show character gold on broker button"], event=true },
+		{ type="toggle", name="showSessionProfit",    label=L["Show session profit"],     tooltip=L["Show session profit on broker button"], event=true },
+		{ type="toggle", name="splitSummaryByFaction", label=L["Split summary by faction"], tooltip=L["Separate summary by faction (Alliance/Horde)"], event=true }
+	},
+	config_tooltip = {
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom"
+	},
+	config_misc = {"shortNumbers"},
+	clickOptions = {
+		["1_open_tokenframe"] = {
+			cfg_label = "Open currency pane", -- L["Open currency pane"]
+			cfg_desc = "open the currency pane", -- L["open the currency pane"]
+			cfg_default = "_LEFT",
+			hint = "Open currency pane",
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleCharacter","TokenFrame");
+			end
+		},
+		["2_open_character_info"] = {
+			cfg_label = "Open character info", -- L["Open character info"]
+			cfg_desc = "open the character info", -- L["open the character info"]
+			cfg_default = "__NONE",
+			hint = "Open character info", -- L["Open character info"]
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleCharacter","PaperDollFrame");
+			end
+		},
+		["3_open_bags"] = {
+			cfg_label = "Open all bags", -- L["Open all bags"]
+			cfg_desc = "open your bags", -- L["open your bags"]
+			cfg_default = "__NONE",
+			hint = "Open all bags", -- L["Open all bags"]
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleAllBags");
+			end
+		},
+		["4_open_menu"] = {
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
+			cfg_default = "_RIGHT",
+			hint = "Open option menu", -- L["Open option menu"]
+			func = function(self,button)
+				local _mod=name; -- for error tracking
+				createMenu(self);
+			end
+		}
+	}
+}
+
+function module.init()
+	if ns.toon.gold==nil then
 		ns.toon.gold = 0;
 	end
 end
 
-ns.modules[name].onevent = function(self,event,msg)
-	current_money = GetMoney();
-	ns.toon.gold = current_money;
-
-	if event=="PLAYER_LOGIN" then
-		login_money = current_money;
-		if ns.profile[name].showAllRealms~=nil then
-			ns.profile[name].showCharsFrom = 4;
-			ns.profile[name].showAllRealms = nil;
+function module.onevent(self,event,msg)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module,ns.profile[name]);
+	else
+		current_money = GetMoney();
+		ns.toon.gold = current_money;
+		if event=="PLAYER_LOGIN" then
+			login_money = current_money;
 		end
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+		updateBroker();
 	end
-
-	local broker = {};
-	if ns.profile[name].showCharGold then
-		tinsert(broker,ns.GetCoinColorOrTextureString(name,current_money));
-	end
-	if ns.profile[name].showSessionProfit and login_money then
-		local profit, direction = getProfit();
-		local sign = (direction==1 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (direction==-1 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
-		tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,profit));
-	end
-	if #broker==0 then
-		broker = {BONUS_ROLL_REWARD_MONEY};
-	end
-	ns.LDB:GetDataObjectByName(ns.modules[name].ldbName).text = table.concat(broker,", ");
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tt) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tt) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, 2, "LEFT", "RIGHT"},{false},{self})
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

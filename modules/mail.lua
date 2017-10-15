@@ -1,88 +1,27 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Mail" -- BUTTON_LAG_MAIL
-local ttName, tooltip, tt = name.."TT"
+local ttName, tooltip, tt,module = name.."TT"
 local alertLocked,onUpdateLocked,hookOn = false,false,false;
+local storedMailLineFaction = "%s - %s |TInterface\\PVPFrame\\PVP-Currency-%s:16:16:0:-1:16:16:0:16:0:16|t";
+local storedMailLineNeutral = "%s - %s";
 local icons = {}
-do for i=1, 22 do local _ = ("inv_letter_%02d"):format(i) icons[_] = "|Tinterface\\icons\\".._..":16:16:0:0|t" end end
-local similar, own, unsave = "%s has a similar option to hide the minimap mail icon.","%s has its own mail icon.","%s found. It's unsave to hide the minimap mail icon without errors.";
-local coexist_tooltip = {
-	["Carbonite"]			= unsave,
-	["DejaMinimap"]			= unsave,
-	["Chinchilla"]			= similar,
-	["Dominos_MINIMAP"]		= similar,
-	["gUI4_Minimap"]		= own,
-	["LUI"]					= own,
-	["MinimapButtonFrame"]	= unsave,
-	["SexyMap"]				= similar,
-	["SquareMap"]			= unsave,
-};
 
 
--- ------------------------------------- --
 -- register icon names and default files --
--- ------------------------------------- --
+-------------------------------------------
 I[name] = {iconfile="interface\\icons\\inv_letter_15",coords={0.05,0.95,0.05,0.95}}					--IconName::Mail--
 I[name..'_new'] = {iconfile="interface\\icons\\inv_letter_18",coords={0.05,0.95,0.05,0.95}}			--IconName::Mail_new--
 I[name..'_stored'] = {iconfile="interface\\icons\\inv_letter_03",coords={0.05,0.95,0.05,0.95}}		--IconName::Mail_stored--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show incoming mails and stored mails on all your chars"],
-	label = BUTTON_LAG_MAIL,
-	events = {
-		"ADDON_LOADED",
-		"PLAYER_ENTERING_WORLD",
-		"UPDATE_PENDING_MAIL",
-		"MAIL_CLOSED",
-		"MAIL_SHOW"
-	},
-	updateinterval = 60,
-	config_defaults = {
-		playsound = false,
-		showDaysLeft = true,
-		hideMinimapMail = false,
-		showAllFactions=true,
-		showRealmNames=true,
-		showCharsFrom=4
-	},
-	config_allowed = nil,
-	config_header = {type="header", label=BUTTON_LAG_MAIL, align="left", icon=I[name]},
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="showDaysLeft", label=L["List mails on chars"], tooltip=L["Display a list of chars on all realms with there mail counts and 3 lowest days before return to sender. Chars with empty mail box aren't displayed."] },
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom"
-	},
-	config_misc = {
-		{ type="toggle", name="playsound", label=L["Play sound on new mail"], tooltip=L["Enable to play a sound on receiving a new mail message. Default is off"] },
-		{ type="toggle", name="hideMinimapMail", label=L["Hide minimap mail icon"], tooltip=L["Hide minimap mail icon"],
-			event = "BE_HIDE_MINIMAPMAIL",
-			disabled = function()
-				if ns.coexist.check() then
-					return ns.coexist.optionInfo();
-				end
-				return false;
-			end
-		},
-	},
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
 local function clearStoredMailsData()
@@ -99,7 +38,7 @@ local function clearStoredMailsData()
 			end
 		end
 	end
-	ns.modules[name].onevent({},"BE_DUMMY_EVENT");
+	module.onevent({},"BE_DUMMY_EVENT");
 end
 
 local function createMenu(self,button)
@@ -175,7 +114,7 @@ local function UpdateStatus(event)
 		end
 	end
 
-	local icon,text,obj = I(name), L["No Mail"],ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+	local icon,text,obj = I(name), L["No Mail"],ns.LDB:GetDataObjectByName(module.ldbName);
 
 	if #charDB_mail.new>0 then
 		icon, text = I(name.."_new"), C("green",L["New mail"]);
@@ -268,24 +207,68 @@ local function createTooltip(tt)
 end
 
 
+-- module functions and variables --
 ------------------------------------
--- module (BE internal) functions --
-------------------------------------
--- ns.modules[name].init = function() end
+module = {
+	desc = L["Broker to show incoming mails and stored mails on all your chars"],
+	label = BUTTON_LAG_MAIL,
+	events = {
+		"PLAYER_LOGIN",
+		"UPDATE_PENDING_MAIL",
+		"MAIL_CLOSED",
+		"MAIL_SHOW"
+	},
+	updateinterval = 60,
+	config_defaults = {
+		playsound = false,
+		showDaysLeft = true,
+		hideMinimapMail = false,
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4
+	},
+	config_allowed = nil,
+	config_header = {type="header", label=BUTTON_LAG_MAIL, align="left", icon=I[name]},
+	config_broker = nil,
+	config_tooltip = {
+		{ type="toggle", name="showDaysLeft", label=L["List mails on chars"], tooltip=L["Display a list of chars on all realms with there mail counts and 3 lowest days before return to sender. Chars with empty mail box aren't displayed."] },
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom"
+	},
+	config_misc = {
+		{ type="toggle", name="playsound", label=L["Play sound on new mail"], tooltip=L["Enable to play a sound on receiving a new mail message. Default is off"] },
+		{ type="toggle", name="hideMinimapMail", label=L["Hide minimap mail icon"], tooltip=L["Hide minimap mail icon"],
+			event = "BE_HIDE_MINIMAPMAIL",
+			disabled = function()
+				if ns.coexist.check() then
+					return ns.coexist.optionInfo();
+				end
+				return false;
+			end
+		},
+	},
+}
 
-ns.modules[name].onevent = function(self,event,msg)
-	if event=="ADDON_LOADED" then
-		if ns.profile[name].showAllRealms~=nil then
-			ns.profile[name].showCharsFrom = 4;
-			ns.profile[name].showAllRealms = nil;
-		end
-	elseif (event=="BE_HIDE_MINIMAPMAIL") and (not ns.coexist.found) then
+function module.init()
+	for i=1, 22 do
+		local I = ("inv_letter_%02d"):format(i);
+		icons[I] = "|Tinterface\\icons\\"..I..":16:16:0:0|t";
+	end
+	if ns.coexist.check() and ns.profile[name].hideMinimapMail then
+		ns.hideFrame("MiniMapMailFrame");
+	end
+	-- TODO: add db data integrity check script here
+end
+
+function module.onevent(self,event,msg)
+	if (event=="BE_HIDE_MINIMAPMAIL") and (not ns.coexist.found) then
 		if (ns.profile[name].hideMinimapMail) then
 			ns.hideFrame("MiniMapMailFrame")
 		else
 			ns.unhideFrame("MiniMapMailFrame")
 		end
-	elseif event=="PLAYER_ENTERING_WORLD" then
+	elseif event=="PLAYER_LOGIN" then
 		hooksecurefunc("SendMail",function(targetName)
 			local n,r,_ = strsplit("-",targetName);
 			if type(r)=="string" and r:len()>0 then
@@ -299,8 +282,6 @@ ns.modules[name].onevent = function(self,event,msg)
 				tinsert(Broker_Everything_CharacterDB[targetName].mail.new,ns.player.name);
 			end
 		end);
-
-		self:UnregisterEvent(event);
 	elseif ns.pastPEW then
 		if (HasNewMail()) and (ns.profile[name].playsound) and (not alertLocked) then
 			PlaySoundFile("Interface\\Addons\\"..addon.."\\media\\mailalert.mp3", "Master"); -- or SFX?
@@ -312,29 +293,21 @@ ns.modules[name].onevent = function(self,event,msg)
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tooltip) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tooltip) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, 2, "LEFT", "RIGHT"},{true},{self});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
+-- function module.onleave(self) end
+-- function module.onclick = createMenu; --function(self,button) end -- TODO: migrate to clickOptions
+-- function module.ondblclick(self,button) end
 
-ns.modules[name].onclick = createMenu; --function(self,button) end
 
--- ns.modules[name].ondblclick = function(self,button) end
-
-ns.modules[name].coexist = function()
-	if (not ns.coexist.found) and (ns.profile[name].hideMinimapMail) then
-		ns.hideFrame("MiniMapMailFrame");
-	end
-end
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

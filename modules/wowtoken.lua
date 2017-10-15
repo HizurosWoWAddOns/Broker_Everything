@@ -1,33 +1,33 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "WoWToken";
-local ttName,ttColumns,tt,icon,_ = name.."TT",1;
+local ttName,ttColumns,tt,icon,module,_ = name.."TT",1;
 local price = {last=0,money=0,diff=0};
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="Interface\\ICONS\\WoW_Token01",coords={0.05,0.95,0.05,0.95}}; --IconName::WoWToken--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
+-- some local functions --
+--------------------------
+
+
+-- module functions and variables --
+------------------------------------
+module = {
 	desc = L["Broker to show current amount of gold for a WoW Token"],
 	events = {
 		"ADDON_LOADED",
-		"PLAYER_ENTERING_WORLD",
+		"PLAYER_LOGIN",
 		"TOKEN_MARKET_PRICE_UPDATED"
 	},
 	updateinterval = 120, -- false or integer
@@ -45,18 +45,9 @@ ns.modules[name] = {
 	config_misc = {"shortNumbers"},
 }
 
+-- function module.init() end
 
---------------------------
--- some local functions --
---------------------------
-
-
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
--- ns.modules[name].init = function() end
-
-ns.modules[name].onevent = function(self,event,msg)
+function module.onevent(self,event,msg)
 	if(event=="ADDON_LOADED" and msg==addon)then
 		if Broker_Everything_DataDB[name]==nil then
 			Broker_Everything_DataDB[name] = {};
@@ -64,12 +55,11 @@ ns.modules[name].onevent = function(self,event,msg)
 		if(#Broker_Everything_DataDB[name]>0 and Broker_Everything_DataDB[name][1].last<time()-(60*30))then
 			wipe(Broker_Everything_DataDB[name]);
 		end
-		C_Timer.NewTicker(ns.modules[name].updateinterval,C_WowTokenPublic.UpdateMarketPrice);
-	elseif(event=="PLAYER_ENTERING_WORLD")then
+		C_Timer.NewTicker(module.updateinterval,C_WowTokenPublic.UpdateMarketPrice);
+	elseif event=="PLAYER_LOGIN" then
 		L[name] = GetItemInfo(122284);
 		C_WowTokenPublic.UpdateMarketPrice();
-	elseif(event=="TOKEN_MARKET_PRICE_UPDATED")then
-
+	elseif event=="TOKEN_MARKET_PRICE_UPDATED" then
 		if(#Broker_Everything_DataDB[name]==0 or (#Broker_Everything_DataDB[name]>0 and Broker_Everything_DataDB[name][1].money~=price.money))then
 			tinsert(Broker_Everything_DataDB[name],1,{money=price.money,last=price.last});
 			if(#Broker_Everything_DataDB[name]==7)then tremove(Broker_Everything_DataDB[name],7); end
@@ -86,16 +76,16 @@ ns.modules[name].onevent = function(self,event,msg)
 				end
 			end
 
-			local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+			local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 			obj.text = ns.GetCoinColorOrTextureString(name,current,{hideLowerZeros=true});
 		end
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
 
-ns.modules[name].ontooltip = function(tt)
+function module.ontooltip(tt)
 	local l;
 	tt:AddLine(L[name]);
 	tt:AddLine(" ");
@@ -134,11 +124,12 @@ ns.modules[name].ontooltip = function(tt)
 	end
 end
 
+-- function module.onenter(self) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
 
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
--- ns.modules[name].onenter = function(self) end
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

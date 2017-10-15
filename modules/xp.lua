@@ -1,168 +1,27 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "XP" -- XP
-local ttName, ttName2, ttColumns, tt, tt2, createMenu, createTooltip  = name.."TT", name.."TT2", 3;
+local ttName, ttName2, ttColumns, tt, tt2, createMenu, createTooltip,module  = name.."TT", name.."TT2", 3;
 local data = {};
 local sessionStartLevel = UnitLevel("player");
-local slots = {  [1]=HEADSLOT, [3]=SHOULDERSLOT, [5]=CHESTSLOT, [7]=LEGSSLOT, [15]=BACKSLOT, [11]=FINGER0SLOT, [12]=FINGER1SLOT, [998]=L["Guild perk"], [999]=L["Recruite a Friend"]};
-local items;
+local slots,items = {  [1]=HEADSLOT, [3]=SHOULDERSLOT, [5]=CHESTSLOT, [7]=LEGSSLOT, [15]=BACKSLOT, [11]=FINGER0SLOT, [12]=FINGER1SLOT, [998]=L["Guild perk"], [999]=L["Recruite a Friend"]};
 local textbarSigns = {"=","-","#","||","/","\\","+",">","•","◊","º","≈","⁄","¤","×"};
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="interface\\icons\\ability_dualwield",coords={0.05,0.95,0.05,0.95}}; --IconName::XP--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show experience from all chars in tooltip and the current character in broker button"],
-	label = XP,
-	events = {
-		"PLAYER_XP_UPDATE",
-		"PLAYER_LOGIN",
-		"DISABLE_XP_GAIN",
-		"ENABLE_XP_GAIN",
-		"UNIT_INVENTORY_CHANGED"
-	},
-	updateinterval = nil, -- 10
-	config_defaults = {
-		display = "1",
-		showMyOtherChars = true,
-		showNonMaxLevelOnly = false,
-		textBarCharacter = "=",
-		textBarCharCount = 20,
-
-		showAllFactions=true,
-		showRealmNames=true,
-		showCharsFrom=4
-	},
-	config_allowed = {
-		display = {["1"]=true,["2"]=true,["3"]=true,["4"]=true,["5"]=true},
-	},
-	config_header = {type="header", label=XP, align="left", icon=I[name]},
-	config_broker = {
-		{ type="select", name="display", label=L["Display XP in broker"], tooltip=L["Select to show XP as an absolute value; Deselected will show it as a percentage."],
-			default="1",
-			values={
-				["1"]="Percent \"77%\"",
-				["2"]="Absolute value \"1234/4567\"",
-				["3"]="Til next level \"1242\"",
-				["4"]="Percent + Resting \"77% (>94%)\"",
-				["5"]="Little text bar"
-			},
-			event=true
-		},
-		{ type="select", name="textBarCharacter", label=L["Text bar character"], tooltip=L["Choose character for little text bar"],
-			values = {},
-			default = "=",
-			event=true
-		},
-		{
-			type="slider", name="textBarCharCount", label=L["Text bar num characters"], tooltip=L["..."],
-			min=5, max=200, default=20, format="%d", event=true
-		}
-	},
-	config_tooltip = {
-		{ type="toggle", name="showMyOtherChars", label=L["Show other chars xp"], tooltip=L["Display a list of my chars on same realm with her level and xp"] },
-		{ type="toggle", name="showNonMaxLevelOnly", label=L["Hide characters at maximum level"], tooltip=L["Hide all characters who have reached the level cap."] },
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom"
-	},
-	config_misc = {"shortNumbers"},
-	clickOptions = {
-		["1_switch_mode"] = {
-			cfg_label = "Switch mode", -- L["Switch mode"]
-			cfg_desc = "switch displayed xp data for characters under the level cap", -- L["switch displayed xp data for characters under the level cap"]
-			cfg_default = "_RIGHT",
-			hint = "Switch mode",
-			func = function(self,button)
-				local _mod=name;
-				local cur = tonumber(ns.profile[name].display);
-				local new = cur==5 and 1 or cur+1;
-				ns.profile[name].display = tostring(new);
-				ns.modules[name].onevent(self)
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_LEFT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
-	}
-};
--- add values to config.textBarCharacter
-for _,v in ipairs(textbarSigns)do
-	ns.modules[name].config_broker[2].values[v]=v;
-end
-
---------------------------
 -- some local functions --
 --------------------------
-local function initData()
-	items = { -- Heirlooms with {<percent>,<maxLevel>}
-		-- SoO Weapons
-		[104399] = {0,100}, [104400] = {0,100}, [104401] = {0,100}, [104402] = {0,100}, [104403] = {0,100}, [104404] = {0,100}, [104405] = {0,100},
-		[104406] = {0,100}, [104407] = {0,100}, [104408] = {0,100}, [104409] = {0,100}, [105670] = {0,100}, [105671] = {0,100}, [105672] = {0,100},
-		[105673] = {0,100}, [105674] = {0,100}, [105675] = {0,100}, [105676] = {0,100}, [105677] = {0,100}, [105678] = {0,100}, [105679] = {0,100},
-		[105680] = {0,100}, [105683] = {0,100}, [105684] = {0,100}, [105685] = {0,100}, [105686] = {0,100}, [105687] = {0,100}, [105688] = {0,100},
-		[105689] = {0,100}, [105690] = {0,100}, [105691] = {0,100}, [105692] = {0,100}, [105693] = {0,100},
-
-		-- Head
-		[61931] = {10,85}, [61935] = {10,85}, [61936] = {10,85}, [61937] = {10,85}, [61942] = {10,85}, [61958] = {10,85}, [69887] = {10,85},
-		--- (new since wod 6.0)
-		[127012] = {10,100,1}, [122263] = {10,100,1}, [122245] = {10,100,1}, [122247] = {10,100,1}, [122246] = {10,100,1}, [122249] = {10,100,1}, [122248] = {10,100,1}, [122250] = {10,100,1},
-
-		-- shoulder
-		[42949] = {10,80}, [42951] = {10,80}, [42952] = {10,80}, [42984] = {10,80}, [42985] = {10,80}, [44099] = {10,80}, [44100] = {10,80},
-		[44101] = {10,80}, [44102] = {10,80}, [44103] = {10,80}, [44105] = {10,80}, [44107] = {10,80}, [69890] = {10,80}, [93859] = {10,85},
-		[93861] = {10,85}, [93862] = {10,85}, [93864] = {10,85}, [93866] = {10,85}, [93876] = {10,85}, [93886] = {10,85}, [93887] = {10,85},
-		[93889] = {10,85}, [93890] = {10,85}, [93893] = {10,85}, [93894] = {10,85},
-		--- (new since wod 6.0)
-		[122355] = {10,100,1}, [122356] = {10,100,1}, [122357] = {10,100,1}, [122358] = {10,100,1}, [122359] = {10,100,1}, [122360] = {10,100,1}, [122372] = {10,100,1},
-		[122375] = {10,100,1}, [122376] = {10,100,1}, [122377] = {10,100,1}, [122378] = {10,100,1}, [122388] = {10,100,1}, [122373] = {10,100,1}, [122374] = {10,100,1},
-
-		-- chest
-		[48677] = {10,80}, [48683] = {10,80}, [48685] = {10,80}, [48687] = {10,80}, [48689] = {10,80}, [48691] = {10,80}, [69889] = {10,80},
-		[93860] = {10,85}, [93863] = {10,85}, [93865] = {10,85}, [93885] = {10,85}, [93888] = {10,85}, [93891] = {10,85}, [93892] = {10,85},
-		--- (new since wod 6.0)
-		[122384] = {10,100,1}, [122382] = {10,100,1}, [122383] = {10,100,1}, [122379] = {10,100,1}, [122380] = {10,100,1}, [122381] = {10,100,1}, [122387] = {10,100,1}, [127010] = {10,100,1},
-
-		-- legs
-		[62029] = {10,85}, [62026] = {10,85}, [62027] = {10,85}, [62024] = {10,85}, [62025] = {10,85}, [62023] = {10,85}, [69888] = {10,85},
-		--- (new since wod 6.0)
-		[122256] = {10,100,1}, [122254] = {10,100,1}, [122255] = {10,100,1}, [122252] = {10,100,1}, [122253] = {10,100,1}, [122251] = {10,100,1}, [122264] = {10,100,1}, [127011] = {10,100,1},
-
-		-- backs
-		[62038] = {5,85}, [62039] = {5,85}, [62040] = {5,85}, [69892] = {5,85},
-		--- (new since wod 6.0)
-		[122260] = {5,100,1}, [122261] = {5,100,1}, [122262] = {5,100,1}, [122266] = {5,100,1},
-
-		-- rings
-		[50255] = {5,80},
-		--- (new since wod 6.0)
-		[128169] = {5,100}, [128172] = {5,100}, [128173] = {5,100},
-	};
-end
-
 function createMenu(self)
 	if (tt~=nil) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
@@ -184,6 +43,27 @@ local function showThisChar(name_realm,data)
 	end
 	local _,realm = strsplit("-",name_realm);
 	return ns.showThisChar(name,realm,data.faction);
+end
+
+local function updateBroker()
+	local dataobj = module.obj or ns.LDB:GetDataObjectByName(module.ldbName);
+
+	-- broker button text
+	if (MAX_PLAYER_LEVEL~=sessionStartLevel) and (MAX_PLAYER_LEVEL==UnitLevel("player")) then
+		dataobj.text = C("ltblue",L["Max. Level reached"]);
+	elseif IsXPUserDisabled() then
+		dataobj.text = C("orange",L["XP gain disabled"])
+	elseif ns.profile[name].display == "1" then
+		dataobj.text = data.percentStr;
+	elseif ns.profile[name].display == "2" then
+		dataobj.text = ns.FormatLargeNumber(name,data.cur).."/"..ns.FormatLargeNumber(name,data.max);
+	elseif ns.profile[name].display == "3" then
+		dataobj.text = ns.FormatLargeNumber(name,data.need);
+	elseif ns.profile[name].display == "4" then
+		dataobj.text = data.percentStr.." ("..data.restStr..")";
+	elseif ns.profile[name].display == "5" then
+		dataobj.text = ns.textBar(ns.profile[name].textBarCharCount,{1,data.percentCur or 1,data.percentRest-data.percentCur},{"gray2","violet","ltblue"},ns.profile[name].textBarCharacter);
+	end
 end
 
 local function createTooltip2(parentLine,data)
@@ -317,28 +197,151 @@ function createTooltip(tt)
 end
 
 
+-- module functions and variables --
 ------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules[name].init = function()
-	if initData then
-		initData();
-		initData=nil;
+module = {
+	desc = L["Broker to show experience from all chars in tooltip and the current character in broker button"],
+	label = XP,
+	events = {
+		"PLAYER_LOGIN",
+		"PLAYER_XP_UPDATE",
+		"DISABLE_XP_GAIN",
+		"ENABLE_XP_GAIN",
+		"UNIT_INVENTORY_CHANGED"
+	},
+	updateinterval = nil, -- 10
+	config_defaults = {
+		display = "1",
+		showMyOtherChars = true,
+		showNonMaxLevelOnly = false,
+		textBarCharacter = "=",
+		textBarCharCount = 20,
+
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4
+	},
+	config_allowed = {
+		display = {["1"]=true,["2"]=true,["3"]=true,["4"]=true,["5"]=true},
+	},
+	config_header = {type="header", label=XP, align="left", icon=I[name]},
+	config_broker = {
+		{ type="select", name="display", label=L["Display XP in broker"], tooltip=L["Select to show XP as an absolute value; Deselected will show it as a percentage."],
+			default="1",
+			values={
+				["1"]="Percent \"77%\"",
+				["2"]="Absolute value \"1234/4567\"",
+				["3"]="Til next level \"1242\"",
+				["4"]="Percent + Resting \"77% (>94%)\"",
+				["5"]="Little text bar"
+			},
+			event=true
+		},
+		{ type="select", name="textBarCharacter", label=L["Text bar character"], tooltip=L["Choose character for little text bar"],
+			values = {},
+			default = "=",
+			event=true
+		},
+		{
+			type="slider", name="textBarCharCount", label=L["Text bar num characters"], tooltip=L["..."],
+			min=5, max=200, default=20, format="%d", event=true
+		}
+	},
+	config_tooltip = {
+		{ type="toggle", name="showMyOtherChars", label=L["Show other chars xp"], tooltip=L["Display a list of my chars on same realm with her level and xp"] },
+		{ type="toggle", name="showNonMaxLevelOnly", label=L["Hide characters at maximum level"], tooltip=L["Hide all characters who have reached the level cap."] },
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom"
+	},
+	config_misc = {"shortNumbers"},
+	clickOptions = {
+		["1_switch_mode"] = {
+			cfg_label = "Switch mode", -- L["Switch mode"]
+			cfg_desc = "switch displayed xp data for characters under the level cap", -- L["switch displayed xp data for characters under the level cap"]
+			cfg_default = "_RIGHT",
+			hint = "Switch mode",
+			func = function(self,button)
+				local _mod=name;
+				local cur = tonumber(ns.profile[name].display);
+				local new = cur==5 and 1 or cur+1;
+				ns.profile[name].display = tostring(new);
+				module.onevent(self)
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu",
+			cfg_desc = "open the option menu",
+			cfg_default = "_LEFT",
+			hint = "Open option menu",
+			func = function(self,button)
+				local _mod=name;
+				createMenu(self)
+			end
+		}
+	}
+};
+
+function module.init()
+	items = { -- Heirlooms with {<percent>,<maxLevel>}
+		-- SoO Weapons
+		[104399] = {0,100}, [104400] = {0,100}, [104401] = {0,100}, [104402] = {0,100}, [104403] = {0,100}, [104404] = {0,100}, [104405] = {0,100},
+		[104406] = {0,100}, [104407] = {0,100}, [104408] = {0,100}, [104409] = {0,100}, [105670] = {0,100}, [105671] = {0,100}, [105672] = {0,100},
+		[105673] = {0,100}, [105674] = {0,100}, [105675] = {0,100}, [105676] = {0,100}, [105677] = {0,100}, [105678] = {0,100}, [105679] = {0,100},
+		[105680] = {0,100}, [105683] = {0,100}, [105684] = {0,100}, [105685] = {0,100}, [105686] = {0,100}, [105687] = {0,100}, [105688] = {0,100},
+		[105689] = {0,100}, [105690] = {0,100}, [105691] = {0,100}, [105692] = {0,100}, [105693] = {0,100},
+
+		-- Head
+		[61931] = {10,85}, [61935] = {10,85}, [61936] = {10,85}, [61937] = {10,85}, [61942] = {10,85}, [61958] = {10,85}, [69887] = {10,85},
+		--- (new since wod 6.0)
+		[127012] = {10,100,1}, [122263] = {10,100,1}, [122245] = {10,100,1}, [122247] = {10,100,1}, [122246] = {10,100,1}, [122249] = {10,100,1}, [122248] = {10,100,1}, [122250] = {10,100,1},
+
+		-- shoulder
+		[42949] = {10,80}, [42951] = {10,80}, [42952] = {10,80}, [42984] = {10,80}, [42985] = {10,80}, [44099] = {10,80}, [44100] = {10,80},
+		[44101] = {10,80}, [44102] = {10,80}, [44103] = {10,80}, [44105] = {10,80}, [44107] = {10,80}, [69890] = {10,80}, [93859] = {10,85},
+		[93861] = {10,85}, [93862] = {10,85}, [93864] = {10,85}, [93866] = {10,85}, [93876] = {10,85}, [93886] = {10,85}, [93887] = {10,85},
+		[93889] = {10,85}, [93890] = {10,85}, [93893] = {10,85}, [93894] = {10,85},
+		--- (new since wod 6.0)
+		[122355] = {10,100,1}, [122356] = {10,100,1}, [122357] = {10,100,1}, [122358] = {10,100,1}, [122359] = {10,100,1}, [122360] = {10,100,1}, [122372] = {10,100,1},
+		[122375] = {10,100,1}, [122376] = {10,100,1}, [122377] = {10,100,1}, [122378] = {10,100,1}, [122388] = {10,100,1}, [122373] = {10,100,1}, [122374] = {10,100,1},
+
+		-- chest
+		[48677] = {10,80}, [48683] = {10,80}, [48685] = {10,80}, [48687] = {10,80}, [48689] = {10,80}, [48691] = {10,80}, [69889] = {10,80},
+		[93860] = {10,85}, [93863] = {10,85}, [93865] = {10,85}, [93885] = {10,85}, [93888] = {10,85}, [93891] = {10,85}, [93892] = {10,85},
+		--- (new since wod 6.0)
+		[122384] = {10,100,1}, [122382] = {10,100,1}, [122383] = {10,100,1}, [122379] = {10,100,1}, [122380] = {10,100,1}, [122381] = {10,100,1}, [122387] = {10,100,1}, [127010] = {10,100,1},
+
+		-- legs
+		[62029] = {10,85}, [62026] = {10,85}, [62027] = {10,85}, [62024] = {10,85}, [62025] = {10,85}, [62023] = {10,85}, [69888] = {10,85},
+		--- (new since wod 6.0)
+		[122256] = {10,100,1}, [122254] = {10,100,1}, [122255] = {10,100,1}, [122252] = {10,100,1}, [122253] = {10,100,1}, [122251] = {10,100,1}, [122264] = {10,100,1}, [127011] = {10,100,1},
+
+		-- backs
+		[62038] = {5,85}, [62039] = {5,85}, [62040] = {5,85}, [69892] = {5,85},
+		--- (new since wod 6.0)
+		[122260] = {5,100,1}, [122261] = {5,100,1}, [122262] = {5,100,1}, [122266] = {5,100,1},
+
+		-- rings
+		[50255] = {5,80},
+		--- (new since wod 6.0)
+		[128169] = {5,100}, [128172] = {5,100}, [128173] = {5,100},
+	};
+	-- add values to config.textBarCharacter
+	for _,v in ipairs(textbarSigns)do
+		module.config_broker[2].values[v]=v;
 	end
-	if(ns.toon.xp==nil)then
+	if ns.toon.xp==nil then
 		ns.toon.xp={};
 	end
 end
 
-ns.modules[name].onevent = function(self,event,msg)
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+function module.onevent(self,event,msg)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module,ns.profile[name]);
 		return;
-	elseif (event=="UNIT_INVENTORY_CHANGED" and msg~="player") then
+	elseif event=="UNIT_INVENTORY_CHANGED" and msg~="player" then
 		return;
 	end
-
-	local dataobj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
 
 	if (MAX_PLAYER_LEVEL==UnitLevel("player")) then
 		data = {cur=1,max=1,rest=0,need=0,percentCur=1,percentRest=1,percentStr="100%",restStr="n/a",bonus={},bonusSum=0};
@@ -405,37 +408,23 @@ ns.modules[name].onevent = function(self,event,msg)
 
 	ns.toon.xp = data;
 
-	-- broker button text
-	if (MAX_PLAYER_LEVEL~=sessionStartLevel) and (MAX_PLAYER_LEVEL==UnitLevel("player")) then
-		dataobj.text = C("ltblue",L["Max. Level reached"]);
-	elseif IsXPUserDisabled() then
-		dataobj.text = C("orange",L["XP gain disabled"])
-	elseif ns.profile[name].display == "1" then
-		dataobj.text = data.percentStr;
-	elseif ns.profile[name].display == "2" then
-		dataobj.text = ns.FormatLargeNumber(name,data.cur).."/"..ns.FormatLargeNumber(name,data.max);
-	elseif ns.profile[name].display == "3" then
-		dataobj.text = ns.FormatLargeNumber(name,data.need);
-	elseif ns.profile[name].display == "4" then
-		dataobj.text = data.percentStr.." ("..data.restStr..")";
-	elseif ns.profile[name].display == "5" then
-		dataobj.text = ns.textBar(ns.profile[name].textBarCharCount,{1,data.percentCur or 1,data.percentRest-data.percentCur},{"gray2","violet","ltblue"},ns.profile[name].textBarCharacter);
-	end
+	updateBroker();
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tooltip) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tooltip) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "RIGHT"},{false},{self});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

@@ -1,19 +1,16 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Reputation"; -- REPUTATION
-local ttName, ttColumns, tt, createMenu,createTooltip,updateBroker = name.."TT", 6;
+local ttName, ttColumns, tt, createMenu,createTooltip,updateBroker,module = name.."TT", 6;
 local Name,description,standingID,barMin,barMax,barValue,atWarWith,canToggleAtWar,isHeader,isCollapsed,hasRep,isWatched,isChild,factionID,hasBonusRepGain,canBeLFGBonus=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- index list for GetFactionInfo
 local factionStandingText,rewardPercent,rewardValue,rewardMax,hasRewardPending,rewardCount=17,18,19,20,21,22;
-
 local bars,wasShown = {},false;
 local allinone = 85000;
 local allinone_friend = 43000;
@@ -31,111 +28,39 @@ local formats = {
 };
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="Interface\\Icons\\Achievement_Reputation_01", coords={0.1,0.9,0.1,0.9}} --IconName::Reputation--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show faction standing of your character"],
-	label = REPUTATION,
-	--icon_suffix = "",
-	events = {
-		"PLAYER_ENTERING_WORLD",
-		"UPDATE_FACTION"
-	},
-	updateinterval = nil, --0.5, -- 10
-	config_defaults = {
-		bgBars = "single",
-		standingText = true,
-		showSession = true,
-		showID = false,
-		numbers = "Percent",
-		watchedNameOnBroker = true,
-		watchedStandingOnBroker = true,
-		watchedSessionBroker = true,
-		watchedFormatOnBroker = "Percent",
-		rewardBeyondExalted = "value_max"
-	},
-	config_allowed = nil,
-	config_header = {type="header", label=REPUTATION, align="left", icon=true},
-	config_broker = {
-		{ type="toggle", name="watchedNameOnBroker", label=L["Name of watched faction"], tooltip=L["Display name of watched faction on broker button"], event="UPDATE_FACTION" },
-		{ type="toggle", name="watchedStandingOnBroker", label=L["Standing of watched faction"], tooltip=L["Display standing of watched faction on broker button"], event="UPDATE_FACTION" },
-		{ type="toggle", name="watchedSessionBroker", label=L["Earn/loss of watched faction"], tooltip=L["Display earn/loss reputation of watched faction on broker button"], event="UPDATE_FACTION" },
-		{ type="select", name="watchedFormatOnBroker", label=L["Format of watched faction"], tooltip=L["Choose display format of watched faction"],
-			values = formats,
-			default = "Percent",
-			event="UPDATE_FACTION"
-		},
-		--{ type="toggle", name="favsOnly", label=L["Favorites only"], tooltip=L["Show favorites only in tooltip"] }
-	},
-	config_tooltip = {
-		{ type="select",
-			name	= "numbers",
-			label	= L["Numeric format"],
-			tooltip	= L["How would you like to view numeric reputation format."],
-			values	= formats,
-			default = "Percent",
-		},
-		{ type="toggle", name="standingText", label=L["Standing text"], tooltip=L["Show standing text in tooltip"]},
-		{ type="toggle", name="showSession", label=L["Show session earn/loss"], tooltip=L["Display session earned/loss reputation in tooltip"]},
-		{ type="select",
-			name	= "bgBars",
-			label	= L["Background reputation bar mode"],
-			tooltip	= L["How would you like to view the background reputation bar."],
-			values	= {
-				["_NONE"]       = "None",
-				["single"]     = "Single standing level",
-				["allinone"] = "All standing level in one",
-			},
-			default = "single",
-		},
-		{ type="toggle", name="showID", label=L["Show id's"], tooltip=L["Display faction and standing id's in tooltip"]},
-		{ type="select",
-			name = "rewardBeyondExalted",
-			label = L["Reward beyond exalted"],
-			tooltip = L["Display reputation collecting for rewards beyond exalted"],
-			values = {
-				["_NONE"] = "None",
-				["percent"] = L["Percent"],
-				["value_max"] = L["Value/Cap"]
-			}
-		}
-	},
-	config_misc = {"shortNumbers"},
-	clickOptions = {
-		["1_open_reputation"] = {
-			cfg_label = "Open reputation pane", -- L["Open reputation pane"]
-			cfg_desc = "open the reputation pane", -- L["open the reputation pane"]
-			cfg_default = "_LEFT",
-			hint = "Open reputation pane",
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","ReputationFrame");
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
+local function initSessionCurrencies()
+	if round==-1 then
+		for i=GetNumFactions(),1,-1 do
+			local _,_,_,_,_,_,_,_,_,isCollapsed=GetFactionInfo(i);
+			if isCollapsed then
+				tinsert(collapsed,1,i);
+				ExpandFactionHeader(i);
+			end
+		end
+	elseif round==0 then
+		for i=1, GetNumFactions() do
+			local _, _, standingID, _, _, barValue, _, _, _, _, _, _, _, factionID = GetFactionInfo(i);
+			if factionID and barValue and session[factionID]==nil then
+				session[factionID] = barValue + (standingID==8 and 999 or 0);
+			end
+		end
+	else
+		if not collapsed[round] then
+			initSessionTicker:Cancel();
+			return;
+		end
+		CollapseFactionHeader(collapsed[round]);
+	end
+	round=round+1;
+end
+
 local function resetSession()
 	local _;
 	for i,v in pairs(session) do
@@ -204,7 +129,7 @@ function updateBroker()
 		end
 	end
 
-	ns.LDB:GetDataObjectByName(ns.modules[name].ldbName).text = txt;
+	ns.LDB:GetDataObjectByName(module.ldbName).text = txt;
 end
 
 local function updateBars()
@@ -459,41 +384,108 @@ function createTooltip(tt)
 	C_Timer.After(0.1,updateBars);
 end
 
-local function initSessionCurrencies()
-	if round==-1 then
-		for i=GetNumFactions(),1,-1 do
-			local _,_,_,_,_,_,_,_,_,isCollapsed=GetFactionInfo(i);
-			if isCollapsed then
-				tinsert(collapsed,1,i);
-				ExpandFactionHeader(i);
-			end
-		end
-	elseif round==0 then
-		for i=1, GetNumFactions() do
-			local _, _, standingID, _, _, barValue, _, _, _, _, _, _, _, factionID = GetFactionInfo(i);
-			if factionID and barValue and session[factionID]==nil then
-				session[factionID] = barValue + (standingID==8 and 999 or 0);
-			end
-		end
-	else
-		if not collapsed[round] then
-			initSessionTicker:Cancel();
-			return;
-		end
-		CollapseFactionHeader(collapsed[round]);
-	end
-	round=round+1;
-end
 
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
--- ns.modules[name].init = function() end
+-- module variables for registration --
+---------------------------------------
+module = {
+	desc = L["Broker to show faction standing of your character"],
+	label = REPUTATION,
+	--icon_suffix = "",
+	events = {
+		"PLAYER_LOGIN",
+		"UPDATE_FACTION"
+	},
+	updateinterval = nil, --0.5, -- 10
+	config_defaults = {
+		bgBars = "single",
+		standingText = true,
+		showSession = true,
+		showID = false,
+		numbers = "Percent",
+		watchedNameOnBroker = true,
+		watchedStandingOnBroker = true,
+		watchedSessionBroker = true,
+		watchedFormatOnBroker = "Percent",
+		rewardBeyondExalted = "value_max"
+	},
+	config_allowed = nil,
+	config_header = {type="header", label=REPUTATION, align="left", icon=true},
+	config_broker = {
+		{ type="toggle", name="watchedNameOnBroker", label=L["Name of watched faction"], tooltip=L["Display name of watched faction on broker button"], event="UPDATE_FACTION" },
+		{ type="toggle", name="watchedStandingOnBroker", label=L["Standing of watched faction"], tooltip=L["Display standing of watched faction on broker button"], event="UPDATE_FACTION" },
+		{ type="toggle", name="watchedSessionBroker", label=L["Earn/loss of watched faction"], tooltip=L["Display earn/loss reputation of watched faction on broker button"], event="UPDATE_FACTION" },
+		{ type="select", name="watchedFormatOnBroker", label=L["Format of watched faction"], tooltip=L["Choose display format of watched faction"],
+			values = formats,
+			default = "Percent",
+			event="UPDATE_FACTION"
+		},
+		--{ type="toggle", name="favsOnly", label=L["Favorites only"], tooltip=L["Show favorites only in tooltip"] }
+	},
+	config_tooltip = {
+		{ type="select",
+			name	= "numbers",
+			label	= L["Numeric format"],
+			tooltip	= L["How would you like to view numeric reputation format."],
+			values	= formats,
+			default = "Percent",
+		},
+		{ type="toggle", name="standingText", label=L["Standing text"], tooltip=L["Show standing text in tooltip"]},
+		{ type="toggle", name="showSession", label=L["Show session earn/loss"], tooltip=L["Display session earned/loss reputation in tooltip"]},
+		{ type="select",
+			name	= "bgBars",
+			label	= L["Background reputation bar mode"],
+			tooltip	= L["How would you like to view the background reputation bar."],
+			values	= {
+				["_NONE"]       = "None",
+				["single"]     = "Single standing level",
+				["allinone"] = "All standing level in one",
+			},
+			default = "single",
+		},
+		{ type="toggle", name="showID", label=L["Show id's"], tooltip=L["Display faction and standing id's in tooltip"]},
+		{ type="select",
+			name = "rewardBeyondExalted",
+			label = L["Reward beyond exalted"],
+			tooltip = L["Display reputation collecting for rewards beyond exalted"],
+			values = {
+				["_NONE"] = "None",
+				["percent"] = L["Percent"],
+				["value_max"] = L["Value/Cap"]
+			}
+		}
+	},
+	config_misc = {"shortNumbers"},
+	clickOptions = {
+		["1_open_reputation"] = {
+			cfg_label = "Open reputation pane", -- L["Open reputation pane"]
+			cfg_desc = "open the reputation pane", -- L["open the reputation pane"]
+			cfg_default = "_LEFT",
+			hint = "Open reputation pane",
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleCharacter","ReputationFrame");
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu",
+			cfg_desc = "open the option menu",
+			cfg_default = "_RIGHT",
+			hint = "Open option menu",
+			func = function(self,button)
+				local _mod=name;
+				createMenu(self)
+			end
+		}
+	}
+}
 
-ns.modules[name].onevent = function(self,event,...)
+-- function module.init() end
+
+function module.onevent(self,event,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-	elseif not self.loadedBodyguards then
+		ns.clickOptions.update(module,ns.profile[name]);
+	end
+	if not self.loadedBodyguards then
 		local glvl = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0);
 		if UnitLevel("player")>=90 and glvl then
 			for i=1,#bodyguards do
@@ -512,20 +504,21 @@ ns.modules[name].onevent = function(self,event,...)
 	updateBroker();
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tooltip) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tooltip) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "LEFT", "RIGHT", "CENTER", "RIGHT", "RIGHT", "RIGHT"},{false},{self},{OnHide=tooltipOnHide});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button)m end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button)m end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

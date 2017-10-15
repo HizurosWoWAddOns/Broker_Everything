@@ -1,16 +1,14 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Friends"; -- L["Friends"]
-local ttName,ttName2,ttColumns,tt,tt2,createMenu=name.."TT",name.."TT2",8;
+local ttName,ttName2,ttColumns,tt,tt2,createMenu,module=name.."TT",name.."TT2",8;
 local unknownGameError = false;
 local DSw, DSh =  0,  0;
 local ULx, ULy =  0,  0;
@@ -37,159 +35,11 @@ local gameNames = {
 }
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\friends"}; --IconName::Friends--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show you which friends are online on realm and BattleNet"],
-	events = {
-		"BATTLETAG_INVITE_SHOW", -- ?
-		"BN_BLOCK_LIST_UPDATED",
-		"BN_CONNECTED",
-		"BN_CUSTOM_MESSAGE_CHANGED",
-		"BN_CUSTOM_MESSAGE_LOADED",
-		"BN_DISCONNECTED",
-		"BN_FRIEND_ACCOUNT_OFFLINE",
-		"BN_FRIEND_ACCOUNT_ONLINE",
-		"BN_FRIEND_INFO_CHANGED",
-		"BN_FRIEND_INVITE_ADDED",
-		"BN_FRIEND_INVITE_REMOVED",
-		"BN_INFO_CHANGED",
-		"BN_SELF_ONLINE", -- same as BN_CONNECTED ?
-		"FRIENDLIST_UPDATE",
-		"PLAYER_ENTERING_WORLD",
-		"PLAYER_LOGIN",
-		"CHAT_MSG_SYSTEM"
-	},
-	updateinterval = nil, -- 10
-	config_defaults = {
-		-- broker button
-		splitFriendsBroker = true,
-		showFriendsBroker = true,
-		showBNFriendsBroker = true,
-
-		-- tooltip 1
-		showFriends = true,
-		showStatus = "1",
-		showBNFriends = true,
-		showBattleTags = "3",
-		showRealm = "1",
-		showGame = "1",
-		showFaction = "2",
-		showZone = true,
-		showNotes = true,
-
-		-- tooltip 2
-		showBroadcastTT2 = true,
-		showBattleTagTT2 = false,
-		showRealIDTT2 = false,
-		showFactionTT2 = false,
-		showZoneTT2 = false,
-		showGameTT2 = false,
-		showNotesTT2 = false
-	},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = {
-		{ type="toggle", name="splitFriendsBroker",  label=L["Split friends on Broker"], tooltip=L["Split Characters and BattleNet-Friends on Broker Button"], event=true },
-		{ type="toggle", name="showFriendsBroker",   label=L["Show friends"], tooltip=L["Display count of friends if 'Split friends on Broker' enabled otherwise add friends to summary count."], event=true },
-		{ type="toggle", name="showBNFriendsBroker", label=L["Show BattleNet friends"], tooltip=L["Display count of BattleNet friends on Broker if 'Split friends on Broker' enabled otherwise add BattleNet friends to summary count."], event=true },
-		{ type="toggle", name="showTotalCount",      label=L["Show total count"], tooltip=L["Display total count of friens and/or BattleNet friends on broker button"], event=true },
-	},
-	config_tooltip = {
-		{ type="toggle", name="showFriends",    label=L["Show friends"],           tooltip=L["Display friends in tooltip"] },
-		{ type="toggle", name="showBNFriends",  label=L["Show BattleNet friends"], tooltip=L["Display BattleNet friends in tooltip"] },
-		{ type="select", name="showBattleTags", label=L["Show BattleTag/RealID"],  tooltip=L["Display BattleTag and/or RealID in tooltip"],
-			values={
-				["0"] = NONE.." / "..ADDON_DISABLED,
-				["1"] = "RealID or BattleName",
-				["2"] = "RealID or BattleName (BattleTag)",
-				["3"] = "BattleTag",
-			},
-			default="3"
-		},
-		{ type="select", name="showRealm",      label=L["Show realm"], tooltip=L["Display realm name in tooltip (WoW only)"],
-			values={
-				["0"] = NONE.." / "..ADDON_DISABLED,
-				["1"] = L["Realm name in own column"],
-				["2"] = L["Realm name in character name column"],
-				["3"] = L["* (Asterisk) behind character name if on foreign realm"]
-			},
-			default="1"
-		},
-		{ type="select", name="showGame",       label=L["Show game"], tooltip=L["Display game icon or game shortcut in tooltip"],
-			values={
-				["0"]=NONE.." / "..ADDON_DISABLED,
-				["1"]=L["Game icon"],
-				["2"]=L["Game shortcut"]
-			},
-			default="1"
-		},
-		{ type="select", name="showFaction",    label=L["Show faction"], tooltip=L["Display faction in tooltip (WoW only)"],
-			values={
-				["0"]=NONE.." / "..ADDON_DISABLED,
-				["1"]=L["Icon behind character name"],
-				["2"]=L["Faction name in own column"],
-				["3"]=L["Faction icon in own column"]
-			},
-			default="2"
-		},
-		{ type="select", name="showStatus",    label=L["Show status"], tooltip=L["Display status like AFK in tooltip"],
-			values={
-				["0"]=NONE.." / "..ADDON_DISABLED,
-				["1"]=L["Status icon"],
-				["2"]=L["Status text"],
-			},
-			default="1"
-		},
-		{ type="toggle", name="showZone",       label=L["Show zone"], tooltip=L["Display zone in tooltip"] },
-		{ type="toggle", name="showNotes",      label=L["Show notes"], tooltip=L["Display notes in tooltip"] },
-
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Second tooltip options"] },
-		{ type="separator", inMenuInvisible=true },
-		{ type="desc",   text=L["The secondary tooltip will be displayed by moving the mouse over a friend in main tooltip. The tooltip will be displayed if one of the following options activated."]},
-		{ type="toggle", name="showBroadcastTT2", label=L["Show broadcast message"], tooltip=L["Display broadcast message in tooltip (BattleNet friend only)"] },
-		{ type="toggle", name="showBattleTagTT2", label=L["Show BattleTag"], tooltip=L["Display BattleTag in tooltip (BattleNet friend only)"] },
-		{ type="toggle", name="showRealIDTT2",    label=L["Show RealID"], tooltip=L["Display RealID in tooltip if available (BattleNet friend only)"] },
-		{ type="toggle", name="showFactionTT2",   label=L["Show faction"], tooltip=L["Display faction in tooltip if available"] },
-		{ type="toggle", name="showZoneTT2",      label=L["Show zone"], tooltip=L["Display zone in second tooltip"] },
-		{ type="toggle", name="showGameTT2",      label=L["Show game"], tooltip=L["Display game in second tooltip"] },
-		{ type="toggle", name="showNotesTT2",     label=L["Show notes"], tooltip=L["Display notes in second tooltip"] },
-	},
-	config_misc = nil,
-	clickOptions = {
-		["1_open_character_info"] = {
-			cfg_label = "Open friends roster", -- L["Open friends roster"]
-			cfg_desc = "open the friends roster", -- L["open the friends roster"]
-			cfg_default = "_LEFT",
-			hint = "Open friends roster",
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleFriendsFrame",1);
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
 function createMenu(self)
@@ -209,13 +59,43 @@ local function BNet_GetClientTexture(game,tt2)
 	return "";
 end
 
-local _status = function(afk,dnd)
+local function _status(afk,dnd)
 	if ns.profile[name].showStatus=="1" then
 		return ("|T%s:0|t"):format(_G["FRIENDS_TEXTURE_"  .. ((afk==true and "AFK") or (dnd==true and "DND") or "ONLINE")]);
 	elseif ns.profile[name].showStatus=="2" then
 		return (afk==true and C("gold","[AFK]")) or (dnd==true and C("ltred","[DND]")) or "";
 	end
 	return "";
+end
+
+local function updateBroker()
+	local dataobj = self.obj or ns.LDB:GetDataObjectByName(module.ldbName);
+	local numBNFriends, numOnlineBNFriends = 0,0;
+	if BNConnected() then
+		numBNFriends, numOnlineBNFriends = BNGetNumFriends();
+	end
+	local numFriends, friendsOnline = GetNumFriends();
+	local broadcastText = select(4,BNGetInfo());
+
+	if ns.profile[name].splitFriendsBroker then
+		local friends = friendsOnline;
+		local bnfriends = numOnlineBNFriends;
+		if ns.profile[name].showTotalCount then
+			friends = friends.."/"..numFriends;
+			bnfriends = bnfriends.."/"..numBNFriends;
+		end
+		dataobj.text = friends .." ".. C(BNConnected() and "ltblue" or "red",bnfriends);
+	else
+		local txt = numOnlineBNFriends + friendsOnline;
+		if ns.profile[name].showTotalCount then
+			txt = txt .."/".. (numBNFriends + numFriends);
+		end
+		dataobj.text = txt .. (BNConnected()==false and "("..C("red","BNet Off")..")" or "");
+	end
+
+	if (broadcastText) and (strlen(broadcastText)>0) then
+		dataobj.text=dataobj.text.." |Tinterface\\chatframe\\ui-chatinput-focusicon:0|t";
+	end
 end
 
 local function broadcastTooltip(self)
@@ -284,10 +164,11 @@ local function createTooltip2(self,data)
 		tt2:AddSeparator(4,0,0,0,0);
 		tt2:SetCell(tt2:AddLine(),1,C(color1,BATTLENET_BROADCAST),nil,nil,0);
 		tt2:AddSeparator();
+		local broadcast = data.broadcast;
 		if not ns.profile.GeneralOptions.scm then
 			broadcast=ns.strWrap(broadcast,48);
 		end
-		tt2:SetCell(tt2:AddLine(),1,data.broadcast,nil,"LEFT",0);
+		tt2:SetCell(tt2:AddLine(),1,broadcast,nil,"LEFT",0);
 		if data.broadcastTime then
 			tt2:SetCell(tt2:AddLine(),1,C("ltgray","("..L["Active since"]..": "..SecondsToTime(time()-data.broadcastTime)..")"),nil,"RIGHT",0);
 		end
@@ -588,73 +469,171 @@ local function createTooltip(tt)
 end
 
 
+-- module functions and variables --
 ------------------------------------
--- module (BE internal) functions --
-------------------------------------
--- ns.modules[name].init = function() end
+module = {
+	desc = L["Broker to show you which friends are online on realm and BattleNet"],
+	events = {
+		"BATTLETAG_INVITE_SHOW", -- ?
+		"BN_BLOCK_LIST_UPDATED",
+		"BN_CONNECTED",
+		"BN_CUSTOM_MESSAGE_CHANGED",
+		"BN_CUSTOM_MESSAGE_LOADED",
+		"BN_DISCONNECTED",
+		"BN_FRIEND_ACCOUNT_OFFLINE",
+		"BN_FRIEND_ACCOUNT_ONLINE",
+		"BN_FRIEND_INFO_CHANGED",
+		"BN_FRIEND_INVITE_ADDED",
+		"BN_FRIEND_INVITE_REMOVED",
+		"BN_INFO_CHANGED",
+		"BN_SELF_ONLINE", -- same as BN_CONNECTED ?
+		"FRIENDLIST_UPDATE",
+		"PLAYER_LOGIN",
+		"CHAT_MSG_SYSTEM"
+	},
+	updateinterval = nil, -- 10
+	config_defaults = {
+		-- broker button
+		splitFriendsBroker = true,
+		showFriendsBroker = true,
+		showBNFriendsBroker = true,
 
-ns.modules[name].onevent = function(self,event,msg)
-	if event=="PLAYER_LOGIN" then
-		if ns.profile[name].disableGameIcons~=nil then
-			ns.profile[name].showGame = ns.profile[name].disableGameIcons and "text" or "icon";
-			ns.profile[name].disableGameIcons = nil;
-		end
+		-- tooltip 1
+		showFriends = true,
+		showStatus = "1",
+		showBNFriends = true,
+		showBattleTags = "3",
+		showRealm = "1",
+		showGame = "1",
+		showFaction = "2",
+		showZone = true,
+		showNotes = true,
+
+		-- tooltip 2
+		showBroadcastTT2 = true,
+		showBattleTagTT2 = false,
+		showRealIDTT2 = false,
+		showFactionTT2 = false,
+		showZoneTT2 = false,
+		showGameTT2 = false,
+		showNotesTT2 = false
+	},
+	config_allowed = nil,
+	config_header = nil, -- use default header
+	config_broker = {
+		{ type="toggle", name="splitFriendsBroker",  label=L["Split friends on Broker"], tooltip=L["Split Characters and BattleNet-Friends on Broker Button"], event=true },
+		{ type="toggle", name="showFriendsBroker",   label=L["Show friends"], tooltip=L["Display count of friends if 'Split friends on Broker' enabled otherwise add friends to summary count."], event=true },
+		{ type="toggle", name="showBNFriendsBroker", label=L["Show BattleNet friends"], tooltip=L["Display count of BattleNet friends on Broker if 'Split friends on Broker' enabled otherwise add BattleNet friends to summary count."], event=true },
+		{ type="toggle", name="showTotalCount",      label=L["Show total count"], tooltip=L["Display total count of friens and/or BattleNet friends on broker button"], event=true },
+	},
+	config_tooltip = {
+		{ type="toggle", name="showFriends",    label=L["Show friends"],           tooltip=L["Display friends in tooltip"] },
+		{ type="toggle", name="showBNFriends",  label=L["Show BattleNet friends"], tooltip=L["Display BattleNet friends in tooltip"] },
+		{ type="select", name="showBattleTags", label=L["Show BattleTag/RealID"],  tooltip=L["Display BattleTag and/or RealID in tooltip"],
+			values={
+				["0"] = NONE.." / "..ADDON_DISABLED,
+				["1"] = "RealID or BattleName",
+				["2"] = "RealID or BattleName (BattleTag)",
+				["3"] = "BattleTag",
+			},
+			default="3"
+		},
+		{ type="select", name="showRealm",      label=L["Show realm"], tooltip=L["Display realm name in tooltip (WoW only)"],
+			values={
+				["0"] = NONE.." / "..ADDON_DISABLED,
+				["1"] = L["Realm name in own column"],
+				["2"] = L["Realm name in character name column"],
+				["3"] = L["* (Asterisk) behind character name if on foreign realm"]
+			},
+			default="1"
+		},
+		{ type="select", name="showGame",       label=L["Show game"], tooltip=L["Display game icon or game shortcut in tooltip"],
+			values={
+				["0"]=NONE.." / "..ADDON_DISABLED,
+				["1"]=L["Game icon"],
+				["2"]=L["Game shortcut"]
+			},
+			default="1"
+		},
+		{ type="select", name="showFaction",    label=L["Show faction"], tooltip=L["Display faction in tooltip (WoW only)"],
+			values={
+				["0"]=NONE.." / "..ADDON_DISABLED,
+				["1"]=L["Icon behind character name"],
+				["2"]=L["Faction name in own column"],
+				["3"]=L["Faction icon in own column"]
+			},
+			default="2"
+		},
+		{ type="select", name="showStatus",    label=L["Show status"], tooltip=L["Display status like AFK in tooltip"],
+			values={
+				["0"]=NONE.." / "..ADDON_DISABLED,
+				["1"]=L["Status icon"],
+				["2"]=L["Status text"],
+			},
+			default="1"
+		},
+		{ type="toggle", name="showZone",       label=L["Show zone"], tooltip=L["Display zone in tooltip"] },
+		{ type="toggle", name="showNotes",      label=L["Show notes"], tooltip=L["Display notes in tooltip"] },
+
+		{ type="separator", alpha=0 },
+		{ type="header", label=L["Second tooltip options"] },
+		{ type="separator", inMenuInvisible=true },
+		{ type="desc",   text=L["The secondary tooltip will be displayed by moving the mouse over a friend in main tooltip. The tooltip will be displayed if one of the following options activated."]},
+		{ type="toggle", name="showBroadcastTT2", label=L["Show broadcast message"], tooltip=L["Display broadcast message in tooltip (BattleNet friend only)"] },
+		{ type="toggle", name="showBattleTagTT2", label=L["Show BattleTag"], tooltip=L["Display BattleTag in tooltip (BattleNet friend only)"] },
+		{ type="toggle", name="showRealIDTT2",    label=L["Show RealID"], tooltip=L["Display RealID in tooltip if available (BattleNet friend only)"] },
+		{ type="toggle", name="showFactionTT2",   label=L["Show faction"], tooltip=L["Display faction in tooltip if available"] },
+		{ type="toggle", name="showZoneTT2",      label=L["Show zone"], tooltip=L["Display zone in second tooltip"] },
+		{ type="toggle", name="showGameTT2",      label=L["Show game"], tooltip=L["Display game in second tooltip"] },
+		{ type="toggle", name="showNotesTT2",     label=L["Show notes"], tooltip=L["Display notes in second tooltip"] },
+	},
+	config_misc = nil,
+	clickOptions = {
+		["1_open_character_info"] = {
+			cfg_label = "Open friends roster", -- L["Open friends roster"]
+			cfg_desc = "open the friends roster", -- L["open the friends roster"]
+			cfg_default = "_LEFT",
+			hint = "Open friends roster",
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleFriendsFrame",1);
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu",
+			cfg_desc = "open the option menu",
+			cfg_default = "_RIGHT",
+			hint = "Open option menu",
+			func = function(self,button)
+				local _mod=name;
+				createMenu(self)
+			end
+		}
+	}
+}
+
+-- function module.init() end
+
+function module.onevent(self,event,msg)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module,ns.profile[name]);
+	elseif event=="PLAYER_LOGIN" then
 		if type(ns.profile[name].showBattleTags)=="boolean" then
 			ns.profile[name].showBattleTags = ns.profile[name].showBattleTags and "3" or "0";
 		end
-		if ns.profile[name].splitFriendsBroker==nil then
-			ns.profile[name].splitFriendsBroker = ns.profile[name].splitFriends;
-			ns.profile[name].splitFriends = nil;
-			ns.profile[name].splitFriendsTT = nil;
-		end
-		return;
-	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-		return;
-	end
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
-	local numBNFriends, numOnlineBNFriends = 0,0;
-	if BNConnected() then
-		numBNFriends, numOnlineBNFriends = BNGetNumFriends();
-	end
-	local numFriends, friendsOnline = GetNumFriends();
-	local broadcastText = select(4,BNGetInfo());
-
-
-	if ns.profile[name].splitFriendsBroker then
-		local friends = friendsOnline;
-		local bnfriends = numOnlineBNFriends;
-		if ns.profile[name].showTotalCount then
-			friends = friends.."/"..numFriends;
-			bnfriends = bnfriends.."/"..numBNFriends;
-		end
-		dataobj.text = friends .." ".. C(BNConnected() and "ltblue" or "red",bnfriends);
 	else
-		local txt = numOnlineBNFriends + friendsOnline;
-		if ns.profile[name].showTotalCount then
-			txt = txt .."/".. (numBNFriends + numFriends);
+		updateBroker();
+		if (tt) and (tt.key) and (tt.key==ttName) and (tt:IsShown()) then
+			createTooltip(tt);
 		end
-		dataobj.text = txt .. (BNConnected()==false and "("..C("red","BNet Off")..")" or "");
-	end
-
-	if (broadcastText) and (strlen(broadcastText)>0) then
-		dataobj.text=dataobj.text.." |Tinterface\\chatframe\\ui-chatinput-focusicon:0|t";
-	end
-
-	if (tt) and (tt.key) and (tt.key==ttName) and (tt:IsShown()) then
-		createTooltip(tt);
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tt) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tt) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip(
 		{ttName, ttColumns, "LEFT","CENTER", "LEFT", "CENTER", "LEFT", "LEFT", "LEFT", "LEFT"},
@@ -664,6 +643,11 @@ ns.modules[name].onenter = function(self)
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button)
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button)
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

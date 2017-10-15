@@ -1,23 +1,19 @@
 
---[[
-	Little description to this 3 in 1 module.
-	it register 4 modules. the first (name0) is only for shared configuration.
-]]
+--[[ 3 in 1 module ]]--
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
-local C, L, I = ns.LC.color, ns.L, ns.I
-local _
+local C, L, I, _ = ns.LC.color, ns.L, ns.I
 
------------------------------------------------------------
+
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name0 = "GPS / Location / ZoneText"; L[name0] = ("%s / %s / %s"):format(L["GPS"],L["Location"],L["ZoneText"]);
 local name1 = "GPS"; -- L["GPS"]
 local name2 = "Location"; -- L["Location"]
 local name3 = "ZoneText"; -- L["ZoneText"]
+local updateinterval,module1,module2,module3 = 0.12;
 local ttName1, ttName2, ttName3, ttName4 = name1.."TT", name2.."TT", name3.."TT", "TransportMenuTT";
 local ttColumns,ttColumns4,onleave,createTooltip2,createMenu = 3,5;
 local tt1, tt2, tt3, tt4, items;
@@ -52,10 +48,10 @@ local sharedClickOptions = {
 		cfg_desc = "open the transport menu",
 		cfg_default = "_RIGHT",
 		hint = "Open transport menu",
-		func = function(self,button)
+		func = function(self,button,name)
 			local _mod=name;
 			if InCombatLockdown() then return; end
-			createTooltip2(self);
+			createTooltip2(self,name);
 		end
 	},
 	["3_open_menu"] = {
@@ -70,132 +66,16 @@ local sharedClickOptions = {
 	}
 }
 
--- ------------------------------------- --
+
 -- register icon names and default files --
--- ------------------------------------- --
+-------------------------------------------
 I[name1] = {iconfile="Interface\\Addons\\"..addon.."\\media\\gps"}		--IconName::GPS--
 I[name2] = {iconfile="Interface\\Addons\\"..addon.."\\media\\gps"}		--IconName::Location--
 I[name3] = {iconfile=134269,coords={0.05,0.95,0.05,0.95}}				--IconName::ZoneText--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name0] = {
-	noBroker = true,
-	desc = L["Some shared options for the modules GPS, Location and ZoneText"],
-	events = {
-		"PLAYER_ENTERING_WORLD"
-	},
-	updateinterval = 0.12,
-	config_defaults = {
-		precision = 0,
-		coordsFormat = "%s, %s",
-		shortMenu = false
-	},
-	config_allowed = {
-		coordsFormat = {
-			["%s, %s"] = true,
-			["%s / %s"] = true,
-			["%s/%s"] = true,
-			["%s | %s"] = true,
-			["%s||%s"] = true
-		}
-	},
-	config_header = {type="header", label=L[name0], align="left", icon=I[name1]},
-	config_broker = false, -- do not use minimap button option
-	config_tooltip = nil,
-	config_misc = {
-		{ type="toggle", name="shortMenu", label=L["Short transport menu"], tooltip=L["Display the transport menu without names of spells and items behind the icons."]},
-		{ type="select",
-			name	= "coordsFormat",
-			label	= L["Coordination format"],
-			tooltip	= L["How would you like to view coordinations."],
-			values	= {
-				["%s, %s"]     = "10.3, 25.4",
-				["%s / %s"]    = "10.3 / 25.4",
-				["%s/%s"]      = "10.3/25.4",
-				["%s | %s"]    = "10.3 | 25.4",
-				["%s||%s"]     = "10.3||25.4"
-			},
-			default = "%s, %s",
-		},
-		{ type="slider",
-			name		= "precision",
-			label		= L["Precision"],
-			tooltip		= L["Change how much digits display after the dot."],
-			min			= 0,
-			max			= 3,
-			default		= 0,
-			format		= "%d"
-		}
-	},
-}
-
-ns.modules[name1] = {
-	desc = L["Broker to show the name of the current zone and the coordinates"],
-	events = {},
-	updateinterval = nil,
-	config_defaults = {
-		bothZones = "2"
-	},
-	config_prepend = name0,
-	config_header = {type="header", label=L[name1], align="left", icon=I[name1]},
-	config_broker = {
-		"minimapButton",
-		{ type="select", name="bothZones", label=L["Display zone names"], tooltip=L["Display in broker zone and subzone if exists or one of it."], default="2", values=zoneDisplayValues }
-	},
-	config_tooltip = nil,
-	config_misc = nil,
-	clickOptions = sharedClickOptions
-}
-
-ns.modules[name2] = {
-	desc = L["Broker to show your current coordinates"],
-	enabled = false,
-	events = {},
-	updateinterval = nil,
-	config_defaults = {},
-	config_prepend = name0,
-	config_header = {type="header", label=L[name2], align="left", icon=I[name2]},
-	config_broker = nil,
-	config_tooltip = nil,
-	config_misc = nil,
-	clickOptions = sharedClickOptions
-}
-
-ns.modules[name3] = {
-	desc = L["Broker to show the name of the current zone"],
-	enabled = false,
-	events = {},
-	updateinterval = nil,
-	config_defaults = {
-		bothZones = "2"
-	},
-	config_prepend = name0,
-	config_header = {type="header", label=L[name3], align="left", icon=I[name3]},
-	config_broker = {
-		"minimapButton",
-		{ type="select", name="bothZones", label=L["Display zone names"], tooltip=L["Display in broker zone and subzone if exists or one of it."], default="2", values=zoneDisplayValues }
-	},
-	config_tooltip = nil,
-	config_misc = nil,
-	clickOptions = sharedClickOptions
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
-local function initData()
-	_classSpecialSpellIds = {50977,18960,556,126892,147420,193753};
-	_teleportIds = {3561,3562,3563,3565,3566,3567,32271,32272,33690,35715,49358,49359,53140,88342,88344,120145,132621,132627,176248,176242,193759,224869};
-	_portalIds = {10059,11416,11417,11418,11419,11420,32266,32267,33691,35717,49360,49361,53142,88345,88346,120146,132620,132626,176246,176244,224871};
-	_itemIds = {18984,18986,21711,22589,22630,22631,22632,24335,29796,30542,30544,32757,33637,33774,34420,35230,36747,37863,38685,40585,40586,43824,44934,44935,45688,45689,45690,45691,45705,46874,48933,48954,48955,48956,48957,51557,51558,51559,51560,52251,52576,58487,58964,60273,60374,60407,60498,61379,63206,63207,63352,63353,63378,63379,64457,65274,65360,66061,68808,68809,82470,87215,87548,91850,91860,91861,91862,91863,91864,91865,91866,92056,92057,92058,92430,92431,92432,95050,95051,95567,95568,103678,104110,104113,107441,110560,112059,116413,117389,118662,118663,118907,118908,119183,128353,128502,128503,129276,132119,132120,132122,132517,133755,134058,136849,138448,139541,139590,139599,140192,140319,140493,141013,141014,141015,141016,141017,141605};
-	_itemReplacementIds = {64488,28585,6948,44315,44314,37118,142542};
-	_itemMustBeEquipped = {[32757]=1,[40585]=1};
-end
-
 function createMenu(self,nameX)
 	if (tt1~=nil) then tt1=ns.hideTooltip(tt1); end
 	if (tt2~=nil) then tt2=ns.hideTooltip(tt2); end
@@ -255,8 +135,8 @@ local function updateItems()
 	items = nil;
 end
 
-local function position()
-	local p, f, pf = ns.profile[name0].precision or 0, ns.profile[name0].coordsFormat or "%s, %s";
+local function position(name)
+	local p, f, pf = ns.profile[name].precision or 0, ns.profile[name].coordsFormat or "%s, %s";
 	local x, y = GetPlayerMapPosition("player");
 	if not x or (x==0 and y==0) then
 		local pX = p==0 and "?" or "?."..strrep("?",p);
@@ -331,7 +211,7 @@ local function createTooltip(tt,ttName,modName)
 		{C("ltyellow",ZONE .. ":"),GetRealZoneText()},
 		{C("ltyellow",L["Subzone"] .. ":"),GetSubZoneText()},
 		{C("ltyellow",L["Zone status"] .. ":"),C(color,L[pvp])},
-		{C("ltyellow",L["Coordinates"] .. ":"),position() or C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos)}
+		{C("ltyellow",L["Coordinates"] .. ":"),position(modName) or C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos)}
 	}
 
 	for _, d in pairs(lst) do
@@ -382,8 +262,8 @@ local function tpmOnEnter(self,info)
 	ns.secureButton(self,data);
 end
 
-local function tpmAddObject(tt,p,l,c,v,t)
-	if ns.profile[name0].shortMenu then
+local function tpmAddObject(tt,p,l,c,v,t,name)
+	if ns.profile[name].shortMenu then
 		if c<ttColumns4 and l~=nil then
 			c=c+1;
 		else
@@ -404,7 +284,7 @@ local function tpmAddObject(tt,p,l,c,v,t)
 	end
 end
 
-function createTooltip2(self)
+function createTooltip2(self,name)
 	if InCombatLockdown() then return; end
 	if (tt1~=nil) then tt1=ns.hideTooltip(tt1); end
 	if (tt2~=nil) then tt2=ns.hideTooltip(tt2); end
@@ -414,7 +294,7 @@ function createTooltip2(self)
 	updateSpells();
 
 	local columns = 5;
-	ttColumns4 = ns.profile[name0].shortMenu and columns or 1;
+	ttColumns4 = ns.profile[name].shortMenu and columns or 1;
 	tt4 = ns.acquireTooltip({ttName4, ttColumns4, "LEFT","LEFT","LEFT","LEFT","LEFT"},{false},{self});
 
 	local pts,ipts,tls,itls = {},{},{},{}
@@ -423,7 +303,7 @@ function createTooltip2(self)
 	tt4:Clear()
 
 	-- title
-	if not ns.profile[name0].shortMenu then
+	if not ns.profile[name].shortMenu then
 		tt4:AddHeader(C("dkyellow","Choose your transport"))
 	end
 
@@ -432,7 +312,7 @@ function createTooltip2(self)
 
 	if #teleports>0 or #portals>0 or #spells>0 then
 		-- class title
-		if not ns.profile[name0].shortMenu then
+		if not ns.profile[name].shortMenu then
 			tt4:AddSeparator(4,0,0,0,0)
 			tt4:AddLine(C("ltyellow",ns.player.classLocale))
 			tt4:AddSeparator()
@@ -441,19 +321,19 @@ function createTooltip2(self)
 		local t = "spell";
 		if ns.player.class=="MAGE" then
 			for i,v in ns.pairsByKeys(teleports) do
-				l,c = tpmAddObject(tt4,self,l,c,v,t);
+				l,c = tpmAddObject(tt4,self,l,c,v,t,name);
 				counter = counter+1;
 			end
-			if not ns.profile[name0].shortMenu then
+			if not ns.profile[name].shortMenu then
 				tt4:AddSeparator()
 			end
 			for i,v in ns.pairsByKeys(portals) do
-				l,c = tpmAddObject(tt4,self,l,c,v,t);
+				l,c = tpmAddObject(tt4,self,l,c,v,t,name);
 				counter = counter+1;
 			end
 		else
 			for i,v in ns.pairsByKeys(spells) do
-				l,c = tpmAddObject(tt4,self,l,c,v,t);
+				l,c = tpmAddObject(tt4,self,l,c,v,t,name);
 				counter = counter+1;
 			end
 		end
@@ -462,28 +342,28 @@ function createTooltip2(self)
 	local t = "item";
 	if #foundItems>0 then
 		-- item title
-		if not ns.profile[name0].shortMenu then
+		if not ns.profile[name].shortMenu then
 			tt4:AddSeparator(4,0,0,0,0);
 			tt4:AddLine(C("ltyellow",ITEMS));
 			tt4:AddSeparator();
 		end
 		-- items
 		for i,v in ns.pairsByKeys(foundItems) do
-			l,c = tpmAddObject(tt4,self,l,c,v,t);
+			l,c = tpmAddObject(tt4,self,l,c,v,t,name);
 			counter = counter + 1
 		end
 	end
 
 	if #foundToys>0 then
 		-- toy title
-		if not ns.profile[name0].shortMenu then
+		if not ns.profile[name].shortMenu then
 			tt4:AddSeparator(4,0,0,0,0);
 			tt4:AddLine(C("ltyellow",TOY_BOX));
 			tt4:AddSeparator();
 		end
 		-- toys
 		for i,v in ns.pairsByKeys(foundToys) do
-			l,c = tpmAddObject(tt4,self,l,c,v,t);
+			l,c = tpmAddObject(tt4,self,l,c,v,t,name);
 			counter = counter + 1;
 		end
 	end
@@ -497,12 +377,8 @@ function createTooltip2(self)
 	ns.roundupTooltip(tt4);
 end
 
-local function updater()
-	if not (ns.profile[name1].enabled or ns.profile[name2].enabled or ns.profile[name3].enabled) then return end
-	gpsLoc.zone1 = zone(name1)
-	gpsLoc.zone3 = zone(name3)
-	gpsLoc.pvp, gpsLoc.color = zoneColor()
-	local pos = position()
+local function posUpdater(name)
+	local gpsLoc,pos = {},position(name)
 	if pos then
 		gpsLoc.pos = pos
 		gpsLoc.posColor = nil
@@ -515,110 +391,178 @@ local function updater()
 			gpsLoc.posInfo = L["Coordinates indeterminable"]
 		end
 	end
+	return gpsLoc;
+end
 
-	if ns.profile[name1].enabled then
-		ns.LDB:GetDataObjectByName(ns.modules[name1].ldbName).text = C(gpsLoc.color,gpsLoc.zone1.." (")..C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos)..C(gpsLoc.color,")");
+local function updater()
+	if not (ns.profile[name1].enabled or ns.profile[name2].enabled or ns.profile[name3].enabled) then return end
+	local pvp, color = zoneColor()
+
+	if ns.profile[name1].enabled and module1.obj then
+		local gpsLoc = posUpdater(name1)
+		gpsLoc.zone = zone(name1);
+		module1.obj.text = C(color,gpsLoc.zone.." (")..C(gpsLoc.posColor or color,gpsLoc.pos)..C(color,")");
 	end
 
-	if ns.profile[name2].enabled then
-		ns.LDB:GetDataObjectByName(ns.modules[name2].ldbName).text = C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos);
+	if ns.profile[name2].enabled and module2.obj then
+		local gpsLoc = posUpdater(name2)
+		module2.obj.text = C(gpsLoc.posColor or color,gpsLoc.pos);
 	end
 
-	if ns.profile[name3].enabled then
-		ns.LDB:GetDataObjectByName(ns.modules[name3].ldbName).text = C(gpsLoc.color,gpsLoc.zone3);
+	if ns.profile[name3].enabled and module3.obj then
+		local gpsLoc = posUpdater(name3)
+		gpsLoc.zone = zone(name3)
+		module3.obj.text = C(color,gpsLoc.zone);
 	end
 end
 
+local function init()
+	_classSpecialSpellIds = {50977,18960,556,126892,147420,193753};
+	_teleportIds = {3561,3562,3563,3565,3566,3567,32271,32272,33690,35715,49358,49359,53140,88342,88344,120145,132621,132627,176248,176242,193759,224869};
+	_portalIds = {10059,11416,11417,11418,11419,11420,32266,32267,33691,35717,49360,49361,53142,88345,88346,120146,132620,132626,176246,176244,224871};
+	_itemIds = {18984,18986,21711,22589,22630,22631,22632,24335,29796,30542,30544,32757,33637,33774,34420,35230,36747,37863,38685,40585,40586,43824,44934,44935,45688,45689,45690,45691,45705,46874,48933,48954,48955,48956,48957,51557,51558,51559,51560,52251,52576,58487,58964,60273,60374,60407,60498,61379,63206,63207,63352,63353,63378,63379,64457,65274,65360,66061,68808,68809,82470,87215,87548,91850,91860,91861,91862,91863,91864,91865,91866,92056,92057,92058,92430,92431,92432,95050,95051,95567,95568,103678,104110,104113,107441,110560,112059,116413,117389,118662,118663,118907,118908,119183,128353,128502,128503,129276,132119,132120,132122,132517,133755,134058,136849,138448,139541,139590,139599,140192,140319,140493,141013,141014,141015,141016,141017,141605};
+	_itemReplacementIds = {64488,28585,6948,44315,44314,37118,142542};
+	_itemMustBeEquipped = {[32757]=1,[40585]=1};
 
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
--- ns.modules[name0].init = function(self) end
-
-ns.modules[name1].init = function(self)
-	if initData then
-		initData();
-		initData=nil;
-	end
-end
-ns.modules[name2].init = function(self)
-	if initData then
-		initData();
-		initData=nil;
-	end
-end
-ns.modules[name3].init = function(self)
-	if initData then
-		initData();
-		initData=nil;
-	end
-end
-
-ns.modules[name0].onevent = function(self,event,msg)
-	if event=="PLAYER_ENTERING_WORLD" and self.PEW~=true then
-		self.PEW=true;
-		C_Timer.NewTicker(ns.modules[name0].updateinterval,updater);
+	C_Timer.After(5,function()
+		C_Timer.NewTicker(updateinterval,updater);
 		updateItems();
 		updateSpells();
+	end);
+end
+
+
+-- module functions and variables --
+------------------------------------
+module1 = {
+	desc = L["Broker to show the name of the current zone and the coordinates"],
+	events = {},
+	updateinterval = nil,
+	config_defaults = {
+		bothZones = "2",
+		precision = 0,
+		coordsFormat = "%s, %s",
+		shortMenu = false
+	},
+	config_prepend = name0,
+	config_header = {type="header", label=L[name1], align="left", icon=I[name1]},
+	config_broker = {
+		"minimapButton",
+		{ type="select", name="bothZones", label=L["Display zone names"], tooltip=L["Display in broker zone and subzone if exists or one of it."], default="2", values=zoneDisplayValues }
+	},
+	config_tooltip = nil,
+	config_misc = nil,
+	clickOptions = sharedClickOptions
+}
+
+module2 = {
+	desc = L["Broker to show your current coordinates"],
+	enabled = false,
+	events = {},
+	updateinterval = nil,
+	config_defaults = {
+		precision = 0,
+		coordsFormat = "%s, %s",
+		shortMenu = false
+	},
+	config_prepend = name0,
+	config_header = {type="header", label=L[name2], align="left", icon=I[name2]},
+	config_broker = nil,
+	config_tooltip = nil,
+	config_misc = nil,
+	clickOptions = sharedClickOptions
+}
+
+module3 = {
+	desc = L["Broker to show the name of the current zone"],
+	enabled = false,
+	events = {},
+	updateinterval = nil,
+	config_defaults = {
+		bothZones = "2",
+		precision = 0,
+		coordsFormat = "%s, %s",
+		shortMenu = false
+	},
+	config_prepend = name0,
+	config_header = {type="header", label=L[name3], align="left", icon=I[name3]},
+	config_broker = {
+		"minimapButton",
+		{ type="select", name="bothZones", label=L["Display zone names"], tooltip=L["Display in broker zone and subzone if exists or one of it."], default="2", values=zoneDisplayValues }
+	},
+	config_tooltip = nil,
+	config_misc = nil,
+	clickOptions = sharedClickOptions
+}
+
+function module1.init()
+	if init then init() init=nil end
+end
+
+function module2.init()
+	if init then init() init=nil end
+end
+
+function module3.init()
+	if init then init() init=nil end
+end
+
+function module1.onevent(self,event,msg)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module1,ns.profile[name1]);
 	end
 end
 
-ns.modules[name1].onevent = function(self,event,msg)
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name1],ns.profile[name1]);
+function module2.onevent(self,event,msg)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module2,ns.profile[name2]);
 	end
 end
 
-ns.modules[name2].onevent = function(self,event,msg)
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name2],ns.profile[name2]);
+function module3.onevent(self,event,msg)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module3,ns.profile[name3]);
 	end
 end
 
-ns.modules[name3].onevent = function(self,event,msg)
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name3],ns.profile[name3]);
-	end
-end
--- ns.modules[name0].onmousewheel = function(self,direction) end
--- ns.modules[name1].onmousewheel = function(self,direction) end
--- ns.modules[name2].onmousewheel = function(self,direction) end
--- ns.modules[name3].onmousewheel = function(self,direction) end
--- ns.modules[name0].optionspanel = function(panel) end
--- ns.modules[name1].optionspanel = function(panel) end
--- ns.modules[name2].optionspanel = function(panel) end
--- ns.modules[name3].optionspanel = function(panel) end
+-- function module1.onmousewheel(self,direction) end
+-- function module2.onmousewheel(self,direction) end
+-- function module3.onmousewheel(self,direction) end
+-- function module1.optionspanel(panel) end
+-- function module2.optionspanel(panel) end
+-- function module3.optionspanel(panel) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name1].onenter = function(self)
+function module1.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt1 = ns.acquireTooltip({ttName1, ttColumns, "LEFT", "RIGHT", "RIGHT"},{true},{self});
 	createTooltip(tt1,ttName1,name1);
 end
 
-ns.modules[name2].onenter = function(self)
+function module2.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt2 = ns.acquireTooltip({ttName2, ttColumns, "LEFT", "RIGHT", "RIGHT"},{true},{self});
 	createTooltip(tt2,ttName2,name2);
 end
 
-ns.modules[name3].onenter = function(self)
+function module3.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt3 = ns.acquireTooltip({ttName3, ttColumns, "LEFT", "RIGHT", "RIGHT"},{true},{self});
 	createTooltip(tt3,ttName3,name3);
 end
 
--- ns.modules[name1].onleave = function(self) end
--- ns.modules[name2].onleave = function(self) end
--- ns.modules[name3].onleave = function(self) end
+-- function module1.onleave(self) end
+-- function module2.onleave(self) end
+-- function module3.onleave(self) end
+-- function module1.onclick(self,button) end
+-- function module2.onclick(self,button) end
+-- function module3.onclick(self,button) end
+-- function module1.ondblclick(self,button) end
+-- function module2.ondblclick(self,button) end
+-- function module3.ondblclick(self,button) end
 
--- ns.modules[name1].onclick = function(self,button) end
--- ns.modules[name2].onclick = function(self,button) end
--- ns.modules[name3].onclick = function(self,button) end
 
--- ns.modules[name1].ondblclick = function(self,button) end
--- ns.modules[name2].ondblclick = function(self,button) end
--- ns.modules[name3].ondblclick = function(self,button) end
+-- final module registration --
+-------------------------------
+ns.modules[name1] = module1;
+ns.modules[name2] = module2;
+ns.modules[name3] = module3;

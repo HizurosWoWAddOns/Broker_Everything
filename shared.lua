@@ -69,7 +69,7 @@ ns.ui = {size={UIParent:GetSize()},center={UIParent:GetCenter()}};
 --- player and twinks dependent data    ---
   ---------------------------------------
 function ns.stripRealm(name)
-	return name:gsub(" ",""):gsub("%-",""):gsub("'","");
+	return name:gsub(" ",""):gsub("%-","");
 end
 ns.player = {
 	name = UnitName("player"),

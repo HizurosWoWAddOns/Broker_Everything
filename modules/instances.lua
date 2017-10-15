@@ -1,18 +1,16 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name1 = "Raids" -- RAIDS
 local name2 = "Dungeons" -- DUNGEONS
-local ttName1, ttName2, ttColumns, tt1, tt2, createTooltip = name1.."TT", name2.."TT", 5
-local fState,symbol = C("ltgray"," (%d/%d)"),"|Tinterface\\buttons\\UI-%sButton-Up:0|t ";
+local ttName1, ttName2, ttColumns, tt1, tt2, createTooltip, module1, module2 = name1.."TT", name2.."TT", 5
+local fState,symbol,renameIt = C("ltgray"," (%d/%d)"),"|Tinterface\\buttons\\UI-%sButton-Up:0|t ",{};
 local instanceName, instanceID, instanceReset, instanceDifficulty, locked, extended, instanceIDMostSig, isRaid, maxPlayers, difficultyName, numEncounters, encounterProgress=1,2,3,4,5,6,7,8,9,10,11,12; -- GetSavedInstanceInfo
 local activeRaids,PL_collected,PEW_collected = {},true,true;
 local hide = {
@@ -22,66 +20,6 @@ local hide = {
 }
 -- some entries have not exact matching names between encounter journal and raidinfo frame
 local rename_il,rename_ej,ignore_ej = {},{},{};
-local renameIt = {
-	-- {<target>,<raidinfo>,<encounterjournalid>}
-	-- IL = InstanceLock, EJ = EncounterJournal, XX = No ID, list without Free/InProgress/Cleared-info
-
-	-- raids
-	{"IL",  409, 741}, -- molten core
-	{"IL",  531, 744}, -- temple of ahn'qiraj
-	{"IL",  548, 748}, -- serpentshrine cavern
-	{"IL",  550, 749}, -- tempest keep
-	{"IL",  564, 751}, -- black temple
-	{"IL",  580, 752}, -- sunwell
-	{"IL",  615, 755}, -- obsidian sanctum
-	{"IL",  724, 761}, -- rubin sanctum
-	{"IL",  631, 758}, -- Icecrown Citadel
-	{"EJ",  996, 320}, -- Terrace of Endless Spring
-	{"IL", 1136, 369}, -- siege of orgrimmar
-	{"EJ", 1205, 457}, -- Blackrock Foundry
-	{"EJ", 1530, 786}, -- The Nighthold
-	{"IL", 1228, 477}, -- Highmaul
-
-
-	-- dungeons
-	{"IL", 1688,  63}, -- Deadmines
-	{"IL",  938, 184}, -- End Time
-	{"IL",  939, 185}, -- Well of Eternity
-	{"IL",  940, 186}, -- Hour of Twilight
-	{"IL",  429, 230}, -- Dire Maul
-	{"XX",    0, 237}, -- The Temple of Atal'hakkar
-	{"XX",    0, 238}, -- The Stockade (or maybe Stormwind Stockade)
-	{"IL",  558, 247}, -- Auchenai Crypts
-	--{"IL",   , 248}, --
-	{"IL",  585, 249}, -- Magisters' Terrace
-	{"IL",  557, 250}, -- Mana-Tombs
-	--{"IL",   , 251}, --
-	{"IL",  556, 252}, -- Sethekk Halls
-	{"IL",  555, 253}, -- Shadow Labyrinth
-	{"IL",  552, 254}, -- The Arcatraz
-	--{"IL",   , 255}, -- The Black Morass
-	{"IL",  542, 256}, -- The Blood Furnace
-	{"IL",  553, 257}, -- The Botanica
-	{"IL",  554, 258}, -- The Mechanar
-	{"IL",  540, 259}, -- The Shattered Halls
-	{"IL",  547, 260}, -- The Slave Pens
-	{"IL",  545, 261}, -- The Steamvault
-	{"IL",  546, 262}, -- The Underbog
-	{"IL",  619, 271}, -- Ahn'kahet: The Old Kingdom
-	{"IL",  600, 273}, -- Drak'Tharon Keep
-	{"IL",  595, 279}, -- The Culling of Stratholme
-	{"IL",  632, 280}, -- The Forge of Souls
-	{"IL",  576, 281}, -- The Nexus
-	{"IL",  578, 282}, -- The Oculus
-	--{"IL",   , 283}, --
-	{"IL",  961, 302}, -- Stormstout Brewery
-	{"IL",  962, 303}, -- Gate of the Setting Sun
-	{"IL", 1001, 311}, -- Scarlet Halls
-	{"IL", 1004, 316}, -- Scarlet Monastery
-	{"IL", 1195, 558}, -- Iron Docks
-	{"IL", 1492, 727}, -- Maw of Souls
-	{"IL", 1544, 777}, -- Assault on Violet Hold
-}
 local diffModeShort = {
 	[RAID_DIFFICULTY_10PLAYER] = "10n",
 	[RAID_DIFFICULTY_20PLAYER] = "20n",
@@ -89,65 +27,15 @@ local diffModeShort = {
 	[RAID_DIFFICULTY_40PLAYER] = "40n",
 	[RAID_DIFFICULTY3] = "10hc",
 	[RAID_DIFFICULTY4] = "25hc",
-}
+};
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
---I[name1] = {iconfile="interface\\lfgframe\\ui-lfg-icon-heroic", coords={0,0.55,0,0.55}};
---I[name2] = {iconfile="interface\\lfgframe\\ui-lfg-icon-heroic", coords={0,0.55,0,0.55}};
 I[name1] = {iconfile="interface\\minimap\\raid", coords={0.25,0.75,0.25,0.75}};
 I[name2] = {iconfile="interface\\minimap\\dungeon", coords={0.25,0.75,0.25,0.75}};
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name1] = {
-	desc = L["..."],
-	label = RAIDS,
-	--icon_suffix = "",
-	events = {
-		"PLAYER_ENTERING_WORLD"
-	},
-	updateinterval = nil, -- 10
-	config_defaults = {
-		invertExpansionOrder = true,
-	},
-	config_allowed = {},
-	config_header = { type="header", label=RAIDS, align="left", icon=true },
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="invertExpansionOrder", label=L["Invert expansion order"], tooltip=L["Invert order by exspansion in tooltip"] }
-	},
-	config_misc = nil,
-	clickOptions = nil
-}
-
-ns.modules[name2] = {
-	desc = L["..."],
-	label = DUNGEONS,
-	--icon_suffix = "",
-	events = {
-		"PLAYER_ENTERING_WORLD"
-	},
-	updateinterval = nil, -- 10
-	config_defaults = {
-		invertExpansionOrder = true,
-	},
-	config_allowed = {},
-	config_header = { type="header", label=DUNGEONS, align="left", icon=true },
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="invertExpansionOrder", label=L["Invert expansion order"], tooltip=L["Invert order by exspansion in tooltip"] }
-	},
-	config_misc = nil,
-	clickOptions = nil
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
 local function updateInstances(name,mode)
@@ -333,55 +221,151 @@ local function update()
 		wipe(renameIt);
 	end
 	local mode,name = false,name2;
-	if self==ns.modules[name1].eventFrame then
+	if self==module1.eventFrame then
 		mode,name = true,name1;
 	end
 	updateInstances(name,mode);
 end
 
 local function OnEvent(self,event,...)
-	if event=="PLAYER_ENTERING_WORLD" then
+	if event=="PLAYER_LOGIN" then
 		C_Timer.After(5, update);
 	end
 end
 
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
--- ns.modules[name].init = function() end
-ns.modules[name1].onevent = OnEvent;
-ns.modules[name2].onevent = OnEvent;
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tooltip) end
 
+-- module functions and variables --
+------------------------------------
+module1 = {
+	desc = L["..."],
+	label = RAIDS,
+	--icon_suffix = "",
+	events = {
+		"PLAYER_LOGIN"
+	},
+	updateinterval = nil, -- 10
+	config_defaults = {
+		invertExpansionOrder = true,
+	},
+	config_allowed = {},
+	config_header = { type="header", label=RAIDS, align="left", icon=true },
+	config_broker = nil,
+	config_tooltip = {
+		{ type="toggle", name="invertExpansionOrder", label=L["Invert expansion order"], tooltip=L["Invert order by exspansion in tooltip"] }
+	},
+	config_misc = nil,
+	clickOptions = nil
+}
 
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name1].onenter = function(self)
+module2 = {
+	desc = L["..."],
+	label = DUNGEONS,
+	--icon_suffix = "",
+	events = {
+		"PLAYER_LOGIN"
+	},
+	updateinterval = nil, -- 10
+	config_defaults = {
+		invertExpansionOrder = true,
+	},
+	config_allowed = {},
+	config_header = { type="header", label=DUNGEONS, align="left", icon=true },
+	config_broker = nil,
+	config_tooltip = {
+		{ type="toggle", name="invertExpansionOrder", label=L["Invert expansion order"], tooltip=L["Invert order by exspansion in tooltip"] }
+	},
+	config_misc = nil,
+	clickOptions = nil
+}
+
+function module1.init()
+	-- {<target>,<raidinfo>,<encounterjournalid>}
+	-- IL = InstanceLock, EJ = EncounterJournal, XX = No ID, list without Free/InProgress/Cleared-info
+	table.insert(renameIt,{"IL",  409, 741}); -- molten core
+	table.insert(renameIt,{"IL",  531, 744}); -- temple of ahn'qiraj
+	table.insert(renameIt,{"IL",  548, 748}); -- serpentshrine cavern
+	table.insert(renameIt,{"IL",  550, 749}); -- tempest keep
+	table.insert(renameIt,{"IL",  564, 751}); -- black temple
+	table.insert(renameIt,{"IL",  580, 752}); -- sunwell
+	table.insert(renameIt,{"IL",  615, 755}); -- obsidian sanctum
+	table.insert(renameIt,{"IL",  724, 761}); -- rubin sanctum
+	table.insert(renameIt,{"IL",  631, 758}); -- Icecrown Citadel
+	table.insert(renameIt,{"EJ",  996, 320}); -- Terrace of Endless Spring
+	table.insert(renameIt,{"IL", 1136, 369}); -- siege of orgrimmar
+	table.insert(renameIt,{"EJ", 1205, 457}); -- Blackrock Foundry
+	table.insert(renameIt,{"EJ", 1530, 786}); -- The Nighthold
+	table.insert(renameIt,{"IL", 1228, 477}); -- Highmaul
+end
+
+function module2.init()
+	table.insert(renameIt,{"IL", 1688,  63}); -- Deadmines
+	table.insert(renameIt,{"IL",  938, 184}); -- End Time
+	table.insert(renameIt,{"IL",  939, 185}); -- Well of Eternity
+	table.insert(renameIt,{"IL",  940, 186}); -- Hour of Twilight
+	table.insert(renameIt,{"IL",  429, 230}); -- Dire Maul
+	table.insert(renameIt,{"XX",    0, 237}); -- The Temple of Atal'hakkar
+	table.insert(renameIt,{"XX",    0, 238}); -- The Stockade (or maybe Stormwind Stockade)
+	table.insert(renameIt,{"IL",  558, 247}); -- Auchenai Crypts
+	--table.insert(renameIt,{"IL",   , 248}); --
+	table.insert(renameIt,{"IL",  585, 249}); -- Magisters' Terrace
+	table.insert(renameIt,{"IL",  557, 250}); -- Mana-Tombs
+	--table.insert(renameIt,{"IL",   , 251}); --
+	table.insert(renameIt,{"IL",  556, 252}); -- Sethekk Halls
+	table.insert(renameIt,{"IL",  555, 253}); -- Shadow Labyrinth
+	table.insert(renameIt,{"IL",  552, 254}); -- The Arcatraz
+	--table.insert(renameIt,{"IL",   , 255}); -- The Black Morass
+	table.insert(renameIt,{"IL",  542, 256}); -- The Blood Furnace
+	table.insert(renameIt,{"IL",  553, 257}); -- The Botanica
+	table.insert(renameIt,{"IL",  554, 258}); -- The Mechanar
+	table.insert(renameIt,{"IL",  540, 259}); -- The Shattered Halls
+	table.insert(renameIt,{"IL",  547, 260}); -- The Slave Pens
+	table.insert(renameIt,{"IL",  545, 261}); -- The Steamvault
+	table.insert(renameIt,{"IL",  546, 262}); -- The Underbog
+	table.insert(renameIt,{"IL",  619, 271}); -- Ahn'kahet: The Old Kingdom
+	table.insert(renameIt,{"IL",  600, 273}); -- Drak'Tharon Keep
+	table.insert(renameIt,{"IL",  595, 279}); -- The Culling of Stratholme
+	table.insert(renameIt,{"IL",  632, 280}); -- The Forge of Souls
+	table.insert(renameIt,{"IL",  576, 281}); -- The Nexus
+	table.insert(renameIt,{"IL",  578, 282}); -- The Oculus
+	--table.insert(renameIt,{"IL",   , 283}); --
+	table.insert(renameIt,{"IL",  961, 302}); -- Stormstout Brewery
+	table.insert(renameIt,{"IL",  962, 303}); -- Gate of the Setting Sun
+	table.insert(renameIt,{"IL", 1001, 311}); -- Scarlet Halls
+	table.insert(renameIt,{"IL", 1004, 316}); -- Scarlet Monastery
+	table.insert(renameIt,{"IL", 1195, 558}); -- Iron Docks
+	table.insert(renameIt,{"IL", 1492, 727}); -- Maw of Souls
+	table.insert(renameIt,{"IL", 1544, 777}); -- Assault on Violet Hold
+end
+
+module1.onevent = OnEvent;
+module2.onevent = OnEvent;
+
+-- function module1.optionspanel(panel) end
+-- function module1.onmousewheel(self,direction) end
+-- function module1.ontooltip(tooltip) end
+
+function module1.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt1 = ns.acquireTooltip({ttName1, ttColumns, "LEFT", "LEFT", "LEFT", "LEFT", "LEFT"},{false},{self});
 	createTooltip(tt1,name1,true); -- raids
 end
 
-ns.modules[name2].onenter = function(self)
+function module2.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt2 = ns.acquireTooltip({ttName2, ttColumns, "LEFT", "LEFT", "LEFT", "LEFT", "LEFT"},{false},{self});
 	createTooltip(tt2,name2,false); -- dungeons
 end
 
--- ns.modules[name].onleave = function(self) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
 
---[[
-ns.modules[name].onclick = function(self,button)
-	if button=="LeftButton" then
-	elseif button=="RightButton" then
-	end
-end
---]]
 
--- ns.modules[name].ondblclick = function(self,button) end
+-- final module registration --
+-------------------------------
+ns.modules[name1] = module1;
+ns.modules[name2] = module2;
+
 
 --[[
 	-- dungeons

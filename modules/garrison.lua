@@ -1,5 +1,4 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
@@ -7,11 +6,10 @@ if ns.build<60000000 then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Garrison" -- GARRISON_LOCATION_TOOLTIP
-local ttName,ttColumns,tt,createMenu= name.."TT",7;
+local ttName,ttColumns,tt,createMenu,module= name.."TT",7;
 local buildings,nBuildings,construct,nConstruct,blueprints3,achievements3 = {},0,{},0,{},{}
 local longer,ticker = false,false;
 local displayAchievements=false;
@@ -21,96 +19,14 @@ local merchant=false;
 local UseContainerItemHooked = false;
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="Interface\\Icons\\inv_garrison_resource", coords={0.05,0.95,0.05,0.95}}; --IconName::Garrison--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show garrison buildings, worker, active work orders, available blueprints, depending achievements and gives you a garrison cache forecast for all your chars"],
-	label = GARRISON_LOCATION_TOOLTIP,
-	events = {
-		"ADDON_LOADED",
-		"PLAYER_ENTERING_WORLD",
-		"GARRISON_LANDINGPAGE_SHIPMENTS",
-		"GARRISON_UPDATE",
-		"GARRISON_BUILDING_UPDATE",
-		"GARRISON_BUILDING_PLACED",
-		"GARRISON_BUILDING_REMOVED",
-		"GARRISON_BUILDING_LIST_UPDATE",
-		"GARRISON_BUILDING_ACTIVATED",
-		"GARRISON_UPGRADEABLE_RESULT",
-		"SHOW_LOOT_TOAST"
-	},
-	updateinterval = 30, -- 10
-	config_defaults = {
-		showConstruct = true,
-		showBlueprints = true,
-		showAchievements = true,
-		showCacheForcast = true,
-		showCacheForcastInBroker = true,
-		showRealms = true,
-		showChars = true,
-		showAllFactions=true,
-		showRealmNames=true,
-		showCharsFrom=4
-	},
-	config_allowed = nil,
-	config_header = {type="header", label=GARRISON_LOCATION_TOOLTIP, align="left", icon=I[name]},
-	config_broker = {
-		{ type="toggle", name="showCacheForcastInBroker", label=L["Show cache forcast in title"], tooltip=L["Show garrison cache forecast for your current char in broker button"] },
-	},
-	config_tooltip = {
-		{ type="toggle", name="showConstruct",            label=L["Show under construction"],     tooltip=L["Show list of buildings there are under construction in tooltip"] },
-		{ type="toggle", name="showBlueprints",           label=L["Show blueprints"],             tooltip=L["Show available blueprints in tooltip"] },
-		{ type="toggle", name="showAchievements",         label=L["Show archievements"],          tooltip=L["Show necessary archievements to unlock blueprints in tooltip"] },
-		{ type="toggle", name="showCacheForcast",         label=L["Show cache forcast"],          tooltip=L["Show garrison cache forecast for all your characters in tooltip"] },
-		{ type="toggle", name="showChars",                label=L["Show characters"],             tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom"
-	},
-	config_misc = nil,
-	clickOptions = {
-		["1_open_garrison_report"] = {
-			cfg_label = "Open garrison report", -- L["Open garrison report"]
-			cfg_desc = "open the garrison report",
-			cfg_default = "_LEFT",
-			hint = "Open garrison report",
-			func = function(self,button)
-				local _mod=name;
-				securecall("GarrisonLandingPage_Toggle");
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
-local function initData()
-	buildings2achievements = {[9]=9129,[25]=9565,[27]=9523,[35]=9703,[38]=9497,[41]=9429,[62]=9453,[66]=9526,[117]=9406,[119]=9406,[121]=9406,[123]=9406,[125]=9406,[127]=9406,[129]=9406,[131]=9406,[134]=9462,[136]=9454,[140]=9468,[142]=9487,[144]=9478,[160]=9495,[163]=9527,[167]=9463};
-	blueprintsL3 = {[9]=111967,[25]=111969,[27]=111971,[35]=109065,[38]=109063,[41]=109255,[62]=111996,[66]=112003,[117]=111991,[119]=111930,[121]=111989,[123]=109257,[125]=111973,[127]=111993,[129]=111979,[131]=111975,[134]=111928,[136]=111997,[140]=111977,[142]=111983,[144]=111987,[160]=111981,[163]=111985,[167]=111999};
-	jobslots = {[25]=1,[27]=1,[28]=1,[62]=1,[63]=1,[117]=1,[118]=1,[119]=1,[120]=1,[121]=1,[122]=1,[123]=1,[124]=1,[125]=1,[126]=1,[127]=1,[128]=1,[129]=1,[130]=1,[131]=1,[132]=1,[133]=1,[135]=1,[136]=1,[137]=1,[138]=1};
-	plot_order=setmetatable({[59]=1,[63]=2,[67]=3,[81]=4,[98]=5,[23]=6,[24]=7,[22]=8,[25]=9,[18]=10,[19]=11,[20]=12},{__index=function(t,k) local c=0; for i,v in pairs(t)do if(v>c)then c=v; end end c=c+1; rawset(t,k,c); return c; end});
-end
-
-local function strCut(str,length)
+local function strCut(str,length) -- TODO: check...
 	if (strlen(str)>length) then
 		return strsub(str,0,length).."...";
 	end
@@ -413,25 +329,88 @@ local function updater()
 	C_Garrison.RequestShipmentInfo();
 end
 
+
+-- module functions and variables --
 ------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules[name].init = function()
-	if initData then
-		initData();
-		initData=nil;
-	end
+module = {
+	desc = L["Broker to show garrison buildings, worker, active work orders, available blueprints, depending achievements and gives you a garrison cache forecast for all your chars"],
+	label = GARRISON_LOCATION_TOOLTIP,
+	events = {
+		"PLAYER_LOGIN",
+		"GARRISON_LANDINGPAGE_SHIPMENTS",
+		"GARRISON_UPDATE",
+		"GARRISON_BUILDING_UPDATE",
+		"GARRISON_BUILDING_PLACED",
+		"GARRISON_BUILDING_REMOVED",
+		"GARRISON_BUILDING_LIST_UPDATE",
+		"GARRISON_BUILDING_ACTIVATED",
+		"GARRISON_UPGRADEABLE_RESULT",
+		"SHOW_LOOT_TOAST"
+	},
+	updateinterval = 30, -- 10
+	config_defaults = {
+		showConstruct = true,
+		showBlueprints = true,
+		showAchievements = true,
+		showCacheForcast = true,
+		showCacheForcastInBroker = true,
+		showRealms = true,
+		showChars = true,
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4
+	},
+	config_allowed = nil,
+	config_header = {type="header", label=GARRISON_LOCATION_TOOLTIP, align="left", icon=I[name]},
+	config_broker = {
+		{ type="toggle", name="showCacheForcastInBroker", label=L["Show cache forcast in title"], tooltip=L["Show garrison cache forecast for your current char in broker button"] },
+	},
+	config_tooltip = {
+		{ type="toggle", name="showConstruct",            label=L["Show under construction"],     tooltip=L["Show list of buildings there are under construction in tooltip"] },
+		{ type="toggle", name="showBlueprints",           label=L["Show blueprints"],             tooltip=L["Show available blueprints in tooltip"] },
+		{ type="toggle", name="showAchievements",         label=L["Show archievements"],          tooltip=L["Show necessary archievements to unlock blueprints in tooltip"] },
+		{ type="toggle", name="showCacheForcast",         label=L["Show cache forcast"],          tooltip=L["Show garrison cache forecast for all your characters in tooltip"] },
+		{ type="toggle", name="showChars",                label=L["Show characters"],             tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom"
+	},
+	config_misc = nil,
+	clickOptions = {
+		["1_open_garrison_report"] = {
+			cfg_label = "Open garrison report", -- L["Open garrison report"]
+			cfg_desc = "open the garrison report",
+			cfg_default = "_LEFT",
+			hint = "Open garrison report",
+			func = function(self,button)
+				local _mod=name;
+				securecall("GarrisonLandingPage_Toggle");
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu",
+			cfg_desc = "open the option menu",
+			cfg_default = "_RIGHT",
+			hint = "Open option menu",
+			func = function(self,button)
+				local _mod=name;
+				createMenu(self)
+			end
+		}
+	}
+}
+
+function module.init()
+	buildings2achievements = {[9]=9129,[25]=9565,[27]=9523,[35]=9703,[38]=9497,[41]=9429,[62]=9453,[66]=9526,[117]=9406,[119]=9406,[121]=9406,[123]=9406,[125]=9406,[127]=9406,[129]=9406,[131]=9406,[134]=9462,[136]=9454,[140]=9468,[142]=9487,[144]=9478,[160]=9495,[163]=9527,[167]=9463};
+	blueprintsL3 = {[9]=111967,[25]=111969,[27]=111971,[35]=109065,[38]=109063,[41]=109255,[62]=111996,[66]=112003,[117]=111991,[119]=111930,[121]=111989,[123]=109257,[125]=111973,[127]=111993,[129]=111979,[131]=111975,[134]=111928,[136]=111997,[140]=111977,[142]=111983,[144]=111987,[160]=111981,[163]=111985,[167]=111999};
+	jobslots = {[25]=1,[27]=1,[28]=1,[62]=1,[63]=1,[117]=1,[118]=1,[119]=1,[120]=1,[121]=1,[122]=1,[123]=1,[124]=1,[125]=1,[126]=1,[127]=1,[128]=1,[129]=1,[130]=1,[131]=1,[132]=1,[133]=1,[135]=1,[136]=1,[137]=1,[138]=1};
+	plot_order=setmetatable({[59]=1,[63]=2,[67]=3,[81]=4,[98]=5,[23]=6,[24]=7,[22]=8,[25]=9,[18]=10,[19]=11,[20]=12},{__index=function(t,k) local c=0; for i,v in pairs(t)do if(v>c)then c=v; end end c=c+1; rawset(t,k,c); return c; end});
 end
 
-ns.modules[name].onevent = function(self,event,...)
-	if event=="ADDON_LOADED" then
-		if ns.profile[name].showAllRealms~=nil then
-			ns.profile[name].showCharsFrom = 4;
-			ns.profile[name].showAllRealms = nil;
-		end
-		return;
-	elseif(event=="PLAYER_ENTERING_WORLD")then
-
+function module.onevent(self,event,...)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module,ns.profile[name]);
+	elseif event=="PLAYER_LOGIN" then
 		if ns.toon.garrison and ns.toon.garrison.cache then
 			for i=1, #Broker_Everything_CharacterDB.order do
 				local k = Broker_Everything_CharacterDB.order[i];
@@ -456,18 +435,17 @@ ns.modules[name].onevent = function(self,event,...)
 		if(not UseContainerItemHooked and UnitLevel("player")==MAX_PLAYER_LEVEL and not ns.toon.garrison_cache[2])then
 			ns.UseContainerItemHook.registerItemID(name,128294,function(bag,slot,itemId)
 				ns.toon.garrison_cache[2]=true;
-				ns.modules[name].onevent(self,"BE_CUSTOM_EVENT");
+				module.onevent(self,"BE_CUSTOM_EVENT");
 			end);
 		end
-	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-	elseif ns.pastPEW then
+	end
+	if event=="PLAYER_LOGIN" or ns.pastPEW then
 		local progress,ready=0,0;
 		local garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0;
 		local tmp, names, _, bName, texture, shipmentCapacity, shipmentsReady, shipmentsTotal, creationTime, duration, timeleftString, shipmentsCurrent = {}, {};
 
 		if not ticker and garrLevel>0 then
-			ticker = C_Timer.NewTicker(ns.modules[name].updateinterval,updater);
+			ticker = C_Timer.NewTicker(module.updateinterval,updater);
 		end
 
 		wipe(construct); wipe(blueprints3); wipe(achievements3);
@@ -630,7 +608,7 @@ ns.modules[name].onevent = function(self,event,...)
 
 		local ohLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
 
-		local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+		local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 		local title = {};
 		tinsert(title, C("ltblue",ready) .."/".. C("orange",progress - ready) );
 
@@ -674,20 +652,21 @@ ns.modules[name].onevent = function(self,event,...)
 
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(self) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(self) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, 7, "LEFT","LEFT", "CENTER", "CENTER", "CENTER", "RIGHT","RIGHT"},{not displayAchievements},{self});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

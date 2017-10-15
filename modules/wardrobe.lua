@@ -1,88 +1,23 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Wardrobe"; -- WARDROBE
-local ldbName, ttName, ttColumns, tt, createMenu = name, name.."TT", 4
+local ttName, ttColumns, tt, createMenu, module = name.."TT", 4
 local illusions,weapons = {0,0},{};
 local session = {};
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="INTERFACE\\ICONS\\trade_archaeology",coords={0.05,0.95,0.05,0.95}}; --IconName::Archaeology--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show count of collected transmog apperiences"],
-	label = WARDROBE,
-	--icon_suffix = "_Neutral",
-	events = {
-		"PLAYER_LOGIN",
-		--"PLAYER_ENTERING_WORLD",
-		--"KNOWN_CURRENCY_TYPES_UPDATE",
-		--"ARTIFACT_UPDATE",
-		--"ARTIFACT_COMPLETE",
-		--"CURRENCY_DISPLAY_UPDATE",
-		--"GET_ITEM_INFO_RECEIVED",
-		--"CHAT_MSG_SKILL"
-	},
-	updateinterval = nil,
-	config_defaults = {},
-	config_allowed = {},
-	config_header = { type="header", label=WARDROBE, align="left", icon=true },
-	config_broker = {},
-	config_tooltip = {},
-	config_misc = {},
-	clickOptions = {
-		-- world map
-		--[[
-		["1_open_archaeology_frame"] = {
-			cfg_label = "Open archaeology frame", -- L["Open archaeology frame"]
-			cfg_desc = "open your archaeology frame", -- L["open your archaeology frame"]
-			cfg_default = "_LEFT",
-			hint = "Open archaeology frame", -- L["Open archaeology frame"]
-			func = function(self,button)
-				local _mod=name;
-				if ( not ArchaeologyFrame ) then
-					ArchaeologyFrame_LoadUI()
-				end
-				if ( ArchaeologyFrame ) then
-					if(ArchaeologyFrame:IsShown())then
-						securecall("ArchaeologyFrame_Hide")
-					else
-						securecall("ArchaeologyFrame_Show")
-					end
-				end
-			end
-		},
-		]]
-		["9_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
 function createMenu(self)
@@ -93,7 +28,7 @@ function createMenu(self)
 end
 
 local function updateBroker()
-	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	obj.text = WARDROBE;
 end
 
@@ -185,14 +120,68 @@ local function createTooltip(tt)
 end
 
 
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name
-end
+-- module variables for registration --
+---------------------------------------
+module = {
+	desc = L["Broker to show count of collected transmog apperiences"],
+	label = WARDROBE,
+	--icon_suffix = "_Neutral",
+	events = {
+		"PLAYER_LOGIN",
+		--"PLAYER_ENTERING_WORLD",
+		--"KNOWN_CURRENCY_TYPES_UPDATE",
+		--"ARTIFACT_UPDATE",
+		--"ARTIFACT_COMPLETE",
+		--"CURRENCY_DISPLAY_UPDATE",
+		--"GET_ITEM_INFO_RECEIVED",
+		--"CHAT_MSG_SKILL"
+	},
+	updateinterval = nil,
+	config_defaults = {},
+	config_allowed = {},
+	config_header = { type="header", label=WARDROBE, align="left", icon=true },
+	config_broker = {},
+	config_tooltip = {},
+	config_misc = {},
+	clickOptions = {
+		-- world map
+		--[[
+		["1_open_archaeology_frame"] = {
+			cfg_label = "Open archaeology frame", -- L["Open archaeology frame"]
+			cfg_desc = "open your archaeology frame", -- L["open your archaeology frame"]
+			cfg_default = "_LEFT",
+			hint = "Open archaeology frame", -- L["Open archaeology frame"]
+			func = function(self,button)
+				local _mod=name;
+				if ( not ArchaeologyFrame ) then
+					ArchaeologyFrame_LoadUI()
+				end
+				if ( ArchaeologyFrame ) then
+					if(ArchaeologyFrame:IsShown())then
+						securecall("ArchaeologyFrame_Hide")
+					else
+						securecall("ArchaeologyFrame_Show")
+					end
+				end
+			end
+		},
+		]]
+		["9_open_menu"] = {
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
+			cfg_default = "_RIGHT",
+			hint = "Open option menu", -- L["Open option menu"]
+			func = function(self,button)
+				local _mod=name; -- for error tracking
+				createMenu(self);
+			end
+		}
+	}
+}
 
-ns.modules[name].onevent = function(self,event,...)
+-- function module.init() end
+
+function module.onevent(self,event,...)
 	if event=="PLAYER_LOGIN" then
 		session.armor = {};
 		for i=1, 11 do
@@ -221,28 +210,28 @@ ns.modules[name].onevent = function(self,event,...)
 		}
 		updateBroker();
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+		ns.clickOptions.update(module,ns.profile[name]);
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tt) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tt) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "RIGHT", "RIGHT","RIGHT"},{true},{self});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
 
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;
 
 --[[
 list of counter collected templates

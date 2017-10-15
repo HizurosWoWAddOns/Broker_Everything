@@ -1,15 +1,13 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Emissary Quests";
-local ttName, ttColumns, tt, createMenu = name.."TT", 4
+local ttName, ttColumns, tt, createMenu, module = name.."TT", 4
 local factions,totalQuests,locked = {},{},false;
 local continents = {
 	1007, -- legion
@@ -32,56 +30,12 @@ if L["Emissary Quests-ShortCut"]=="Emissary Quests-ShortCut" then
 	L["Emissary Quests-ShortCut"] = "EQ";
 end
 
--------------------------------------------
+
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="Interface\\QuestFrame\\UI-QuestLog-BookIcon",coords={0.05,0.95,0.05,0.95}}; --IconName::Emissary Quests--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show world quests"],
-	--icon_suffix = "_Neutral",
-	events = {
-		"PLAYER_ENTERING_WORLD",
-		"QUEST_LOG_UPDATE"
-	},
-	updateinterval = nil,
-	config_defaults = {
-		shortTitle = false,
-		showAllFactions=true,
-		showRealmNames=true,
-		showCharsFrom=4
-	},
-	config_allowed = nil,
-	config_header = nil,
-	config_broker = {
-		{ type="toggle", name="shortTitle", label="Show shorter title", tooltip=L["Display '%s' instead of '%s' on chars under level 110 on broker button"]:format(L["Emissary Quests-ShortCut"],L["Emissary Quests"]), event=true }
-	},
-	config_tooltip = {
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom"
-	},
-	config_misc = nil,
-	clickOptions = {
-		["9_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
 function createMenu(self)
@@ -96,7 +50,7 @@ local function sortFactions(a,b)
 end
 
 local function updateBroker()
-	local lst,obj = {},ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+	local lst,obj = {},ns.LDB:GetDataObjectByName(module.ldbName);
 	if UnitLevel("player")<110 then
 		obj.text = ns.profile[name].shortTitle and L["Emissary Quests-ShortCut"] or L[name];
 		return
@@ -197,7 +151,6 @@ local function updateData()
 	updateBroker();
 	C_Timer.After(1,unlock);
 end
-
 
 local function createTooltip(tt)
 	local sAR,sAF = ns.profile[name].showAllRealms==true,ns.profile[name].showAllFactions==true;
@@ -307,40 +260,79 @@ local function createTooltip(tt)
 end
 
 
+-- module functions and variables --
 ------------------------------------
--- module (BE internal) functions --
-------------------------------------
--- ns.modules[name].init = function() end
+module = {
+	desc = L["Broker to show world quests"],
+	--icon_suffix = "",
+	events = {
+		"PLAYER_LOGIN",
+		"QUEST_LOG_UPDATE"
+	},
+	updateinterval = nil,
+	config_defaults = {
+		shortTitle = false,
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4
+	},
+	config_allowed = nil,
+	config_header = nil,
+	config_broker = {
+		{ type="toggle", name="shortTitle", label="Show shorter title", tooltip=L["Display '%s' instead of '%s' on chars under level 110 on broker button"]:format(L["Emissary Quests-ShortCut"],L["Emissary Quests"]), event=true }
+	},
+	config_tooltip = {
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom"
+	},
+	config_misc = nil,
+	clickOptions = {
+		["9_open_menu"] = {
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
+			cfg_default = "_RIGHT",
+			hint = "Open option menu", -- L["Open option menu"]
+			func = function(self,button)
+				local _mod=name; -- for error tracking
+				createMenu(self);
+			end
+		}
+	}
+}
 
-ns.modules[name].onevent = function(self,event,...)
-	if event=="PLAYER_ENTERING_WORLD" then
+-- function module.init() end
+
+function module.onevent(self,event,...)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module,ns.profile[name]);
+	elseif event=="PLAYER_LOGIN" then
 		if ns.data[name]==nil then ns.data[name]={}; end
 		if ns.toon[name]==nil then ns.toon[name]={}; end
 		if ns.data[name].factions==nil then ns.data[name].factions = {}; end
 		if ns.toon[name].factions==nil then ns.toon[name].factions = {}; end
 		self.PEW=true;
-		self:UnregisterEvent(event);
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-	elseif self.PEW then
+	end
+	if self.PEW then
 		updateData();
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tt) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tt) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "CENTER","CENTER","CENTER","CENTER","CENTER","CENTER"},{true},{self});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

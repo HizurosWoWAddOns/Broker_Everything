@@ -1,5 +1,4 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
@@ -7,18 +6,15 @@ if ns.build<60000000 then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Missions" -- GARRISON_MISSIONS
-local ttName, ttColumns,ttColumns_default, tt, createMenu = name.."TT",6,6
-local missions = {};
-local started = {};
+local ttName, ttColumns,ttColumns_default, tt, createMenu,module = name.."TT",6,6
+local missions,started = {},{};
 local qualities = {"white","ff1eaa00","ff0070dd","ffa335ee","red"};
 local garrLevel,syLevel,ohLevel = 0,0,0;
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name]             = {iconfile="Interface\\Icons\\Achievement_RareGarrisonQuests_X", coords={0.1,0.9,0.1,0.9} }; --IconName::Missions--
@@ -26,81 +22,6 @@ I[name.."Follower"] = {iconfile="Interface\\Garrison\\GarrisonShipMapIcons", coo
 I[name.."Ship"]     = {iconfile="Interface\\Garrison\\GarrisonShipMapIcons", coordsStr="16:16:0:0:512:512:411:451:270:310" }; --IconName::MissionsShip--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show active and available missions for your followers and ships"],
-	label = GARRISON_MISSIONS,
-	--icon_suffix = "_Neutral",
-	events = {
-		"ADDON_LOADED",
-		"PLAYER_ENTERING_WORLD",
-		"GARRISON_MISSION_LIST_UPDATE",
-		"GARRISON_MISSION_STARTED",
-		"GARRISON_MISSION_FINISHED"
-	},
-	updateinterval = nil,
-	config_defaults = {
-		showAvailable = true,
-		showActive = true,
-		showReady = true,
-
-		showChars = true,
-		showAllFactions=true,
-		showRealmNames=true,
-		showCharsFrom=4,
-
-		showMissionType = true,
-		showMissionLevel = true,
-		showMissionItemLevel = true,
-		showMissionFollowerSlots = true
-	},
-	config_allowed = nil,
-	config_header = {type="header", label=GARRISON_MISSIONS, align="left", icon=I[name]},
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="showChars",       label=L["Show characters"],          tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom",
-
-		{ type="toggle", name="showReady",     label=L["Show ready missions"],     tooltip=L["Show ready missions in tooltip"] },
-		{ type="toggle", name="showActive",    label=L["Show active missions"],    tooltip=L["Show active missions in tooltip"] },
-		{ type="toggle", name="showAvailable", label=L["Show available missions"], tooltip=L["Show available missions in tooltip"] },
-
-		{ type="toggle", name="showMissionType",          label=L["Show mission type"],   tooltip=L["Show mission type in tooltip."] },
-		{ type="toggle", name="showMissionLevel",         label=L["Show mission level"],  tooltip=L["Show mission level in tooltip."] },
-		{ type="toggle", name="showMissionItemLevel",     label=L["Show mission iLevel"], tooltip=L["Show mission item level in tooltip."] },
-		{ type="toggle", name="showMissionFollowerSlots", label=L["Show follower slots"], tooltip=L["Show mission follower slots in tooltip."] },
-	},
-	config_misc = nil,
-	clickOptions = {
-		["1_open_garrison_report"] = {
-			cfg_label = "Open garrison report", -- L["Open garrison report"]
-			cfg_desc = "open the garrison report", -- L["open the garrison report"]
-			cfg_default = "_LEFT",
-			hint = "Open garrison report",
-			func = function(self,button)
-				local _mod=name;
-				securecall("GarrisonLandingPage_Toggle");
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
 function createMenu(self)
@@ -229,7 +150,7 @@ local function createTooltip(tt)
 
 			for _,fType in ipairs(lst)do -- follower types
 				local Type,Label = unpack(fType);
-				if #missions[Type][aType]>0 then
+				if missions[Type] and missions[Type][aType] and #missions[Type][aType]>0 then
 					act[aType]=true;
 					tt:AddLine(C("ltgray",Label));
 					for mi, md in ipairs(missions[Type][aType]) do
@@ -306,7 +227,7 @@ end
 
 local function update()
 	-- LE_FOLLOWER_TYPE_GARRISON_6_0 // LE_FOLLOWER_TYPE_SHIPYARD_6_2 // LE_FOLLOWER_TYPE_GARRISON_7_0
-	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local completed, inprogress, available = 0,0,0;
 
 	for _,Type in ipairs({"followers","ships","champions"})do
@@ -358,33 +279,93 @@ local function update()
 	obj.text = ("%s/%s/%s"):format(C("ltblue",completed),C("yellow",inprogress),C("green",available));
 end
 
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
--- ns.modules[name].init = function() end
 
-ns.modules[name].onevent = function(self,event,msg)
-	if event=="ADDON_LOADED" then
-		if ns.profile[name].showAllRealms~=nil then
-			ns.profile[name].showCharsFrom = 4;
-			ns.profile[name].showAllRealms = nil;
-		end
-	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-	elseif ns.pastPEW then
+-- module functions and variables --
+------------------------------------
+module = {
+	desc = L["Broker to show active and available missions for your followers and ships"],
+	label = GARRISON_MISSIONS,
+	--icon_suffix = "_Neutral",
+	events = {
+		"PLAYER_LOGIN",
+		"GARRISON_MISSION_LIST_UPDATE",
+		"GARRISON_MISSION_STARTED",
+		"GARRISON_MISSION_FINISHED"
+	},
+	updateinterval = nil,
+	config_defaults = {
+		showAvailable = true,
+		showActive = true,
+		showReady = true,
+
+		showChars = true,
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4,
+
+		showMissionType = true,
+		showMissionLevel = true,
+		showMissionItemLevel = true,
+		showMissionFollowerSlots = true
+	},
+	config_allowed = nil,
+	config_header = {type="header", label=GARRISON_MISSIONS, align="left", icon=I[name]},
+	config_broker = nil,
+	config_tooltip = {
+		{ type="toggle", name="showChars",       label=L["Show characters"],          tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom",
+
+		{ type="toggle", name="showReady",     label=L["Show ready missions"],     tooltip=L["Show ready missions in tooltip"] },
+		{ type="toggle", name="showActive",    label=L["Show active missions"],    tooltip=L["Show active missions in tooltip"] },
+		{ type="toggle", name="showAvailable", label=L["Show available missions"], tooltip=L["Show available missions in tooltip"] },
+
+		{ type="toggle", name="showMissionType",          label=L["Show mission type"],   tooltip=L["Show mission type in tooltip."] },
+		{ type="toggle", name="showMissionLevel",         label=L["Show mission level"],  tooltip=L["Show mission level in tooltip."] },
+		{ type="toggle", name="showMissionItemLevel",     label=L["Show mission iLevel"], tooltip=L["Show mission item level in tooltip."] },
+		{ type="toggle", name="showMissionFollowerSlots", label=L["Show follower slots"], tooltip=L["Show mission follower slots in tooltip."] },
+	},
+	config_misc = nil,
+	clickOptions = {
+		["1_open_garrison_report"] = {
+			cfg_label = "Open garrison report", -- L["Open garrison report"]
+			cfg_desc = "open the garrison report", -- L["open the garrison report"]
+			cfg_default = "_LEFT",
+			hint = "Open garrison report",
+			func = function(self,button)
+				local _mod=name;
+				securecall("GarrisonLandingPage_Toggle");
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu",
+			cfg_desc = "open the option menu",
+			cfg_default = "_RIGHT",
+			hint = "Open option menu",
+			func = function(self,button)
+				local _mod=name;
+				createMenu(self)
+			end
+		}
+	}
+}
+
+-- function module.init() end
+
+function module.onevent(self,event,msg)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module,ns.profile[name]);
+	else
 		update();
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(self) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(self) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	ttColumns=ttColumns_default;
 	if not ns.profile[name].showMissionLevel then         ttColumns=ttColumns-1; end
@@ -395,6 +376,11 @@ ns.modules[name].onenter = function(self)
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

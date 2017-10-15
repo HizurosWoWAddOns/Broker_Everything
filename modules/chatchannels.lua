@@ -1,5 +1,4 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
@@ -7,13 +6,13 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local channels={}
 local channels_last =1;
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "ChatChannels";
-local ttName,ttColumns,tt,createMenu,ticker = name.."TT",2
+local ttName,ttColumns,tt,createMenu,ticker,module = name.."TT",2
 local iName, iHeader, iCollapsed, iChannelNumber, iCount, iActive, iCategory, iVoiceEnabled, iVoiceActive = 1,2,3,4,5,6,7,8,9;
-local WD_Locale = {
+local events={PLAYER_LOGIN=1,CHANNEL_UI_UPDATE=1,PARTY_LEADER_CHANGED=1,GROUP_ROSTER_UPDATE=1,CHANNEL_ROSTER_UPDATE=1,MUTELIST_UPDATE=2,IGNORELIST_UPDATE=2}
+local wd = ({
 	enUS="WorldDefense",
 	enBG="WorldDefense",
 	enCN="WorldDefense",
@@ -28,66 +27,14 @@ local WD_Locale = {
 	ruRU="ОборонаГлобальный",
 	zhCN="世界防务",
 	zhTW="世界防務",
-};
-local wd = WD_Locale[ns.locale];
-local events={PLAYER_ENTERING_WORLD=1,CHANNEL_UI_UPDATE=1,PARTY_LEADER_CHANGED=1,GROUP_ROSTER_UPDATE=1,CHANNEL_ROSTER_UPDATE=1,MUTELIST_UPDATE=2,IGNORELIST_UPDATE=2}
+})[ns.locale];
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="Interface\\chatframe\\ui-chatwhispericon",coords={0.05,0.95,0.05,0.95}} --IconName::ChatChannels--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show count of users of all chat channels"],
-	--icon_suffix = '',
-	events = {
-		"PLAYER_ENTERING_WORLD",
-		"PARTY_LEADER_CHANGED",
-		"GROUP_ROSTER_UPDATE",
-		"CHANNEL_UI_UPDATE",
-		"CHANNEL_COUNT_UPDATE",
-		"CHANNEL_ROSTER_UPDATE"
-	},
-	updateinterval = 30, -- 10
-	config_defaults = {
-		inTitle = {}
-	},
-	config_allowed = nil,
-	config_header = {type="header", label=CHAT_CHANNELS, align="left", icon=I[name]},
-	config_broker = nil,
-	config_tooltip = nil,
-	config_misc = {"shortNumbers"},
-	clickOptions = {
-		["1_open_chats"] = {
-			cfg_label = "Open chat channels window", -- L["Open chat channels window"]
-			cfg_desc = "open the chat channels tab on the contact window", -- L["open the chat channels tab on the contact window"]
-			cfg_default = "_LEFT",
-			hint = "Open chat channels window",
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleFriendsFrame",3);
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
 function createMenu(self)
@@ -193,7 +140,7 @@ local function updater()
 	local I=0;
 	for i,v in ipairs(channels)do
 		if not v.noUpdate and not v[iHeader] and v[iActive] then
-			C_Timer.After(i*1.2,function()
+			C_Timer.After(i*.4,function()
 				if(ChannelFrame and ChannelFrame:IsShown()) then return end
 				SetSelectedDisplayChannel(i);
 				if(tt and tt.key and tt.key==ttName)then
@@ -203,8 +150,8 @@ local function updater()
 		end
 		I=i+1;
 	end
-	C_Timer.After(I*1.2,function()
-		local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+	C_Timer.After(I*.4,function()
+		local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 		local txt={};
 		for i,v in ipairs(channels)do
 			if not v[iHeader] then
@@ -223,41 +170,87 @@ local function updater()
 	end);
 end
 
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
--- ns.modules[name].init = function() end
 
-ns.modules[name].onevent = function(self,event,arg1,arg2,...)
-	if events[event]==1 then
-		updateList()
-		if not ticker and event=="PLAYER_ENTERING_WORLD" then
-			C_Timer.After(5,updater);
-			ticker = C_Timer.NewTicker(ns.modules[name].updateinterval,updater);
-		end
+-- module functions and variables --
+------------------------------------
+module = {
+	desc = L["Broker to show count of users of all chat channels"],
+	--icon_suffix = '',
+	events = {
+		"PLAYER_LOGIN",
+		"PARTY_LEADER_CHANGED",
+		"GROUP_ROSTER_UPDATE",
+		"CHANNEL_UI_UPDATE",
+		"CHANNEL_COUNT_UPDATE",
+		"CHANNEL_ROSTER_UPDATE"
+	},
+	updateinterval = 30, -- 10
+	config_defaults = {
+		--inTitle = {}
+	},
+	config_allowed = nil,
+	config_header = {type="header", label=CHAT_CHANNELS, align="left", icon=I[name]},
+	config_broker = nil,
+	config_tooltip = nil,
+	config_misc = {"shortNumbers"},
+	clickOptions = {
+		["1_open_chats"] = {
+			cfg_label = "Open chat channels window", -- L["Open chat channels window"]
+			cfg_desc = "open the chat channels tab on the contact window", -- L["open the chat channels tab on the contact window"]
+			cfg_default = "_LEFT",
+			hint = "Open chat channels window",
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleFriendsFrame",3);
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
+			cfg_default = "_RIGHT",
+			hint = "Open option menu", -- L["Open option menu"]
+			func = function(self,button)
+				local _mod=name; -- for error tracking
+				createMenu(self);
+			end
+		}
+	}
+}
+
+-- function module.init() end
+
+function module.onevent(self,event,arg1,arg2,...)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module,ns.profile[name]);
 	elseif event=="CHANNEL_COUNT_UPDATE" then
 		updateChannels(arg1,arg2 or 0)
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+	end
+	if events[event]==1 then
+		updateList()
+		if not ticker and event=="PLAYER_LOGIN" then
+			C_Timer.After(5,updater);
+			ticker = C_Timer.NewTicker(module.updateinterval,updater);
+		end
 	elseif event=="d" then
 		updateList()
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tooltip) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tooltip) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT","RIGHT"},{true},{self})
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

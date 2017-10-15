@@ -1,16 +1,14 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "GuildLog" -- L["GuildLog"]
-local ttName,ttColumns,tt,createMenu = name.."TT",4
+local ttName,ttColumns,tt,createMenu,module = name.."TT",4
 local type2locale = {
 	["invite"]	= C("cyan",CALENDAR_STATUS_INVITED),
 	["join"]	= C("green",LFG_LIST_APP_INVITE_ACCEPTED),
@@ -22,92 +20,11 @@ local type2locale = {
 local logs = {};
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="Interface\\icons\\inv_misc_note_05",coords={0.05,0.95,0.05,0.95}} --IconName::GuildLog--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show last entries of the guild log"],
-	events = {
-		"PLAYER_ENTERING_WORLD",
-		"GUILD_ROSTER_UPDATE",
-		"GUILD_EVENT_LOG_UPDATE"
-		-- guild roster update or so...
-	},
-	updateinterval = nil, -- 10
-	config_defaults = {
-		max_entries = 0,
-		displayMode = "NORMAL",
-		hideJoin = false,
-		hideLeave = false,
-		hideRemove = false,
-		hideInvite = false,
-		hidePromote = false,
-		hideDemote = false,
-		showRealms = true
-	},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="hideInvite",  label=L["Hide invites"],    tooltip=L["Hide all entries with 'Invite' as action."] },
-		{ type="toggle", name="hideJoin",    label=L["Hide joins"],      tooltip=L["Hide all entries with 'Join' as action."] },
-		{ type="toggle", name="hidePromote", label=L["Hide promotions"], tooltip=L["Hide all entries with 'Promote' as action."] },
-		{ type="toggle", name="hideDemote",  label=L["Hide demotions"],  tooltip=L["Hide all entries with 'Demote' as action."] },
-		{ type="toggle", name="hideLeave",   label=L["Hide leaves"],     tooltip=L["Hide all entries with 'Leave' as action."] },
-		{ type="toggle", name="hideRemove",  label=L["Hide removes"],    tooltip=L["Hide all entries with 'Remove' as action."] },
-		{ type="separator" },
-		{ type="toggle", name="showRealm",  label=L["Show realm names"], tooltip=L["Show realm names after character names from other realms (connected realms)."] },
-		{ type="slider", name="max_entries", label=L["Show max. entries"], tooltip=L["Select the maximum number of entries from the guild log, otherwise drag to 'All'."],
-			minText = ACHIEVEMENTFRAME_FILTER_ALL,
-			default = 0,
-			min = 0,
-			max = 100,
-			format = "%d",
-			step = 1,
-			rep = {[0]=ACHIEVEMENTFRAME_FILTER_ALL}
-		},
-		{ type="select", name="displayMode", label=L["Display mode"], tooltip=L["Change the list style."],
-			values	= {
-				["NORMAL"]    = L["Normal list of log entries"],
-				["SPLIT"]    = L["Separate tables by actions and 'Show max. entries' used per table."],
-			},
-			default = "BOTTOM"
-		},
-	},
-	config_misc = nil,
-	clickOptions = {
-		["1_open_guild"] = {
-			cfg_label = "Open guild roster", -- L["Open guild roster"]
-			cfg_desc = "open the guild roster", -- L["open the guild roster"]
-			cfg_default = "_LEFT",
-			hint = "Open guild roster", -- L["Open guild roster"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleGuildFrame")
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
-	}
-
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
 function createMenu(parent)
@@ -234,18 +151,91 @@ local function createTooltip(tt)
 end
 
 
-
+-- module functions and variables --
 ------------------------------------
--- module (BE internal) functions --
-------------------------------------
--- ns.modules[name].init = function() end
+module = {
+	desc = L["Broker to show last entries of the guild log"],
+	events = {
+		"PLAYER_LOGIN",
+		"GUILD_ROSTER_UPDATE",
+		"GUILD_EVENT_LOG_UPDATE"
+		-- guild roster update or so...
+	},
+	updateinterval = nil, -- 10
+	config_defaults = {
+		max_entries = 0,
+		displayMode = "NORMAL",
+		hideJoin = false,
+		hideLeave = false,
+		hideRemove = false,
+		hideInvite = false,
+		hidePromote = false,
+		hideDemote = false,
+		showRealms = true
+	},
+	config_allowed = nil,
+	config_header = nil, -- use default header
+	config_broker = nil,
+	config_tooltip = {
+		{ type="toggle", name="hideInvite",  label=L["Hide invites"],    tooltip=L["Hide all entries with 'Invite' as action."] },
+		{ type="toggle", name="hideJoin",    label=L["Hide joins"],      tooltip=L["Hide all entries with 'Join' as action."] },
+		{ type="toggle", name="hidePromote", label=L["Hide promotions"], tooltip=L["Hide all entries with 'Promote' as action."] },
+		{ type="toggle", name="hideDemote",  label=L["Hide demotions"],  tooltip=L["Hide all entries with 'Demote' as action."] },
+		{ type="toggle", name="hideLeave",   label=L["Hide leaves"],     tooltip=L["Hide all entries with 'Leave' as action."] },
+		{ type="toggle", name="hideRemove",  label=L["Hide removes"],    tooltip=L["Hide all entries with 'Remove' as action."] },
+		{ type="separator" },
+		{ type="toggle", name="showRealm",  label=L["Show realm names"], tooltip=L["Show realm names after character names from other realms (connected realms)."] },
+		{ type="slider", name="max_entries", label=L["Show max. entries"], tooltip=L["Select the maximum number of entries from the guild log, otherwise drag to 'All'."],
+			minText = ACHIEVEMENTFRAME_FILTER_ALL,
+			default = 0,
+			min = 0,
+			max = 100,
+			format = "%d",
+			step = 1,
+			rep = {[0]=ACHIEVEMENTFRAME_FILTER_ALL}
+		},
+		{ type="select", name="displayMode", label=L["Display mode"], tooltip=L["Change the list style."],
+			values	= {
+				["NORMAL"]    = L["Normal list of log entries"],
+				["SPLIT"]    = L["Separate tables by actions and 'Show max. entries' used per table."],
+			},
+			default = "BOTTOM"
+		},
+	},
+	config_misc = nil,
+	clickOptions = {
+		["1_open_guild"] = {
+			cfg_label = "Open guild roster", -- L["Open guild roster"]
+			cfg_desc = "open the guild roster", -- L["open the guild roster"]
+			cfg_default = "_LEFT",
+			hint = "Open guild roster", -- L["Open guild roster"]
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleGuildFrame")
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu",
+			cfg_desc = "open the option menu",
+			cfg_default = "_RIGHT",
+			hint = "Open option menu",
+			func = function(self,button)
+				local _mod=name;
+				createMenu(self)
+			end
+		}
+	}
 
-ns.modules[name].onevent = function(self,event,msg)
-	if (event=="PLAYER_ENTERING_WORLD") or (event=="GUILD_ROSTER_UPDATE") then
+}
+
+-- function module.init() end
+
+function module.onevent(self,event,msg)
+	if event=="PLAYER_LOGIN" or event=="GUILD_ROSTER_UPDATE" then
 		QueryGuildEventLog();
-	elseif (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-	elseif (event=="GUILD_EVENT_LOG_UPDATE") then
+	elseif event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module,ns.profile[name]);
+	elseif event=="GUILD_EVENT_LOG_UPDATE" then
 		wipe(logs);
 		local numEvents = GetNumGuildEvents();
 		local cY,cM,cD,cH = strsplit(".",date("%Y.%m.%d.%H"));
@@ -274,20 +264,21 @@ ns.modules[name].onevent = function(self,event,msg)
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tt) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tt) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "LEFT", "LEFT", "RIGHT"},{false},{self});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

@@ -1,136 +1,22 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Calendar" -- L["Calendar"]
-local ttName,ttColumns,tt,createMenu = name.."TT",2;
-local similar, own, unsave = "%s has a similar option to hide the minimap mail icon.","%s has its own mail icon.","%s found. It's unsave to hide the minimap mail icon without errors.";
--- L["%s has a similar option to hide the minimap mail icon."] L["%s has its own mail icon."] L["%s found. It's unsave to hide the minimap mail icon without errors."]
-local coexist_tooltip = {
-	["Carbonite"]			= unsave,
-	["DejaMinimap"]			= unsave,
-	["Chinchilla"]			= similar,
-	["Dominos_MINIMAP"]		= similar,
-	["gUI4_Minimap"]		= own,
-	["LUI"]					= own,
-	["MinimapButtonFrame"]	= unsave,
-	["SexyMap"]				= similar,
-	["SquareMap"]			= unsave,
-};
-local calendar_weekend_texture_ids = { -- Calendar_Weekend(.*)
-	[1129666] = "ApexisEnd",
-	[1129667] = "ApexisOngoing",
-	[1129668] = "ApexisStart",
-	[1129669] = "BattlegroundsEnd",
-	[1129670] = "BattlegroundsOngoing",
-	[1129671] = "BattlegroundsStart",
-	[1663861] = "BlackTempleStart",
-	[1129672] = "BurningCrusadeEnd",
-	[1129673] = "BurningCrusadeOngoing",
-	[1129674] = "BurningCrusadeStart",
-	[1304686] = "CataclysmEnd",
-	[1304687] = "CataclysmOngoing",
-	[1304688] = "CataclysmStart",
-	[1467045] = "LegionEnd",
-	[1467046] = "LegionOngoing",
-	[1467047] = "LegionStart",
-	[1530588] = "MistsofPandariaEnd",
-	[1530589] = "MistsofPandariaOngoing",
-	[1530590] = "MistsofPandariaStart",
-	[1129675] = "PetBattlesEnd",
-	[1129676] = "PetBattlesOngoing",
-	[1129677] = "PetBattlesStart",
-	[1129678] = "PvPSkirmishEnd",
-	[1129679] = "PvPSkirmishOngoing",
-	[1129680] = "PvPSkirmishStart",
-	[1129681] = "WarlordsOfDraenorEnd",
-	[1129682] = "WarlordsOfDraenorOngoing",
-	[1129683] = "WarlordsOfDraenorStart",
-	[1467048] = "WorldQuestEnd",
-	[1467049] = "WorldQuestOngoing",
-	[1467050] = "WorldQuestStart",
-	[1129684] = "WrathOfTheLichKingEnd",
-	[1129685] = "WrathOfTheLichKingOngoing",
-	[1129686] = "WrathOfTheLichKingStart",
-}
+local ttName,ttColumns,tt,createMenu,module,calendar_weekend_texture_ids = name.."TT",2;
 
--- ------------------------------------- --
+
 -- register icon names and default files --
--- ------------------------------------- --
+-------------------------------------------
 I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\calendar"}; --IconName::Calendar--
 I[name.."_pending"] = {iconfile="Interface\\Addons\\"..addon.."\\media\\calendar_pending"}; --IconName::Calendar_pending--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show calendar events and invitations"],
-	events = {
-		"CALENDAR_UPDATE_PENDING_INVITES",
-		"PLAYER_ENTERING_WORLD"
-	},
-	updateinterval = nil, -- 10
-	config_defaults = {
-		hideMinimapCalendar = false,
-		shortBroker = false,
-		shortEvents = true,
-		showEvents = true,
-		singleLineEvents = false
-	},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = {
-		{ type="toggle", name="shortBroker", label=L["Shorter Broker"], tooltip=L["Reduce the broker text to a number without text"], event=true },
-	},
-	config_tooltip = {
-		{ type="toggle", name="showEvents",  label=L["Show events"], tooltip=L["Display a list of events in tooltip"]},
-		{ type="toggle", name="shortEvents", label=L["Shorter Events"], tooltip=L["Reduce event list height in tooltip"] },
-		{ type="toggle", name="singleLineEvents", label=L["One event per line"], tooltip=L["Display event title and start/end date in a single line in tooltip"]}
-	},
-	config_misc = {
-		{ type="toggle", name="hideMinimapCalendar", label=L["Hide calendar button"], tooltip=L["Hide Blizzard's minimap calendar button"],
-			disabled = function()
-				if ns.coexist.check() then
-					return ns.coexist.optionInfo();
-				end
-				return false;
-			end
-		},
-	},
-	clickOptions = {
-		["1_open_character_info"] = {
-			cfg_label = "Open calendar", -- L["Open calendar"]
-			cfg_desc = "open the calendar", -- L["open the calendar"]
-			cfg_default = "_LEFT",
-			hint = "Open calendar", -- L["Open calendar"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCalendar");
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self)
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
 function createMenu(self)
@@ -138,6 +24,27 @@ function createMenu(self)
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.ShowMenu(self);
+end
+
+local function updateBroker()
+	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
+	local num = CalendarGetNumPendingInvites();
+
+	local icon = I(name..(num~=0 and "_pending" or ""))
+	obj.iconCoords = icon.coords
+	obj.icon = icon.iconfile
+
+	-- %d |4Invite:Invites; ?
+	local inv = " "..L[ num==1 and "Invite" or "Invites" ]
+	if (ns.profile[name].shortBroker) then
+		inv = ""
+	end
+
+	if num==0 then
+		obj.text = num..inv;
+	else
+		obj.text = C("green",num..inv);
+	end
 end
 
 local function createTooltip(tt)
@@ -259,57 +166,129 @@ local function createTooltip(tt)
 	ns.roundupTooltip(tt);
 end
 
+
+-- module functions and variables --
 ------------------------------------
--- module (BE internal) functions --
-------------------------------------
--- ns.modules[name].init = function() end
+module = {
+	desc = L["Broker to show calendar events and invitations"],
+	events = {
+		"CALENDAR_UPDATE_PENDING_INVITES",
+		"PLAYER_LOGIN"
+	},
+	updateinterval = nil, -- 10
+	config_defaults = {
+		hideMinimapCalendar = false,
+		shortBroker = false,
+		shortEvents = true,
+		showEvents = true,
+		singleLineEvents = false
+	},
+	config_allowed = nil,
+	config_header = nil, -- use default header
+	config_broker = {
+		{ type="toggle", name="shortBroker", label=L["Shorter Broker"], tooltip=L["Reduce the broker text to a number without text"], event=true },
+	},
+	config_tooltip = {
+		{ type="toggle", name="showEvents",  label=L["Show events"], tooltip=L["Display a list of events in tooltip"]},
+		{ type="toggle", name="shortEvents", label=L["Shorter Events"], tooltip=L["Reduce event list height in tooltip"] },
+		{ type="toggle", name="singleLineEvents", label=L["One event per line"], tooltip=L["Display event title and start/end date in a single line in tooltip"]}
+	},
+	config_misc = {
+		{ type="toggle", name="hideMinimapCalendar", label=L["Hide calendar button"], tooltip=L["Hide Blizzard's minimap calendar button"],
+			disabled = function()
+				if ns.coexist.check() then
+					return ns.coexist.optionInfo();
+				end
+				return false;
+			end
+		},
+	},
+	clickOptions = {
+		["1_open_character_info"] = {
+			cfg_label = "Open calendar", -- L["Open calendar"]
+			cfg_desc = "open the calendar", -- L["open the calendar"]
+			cfg_default = "_LEFT",
+			hint = "Open calendar", -- L["Open calendar"]
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleCalendar");
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
+			cfg_default = "_RIGHT",
+			hint = "Open option menu", -- L["Open option menu"]
+			func = function(self,button)
+				local _mod=name; -- for error tracking
+				createMenu(self)
+			end
+		}
+	}
+}
 
-ns.modules[name].onevent = function(self,event,msg)
-	self.obj = self.obj or ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
-	local num = CalendarGetNumPendingInvites();
+function module.init()
+	calendar_weekend_texture_ids = { -- Calendar_Weekend(.*)
+		[1129666] = "ApexisEnd",
+		[1129667] = "ApexisOngoing",
+		[1129668] = "ApexisStart",
+		[1129669] = "BattlegroundsEnd",
+		[1129670] = "BattlegroundsOngoing",
+		[1129671] = "BattlegroundsStart",
+		[1663861] = "BlackTempleStart",
+		[1129672] = "BurningCrusadeEnd",
+		[1129673] = "BurningCrusadeOngoing",
+		[1129674] = "BurningCrusadeStart",
+		[1304686] = "CataclysmEnd",
+		[1304687] = "CataclysmOngoing",
+		[1304688] = "CataclysmStart",
+		[1467045] = "LegionEnd",
+		[1467046] = "LegionOngoing",
+		[1467047] = "LegionStart",
+		[1530588] = "MistsofPandariaEnd",
+		[1530589] = "MistsofPandariaOngoing",
+		[1530590] = "MistsofPandariaStart",
+		[1129675] = "PetBattlesEnd",
+		[1129676] = "PetBattlesOngoing",
+		[1129677] = "PetBattlesStart",
+		[1129678] = "PvPSkirmishEnd",
+		[1129679] = "PvPSkirmishOngoing",
+		[1129680] = "PvPSkirmishStart",
+		[1129681] = "WarlordsOfDraenorEnd",
+		[1129682] = "WarlordsOfDraenorOngoing",
+		[1129683] = "WarlordsOfDraenorStart",
+		[1467048] = "WorldQuestEnd",
+		[1467049] = "WorldQuestOngoing",
+		[1467050] = "WorldQuestStart",
+		[1129684] = "WrathOfTheLichKingEnd",
+		[1129685] = "WrathOfTheLichKingOngoing",
+		[1129686] = "WrathOfTheLichKingStart",
+	}
+end
 
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-	end
-
-	local icon = I(name..(num~=0 and "_pending" or ""))
-	self.obj.iconCoords = icon.coords
-	self.obj.icon = icon.iconfile
-
-	-- %d |4Invite:Invites; ?
-	local inv = " "..L[ num==1 and "Invite" or "Invites" ]
-	if (ns.profile[name].shortBroker) then
-		inv = ""
-	end
-
-	if num==0 then
-		self.obj.text = num..inv;
+function module.onevent(self,event,msg)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module,ns.profile[name]);
 	else
-		self.obj.text = C("green",num..inv);
+		updateBroker();
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tooltip) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tooltip) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT"},{true},{self});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self) end
+-- function module.ondblclick(self,button) end
 
-ns.modules[name].coexist = function()
-	if (not ns.coexist.found) and (ns.profile[name].hideMinimapCalendar) then
-		GameTimeFrame:Hide();
-		GameTimeFrame.Show = dummyFunc;
-	end
-end
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

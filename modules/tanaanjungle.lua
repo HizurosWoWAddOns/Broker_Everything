@@ -1,18 +1,17 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Tanaan Jungle Dailies"; -- L["Tanaan Jungle Dailies"]
-local ttName, ttName2, ttColumns, ttColumns2, tt, tt2, createMenu = name.."TT",name.."TT2", 2, 2;
+local ttName, ttName2, ttColumns, ttColumns2, tt, tt2, createMenu,module = name.."TT",name.."TT2", 2, 2;
 local try,dailiesReset,weekliesReset,namesCount,namesNeed,completed,numCompleted,names,questlog,numQuestlog = 6,0,0,0,0,{},{},{},{},{};
 local dubs,elapse,update,updateTimeout = {},0,false,10;
+local ids,zone2hidden,numIDTypes,colorIDTypes,typeOrder,npcs,groupIds,titles;
 -- [<questId>] = <number> ( 1=bosses, 2=zone dailies, 3=hidden zone dailies, 4=bonus zone dailies, 5=random dailies, 6=weeklies )
 --[=[
 what the difference between zone, hidden and bonus dailys?
@@ -21,140 +20,14 @@ if you have the zone daily in your log and fly into the zone you will automatica
 you can see it through blizzards objective tracker under the minimap. note: the hidden quest contains all subtargets to complete the quest.
 the bonus quest you get by fly or walk into zone without a active zone daily in questlog.
 --]=]
-local ids,zone2hidden,numIDTypes,colorIDTypes,typeOrder,npcs,groupIds,titles;
 
-
-
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="interface\\icons\\Achievement_Zone_Tanaanjungle", coords={.15,.55,.15,.55}, size={64,64}}; --IconName::Tanaan Jungle Dailies--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show a list of solved/solvable tanaan jungle bosses, dailys, weeklys and bonus zones"],
-	--icon_suffix = "",
-	events = {
-		"ADDON_LOADED",
-		"PLAYER_ENTERING_WORLD",
-		"PLAYER_REGEN_ENABLED",
-		"QUEST_LOG_UPDATE"
-	},
-	updateinterval = 10,
-	config_defaults = {
-		showQuestIDs = false,
-		showChars = true,
-		showAllFactions=true,
-		showRealmNames=true,
-		showCharsFrom=4
-	},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="showQuestIDs", label=L["Show QuestIDs"],   tooltip=L["Show/Hide QuestIDs in tooltip"] },
-		{ type="toggle", name="showChars",    label=L["Show characters"], tooltip=L["Show a list of your characters with count of ready and available targets in tooltip"] },
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom"
-	},
-	config_misc = nil,
-	clickOptions = {
-		["1_open_questlog"] = {
-			cfg_label = "Open questlog", -- L["Open questlog"]
-			cfg_desc = "open your bags", -- L["open your questlog"]
-			cfg_default = "_LEFT",
-			hint = "Open questlog", -- L["Open questlog"]
-			func = function(self,button)
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
-local function initData()
-	ids = ns.player.faction=="Alliance" and {
-		[39287]=1,[39288]=1,[39289]=1,[39290]=1, -- bosses
-		[38585]=2,[38587]=3,[39453]=4,-- Assault on the Throne of Kil'jaeden
-		[38441]=2,[37970]=3,[39445]=4,-- Assault on the Fel Forge
-		[37891]=2,[37865]=3,[39451]=4,-- Assault on Ironhold Harbor
-		[38250]=2,[37938]=3,[39447]=4,-- Assault on the Ruins of Kra'nak
-		[38045]=2,[38043]=3,[39441]=4,-- Bleeding the Bleeding Hollow
-		[38046]=2,[38051]=3,[39443]=4,-- Battle at the Iron Front
-		[37968]=2,[37966]=3,[39450]=4,-- Assault on the Temple of Sha'naar
-		[39433]=5,-- npc 95424
-		[39581]=5,[39582]=5,[39586]=5, -- npc 96147
-		[39567]=5,[39568]=5,[39570]=5,[39574]=5,[39573]=5,[39571]=5,[39569]=5, -- npc 90974
-		[39565]=6 -- npc 92805
-	} or {
-		[39287]=1,[39288]=1,[39289]=1,[39290]=1,-- bosses
-		[38586]=2,[38588]=3,[39454]=4,-- Assault on the Throne of Kil'jaeden
-		[38440]=2,[38439]=3,[39446]=4,-- Assault on the Fel Forge
-		[37940]=2,[37866]=3,[39452]=4,-- Assault on Ironhold Harbor
-		[38252]=2,[38009]=3,[39448]=4,-- Assault on the Ruins of Kra'nak
-		[38044]=2,[38040]=3,[39442]=4,-- Bleeding the Bleeding Hollow
-		[38047]=2,[38054]=3,[39444]=4,-- Battle at the Iron Front
-		[38449]=2,[38020]=3,[39449]=4,-- Assault on the Temple of Sha'naar
-		[39433]=5,-- npc 95424
-		[39519]=5,[39529]=5,[39532]=5,-- npc 93396
-		[39511]=5,[39509]=5,[39510]=5,[39512]=5,[39526]=5,[39514]=5,[39513]=5,-- npc 96014
-		[39565]=6-- npc 92805
-	};
-	zone2hidden = {
-		[38585]=38587,[38441]=37970,[37891]=37865,[38250]=37938,
-		[38045]=38043,[38046]=38051,[37968]=37966,[38586]=38588,
-		[38440]=38439,[37940]=37866,[38252]=38009,[38044]=38040,
-		[38047]=38054,[38449]=38020,
-	};
-	numIDTypes = {
-		4, -- bosses
-		1, -- random zone daily
-		1, -- hidden zone daily
-		7, -- bonus dailies
-		4, -- random dailies
-		1, -- weeklies
-	};
-	colorIDTypes = {
-		"ltblue",
-		"green",
-		"red",
-		"yellow",
-		"orange",
-		"violet",
-	}
-	typeOrder = {1,6,5,2,4};
-	npcs = { -- [<npcID>] = <questID>
-		[95053]=39287,[95044]=39288,[95056]=39289,[95054]=39290
-	};
-	groupIds = {
-		--[39432] =
-	};
-	titles = { -- {"<title>", <maxQuestCount>}
-		{"Rare bosses",4}, -- L["Rare bosses"]
-		{"Random zone daily",1}, -- L["Random zone dailies"]
-		{"Hidden random zone dailies",3}, -- L["Hidden random zone dailies"]
-		{"Daily zone bonus",7}, -- L["Daily zone bonus"]
-		{"Reputation dailies",4}, -- L["Reputation dailies"]
-		{"Reputation weeklies",1} -- L["Reputation weeklies"]
-	}
-end
-
 function createMenu(self)
 	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
@@ -250,7 +123,7 @@ local function updateQuestStatus()
 		for _,i in ipairs(typeOrder) do
 			tinsert(bbt,C(colorIDTypes[i], numCompleted[i]) .. "/" .. C(colorIDTypes[i], numIDTypes[i]));
 		end
-		ns.LDB:GetDataObjectByName(ns.modules[name].ldbName).text = table.concat(bbt,", ");
+		ns.LDB:GetDataObjectByName(module.ldbName).text = table.concat(bbt,", ");
 	else
 		C_Timer.After(1, function()
 			elapse,update=0,true;
@@ -328,7 +201,7 @@ local function createTooltip(tt)
 			local name_realm = Broker_Everything_CharacterDB.order[i];
 			local v = Broker_Everything_CharacterDB[name_realm];
 			local c,r,_ = strsplit("-",name_realm);
-			if v.level>=100 and v.tanaanjungle and ns.showThisChar(name,r,v.faction) then -- not ((ns.profile[name].showAllRealms~=true and realm~=ns.realm) or (ns.profile[name].showAllFactions~=true and v.faction~=ns.player.faction)) then
+			if v.level>=100 and v.tanaanjungle and ns.showThisChar(name,r,v.faction) then
 				local bbt = {}; -- broker button text
 				if type(r)=="string" and r:len()>0 then
 					_,r = ns.LRI:GetRealmInfo(r);
@@ -363,23 +236,126 @@ local function createTooltip(tt)
 end
 
 
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules[name].init = function()
-	if initData then
-		initData();
-		initData=nil;
-	end
+-- module variables for registration --
+---------------------------------------
+module = {
+	desc = L["Broker to show a list of solved/solvable tanaan jungle bosses, dailys, weeklys and bonus zones"],
+	--icon_suffix = "",
+	events = {
+		"PLAYER_LOGIN",
+		"PLAYER_REGEN_ENABLED",
+		"QUEST_LOG_UPDATE"
+	},
+	updateinterval = 10,
+	config_defaults = {
+		showQuestIDs = false,
+		showChars = true,
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4
+	},
+	config_allowed = nil,
+	config_header = nil, -- use default header
+	config_broker = nil,
+	config_tooltip = {
+		{ type="toggle", name="showQuestIDs", label=L["Show QuestIDs"],   tooltip=L["Show/Hide QuestIDs in tooltip"] },
+		{ type="toggle", name="showChars",    label=L["Show characters"], tooltip=L["Show a list of your characters with count of ready and available targets in tooltip"] },
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom"
+	},
+	config_misc = nil,
+	clickOptions = {
+		["1_open_questlog"] = {
+			cfg_label = "Open questlog", -- L["Open questlog"]
+			cfg_desc = "open your bags", -- L["open your questlog"]
+			cfg_default = "_LEFT",
+			hint = "Open questlog", -- L["Open questlog"]
+			func = function(self,button)
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
+			cfg_default = "_RIGHT",
+			hint = "Open option menu", -- L["Open option menu"]
+			func = function(self,button)
+				local _mod=name; -- for error tracking
+				createMenu(self);
+			end
+		}
+	}
+}
+
+function module.init()
+	ids = ns.player.faction=="Alliance" and {
+		[39287]=1,[39288]=1,[39289]=1,[39290]=1, -- bosses
+		[38585]=2,[38587]=3,[39453]=4,-- Assault on the Throne of Kil'jaeden
+		[38441]=2,[37970]=3,[39445]=4,-- Assault on the Fel Forge
+		[37891]=2,[37865]=3,[39451]=4,-- Assault on Ironhold Harbor
+		[38250]=2,[37938]=3,[39447]=4,-- Assault on the Ruins of Kra'nak
+		[38045]=2,[38043]=3,[39441]=4,-- Bleeding the Bleeding Hollow
+		[38046]=2,[38051]=3,[39443]=4,-- Battle at the Iron Front
+		[37968]=2,[37966]=3,[39450]=4,-- Assault on the Temple of Sha'naar
+		[39433]=5,-- npc 95424
+		[39581]=5,[39582]=5,[39586]=5, -- npc 96147
+		[39567]=5,[39568]=5,[39570]=5,[39574]=5,[39573]=5,[39571]=5,[39569]=5, -- npc 90974
+		[39565]=6 -- npc 92805
+	} or {
+		[39287]=1,[39288]=1,[39289]=1,[39290]=1,-- bosses
+		[38586]=2,[38588]=3,[39454]=4,-- Assault on the Throne of Kil'jaeden
+		[38440]=2,[38439]=3,[39446]=4,-- Assault on the Fel Forge
+		[37940]=2,[37866]=3,[39452]=4,-- Assault on Ironhold Harbor
+		[38252]=2,[38009]=3,[39448]=4,-- Assault on the Ruins of Kra'nak
+		[38044]=2,[38040]=3,[39442]=4,-- Bleeding the Bleeding Hollow
+		[38047]=2,[38054]=3,[39444]=4,-- Battle at the Iron Front
+		[38449]=2,[38020]=3,[39449]=4,-- Assault on the Temple of Sha'naar
+		[39433]=5,-- npc 95424
+		[39519]=5,[39529]=5,[39532]=5,-- npc 93396
+		[39511]=5,[39509]=5,[39510]=5,[39512]=5,[39526]=5,[39514]=5,[39513]=5,-- npc 96014
+		[39565]=6-- npc 92805
+	};
+	zone2hidden = {
+		[38585]=38587,[38441]=37970,[37891]=37865,[38250]=37938,
+		[38045]=38043,[38046]=38051,[37968]=37966,[38586]=38588,
+		[38440]=38439,[37940]=37866,[38252]=38009,[38044]=38040,
+		[38047]=38054,[38449]=38020,
+	};
+	numIDTypes = {
+		4, -- bosses
+		1, -- random zone daily
+		1, -- hidden zone daily
+		7, -- bonus dailies
+		4, -- random dailies
+		1, -- weeklies
+	};
+	colorIDTypes = {
+		"ltblue",
+		"green",
+		"red",
+		"yellow",
+		"orange",
+		"violet",
+	}
+	typeOrder = {1,6,5,2,4};
+	npcs = { -- [<npcID>] = <questID>
+		[95053]=39287,[95044]=39288,[95056]=39289,[95054]=39290
+	};
+	groupIds = {
+		--[39432] =
+	};
+	titles = { -- {"<title>", <maxQuestCount>}
+		{"Rare bosses",4}, -- L["Rare bosses"]
+		{"Random zone daily",1}, -- L["Random zone dailies"]
+		{"Hidden random zone dailies",3}, -- L["Hidden random zone dailies"]
+		{"Daily zone bonus",7}, -- L["Daily zone bonus"]
+		{"Reputation dailies",4}, -- L["Reputation dailies"]
+		{"Reputation weeklies",1} -- L["Reputation weeklies"]
+	}
 end
 
-ns.modules[name].onevent = function(self,event,...)
-	if event=="ADDON_LOADED" then
-		if ns.profile[name].showAllRealms~=nil then
-			ns.profile[name].showCharsFrom = 4;
-			ns.profile[name].showAllRealms = nil;
-		end
-	elseif event=="PLAYER_ENTERING_WORLD" then
+function module.onevent(self,event,...)
+		if event=="PLAYER_LOGIN" then
 		updateResetTimes();
 
 		if ns.toon==nil then
@@ -393,8 +369,7 @@ ns.modules[name].onevent = function(self,event,...)
 		end
 
 		C_Timer.After(3, updateLocaleNames);
-		C_Timer.NewTicker(ns.modules[name].updateinterval,function() update=true; updateQuestStatus() end);
-		self:UnregisterEvent(event);
+		C_Timer.NewTicker(module.updateinterval,function() update=true; updateQuestStatus() end);
 	elseif event=="PLAYER_REGEN_ENABLED" then
 		C_Timer.After(3, function()
 			elapse,update=0,true;
@@ -402,23 +377,24 @@ ns.modules[name].onevent = function(self,event,...)
 	elseif event=="QUEST_LOG_UPDATE" then
 		elapse,update=0,true;
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+		ns.clickOptions.update(module,ns.profile[name]);
 	end
 end
--- ns.modules[name].onupdate = function(self,elapse) end
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tooltip) end
 
+-- function module.onupdate(self,elapse) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tooltip) end
 
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT"},{false},{self});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
+-- function module.onleave(self) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

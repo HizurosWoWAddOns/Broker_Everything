@@ -29,7 +29,6 @@
 	<Script file="modules/classspecs.lua"/>
 	<Script file="modules/clock.lua"/>
 	<Script file="modules/currency.lua"/>
-	<Script file="modules/dualspec.lua"/>
 	<Script file="modules/durability.lua"/>
 	<Script file="modules/emissaryquests.lua"/>
 	<Script file="modules/equipment.lua"/>
@@ -62,13 +61,6 @@
 	<Script file="modules/wardrobe.lua"/>
 	<Script file="modules/wowtoken.lua"/>
 	<Script file="modules/xp.lua"/>
-	<!--Script file="modules/under_construction/lookingfor.lua"/-->
-	<!--Script file="modules/unter_construction/difficulty.lua"/-->
-	<!--Script file="modules/under_construction/worldpvpareas.lua"/-->
-	<!-- Script file="modules/under_constriction/playerkills.lua"/-->
-	<!-- Script file="modules/under_construction/wardrobe.lua"/-->
-	<!-- Script file="modules/under_construction/events.lua"/-->
-	<!-- Script file="modules/under_construction/quickjoin.lua"/-->
 	<!-- modules -->
 
 	<Script file="chatcommand.lua" />

@@ -1,21 +1,18 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Notes" -- L["Notes"]
-local ttName,ttColumns,tt,createMenu = name.."TT",2;
+local ttName,ttColumns,tt,createMenu,module = name.."TT",2;
 local delIndex,editor,createTooltip,note_edit
 local titleLimit,textLimit = 32,10000;
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name]              = {iconfile="Interface\\Icons\\INV_Misc_PaperBundle04a", coords={0.05,0.95,0.05,0.95}}; --IconName::Notes--
@@ -23,48 +20,6 @@ I[name..'_alliance'] = {iconfile="Interface\\Icons\\INV_Misc_PaperBundle04c", co
 I[name..'_horde']    = {iconfile="Interface\\Icons\\INV_Misc_PaperBundle04b", coords={0.05,0.95,0.05,0.95}}; --IconName::Notes_horde--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Display a broker with very simple notes functionality"],
-	events = {
-		"PLAYER_ENTERING_WORLD",
-		"NEUTRAL_FACTION_SELECT_RESULT"
-	},
-	updateinterval = 30, -- 10
-	config_defaults = {},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = nil,
-	config_tooltip = nil,
-	config_misc = {"shortNumbers"},
-	clickOptions = {
-		["1_new_note"] = {
-			cfg_label = "Add new note",
-			cfg_desc = "add new note",
-			cfg_default = "__NONE",
-			hint = "Add new note",
-			func = function(self,button)
-				local _mod=name;
-				note_edit({},nil,"LeftButton");
-			end
-		},
-		["9_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
 function createMenu(self)
@@ -75,7 +30,7 @@ function createMenu(self)
 end
 
 local function updateBroker()
-	local icon,obj = I[name],ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+	local icon,obj = I[name],ns.LDB:GetDataObjectByName(module.ldbName);
 	local faction = UnitFactionGroup("player"):lower();
 	if faction~="neutral" then
 		icon = I[name..'_'..faction];
@@ -223,37 +178,75 @@ function createTooltip(tt)
 end
 
 
+-- module functions and variables --
 ------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules[name].init = function()
+module = {
+	desc = L["Display a broker with very simple notes functionality"],
+	events = {
+		"PLAYER_LOGIN",
+		"NEUTRAL_FACTION_SELECT_RESULT"
+	},
+	updateinterval = 30, -- 10
+	config_defaults = {},
+	config_allowed = nil,
+	config_header = nil, -- use default header
+	config_broker = nil,
+	config_tooltip = nil,
+	config_misc = {"shortNumbers"},
+	clickOptions = {
+		["1_new_note"] = {
+			cfg_label = "Add new note",
+			cfg_desc = "add new note",
+			cfg_default = "__NONE",
+			hint = "Add new note",
+			func = function(self,button)
+				local _mod=name;
+				note_edit({},nil,"LeftButton");
+			end
+		},
+		["9_open_menu"] = {
+			cfg_label = "Open option menu",
+			cfg_desc = "open the option menu",
+			cfg_default = "_RIGHT",
+			hint = "Open option menu",
+			func = function(self,button)
+				local _mod=name;
+				createMenu(self)
+			end
+		}
+	}
+}
+
+function module.init()
 	if ns.data[name]==nil then
 		ns.data[name] = {};
 	end
 end
 
-ns.modules[name].onevent = function(self,event,...)
+function module.onevent(self,event,...)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+		ns.clickOptions.update(module,ns.profile[name]);
 	else
 		updateBroker();
 	end
 end
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(self) end
 
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(self) end
 
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName,ttColumns, "LEFT","RIGHT"},{false},{self});
 	delIndex = nil;
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

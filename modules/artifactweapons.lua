@@ -1,6 +1,4 @@
 
-
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
@@ -8,231 +6,32 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 if ns.build<70000000 then return end
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Artifact weapon" -- L["Artifact weapon"]
-local ttName,ttNameAlt,ttColumns,tt,ttAlt,createMenu,createTooltip = name.."TT",name.."TT2", 3;
+local ttName,ttNameAlt,ttColumns,tt,ttAlt,module,createMenu,createTooltip = name.."TT",name.."TT2", 3;
 local ap_items_found,spec2weapon,knowledgeLevel,obtained,updateBroker, _ = {},{},0,0;
 local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d*)");
 local PATTERN_ARTIFACT_XP_GAIN = gsub(ARTIFACT_XP_GAIN,"%s",".*");
 local PATTERN_SECOND_NUMBERS,akUpgrade = {};
-PATTERN_SECOND_NUMBERS[1] = SECOND_NUMBER:gsub("%|7(.*):(.*);","%1");
-PATTERN_SECOND_NUMBERS[2] = SECOND_NUMBER:gsub("%|7(.*):(.*);","%2");
-if PATTERN_SECOND_NUMBERS[1]:len()<PATTERN_SECOND_NUMBERS[2]:len() then
-	PATTERN_SECOND_NUMBERS[1],PATTERN_SECOND_NUMBERS[2] = PATTERN_SECOND_NUMBERS[2],PATTERN_SECOND_NUMBERS[1];
-end
 local artifactKnowledgeMultiplier_cap, artifactLocked = 40; -- 50
 if ns.build>=73000000 then
 	artifactKnowledgeMultiplier_cap = 55; -- 7.3
 end
+local updateItemStateTry,updateItemState=0;
 local artifactKnowledgeMultiplier = {}
 local AP_MATCH_STRINGS,FISHING_AP_MATCH_STRINGS = {},{};
 ns.artifactpower_items = {};
 ns.artifactrelikts = {};
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile=1109508 or ns.icon_fallback,coords={0.05,0.95,0.05,0.95}} --IconName::Artifact weapon--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Display informations about your obtained artifact weapons on broker and in tooltip"],
-	events = {
-		"PLAYER_ENTERING_WORLD",
-		"ARTIFACT_XP_UPDATE",
-		"ARTIFACT_MAX_RANKS_UPDATE",
-		"ARTIFACT_UPDATE",
-		"UNIT_INVENTORY_CHANGED",
-		"CURRENCY_DISPLAY_UPDATE"
-	},
-	updateinterval = nil, -- 10
-	config_defaults = {
-		showName = true,
-		showPoints = true,
-		showXP = "1",
-		showPower = true,
-		showWarning = true,
-		showRelic = true,
-		showRelicItemLevel = false,
-		showRelicIncreaseItemLevel = true,
-		showItems = true,
-		showTotalAP = true,
-		showKnowledge = true,
-		showAlt = true,
-	},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = {
-		{ type="toggle", name="showName",   label=L["Show weapon name"],    tooltip=L["Show artifact weapon name in broker button"], event="ARTIFACT_UPDATE"},
-		{ type="toggle", name="showPoints", label=L["Show points"],         tooltip=L["Show spent/available points in broker button"], event="ARTIFACT_UPDATE"},
-		{ type="select", name="showXP",     label=L["Show artifact power"], tooltip=L["Show artifact weapon expierence (artifact power) in broker button"], event="ARTIFACT_UPDATE",
-			values	= {
-				["0"]    = L["Hide"],
-				["1"]    = L["Current / max expierence"],
-				["2"]    = L["Need to next point"],
-			},
-			default = "1"
-		},
-		{ type="toggle", name="showPower",     label=L["Show unspend artifact power"], tooltip=L["Show amount summary of artifact power from items in your backpack in broker button"]},
-		{ type="toggle", name="showKnowledge", label=L["Show artifact knowledge"],     tooltip=L["Show artifact knowledge in broker button"]},
-		{ type="toggle", name="showWarning",   label=L["Show 'not equipped' warning"], tooltip=L["Show 'artifact weapon not equipped' warning in broker button"]},
-	},
-	config_tooltip = {
-		{ type="toggle", name="showRelic",                  label=L["Show artifact relic"],               tooltip=L["Display a list of artifact relic slots in tooltip"]},
-		{ type="toggle", name="showRelicItemLevel",         label=L["Show relic item level"],             tooltip=L["Display relic item level"]},
-		{ type="toggle", name="showRelicIncreaseItemLevel", label=L["Show increase item level by relic"], tooltip=L["Display increase item level by relic"]},
-		{ type="toggle", name="showItems",                  label=L["Show artifact power items"],         tooltip=L["Display a list of artifact power items found in your bag in tooltip"]},
-		{ type="toggle", name="showTotalAP",                label=L["Show total used artifact power"],    tooltip=L["Display amount of total used artifact power on current equipped artifact weapon. That doesn't includes point resets!"]},
-		{ type="toggle", name="showAlt",                    label=L["Show your other artifacts"],         tooltip=L["Display a list of your other artifacts you have obtainted"]}
-	},
-	config_misc = {"shortNumbers"},
-	clickOptions = {
-		["1_open_character_info"] = {
-			cfg_label = "Open character info", -- L["Open character info"]
-			cfg_desc = "open the character info", -- L["open the character info"]
-			cfg_default = "__NONE",
-			hint = "Open character info", -- L["Open character info"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","PaperDollFrame");
-			end
-		},
-		["2_artifact_frame"] = {
-			cfg_label = "Open artifact frame", -- L["Show artifact frame"]
-			cfg_desc = "open artifact frame", -- L["open artifact frame"]
-			cfg_default = "_LEFT",
-			hint = "Open artifact frame",
-			func = function(self,button)
-				local _mod=name;
-				SocketInventoryItem(16);
-			end
-		},
-		["3_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
-local function initData()
-	ns.artifactpower_items = {
-		-- >0 = known amount of artifact power
-		-- -1 = special actifact power items
-		[127999]=1, [128000]=1, [128021]=1, [128022]=1, [128026]=1, [130144]=1, [130149]=1, [130152]=1, [130153]=1, [130159]=1, [130160]=1, [130165]=1,
-		[131728]=1, [131732]=1, [131751]=1, [131753]=1, [131758]=1, [131763]=1, [131778]=1, [131784]=1, [131785]=1, [131789]=1, [131795]=1, [131802]=1,
-		[131808]=1, [132361]=1, [132897]=1, [132923]=1, [132950]=1, [134118]=1, [134133]=1, [136360]=1, [138480]=1, [138487]=1, [138726]=1, [138732]=1,
-		[138781]=1, [138782]=1, [138783]=1, [138784]=1, [138785]=1, [138786]=1, [138812]=1, [138813]=1, [138814]=1, [138816]=1, [138839]=1, [138864]=1,
-		[138865]=1, [138880]=1, [138881]=1, [138885]=1, [138886]=1, [139413]=1, [139506]=1, [139507]=1, [139508]=1, [139509]=1, [139510]=1, [139511]=1,
-		[139512]=1, [139608]=1, [139609]=1, [139610]=1, [139611]=1, [139612]=1, [139613]=1, [139614]=1, [139615]=1, [139616]=1, [139617]=1, [139652]=1,
-		[139653]=1, [139654]=1, [139655]=1, [139656]=1, [139657]=1, [139658]=1, [139659]=1, [139660]=1, [139661]=1, [139662]=1, [139663]=1, [139664]=1,
-		[139665]=1, [139666]=1, [139667]=1, [139668]=1, [139669]=1, [140176]=1, [140237]=1, [140238]=1, [140241]=1, [140244]=1, [140247]=1, [140250]=1,
-		[140251]=1, [140252]=1, [140254]=1, [140255]=1, [140304]=1, [140305]=1, [140306]=1, [140307]=1, [140310]=1, [140322]=1, [140349]=1, [140357]=1,
-		[140358]=1, [140359]=1, [140361]=1, [140364]=1, [140365]=1, [140366]=1, [140367]=1, [140368]=1, [140369]=1, [140370]=1, [140371]=1, [140372]=1,
-		[140373]=1, [140374]=1, [140377]=1, [140379]=1, [140380]=1, [140381]=1, [140382]=1, [140383]=1, [140384]=1, [140385]=1, [140386]=1, [140387]=1,
-		[140388]=1, [140389]=1, [140391]=1, [140392]=1, [140393]=1, [140396]=1, [140409]=1, [140410]=1, [140421]=1, [140422]=1, [140444]=1, [140445]=1,
-		[140459]=1, [140460]=1, [140461]=1, [140462]=1, [140463]=1, [140466]=1, [140467]=1, [140468]=1, [140469]=1, [140470]=1, [140471]=1, [140473]=1,
-		[140474]=1, [140475]=1, [140476]=1, [140477]=1, [140478]=1, [140479]=1, [140480]=1, [140481]=1, [140482]=1, [140484]=1, [140485]=1, [140486]=1,
-		[140487]=1, [140488]=1, [140489]=1, [140490]=1, [140491]=1, [140492]=1, [140494]=1, [140497]=1, [140498]=1, [140503]=1, [140504]=1, [140505]=1,
-		[140507]=1, [140508]=1, [140509]=1, [140510]=1, [140511]=1, [140512]=1, [140513]=1, [140515]=1, [140516]=1, [140517]=1, [140518]=1, [140519]=1,
-		[140520]=1, [140521]=1, [140522]=1, [140523]=1, [140524]=1, [140525]=1, [140528]=1, [140529]=1, [140530]=1, [140531]=1, [140532]=1, [140685]=1,
-		[140847]=1, [141023]=1, [141024]=1, [141310]=1, [141313]=1, [141314]=1, [141337]=1, [141383]=1, [141384]=1, [141385]=1, [141386]=1, [141387]=1,
-		[141388]=1, [141389]=1, [141390]=1, [141391]=1, [141392]=1, [141393]=1, [141394]=1, [141395]=1, [141396]=1, [141397]=1, [141398]=1, [141399]=1,
-		[141400]=1, [141401]=1, [141402]=1, [141403]=1, [141404]=1, [141405]=1, [141638]=1, [141639]=1, [141667]=1, [141668]=1, [141669]=1, [141670]=1,
-		[141671]=1, [141672]=1, [141673]=1, [141674]=1, [141675]=1, [141676]=1, [141677]=1, [141678]=1, [141679]=1, [141680]=1, [141681]=1, [141682]=1,
-		[141683]=1, [141684]=1, [141685]=1, [141689]=1, [141690]=1, [141699]=1, [141701]=1, [141702]=1, [141703]=1, [141704]=1, [141705]=1, [141706]=1,
-		[141707]=1, [141708]=1, [141709]=1, [141710]=1, [141711]=1, [141852]=1, [141853]=1, [141854]=1, [141855]=1, [141856]=1, [141857]=1, [141858]=1,
-		[141859]=1, [141863]=1, [141872]=1, [141876]=1, [141877]=1, [141883]=1, [141886]=1, [141887]=1, [141888]=1, [141889]=1, [141890]=1, [141891]=1,
-		[141892]=1, [141896]=1, [141921]=1, [141922]=1, [141923]=1, [141924]=1, [141925]=1, [141926]=1, [141927]=1, [141928]=1, [141929]=1, [141930]=1,
-		[141931]=1, [141932]=1, [141933]=1, [141934]=1, [141935]=1, [141936]=1, [141937]=1, [141940]=1, [141941]=1, [141942]=1, [141943]=1, [141944]=1,
-		[141945]=1, [141946]=1, [141947]=1, [141948]=1, [141949]=1, [141950]=1, [141951]=1, [141952]=1, [141953]=1, [141954]=1, [141955]=1, [141956]=1,
-		[142001]=1, [142002]=1, [142003]=1, [142004]=1, [142005]=1, [142006]=1, [142007]=1, [142054]=1, [142449]=1, [142450]=1, [142451]=1, [142453]=1,
-		[142454]=1, [142455]=1, [142533]=1, [142534]=1, [142535]=1, [142555]=1, [143333]=1, [143486]=1, [143487]=1, [143488]=1, [143498]=1, [143499]=1,
-		[143533]=1, [143536]=1, [143538]=1, [143540]=1, [143677]=1, [143680]=1, [143713]=1, [143714]=1, [143715]=1, [143716]=1, [143738]=1, [143739]=1,
-		[143740]=1, [143741]=1, [143742]=1, [143743]=1, [143744]=1, [143745]=1, [143746]=1, [143747]=1, [143749]=1, [143757]=1, [143844]=1, [143868]=1,
-		[143869]=1, [143870]=1, [143871]=1, [144266]=1, [144267]=1, [144268]=1, [144269]=1, [144270]=1, [144271]=1, [144272]=1, [144297]=1, [146122]=1,
-		[146123]=1, [146124]=1, [146125]=1, [146126]=1, [146127]=1, [146128]=1, [146129]=1, [146309]=1, [146313]=1, [146314]=1, [146315]=1, [146316]=1,
-		[146318]=1, [146319]=1, [146320]=1, [146321]=1, [146322]=1, [146323]=1, [146324]=1, [146325]=1, [146326]=1, [146327]=1, [146329]=1, [146662]=1,
-		[146663]=1, [146664]=1, [146671]=1, [147198]=1, [147199]=1, [147200]=1, [147201]=1, [147202]=1, [147203]=1, [147293]=1, [147398]=1, [147399]=1,
-		[147400]=1, [147401]=1, [147402]=1, [147403]=1, [147404]=1, [147405]=1, [147406]=1, [147407]=1, [147408]=1, [147409]=1, [147441]=1, [147442]=1,
-		[147444]=1, [147456]=1, [147457]=1, [147458]=1, [147459]=1, [147460]=1, [147461]=1, [147462]=1, [147463]=1, [147464]=1, [147465]=1, [147466]=1,
-		[147467]=1, [147468]=1, [147469]=1, [147470]=1, [147471]=1, [147472]=1, [147473]=1, [147474]=1, [147475]=1, [147476]=1, [147477]=1, [147478]=1,
-		[147479]=1, [147480]=1, [147481]=1, [147482]=1, [147483]=1, [147484]=1, [147485]=1, [147486]=1, [147513]=1, [147548]=1, [147549]=1, [147550]=1,
-		[147551]=1, [147579]=1, [147581]=1, [147718]=1, [147719]=1, [147720]=1, [147721]=1, [147808]=1, [147809]=1, [147810]=1, [147811]=1, [147812]=1,
-		[147814]=1, [147818]=1, [147819]=1, [147842]=1
-	};
-
-	artifactKnowledgeMultiplier = {
-		-- with 7.0
-		  0.25,  0.50,  0.90,  1.40,  2.00, --  1 -  5
-		  2.75,  3.75,  5.00,  6.50,  8.50, --  6 - 10
-		 11.00, 14.00, 17.75, 22.50, 28.50, -- 11 - 15
-		 36.00, 45.50, 57.00, 72.00, 90.00, -- 16 - 20
-		113.00,142.00,178.00,223.00,249.00, -- 21 - 25
-
-		-- with 7.2
-		  1000.00,   1300.00,   1700.00,   2200.00,   2900.00, -- 26 - 30
-		  3800.00,   4900.00,   6400.00,   8300.00,  10800.00, -- 31 - 35
-		 14000.00,  18200.00,  23700.00,  30800.00,  40000.00, -- 36 - 40
-
-		-- with 7.2.5
-		-- 52000.00,  67600.00,  87900.00, 114300.00, 148600.00, -- 41 - 45
-		--193200.00, 251200.00, 326600.00, 424600.00, 552000.00, -- 46 - 50
-
-		-- with 7.3
-		 160000.00,  208000.00,  270400.00,  351500.00,  457000.00, -- 41 - 45
- 		 594000.00,  772500.00, 1004000.00, 1305000.00, 1696500.00, -- 46 - 50
-		2205500.00, 2867500.00, 3727500.00, 4846000.00, 6300000.00, -- 51 - 55
-
-		-- wow... damned high values
-	}
-
-	AP_MATCH_STRINGS = {
-		deDE = "Gewährt Eurem derzeit ausgerüsteten Artefakt (.*) Artefaktmacht",
-		enUS = "Grants (.*) Artifact Power to your currently equipped Artifact",
-		esES = "Otorga (.*) p. de poder de artefacto al artefacto que lleves equipado",
-		esMX = "Otorga (.*) p. de Poder de artefacto para el artefacto que llevas equipado",
-		frFR = "Confère (.*) point* de puissance à l’arme prodigieuse que vous brandissez",
-		itIT = {"Fornisce (.*) Potere Artefatto all'Artefatto attualmente equipaggiato.","(.*) Potere Artefatto fornito all'Artefatto attualmente equipaggiato"},
-		koKR = {"현재 장착한 유물에 (.*)의 유물력을 부여합니다.","현재 장착한 유물에 (.*)의 유물력 부여"},
-		ptBR = "Concede (.*) de Poder do Artefato ao artefato equipado",
-		ptPT = "Concede (.*) de Poder do Artefato ao artefato equipado",
-		ruRU = {"Добавляет используемому в данный момент артефакту (.*) ед. силы артефакта.","Добавление используемому в данный момент артефакту (.*) ед. силы артефакта"},
-		zhCN = "将(.*)点神器能量注入到你当前装备的神器之中",
-		zhTW = "賦予你目前裝備的神兵武器(.*)點神兵之力",
-	}
-
-	FISHING_AP_MATCH_STRINGS = {
-		deDE = "Wirft den Fisch zurück ins Wasser und gewährt Eurem Angelartefakt (.*) Artefaktmacht",
-		enUS = "Toss the fish back into the water, granting (.*) Artifact Power to your fishing artifact",
-		esES = "Lanza el pez de nuevo al agua, lo que otorga (.*) p. de poder de artefacto a tu artefacto de pesca",
-		esMX = "Devuelve el pez al agua, lo que otorga (.*) de poder de artefacto a tu artefacto de pesca",
-		frFR = "Vous rejetez le poisson à l’eau, ce qui confère (.*) $lpoint:points; de puissance prodigieuse à votre ustensile de pêche prodigieux",
-		itIT = "Rilancia il pesce in acqua, fornendo (.*) Potere Artefatto al tuo artefatto da pesca",
-		koKR = "물고기를 다시 물에 던져 낚시 유물에 (.*)의 유물력을 추가합니다.",
-		ptBR = "Joga o peixe de volta na água, concedendo (.*) de Poder do Artefato ao seu artefato de pesca",
-		ptPT = "Joga o peixe de volta na água, concedendo (.*) de Poder do Artefato ao seu artefato de pesca",
-		ruRU = "Бросить рыбу обратно в воду, добавив вашему рыболовному артефакту (.*) ед. силы артефакта",
-		zhCN = "将鱼扔回到水中，使你的钓鱼神器获得(.*)点神器能量",
-		zhTW = "將魚丟回水中，為你的釣魚神器取得(.*)點神兵之力",
-	}
-end
-
 function createMenu(self)
 	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
@@ -240,7 +39,7 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
--- not in use... deprecated?
+-- TODO: not in use... deprecated?
 local function CalculateArtifactPower(ap,ak) -- artifact_power, artifact_knowledge
 	ap,ak=tonumber(ap) or 0,tonumber(ak) or 0;
 	if ak > 0 then
@@ -255,7 +54,6 @@ local function CalculateArtifactPower(ap,ak) -- artifact_power, artifact_knowled
 	return ap;
 end
 
-local updateItemStateTry,updateItemState=0;
 local function ttMatchString(line,matchString)
 	local artefact_power;
 	if type(matchString)=="table" then
@@ -286,8 +84,6 @@ end
 function updateItemState()
 	wipe(ap_items_found);
 	local lst = ns.items.GetItemlist();
-	local matchString1 = AP_MATCH_STRINGS[ns.locale] or AP_MATCH_STRINGS.enUS;
-	local matchString2 = FISHING_AP_MATCH_STRINGS[ns.locale] or FISHING_AP_MATCH_STRINGS.enUS;
 	local isFishing = false;
 	for id,v in pairs(lst) do
 		if ns.artifactpower_items[id]~=nil then
@@ -310,9 +106,9 @@ function updateItemState()
 				-- read artefact power from single item tooltip with same item id and knowledge level
 				if items[1].tooltip then
 					for i=2, #items[1].tooltip do
-						artefact_power = ttMatchString(items[1].tooltip[i],matchString1); -- artefact power for artefact weapons?
+						artefact_power = ttMatchString(items[1].tooltip[i],AP_MATCH_STRINGS); -- artefact power for artefact weapons?
 						if not artefact_power then
-							artefact_power = ttMatchString(items[1].tooltip[i],matchString2); -- artefact power for artefact pole?
+							artefact_power = ttMatchString(items[1].tooltip[i],FISHING_AP_MATCH_STRINGS); -- artefact power for artefact pole?
 							if artefact_power then
 								isFishing = true;
 							end
@@ -438,7 +234,7 @@ function updateBroker()
 
 	obtained = C_ArtifactUI.GetNumObtainedArtifacts();
 
-	local allDisabled,data,obj = true,{}, ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+	local allDisabled,data,obj = true,{}, ns.LDB:GetDataObjectByName(module.ldbName);
 	local itemID, altItemID, itemName, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop, artifactTier = C_ArtifactUI.GetEquippedArtifactInfo();
 
 	updateCharacterDB(itemID);
@@ -518,7 +314,7 @@ end
 local function createTooltip2(parent,artifactID)
 	local item,missingdata,l = ns.toon[name][artifactID],false;
 	local tt = ns.acquireTooltip({ttNameAlt, ttColumns, "LEFT", "RIGHT", "RIGHT", "LEFT", "LEFT","RIGHT", "CENTER", "LEFT", "LEFT", "LEFT"},{false},{parent,"horizontal",tt});
-	ttAkt = tt;
+	ttAlt = tt;
 
 	tt:Clear();
 	l=tt:AddHeader("|T"..(GetItemIcon(artifactID) or ns.icon_fallback)..":0|t "..C("ltyellow",item.name));
@@ -604,7 +400,7 @@ local function createTooltip2(parent,artifactID)
 	if missingdata then
 		tt:AddSeparator(4,0,0,0,0);
 		l=tt:AddLine();
-		tt:SetCell(l,1,ns.strWrap(C("orange",L.ArtifactMissingData),64),nil,"CENTER",0);
+		tt:SetCell(l,1,ns.strWrap(C("orange",L["ArtifactMissingData"]),64),nil,"CENTER",0);
 	end
 
 	ns.roundupTooltip(tt);
@@ -617,10 +413,6 @@ local function hideTooltip2()
 	end
 end
 
--- - Add alternate artifact weapon to tooltip (internal use)
--- @param tooltip
--- @param counter
--- @param itemId
 local function addAltArtifactLine(tt,c,id)
 	local l=tt:AddLine(C("ltyellow",c..". "..L["Artifact weapon"]));
 	tt:SetCell(l,3,"|T"..(GetItemIcon(id) or ns.icon_fallback)..":0|t "..C("ltyellow",ns.toon[name][id].name));
@@ -817,18 +609,207 @@ function createTooltip(tt)
 end
 
 
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules[name].init = function()
-	if initData then
-		initData();
-		initData=nil;
+-- module variables for registration --
+---------------------------------------
+module = {
+	desc = L["Display informations about your obtained artifact weapons on broker and in tooltip"],
+	events = {
+		"PLAYER_LOGIN",
+		"ARTIFACT_XP_UPDATE",
+		"ARTIFACT_MAX_RANKS_UPDATE",
+		"ARTIFACT_UPDATE",
+		"UNIT_INVENTORY_CHANGED",
+		"CURRENCY_DISPLAY_UPDATE"
+	},
+	updateinterval = nil, -- 10
+	config_defaults = {
+		showName = true,
+		showPoints = true,
+		showXP = "1",
+		showPower = true,
+		showWarning = true,
+		showRelic = true,
+		showRelicItemLevel = false,
+		showRelicIncreaseItemLevel = true,
+		showItems = true,
+		showTotalAP = true,
+		showKnowledge = true,
+		showAlt = true,
+	},
+	config_allowed = nil,
+	config_header = nil, -- use default header
+	config_broker = {
+		{ type="toggle", name="showName",   label=L["Show weapon name"],    tooltip=L["Show artifact weapon name in broker button"], event="ARTIFACT_UPDATE"},
+		{ type="toggle", name="showPoints", label=L["Show points"],         tooltip=L["Show spent/available points in broker button"], event="ARTIFACT_UPDATE"},
+		{ type="select", name="showXP",     label=L["Show artifact power"], tooltip=L["Show artifact weapon expierence (artifact power) in broker button"], event="ARTIFACT_UPDATE",
+			values	= {
+				["0"]    = L["Hide"],
+				["1"]    = L["Current / max expierence"],
+				["2"]    = L["Need to next point"],
+			},
+			default = "1"
+		},
+		{ type="toggle", name="showPower",     label=L["Show unspend artifact power"], tooltip=L["Show amount summary of artifact power from items in your backpack in broker button"]},
+		{ type="toggle", name="showKnowledge", label=L["Show artifact knowledge"],     tooltip=L["Show artifact knowledge in broker button"]},
+		{ type="toggle", name="showWarning",   label=L["Show 'not equipped' warning"], tooltip=L["Show 'artifact weapon not equipped' warning in broker button"]},
+	},
+	config_tooltip = {
+		{ type="toggle", name="showRelic",                  label=L["Show artifact relic"],               tooltip=L["Display a list of artifact relic slots in tooltip"]},
+		{ type="toggle", name="showRelicItemLevel",         label=L["Show relic item level"],             tooltip=L["Display relic item level"]},
+		{ type="toggle", name="showRelicIncreaseItemLevel", label=L["Show increase item level by relic"], tooltip=L["Display increase item level by relic"]},
+		{ type="toggle", name="showItems",                  label=L["Show artifact power items"],         tooltip=L["Display a list of artifact power items found in your bag in tooltip"]},
+		{ type="toggle", name="showTotalAP",                label=L["Show total used artifact power"],    tooltip=L["Display amount of total used artifact power on current equipped artifact weapon. That doesn't includes point resets!"]},
+		{ type="toggle", name="showAlt",                    label=L["Show your other artifacts"],         tooltip=L["Display a list of your other artifacts you have obtainted"]}
+	},
+	config_misc = {"shortNumbers"},
+	clickOptions = {
+		["1_open_character_info"] = {
+			cfg_label = "Open character info", -- L["Open character info"]
+			cfg_desc = "open the character info", -- L["open the character info"]
+			cfg_default = "__NONE",
+			hint = "Open character info", -- L["Open character info"]
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleCharacter","PaperDollFrame");
+			end
+		},
+		["2_artifact_frame"] = {
+			cfg_label = "Open artifact frame", -- L["Show artifact frame"]
+			cfg_desc = "open artifact frame", -- L["open artifact frame"]
+			cfg_default = "_LEFT",
+			hint = "Open artifact frame",
+			func = function(self,button)
+				local _mod=name;
+				SocketInventoryItem(16);
+			end
+		},
+		["3_open_menu"] = {
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
+			cfg_default = "_RIGHT",
+			hint = "Open option menu", -- L["Open option menu"]
+			func = function(self,button)
+				local _mod=name; -- for error tracking
+				createMenu(self);
+			end
+		}
+	}
+}
+
+function module.init()
+	ns.artifactpower_items = {
+		-- >0 = known amount of artifact power
+		-- -1 = special actifact power items
+		[127999]=1, [128000]=1, [128021]=1, [128022]=1, [128026]=1, [130144]=1, [130149]=1, [130152]=1, [130153]=1, [130159]=1, [130160]=1, [130165]=1,
+		[131728]=1, [131732]=1, [131751]=1, [131753]=1, [131758]=1, [131763]=1, [131778]=1, [131784]=1, [131785]=1, [131789]=1, [131795]=1, [131802]=1,
+		[131808]=1, [132361]=1, [132897]=1, [132923]=1, [132950]=1, [134118]=1, [134133]=1, [136360]=1, [138480]=1, [138487]=1, [138726]=1, [138732]=1,
+		[138781]=1, [138782]=1, [138783]=1, [138784]=1, [138785]=1, [138786]=1, [138812]=1, [138813]=1, [138814]=1, [138816]=1, [138839]=1, [138864]=1,
+		[138865]=1, [138880]=1, [138881]=1, [138885]=1, [138886]=1, [139413]=1, [139506]=1, [139507]=1, [139508]=1, [139509]=1, [139510]=1, [139511]=1,
+		[139512]=1, [139608]=1, [139609]=1, [139610]=1, [139611]=1, [139612]=1, [139613]=1, [139614]=1, [139615]=1, [139616]=1, [139617]=1, [139652]=1,
+		[139653]=1, [139654]=1, [139655]=1, [139656]=1, [139657]=1, [139658]=1, [139659]=1, [139660]=1, [139661]=1, [139662]=1, [139663]=1, [139664]=1,
+		[139665]=1, [139666]=1, [139667]=1, [139668]=1, [139669]=1, [140176]=1, [140237]=1, [140238]=1, [140241]=1, [140244]=1, [140247]=1, [140250]=1,
+		[140251]=1, [140252]=1, [140254]=1, [140255]=1, [140304]=1, [140305]=1, [140306]=1, [140307]=1, [140310]=1, [140322]=1, [140349]=1, [140357]=1,
+		[140358]=1, [140359]=1, [140361]=1, [140364]=1, [140365]=1, [140366]=1, [140367]=1, [140368]=1, [140369]=1, [140370]=1, [140371]=1, [140372]=1,
+		[140373]=1, [140374]=1, [140377]=1, [140379]=1, [140380]=1, [140381]=1, [140382]=1, [140383]=1, [140384]=1, [140385]=1, [140386]=1, [140387]=1,
+		[140388]=1, [140389]=1, [140391]=1, [140392]=1, [140393]=1, [140396]=1, [140409]=1, [140410]=1, [140421]=1, [140422]=1, [140444]=1, [140445]=1,
+		[140459]=1, [140460]=1, [140461]=1, [140462]=1, [140463]=1, [140466]=1, [140467]=1, [140468]=1, [140469]=1, [140470]=1, [140471]=1, [140473]=1,
+		[140474]=1, [140475]=1, [140476]=1, [140477]=1, [140478]=1, [140479]=1, [140480]=1, [140481]=1, [140482]=1, [140484]=1, [140485]=1, [140486]=1,
+		[140487]=1, [140488]=1, [140489]=1, [140490]=1, [140491]=1, [140492]=1, [140494]=1, [140497]=1, [140498]=1, [140503]=1, [140504]=1, [140505]=1,
+		[140507]=1, [140508]=1, [140509]=1, [140510]=1, [140511]=1, [140512]=1, [140513]=1, [140515]=1, [140516]=1, [140517]=1, [140518]=1, [140519]=1,
+		[140520]=1, [140521]=1, [140522]=1, [140523]=1, [140524]=1, [140525]=1, [140528]=1, [140529]=1, [140530]=1, [140531]=1, [140532]=1, [140685]=1,
+		[140847]=1, [141023]=1, [141024]=1, [141310]=1, [141313]=1, [141314]=1, [141337]=1, [141383]=1, [141384]=1, [141385]=1, [141386]=1, [141387]=1,
+		[141388]=1, [141389]=1, [141390]=1, [141391]=1, [141392]=1, [141393]=1, [141394]=1, [141395]=1, [141396]=1, [141397]=1, [141398]=1, [141399]=1,
+		[141400]=1, [141401]=1, [141402]=1, [141403]=1, [141404]=1, [141405]=1, [141638]=1, [141639]=1, [141667]=1, [141668]=1, [141669]=1, [141670]=1,
+		[141671]=1, [141672]=1, [141673]=1, [141674]=1, [141675]=1, [141676]=1, [141677]=1, [141678]=1, [141679]=1, [141680]=1, [141681]=1, [141682]=1,
+		[141683]=1, [141684]=1, [141685]=1, [141689]=1, [141690]=1, [141699]=1, [141701]=1, [141702]=1, [141703]=1, [141704]=1, [141705]=1, [141706]=1,
+		[141707]=1, [141708]=1, [141709]=1, [141710]=1, [141711]=1, [141852]=1, [141853]=1, [141854]=1, [141855]=1, [141856]=1, [141857]=1, [141858]=1,
+		[141859]=1, [141863]=1, [141872]=1, [141876]=1, [141877]=1, [141883]=1, [141886]=1, [141887]=1, [141888]=1, [141889]=1, [141890]=1, [141891]=1,
+		[141892]=1, [141896]=1, [141921]=1, [141922]=1, [141923]=1, [141924]=1, [141925]=1, [141926]=1, [141927]=1, [141928]=1, [141929]=1, [141930]=1,
+		[141931]=1, [141932]=1, [141933]=1, [141934]=1, [141935]=1, [141936]=1, [141937]=1, [141940]=1, [141941]=1, [141942]=1, [141943]=1, [141944]=1,
+		[141945]=1, [141946]=1, [141947]=1, [141948]=1, [141949]=1, [141950]=1, [141951]=1, [141952]=1, [141953]=1, [141954]=1, [141955]=1, [141956]=1,
+		[142001]=1, [142002]=1, [142003]=1, [142004]=1, [142005]=1, [142006]=1, [142007]=1, [142054]=1, [142449]=1, [142450]=1, [142451]=1, [142453]=1,
+		[142454]=1, [142455]=1, [142533]=1, [142534]=1, [142535]=1, [142555]=1, [143333]=1, [143486]=1, [143487]=1, [143488]=1, [143498]=1, [143499]=1,
+		[143533]=1, [143536]=1, [143538]=1, [143540]=1, [143677]=1, [143680]=1, [143713]=1, [143714]=1, [143715]=1, [143716]=1, [143738]=1, [143739]=1,
+		[143740]=1, [143741]=1, [143742]=1, [143743]=1, [143744]=1, [143745]=1, [143746]=1, [143747]=1, [143749]=1, [143757]=1, [143844]=1, [143868]=1,
+		[143869]=1, [143870]=1, [143871]=1, [144266]=1, [144267]=1, [144268]=1, [144269]=1, [144270]=1, [144271]=1, [144272]=1, [144297]=1, [146122]=1,
+		[146123]=1, [146124]=1, [146125]=1, [146126]=1, [146127]=1, [146128]=1, [146129]=1, [146309]=1, [146313]=1, [146314]=1, [146315]=1, [146316]=1,
+		[146318]=1, [146319]=1, [146320]=1, [146321]=1, [146322]=1, [146323]=1, [146324]=1, [146325]=1, [146326]=1, [146327]=1, [146329]=1, [146662]=1,
+		[146663]=1, [146664]=1, [146671]=1, [147198]=1, [147199]=1, [147200]=1, [147201]=1, [147202]=1, [147203]=1, [147293]=1, [147398]=1, [147399]=1,
+		[147400]=1, [147401]=1, [147402]=1, [147403]=1, [147404]=1, [147405]=1, [147406]=1, [147407]=1, [147408]=1, [147409]=1, [147441]=1, [147442]=1,
+		[147444]=1, [147456]=1, [147457]=1, [147458]=1, [147459]=1, [147460]=1, [147461]=1, [147462]=1, [147463]=1, [147464]=1, [147465]=1, [147466]=1,
+		[147467]=1, [147468]=1, [147469]=1, [147470]=1, [147471]=1, [147472]=1, [147473]=1, [147474]=1, [147475]=1, [147476]=1, [147477]=1, [147478]=1,
+		[147479]=1, [147480]=1, [147481]=1, [147482]=1, [147483]=1, [147484]=1, [147485]=1, [147486]=1, [147513]=1, [147548]=1, [147549]=1, [147550]=1,
+		[147551]=1, [147579]=1, [147581]=1, [147718]=1, [147719]=1, [147720]=1, [147721]=1, [147808]=1, [147809]=1, [147810]=1, [147811]=1, [147812]=1,
+		[147814]=1, [147818]=1, [147819]=1, [147842]=1
+		-- TODO: needs update
+	};
+
+	artifactKnowledgeMultiplier = {
+		-- with 7.0
+		  0.25,  0.50,  0.90,  1.40,  2.00, --  1 -  5
+		  2.75,  3.75,  5.00,  6.50,  8.50, --  6 - 10
+		 11.00, 14.00, 17.75, 22.50, 28.50, -- 11 - 15
+		 36.00, 45.50, 57.00, 72.00, 90.00, -- 16 - 20
+		113.00,142.00,178.00,223.00,249.00, -- 21 - 25
+
+		-- with 7.2
+		  1000.00,   1300.00,   1700.00,   2200.00,   2900.00, -- 26 - 30
+		  3800.00,   4900.00,   6400.00,   8300.00,  10800.00, -- 31 - 35
+		 14000.00,  18200.00,  23700.00,  30800.00,  40000.00, -- 36 - 40
+
+		-- with 7.2.5
+		-- 52000.00,  67600.00,  87900.00, 114300.00, 148600.00, -- 41 - 45
+		--193200.00, 251200.00, 326600.00, 424600.00, 552000.00, -- 46 - 50
+
+		-- with 7.3
+		 160000.00,  208000.00,  270400.00,  351500.00,  457000.00, -- 41 - 45
+ 		 594000.00,  772500.00, 1004000.00, 1305000.00, 1696500.00, -- 46 - 50
+		2205500.00, 2867500.00, 3727500.00, 4846000.00, 6300000.00, -- 51 - 55
+
+		-- wow... damned high values
+	}
+
+	AP_MATCH_STRINGS = ({
+		deDE = "Gewährt Eurem derzeit ausgerüsteten Artefakt (.*) Artefaktmacht",
+		enUS = "Grants (.*) Artifact Power to your currently equipped Artifact",
+		esES = "Otorga (.*) p. de poder de artefacto al artefacto que lleves equipado",
+		esMX = "Otorga (.*) p. de Poder de artefacto para el artefacto que llevas equipado",
+		frFR = "Confère (.*) point* de puissance à l’arme prodigieuse que vous brandissez",
+		itIT = {"Fornisce (.*) Potere Artefatto all'Artefatto attualmente equipaggiato.","(.*) Potere Artefatto fornito all'Artefatto attualmente equipaggiato"},
+		koKR = {"현재 장착한 유물에 (.*)의 유물력을 부여합니다.","현재 장착한 유물에 (.*)의 유물력 부여"},
+		ptBR = "Concede (.*) de Poder do Artefato ao artefato equipado",
+		ptPT = "Concede (.*) de Poder do Artefato ao artefato equipado",
+		ruRU = {"Добавляет используемому в данный момент артефакту (.*) ед. силы артефакта.","Добавление используемому в данный момент артефакту (.*) ед. силы артефакта"},
+		zhCN = "将(.*)点神器能量注入到你当前装备的神器之中",
+		zhTW = "賦予你目前裝備的神兵武器(.*)點神兵之力",
+	})[ns.locale];
+
+	FISHING_AP_MATCH_STRINGS = ({
+		deDE = "Wirft den Fisch zurück ins Wasser und gewährt Eurem Angelartefakt (.*) Artefaktmacht",
+		enUS = "Toss the fish back into the water, granting (.*) Artifact Power to your fishing artifact",
+		esES = "Lanza el pez de nuevo al agua, lo que otorga (.*) p. de poder de artefacto a tu artefacto de pesca",
+		esMX = "Devuelve el pez al agua, lo que otorga (.*) de poder de artefacto a tu artefacto de pesca",
+		frFR = "Vous rejetez le poisson à l’eau, ce qui confère (.*) $lpoint:points; de puissance prodigieuse à votre ustensile de pêche prodigieux",
+		itIT = "Rilancia il pesce in acqua, fornendo (.*) Potere Artefatto al tuo artefatto da pesca",
+		koKR = "물고기를 다시 물에 던져 낚시 유물에 (.*)의 유물력을 추가합니다.",
+		ptBR = "Joga o peixe de volta na água, concedendo (.*) de Poder do Artefato ao seu artefato de pesca",
+		ptPT = "Joga o peixe de volta na água, concedendo (.*) de Poder do Artefato ao seu artefato de pesca",
+		ruRU = "Бросить рыбу обратно в воду, добавив вашему рыболовному артефакту (.*) ед. силы артефакта",
+		zhCN = "将鱼扔回到水中，使你的钓鱼神器获得(.*)点神器能量",
+		zhTW = "將魚丟回水中，為你的釣魚神器取得(.*)點神兵之力",
+	})[ns.locale];
+
+	PATTERN_SECOND_NUMBERS[1] = SECOND_NUMBER:gsub("%|7(.*):(.*);","%1");
+	PATTERN_SECOND_NUMBERS[2] = SECOND_NUMBER:gsub("%|7(.*):(.*);","%2");
+	if PATTERN_SECOND_NUMBERS[1]:len()<PATTERN_SECOND_NUMBERS[2]:len() then
+		PATTERN_SECOND_NUMBERS[1],PATTERN_SECOND_NUMBERS[2] = PATTERN_SECOND_NUMBERS[2],PATTERN_SECOND_NUMBERS[1];
 	end
 end
 
-ns.modules[name].onevent = function(self,event,arg1,...)
-	if event=="PLAYER_ENTERING_WORLD" then
+function module.onevent(self,event,arg1,...)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module,ns.profile[name]);
+	elseif event=="PLAYER_LOGIN" then
 		if ns.toon[name]==nil then
 			ns.toon[name] = {equipped=false,knowledgeLevel=0};
 		end
@@ -850,34 +831,32 @@ ns.modules[name].onevent = function(self,event,arg1,...)
 		ns.items.RegisterCallback(name,updateItemState,"any");
 		C_Timer.After(1,ns.items.UpdateNow);
 		C_Timer.After(2,function()
-			ns.modules[name]:onevent();
+			module:onevent("BE_DUMMY_EVENT");
 		end);
-		self:UnregisterEvent(event);
 		self.PEW=true;
-	elseif self.PEW then
-		if event=="BE_UPDATE_CLICKOPTIONS" then
-			ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-		else--if event=="ARTIFACT_XP_UPDATE" or event=="ARTIFACT_MAX_RANKS_UPDATE" or event=="ARTIFACT_UPDATE" then
-			obtained = C_ArtifactUI.GetNumObtainedArtifacts() or 0;
-			updateBroker();
-		end
+	end
+	if self.PEW then
+		--if event=="ARTIFACT_XP_UPDATE" or event=="ARTIFACT_MAX_RANKS_UPDATE" or event=="ARTIFACT_UPDATE" then
+		obtained = C_ArtifactUI.GetNumObtainedArtifacts() or 0;
+		updateBroker();
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tooltip) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tooltip) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "RIGHT", "LEFT", "LEFT","RIGHT", "CENTER", "LEFT", "LEFT", "LEFT"},{false},{self});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

@@ -1,21 +1,20 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...;
 local C,L,I = ns.LC.color,ns.L,ns.I;
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Professions"; -- TRADE_SKILLS
-local ttName,ttName2,ttColumns,tt,tt2 = name.."TT",name.."TT2",2;
+local ttName,ttName2,ttColumns,tt,tt2,module = name.."TT",name.."TT2",2;
 local professions,db,createMenu,locked = {};
 local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset = 1,2,3,4,5,6,7,8,9,10; -- GetProfessionInfo
 local nameEnglish,spellId,skillId,disabled = 11, 12, 13, 14; -- custom after GetProfessionInfo
 local spellName,spellLocaleName,spellIcon,spellId = 1,2,3,4;
 local legion_faction_recipes,cdSpells = {},{};
+local profs = {data={},id2Name={},test={}, generated=false};
 local cd_groups = { -- %s cooldown group
 	"Transmutation",	-- L["Transmutation cooldown group"]
 	"Jewels",			-- L["Jewels cooldown group"]
@@ -53,225 +52,13 @@ local cdResetTypes = {
 }
 
 
--- ------------------------------------- --
 -- register icon names and default files --
--- ------------------------------------- --
+-------------------------------------------
 I[name] = {iconfile="Interface\\Icons\\INV_Misc_Book_09.png",coords={0.05,0.95,0.05,0.95}}; --IconName::Professions--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show your profession skills and cooldowns"],
-	label = TRADE_SKILLS,
-	events = {
-		"ADDON_LOADED",
-		"PLAYER_ENTERING_WORLD",
-		"TRADE_SKILL_UPDATE",
-		"TRADE_SKILL_NAME_UPDATE",
-
-		-- archaeology
-		"ARTIFACT_UPDATE",
-		"ARTIFACT_HISTORY_READY",
-		"ARTIFACT_COMPLETE",
-		"ARTIFACT_DIG_SITE_UPDATED",
-		"CURRENCY_DISPLAY_UPDATE",
-		"SKILL_LINES_CHANGED",
-		"BAG_UPDATE_DELAYED",
-		"GET_ITEM_INFO_RECEIVED",
-	},
-	updateinterval = nil, -- 10
-	config_defaults = {
-		showCooldowns = true,
-		showDigSiteStatus = true,
-		showLegionFactionRespices = true,
-		inTitle = {},
-		showAllFactions=true,
-		showRealmNames=true,
-		showCharsFrom=4
-	},
-	config_allowed = nil,
-	config_header = {type="header", label=TRADE_SKILLS, align="left", icon=I[name]},
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="showCooldowns", label=L["Show cooldowns"], tooltip=L["Show/Hide profession cooldowns from all characters."] },
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom",
-		{ type="toggle", name="showLegionFactionRespices", label=L["Show legion recipes"], tooltip=L["Display a list of legion respices with neccessary faction repution"] }
-	},
-	config_misc = nil,
-	clickOptions = {
-		["1_open_character_info"] = {
-			cfg_label = "Open profession menu", -- L["Open profession menu"]
-			cfg_desc = "open the profession menu", -- L["open the profession menu"]
-			cfg_default = "_LEFT",
-			hint = "Open profession menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self,"professions")
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self,"options")
-			end
-		}
-	}
-
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
-local function initData()
-	legion_faction_recipes = { -- { <tradeSkillId>, <faction>, <standing>, <itemId>, <recipeId> }
-		-- Alchemy
-		{171,1859,7,142120,229218},
-		-- Blacksmithing
-		{164,1828,8,123948,182982},{164,1828,8,123953,182987},{164,1828,8,123955,182989},{164,1828,6,136697,209497},{164,1948,6,136698,209498},{164,1948,8,123951,182985},{164,1948,8,123954,182988},
-		-- Enchanting
-		{333,1859,8,128600,191013},{333,1859,8,128602,191015},{333,1859,8,128603,191016},{333,1859,8,128609,191022},{333,1883,8,128593,191006},{333,1883,6,128599,191012},{333,1883,8,128601,191014},{333,1883,8,128608,191021},
-		-- Engineering
-		{202,1894,6,137713,199007},{202,1894,6,137714,199008},{202,1894,8,137715,199009},{202,1894,8,137716,199010},
-		-- Inscription
-		{773,1894,7,137773,192897},{773,1894,7,137777,192901},{773,1894,7,137781,192905},{773,1894,7,142107,229183},{773,1900,7,137774,192898},{773,1900,7,137779,192903},{773,1900,7,137780,192904},
-		-- Jewelcrafting
-		{755,1828,6,137839,195924},{755,1828,8,137844,195929},{755,1828,8,137846,195931},{755,1828,8,137855,195940},{755,1859,8,137850,195935},{755,1894,8,137849,195934},
-		-- Leatherworking
-		{165,1828,7,142408,230954},{165,1828,8,142409,230955},{165,1883,6,137883,194718},{165,1883,8,137895,194730},{165,1883,8,137896,194731},{165,1883,8,137898,194733},{165,1948,6,137910,194753},{165,1948,6,137915,194758},{165,1948,8,137927,194770},{165,1948,8,137928,194771},
-		-- Tailoring
-		{197,1859,8,137973,185954},{197,1859,8,137976,185957},{197,1859,8,137979,185960},{197,1900,8,137977,185958},{197,1900,8,137978,185959},{197,1900,8,137980,185961},{197,1900,6,138015,208353},
-		-- Cooking
-		{185,1894,7,142331,230046},
-		-- First Aid
-		{129,1894,6,142333,230047},
-	};
-	cdSpells = {
-		["Alchemy"] = {
-			[11479]		= {group=1,	type=2}, -- Iron to Gold
-			[11480]		= {group=1,	type=2}, -- Mithril to Truesilver
-			[17559]		= {group=1,	type=2}, -- Air to Fire
-			[17560]		= {group=1,	type=2}, -- Fire to Earth
-			[17561]		= {group=1,	type=2}, -- Earth to Water
-			[17562]		= {group=1,	type=2}, -- Water to Air
-			[17563]		= {group=1,	type=2}, -- Undeath to Earth
-			[17564]		= {group=1,	type=2}, -- Water to Undeath
-			[17565]		= {group=1,	type=2}, -- Life to Earth
-			[17566]		= {group=1,	type=2}, -- Earth to Life
-			[28566]		= {group=1,	type=2}, -- Primal Air to Fire
-			[28567]		= {group=1,	type=2}, -- Primal Earth to Water
-			[28568]		= {group=1,	type=2}, -- Primal Fire to Earth
-			[28569]		= {group=1,	type=2}, -- Primal Water to Air
-			[28580]		= {group=1,	type=2}, -- Primal Shadow to Water
-			[28581]		= {group=1,	type=2}, -- Primal Water to Shadow
-			[28582]		= {group=1,	type=2}, -- Primal Mana to Fire
-			[28583]		= {group=1,	type=2}, -- Primal Fire to Mana
-			[28584]		= {group=1,	type=2}, -- Primal Life to Earth
-			[28585]		= {group=1,	type=2}, -- Primal Earth to Life
-			[52776]		= {group=1,	type=2}, -- Eternal Air to Water
-			[52780]		= {group=1,	type=2}, -- Eternal Shadow to Life
-			[53771]		= {group=1,	type=2}, -- Eternal Life to Shadow
-			[53773]		= {group=1,	type=2}, -- Eternal Life to Fire
-			[53774]		= {group=1,	type=2}, -- Eternal Fire to Water
-			[53775]		= {group=1,	type=2}, -- Eternal Fire to Life
-			[53777]		= {group=1,	type=2}, -- Eternal Air to Earth
-			[53779]		= {group=1,	type=2}, -- Eternal Shadow to Earth
-			[53781]		= {group=1,	type=2}, -- Eternal Earth to Air
-			[53782]		= {group=1,	type=2}, -- Eternal Earth to Shadow
-			[53783]		= {group=1,	type=2}, -- Eternal Water to Air
-			[53784]		= {group=1,	type=2}, -- Eternal Water to Fire
-			[54020]		= {group=1,	type=2}, -- Eternal Might
-			[60893]		= {group=0,	type=1}, -- Alchemy Research // 3 days QuestResetTime?
-			[66658]		= {group=1,	type=2}, -- Ametrine
-			[66659]		= {group=1,	type=2}, -- Cardinal Ruby
-			[66660]		= {group=1,	type=2}, -- King's Amber
-			[66662]		= {group=1,	type=2}, -- Dreadstone
-			[66663]		= {group=1,	type=2}, -- Majestic Zircon
-			[66664]		= {group=1,	type=2}, -- Eye of Zul
-			[78866]		= {group=1,	type=2}, -- Living Elements
-			[80243]		= {group=0,	type=2}, -- Truegold
-			[80244]		= {group=1,	type=2}, -- Pyrium Bar
-			[114780]	= {group=1,	type=2}, -- Transmute: Living Steel
-			[114783]	= {group=0,	type=2}, -- Transmute: Trillium Ingot
-			[156587]	= {group=0,	type=2}, -- Alchemical Catalyst					[wod beta]
-			[168042]	= {group=0,	type=2}, -- Alchemical Catalyst					[wod beta, maybe a replacement on max skill level]
-			[175880]	= {group=0,	type=2}, -- Secrets of Draenor Alchemy			[wod beta, research]
-		},
-		["Enchanting"] = {
-			[116499]	= {group=0,	type=2}, -- Sha Crystal
-			[169092]	= {group=0,	type=2}, -- Temporal Crystal					[wod beta]
-			[177043]	= {group=0,	type=2}, -- Secrets of Draenor Enchanting		[wod beta, Research]
-			[178241]	= {group=0,	type=2}, -- Temporal Crystal					[wod beta, maybe a replacement on max skill level]
-		},
-		["Jewelcrafting"] = {
-			[47280]		= {group=0,	type=2}, -- Brilliant Glass
-			[62242]		= {group=0,	type=2}, -- Icy Prism
-			[73478]		= {group=0,	type=4}, -- Fire Prism
-			[131593]	= {group=2,	type=2}, -- River's Heart
-			[131695]	= {group=2,	type=2}, -- Sun's Radiance
-			[131690]	= {group=2,	type=2}, -- Vermilion Onyx
-			[131686]	= {group=2,	type=2}, -- Primordial Ruby
-			[131691]	= {group=2,	type=2}, -- Imperial Amethyst
-			[131688]	= {group=2,	type=2}, -- Wild Jade
-			[140050]	= {group=0,	type=2}, -- Serpent's Heart
-			[170700]	= {group=0,	type=2}, -- Taladite Crytal						[wod beta]
-			[170832]	= {group=0,	type=2}, -- Taladite Crytal						[wod beta, maybe a replacement on max skill level]
-			[176087]	= {group=0, type=2}, -- Secrets of Draenor Jewelcrafting	[wod beta, research]
-		},
-		["Tailoring"] = {
-			[75141]		= {group=0,	type=1}, -- Dream of Skywall
-			[75142]		= {group=0,	type=1}, -- Dream of Deepholm
-			[75144]		= {group=0,	type=1}, -- Dream of Hyjal
-			[75145]		= {group=0,	type=1}, -- Dream of Ragnaros
-			[75146]		= {group=0,	type=1}, -- Dream of Azshara	//	6days, 20min-40min?
-
-			[125557]	= {group=0,	type=2}, -- Imperial Silk
-			[143011]	= {group=0,	type=2}, -- Celestial Cloth
-			[168835]	= {group=0,	type=2}, -- Hexweave Cloth						[wod beta]
-			[169669]	= {group=0,	type=2}, -- Hexweave Cloth						[wod beta, maybe a replacement on max skill level]
-			[176058]	= {group=0, type=2}, -- Secrets of Draenor Tailoring		[wod beta, research]
-		},
-		["Inscription"] = {
-			[61288]		= {group=0,	type=2}, -- Minor Glyph Research
-			[61177]		= {group=0,	type=2}, -- Major Glyph Research
-			[89244]		= {group=0,	type=2}, -- Forged Documents - Alliance
-			[86654]		= {group=0,	type=2}, -- Forged Documents - Horde
-			[112996]	= {group=0,	type=2}, -- Scroll of Wisdom
-			[169081]	= {group=0,	type=2}, -- War Paints							[wod beta]
-			[177045]	= {group=0,	type=2}, -- Secrets of Draenor Inscription		[wod beta, research]
-			[178240]	= {group=0,	type=2}, -- War Paints							[wod beta, maybe a replacement on max skill level]
-		},
-		["Blacksmithing"] = {
-			[138646]	= {group=0,	type=2}, -- Lightning Steel Ingot
-			[143255]	= {group=0,	type=2}, -- Balanced Trillium Ingot
-			[171690]	= {group=0,	type=2}, -- Truesteel Ingot						[wod beta]
-			[171718]	= {group=0,	type=2}, -- Truesteel Ingot						[wod beta, maybe a replacement on max skill level]
-			[176090]	= {group=0,	type=2}, -- Secrets of Draenor Blacksmithing	[wod beta, research]
-		},
-		["Leatherworking"] = {
-			[140040]	= {group=3,	type=2}, -- Magnificence of Leather
-			[140041]	= {group=3,	type=2}, -- Magnificence of Scales
-			[142976]	= {group=0,	type=2}, -- Hardened Magnificent Hide
-			[171391]	= {group=0,	type=2}, -- Burnished Leather					[wod beta]
-			[171713]	= {group=0,	type=2}, -- Burnished Leather					[wod beta, maybe a replacement on max skill level]
-			[176089]	= {group=0,	type=2}, -- Secrets of Draenor Leatherworking	[wod beta, research]
-		},
-		["Engineering"] = {
-			[139176]	= {group=0,	type=2}, -- Jard's Peculiar Energy Source
-			[169080]	= {group=0,	type=2}, -- Gearspring Parts					[wod beta]
-			[177054]	= {group=0,	type=2}, -- Secrets of Draenor Engineering		[wod beta, research]
-			[178242]	= {group=0,	type=2}, -- Gearspring Parts					[wod beta, maybe a replacement on max skill level]
-		}
-	};
-end
 local function Title_Update()
 	local inTitle,db,v = {},ns.profile[name].inTitle;
 
@@ -282,7 +69,7 @@ local function Title_Update()
 		end
 	end
 
-	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	obj.text = (#inTitle==0) and TRADE_SKILLS or table.concat(inTitle," ");
 end
 
@@ -296,8 +83,7 @@ local function GetTimeLeft(a,b)
 	return floor(a-(time()-b));
 end
 
-local profs = {data={},id2Name={},test={}, generated=false};
-profs.build=function()
+function profs.build()
 	for spellId, spellName in pairs({
 		[1804] = "Lockpicking", [2018]  = "Blacksmithing", [2108]  = "Leatherworking", [2259]  = "Alchemy",     [2550]  = "Cooking",     [2575]   = "Mining",
 		[2656] = "Smelting",    [2366]  = "Herbalism",     [3273]  = "First Aid",      [3908]  = "Tailoring",   [4036]  = "Engineering", [7411]   = "Enchanting",
@@ -538,14 +324,213 @@ local function updateTradeSkill(self)
 end
 
 
+-- module functions and variables --
 ------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules[name].init = function()
-	if initData then
-		initData();
-		initData=nil;
-	end
+module = {
+	desc = L["Broker to show your profession skills and cooldowns"],
+	label = TRADE_SKILLS,
+	events = {
+		"ADDON_LOADED",
+		"PLAYER_LOGIN",
+		"TRADE_SKILL_UPDATE",
+		"TRADE_SKILL_NAME_UPDATE",
+
+		-- archaeology
+		"ARTIFACT_UPDATE",
+		"ARTIFACT_HISTORY_READY",
+		"ARTIFACT_COMPLETE",
+		"ARTIFACT_DIG_SITE_UPDATED",
+		"CURRENCY_DISPLAY_UPDATE",
+		"SKILL_LINES_CHANGED",
+		"BAG_UPDATE_DELAYED",
+		"GET_ITEM_INFO_RECEIVED",
+	},
+	updateinterval = nil, -- 10
+	config_defaults = {
+		showCooldowns = true,
+		showDigSiteStatus = true,
+		showLegionFactionRespices = true,
+		inTitle = {},
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4
+	},
+	config_allowed = nil,
+	config_header = {type="header", label=TRADE_SKILLS, align="left", icon=I[name]},
+	config_broker = nil,
+	config_tooltip = {
+		{ type="toggle", name="showCooldowns", label=L["Show cooldowns"], tooltip=L["Show/Hide profession cooldowns from all characters."] },
+		"showAllFactions",
+		"showRealmNames",
+		"showCharsFrom",
+		{ type="toggle", name="showLegionFactionRespices", label=L["Show legion recipes"], tooltip=L["Display a list of legion respices with neccessary faction repution"] }
+	},
+	config_misc = nil,
+	clickOptions = {
+		["1_open_character_info"] = {
+			cfg_label = "Open profession menu", -- L["Open profession menu"]
+			cfg_desc = "open the profession menu", -- L["open the profession menu"]
+			cfg_default = "_LEFT",
+			hint = "Open profession menu",
+			func = function(self,button)
+				local _mod=name;
+				createMenu(self,"professions")
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu",
+			cfg_desc = "open the option menu",
+			cfg_default = "_RIGHT",
+			hint = "Open option menu",
+			func = function(self,button)
+				local _mod=name;
+				createMenu(self,"options")
+			end
+		}
+	}
+
+}
+
+function module.init()
+	legion_faction_recipes = { -- { <tradeSkillId>, <faction>, <standing>, <itemId>, <recipeId> }
+		-- Alchemy
+		{171,1859,7,142120,229218},
+		-- Blacksmithing
+		{164,1828,8,123948,182982},{164,1828,8,123953,182987},{164,1828,8,123955,182989},{164,1828,6,136697,209497},{164,1948,6,136698,209498},{164,1948,8,123951,182985},{164,1948,8,123954,182988},
+		-- Enchanting
+		{333,1859,8,128600,191013},{333,1859,8,128602,191015},{333,1859,8,128603,191016},{333,1859,8,128609,191022},{333,1883,8,128593,191006},{333,1883,6,128599,191012},{333,1883,8,128601,191014},{333,1883,8,128608,191021},
+		-- Engineering
+		{202,1894,6,137713,199007},{202,1894,6,137714,199008},{202,1894,8,137715,199009},{202,1894,8,137716,199010},
+		-- Inscription
+		{773,1894,7,137773,192897},{773,1894,7,137777,192901},{773,1894,7,137781,192905},{773,1894,7,142107,229183},{773,1900,7,137774,192898},{773,1900,7,137779,192903},{773,1900,7,137780,192904},
+		-- Jewelcrafting
+		{755,1828,6,137839,195924},{755,1828,8,137844,195929},{755,1828,8,137846,195931},{755,1828,8,137855,195940},{755,1859,8,137850,195935},{755,1894,8,137849,195934},
+		-- Leatherworking
+		{165,1828,7,142408,230954},{165,1828,8,142409,230955},{165,1883,6,137883,194718},{165,1883,8,137895,194730},{165,1883,8,137896,194731},{165,1883,8,137898,194733},{165,1948,6,137910,194753},{165,1948,6,137915,194758},{165,1948,8,137927,194770},{165,1948,8,137928,194771},
+		-- Tailoring
+		{197,1859,8,137973,185954},{197,1859,8,137976,185957},{197,1859,8,137979,185960},{197,1900,8,137977,185958},{197,1900,8,137978,185959},{197,1900,8,137980,185961},{197,1900,6,138015,208353},
+		-- Cooking
+		{185,1894,7,142331,230046},
+		-- First Aid
+		{129,1894,6,142333,230047},
+	};
+	cdSpells = {
+		["Alchemy"] = {
+			[11479]		= {group=1,	type=2}, -- Iron to Gold
+			[11480]		= {group=1,	type=2}, -- Mithril to Truesilver
+			[17559]		= {group=1,	type=2}, -- Air to Fire
+			[17560]		= {group=1,	type=2}, -- Fire to Earth
+			[17561]		= {group=1,	type=2}, -- Earth to Water
+			[17562]		= {group=1,	type=2}, -- Water to Air
+			[17563]		= {group=1,	type=2}, -- Undeath to Earth
+			[17564]		= {group=1,	type=2}, -- Water to Undeath
+			[17565]		= {group=1,	type=2}, -- Life to Earth
+			[17566]		= {group=1,	type=2}, -- Earth to Life
+			[28566]		= {group=1,	type=2}, -- Primal Air to Fire
+			[28567]		= {group=1,	type=2}, -- Primal Earth to Water
+			[28568]		= {group=1,	type=2}, -- Primal Fire to Earth
+			[28569]		= {group=1,	type=2}, -- Primal Water to Air
+			[28580]		= {group=1,	type=2}, -- Primal Shadow to Water
+			[28581]		= {group=1,	type=2}, -- Primal Water to Shadow
+			[28582]		= {group=1,	type=2}, -- Primal Mana to Fire
+			[28583]		= {group=1,	type=2}, -- Primal Fire to Mana
+			[28584]		= {group=1,	type=2}, -- Primal Life to Earth
+			[28585]		= {group=1,	type=2}, -- Primal Earth to Life
+			[52776]		= {group=1,	type=2}, -- Eternal Air to Water
+			[52780]		= {group=1,	type=2}, -- Eternal Shadow to Life
+			[53771]		= {group=1,	type=2}, -- Eternal Life to Shadow
+			[53773]		= {group=1,	type=2}, -- Eternal Life to Fire
+			[53774]		= {group=1,	type=2}, -- Eternal Fire to Water
+			[53775]		= {group=1,	type=2}, -- Eternal Fire to Life
+			[53777]		= {group=1,	type=2}, -- Eternal Air to Earth
+			[53779]		= {group=1,	type=2}, -- Eternal Shadow to Earth
+			[53781]		= {group=1,	type=2}, -- Eternal Earth to Air
+			[53782]		= {group=1,	type=2}, -- Eternal Earth to Shadow
+			[53783]		= {group=1,	type=2}, -- Eternal Water to Air
+			[53784]		= {group=1,	type=2}, -- Eternal Water to Fire
+			[54020]		= {group=1,	type=2}, -- Eternal Might
+			[60893]		= {group=0,	type=1}, -- Alchemy Research // 3 days QuestResetTime?
+			[66658]		= {group=1,	type=2}, -- Ametrine
+			[66659]		= {group=1,	type=2}, -- Cardinal Ruby
+			[66660]		= {group=1,	type=2}, -- King's Amber
+			[66662]		= {group=1,	type=2}, -- Dreadstone
+			[66663]		= {group=1,	type=2}, -- Majestic Zircon
+			[66664]		= {group=1,	type=2}, -- Eye of Zul
+			[78866]		= {group=1,	type=2}, -- Living Elements
+			[80243]		= {group=0,	type=2}, -- Truegold
+			[80244]		= {group=1,	type=2}, -- Pyrium Bar
+			[114780]	= {group=1,	type=2}, -- Transmute: Living Steel
+			[114783]	= {group=0,	type=2}, -- Transmute: Trillium Ingot
+			[156587]	= {group=0,	type=2}, -- Alchemical Catalyst					[wod beta]
+			[168042]	= {group=0,	type=2}, -- Alchemical Catalyst					[wod beta, maybe a replacement on max skill level]
+			[175880]	= {group=0,	type=2}, -- Secrets of Draenor Alchemy			[wod beta, research]
+		},
+		["Enchanting"] = {
+			[116499]	= {group=0,	type=2}, -- Sha Crystal
+			[169092]	= {group=0,	type=2}, -- Temporal Crystal					[wod beta]
+			[177043]	= {group=0,	type=2}, -- Secrets of Draenor Enchanting		[wod beta, Research]
+			[178241]	= {group=0,	type=2}, -- Temporal Crystal					[wod beta, maybe a replacement on max skill level]
+		},
+		["Jewelcrafting"] = {
+			[47280]		= {group=0,	type=2}, -- Brilliant Glass
+			[62242]		= {group=0,	type=2}, -- Icy Prism
+			[73478]		= {group=0,	type=4}, -- Fire Prism
+			[131593]	= {group=2,	type=2}, -- River's Heart
+			[131695]	= {group=2,	type=2}, -- Sun's Radiance
+			[131690]	= {group=2,	type=2}, -- Vermilion Onyx
+			[131686]	= {group=2,	type=2}, -- Primordial Ruby
+			[131691]	= {group=2,	type=2}, -- Imperial Amethyst
+			[131688]	= {group=2,	type=2}, -- Wild Jade
+			[140050]	= {group=0,	type=2}, -- Serpent's Heart
+			[170700]	= {group=0,	type=2}, -- Taladite Crytal						[wod beta]
+			[170832]	= {group=0,	type=2}, -- Taladite Crytal						[wod beta, maybe a replacement on max skill level]
+			[176087]	= {group=0, type=2}, -- Secrets of Draenor Jewelcrafting	[wod beta, research]
+		},
+		["Tailoring"] = {
+			[75141]		= {group=0,	type=1}, -- Dream of Skywall
+			[75142]		= {group=0,	type=1}, -- Dream of Deepholm
+			[75144]		= {group=0,	type=1}, -- Dream of Hyjal
+			[75145]		= {group=0,	type=1}, -- Dream of Ragnaros
+			[75146]		= {group=0,	type=1}, -- Dream of Azshara	//	6days, 20min-40min?
+
+			[125557]	= {group=0,	type=2}, -- Imperial Silk
+			[143011]	= {group=0,	type=2}, -- Celestial Cloth
+			[168835]	= {group=0,	type=2}, -- Hexweave Cloth						[wod beta]
+			[169669]	= {group=0,	type=2}, -- Hexweave Cloth						[wod beta, maybe a replacement on max skill level]
+			[176058]	= {group=0, type=2}, -- Secrets of Draenor Tailoring		[wod beta, research]
+		},
+		["Inscription"] = {
+			[61288]		= {group=0,	type=2}, -- Minor Glyph Research
+			[61177]		= {group=0,	type=2}, -- Major Glyph Research
+			[89244]		= {group=0,	type=2}, -- Forged Documents - Alliance
+			[86654]		= {group=0,	type=2}, -- Forged Documents - Horde
+			[112996]	= {group=0,	type=2}, -- Scroll of Wisdom
+			[169081]	= {group=0,	type=2}, -- War Paints							[wod beta]
+			[177045]	= {group=0,	type=2}, -- Secrets of Draenor Inscription		[wod beta, research]
+			[178240]	= {group=0,	type=2}, -- War Paints							[wod beta, maybe a replacement on max skill level]
+		},
+		["Blacksmithing"] = {
+			[138646]	= {group=0,	type=2}, -- Lightning Steel Ingot
+			[143255]	= {group=0,	type=2}, -- Balanced Trillium Ingot
+			[171690]	= {group=0,	type=2}, -- Truesteel Ingot						[wod beta]
+			[171718]	= {group=0,	type=2}, -- Truesteel Ingot						[wod beta, maybe a replacement on max skill level]
+			[176090]	= {group=0,	type=2}, -- Secrets of Draenor Blacksmithing	[wod beta, research]
+		},
+		["Leatherworking"] = {
+			[140040]	= {group=3,	type=2}, -- Magnificence of Leather
+			[140041]	= {group=3,	type=2}, -- Magnificence of Scales
+			[142976]	= {group=0,	type=2}, -- Hardened Magnificent Hide
+			[171391]	= {group=0,	type=2}, -- Burnished Leather					[wod beta]
+			[171713]	= {group=0,	type=2}, -- Burnished Leather					[wod beta, maybe a replacement on max skill level]
+			[176089]	= {group=0,	type=2}, -- Secrets of Draenor Leatherworking	[wod beta, research]
+		},
+		["Engineering"] = {
+			[139176]	= {group=0,	type=2}, -- Jard's Peculiar Energy Source
+			[169080]	= {group=0,	type=2}, -- Gearspring Parts					[wod beta]
+			[177054]	= {group=0,	type=2}, -- Secrets of Draenor Engineering		[wod beta, research]
+			[178242]	= {group=0,	type=2}, -- Gearspring Parts					[wod beta, maybe a replacement on max skill level]
+		}
+	};
 	if(ns.toon.professions==nil)then
 		ns.toon.professions = {cooldowns={},hasCooldowns=false};
 	end
@@ -559,9 +544,9 @@ ns.modules[name].init = function()
 	profs.build();
 end
 
-ns.modules[name].onevent = function(self,event,arg1)
+function module.onevent(self,event,arg1)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+		ns.clickOptions.update(module,ns.profile[name]);
 		return;
 	elseif event=="ADDON_LOADED" and arg1==addon then
 		if ns.profile[name].showAllRealms~=nil then
@@ -682,20 +667,21 @@ ns.modules[name].onevent = function(self,event,arg1)
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tt) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tt) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT"},{true},{self});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

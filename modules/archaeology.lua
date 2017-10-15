@@ -1,166 +1,27 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Archaeology"; -- PROFESSIONS_ARCHAEOLOGY
-local ttName, ttColumns, tt = name.."TT", 5, nil
-local skill,createMenu
-local tradeskill = {};
-local maxFragments = 200;
-local maxFragments250 = {[109585]=1,[108439]=1,[109584]=1};
+local ttName, ttColumns, tt, skill, module = name.."TT", 5
+local tradeskill, maxFragments, maxFragments250 = {},200,{[109585]=1,[108439]=1,[109584]=1};
 local raceIndex,raceCurrencyId,raceKeystone2Fragments,raceName,raceTexture,raceKeystoneItemID = 1,2,3,4,5,6;
 local raceFragmentsCollected,raceNumFragmentsRequired,raceFragmentsMax,raceArtifactName,raceArtifactIcon,raceKeystoneSlots = 7,8,9,10,11,12;
 local raceKeystoneIcon,raceKeystoneCount,raceKeystoneFragmentsValue,raceArtifactSolvable,raceFragmentsIcon = 13,14,15,16,17;
-local races = { -- <raceIndex>, <currencyId>, <raceKeystone2FragmentsCount>
-	Azeroth		= {nil, true},
-	Dwarf		= {nil, 384, 20},
-	Troll		= {nil, 385, 20},
-	Fossil		= {nil, 393, 20},
-	NightElf	= {nil, 394, 20},
-	Tolvir		= {nil, 401, 20},
-	Outland		= {nil, true},
-	Draenei		= {nil, 398, 20},
-	Orc			= {nil, 397, 20},
-	Northend	= {nil, true},
-	Vrykul		= {nil, 399, 20},
-	Nerubian	= {nil, 400, 20},
-};
-local racesOrder = {
-	"Azeroth", -- continent header
-	"Dwarf","Troll","Fossil","NightElf","Tolvir",
-	"Outland", -- continent header
-	"Draenei","Orc",
-	"Northend", -- continent header
-	"Vrykul","Nerubian"
-};
-local keystoneItem2race = {};
-local solvables,limitWarning = {},{};
-
-if ns.build>50000000 then -- MoP
-	races.Pandaria	= {nil, true};
-	races.Pandaren	= {nil, 676, 20};
-	races.Mogu		= {nil, 677, 20};
-	races.Mantid	= {nil, 754, 20};
-	tinsert(racesOrder,"Pandaria"); -- continent header
-	tinsert(racesOrder,"Pandaren");
-	tinsert(racesOrder,"Mogu");
-	tinsert(racesOrder,"Mantid");
-end
-
-if ns.build>60000000 then -- WoD
-	races.Draenor		= {nil, true};
-	races.DraenorOrc	= {nil, 821, 20};
-	races.Ogre			= {nil, 828, 20};
-	races.Arakkoa		= {nil, 829, 20};
-	tinsert(racesOrder,"Draenor"); -- continent header
-	tinsert(racesOrder,"DraenorOrc");
-	tinsert(racesOrder,"Ogre");
-	tinsert(racesOrder,"Arakkoa");
-end
-
-if ns.build>70000000 then -- Legion
-	races.Legion				= {nil, true};
-	races.HighborneNightElves	= {nil, 1172, 12};
-	races.HighmountainTauren	= {nil, 1173, 12};
-	races.Demons				= {nil, 1174, 12};
-	tinsert(racesOrder,"Legion"); -- continent header
-	tinsert(racesOrder,"HighborneNightElves");
-	tinsert(racesOrder,"HighmountainTauren");
-	tinsert(racesOrder,"Demons");
-end
-
-if ns.build>80000000 then -- ?
-end
-
-local iconID2Race = { -- 7.3 -- required since blizzard replaced iconFile with iconFileID
-	[461829]="Draenei",		[461831]="Dwarf",
-	[461833]="Fossil",		[462319]="Misc",
-	[461835]="Nerubian",	[461837]="NightElf",
-	[462321]="Orc",			[461839]="Tolvir",
-	[461841]="Troll",		[461843]="Vrykul",
-	[1030616]="Arakkoa",	[1445573]="Demons",
-	[1030617]="DraenorOrc",	[1445575]="HighborneNightElves",
-	[839111]="Mantid",		[1445577]="HighmountainTauren",
-	[633000]="Mogu",		[1030618]="Ogre",
-	[633002]="Pandaren",
-}
+local keystoneItem2race,races,racesOrder = {};
+local solvables,limitWarning,iconID2Race = {},{};
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="INTERFACE\\ICONS\\trade_archaeology",coords={0.05,0.95,0.05,0.95}}; --IconName::Archaeology--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show archaeology factions with fragments, keystones and necessary amount of fragments to solve artifacts"],
-	label = PROFESSIONS_ARCHAEOLOGY,
-	--icon_suffix = "_Neutral",
-	events = {
-		"PLAYER_ENTERING_WORLD",
-		"KNOWN_CURRENCY_TYPES_UPDATE",
-		"ARTIFACT_UPDATE",
-		"ARTIFACT_COMPLETE",
-		"CURRENCY_DISPLAY_UPDATE",
-		"CHAT_MSG_SKILL"
-	},
-	updateinterval = nil,
-	config_defaults = {
-		inTitle = {},
-		continentOrder=true
-	},
-	config_allowed = {
-		subTTposition = {["AUTO"]=true,["TOP"]=true,["LEFT"]=true,["RIGHT"]=true,["BOTTOM"]=true}
-	},
-	config_header = {type="header", label=PROFESSIONS_ARCHAEOLOGY, align="left", icon=true},
-	config_broker = nil,
-	config_tooltip = { { type="toggle", name="continentOrder", label=L["Order by continent"], tooltip=L["Order archaeology races by continent"] } },
-	config_misc = nil,
-	clickOptions = {
-		["1_open_archaeology_frame"] = {
-			cfg_label = "Open archaeology frame", -- L["Open archaeology frame"]
-			cfg_desc = "open your archaeology frame", -- L["open your archaeology frame"]
-			cfg_default = "_LEFT",
-			hint = "Open archaeology frame", -- L["Open archaeology frame"]
-			func = function(self,button)
-				local _mod=name;
-				if ( not ArchaeologyFrame ) then
-					ArchaeologyFrame_LoadUI()
-				end
-				if ( ArchaeologyFrame ) then
-					if(ArchaeologyFrame:IsShown())then
-						securecall("ArchaeologyFrame_Hide")
-					else
-						securecall("ArchaeologyFrame_Show")
-					end
-				end
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
 function createMenu(self)
@@ -174,9 +35,8 @@ local function limitColors(numFree,default)
 	return (numFree<=10 and "red") or (numFree<=30 and "orange") or (numFree<=50 and "yellow") or default;
 end
 
-
 local function updateBroker()
-	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local text = {};
 	if #limitWarning>0 then
 		table.sort(limitWarning,function(a,b) return a.free < b.free; end);
@@ -365,49 +225,176 @@ local function createTooltip(tt)
 	ns.roundupTooltip(tt);
 end
 
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
--- ns.modules[name].init = function() end
 
-ns.modules[name].onevent = function(self,event,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
-	else
-		if event=="PLAYER_ENTERING_WORLD" then
-			updateRaces(true);
-
-			local _;
-			_,_,tradeskill.id = GetProfessions();
-			if tradeskill.id then
-				tradeskill.name,tradeskill.icon,tradeskill.skill,tradeskill.maxSkill = GetProfessionInfo(tradeskill.id);
-			else
-				tradeskill.name,_,tradeskill.icon = GetSpellInfo(78670);
-				tradeskill.skill, tradeskill.maxSkill = 0,0;
+-- module variables for registration --
+---------------------------------------
+module = {
+	desc = L["Broker to show archaeology factions with fragments, keystones and necessary amount of fragments to solve artifacts"],
+	label = PROFESSIONS_ARCHAEOLOGY,
+	--icon_suffix = "_Neutral",
+	events = {
+		"PLAYER_LOGIN",
+		"KNOWN_CURRENCY_TYPES_UPDATE",
+		"ARTIFACT_UPDATE",
+		"ARTIFACT_COMPLETE",
+		"CURRENCY_DISPLAY_UPDATE",
+		"CHAT_MSG_SKILL"
+	},
+	updateinterval = nil,
+	config_defaults = {
+		inTitle = {},
+		continentOrder=true
+	},
+	config_allowed = {
+		subTTposition = {["AUTO"]=true,["TOP"]=true,["LEFT"]=true,["RIGHT"]=true,["BOTTOM"]=true}
+	},
+	config_header = {type="header", label=PROFESSIONS_ARCHAEOLOGY, align="left", icon=true},
+	config_broker = nil,
+	config_tooltip = { { type="toggle", name="continentOrder", label=L["Order by continent"], tooltip=L["Order archaeology races by continent"] } },
+	config_misc = nil,
+	clickOptions = {
+		["1_open_archaeology_frame"] = {
+			cfg_label = "Open archaeology frame", -- L["Open archaeology frame"]
+			cfg_desc = "open your archaeology frame", -- L["open your archaeology frame"]
+			cfg_default = "_LEFT",
+			hint = "Open archaeology frame", -- L["Open archaeology frame"]
+			func = function(self,button)
+				local _mod=name;
+				if ( not ArchaeologyFrame ) then
+					ArchaeologyFrame_LoadUI()
+				end
+				if ( ArchaeologyFrame ) then
+					if(ArchaeologyFrame:IsShown())then
+						securecall("ArchaeologyFrame_Hide")
+					else
+						securecall("ArchaeologyFrame_Show")
+					end
+				end
 			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
+			cfg_default = "_RIGHT",
+			hint = "Open option menu", -- L["Open option menu"]
+			func = function(self,button)
+				local _mod=name; -- for error tracking
+				createMenu(self);
+			end
+		}
+	}
+}
 
-			self:UnregisterEvent(event);
+function module.init()
+	racesOrder = {
+		"Azeroth", -- continent header
+		"Dwarf","Troll","Fossil","NightElf","Tolvir",
+		"Outland", -- continent header
+		"Draenei","Orc",
+		"Northend", -- continent header
+		"Vrykul","Nerubian"
+	};
+
+	races = { -- <raceIndex>, <currencyId>, <raceKeystone2FragmentsCount>
+		Azeroth		= {nil, true},
+		Dwarf		= {nil, 384, 20},
+		Troll		= {nil, 385, 20},
+		Fossil		= {nil, 393, 20},
+		NightElf	= {nil, 394, 20},
+		Tolvir		= {nil, 401, 20},
+		Outland		= {nil, true},
+		Draenei		= {nil, 398, 20},
+		Orc			= {nil, 397, 20},
+		Northend	= {nil, true},
+		Vrykul		= {nil, 399, 20},
+		Nerubian	= {nil, 400, 20},
+	};
+
+	if ns.build>50000000 then -- MoP
+		races.Pandaria	= {nil, true};
+		races.Pandaren	= {nil, 676, 20};
+		races.Mogu		= {nil, 677, 20};
+		races.Mantid	= {nil, 754, 20};
+		tinsert(racesOrder,"Pandaria"); -- continent header
+		tinsert(racesOrder,"Pandaren");
+		tinsert(racesOrder,"Mogu");
+		tinsert(racesOrder,"Mantid");
+	end
+
+	if ns.build>60000000 then -- WoD
+		races.Draenor		= {nil, true};
+		races.DraenorOrc	= {nil, 821, 20};
+		races.Ogre			= {nil, 828, 20};
+		races.Arakkoa		= {nil, 829, 20};
+		tinsert(racesOrder,"Draenor"); -- continent header
+		tinsert(racesOrder,"DraenorOrc");
+		tinsert(racesOrder,"Ogre");
+		tinsert(racesOrder,"Arakkoa");
+	end
+
+	if ns.build>70000000 then -- Legion
+		races.Legion				= {nil, true};
+		races.HighborneNightElves	= {nil, 1172, 12};
+		races.HighmountainTauren	= {nil, 1173, 12};
+		races.Demons				= {nil, 1174, 12};
+		tinsert(racesOrder,"Legion"); -- continent header
+		tinsert(racesOrder,"HighborneNightElves");
+		tinsert(racesOrder,"HighmountainTauren");
+		tinsert(racesOrder,"Demons");
+	end
+
+	if ns.build>80000000 then -- ?
+	end
+
+	iconID2Race = { -- 7.3 -- required since blizzard replaced iconFile with iconFileID
+		[461829]="Draenei",		[461831]="Dwarf",
+		[461833]="Fossil",		[462319]="Misc",
+		[461835]="Nerubian",	[461837]="NightElf",
+		[462321]="Orc",			[461839]="Tolvir",
+		[461841]="Troll",		[461843]="Vrykul",
+		[1030616]="Arakkoa",	[1445573]="Demons",
+		[1030617]="DraenorOrc",	[1445575]="HighborneNightElves",
+		[839111]="Mantid",		[1445577]="HighmountainTauren",
+		[633000]="Mogu",		[1030618]="Ogre",
+		[633002]="Pandaren",
+	};
+end
+
+function module.onevent(self,event,...)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module,ns.profile[name]);
+	elseif event=="PLAYER_LOGIN" then
+		updateRaces(true);
+
+		local _;
+		_,_,tradeskill.id = GetProfessions();
+		if tradeskill.id then
+			tradeskill.name,tradeskill.icon,tradeskill.skill,tradeskill.maxSkill = GetProfessionInfo(tradeskill.id);
 		else
-			updateRaces(true);
+			tradeskill.name,_,tradeskill.icon = GetSpellInfo(78670);
+			tradeskill.skill, tradeskill.maxSkill = 0,0;
 		end
+	end
+	if ns.pastPEW then
+		updateRaces(true);
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tt) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tt) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "CENTER", "RIGHT", "RIGHT","RIGHT"},{false},{self});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
 
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

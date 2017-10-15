@@ -1,153 +1,29 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Volume" -- VOLUME
-local ttName,ttColumns,tt,createMenu,createTooltip = name.."TT",2;
+local ttName,ttColumns,tt,createMenu,createTooltip,module = name.."TT",2;
 local updateBrokerButton,getSoundHardware,setSoundHardware
 local icon = "Interface\\AddOns\\"..addon.."\\media\\volume_"
 local VIDEO_VOLUME_TITLE = L["Video Volume"];
-local volume,cvars,updateBroker = {},{};
-local vol;
+local volume,cvars,updateBroker,vol = {},{};
 
--- ------------------------------------- --
 -- register icon names and default files --
--- ------------------------------------- --
+-------------------------------------------
 I[name..'_0']    = {iconfile=icon.."0"}		--IconName::Volume_0--
 I[name..'_33']   = {iconfile=icon.."33"}	--IconName::Volume_33--
 I[name..'_66']   = {iconfile=icon.."66"}	--IconName::Volume_66--
 I[name..'_100']  = {iconfile=icon.."100"}	--IconName::Volume_100--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show current volume and in tooltip all changeable audio options"],
-	label = VOLUME,
-	icon_suffix = "_100",
-	events = {
-		"PLAYER_ENTERING_WORLD",
-		"CVAR_UPDATE",
-		"SOUND_DEVICE_UPDATE"
-	},
-	updateinterval = nil, --5,
-	config_defaults = {
-		useWheel = false,
-		steps = 10,
-		listHardware = true
-	},
-	config_allowed = {
-	},
-	config_header = {type="header", label=VOLUME, align="left", icon=I[name..'_100']},
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="listHardware", label=L["List of hardware"], tooltip=L["Display in tooltip a list of your sound output hardware."] },
-	},
-	config_misc = {
-		{ type="toggle", name="useWheel", label=L["Use MouseWheel"], tooltip=L["Use the MouseWheel to change the volume"] },
-		{ type="slider", name="steps", label=L["Change steps"], tooltip=L["Change the stepping width for volume changes with mousewheel and clicks."], min=1, max=100, default=10, format = "%d" },
-	},
-	clickOptions = {
-		["0_mute"] = {
-			cfg_label = "Mute game sound", -- L["Mute game sound"]
-			cfg_desc = "mute gane sound", -- L["mute game sound"]
-			cfg_default = "_LEFT",
-			hint = "Mute game sound",
-			func = function(self,button)
-				local _mod=name;
-				BlizzardOptionsPanel_SetCVarSafe("Sound_EnableAllSound",BlizzardOptionsPanel_GetCVarSafe("Sound_EnableAllSound")==0 and 1 or 0);
-				updateBroker();
-				createTooltip(tt,true);
-			end
-		},
-		["1_louder"] = {
-			cfg_label = "Louder", -- L["Louder"]
-			cfg_desc = "make volume louder", -- L["make volume louder"]
-			cfg_default = "__NONE",
-			hint = "Louder",
-			func = function(self,button)
-				local _mod=name;
-				if volume.master==1 then return end
-				volume.master = volume.master + (ns.profile[name].steps / 100);
-				if volume.master>1 then volume.master=1 elseif volume.master<0 then volume.master=0; end
-				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master);
-				updateBroker();
-				createTooltip(tt,true);
-			end
-		},
-		["2_quieter"] = {
-			cfg_label = "Quieter", -- L["Quieter"]
-			cfg_desc = "make volume quieter", -- L["make volume quieter"]
-			cfg_default = "__NONE",
-			hint = "Quieter",
-			func = function(self,button)
-				local _mod=name;
-				if volume.master==0 then return end
-				volume.master = volume.master - (ns.profile[name].steps / 100)
-				if volume.master>1 then volume.master=1 elseif volume.master<0 then volume.master=0; end
-				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master);
-				updateBroker();
-				createTooltip(tt,true);
-			end
-		},
-		["3_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self);
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
-local function initData()
-	vol = {
-		{inset=0,locale="MASTER_VOLUME",			toggle="Sound_EnableAllSound",									percent="Sound_MasterVolume"},
-		{inset=1,locale="ENABLE_SOUNDFX",			toggle="Sound_EnableSFX",						depend={1},		percent="Sound_SFXVolume"},
-		{inset=2,locale="ENABLE_ERROR_SPEECH",		toggle="Sound_EnableErrorSpeech",				depend={1,2}	},
-		{inset=2,locale="ENABLE_EMOTE_SOUNDS",		toggle="Sound_EnableEmoteSounds",				depend={1,2}	},
-		{inset=2,locale="ENABLE_PET_SOUNDS",		toggle="Sound_EnablePetSounds",					depend={1,2}	},
-		{inset=1,locale="MUSIC_VOLUME",				toggle="Sound_EnableMusic",						depend={1},		percent="Sound_MusicVolume"},
-		{inset=2,locale="ENABLE_MUSIC_LOOPING",		toggle="Sound_ZoneMusicNoDelay",				depend={1,6}	},
-		{inset=2,locale="ENABLE_PET_BATTLE_MUSIC",	toggle="Sound_EnablePetBattleMusic",			depend={1,6}	},
-		{inset=1,locale="ENABLE_AMBIENCE",			toggle="Sound_EnableAmbience",					depend={1},		percent="Sound_AmbienceVolume"},
-		{inset=1,locale="DIALOG_VOLUME",			toggle="Sound_EnableDialog",					depend={1},		percent="Sound_DialogVolume", hide=(select(4,GetBuildInfo())<60000)},
-		{inset=1,locale="ENABLE_BGSOUND",			toggle="Sound_EnableSoundWhenGameIsInBG",		depend={1}		},
-		{inset=1,locale="ENABLE_SOUND_AT_CHARACTER",toggle="Sound_ListenerAtCharacter",				depend={1}		},
-		{inset=1,locale="ENABLE_REVERB",			toggle="Sound_EnableReverb",					depend={1}		},
-		{inset=1,locale="ENABLE_SOFTWARE_HRTF",		toggle="Sound_EnablePositionalLowPassFilter",	depend={1}		},
-		{inset=1,locale="ENABLE_DSP_EFFECTS",		toggle="Sound_EnableDSPEffects",				depend={1}		},
-		--{inset=0,locale="VIDEO_VOLUME_TITLE",		toggle=false,									special="video"},
-		{inset=0,locale="HARDWARE",					toggle=false,									special="hardware"},
-	}
-	for i=1,#vol do
-		if vol[i].locale then
-			cvars[vol[i].locale:lower()]=true;
-		end
-		if vol[i].toggle then
-			cvars[vol[i].toggle:lower()]=true;
-		end
-		if vol[i].percent then
-			cvars[vol[i].percent:lower()]=true;
-		end
-	end
-end
-
 function createMenu(self)
 	if (tt~=nil) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
@@ -157,7 +33,7 @@ end
 
 function updateBroker()
 	volume.master = tonumber(("%.2f"):format(GetCVar("Sound_MasterVolume")))
-	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local suffix,color = "100","green"
 	if volume.master < .1 then
 		suffix,color = "0","gray"
@@ -352,17 +228,124 @@ local function BlizzardOptionsPanel_SetCVarSafeHook(cvar)
 end
 
 
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules[name].init = function()
-	if initData then
-		initData();
-		initData=nil;
+-- module variables for registration --
+---------------------------------------
+module = {
+	desc = L["Broker to show current volume and in tooltip all changeable audio options"],
+	label = VOLUME,
+	icon_suffix = "_100",
+	events = {
+		"PLAYER_LOGIN",
+		"CVAR_UPDATE",
+		"SOUND_DEVICE_UPDATE"
+	},
+	updateinterval = nil, --5,
+	config_defaults = {
+		useWheel = false,
+		steps = 10,
+		listHardware = true
+	},
+	config_allowed = {
+	},
+	config_header = {type="header", label=VOLUME, align="left", icon=I[name..'_100']},
+	config_broker = nil,
+	config_tooltip = {
+		{ type="toggle", name="listHardware", label=L["List of hardware"], tooltip=L["Display in tooltip a list of your sound output hardware."] },
+	},
+	config_misc = {
+		{ type="toggle", name="useWheel", label=L["Use MouseWheel"], tooltip=L["Use the MouseWheel to change the volume"] },
+		{ type="slider", name="steps", label=L["Change steps"], tooltip=L["Change the stepping width for volume changes with mousewheel and clicks."], min=1, max=100, default=10, format = "%d" },
+	},
+	clickOptions = {
+		["0_mute"] = {
+			cfg_label = "Mute game sound", -- L["Mute game sound"]
+			cfg_desc = "mute gane sound", -- L["mute game sound"]
+			cfg_default = "_LEFT",
+			hint = "Mute game sound",
+			func = function(self,button)
+				local _mod=name;
+				BlizzardOptionsPanel_SetCVarSafe("Sound_EnableAllSound",BlizzardOptionsPanel_GetCVarSafe("Sound_EnableAllSound")==0 and 1 or 0);
+				updateBroker();
+				createTooltip(tt,true);
+			end
+		},
+		["1_louder"] = {
+			cfg_label = "Louder", -- L["Louder"]
+			cfg_desc = "make volume louder", -- L["make volume louder"]
+			cfg_default = "__NONE",
+			hint = "Louder",
+			func = function(self,button)
+				local _mod=name;
+				if volume.master==1 then return end
+				volume.master = volume.master + (ns.profile[name].steps / 100);
+				if volume.master>1 then volume.master=1 elseif volume.master<0 then volume.master=0; end
+				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master);
+				updateBroker();
+				createTooltip(tt,true);
+			end
+		},
+		["2_quieter"] = {
+			cfg_label = "Quieter", -- L["Quieter"]
+			cfg_desc = "make volume quieter", -- L["make volume quieter"]
+			cfg_default = "__NONE",
+			hint = "Quieter",
+			func = function(self,button)
+				local _mod=name;
+				if volume.master==0 then return end
+				volume.master = volume.master - (ns.profile[name].steps / 100)
+				if volume.master>1 then volume.master=1 elseif volume.master<0 then volume.master=0; end
+				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master);
+				updateBroker();
+				createTooltip(tt,true);
+			end
+		},
+		["3_open_menu"] = {
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
+			cfg_default = "_RIGHT",
+			hint = "Open option menu",
+			func = function(self,button)
+				local _mod=name;
+				createMenu(self);
+			end
+		}
+	}
+}
+
+function module.init()
+	vol = {
+		{inset=0,locale="MASTER_VOLUME",			toggle="Sound_EnableAllSound",									percent="Sound_MasterVolume"},
+		{inset=1,locale="ENABLE_SOUNDFX",			toggle="Sound_EnableSFX",						depend={1},		percent="Sound_SFXVolume"},
+		{inset=2,locale="ENABLE_ERROR_SPEECH",		toggle="Sound_EnableErrorSpeech",				depend={1,2}	},
+		{inset=2,locale="ENABLE_EMOTE_SOUNDS",		toggle="Sound_EnableEmoteSounds",				depend={1,2}	},
+		{inset=2,locale="ENABLE_PET_SOUNDS",		toggle="Sound_EnablePetSounds",					depend={1,2}	},
+		{inset=1,locale="MUSIC_VOLUME",				toggle="Sound_EnableMusic",						depend={1},		percent="Sound_MusicVolume"},
+		{inset=2,locale="ENABLE_MUSIC_LOOPING",		toggle="Sound_ZoneMusicNoDelay",				depend={1,6}	},
+		{inset=2,locale="ENABLE_PET_BATTLE_MUSIC",	toggle="Sound_EnablePetBattleMusic",			depend={1,6}	},
+		{inset=1,locale="ENABLE_AMBIENCE",			toggle="Sound_EnableAmbience",					depend={1},		percent="Sound_AmbienceVolume"},
+		{inset=1,locale="DIALOG_VOLUME",			toggle="Sound_EnableDialog",					depend={1},		percent="Sound_DialogVolume", hide=(select(4,GetBuildInfo())<60000)},
+		{inset=1,locale="ENABLE_BGSOUND",			toggle="Sound_EnableSoundWhenGameIsInBG",		depend={1}		},
+		{inset=1,locale="ENABLE_SOUND_AT_CHARACTER",toggle="Sound_ListenerAtCharacter",				depend={1}		},
+		{inset=1,locale="ENABLE_REVERB",			toggle="Sound_EnableReverb",					depend={1}		},
+		{inset=1,locale="ENABLE_SOFTWARE_HRTF",		toggle="Sound_EnablePositionalLowPassFilter",	depend={1}		},
+		{inset=1,locale="ENABLE_DSP_EFFECTS",		toggle="Sound_EnableDSPEffects",				depend={1}		},
+		--{inset=0,locale="VIDEO_VOLUME_TITLE",		toggle=false,									special="video"},
+		{inset=0,locale="HARDWARE",					toggle=false,									special="hardware"},
+	}
+	for i=1,#vol do
+		if vol[i].locale then
+			cvars[vol[i].locale:lower()]=true;
+		end
+		if vol[i].toggle then
+			cvars[vol[i].toggle:lower()]=true;
+		end
+		if vol[i].percent then
+			cvars[vol[i].percent:lower()]=true;
+		end
 	end
 end
 
-ns.modules[name].onevent = function(self,event,arg1)
+function module.onevent(self,event,arg1)
 	if event=="PLAYER_ENTERING_WORLD" or event=="SOUND_DEVICE_UPDATE" or (event=="CVAR_UPDATE" and cvars[arg1:lower()]) then
 		if not self.hooked then
 			hooksecurefunc("BlizzardOptionsPanel_SetCVarSafe",BlizzardOptionsPanel_SetCVarSafeHook);
@@ -370,13 +353,13 @@ ns.modules[name].onevent = function(self,event,arg1)
 		end
 		updateBroker();
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+		ns.clickOptions.update(module,ns.profile[name]);
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
+-- function module.optionspanel(panel) end
 
-ns.modules[name].onmousewheel = function(self,direction)
+function module.onmousewheel(self,direction)
 	if not ns.profile[name].useWheel then return end
 	if (direction==-1 and volume.master == 0) or (direction==1 and volume.master == 1) then return end
 
@@ -394,11 +377,7 @@ ns.modules[name].onmousewheel = function(self,direction)
 	end
 end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 
 	if not self.mousewheelOn then
@@ -407,10 +386,15 @@ ns.modules[name].onenter = function(self)
 	end
 
 	tt = ns.acquireTooltip({ttName, 2, "LEFT", "RIGHT"},{false},{self})
-	ns.RegisterMouseWheel(self,ns.modules[name].onmousewheel)
+	ns.RegisterMouseWheel(self,module.onmousewheel)
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

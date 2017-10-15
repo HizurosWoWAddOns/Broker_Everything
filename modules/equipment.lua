@@ -1,16 +1,14 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Equipment"; -- BAG_FILTER_EQUIPMENT
-local ttName, ttColumns, tt,createMenu, equipPending = name.."TT", 3;
+local ttName, ttColumns, tt,createMenu, equipPending,module = name.."TT", 3;
 local objLink,objColor,objType,objId,objData,objName,objInfo,objTooltip=1,2,3,4,6,5,7,8;
 local itemEnchant,itemGem1,itemGem2,itemGem3,itemGem4=1,2,3,4,5;
 local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice=1,2,3,4,5,6,7,8,9,10,11;
@@ -18,187 +16,14 @@ local slots = {"HEAD","NECK","SHOULDER","SHIRT","CHEST","WAIST","LEGS","FEET","W
 local inventory,enchantSlots = {iLevelMin=0,iLevelMax=0},{}; -- (enchantSlots) -1 = [iLevel<600], 0 = both, 1 = [iLevel=>600]
 local warlords_crafted,tSetItems = {},{};
 
--------------------------------------------
+
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\equip"}; --IconName::Equipment--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show current equipped items and list & modify equipment sets"],
-	label = BAG_FILTER_EQUIPMENT,
-	events = {
-		"UNIT_INVENTORY_CHANGED",
-		"EQUIPMENT_SWAP_FINISHED",
-		"EQUIPMENT_SETS_CHANGED",
-		"PLAYER_ENTERING_WORLD",
-		"PLAYER_REGEN_ENABLED",
-		"PLAYER_ALIVE",
-		"PLAYER_UNGHOST",
-		"ITEM_UPGRADE_MASTER_UPDATE"
-	},
-	updateinterval = nil, -- 10
-	config_defaults = {
-		showSets = true,
-		showInventory = true,
-		showEmptySlots = false,
-		showItemLevel = true,
-		showCurrentSet = true,
-		fullyUpgraded = true,
-
-		showNotEnchanted = true,
-		showEmptyGems = true,
-		showTSet = true,
-		showSetName = true,
-		showGreenText = true,
-		showUpgrades = true,
-		showShorterInfo = false
-	},
-	config_allowed = nil,
-	config_header = {type="header", label=BAG_FILTER_EQUIPMENT, align="left", icon=I[name]},
-	config_broker = {
-		{ type="toggle", name="showCurrentSet",      label=L["Show current set"],                             tooltip=L["Display your current equipment set on broker button"], event=true},
-		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],                      tooltip=L["Display your average item level on broker button"], event=true},
-		{ type="toggle", name="showShorterInfo",     label=L["Show shorter Info for 'Unknown set' and more"], tooltip=L["Display shorter Info on broker button. 'Set?' instead of 'Unknown set'. 'No sets' instead of 'No sets found'."], event=true}
-	},
-	config_tooltip = {
-		{ type="toggle", name="showSets",            label=L["Show equipment sets"],               tooltip=L["Display a list of your equipment sets"]},
-		{ type="toggle", name="showInventory" ,      label=L["Show inventory"],                    tooltip=L["Display a list of currently equipped items"]},
-		{ type="toggle", name="showEmptySlots",      label=L["Show emtpy slots"],                  tooltip=L["Display empty equipment slots"]},
-		{ type="toggle", name="showNotEnchanted" ,   label=L["Show 'not enchanted' mark"],         tooltip=L["Display a red # on not enchanted/enchantable items"]},
-		{ type="toggle", name="showEmptyGems" ,      label=L["Show 'empty socket' mark"],          tooltip=L["Display a yellow # on items with empty sockets"]},
-		{ type="toggle", name="showTSet" ,           label=L["Show T-Set"],                        tooltip=L["Display a T-Set label on items"]},
-		{ type="toggle", name="showSetName",         label=L["Show Set name"],                     tooltip=L["Display set name on items"]},
-		{ type="toggle", name="showGreenText" ,      label=L["Show green text"],                   tooltip=L["Display green text line from item tooltip like titanforged"]},
-		{ type="toggle", name="showUpgrades" ,       label=L["Show upgrade info"],                 tooltip=L["Display upgrade info like 2/6"]},
-		{ type="toggle", name="fullyUpgraded",       label=L["Darker blue for fully upgraded"],    tooltip=L["Display upgrade counter in darker blue on fully upgraded items"]},
-	},
-	config_misc = nil,
-	clickOptions = {
-		["1_open_character_info"] = {
-			cfg_label = "Open character info", -- L["Open character info"]
-			cfg_desc = "open the character info", -- L["open the character info"]
-			cfg_default = "_LEFT",
-			hint = "Open character info", -- L["Open character info"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","PaperDollFrame");
-			end
-		},
-		["3_open_equipment_sets_tab"] = {
-			cfg_label = "Open equipment manager tab", -- L["Open equipment manager tab"]
-			cfg_desc = "open the equipment manager tab on character info", -- L["open the equipment manager tab on character info"]
-			cfg_default = "__NONE",
-			hint = "Open equipment manager tab", -- L["Open equipment manager tab"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","PaperDollFrame");
-				securecall("PaperDollFrame_SetSidebar",nil,3);
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self)
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
-local function initData()
-	if ns.build<6000000 then
-		enchantSlots = {
-			[1]=1,[5]=1,[6]=1,[8]=1,[9]=1,[10]=1,[11]=1,[12]=1,[15]=1,[16]=1,[17]=1, -- enchanters
-			[3]=1, -- inscription
-			[7]=1, -- misc trade skills
-		};
-	elseif ns.build<7000000 then
-		enchantSlots = {
-			[2]=1,[11]=1,[12]=1,[15]=1,[16]=1 -- enchanters
-		};
-	else --if ns.build<8000000 then
-		enchantSlots = {
-			[2]=1,[3]=1,[10]=1,[11]=1,[12]=1,[15]=1 -- enchanters
-		}
-	end
-	warlords_crafted = {
-		-- Alchemy
-		[122601]=1,[122602]=1,[122603]=1,[122604]=1,
-		-- Blacksmithing
-		[114230]=1,[114231]=1,[114232]=1,[114233]=1,
-		[114234]=1,[114235]=1,[114236]=1,[114237]=1,
-		-- Engineering
-		[109171]=1,[109172]=1,[109173]=1,[109174]=1,
-		-- Jewelcrafting
-		[115794]=1,[115796]=1,[115798]=1,[115799]=1,
-		[115800]=1,[115801]=1,
-		-- Leatherworking
-		[116174]=1,[116191]=1,[116193]=1,[116187]=1,
-		[116188]=1,[116190]=1,[116194]=1,[116189]=1,
-		[116192]=1,[116183]=1,[116176]=1,[116177]=1,
-		[116180]=1,[116182]=1,[116179]=1,[116178]=1,
-		[116181]=1,[116171]=1,[116175]=1,
-		-- Tailoring
-		[114809]=1,[114810]=1,[114811]=1,[114812]=1,
-		[114813]=1,[114814]=1,[114815]=1,[114816]=1,
-		[114817]=1,[114818]=1,[114819]=1,
-	}
-	tSetItems = {
-		-- Tier 1
-		[16828]=1,[16829]=1,[16830]=1,[16833]=1,[16831]=1,[16834]=1,[16835]=1,[16836]=1,[16851]=1,[16849]=1,[16850]=1,[16845]=1,[16848]=1,[16852]=1,
-		[16846]=1,[16847]=1,[16802]=1,[16799]=1,[16795]=1,[16800]=1,[16801]=1,[16796]=1,[16797]=1,[16798]=1,[16858]=1,[16859]=1,[16857]=1,[16853]=1,
-		[16860]=1,[16854]=1,[16855]=1,[16856]=1,[16811]=1,[16813]=1,[16817]=1,[16812]=1,[16814]=1,[16816]=1,[16815]=1,[16819]=1,[16827]=1,[16824]=1,
-		[16825]=1,[16820]=1,[16821]=1,[16826]=1,[16822]=1,[16823]=1,[16838]=1,[16837]=1,[16840]=1,[16841]=1,[16844]=1,[16839]=1,[16842]=1,[16843]=1,
-		-- Tier 2
-		-- Tier 3
-		-- Tier 4
-		-- Tier 5
-		-- Tier 6
-		-- Tier 7
-		-- Tier 8
-		-- Tier 9
-		-- Tier 10
-		-- Tier 11
-		-- Tier 12
-		-- Tier 13
-		-- Tier 14
-		-- Tier 15
-		-- Tier 16
-		-- Tier 17 (WoD 6.0)
-		[115535]=17,[115536]=17,[115537]=17,[115538]=17,[115539]=17,[115540]=17,[115541]=17,[115542]=17,[115543]=17,[115544]=17,[115545]=17,
-		[115546]=17,[115547]=17,[115548]=17,[115549]=17,[115550]=17,[115551]=17,[115552]=17,[115553]=17,[115554]=17,[115555]=17,[115556]=17,
-		[115557]=17,[115558]=17,[115559]=17,[115560]=17,[115561]=17,[115562]=17,[115563]=17,[115564]=17,[115565]=17,[115566]=17,[115567]=17,
-		[115568]=17,[115569]=17,[115570]=17,[115571]=17,[115572]=17,[115573]=17,[115574]=17,[115575]=17,[115576]=17,[115577]=17,[115578]=17,
-		[115579]=17,[115580]=17,[115581]=17,[115582]=17,[115583]=17,[115584]=17,[115585]=17,[115586]=17,[115587]=17,[115588]=17,[115589]=17,
-		-- Tier 18 (WoD 6.2)
-		[124154]=18,[124155]=18,[124156]=18,[124160]=18,[124161]=18,[124162]=18,[124165]=18,[124166]=18,[124167]=18,[124171]=18,[124172]=18,
-		[124173]=18,[124177]=18,[124178]=18,[124179]=18,[124246]=18,[124247]=18,[124248]=18,[124255]=18,[124256]=18,[124257]=18,[124261]=18,
-		[124262]=18,[124263]=18,[124267]=18,[124268]=18,[124269]=18,[124272]=18,[124273]=18,[124274]=18,[124284]=18,[124292]=18,[124293]=18,
-		[124296]=18,[124297]=18,[124301]=18,[124302]=18,[124303]=18,[124307]=18,[124308]=18,[124317]=18,[124318]=18,[124319]=18,[124327]=18,
-		[124328]=18,[124329]=18,[124332]=18,[124333]=18,[124334]=18,[124338]=18,[124339]=18,[124340]=18,[124344]=18,[124345]=18,[124346]=18,
-		-- Tier 19 (Legion 7.0)
-		[138309]=19,[138310]=19,[138311]=19,[138312]=19,[138313]=19,[138314]=19,[138315]=19,[138316]=19,[138317]=19,[138318]=19,[138319]=19,
-		[138320]=19,[138321]=19,[138322]=19,[138323]=19,[138324]=19,[138325]=19,[138326]=19,[138327]=19,[138328]=19,[138329]=19,[138330]=19,
-		[138331]=19,[138332]=19,[138333]=19,[138334]=19,[138335]=19,[138336]=19,[138337]=19,[138338]=19,[138339]=19,[138340]=19,[138341]=19,
-		[138342]=19,[138343]=19,[138344]=19,[138345]=19,[138346]=19,[138347]=19,[138348]=19,[138349]=19,[138350]=19,[138351]=19,[138352]=19,
-		[138353]=19,[138354]=19,[138355]=19,[138356]=19,[138357]=19,[138358]=19,[138359]=19,[138360]=19,[138361]=19,[138362]=19,[138363]=19,
-		[138364]=19,[138365]=19,[138366]=19,[138367]=19,[138368]=19,[138369]=19,[138370]=19,[138371]=19,[138372]=19,[138373]=19,[138374]=19,
-		[138375]=19,[138376]=19,[138377]=19,[138378]=19,[138379]=19,[138380]=19,
-		-- Tier 20 (Legion 7.?)
-	}
-end
-
 function createMenu(self)
 	if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
@@ -207,10 +32,10 @@ function createMenu(self)
 end
 
 -- defined in addon namespace for chatcommand.lua
-ns.toggleEquipment = function(eSetID)
+function ns.toggleEquipment(eSetID)
 	if InCombatLockdown() or UnitIsDeadOrGhost("player") then
 		equipPending = eSetID
-		ns.modules[name].onevent("BE_DUMMY_EVENT")
+		module.onevent("BE_DUMMY_EVENT")
 	else
 		C_EquipmentSet.UseEquipmentSet(eSetID);
 	end
@@ -218,7 +43,7 @@ ns.toggleEquipment = function(eSetID)
 end
 
 local function updateBroker()
-	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local icon,iconCoords,text = I[name].iconfile,{0,1,0,1},{};
 
 	if ns.profile[name].showCurrentSet then
@@ -460,7 +285,7 @@ local function createTooltip(tt)
 				);
 			end
 		end
-		if (none) then
+		if none and not ns.profile[name].showEmptySlots then
 			local l = tt:AddLine();
 			tt:SetCell(l,1,L["All slots are empty"],nil,nil,ttColumns);
 		end
@@ -482,18 +307,181 @@ local function createTooltip(tt)
 	ns.roundupTooltip(tt);
 end
 
+
+-- module functions and variables --
 ------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules[name].init = function()
-	if initData then
-		initData();
-		initData=nil;
+module = {
+	desc = L["Broker to show current equipped items and list & modify equipment sets"],
+	label = BAG_FILTER_EQUIPMENT,
+	events = {
+		"UNIT_INVENTORY_CHANGED",
+		"EQUIPMENT_SWAP_FINISHED",
+		"EQUIPMENT_SETS_CHANGED",
+		"PLAYER_LOGIN",
+		"PLAYER_REGEN_ENABLED",
+		"PLAYER_ALIVE",
+		"PLAYER_UNGHOST",
+		"ITEM_UPGRADE_MASTER_UPDATE"
+	},
+	updateinterval = nil, -- 10
+	config_defaults = {
+		showSets = true,
+		showInventory = true,
+		showEmptySlots = false,
+		showItemLevel = true,
+		showCurrentSet = true,
+		fullyUpgraded = true,
+
+		showNotEnchanted = true,
+		showEmptyGems = true,
+		showTSet = true,
+		showSetName = true,
+		showGreenText = true,
+		showUpgrades = true,
+		showShorterInfo = false
+	},
+	config_allowed = nil,
+	config_header = {type="header", label=BAG_FILTER_EQUIPMENT, align="left", icon=I[name]},
+	config_broker = {
+		{ type="toggle", name="showCurrentSet",      label=L["Show current set"],                             tooltip=L["Display your current equipment set on broker button"], event=true},
+		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],                      tooltip=L["Display your average item level on broker button"], event=true},
+		{ type="toggle", name="showShorterInfo",     label=L["Show shorter Info for 'Unknown set' and more"], tooltip=L["Display shorter Info on broker button. 'Set?' instead of 'Unknown set'. 'No sets' instead of 'No sets found'."], event=true}
+	},
+	config_tooltip = {
+		{ type="toggle", name="showSets",            label=L["Show equipment sets"],               tooltip=L["Display a list of your equipment sets"]},
+		{ type="toggle", name="showInventory" ,      label=L["Show inventory"],                    tooltip=L["Display a list of currently equipped items"]},
+		{ type="toggle", name="showEmptySlots",      label=L["Show emtpy slots"],                  tooltip=L["Display empty equipment slots"]},
+		{ type="toggle", name="showNotEnchanted" ,   label=L["Show 'not enchanted' mark"],         tooltip=L["Display a red # on not enchanted/enchantable items"]},
+		{ type="toggle", name="showEmptyGems" ,      label=L["Show 'empty socket' mark"],          tooltip=L["Display a yellow # on items with empty sockets"]},
+		{ type="toggle", name="showTSet" ,           label=L["Show T-Set"],                        tooltip=L["Display a T-Set label on items"]},
+		{ type="toggle", name="showSetName",         label=L["Show Set name"],                     tooltip=L["Display set name on items"]},
+		{ type="toggle", name="showGreenText" ,      label=L["Show green text"],                   tooltip=L["Display green text line from item tooltip like titanforged"]},
+		{ type="toggle", name="showUpgrades" ,       label=L["Show upgrade info"],                 tooltip=L["Display upgrade info like 2/6"]},
+		{ type="toggle", name="fullyUpgraded",       label=L["Darker blue for fully upgraded"],    tooltip=L["Display upgrade counter in darker blue on fully upgraded items"]},
+	},
+	config_misc = nil,
+	clickOptions = {
+		["1_open_character_info"] = {
+			cfg_label = "Open character info", -- L["Open character info"]
+			cfg_desc = "open the character info", -- L["open the character info"]
+			cfg_default = "_LEFT",
+			hint = "Open character info", -- L["Open character info"]
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleCharacter","PaperDollFrame");
+			end
+		},
+		["3_open_equipment_sets_tab"] = {
+			cfg_label = "Open equipment manager tab", -- L["Open equipment manager tab"]
+			cfg_desc = "open the equipment manager tab on character info", -- L["open the equipment manager tab on character info"]
+			cfg_default = "__NONE",
+			hint = "Open equipment manager tab", -- L["Open equipment manager tab"]
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleCharacter","PaperDollFrame");
+				securecall("PaperDollFrame_SetSidebar",nil,3);
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
+			cfg_default = "_RIGHT",
+			hint = "Open option menu", -- L["Open option menu"]
+			func = function(self,button)
+				local _mod=name; -- for error tracking
+				createMenu(self)
+			end
+		}
+	}
+}
+
+function module.init()
+	if ns.build<6000000 then
+		enchantSlots = {
+			[1]=1,[5]=1,[6]=1,[8]=1,[9]=1,[10]=1,[11]=1,[12]=1,[15]=1,[16]=1,[17]=1, -- enchanters
+			[3]=1, -- inscription
+			[7]=1, -- misc trade skills
+		};
+	elseif ns.build<7000000 then
+		enchantSlots = {
+			[2]=1,[11]=1,[12]=1,[15]=1,[16]=1 -- enchanters
+		};
+	else --if ns.build<8000000 then
+		enchantSlots = {
+			[2]=1,[3]=1,[10]=1,[11]=1,[12]=1,[15]=1 -- enchanters
+		}
 	end
+	warlords_crafted = {
+		-- Alchemy
+		[122601]=1,[122602]=1,[122603]=1,[122604]=1,
+		-- Blacksmithing
+		[114230]=1,[114231]=1,[114232]=1,[114233]=1,
+		[114234]=1,[114235]=1,[114236]=1,[114237]=1,
+		-- Engineering
+		[109171]=1,[109172]=1,[109173]=1,[109174]=1,
+		-- Jewelcrafting
+		[115794]=1,[115796]=1,[115798]=1,[115799]=1,
+		[115800]=1,[115801]=1,
+		-- Leatherworking
+		[116174]=1,[116191]=1,[116193]=1,[116187]=1,
+		[116188]=1,[116190]=1,[116194]=1,[116189]=1,
+		[116192]=1,[116183]=1,[116176]=1,[116177]=1,
+		[116180]=1,[116182]=1,[116179]=1,[116178]=1,
+		[116181]=1,[116171]=1,[116175]=1,
+		-- Tailoring
+		[114809]=1,[114810]=1,[114811]=1,[114812]=1,
+		[114813]=1,[114814]=1,[114815]=1,[114816]=1,
+		[114817]=1,[114818]=1,[114819]=1,
+	}
+	tSetItems = {
+		-- Tier 1
+		[16828]=1,[16829]=1,[16830]=1,[16833]=1,[16831]=1,[16834]=1,[16835]=1,[16836]=1,[16851]=1,[16849]=1,[16850]=1,[16845]=1,[16848]=1,[16852]=1,
+		[16846]=1,[16847]=1,[16802]=1,[16799]=1,[16795]=1,[16800]=1,[16801]=1,[16796]=1,[16797]=1,[16798]=1,[16858]=1,[16859]=1,[16857]=1,[16853]=1,
+		[16860]=1,[16854]=1,[16855]=1,[16856]=1,[16811]=1,[16813]=1,[16817]=1,[16812]=1,[16814]=1,[16816]=1,[16815]=1,[16819]=1,[16827]=1,[16824]=1,
+		[16825]=1,[16820]=1,[16821]=1,[16826]=1,[16822]=1,[16823]=1,[16838]=1,[16837]=1,[16840]=1,[16841]=1,[16844]=1,[16839]=1,[16842]=1,[16843]=1,
+		-- Tier 2
+		-- Tier 3
+		-- Tier 4
+		-- Tier 5
+		-- Tier 6
+		-- Tier 7
+		-- Tier 8
+		-- Tier 9
+		-- Tier 10
+		-- Tier 11
+		-- Tier 12
+		-- Tier 13
+		-- Tier 14
+		-- Tier 15
+		-- Tier 16
+		-- Tier 17 (WoD 6.0)
+		[115535]=17,[115536]=17,[115537]=17,[115538]=17,[115539]=17,[115540]=17,[115541]=17,[115542]=17,[115543]=17,[115544]=17,[115545]=17,
+		[115546]=17,[115547]=17,[115548]=17,[115549]=17,[115550]=17,[115551]=17,[115552]=17,[115553]=17,[115554]=17,[115555]=17,[115556]=17,
+		[115557]=17,[115558]=17,[115559]=17,[115560]=17,[115561]=17,[115562]=17,[115563]=17,[115564]=17,[115565]=17,[115566]=17,[115567]=17,
+		[115568]=17,[115569]=17,[115570]=17,[115571]=17,[115572]=17,[115573]=17,[115574]=17,[115575]=17,[115576]=17,[115577]=17,[115578]=17,
+		[115579]=17,[115580]=17,[115581]=17,[115582]=17,[115583]=17,[115584]=17,[115585]=17,[115586]=17,[115587]=17,[115588]=17,[115589]=17,
+		-- Tier 18 (WoD 6.2)
+		[124154]=18,[124155]=18,[124156]=18,[124160]=18,[124161]=18,[124162]=18,[124165]=18,[124166]=18,[124167]=18,[124171]=18,[124172]=18,
+		[124173]=18,[124177]=18,[124178]=18,[124179]=18,[124246]=18,[124247]=18,[124248]=18,[124255]=18,[124256]=18,[124257]=18,[124261]=18,
+		[124262]=18,[124263]=18,[124267]=18,[124268]=18,[124269]=18,[124272]=18,[124273]=18,[124274]=18,[124284]=18,[124292]=18,[124293]=18,
+		[124296]=18,[124297]=18,[124301]=18,[124302]=18,[124303]=18,[124307]=18,[124308]=18,[124317]=18,[124318]=18,[124319]=18,[124327]=18,
+		[124328]=18,[124329]=18,[124332]=18,[124333]=18,[124334]=18,[124338]=18,[124339]=18,[124340]=18,[124344]=18,[124345]=18,[124346]=18,
+		-- Tier 19 (Legion 7.0)
+		[138309]=19,[138310]=19,[138311]=19,[138312]=19,[138313]=19,[138314]=19,[138315]=19,[138316]=19,[138317]=19,[138318]=19,[138319]=19,
+		[138320]=19,[138321]=19,[138322]=19,[138323]=19,[138324]=19,[138325]=19,[138326]=19,[138327]=19,[138328]=19,[138329]=19,[138330]=19,
+		[138331]=19,[138332]=19,[138333]=19,[138334]=19,[138335]=19,[138336]=19,[138337]=19,[138338]=19,[138339]=19,[138340]=19,[138341]=19,
+		[138342]=19,[138343]=19,[138344]=19,[138345]=19,[138346]=19,[138347]=19,[138348]=19,[138349]=19,[138350]=19,[138351]=19,[138352]=19,
+		[138353]=19,[138354]=19,[138355]=19,[138356]=19,[138357]=19,[138358]=19,[138359]=19,[138360]=19,[138361]=19,[138362]=19,[138363]=19,
+		[138364]=19,[138365]=19,[138366]=19,[138367]=19,[138368]=19,[138369]=19,[138370]=19,[138371]=19,[138372]=19,[138373]=19,[138374]=19,
+		[138375]=19,[138376]=19,[138377]=19,[138378]=19,[138379]=19,[138380]=19,
+		-- Tier 20 (Legion 7.?)
+	}
 end
 
-ns.modules[name].onevent = function(self,event,arg1,...)
-	if event=="PLAYER_ENTERING_WORLD" then
+function module.onevent(self,event,arg1,...)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module,ns.profile[name]);
+	elseif event=="PLAYER_LOGIN" then
 		if not self.hooked_UgradeUtem then
 			ns.items.RegisterCallback(name,UpdateInventory,"inv");
 			hooksecurefunc("UpgradeItem",updateBroker);
@@ -507,25 +495,24 @@ ns.modules[name].onevent = function(self,event,arg1,...)
 			updateBroker();
 		end
 		updateBroker();
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tt) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tt) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "LEFT", "RIGHT"},{false},{self});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

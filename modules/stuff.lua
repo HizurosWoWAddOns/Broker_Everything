@@ -1,16 +1,14 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Stuff" -- L["Stuff"]
-local ttName,tt2Name = name.."TT",name.."TT2"
+local ttName,tt2Name,module = name.."TT",name.."TT2"
 local tt,tt2 = nil
 local last_click = 0
 local nextAction = nil;
@@ -24,29 +22,11 @@ local timeout=5;
 local timeout_counter=0;
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\stuff"}; --IconName::Stuff--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to allow you to do...Stuff! Switch to windowed mode, reload ui, logout and quit."],
-	events = {},
-	updateinterval = nil, -- 10
-	config_defaults = {},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = nil,
-	config_tooltip = nil,
-	config_misc = nil,
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
 StaticPopupDialogs["BE_CONFIRM_RELOADUI"] = {
@@ -132,32 +112,39 @@ local function createTooltip(tt)
 	ns.roundupTooltip(tt);
 end
 
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
 
--- ns.modules[name].init = function() end
--- ns.modules[name].onevent = function(self,event,msg) end
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tt) end
+-- module variables for registration --
+---------------------------------------
+module = {
+	desc = L["Broker to allow you to do...Stuff! Switch to windowed mode, reload ui, logout and quit."],
+	events = {},
+	updateinterval = nil, -- 10
+	config_defaults = {},
+	config_allowed = nil,
+	config_header = nil, -- use default header
+	config_broker = nil,
+	config_tooltip = nil,
+	config_misc = nil,
+}
 
+-- function module.init() end
+-- function module.onevent(self,event,msg) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tt) end
 
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, 1, "LEFT"},{false},{self});
 	createTooltip(tt);
 end
 
-ns.modules[name].onleave = function(self)
+function module.onleave(self)
 	timeout_counter=0;
 	nextAction=nil;
 end
 
-ns.modules[name].onclick = function(self,button)
+function module.onclick(self,button)
 	if ns.profile[name].disableOnClick then return end
 	local shift = IsShiftKeyDown()
 
@@ -188,4 +175,9 @@ ns.modules[name].onclick = function(self,button)
 	end
 end
 
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

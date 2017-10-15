@@ -1,16 +1,14 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon,ns = ...;
 local C,L,I=ns.LC.color,ns.L,ns.I;
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Guild"; -- GUILD
-local ttName, ttName2,ttColumns,ttColumns2,tt,tt2,createMenu,db = name.."TT", name.."TT2",9,2;
+local ttName, ttName2,ttColumns,ttColumns2,tt,tt2,createMenu,module = name.."TT", name.."TT2",9,2;
 local off, on = strtrim(gsub(ERR_FRIEND_OFFLINE_S,"%%s","(.*)")), strtrim(gsub(ERR_FRIEND_ONLINE_SS,"\124Hplayer:%%s\124h%[%%s%]\124h","(.*)"));
 local tradeskillsLockUpdate,tradeskillsLastUpdate,tradeskillsUpdateTimeout = false,0,20;
 local guild, player, members, membersName2Index, mobile, tradeskills, applicants = {},{},{},{},{},{},{};
@@ -42,107 +40,12 @@ local IsOnline = setmetatable({},{
 	end
 });
 
--------------------------------------------
+
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile=135026,coords={0.05,0.95,0.05,0.95}} --IconName::Guild--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show guild message of the day, your guild reputation, guild members, applicants and mobile app users"],
-	label = GUILD,
-	events = {
-		"PLAYER_ENTERING_WORLD",
-		"PLAYER_GUILD_UPDATE",
-	},
-	updateinterval = nil,
-	config_defaults = {
-		-- guild
-		showRep = true,
-		showMOTD = true,
-
-		-- guild members
-		showRealmname = true,
-		showZone = true,		showZoneInTT2 = false,
-		showNotes = true,		showNotesInTT2 = false,
-		showONotes = true,		showONotesInTT2 = false,
-		showRank = true,		showRankInTT2 = false,
-		showProfessions = true,	showProfessionsInTT2 = false,
-
-		-- misc
-		showApplicants = true,
-		showApplicantsBroker = true,
-		showMobileChatter = true,
-		showMobileChatterBroker = true,
-		showTotalMembersBroker = true,
-		splitTables = false,
-		showMembersLevelUp = true
-	},
-	config_allowed = nil,
-	config_header = {type="header", label=GUILD, align="left", icon=I[name]},
-	config_broker = {
-		{ type="toggle", name="showApplicantsBroker",	label=L["Show applicants on broker"],			tooltip=L["Show applicants on broker button"], event = true },
-		{ type="toggle", name="showMobileChatterBroker",label=L["Show mobile chatter on broker"],		tooltip=L["Show count of mobile chatter on broker button"], event = true },
-		{ type="toggle", name="showTotalMembersBroker",	label=L["Show total members count on broker"],	tooltip=L["Show total members count on broker button"], event = true },
-	},
-	config_tooltip = {
-		{ type="header", label=L["Main tooltip options"] },
-		{ type="separator", inMenuInvisible=true, isSubMenu=true },
-		{ type="toggle", name="showRep",				label=L["Show guild reputation"],		tooltip=L["Enable/Disable the display of Guild Reputation in tooltip"] },
-		{ type="toggle", name="showMOTD",				label=L["Show Guild MotD"],				tooltip=L["Show Guild Message of the Day in tooltip"] },
-		{ type="toggle", name="showRealmname",			label=L["Show realm name"],				tooltip=L["Show realm names behind guild and character names in tooltip. Guilds and characters from connected-realms gets an asterisk behind the names if this option is unchecked."] },
-		{ type="toggle", name="showZone",				label=L["Show zone"],					tooltip=L["Show current zone from guild members in tooltip"]},
-		{ type="toggle", name="showNotes",				label=L["Show notes"],					tooltip=L["Show notes from guild members in tooltip"]},
-		{ type="toggle", name="showONotes",				label=L["Show officer notes"],			tooltip=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"]},
-		{ type="toggle", name="showRank",				label=L["Show rank"],					tooltip=L["Show rank name from guild members in tooltip"]},
-		{ type="toggle", name="showProfessions",		label=L["Show professions"],			tooltip=L["Show professions from guild members in tooltip"], event = true },
-		{ type="toggle", name="showApplicants",			label=L["Show applicants"],				tooltip=L["Show applicants in tooltip"] },
-		{ type="toggle", name="showMobileChatter",		label=L["Show mobile chatter"],			tooltip=L["Show mobile chatter in tooltip (Armory App users)"] },
-		{ type="toggle", name="splitTables",			label=L["Separate mobile chatter"],		tooltip=L["Display mobile chatter with own table in tooltip"] },
-
-		{ type="separator", alpha=0 },
-
-		{ type="header", label=L["Secondary tooltip options"] },
-		{ type="separator", inMenuInvisible=true, isSubMenu=true },
-		{ type="desc",   text=L["The secondary tooltip will be displayed by moving the mouse over a guild member in main tooltip. The tooltip will be displayed if one of the following options activated."]},
-		{ type="toggle", name="showZoneInTT2",			label=L["Show zone"],					tooltip=L["Show current zone from guild member"]},
-		{ type="toggle", name="showNotesInTT2",			label=L["Show notes"],					tooltip=L["Show notes from guild member"]},
-		{ type="toggle", name="showONotesInTT2",		label=L["Show officer notes"],			tooltip=L["Show officer notes from guild member"]},
-		{ type="toggle", name="showRankInTT2",			label=L["Show rank"],					tooltip=L["Show rank from guild member"]},
-		{ type="toggle", name="showProfessionsInTT2",	label=L["Show professions"],			tooltip=L["Show professions from guild member"]}
-	},
-	config_misc = {
-		{ type="toggle", name="showMembersLevelUp",		label=L["Show level up notification"],	tooltip=L["Show guild member level up notification in chat frame. (This is not a gratulation bot!)"]},
-	},
-	clickOptions = {
-		["1_open_guild"] = {
-			cfg_label = "Open guild roster", -- L["Open guild roster"]
-			cfg_desc = "open the guild roster", -- L["open the guild roster"]
-			cfg_default = "_LEFT",
-			hint = "Open guild roster", -- L["Open guild roster"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleGuildFrame")
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self)
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
 function createMenu(self)
@@ -196,7 +99,7 @@ local function updateMembers()
 			if m[mZone]~=old[mZone] then
 				doUpdateTooltip = true;
 			end
-			if db.showMembersLevelUp and old[mLevel]~=nil and m[mLevel]~=old[mLevel] then
+			if ns.profile[name].showMembersLevelUp and m[mFullName]~=ns.player.name_realm_short and old[mLevel]~=nil and m[mLevel]~=old[mLevel] then
 				ns.print( C(m[mClassFile],m[mName]) .." ".. C("green",L["has reached Level %d."]:format(m[mLevel])) );
 				doUpdateTooltip = true;
 			end
@@ -278,7 +181,7 @@ local function updateApplicants()
 end
 
 local function updateBroker()
-	local broker = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+	local broker = ns.LDB:GetDataObjectByName(module.ldbName);
 	if guild[gName] then
 		local txt = {};
 		if (ns.profile[name].showApplicantsBroker) and (guild[gNumApplicants]>0) then
@@ -379,7 +282,7 @@ local function tooltipAddLine(v,me)
 	local status = ( (v[mIsAway]==1) and C("gold","[AFK] ") ) or ( (v[mIsAway]==2) and C("ltred","[DND] ") ) or "";
 	local realm,_ = "";
 	if guild[gRealmNoSpacer]~=v[mRealm] then
-		if (db.showRealmname) then
+		if (ns.profile[name].showRealmname) then
 			realm = v[mRealm];
 			if type(realm)=="string" and realm:len()>0 then
 				_,realm = ns.LRI:GetRealmInfo(realm);
@@ -390,7 +293,7 @@ local function tooltipAddLine(v,me)
 		end
 	end
 	local ts1, ts2 = "","";
-	if db.showProfessions and tradeskills[v[mFullName]] then
+	if ns.profile[name].showProfessions and tradeskills[v[mFullName]] then
 		if tradeskills[v[mFullName]][1] then
 			local t = tradeskills[v[mFullName]][1];
 			ts1 = "|T"..t[tsIcon]..":0|t "..t[tsValue];
@@ -418,10 +321,10 @@ local function tooltipAddLine(v,me)
 	local l=tt:AddLine(
 		v[mLevel],
 		C(v[mClassFile],MobIcon .. ns.scm(v[mName]) .. realm),
-		(db.showZone) and Zone or "", -- [3]
-		(db.showNotes) and ns.scm(v[mNote]) or "", -- [4]
-		(db.showONotes) and ns.scm(v[mOfficerNote]) or "", -- [5]
-		(db.showRank) and ns.scm(v[mRank]) or "", -- [6]
+		(ns.profile[name].showZone) and Zone or "", -- [3]
+		(ns.profile[name].showNotes) and ns.scm(v[mNote]) or "", -- [4]
+		(ns.profile[name].showONotes) and ns.scm(v[mOfficerNote]) or "", -- [5]
+		(ns.profile[name].showRank) and ns.scm(v[mRank]) or "", -- [6]
 		ts1, -- [7]
 		ts2 -- [8]
 	);
@@ -461,7 +364,7 @@ local function createTooltip(tt,update)
 
 	if ns.realm~=guild[gRealm] then
 		realm = guild[gRealm];
-		if (db.showRealmname) then
+		if (ns.profile[name].showRealmname) then
 			if type(realm)=="string" and realm:len()>0 then
 				_,realm = ns.LRI:GetRealmInfo(realm);
 			end
@@ -477,13 +380,13 @@ local function createTooltip(tt,update)
 	tt:AddSeparator(4,0,0,0,0);
 
 	local sep=false;
-	if (db.showMOTD) then
+	if (ns.profile[name].showMOTD) then
 		local l = tt:AddLine(C("ltblue",MOTD_COLON));
 		tt:SetCell(l, 2, C("ltgreen",ns.scm(ns.strWrap(guild[gMotD],56),true)), nil, nil, ttColumns-1)
 		sep = true;
 	end
 
-	if (db.showRep) then
+	if (ns.profile[name].showRep) then
 		local l = tt:AddLine(("%s: "):format(C("ltblue",REPUTATION_ABBR)));
 		tt:SetCell(l,2,("%s: (%d/%d)"):format(player[pStandingText], player[pStandingValue]-player[pStandingMin], player[pStandingMax]-player[pStandingMin]), nil, nil, ttColumns - 1);
 		sep=true;
@@ -493,14 +396,14 @@ local function createTooltip(tt,update)
 		tt:AddSeparator(4,0,0,0,0);
 	end
 
-	if (db.showApplicants) and type(guild[gNumApplicants])=="number" and (guild[gNumApplicants]>0) then
+	if (ns.profile[name].showApplicants) and type(guild[gNumApplicants])=="number" and (guild[gNumApplicants]>0) then
 		local line,column = tt:AddLine(C("orange",LEVEL),C("orange",L["Applicant"]),C("orange",L["Roles"]),C("orange",RAID_INSTANCE_EXPIRES_EXPIRED),C("orange",COMMENT));
 		tt:AddSeparator();
 		for i, a in ipairs(applicants) do
 			if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
 			local realm,_ = a[app_realm];
 			if guild[gRealmNoSpacer]~=a[app_realm] then
-				if (db.showRealmname) then
+				if (ns.profile[name].showRealmname) then
 					if type(realm)=="string" and realm:len()>0 then
 						_,realm = ns.LRI:GetRealmInfo(realm);
 					end
@@ -531,13 +434,13 @@ local function createTooltip(tt,update)
 	local l=tt:AddLine(
 		C("ltyellow",LEVEL), -- [1]
 		C("ltyellow",CHARACTER), -- [2]
-		(db.showZone) and C("ltyellow",ZONE) or "", -- [3]
-		(db.showNotes) and C("ltyellow",LABEL_NOTE) or "", -- [4]
-		(db.showONotes and CanViewOfficerNote()) and C("ltyellow",OFFICER_NOTE_COLON) or "", -- [5]
-		(db.showRank) and C("ltyellow",RANK) or "" -- [6]
+		(ns.profile[name].showZone) and C("ltyellow",ZONE) or "", -- [3]
+		(ns.profile[name].showNotes) and C("ltyellow",LABEL_NOTE) or "", -- [4]
+		(ns.profile[name].showONotes and CanViewOfficerNote()) and C("ltyellow",OFFICER_NOTE_COLON) or "", -- [5]
+		(ns.profile[name].showRank) and C("ltyellow",RANK) or "" -- [6]
 	);
 
-	if db.showProfessions then
+	if ns.profile[name].showProfessions then
 		tt:SetCell(l, 7,C("ltyellow",TRADE_SKILLS), nil,nil,2); -- [7,8]
 	end
 
@@ -545,12 +448,12 @@ local function createTooltip(tt,update)
 
 	for i,v in ipairs(members)do
 		if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
-		if v[mOnline] and ((not v[mIsMobile]) or (db.showMobileChatter and v[mIsMobile] and not db.splitTables)) then
+		if v[mOnline] and ((not v[mIsMobile]) or (ns.profile[name].showMobileChatter and v[mIsMobile] and not ns.profile[name].splitTables)) then
 			tooltipAddLine(v);
 		end
 	end
 
-	if db.showMobileChatter and db.splitTables and guild[gNumMobile]>0 then
+	if ns.profile[name].showMobileChatter and ns.profile[name].splitTables and guild[gNumMobile]>0 then
 		tt:AddSeparator();
 		for i,v in ipairs(members)do
 			if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
@@ -563,7 +466,7 @@ local function createTooltip(tt,update)
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0);
 
-		if (db.showApplicants) and guild[gNumApplicants] and (guild[gNumApplicants]>0) then
+		if (ns.profile[name].showApplicants) and guild[gNumApplicants] and (guild[gNumApplicants]>0) then
 			local l = tt:AddLine();
 			tt:SetCell(l,1,C("orange",L["Click"]).." || "..C("green","Open guild applications"),nil,"LEFT",ttColumns);
 		end
@@ -578,20 +481,20 @@ local function createTooltip(tt,update)
 			tt:SetCell(l,1,C("ltblue",L["Alt+Click"]).." || "..C("green",L["Invite a member"]),nil,"LEFT",ttColumns);
 		end
 
-		if (ns.modules[name].clickHints) then
+		if (module.clickHints) then
 			local steps,t1,t2=1,{},{};
 			if (ttColumns>4) then
 				steps=2;
 			end
-			for i=1, #ns.modules[name].clickHints, steps do
+			for i=1, #module.clickHints, steps do
 				if (ttColumns>4) then
 					t2 = {};
-					if (ns.modules[name].clickHints[i]) then tinsert(t2,ns.modules[name].clickHints[i]); end
-					if (ns.modules[name].clickHints[i+1]) then tinsert(t2,ns.modules[name].clickHints[i+1]); end
+					if (module.clickHints[i]) then tinsert(t2,module.clickHints[i]); end
+					if (module.clickHints[i+1]) then tinsert(t2,module.clickHints[i+1]); end
 					tinsert(t1,table.concat(t2," - "));
 				else
-					if (ns.modules[name].clickHints[i]) then
-						tinsert(t1,ns.modules[name].clickHints[i]);
+					if (module.clickHints[i]) then
+						tinsert(t1,module.clickHints[i]);
 					end
 				end
 			end
@@ -630,18 +533,136 @@ local function updater()
 	updaterLocked = false;
 end
 
+
+-- module functions and variables --
 ------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules[name].init = function()
+module = {
+	desc = L["Broker to show guild message of the day, your guild reputation, guild members, applicants and mobile app users"],
+	label = GUILD,
+	events = {
+		"PLAYER_LOGIN",
+		"PLAYER_GUILD_UPDATE",
+	},
+	updateinterval = nil,
+	config_defaults = {
+		-- guild
+		showRep = true,
+		showMOTD = true,
+
+		-- guild members
+		showRealmname = true,
+		showZone = true,		showZoneInTT2 = false,
+		showNotes = true,		showNotesInTT2 = false,
+		showONotes = true,		showONotesInTT2 = false,
+		showRank = true,		showRankInTT2 = false,
+		showProfessions = true,	showProfessionsInTT2 = false,
+
+		-- misc
+		showApplicants = true,
+		showApplicantsBroker = true,
+		showMobileChatter = true,
+		showMobileChatterBroker = true,
+		showTotalMembersBroker = true,
+		splitTables = false,
+		showMembersLevelUp = true
+	},
+	config_allowed = nil,
+	config_header = {type="header", label=GUILD, align="left", icon=I[name]},
+	config_broker = {
+		{ type="toggle", name="showApplicantsBroker",	label=L["Show applicants on broker"],			tooltip=L["Show applicants on broker button"], event = true },
+		{ type="toggle", name="showMobileChatterBroker",label=L["Show mobile chatter on broker"],		tooltip=L["Show count of mobile chatter on broker button"], event = true },
+		{ type="toggle", name="showTotalMembersBroker",	label=L["Show total members count on broker"],	tooltip=L["Show total members count on broker button"], event = true },
+	},
+	config_tooltip = {
+		{ type="header", label=L["Main tooltip options"] },
+		{ type="separator", inMenuInvisible=true, isSubMenu=true },
+		{ type="toggle", name="showRep",				label=L["Show guild reputation"],		tooltip=L["Enable/Disable the display of Guild Reputation in tooltip"] },
+		{ type="toggle", name="showMOTD",				label=L["Show Guild MotD"],				tooltip=L["Show Guild Message of the Day in tooltip"] },
+		{ type="toggle", name="showRealmname",			label=L["Show realm name"],				tooltip=L["Show realm names behind guild and character names in tooltip. Guilds and characters from connected-realms gets an asterisk behind the names if this option is unchecked."] },
+		{ type="toggle", name="showZone",				label=L["Show zone"],					tooltip=L["Show current zone from guild members in tooltip"]},
+		{ type="toggle", name="showNotes",				label=L["Show notes"],					tooltip=L["Show notes from guild members in tooltip"]},
+		{ type="toggle", name="showONotes",				label=L["Show officer notes"],			tooltip=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"]},
+		{ type="toggle", name="showRank",				label=L["Show rank"],					tooltip=L["Show rank name from guild members in tooltip"]},
+		{ type="toggle", name="showProfessions",		label=L["Show professions"],			tooltip=L["Show professions from guild members in tooltip"], event = true },
+		{ type="toggle", name="showApplicants",			label=L["Show applicants"],				tooltip=L["Show applicants in tooltip"] },
+		{ type="toggle", name="showMobileChatter",		label=L["Show mobile chatter"],			tooltip=L["Show mobile chatter in tooltip (Armory App users)"] },
+		{ type="toggle", name="splitTables",			label=L["Separate mobile chatter"],		tooltip=L["Display mobile chatter with own table in tooltip"] },
+
+		{ type="separator", alpha=0 },
+
+		{ type="header", label=L["Secondary tooltip options"] },
+		{ type="separator", inMenuInvisible=true, isSubMenu=true },
+		{ type="desc",   text=L["The secondary tooltip will be displayed by moving the mouse over a guild member in main tooltip. The tooltip will be displayed if one of the following options activated."]},
+		{ type="toggle", name="showZoneInTT2",			label=L["Show zone"],					tooltip=L["Show current zone from guild member"]},
+		{ type="toggle", name="showNotesInTT2",			label=L["Show notes"],					tooltip=L["Show notes from guild member"]},
+		{ type="toggle", name="showONotesInTT2",		label=L["Show officer notes"],			tooltip=L["Show officer notes from guild member"]},
+		{ type="toggle", name="showRankInTT2",			label=L["Show rank"],					tooltip=L["Show rank from guild member"]},
+		{ type="toggle", name="showProfessionsInTT2",	label=L["Show professions"],			tooltip=L["Show professions from guild member"]}
+	},
+	config_misc = {
+		{ type="toggle", name="showMembersLevelUp",		label=L["Show level up notification"],	tooltip=L["Show guild member level up notification in chat frame. (This is not a gratulation bot!)"]},
+	},
+	clickOptions = {
+		["1_open_guild"] = {
+			cfg_label = "Open guild roster", -- L["Open guild roster"]
+			cfg_desc = "open the guild roster", -- L["open the guild roster"]
+			cfg_default = "_LEFT",
+			hint = "Open guild roster", -- L["Open guild roster"]
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleGuildFrame")
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
+			cfg_default = "_RIGHT",
+			hint = "Open option menu", -- L["Open option menu"]
+			func = function(self,button)
+				local _mod=name; -- for error tracking
+				createMenu(self)
+			end
+		}
+	}
+}
+
+function module.init()
 	db = ns.profile[name];
 end
 
-ns.modules[name].onevent = function(self,event,msg,...)
-	if event=="PLAYER_ENTERING_WORLD" or event=="LF_GUILD_RECRUIT_LIST_CHANGED" then
+function module.onevent(self,event,msg,...)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module,ns.profile[name]);
+	elseif event=="PLAYER_LOGIN" or event=="LF_GUILD_RECRUIT_LIST_CHANGED" then
 		RequestGuildApplicantsList();
+	elseif event=="CHAT_MSG_SYSTEM" then
+		local On,Off = msg:match(on), msg:match(off);
+		if On or Off then
+			if On then
+				On = On:gsub("\124Hplayer:%%s\124h%[",""):gsub("%]\124h","");
+			end
+			local Name = tostring(On or Off);
+			if not Name:find("-") then
+				Name = Name .."-".. ns.realm_short;
+			end
+			if not membersName2Index[Name] then
+				return; -- it is not a guild member. don't update for toons from friendlist.
+			end
+			if On then
+				IsOnline(time(),Name);
+			elseif Off then
+				IsOnline(0,Name);
+			end
+			doGuildUpdate = true;
+			doMembersUpdate = true;
+		end
+	elseif event=="GUILD_ROSTER_UPDATE" or event=="LF_GUILD_RECRUITS_UPDATED" or event=="BE_DUMMY_EVENT" then
+		doGuildUpdate = true;
+		doMembersUpdate = true;
+	elseif event=="GUILD_TRADESKILL_UPDATE" then
+		doTradeskillsUpdate = true;
 	end
-	if event=="PLAYER_ENTERING_WORLD" or event=="PLAYER_GUILD_UPDATE" then
+	if event=="PLAYER_LOGIN" or ns.pastPEW then
 		if not IsInGuild() then
 			wipe(guild);
 			wipe(tradeskills);
@@ -667,37 +688,6 @@ ns.modules[name].onevent = function(self,event,msg,...)
 			doMembersUpdate    = true;
 			doApplicantsUpdate = true;
 		end
-		self:UnregisterEvent("PLAYER_ENTERING_WORLD");
-	elseif event=="CHAT_MSG_SYSTEM" then
-		local On,Off = msg:match(on), msg:match(off);
-		if On or Off then
-			--ns.debug("<ChatMsg>",On and "<On>" or "<Off>",(On or Off):gsub("\124","\\124"));
-			if On then
-				On = On:gsub("\124Hplayer:%%s\124h%[",""):gsub("%]\124h","");
-			end
-			local Name = tostring(On or Off);
-			if not Name:find("-") then
-				Name = Name .."-".. ns.realm:gsub(" ","");
-			end
-			if not membersName2Index[Name] then
-				return; -- it is not a guild member. don't update for toons from friendlist.
-			end
-			if On then
-				IsOnline(time(),Name);
-			elseif Off then
-				IsOnline(0,Name);
-			end
-			doGuildUpdate = true;
-			doMembersUpdate = true;
-		end
-		return;
-	elseif event=="GUILD_ROSTER_UPDATE" or event=="LF_GUILD_RECRUITS_UPDATED" or event=="BE_DUMMY_EVENT" then
-		doGuildUpdate = true;
-		doMembersUpdate = true;
-	elseif event=="GUILD_TRADESKILL_UPDATE" then
-		doTradeskillsUpdate = true;
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
 	end
 	if updaterLocked==false and (doGuildUpdate or doMembersUpdate or doTradeskillsUpdate or doApplicantsUpdate or doUpdateTooltip) then
 		updaterLocked = true;
@@ -706,14 +696,10 @@ ns.modules[name].onevent = function(self,event,msg,...)
 	end
 end
 
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].optionspanel = function(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.optionspanel(panel) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	local ttAlignings = {"LEFT"};
 
@@ -736,6 +722,11 @@ ns.modules[name].onenter = function(self)
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

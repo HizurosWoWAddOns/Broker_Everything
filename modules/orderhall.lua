@@ -1,5 +1,4 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
@@ -7,11 +6,10 @@ if ns.build<70000000 then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Order hall" -- GARRISON_LOCATION_TOOLTIP
-local ldbName,ttName,ttColumns,tt,createMenu = name, name.."TT",3;
+local ldbName,ttName,ttColumns,tt,createMenu,module = name, name.."TT",3;
 local now = 0;
 local TalentUnavailableReasons = {
 	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_ANOTHER_IS_RESEARCHING] = ORDER_HALL_TALENT_UNAVAILABLE_ANOTHER_IS_RESEARCHING,
@@ -21,54 +19,13 @@ local TalentUnavailableReasons = {
 };
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="Interface\\Icons\\inv_garrison_resource", coords={0.05,0.95,0.05,0.95}}; --IconName::Order hall--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Display order hall upgrade tree and work orders from order hall and kitchen"],
-	events = {},
-	updateinterval = nil, -- 10
-	config_defaults = {},
-	config_allowed = {},
-	config_header = { type="header", label=L[name], align="left", icon=I[name] },
-	config_broker = nil,
-	config_tooltip = {},
-	config_misc = {},
-	clickOptions = {
-		["1_open_garrison_report"] = {
-			cfg_label = "Open garrison report", -- L["Open garrison report"]
-			cfg_desc = "open the garrison report",
-			cfg_default = "_LEFT",
-			hint = "Open garrison report",
-			func = function(self,button)
-				local _mod=name;
-				securecall("GarrisonLandingPage_Toggle");
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
-
 function createMenu(self)
 	if (tt~=nil) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
@@ -77,7 +34,7 @@ function createMenu(self)
 end
 
 local function updateBroker()
-	local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName);
+	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local title = {};
 	tinsert(title, C("ltblue",ready) .."/".. C("orange",progress - ready) );
 
@@ -266,34 +223,65 @@ local function createTooltip(tt)
 end
 
 
+-- module functions and variables --
 ------------------------------------
--- module (BE internal) functions --
-------------------------------------
-ns.modules[name].init = function()
-	ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
-end
+module = {
+	desc = L["Display order hall upgrade tree and work orders from order hall and kitchen"],
+	events = {},
+	updateinterval = nil, -- 10
+	config_defaults = {},
+	config_allowed = {},
+	config_header = { type="header", label=L[name], align="left", icon=I[name] },
+	config_broker = nil,
+	config_tooltip = {},
+	config_misc = {},
+	clickOptions = {
+		["1_open_garrison_report"] = {
+			cfg_label = "Open garrison report", -- L["Open garrison report"]
+			cfg_desc = "open the garrison report",
+			cfg_default = "_LEFT",
+			hint = "Open garrison report",
+			func = function(self,button)
+				local _mod=name;
+				securecall("GarrisonLandingPage_Toggle");
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu",
+			cfg_desc = "open the option menu",
+			cfg_default = "_RIGHT",
+			hint = "Open option menu",
+			func = function(self,button)
+				local _mod=name;
+				createMenu(self)
+			end
+		}
+	}
+}
 
-ns.modules[name].onevent = function(self,event,...)
+-- function module.init() end
+
+function module.onevent(self,event,...)
 	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+		ns.clickOptions.update(module,ns.profile[name]);
 	end
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(self) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(self) end
 
-
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName,ttColumns, "LEFT","LEFT", "CENTER", "CENTER", "CENTER", "RIGHT","RIGHT"},{false},{self});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
 
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

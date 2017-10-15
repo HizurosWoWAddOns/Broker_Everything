@@ -1,68 +1,23 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 L.Achievements = ACHIEVEMENTS;
 
------------------------------------------------------------
+
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Achievements"; -- ACHIEVEMENTS
-local ttName, ttColumns, tt, createMenu = name.."TT", 2;
+local ttName, ttColumns, tt, module, createMenu = name.."TT", 2;
 local categoryIds,bars,count = {92, 96, 97, 95, 168, 169, 201, 15165, 155, 15117, 15246, 15237},{},0;
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="interface\\achievementframe\\UI-Achievement-Progressive-Shield-NoPoints", coords={.15,.55,.15,.55}, size={64,64}}; --IconName::Achievements--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show earned achievements and the curent tracking list"],
-	label = ACHIEVEMENTS,
-	--icon_suffix = "",
-	events = {},
-	updateinterval = false, -- 10
-	config_defaults = {
-		showLatest = true,
-		showCategory = true,
-		showWatchlist = true,
-		showProgressBars = true,
-		showCompleted = true
-	},
-	config_allowed = nil,
-	config_header = { type="header", label=ACHIEVEMENTS, align="left", icon=true },
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="showLatest",       label=L["Show latest achievements"],    tooltip=L["Show 5 latest earned achievements in tooltip"]},
-		{ type="toggle", name="showCategory",     label=L["Show achievement categories"], tooltip=L["Show achievement categories in tooltip"]},
-		{ type="toggle", name="showWatchlist",    label=L["Show watch list"],             tooltip=L["Show watch list in tooltip"]},
-		{ type="toggle", name="showProgressBars", label=L["Show progress bars"],          tooltip=L["Show progress bars in tooltip"]},
-		{ type="toggle", name="showCompleted",    label=L["Show completed criteria"],     tooltip=L["Show completed criteria in watch list"]},
-	},
-	config_misc = nil,
-	clickOptions = {
-		["open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
-	}
-}
-
-
---------------------------
 -- some local functions --
 --------------------------
 function createMenu(self)
@@ -212,31 +167,71 @@ local function tooltipOnHide()
 	end
 end
 
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
--- ns.modules[name].init = function() end
-ns.modules[name].onevent = function(self,event,...)
+
+-- module variables for registration --
+---------------------------------------
+module = {
+	desc = L["Broker to show earned achievements and the curent tracking list"],
+	label = ACHIEVEMENTS,
+	--icon_suffix = "",
+	events = {},
+	updateinterval = nil,
+	config_defaults = {
+		showLatest = true,
+		showCategory = true,
+		showWatchlist = true,
+		showProgressBars = true,
+		showCompleted = true
+	},
+	config_allowed = nil,
+	config_header = { type="header", label=ACHIEVEMENTS, align="left", icon=true },
+	config_broker = nil,
+	config_tooltip = {
+		{ type="toggle", name="showLatest",       label=L["Show latest achievements"],    tooltip=L["Show 5 latest earned achievements in tooltip"]},
+		{ type="toggle", name="showCategory",     label=L["Show achievement categories"], tooltip=L["Show achievement categories in tooltip"]},
+		{ type="toggle", name="showWatchlist",    label=L["Show watch list"],             tooltip=L["Show watch list in tooltip"]},
+		{ type="toggle", name="showProgressBars", label=L["Show progress bars"],          tooltip=L["Show progress bars in tooltip"]},
+		{ type="toggle", name="showCompleted",    label=L["Show completed criteria"],     tooltip=L["Show completed criteria in watch list"]},
+	},
+	config_misc = nil,
+	clickOptions = {
+		["open_menu"] = {
+			cfg_label = "Open option menu",
+			cfg_desc = "open the option menu",
+			cfg_default = "_RIGHT",
+			hint = "Open option menu",
+			func = function(self,button)
+				local _mod=name;
+				createMenu(self)
+			end
+		}
+	}
+}
+
+-- function module.init() end
+
+function module.onevent(self,event,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+		ns.clickOptions.update(module,ns.profile[name]);
 	end
 end
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].ontooltip = function(tooltip) end
 
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
+-- function module.ontooltip(tooltip) end
 
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT"},{false},{self},{OnHide=tooltipOnHide});
 	createTooltip(tt);
 	C_Timer.After(0.5,updateBars);
 end
 
--- ns.modules[name].onleave = function(self) end
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onleave(self) end
+-- function module.onclick(self,button) end
+-- function module.ondblclick(self,button) end
 
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

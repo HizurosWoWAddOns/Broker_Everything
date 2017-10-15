@@ -1,16 +1,14 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...;
 local C, L, I = ns.LC.color, ns.L, ns.I;
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name,_ = "Durability"; -- DURABILITY
-local ttName,tt = name.."TT",nil;
+local ttName,tt,module = name.."TT";
 local hiddenTooltip,createMenu
 local last_repairs = {};
 local merchant = {repair=false,costs=0,diff=0,single=0};
@@ -53,104 +51,11 @@ colorSets.set3 = {[20]="red",[40]="orange",[60]="yellow",[99]="green",[100]="ltb
 colorSets.set4 = {[15]="red",[40]="orange",[60]="yellow",[80]="green",[100]="white"};
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="Interface\\Minimap\\TRACKING\\Repair",coords={0.05,0.95,0.05,0.95}}; --IconName::Durability--
 
 
----------------------------------------
--- module variables for registration --
----------------------------------------
-ns.modules[name] = {
-	desc = L["Broker to show durability of your gear and estimated repair costs"],
-	label = DURABILITY,
-	events = {
-		"PLAYER_LOGIN",
-		"PLAYER_DEAD",
-		"PLAYER_REGEN_ENABLED",
-		"PLAYER_ENTERING_WORLD",
-		"MERCHANT_CLOSED",
-		"MERCHANT_SHOW",
-		"PLAYER_MONEY",
-		"CHAT_MSG_MONEY"
-	},
-	updateinterval = nil,
-	config_defaults = {
-		goldColor = false,
-		inBroker = "percent",
-		colorSet = "set1",
-		autorepair = false,
-		autorepairbyguild = false,
-		listCosts = true,
-		saveCosts = true,
-		maxCosts = 5,
-		dateFormat = "%Y-%m-%d %H:%M",
-		showDiscount = true,
-		lowestItem = true,
-		chatRepairInfo = false
-	},
-	config_allowed = {
-		inBroker = {["percent"]=true,["costs"]=true,["costs/percent"]=true,["percent/costs"]=true},
-		colorSet = {},
-		dateFormat = {["%d.%m. %H:%M"] = true,["%d.%m. %I:%M %p"] = true,["%Y-%m-%d %H:%M"] = true,["%Y-%m-%d %I:%M %p"] = true,["%d/%m/%Y %H:%M"] = true,["%d/%m/%Y %I:%M %p"] = true}
-	},
-	config_header = {type="header", label=DURABILITY, align="left", icon=I[name]},
-	config_broker = {
-		{ type="toggle", name="lowestItem", label=L["Lowest durability"], tooltip=L["Display the lowest item durability in broker."], event=true },
-		{ type="select", name="inBroker", label=L["Broker format"], tooltip=L["Choose your favorite display format for the broker button."], default="percent", event=true,
-			values={
-				["percent"]="54%",
-				["costs"]="34.23.01",
-				["costs/percent"]="32.27.16, 54%",
-				["percent/costs"]="54%, 32.27.16"
-			}
-		},
-	},
-	config_tooltip = {
-		{ type="toggle", name="showDiscount", label=L["Show discount"], tooltip=L["Show list of reputation discounts in tooltip"] },
-		{ type="select", name="dateFormat", label=L["Date format"], tooltip=L["Choose the date format if used in the list of repair costs"], default="%Y-%m-%d %H:%M", values=date_formats, event=true },
-	},
-	config_misc = {
-		{ type="select", name="colorSet", label=L["Percent color set"], tooltip=L["Choose your favorite color set in which the percent text in broker should be displayed."], event=true, default="set1", values=colorSets.values },
-		{ type="header", label=L["Repair options"] },
-		{ type="separator", inMenuInvisible=true },
-		{ type="toggle", name="autorepair", label=L["Enable auto repair"], tooltip=L["Automatically repair your equipment on opening a merchant with repair option."], event=true },
-		{ type="toggle", name="autorepairbyguild", label=L["Use guild money"], tooltip=function() return L["Use guild money on auto repair if you can"].. ( (GetGuildInfoText():find("%[noautorepair%]")) and "|n"..C("red",L["Your guild leadership denied the use of guild money for auto repair."]) or ""); end, event=true, --[[disabled=function() return (GetGuildInfoText():find("%[noautorepair%]")); end]] },
-		{ type="toggle", name="chatRepairInfo", label=L["Repair info"], tooltip=L["Post repair actions in chatframe"] },
-		{ type="toggle", name="listCosts", label=L["List of repair costs"], tooltip=L["Display a list of the last repair costs in tooltip"] },
-		{ type="toggle", name="saveCosts", label=L["Save repair costs"], tooltip=L["Save the list of repair costs over the session"] },
-		{ type="slider", name="maxCosts", label=L["Max. list entries"], tooltip=L["Choose how much entries the list of repair costs can have."], min=1, max=50, default=5, format="%d" },
-	},
-	clickOptions = {
-		["1_open_character_info"] = {
-			cfg_label = "Open character info", -- L["Open character info"]
-			cfg_desc = "open the character info", -- L["open the character info"]
-			cfg_default = "_LEFT",
-			hint = "Open character info", -- L["Open character info"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","PaperDollFrame");
-			end
-		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self)
-			end
-		}
-	}
-};
-
-for i,v in pairs(colorSets) do
-	ns.modules[name].config_allowed.colorSet[i] = true;
-end
-
---------------------------
 -- some local functions --
 --------------------------
 local function scanAll()
@@ -198,12 +103,6 @@ local function scanAll()
 	return total,equipped,bags,_AvPercent*100,_per*100,_perSlot;
 end
 
---[[
-	lastRepairs_add
-		@param cost       [number]      - repair costs
-		@param fund       [true|nil]    - true=guild fund, nil=player fund.
-		@param repairType [boolean|nil] - true=autorepair, false=single item repair mode, nil=normal repair all
---]]
 local function lastRepairs_add(cost,fund,repairType)
 	local t = {};
 	table.insert(last_repairs,1,{time(),cost,(fund==true),(repairType==true)});
@@ -354,11 +253,96 @@ function createMenu(self)
 	ns.EasyMenu.ShowMenu(self);
 end
 
+-- module functions and variables --
 ------------------------------------
--- module (BE internal) functions --
-------------------------------------
+module = {
+	desc = L["Broker to show durability of your gear and estimated repair costs"],
+	label = DURABILITY,
+	events = {
+		"PLAYER_LOGIN",
+		"PLAYER_DEAD",
+		"PLAYER_REGEN_ENABLED",
+		"MERCHANT_CLOSED",
+		"MERCHANT_SHOW",
+		"PLAYER_MONEY",
+		"CHAT_MSG_MONEY"
+	},
+	updateinterval = nil,
+	config_defaults = {
+		goldColor = false,
+		inBroker = "percent",
+		colorSet = "set1",
+		autorepair = false,
+		autorepairbyguild = false,
+		listCosts = true,
+		saveCosts = true,
+		maxCosts = 5,
+		dateFormat = "%Y-%m-%d %H:%M",
+		showDiscount = true,
+		lowestItem = true,
+		chatRepairInfo = false
+	},
+	config_allowed = {
+		inBroker = {["percent"]=true,["costs"]=true,["costs/percent"]=true,["percent/costs"]=true},
+		colorSet = {},
+		dateFormat = {["%d.%m. %H:%M"] = true,["%d.%m. %I:%M %p"] = true,["%Y-%m-%d %H:%M"] = true,["%Y-%m-%d %I:%M %p"] = true,["%d/%m/%Y %H:%M"] = true,["%d/%m/%Y %I:%M %p"] = true}
+	},
+	config_header = {type="header", label=DURABILITY, align="left", icon=I[name]},
+	config_broker = {
+		{ type="toggle", name="lowestItem", label=L["Lowest durability"], tooltip=L["Display the lowest item durability in broker."], event=true },
+		{ type="select", name="inBroker", label=L["Broker format"], tooltip=L["Choose your favorite display format for the broker button."], default="percent", event=true,
+			values={
+				["percent"]="54%",
+				["costs"]="34.23.01",
+				["costs/percent"]="32.27.16, 54%",
+				["percent/costs"]="54%, 32.27.16"
+			}
+		},
+	},
+	config_tooltip = {
+		{ type="toggle", name="showDiscount", label=L["Show discount"], tooltip=L["Show list of reputation discounts in tooltip"] },
+		{ type="select", name="dateFormat", label=L["Date format"], tooltip=L["Choose the date format if used in the list of repair costs"], default="%Y-%m-%d %H:%M", values=date_formats, event=true },
+	},
+	config_misc = {
+		{ type="select", name="colorSet", label=L["Percent color set"], tooltip=L["Choose your favorite color set in which the percent text in broker should be displayed."], event=true, default="set1", values=colorSets.values },
+		{ type="header", label=L["Repair options"] },
+		{ type="separator", inMenuInvisible=true },
+		{ type="toggle", name="autorepair", label=L["Enable auto repair"], tooltip=L["Automatically repair your equipment on opening a merchant with repair option."], event=true },
+		{ type="toggle", name="autorepairbyguild", label=L["Use guild money"], tooltip=function() return L["Use guild money on auto repair if you can"].. ( (GetGuildInfoText():find("%[noautorepair%]")) and "|n"..C("red",L["Your guild leadership denied the use of guild money for auto repair."]) or ""); end, event=true, --[[disabled=function() return (GetGuildInfoText():find("%[noautorepair%]")); end]] },
+		{ type="toggle", name="chatRepairInfo", label=L["Repair info"], tooltip=L["Post repair actions in chatframe"] },
+		{ type="toggle", name="listCosts", label=L["List of repair costs"], tooltip=L["Display a list of the last repair costs in tooltip"] },
+		{ type="toggle", name="saveCosts", label=L["Save repair costs"], tooltip=L["Save the list of repair costs over the session"] },
+		{ type="slider", name="maxCosts", label=L["Max. list entries"], tooltip=L["Choose how much entries the list of repair costs can have."], min=1, max=50, default=5, format="%d" },
+	},
+	clickOptions = {
+		["1_open_character_info"] = {
+			cfg_label = "Open character info", -- L["Open character info"]
+			cfg_desc = "open the character info", -- L["open the character info"]
+			cfg_default = "_LEFT",
+			hint = "Open character info", -- L["Open character info"]
+			func = function(self,button)
+				local _mod=name;
+				securecall("ToggleCharacter","PaperDollFrame");
+			end
+		},
+		["2_open_menu"] = {
+			cfg_label = "Open option menu", -- L["Open option menu"]
+			cfg_desc = "open the option menu", -- L["open the option menu"]
+			cfg_default = "_RIGHT",
+			hint = "Open option menu", -- L["Open option menu"]
+			func = function(self,button)
+				local _mod=name; -- for error tracking
+				createMenu(self)
+			end
+		}
+	}
+};
 
-ns.modules[name].init = function()
+function module.init()
+	for i,v in pairs(colorSets) do
+		module.config_allowed.colorSet[i] = true;
+	end
+
 	ns.items.Enable();
 
 	if not hiddenTooltip then
@@ -380,16 +364,19 @@ ns.modules[name].init = function()
 	end
 
 	MerchantRepairAllButton:HookScript("OnClick",function(self,button)
-		ns.modules[name].onevent({},"BE_EVENT_REPAIRALL_PLAYER");
+		module.onevent({},"BE_EVENT_REPAIRALL_PLAYER");
 	end);
 
 	MerchantGuildBankRepairButton:HookScript("OnClick",function(self,button)
-		ns.modules[name].onevent({},"BE_EVENT_REPAIRALL_GUILD");
+		module.onevent({},"BE_EVENT_REPAIRALL_GUILD");
 	end);
 end
 
-ns.modules[name].onevent = function(self,event,msg)
-	if (event=="MERCHANT_SHOW") then
+function module.onevent(self,event,msg)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(module,ns.profile[name]);
+		return;
+	elseif event=="MERCHANT_SHOW" then
 		local costs, canRepair = GetRepairAllCost();
 		if (costs>0) and (canRepair) then
 			merchant.repair=true;
@@ -398,13 +385,9 @@ ns.modules[name].onevent = function(self,event,msg)
 				if (AutoRepairAll(costs)==false) and (ns.profile[name].chatRepairInfo) then
 					ns.print(L["AutoRepair"], L["Automatic repair failed. Not enough money..."]);
 				end
-				return;
 			end
 		end
-	end
-
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(ns.modules[name],ns.profile[name]);
+		return;
 	end
 
 	-- RepairAll - ButtonHooks - custom events
@@ -443,7 +426,7 @@ ns.modules[name].onevent = function(self,event,msg)
 		end
 	end
 
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ns.modules[name].ldbName)
+	local dataobj = self.obj or ns.LDB:GetDataObjectByName(module.ldbName)
 	local repairCosts, equipCost, bagCost, dA, dL, dLSlot, d = scanAll();
 
 	if (ns.profile[name].inBroker=="costs") then
@@ -462,16 +445,21 @@ ns.modules[name].onevent = function(self,event,msg)
 	date_format = ns.profile[name].dateFormat;
 end
 
--- ns.modules[name].onclick = function(self,button) end
--- ns.modules[name].onmousewheel = function(self,direction) end
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].ontooltip = function(tt) end
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.onclick(self,button) end
+-- function module.onmousewheel(self,direction) end
+-- function module.optionspanel(panel) end
+-- function module.ontooltip(tt) end
+-- function module.ondblclick(self,button) end
 
-ns.modules[name].onenter = function(self)
+function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip({ttName, 2, "LEFT", "RIGHT"},{true},{self});
 	createTooltip(tt);
 end
 
--- ns.modules[name].onleave = function(self) end
+-- function module.onleave(self) end
+
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;

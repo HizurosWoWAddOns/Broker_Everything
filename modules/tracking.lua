@@ -1,35 +1,67 @@
 
-----------------------------------
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
------------------------------------------------------------
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Tracking" -- TRACKING
-local tt = nil
-local menuOpened = false;
+local menuOpened,tt,module = false;
 
 
--------------------------------------------
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="Interface\\minimap\\tracking\\none"}; --IconName::Tracking--
 
 
----------------------------------------
+-- some local functions --
+--------------------------
+local function updateTracking()
+	local tActive = 0
+	local n = {}
+
+	for i = 1, GetNumTrackingTypes() do
+		local name, tex, active, category = GetTrackingInfo(i)
+		if (active) then
+			tActive = tActive + 1
+			n[tActive] = {["Name"] = name, ["Texture"] = tex}
+		end
+	end
+
+	return tActive, n
+end
+
+local function menuClosed()
+	menuOpened=true;
+end
+
+local updateBroker()
+	-- broker button text
+	local numActive, trackActive = updateTracking()
+	local n = TRACKING;
+	local dataobj = self.obj or ns.LDB:GetDataObjectByName(module.ldbName)
+	if ns.profile[name].displaySelection then
+		if numActive == 0 then
+			n = "None";
+		else
+			for i = 1, numActive, 1 do
+				n = trackActive[i]["Name"];
+			end
+		end
+	end
+	dataobj.text = n;
+end
+
 -- module variables for registration --
 ---------------------------------------
-ns.modules[name] = {
+module = {
 	desc = L["Broker to show current tracking list with option to change it"],
 	label = TRACKING,
 	events = {
 		"MINIMAP_UPDATE_TRACKING",
-		"PLAYER_LOGIN",
-		"PLAYER_ENTERING_WORLD"
+		"PLAYER_LOGIN"
 	},
 	updateinterval = nil, -- 10
 	config_defaults = {
@@ -54,35 +86,9 @@ ns.modules[name] = {
 	}
 }
 
+-- function module.init() end
 
---------------------------
--- some local functions --
---------------------------
-local function updateTracking()
-	local tActive = 0
-	local n = {}
-
-	for i = 1, GetNumTrackingTypes() do
-		local name, tex, active, category = GetTrackingInfo(i)
-		if (active) then
-			tActive = tActive + 1
-			n[tActive] = {["Name"] = name, ["Texture"] = tex}
-		end
-	end
-
-	return tActive, n
-end
-
-local function menuClosed()
-	menuOpened=true;
-end
-
-------------------------------------
--- module (BE internal) functions --
-------------------------------------
--- ns.modules[name].init = function() end
-
-ns.modules[name].onevent = function(self,event,msg)
+function module.onevent(self,event,msg)
 	if event=="BE_HIDE_TRACKING" then -- custom event on config changed
 		if ns.profile[name].hideMinimapButton then
 			ns.hideFrame("MiniMapTracking")
@@ -93,26 +99,13 @@ ns.modules[name].onevent = function(self,event,msg)
 		ns.EasyMenu.Refresh(1);
 	end
 
-	-- broker button text
-	local numActive, trackActive = updateTracking()
-	local n = TRACKING;
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(ns.modules[name].ldbName)
-	if ns.profile[name].displaySelection then
-		if numActive == 0 then
-			n = "None";
-		else
-			for i = 1, numActive, 1 do
-				n = trackActive[i]["Name"];
-			end
-		end
-	end
-	dataobj.text = n;
+	updateBroker();
 end
 
--- ns.modules[name].optionspanel = function(panel) end
--- ns.modules[name].onmousewheel = function(self,direction) end
+-- function module.optionspanel(panel) end
+-- function module.onmousewheel(self,direction) end
 
-ns.modules[name].ontooltip = function(tooltip)
+function module.ontooltip(tooltip)
 	tt=tooltip;
 	if (ns.tooltipChkOnShowModifier(false)) then tt:Hide(); return; end
 
@@ -135,14 +128,10 @@ ns.modules[name].ontooltip = function(tooltip)
 	end
 end
 
+-- function module.onenter(self) end
+-- function module.onleave(self) end
 
--------------------------------------------
--- module functions for LDB registration --
--------------------------------------------
--- ns.modules[name].onenter = function(self) end
--- ns.modules[name].onleave = function(self) end
-
-ns.modules[name].onclick = function(self,button)
+function module.onclick(self,button)
 	if tt then tt:Hide(); end
 	local Name, texture, active, category, nested, Type = 1,2,3,4,5,6;
 	local list,count = {},GetNumTrackingTypes();
@@ -204,5 +193,9 @@ ns.modules[name].onclick = function(self,button)
 	ns.EasyMenu.ShowMenu(self,-20,nil,menuClosed);
 end
 
--- ns.modules[name].ondblclick = function(self,button) end
+-- function module.ondblclick(self,button) end
 
+
+-- final module registration --
+-------------------------------
+ns.modules[name] = module;
