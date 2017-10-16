@@ -69,7 +69,7 @@ local function _status(afk,dnd)
 end
 
 local function updateBroker()
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(module.ldbName);
+	local dataobj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local numBNFriends, numOnlineBNFriends = 0,0;
 	if BNConnected() then
 		numBNFriends, numOnlineBNFriends = BNGetNumFriends();

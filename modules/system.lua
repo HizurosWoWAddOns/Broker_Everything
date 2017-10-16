@@ -572,6 +572,9 @@ local function updateAll()
 	end
 end
 
+local function init()
+	C_Timer.NewTicker(5,updateAll);
+end
 
 -- module variables for registration --
 ---------------------------------------
@@ -778,6 +781,7 @@ module_traf = {
 
 function module_sys.init()
 	enabled.sys_mod = true;
+	if init then init() init=nil end
 	enabled.fps_sys = (ns.profile[name_sys].showFpsOnBroker or ns.profile[name_sys].showFpsInTooltip);
 	enabled.lat_sys = (ns.profile[name_sys].showWorldOnBroker or ns.profile[name_sys].showHomeOnBroker or ns.profile[name_sys].showLatencyInTooltip);
 	enabled.mem_sys = (ns.profile[name_sys].showMemoryUsageOnBroker or ns.profile[name_sys].showAddOnsCountOnBroker or ns.profile[name_sys].showMemoryUsageInTooltip);
@@ -810,16 +814,30 @@ function module_sys.onevent(self,event,msg)
 	end
 end
 
--- function module_fps.onevent(self,event,msg) end
--- function module_lat.onevent(self,event,msg) end
-
 function module_mem.onevent(self,event,msg)
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
+	if event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(module_mem,ns.profile[name_mem]);
 	end
 end
 
--- function module_traf.onevent(self,event,msg) end
+function module_fps.onevent(self,event,msg)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(name_fps);
+	end
+end
+
+function module_lat.onevent(self,event,msg)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(name_lat);
+	end
+end
+
+function module_traf.onevent(self,event,msg)
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(name_traf);
+	end
+end
+
 -- function module_*.optionspanel(panel) end
 -- function module_*.onmousewheel(self,direction) end
 -- function module_*.ontooltip(tt) end
@@ -865,4 +883,4 @@ ns.modules[name_sys] = module_sys;
 ns.modules[name_fps] = module_fps;
 ns.modules[name_lat] = module_lat;
 ns.modules[name_mem] = module_mem;
-ns.modules[name_trag] = module_traf;
+ns.modules[name_traf] = module_traf;

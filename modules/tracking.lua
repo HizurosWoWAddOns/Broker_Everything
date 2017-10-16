@@ -37,11 +37,11 @@ local function menuClosed()
 	menuOpened=true;
 end
 
-local updateBroker()
+local function updateBroker()
 	-- broker button text
 	local numActive, trackActive = updateTracking()
 	local n = TRACKING;
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(module.ldbName)
+	local dataobj = ns.LDB:GetDataObjectByName(module.ldbName)
 	if ns.profile[name].displaySelection then
 		if numActive == 0 then
 			n = "None";
