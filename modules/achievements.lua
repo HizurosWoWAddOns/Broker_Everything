@@ -3,7 +3,6 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-L.Achievements = ACHIEVEMENTS;
 
 
 -- module own local variables and local cached functions --
@@ -121,7 +120,7 @@ local function createTooltip(tt)
 		local ids = {GetTrackedAchievements()};
 		if(#ids>0)then
 			tt:AddSeparator(4,0,0,0,0);
-			tt:AddLine(C("ltblue",L["Watch list"]));
+			tt:AddLine(C("ltblue",L["AchieveWatch"]));
 			tt:AddSeparator();
 			for i=1, #ids do
 				local id, Name, points, completed, month, day, year, description, flags, icon, rewardText, isGuild, wasEarnedByMe, earnedBy = GetAchievementInfo(ids[i]);

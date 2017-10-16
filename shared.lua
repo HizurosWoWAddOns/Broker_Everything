@@ -166,10 +166,10 @@ do
 			local msg
 			-- usefull blacklisted cvars...
 			if cvar=="uiScale" or cvar=="useUiScale" then
-				msg = "Changing UI scaling while combat nether an good idea."
+				msg = L["CVarScalingInCombat"];
 			else
 			-- useless blacklisted cvars...
-				msg = "Sorry, CVar "..cvar.." are no longer changeable while combat. Thanks @ Blizzard."
+				msg = L["CVarInCombat"]:format(cvar);
 			end
 			ns.print(ns.LC.color("ltorange",msg));
 		else
@@ -339,16 +339,17 @@ function ns.RegisterMouseWheel(self,func)
 	self:SetScript("OnMouseWheel", func);
 end
 
+-- L["ModKey" .. ns.tooltipModifiers.<key>.l]
 ns.tooltipModifiers = {
-	SHIFT      = {l=L["Shift"],       f="Shift"},
-	LEFTSHIFT  = {l=L["Left shift"],  f="LeftShift"},
-	RIGHTSHIFT = {l=L["Right shift"], f="RightShift"},
-	ALT        = {l=L["Alt"],         f="Alt"},
-	LEFTALT    = {l=L["Left alt"],    f="LeftAlt"},
-	RIGHTALT   = {l=L["Right alt"],   f="RightAlt"},
-	CTRL       = {l=L["Ctrl"],        f="Control"},
-	LEFTCTRL   = {l=L["Left ctrl"],   f="LeftControl"},
-	RIGHTCTRL  = {l=L["Right ctrl"],  f="RightControl"}
+	SHIFT      = {l="S",  f="Shift"},
+	LEFTSHIFT  = {l="LS", f="LeftShift"},
+	RIGHTSHIFT = {l="RS", f="RightShift"},
+	ALT        = {l="A",  f="Alt"},
+	LEFTALT    = {l="LA", f="LeftAlt"},
+	RIGHTALT   = {l="RA", f="RightAlt"},
+	CTRL       = {l="C",  f="Control"},
+	LEFTCTRL   = {l="LC", f="LeftControl"},
+	RIGHTCTRL  = {l="Rc", f="RightControl"}
 }
 
 function ns.tooltipChkOnShowModifier(bool)
@@ -1690,7 +1691,7 @@ do
 
 		self.addEntry({separator=true});
 		--self.addEntry({label=CANCEL, func=function() LibDropDownMenu_List1:Hide(); end});
-		self.addEntry({label=L["Close menu"], func=function() LibDropDownMenu_List1:Hide(); if callbackOnClose then callbackOnClose() end end});
+		self.addEntry({label=L["CloseMenu"], func=function() LibDropDownMenu_List1:Hide(); if callbackOnClose then callbackOnClose() end end});
 
 		if openTooltip then
 			ns.hideTooltip(openTooltip,openTooltip.key,true,false,true);
@@ -1739,18 +1740,18 @@ end
 do
 	local values = {
 		["__NONE"]     = "Disabled",			-- ADDON_DISABLED
-		["_CLICK"]     = "Click",				-- L["Click"]
-		["_LEFT"]      = "Left-click",			-- L["Left-click"]
-		["_RIGHT"]     = "Right-click",			-- L["Right-click"]
-		["ALTCLICK"]   = "Alt+Click",			-- L["Alt+Click"]
-		["ALTLEFT"]    = "Alt+Left-click",		-- L["Alt+Left-click"]
-		["ALTRIGHT"]   = "Alt+Right-click",		-- L["Alt+Right-click"]
-		["SHIFTCLICK"] = "Shift+Click",			-- L["Shift+Click"]
-		["SHIFTLEFT"]  = "Shift+Left-click",	-- L["Shift+Left-click"]
-		["SHIFTRIGHT"] = "Shift+Right-click",	-- L["Shift+Right-click"]
-		["CTRLCLICK"]  = "Ctrl+Click",			-- L["Ctrl+Click"]
-		["CTRLLEFT"]   = "Ctrl+Left-click",		-- L["Ctrl+Left-click"]
-		["CTRLRIGHT"]  = "Ctrl+Right-click",	-- L["Ctrl+Right-click"]
+		["_CLICK"]     = L["ClickOpt"],
+		["_LEFT"]      = L["ClickOptL"],
+		["_RIGHT"]     = L["ClickOptR"],
+		["ALTCLICK"]   = L["ClickOptA"]..L["ClickOpt"],
+		["ALTLEFT"]    = L["ClickOptA"]..L["ClickOptL"],
+		["ALTRIGHT"]   = L["ClickOptA"]..L["ClickOptR"],
+		["SHIFTCLICK"] = L["ClickOptS"]..L["ClickOpt"],
+		["SHIFTLEFT"]  = L["ClickOptS"]..L["ClickOptL"],
+		["SHIFTRIGHT"] = L["ClickOptS"]..L["ClickOptR"],
+		["CTRLCLICK"]  = L["ClickOptC"]..L["ClickOpt"],
+		["CTRLLEFT"]   = L["ClickOptC"]..L["ClickOptL"],
+		["CTRLRIGHT"]  = L["ClickOptC"]..L["ClickOptR"],
 	};
 	local sharedOptions = {
 		OptionMenu = {name="ClickOptMenu",desc="ClickOptMenuDesc",hint="ClickOptMenuHint",default="_RIGHT",func="OptionMenu"},
@@ -1888,19 +1889,19 @@ end
 -- --------------------------------------- --
 do
 	ns.questTags = {
-		[QUEST_TAG_GROUP] = "g",
-		[QUEST_TAG_PVP] = {"pvp","violet"},
-		[QUEST_TAG_DUNGEON] = "d",
-		[QUEST_TAG_HEROIC] = "hc",
-		[QUEST_TAG_RAID] = "r",
-		[QUEST_TAG_RAID10] = "r10",
-		[QUEST_TAG_RAID25] = "r25",
-		[QUEST_TAG_SCENARIO] = "s",
-		[QUEST_TAG_ACCOUNT] = "a",
-		[QUEST_TAG_LEGENDARY] = {"leg","orange"},
-		TRADE_SKILLS = {"ts","green"},
-		WORLD_QUESTS = {"wq","yellow"},
-		DUNGEON_MYTHIC = {"myth","ltred"}
+		[QUEST_TAG_GROUP]     = L["QuestTagGRP"],
+		[QUEST_TAG_PVP]       = {L["QuestTagPVP"],"violet"},
+		[QUEST_TAG_DUNGEON]   = L["QuestTagND"],
+		[QUEST_TAG_HEROIC]    = L["QuestTagHD"],
+		[QUEST_TAG_RAID]      = L["QuestTagRD"],
+		[QUEST_TAG_RAID10]    = L["QuestTagRD10"],
+		[QUEST_TAG_RAID25]    = L["QuestTagRD25"],
+		[QUEST_TAG_SCENARIO]  = L["QuestTagSC"],
+		[QUEST_TAG_ACCOUNT]   = L["QuestTagACC"],
+		[QUEST_TAG_LEGENDARY] = {L["QuestTagLEG"],"orange"},
+		TRADE_SKILLS          = {L["QuestTagTS"],"green"},
+		WORLD_QUESTS          = {L["QuestTagWQ"],"yellow"},
+		DUNGEON_MYTHIC        = {L["QuestTagMD"],"ltred"}
 	};
 	local tradeskills_update;
 	local tradeskills_mt = {__call=function(t,k)

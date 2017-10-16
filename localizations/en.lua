@@ -9,49 +9,89 @@ local addon, ns = ...
 -- from Blizzard                                                     --
 -- ----------------------------------------------------------------- --
 
+local L = {};
+
 ns.L = setmetatable({}, {
+	__newindex = function(t,k,v)
+		L[k] = v;
+	end,
 	__index = function(t, k)
-		if not k then return "?"; end
-		local v=tostring(k);
-		rawset(t, k, v);
-		return v;
+		if ns.debugMode then
+			return L[k] or "<"..k..">";
+		end
+		return L[k] or k;
 	end
-})
+});
 
-if (FACTION_STANDING_LABEL1~="Hated") then
-	ns.L["Hated"]         = FACTION_STANDING_LABEL1
-	ns.L["Hostile"]       = FACTION_STANDING_LABEL2
-	ns.L["Unfriendly"]    = FACTION_STANDING_LABEL3
-	ns.L["Neutral"]       = FACTION_STANDING_LABEL4
-	ns.L["Friendly"]      = FACTION_STANDING_LABEL5
-	ns.L["Honoured"]      = FACTION_STANDING_LABEL6
-	ns.L["Revered"]       = FACTION_STANDING_LABEL7
-	ns.L["Exalted"]       = FACTION_STANDING_LABEL8
-	ns.L["Inn"]           = HOME_INN
-	ns.L["Officer notes"] = OFFICER_NOTE_COLON:gsub(":",""):gsub("：",""):trim();
-	ns.L["FPS"]           = FRAMERATE_LABEL:gsub(":",""):gsub("：",""):trim();
+
+-- localization by Blizzard - step 1
+L["Achievements"] = ACHIEVEMENTS;
+L["Archaeology"] = PROFESSIONS_ARCHAEOLOGY
+L["Clock"] = TIMEMANAGER_TITLE
+L["Currency"] = CURRENCY
+L["Dungeon"] = LFG_TYPE_DUNGEON
+L["Dungeons"] = DUNGEONS
+L["Durability"] = DURABILITY
+L["Equipment"] = BAG_FILTER_EQUIPMENT
+L["Exalted"] = FACTION_STANDING_LABEL8
+L["Followers"] = GARRISON_FOLLOWERS
+L["Friendly"] = FACTION_STANDING_LABEL5
+L["Game Menu"] = MAINMENU_BUTTON
+L["Garrison"] = GARRISON_LOCATION_TOOLTIP
+L["Gold"] = BONUS_ROLL_REWARD_MONEY
+L["Guild"] = GUILD
+L["Hated"] = FACTION_STANDING_LABEL1
+L["Honoured"] = FACTION_STANDING_LABEL6
+L["Hostile"] = FACTION_STANDING_LABEL2
+L["Inn"] = HOME_INN
+L["Mail"] = BUTTON_LAG_MAIL
+L["Missions"] = GARRISON_MISSIONS
+L["Neutral"] = FACTION_STANDING_LABEL4
+L["OptGeneral"] = GENERAL
+L["OptMisc"] = AUCTION_SUBCATEGORY_OTHER
+L["Professions"] = TRADE_SKILLS
+L["Quest Log"] = QUESTLOG_BUTTON
+L["Raids"] = RAIDS
+L["Reputation"] = REPUTATION
+L["Revered"] = FACTION_STANDING_LABEL7
+L["Ships"] = GARRISON_SHIPYARD_FOLLOWERS
+L["System"] = CHAT_MSG_SYSTEM
+L["Tracking"] = TRACKING
+L["Unfriendly"] = FACTION_STANDING_LABEL3
+L["Volume"] = VOLUME
+L["Wardrobe"] = WARDROBE
+L["XP"] = XP
+L["Disabled"] = ADDON_DISABLED
+
+
+-- localization by Blizzard - step 2
+L["FPS"] = FRAMERATE_LABEL:gsub(":",""):gsub("：",""):trim();
+L["Home"], L["World"] = MAINMENUBAR_LATENCY_LABEL:match("%((.*)%).*%((.*)%)");
+L["Officer notes"] = OFFICER_NOTE_COLON:gsub(":",""):gsub("：",""):trim();
+
+
+-- localization by Blizzard - step 3 (by events)
+local byItemId = {
+	-- [<itemId>] = "<english name>",
+	[122284] = "WoWToken",
+};
+
+function ns.LocalizationsOnEvent(event,...) -- executed by core.lua > Broker_Everything:SetScript("OnEvent"...
+	if event=="PLAYER_LOGIN" then
+		local result,name;
+		for id, key in pairs(byItemId) do
+			name = GetItemInfo(id);
+			if name then L[key] = name; end
+		end
+	elseif event=="GET_ITEM_INFO_RECEIVED" then
+		local id = ...;
+		if byItemId[id] then
+			L[byItemId[id]] = GetItemInfo(id);
+		end
+	end
 end
 
-if not (LOCALE_enUS or LOCALE_enGB) then
-	ns.L["Home"], ns.L["World"] = MAINMENUBAR_LATENCY_LABEL:match("%((.*)%).*%((.*)%)");
-end
 
-ns.L["ChatChannels"] = "Chat channels";
-ns.L["ClassSpecs"] = "Class specs";
-ns.L["FOLLOWERS_ABBREV"] = "F";
-ns.L["SHIPS_ABBREV"] = "S";
-ns.L["CHAMPIONS_ABBREV"] = "C";
+-- last step: localization filled by curse packager
+--@localization(locale="enUS", format="lua_additive_table", handle-subnamespaces="none", handle-unlocalized="ignore")@
 
-
-
-ns.L["CoExistDisabled"] = "This option is disabled because:"
-ns.L["CoExistOwn"]     = "Has it's own minimap icon."
-ns.L["CoExistSimilar"] = "Has similar option to hide the minimap icon."
-ns.L["CoExistUnsave"]  = "Produce error on try to hide the minimap icon."
-
-
-
------------
-
--- artifactweapons.lua
-ns.L.ArtifactMissingData = "There are some missing informations. Do you want to see all about this weapon it is necessary to temporary switch the spec.";

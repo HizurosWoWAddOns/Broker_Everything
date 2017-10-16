@@ -3,7 +3,6 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-L.System = SYSTEMOPTIONS_MENU;
 
 
 -- module own local variables and local cached functions --
