@@ -708,6 +708,7 @@ end
 do
 	--- local elements
 	local update,d,ticker,_ = false,{ids={}, seen={}, bags={},inv={},item={}, callbacks={any={},bags={},inv={},item={}}, preScanCallbacks={}, linkData={}, tooltipData={}, NeedTooltip={}};
+	local locked,tickerDelay,defaultDelay,f = false,0.18,1,CreateFrame("Frame");
 	local GetItemInfoFailed,IsEnabled = false,false;
 	local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d*)");
 	local _UPGRADES = gsub(ITEM_UPGRADE_TOOLTIP_FORMAT,": %%d/%%d","");
@@ -951,7 +952,6 @@ do
 	end
 
 	--- event and update frame
-	local locked,tickerDelay,defaultDelay,f = false,0.3,1.5,CreateFrame("Frame");
 	local function updater()
 		if update==false or locked then return end
 		locked = true;
@@ -964,23 +964,31 @@ do
 		end;
 		locked = false;
 	end
-	f:SetScript("OnEvent",function(self,event)
-		if event=="PLAYER_ENTERING_WORLD" then
-			self.PEW = true;
+	local function OnEvent(self,event)
+		if event=="PLAYER_LOGIN" then
 			ticker = C_Timer.NewTicker(tickerDelay,updater);
-			self:UnregisterEvent(event);
-		elseif self.PEW then
+		elseif ns.eventPlayerEnteredWorld then
 			update = defaultDelay;
 			if not ticker then
 				ticker = C_Timer.NewTicker(tickerDelay,updater);
 			end
 		end
-	end);
-	f:RegisterEvent("GET_ITEM_INFO_RECEIVED");
-	f:RegisterEvent("ITEM_UPGRADE_MASTER_UPDATE");
-	f:RegisterEvent("BAG_UPDATE_DELAYED");
-	f:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
-	f:RegisterEvent("PLAYER_ENTERING_WORLD");
+	end
+	local function init()
+		if not IsEnabled then
+			IsEnabled = true;
+			f:SetScript("OnEvent",OnEvent);
+			f:RegisterEvent("GET_ITEM_INFO_RECEIVED");
+			f:RegisterEvent("ITEM_UPGRADE_MASTER_UPDATE");
+			f:RegisterEvent("BAG_UPDATE_DELAYED");
+			f:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
+			if not ns.pastPEW then
+				f:RegisterEvent("PLAYER_LOGIN");
+			else
+				OnEvent(f,"PLAYER_LOGIN");
+			end
+		end
+	end
 
 	--- namespace functions
 	ns.items = {};
@@ -1002,7 +1010,7 @@ do
 			d.callbacks[mode][modName] = func;
 		end
 		d.callbacks.active = true;
-		IsEnabled = true;
+		init();
 	end
 	function ns.items.RegisterPreScanCallback(modName,func)
 		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
@@ -1011,10 +1019,10 @@ do
 			d.preScanCallbacks={};
 		end
 		d.preScanCallbacks[modName]=func;
-		IsEnabled = true;
+		init();
 	end
 	function ns.items.Enable()
-		IsEnabled = true;
+		init();
 	end
 	function ns.items.RegisterNeedTooltip(id)
 		if type(id)=="table" then
@@ -1027,6 +1035,7 @@ do
 				d.NeedTooltip[id]=true;
 			end
 		end
+		init();
 	end
 	function ns.items.exist(itemId)
 		return d.ids[itemId] or false;
