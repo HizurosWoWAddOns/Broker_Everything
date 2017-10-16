@@ -182,7 +182,7 @@ end
   ---------------------------------------
 --- Helpful function for extra tooltips ---
   ---------------------------------------
-local openTooltip, hiddenMouseOver;
+local brokerDragHooks, openTooltip, hiddenMouseOver, currentBroker = {};
 
 function ns.GetTipAnchor(frame, direction, parentTT)
 	if not frame then return end
@@ -246,6 +246,12 @@ local function hideOnUpdate(self, elapse)
 	end
 end
 
+local function hookDragStart(self)
+	if brokerDragHooks[self] and brokerDragHooks[self]:IsShown() then
+		ns.hideTooltip(brokerDragHooks[self])
+	end
+end
+
 function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
 	if openTooltip and openTooltip.key~=ttData[1] and openTooltip.parent and not (ttParent[1]==openTooltip or (ttParent[3] and ttParent[3]==openTooltip)) then
 		ns.hideTooltip(openTooltip);
@@ -282,6 +288,16 @@ function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
 	end
 	tooltip:SetClampedToScreen(true);
 	tooltip:SetPoint(ns.GetTipAnchor(unpack(ttParent)));
+
+	if type(ttParent[1])=="table" and ttParent[1]:GetObjectType()=="Button" then
+		currentBroker = ttParent;
+		if not brokerDragHooks[ttParent[1]] then
+			-- close tooltips if broker button fire OnDragStart
+			ttParent[1]:HookScript("OnDragStart",hookDragStart);
+		end
+		brokerDragHooks[ttParent[1]]=tooltip;
+	end
+
 	return tooltip;
 end
 
