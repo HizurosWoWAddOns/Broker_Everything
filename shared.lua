@@ -372,23 +372,23 @@ do
 		["SexyMap"]				= "CoExistSimilar",
 		["SquareMap"]			= "CoExistUnsave",
 	};
-
+	ns.coexist = {};
 	function ns.coexist.check()
-		wipe(ns.coexist.found);
-		for name in pairs(ns.coexist.list) do
+		wipe(found);
+		for name in pairs(list) do
 			if (GetAddOnInfo(name)) and (GetAddOnEnableState(ns.player.name,name)==2) then
-				tinsert(ns.coexist.found,name);
+				tinsert(found,name);
 			end
 		end
-		return #ns.coexist.found>0;
+		return #found>0;
 	end
 
 	function ns.coexist.optionInfo()
 		-- This option is disabled because:
 		-- <addon> >> <msg>
 		local msgs = {};
-		for name in pairs(ns.coexist.found)do
-			tinsert(msgs, C("ltblue",name)..C("ltgray"," >> ")..ns.coexist.list[name]);
+		for name in pairs(found)do
+			tinsert(msgs, C("ltblue",name)..C("ltgray"," >> ")..list[name]);
 		end
 		return C("orange",L["CoExistDisabled"]).."\n"
 			.. table.concat(msgs,"\n");

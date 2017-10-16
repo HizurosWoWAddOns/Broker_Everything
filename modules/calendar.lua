@@ -264,10 +264,26 @@ function module.init()
 		[1129685] = "WrathOfTheLichKingOngoing",
 		[1129686] = "WrathOfTheLichKingStart",
 	}
+	if ns.coexist.check() and ns.profile[name].hideMinimapCalendar then
+		GameTimeFrame:Hide();
+		GameTimeFrame.Show = dummyFunc;
+	end
 end
 
 function module.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
+	if event=="BE_UPDATE_CFG" then
+		if ns.coexist.check() then
+			if ns.profile[name].hideMinimapCalendar then
+				GameTimeFrame:Hide();
+				GameTimeFrame.ShowOrig = GameTimeFrame.Show
+				GameTimeFrame.Show = dummyFunc;
+			else
+				GameTimeFrame.Show = GameTimeFrame.ShowOrig
+				GameTimeFrame.ShowOrig = nil;
+				GameTimeFrame:Show();
+			end
+		end
+	elseif event=="BE_UPDATE_CLICKOPTIONS" then
 		ns.clickOptions.update(module,ns.profile[name]);
 	else
 		updateBroker();

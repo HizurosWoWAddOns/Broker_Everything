@@ -86,14 +86,20 @@ module = {
 	}
 }
 
--- function module.init() end
+function module.init()
+	if ns.coexist.check() and ns.profile[name].hideMinimapButton then
+		ns.hideFrame("MiniMapTracking");
+	end
+end
 
 function module.onevent(self,event,msg)
-	if event=="BE_HIDE_TRACKING" then -- custom event on config changed
-		if ns.profile[name].hideMinimapButton then
-			ns.hideFrame("MiniMapTracking")
-		else
-			ns.unhideFrame("MiniMapTracking")
+	if event=="BE_UPDATE_CFG" then
+		if ns.coexist.check() then
+			if ns.profile[name].hideMinimapButton then
+				ns.hideFrame("MiniMapTracking");
+			else
+				ns.unhideFrame("MiniMapTracking");
+			end
 		end
 	elseif event=="MINIMAP_UPDATE_TRACKING" and menuOpened and LibDropDownMenu_List1:IsShown() then
 		ns.EasyMenu.Refresh(1);

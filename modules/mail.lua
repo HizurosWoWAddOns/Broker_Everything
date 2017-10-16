@@ -262,11 +262,13 @@ function module.init()
 end
 
 function module.onevent(self,event,msg)
-	if (event=="BE_HIDE_MINIMAPMAIL") and (not ns.coexist.found) then
-		if (ns.profile[name].hideMinimapMail) then
-			ns.hideFrame("MiniMapMailFrame")
-		else
-			ns.unhideFrame("MiniMapMailFrame")
+	if event=="BE_UPDATE_CFG" then
+		if ns.coexist.check() then
+			if ns.profile[name].hideMinimapMail then
+				ns.hideFrame("MiniMapMailFrame")
+			else
+				ns.unhideFrame("MiniMapMailFrame")
+			end
 		end
 	elseif event=="PLAYER_LOGIN" then
 		hooksecurefunc("SendMail",function(targetName)
