@@ -119,7 +119,7 @@ local function createTooltip(tt)
 			for i=1, #Broker_Everything_CharacterDB.order do
 				local name_realm = Broker_Everything_CharacterDB.order[i];
 				local v = Broker_Everything_CharacterDB[name_realm];
-				local charName,realm,_=strsplit("-",name_realm);
+				local charName,realm,_=strsplit("-",name_realm,2);
 				if (ns.profile[name].showAllRealms~=true and realm~=ns.realm) or (ns.profile[name].showAllFactions~=true and v.faction~=ns.player.faction) then
 					-- do nothing
 				elseif(v.missions)then
@@ -246,13 +246,13 @@ local function createTooltip(tt)
 		tt:AddSeparator();
 		for i=1, #Broker_Everything_CharacterDB.order do
 			local v = Broker_Everything_CharacterDB[Broker_Everything_CharacterDB.order[i]];
-			local c,r = strsplit("-",Broker_Everything_CharacterDB.order[i]);
+			local c,r = strsplit("-",Broker_Everything_CharacterDB.order[i],2);
 			if not ns.showThisChar(name,r,v.faction) or v.garrison==nil or (v.garrison~=nil and (v.garrison[1]==nil) or (v.garrison[1]==0))then
 				-- do nothing
 			elseif (v.garrison_cache and v.garrison_cache[1]) then
 				local k=Broker_Everything_CharacterDB.order[i];
 				local l,_=tt:AddLine();
-				local charName,realm = strsplit("-",k);
+				local charName,realm = strsplit("-",k,2);
 				if not ns.profile[name].showRealms and realm and realm~=ns.realm then
 					realm = C("dkyellow","*");
 				else

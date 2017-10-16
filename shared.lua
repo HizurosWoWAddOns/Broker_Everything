@@ -76,7 +76,7 @@ ns.player = {
 	female = UnitSex("player")==3,
 };
 ns.player.name_realm = ns.player.name.."-"..ns.realm;
-ns.player.name_realm_short = ns.stripRealm(ns.player.name_realm);
+ns.player.name_realm_short = ns.player.name.."-"..ns.realm_short;
 _, ns.player.class,ns.player.classId = UnitClass("player");
 ns.player.faction,ns.player.factionL  = UnitFactionGroup("player");
 L[ns.player.faction] = ns.player.factionL;

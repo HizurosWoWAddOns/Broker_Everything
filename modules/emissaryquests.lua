@@ -204,7 +204,7 @@ local function createTooltip(tt)
 	for i=1, #Broker_Everything_CharacterDB.order do
 		local name_realm = Broker_Everything_CharacterDB.order[i];
 		local v,cell = Broker_Everything_CharacterDB[name_realm],2;
-		local c,realm,_ = strsplit("-",name_realm);
+		local c,realm,_ = strsplit("-",name_realm,2);
 		if v.level>=110 and v[name] and ns.showThisChar(name,realm,v.faction) then
 			local faction = v.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 			if type(realm)=="string" and realm:len()>0 then

@@ -193,7 +193,7 @@ local function createTooltip(tt)
 		end
 
 		for i=1, #Broker_Everything_CharacterDB.order do
-			local charName,charRealm,_ = strsplit("-",Broker_Everything_CharacterDB.order[i]);
+			local charName,charRealm,_ = strsplit("-",Broker_Everything_CharacterDB.order[i],2);
 			local charData = Broker_Everything_CharacterDB[Broker_Everything_CharacterDB.order[i]];
 			local char_header=false;
 			if (not (charRealm==ns.realm and charName==ns.player.name)) and (charData.professions) and (charData.professions.cooldowns) and (charData.professions.hasCooldowns==true) then

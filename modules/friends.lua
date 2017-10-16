@@ -372,7 +372,7 @@ local function createTooltip(tt)
 			for i=1, numFriends do
 				local v = {GetFriendInfo(i)};
 				if v[charName]:find("-") then
-					v[cName], v[cRealm] = strsplit("-",v[charName]);
+					v[cName], v[cRealm] = strsplit("-",v[charName],2);
 				else
 					v[cName], v[cRealm] = v[charName],ns.realm;
 				end

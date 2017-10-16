@@ -41,7 +41,7 @@ local function showThisChar(name_realm,data)
 	if ns.profile[name].showNonMaxLevelOnly and data.level==MAX_PLAYER_LEVEL then
 		return false;
 	end
-	local _,realm = strsplit("-",name_realm);
+	local _,realm = strsplit("-",name_realm,2);
 	return ns.showThisChar(name,realm,data.faction);
 end
 
@@ -155,7 +155,7 @@ function createTooltip(tt)
 				end
 			end
 			if showThisChar(name_realm,v) then
-				local Name,Realm,_ = strsplit("-",name_realm);
+				local Name,Realm,_ = strsplit("-",name_realm,2);
 				if type(Realm)=="string" and Realm:len()>0 then
 					_,Realm = ns.LRI:GetRealmInfo(Realm);
 				end

@@ -86,7 +86,7 @@ local function updateMembers()
 		local m,old = {};
 		m[mFullName], m[mRank], m[mRankIndex], m[mLevel], m[mClassLocale], m[mZone], m[mNote], m[mOfficerNote], m[mOnline], m[mIsAway], m[mClassFile], m[mAchievementPoints], m[mAchievementRank], m[mIsMobile], m[mCanSoR], m[mStanding] = GetGuildRosterInfo(i);
 		tmpNames[m[mFullName]]=i;
-		m[mName], m[mRealm] = strsplit("-",m[mFullName]);
+		m[mName], m[mRealm] = strsplit("-",m[mFullName],2);
 		m[mStandingText] = _G["FACTION_STANDING_LABEL"..m[mStanding]];
 		if IsOnline[m[mFullName]]==0 and m[mOnline] then
 			IsOnline(1,m[mFullName]);
@@ -170,7 +170,7 @@ local function updateApplicants()
 	for index=1, guild[gNumApplicants] do
 		local applicant,Realm = {GetGuildApplicantInfo(index)};
 		tinsert(applicant,1,index);
-		applicant[app_name], Realm = strsplit("-",applicant[app_name]);
+		applicant[app_name], Realm = strsplit("-",applicant[app_name],2);
 		tinsert(applicant,app_realm,Realm or guild[gRealmNoSpacer]);
 		tinsert(temp,applicant);
 	end

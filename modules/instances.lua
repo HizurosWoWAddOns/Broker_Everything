@@ -86,7 +86,7 @@ local function createTooltip2(self,instance)
 
 	for i=1, #Broker_Everything_CharacterDB.order do
 		local v = Broker_Everything_CharacterDB[ Broker_Everything_CharacterDB.order[i] ];
-		local c,r = strsplit("-",Broker_Everything_CharacterDB.order[i]); -- char, realm
+		local c,r = strsplit("-",Broker_Everything_CharacterDB.order[i],2); -- char, realm
 		local factionSymbol = "";
 		if v.faction and v.faction~="Neutral" then
 			factionSymbol = " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t";

@@ -88,7 +88,7 @@ local function UpdateStatus(event)
 		local names = {};
 		if #charDB_mail.stored>0 then
 			 for i=1, #charDB_mail.stored do
-				local n = strsplit("-",charDB_mail.stored[i].sender);
+				local n = strsplit("-",charDB_mail.stored[i].sender,2);
 				names[n]=true;
 			 end
 		end
@@ -154,7 +154,7 @@ local function createTooltip(tt)
 		for i=1, #Broker_Everything_CharacterDB.order do
 			if Broker_Everything_CharacterDB.order[i]~=ns.player.name_realm then
 				local v = Broker_Everything_CharacterDB[Broker_Everything_CharacterDB.order[i]];
-				local n = {strsplit("-",Broker_Everything_CharacterDB.order[i])}
+				local n = {strsplit("-",Broker_Everything_CharacterDB.order[i],2)}
 				if v.mail and  not ((ns.profile[name].showAllRealms~=true and n[2]~=ns.realm) or (ns.profile[name].showAllFactions~=true and v.faction~=ns.player.faction)) then
 					if #v.mail.new>0 or #v.mail.stored>0 then
 						local count,countnew,str = #v.mail.stored,#v.mail.new,"";
@@ -270,7 +270,7 @@ function module.onevent(self,event,msg)
 		end
 	elseif event=="PLAYER_LOGIN" then
 		hooksecurefunc("SendMail",function(targetName)
-			local n,r,_ = strsplit("-",targetName);
+			local n,r,_ = strsplit("-",targetName,2);
 			if type(r)=="string" and r:len()>0 then
 				r = ns.realms[r];
 			end

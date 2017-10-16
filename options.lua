@@ -1120,7 +1120,7 @@ ns.datapanel = function()
 
 			if (f.tmpCharCache.order[index]) then
 				local name_realm = f.tmpCharCache.order[index];
-				local name, realm, _ = strsplit("-",name_realm);
+				local name, realm, _ = strsplit("-",name_realm,2);
 				if realm then
 					_, realm = ns.LRI:GetRealmInfo(realm);
 				end

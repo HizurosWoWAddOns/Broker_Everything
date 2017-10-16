@@ -35,7 +35,7 @@ function createMenu(parent)
 end
 
 local function showRealm(Char)
-	local Name,Realm,_ = strsplit("-", Char);
+	local Name,Realm,_ = strsplit("-", Char,2);
 	if ns.profile[name].showRealm and Realm then
 		if type(Realm)=="string" and Realm:len()>0 then
 			_,Realm = ns.LRI:GetRealmInfo(Realm);
@@ -121,7 +121,7 @@ local function createTooltip(tt)
 				local c = 0;
 				for num=1, #logs do
 					if (logs[num].type==action) and (c<limit) then
-						local ch,r = strsplit("-",logs[num].char);
+						local ch,r = strsplit("-",logs[num].char,2);
 						if (ns.profile[name].showRealm) then
 							ch = ch..(r and C("dkyellow","*") or "");
 						else

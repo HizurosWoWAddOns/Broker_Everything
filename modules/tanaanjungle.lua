@@ -200,7 +200,7 @@ local function createTooltip(tt)
 		for i=1, #Broker_Everything_CharacterDB.order do
 			local name_realm = Broker_Everything_CharacterDB.order[i];
 			local v = Broker_Everything_CharacterDB[name_realm];
-			local c,r,_ = strsplit("-",name_realm);
+			local c,r,_ = strsplit("-",name_realm,2);
 			if v.level>=100 and v.tanaanjungle and ns.showThisChar(name,r,v.faction) then
 				local bbt = {}; -- broker button text
 				if type(r)=="string" and r:len()>0 then

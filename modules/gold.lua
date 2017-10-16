@@ -93,7 +93,7 @@ function createTooltip(tt,update)
 	local lineCount=0;
 	for i=1, #Broker_Everything_CharacterDB.order do
 		local name_realm = Broker_Everything_CharacterDB.order[i];
-		local charName,realm,_=strsplit("-",name_realm);
+		local charName,realm,_=strsplit("-",name_realm,2);
 		local v = Broker_Everything_CharacterDB[name_realm];
 
 		if (v.gold) and (ns.player.name_realm~=name_realm) and ns.showThisChar(name,realm,v.faction) then
