@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Equipment"; -- BAG_FILTER_EQUIPMENT
-local ttName, ttColumns, tt,createMenu, equipPending,module = name.."TT", 3;
+local ttName, ttColumns, tt, module, equipPending = name.."TT", 3;
 local objLink,objColor,objType,objId,objData,objName,objInfo,objTooltip=1,2,3,4,6,5,7,8;
 local itemEnchant,itemGem1,itemGem2,itemGem3,itemGem4=1,2,3,4,5;
 local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice=1,2,3,4,5,6,7,8,9,10,11;
@@ -24,13 +24,6 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\equip"}; --IconName:
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 -- defined in addon namespace for chatcommand.lua
 function ns.toggleEquipment(eSetID)
 	if InCombatLockdown() or UnitIsDeadOrGhost("player") then
@@ -311,8 +304,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show current equipped items and list & modify equipment sets"],
-	label = BAG_FILTER_EQUIPMENT,
+	icon_suffix = nil,
 	events = {
 		"UNIT_INVENTORY_CHANGED",
 		"EQUIPMENT_SWAP_FINISHED",
@@ -340,31 +332,11 @@ module = {
 		showUpgrades = true,
 		showShorterInfo = false
 	},
-	config_allowed = nil,
-	config_header = {type="header", label=BAG_FILTER_EQUIPMENT, align="left", icon=I[name]},
-	config_broker = {
-		{ type="toggle", name="showCurrentSet",      label=L["Show current set"],                             tooltip=L["Display your current equipment set on broker button"], event=true},
-		{ type="toggle", name="showItemLevel",       label=L["Show average item level"],                      tooltip=L["Display your average item level on broker button"], event=true},
-		{ type="toggle", name="showShorterInfo",     label=L["Show shorter Info for 'Unknown set' and more"], tooltip=L["Display shorter Info on broker button. 'Set?' instead of 'Unknown set'. 'No sets' instead of 'No sets found'."], event=true}
-	},
-	config_tooltip = {
-		{ type="toggle", name="showSets",            label=L["Show equipment sets"],               tooltip=L["Display a list of your equipment sets"]},
-		{ type="toggle", name="showInventory" ,      label=L["Show inventory"],                    tooltip=L["Display a list of currently equipped items"]},
-		{ type="toggle", name="showEmptySlots",      label=L["Show emtpy slots"],                  tooltip=L["Display empty equipment slots"]},
-		{ type="toggle", name="showNotEnchanted" ,   label=L["Show 'not enchanted' mark"],         tooltip=L["Display a red # on not enchanted/enchantable items"]},
-		{ type="toggle", name="showEmptyGems" ,      label=L["Show 'empty socket' mark"],          tooltip=L["Display a yellow # on items with empty sockets"]},
-		{ type="toggle", name="showTSet" ,           label=L["Show T-Set"],                        tooltip=L["Display a T-Set label on items"]},
-		{ type="toggle", name="showSetName",         label=L["Show Set name"],                     tooltip=L["Display set name on items"]},
-		{ type="toggle", name="showGreenText" ,      label=L["Show green text"],                   tooltip=L["Display green text line from item tooltip like titanforged"]},
-		{ type="toggle", name="showUpgrades" ,       label=L["Show upgrade info"],                 tooltip=L["Display upgrade info like 2/6"]},
-		{ type="toggle", name="fullyUpgraded",       label=L["Darker blue for fully upgraded"],    tooltip=L["Display upgrade counter in darker blue on fully upgraded items"]},
-	},
-	config_misc = nil,
 	clickOptions = {
 		["1_open_character_info"] = {
-			cfg_label = "Open character info", -- L["Open character info"]
-			cfg_desc = "open the character info", -- L["open the character info"]
-			cfg_default = "_LEFT",
+			name = "Open character info", -- L["Open character info"]
+			desc = "open the character info", -- L["open the character info"]
+			default = "_LEFT",
 			hint = "Open character info", -- L["Open character info"]
 			func = function(self,button)
 				local _mod=name;
@@ -372,9 +344,9 @@ module = {
 			end
 		},
 		["3_open_equipment_sets_tab"] = {
-			cfg_label = "Open equipment manager tab", -- L["Open equipment manager tab"]
-			cfg_desc = "open the equipment manager tab on character info", -- L["open the equipment manager tab on character info"]
-			cfg_default = "__NONE",
+			name = "Open equipment manager tab", -- L["Open equipment manager tab"]
+			desc = "open the equipment manager tab on character info", -- L["open the equipment manager tab on character info"]
+			default = "__NONE",
 			hint = "Open equipment manager tab", -- L["Open equipment manager tab"]
 			func = function(self,button)
 				local _mod=name;
@@ -382,18 +354,39 @@ module = {
 				securecall("PaperDollFrame_SetSidebar",nil,3);
 			end
 		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self)
-			end
-		}
+		["2_open_menu"] = "OptionMenu"
 	}
 }
+
+function module.options()
+	return {
+		broker = {
+			showCurrentSet={ type="toggle", order=1, name=L["Show current set"],                             desc=L["Display your current equipment set on broker button"]},
+			showItemLevel={ type="toggle", order=2, name=L["Show average item level"],                      desc=L["Display your average item level on broker button"]},
+			showShorterInfo={ type="toggle", order=3, name=L["Show shorter Info for 'Unknown set' and more"], desc=L["Display shorter Info on broker button. 'Set?' instead of 'Unknown set'. 'No sets' instead of 'No sets found'."]}
+		},
+		tooltip = {
+			showSets={ type="toggle", order=1, name=L["Show equipment sets"],               desc=L["Display a list of your equipment sets"]},
+			showInventory={ type="toggle", order=2, name=L["Show inventory"],                    desc=L["Display a list of currently equipped items"]},
+			showEmptySlots={ type="toggle", order=3, name=L["Show emtpy slots"],                  desc=L["Display empty equipment slots"]},
+			showNotEnchanted={ type="toggle", order=4, name=L["Show 'not enchanted' mark"],         desc=L["Display a red # on not enchanted/enchantable items"]},
+			showEmptyGems={ type="toggle", order=5, name=L["Show 'empty socket' mark"],          desc=L["Display a yellow # on items with empty sockets"]},
+			showTSet={ type="toggle", order=6, name=L["Show T-Set"],                        desc=L["Display a T-Set label on items"]},
+			showSetName={ type="toggle", order=7, name=L["Show Set name"],                     desc=L["Display set name on items"]},
+			showGreenText={ type="toggle", order=8, name=L["Show green text"],                   desc=L["Display green text line from item tooltip like titanforged"]},
+			showUpgrades={ type="toggle", order=9,  name=L["Show upgrade info"],                 desc=L["Display upgrade info like 2/6"]},
+			fullyUpgraded={ type="toggle", order=10, name=L["Darker blue for fully upgraded"],    desc=L["Display upgrade counter in darker blue on fully upgraded items"]},
+		},
+		misc = nil,
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 function module.init()
 	if ns.build<6000000 then
@@ -480,15 +473,11 @@ end
 
 function module.onevent(self,event,arg1,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	elseif event=="PLAYER_LOGIN" then
-		if not self.hooked_UgradeUtem then
-			ns.items.RegisterCallback(name,UpdateInventory,"inv");
-			hooksecurefunc("UpgradeItem",updateBroker);
-			self.hooked_UgradeUtem = true;
-		end
-		self.PEW=true;
-	elseif self.PEW then
+		ns.items.RegisterCallback(name,UpdateInventory,"inv");
+		hooksecurefunc("UpgradeItem",updateBroker);
+	elseif ns.eventPlayerEnteredWorld then
 		if (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and equipPending~=nil then
 			C_EquipmentSet.UseEquipmentSet(equipPending);
 			equipPending = nil

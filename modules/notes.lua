@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Notes" -- L["Notes"]
-local ttName,ttColumns,tt,createMenu,module = name.."TT",2;
+local ttName,ttColumns,tt,module = name.."TT",2;
 local delIndex,editor,createTooltip,note_edit
 local titleLimit,textLimit = 32,10000;
 
@@ -22,13 +22,6 @@ I[name..'_horde']    = {iconfile="Interface\\Icons\\INV_Misc_PaperBundle04b", co
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function updateBroker()
 	local icon,obj = I[name],ns.LDB:GetDataObjectByName(module.ldbName);
 	local faction = UnitFactionGroup("player"):lower();
@@ -181,51 +174,53 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Display a broker with very simple notes functionality"],
 	events = {
 		"PLAYER_LOGIN",
 		"NEUTRAL_FACTION_SELECT_RESULT"
 	},
 	updateinterval = 30, -- 10
 	config_defaults = {},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = nil,
-	config_tooltip = nil,
-	config_misc = {"shortNumbers"},
 	clickOptions = {
 		["1_new_note"] = {
-			cfg_label = "Add new note",
-			cfg_desc = "add new note",
-			cfg_default = "__NONE",
+			name = "Add new note",
+			desc = "add new note",
+			default = "__NONE",
 			hint = "Add new note",
 			func = function(self,button)
 				local _mod=name;
 				note_edit({},nil,"LeftButton");
 			end
 		},
-		["9_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
+		["9_open_menu"] = "OptionMenu"
 	}
 }
 
+function module.options()
+	return {
+		broker = nil,
+		tooltip = nil,
+		misc = {
+			shortNumbers=true
+		},
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
+
 function module.init()
 	if ns.data[name]==nil then
-		ns.data[name] = {};
+		ns.data[name] = {}; -- TODO: really neccessary?
 	end
 end
 
 function module.onevent(self,event,...)
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(module,ns.profile[name]);
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(name);
 	else
 		updateBroker();
 	end

@@ -9,9 +9,10 @@ L.Clock = TIMEMANAGER_TITLE;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Clock"; -- TIMEMANAGER_TITLE
-local ttName,ttColumns, tt, createMenu,module = name.."TT", 2;
+local ttName,ttColumns, tt, module = name.."TT", 2;
 local countries,month_short = {},{};
 local played,initialized,clock_diff = false,false;
+local _dateFormatValues = nil
 
 
 -- register icon names and default files --
@@ -21,13 +22,6 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\clock"}; --IconName:
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function date(dateStr)
 	local m = tonumber(_G.date("%m"));
 	local M = _G["MONTH_".._G.date("%B"):upper()];
@@ -65,8 +59,8 @@ local function createTooltip(tt,update)
 	tt:AddSeparator(3,0,0,0,0);
 	tt:AddLine(C("ltblue",L["Playtime"]));
 	tt:AddSeparator();
-	tt:AddLine(C("ltyellow",TOTAL),C("white",SecondsToTime(pT)));
-	tt:AddLine(C("ltyellow",LEVEL),C("white",SecondsToTime(pL)));
+	tt:AddLine(C("ltyellow",TOTAL),C(pT and "white" or "gray",pT and SecondsToTime(pT) or "requested..."));
+	tt:AddLine(C("ltyellow",LEVEL),C(pL and "white" or "gray",pL and SecondsToTime(pL) or "requested..."));
 	tt:AddLine(C("ltyellow",L["Session"]),C("white",SecondsToTime(pS)));
 
 	if ns.profile.GeneralOptions.showHints then
@@ -88,16 +82,35 @@ local function updater(self)
 	end
 end
 
+local function dateFormatValues()
+	if not _dateFormatValues then
+		_dateFormatValues = {};
+		for key,value in pairs({
+			["%Y-%m-%d"] = "yyyy-mm-dd",
+			["%Y.%m.%d"] = "yyyy.mm.dd",
+			["%Y.%d.%m"] = "yyyy.dd.mm",
+			["%d.%m.%Y"] = "dd.mm.yyyy",
+			["%d/%m/%Y"] = "dd/mm/yyyy",
+			["%m/%d/%Y"] = "mm/dd/yyyy",
+			["%d. _mm_ %Y"] = "dd. mmmm yyyy",
+			["%d. _mm_ %y"] = "dd. mmmm yy",
+			["%d. _m_ %Y"] = "dd. mmm yyyy",
+			["%Y _mm_ %d."] = "yyyy mm dd.",
+		})do
+			_dateFormatValues[key] = date(key)..C("ltgray"," ("..value..")");
+		end
+	end
+	return _dateFormatValues;
+end
 
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show local and/or realm time"],
-	label = TIMEMANAGER_TITLE,
+	icon_suffix = nil,
 	events = {"PLAYER_LOGIN","TIME_PLAYED_MSG"},
 	updateinterval = 1,
 	timeout = 30,
-	timeoutAfterEvent = "PLAYER_ENTERING_WORLD",
+	timeoutAfterEvent = "PLAYER_LOGIN",
 	config_defaults = {
 		format24 = true,
 		timeLocal = true,
@@ -105,37 +118,11 @@ module = {
 		showDate = true,
 		dateFormat = "%Y-%m-%d"
 	},
-	config_allowed = nil,
-	config_header = {type="header", label=TIMEMANAGER_TITLE, align="left", icon=I[name]},
-	config_broker = {
-		{ type="toggle", name="timeLocal",   label=L["Local or realm time"], tooltip=L["Switch between local and realm time in broker button"] },
-	},
-	config_tooltip = {
-		{ type="toggle", name="showSeconds", label=L["Show seconds"], tooltip=L["Display the time with seconds in broker button and tooltip"] },
-		{ type="toggle", name="showDate",    label=L["Show date"], tooltip=L["Display date in tooltip"] },
-	},
-	config_misc = {
-		{ type="toggle", name="format24",    label=TIMEMANAGER_24HOURMODE, tooltip=L["Switch between time format 24 hours and 12 hours with AM/PM"] },
-		{ type="select", name="dateFormat",  label=L["Date format"], tooltip=L["Choose your favorite date format"],
-			values = {
-				["%Y-%m-%d"] = "yyyy-mm-dd",
-				["%Y.%m.%d"] = "yyyy.mm.dd",
-				["%Y.%d.%m"] = "yyyy.dd.mm",
-				["%d.%m.%Y"] = "dd.mm.yyyy",
-				["%d/%m/%Y"] = "dd/mm/yyyy",
-				["%m/%d/%Y"] = "mm/dd/yyyy",
-				["%d. _mm_ %Y"] = "dd. mmmm yyyy",
-				["%d. _mm_ %y"] = "dd. mmmm yy",
-				["%d. _m_ %Y"] = "dd. mmm yyyy",
-				["%Y _mm_ %d."] = "yyyy mm dd.",
-			}
-		},
-	},
 	clickOptions = {
 		["1_timemanager"] = {
-			cfg_label = "Open time manager", -- L["Open time manager"]
-			cfg_desc = "open the time manager", -- L["open the time manager"]
-			cfg_default = "_LEFT",
+			name = "Open time manager", -- L["Open time manager"]
+			desc = "open the time manager", -- L["open the time manager"]
+			default = "_LEFT",
 			hint = "Open time manager", -- L["Open time manager"]
 			func = function(self,button)
 				local _mod=name;
@@ -143,9 +130,9 @@ module = {
 			end
 		},
 		["2_toggle_time"] = {
-			cfg_label = "Local or realm time", -- L["Local or realm time"]
-			cfg_desc = "switch between local and realm time", -- L["switch between local and realm time"]
-			cfg_default = "_RIGHT",
+			name = "Local or realm time", -- L["Local or realm time"]
+			desc = "switch between local and realm time", -- L["switch between local and realm time"]
+			default = "_RIGHT",
 			hint = "Local or realm time",
 			func = function(self,button)
 				local _mod=name;
@@ -153,9 +140,9 @@ module = {
 			end
 		},
 		["3_calendar"] = {
-			cfg_label = "Open calendar", -- L["Open calendar"]
-			cfg_desc = "open the calendar", -- L["open the calendar"]
-			cfg_default = "SHIFTRIGHT",
+			name = "Open calendar", -- L["Open calendar"]
+			desc = "open the calendar", -- L["open the calendar"]
+			default = "SHIFTRIGHT",
 			hint = "Open calendar",
 			func = function(self,button)
 				local _mod=name;
@@ -163,38 +150,48 @@ module = {
 			end
 		},
 		["4_hours_mode"] = {
-			cfg_label = "12 / 24 hours mode", -- L["12 / 24 hours mode"]
-			cfg_desc = "switch between 12 and 24 time format", -- L["switch between 12 and 24 time format"]
-			cfg_default = "SHIFTLEFT",
+			name = "12 / 24 hours mode", -- L["12 / 24 hours mode"]
+			desc = "switch between 12 and 24 time format", -- L["switch between 12 and 24 time format"]
+			default = "SHIFTLEFT",
 			hint = "12 / 24 hours mode",
 			func = function(self,button)
 				local _mod=name;
 				ns.profile[name].format24 = not ns.profile[name].format24;
 			end
 		},
-		["5_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		},
+		["5_open_menu"] = "OptionMenu"
 		-- open blizzards stopwatch?
 	}
 }
 
-function module.init()
-	for i,v in pairs(module.config_misc[2].values)do
-		module.config_misc[2].values[i] = date(i)..C("gray","("..v..")");
-	end
+function module.options()
+	return {
+		broker = {
+			timeLocal={ type="toggle", order=1, name=L["Local or realm time"], desc=L["Switch between local and realm time in broker button"] },
+		},
+		tooltip = {
+			showSeconds={ type="toggle", order=1, name=L["Show seconds"], desc=L["Display the time with seconds in broker button and tooltip"] },
+			showDate={ type="toggle", order=2, name=L["Show date"], desc=L["Display date in tooltip"] },
+		},
+		misc = {
+			format24={ type="toggle", order=1, name=TIMEMANAGER_24HOURMODE, desc=L["Switch between time format 24 hours and 12 hours with AM/PM"] },
+			dateFormat={ type="select", order=2, name=L["Date format"], desc=L["Choose your favorite date format"], values=dateFormatValues, width="double" },
+		},
+	}
 end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
+
+-- function module.init() end
 
 function module.onevent(self,event,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		C_Timer.NewTicker(module.updateinterval,updater);
 	elseif event=="TIME_PLAYED_MSG" then

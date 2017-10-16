@@ -943,7 +943,7 @@ do
 		if GetItemInfoFailed~=false then
 			if GetItemInfoFailed>4 then
 				GetItemInfoFailed=false;
-			elseif ns.pastPEW then
+			elseif ns.eventPlayerEnteredWorld then
 				update = 0.5;
 			end
 		elseif GetItemInfoFailed==_GetItemInfoFailed then
@@ -982,7 +982,7 @@ do
 			f:RegisterEvent("ITEM_UPGRADE_MASTER_UPDATE");
 			f:RegisterEvent("BAG_UPDATE_DELAYED");
 			f:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
-			if not ns.pastPEW then
+			if not ns.eventPlayerEnteredWorld then
 				f:RegisterEvent("PLAYER_LOGIN");
 			else
 				OnEvent(f,"PLAYER_LOGIN");
@@ -1044,7 +1044,7 @@ do
 		return d.ids;
 	end
 	function ns.items.UpdateNow()
-		if not IsEnabled and ns.pastPEW then return end
+		if not IsEnabled and ns.eventPlayerEnteredWorld then return end
 		update = 1;
 	end
 	function ns.items.GetBagItems()
@@ -1399,6 +1399,11 @@ do
 		end
 	};
 
+	local pat = "%06d%s";
+	local function sortAceOptions(a,b)
+		return pat:format(a.order or 100,a.name or "")<pat:format(b.order or 100,b.name or "");
+	end
+
 	local beTypeFunc = {
 		bool = function(d)
 			if (d.beModName) then
@@ -1560,76 +1565,116 @@ do
 	self.addEntries = self.addEntry;
 
 	function self.addConfigElements(modName,separator,noTitle)
-		if (separator) then
-			self.addEntry({ separator = true });
+		local noFirstSep,options = true,ns.getModOptionTable(modName);
+		local showLabel=true;
+		if separator then
+			showLabel = false;
 		end
-		if not noTitle and #ns.modules[modName].config>=3 and ns.modules[modName].config[3].type~="header" then
-			self.addEntry({ label = OPTIONS, title = true });
-		end
-		for i,v in ipairs(ns.modules[modName].config) do
-
-			local disabled = v.disabled;
-			if (type(disabled)=="function") then
-				disabled=disabled();
-			end
-
-			if (disabled) or (i==1) or (i==2) then
-				-- do nothing
-			elseif (v.type=="separator" and v.inMenuInvisible~=true) then
-				self.addEntry({ separator=true });
-			elseif (v.type=="header") then
-				self.addEntry({ label=v.label, title=true });
-			elseif (v.type=="toggle") then
-				local tooltip = v.tooltip;
-				if (type(tooltip)=="function") then
-					tooltip = v.tooltip();
-				end
-				self.addEntry({
-					label = gsub(L[v.label],"|n"," "),
-					checked = function()
-						if v.name=="minimap" then
-							return not ns.profile[modName][v.name].hide;
+		if options then
+			--local label = {broker=L["OptBroker"],tooltip=L["OptTooltip"],misc=L["OptMisc"],clickOptions=L["OptClickOptions"]};
+			for _,group in ipairs({"broker","tooltip","misc","clickOptions"})do
+				if options[group] and type(options[group].args)=="table" then
+					-- add group header
+					if separator then
+						self.addEntry({ separator=true });
+					else
+						if showLabel then
+							self.addEntry({ label = L[modName], title = true });
+							self.addEntry({ separator=true });
+							showLabel=false;
 						end
-						return ns.profile[modName][v.name];
-					end,
-					func  = function()
-						if v.name=="minimap" then
-							ns.profile[modName].minimap.hide = not ns.profile[modName].minimap.hide;
-							ns.toggleMinimapButton(modName);
-						else
-							ns.profile[modName][v.name] = not ns.profile[modName][v.name];
-							if v.event and ns.modules[modName].onevent then
-								ns.modules[modName].onevent(ns.modules[modName].eventFrame,v.event~=true and v.event or "BE_DUMMY_EVENT");
+						separator=true
+					end
+					self.addEntry({ label=options[group].name, title=true });
+
+					-- replace shared option entries
+					for key, value in pairs(options[group])do
+						if ns.sharedOptions[key] then
+							local order = tonumber(value);
+							options[group][key] = CopyTable(ns.sharedOptions[key]);
+							options[group][key].order = order;
+						end
+					end
+
+					-- sort group table
+					table.sort(options[group].args,sortAceOptions);
+					for key, value in pairs(options[group].args)do
+
+						local hide = (value.hidden==true) or (value.disabled==true) or false;
+						if not hide and type(value.hidden)=="function" then
+							hide = value.hidden();
+						end
+						if not hide and type(value.disabled)=="function" then
+							hide = value.disabled();
+						end
+
+						if not hide then
+							if value.type=="separator" then
+								self.addEntry({ separator=true });
+							elseif value.type=="header" then
+								self.addEntry({ separator=true });
+								self.addEntry({ label=value.name, title=true });
+							elseif value.type=="toggle" then
+								local tooltip = nil;
+								if value.desc then
+									tooltip = {value.name, value.desc};
+									if type(tooltip[2])=="function" then
+										tooltip[2] = tooltip[2]();
+									end
+								end
+								self.addEntry({
+									label = gsub(value.name,"|n"," "),
+									checked = function()
+										if key=="minimap" then
+											return not ns.profile[modName][key].hide;
+										end
+										return ns.profile[modName][key];
+									end,
+									func = function()
+										local info = {modName,"",key};
+										if key=="minimap" then
+											ns.option(info,ns.profile[modName].minimap.hide);
+										else
+											ns.option(info,not ns.profile[modName][key]);
+										end
+									end,
+									tooltip = tooltip,
+								});
+							elseif value.type=="select" then
+								local tooltip = {value.name, value.desc};
+								if type(tooltip[2])=="function" then
+									tooltip[2] = tooltip[2]();
+								end
+								local p = self.addEntry({
+									label = value.name,
+									tooltip = tooltip,
+									arrow = true
+								});
+								local values = value.values;
+								if type(values)=="function" then
+									values = values({modName,"",key});
+								end
+								for valKey,valLabel in ns.pairsByKeys(values) do
+									self.addEntry({
+										label = valLabel,
+										radio = valKey,
+										keepShown = false,
+										checked = function()
+											return (ns.profile[modName][key]==valKey);
+										end,
+										func = function(self)
+											ns.option({modName,"",key},valKey);
+											self:GetParent():Hide();
+										end
+									},p);
+								end
+							elseif value.type=="range" then
+								-- TODO: currently no idea how i can add a slider into blizzard's dropdown menu.
 							end
 						end
-					end,
-					tooltip = {v.label,tooltip},
-				});
-			elseif (v.type=="select") then
-				local p = self.addEntry({
-					label = L[v.label],
-					tooltip = {v.label,v.tooltip},
-					arrow = true
-				});
-				for valKey,valLabel in ns.pairsByKeys(v.values) do
-					self.addEntry({
-						label = L[valLabel],
-						radio = valKey,
-						keepShown = false,
-						checked = function()
-							return (ns.profile[modName][v.name]==valKey);
-						end,
-						func = function(self)
-							ns.profile[modName][v.name] = valKey;
-							if v.event and ns.modules[modName].onevent then
-								ns.modules[modName].onevent(ns.modules[modName].eventFrame,v.event~=true and v.event or "BE_DUMMY_EVENT");
-							end
-							self:GetParent():Hide();
-						end
-					},p);
+					end
+
 				end
-			elseif (v.type=="slider") then
-				-- currently no idea how i can add a slider into blizzard's dropdown menu.
 			end
 		end
 	end
@@ -1707,10 +1752,13 @@ do
 		["CTRLLEFT"]   = "Ctrl+Left-click",		-- L["Ctrl+Left-click"]
 		["CTRLRIGHT"]  = "Ctrl+Right-click",	-- L["Ctrl+Right-click"]
 	};
-
+	local sharedOptions = {
+		OptionMenu = {name="ClickOptMenu",desc="ClickOptMenuDesc",hint="ClickOptMenuHint",default="_RIGHT",func="OptionMenu"},
+		OptionPanel = {name="ClickOptPanel",desc="ClickOptPanelDesc",hint="ClickOptPanelHint",default="__NONE",func="ns.ToggleBlizzOptionPanel"},
+	};
 	ns.clickOptions = {};
 
-	function ns.clickOptions.func(name,self,button)
+	function ns.clickOptions.func(self,button,name)
 		if not ((ns.modules[name]) and (ns.modules[name].onclick)) then return; end
 
 		-- click(plan)A = combine modifier if pressed with named button (left,right)
@@ -1740,49 +1788,71 @@ do
 		clickB=clickB.."CLICK";
 
 		if (ns.modules[name].onclick[clickA]) then
-			ns.modules[name].onclick[clickA](self,button);
+			ns.modules[name].onclick[clickA](self,button,name);
 		elseif (ns.modules[name].onclick[clickB]) then
-			ns.modules[name].onclick[clickB](self,button);
+			ns.modules[name].onclick[clickB](self,button,name);
 		end
 	end
 
 	function ns.clickOptions.update(modName) -- BE_UPDATE_CLICKOPTION
 		local mod = ns.modules[modName];
-		local db = ns.profile[modName];
-		if (not mod.clickOptionsConfigNum) then
-			mod.clickOptionsConfigNum={};
-			mod.config_click_options={};
+		if not (mod and type(mod.clickOptions)=="table") then return end
+		local hasOptions = false;
+		mod.onclick = {};
+		mod.clickHints = {};
 
-			for cfgKey,clickOpts in ns.pairsByKeys(mod.clickOptions) do
-				local cfg_entry = {
-					type	= "select",
-					name	= "clickOptions::"..cfgKey,
-					label	= L[clickOpts.cfg_label],
-					tooltip	= L["Choose your fav. combination of modifier and mouse key to"].." "..L[clickOpts.cfg_desc],
-					values	= values,
-					default	= clickOpts.cfg_default or "__NONE",
-					event	= "BE_UPDATE_CLICKOPTIONS"
-				};
-				tinsert(mod.config_click_options,cfg_entry);
-				mod.clickOptionsConfigNum[cfgKey] = #mod.config_click_options;
-
-				if (db["clickOptions::"..cfgKey]==nil) then
-					db["clickOptions::"..cfgKey] = clickOpts.cfg_default or "__NONE";
+		for cfgKey,clickOpts in ns.pairsByKeys(mod.clickOptions) do
+			local clickOpts = mod.clickOptions[cfgKey];
+			local key = ns.profile[modName]["clickOptions::"..cfgKey];
+			if key and key~="__NONE" then
+				local func = clickOpts.func
+				if type(func)=="string" then
+					local nsFunc = func:match("^ns\.(.*)$");
+					if nsFunc then
+						func = ns[nsFunc];
+					elseif mod[func] then
+						func = mod[func];
+					end
+				end
+				if func then
+					mod.onclick[key] = func;
+					tinsert(mod.clickHints,ns.LC.color("copper",L[values[key]]).." || "..ns.LC.color("green",L[clickOpts.hint]));
+					hasOptions = true;
 				end
 			end
 		end
+		return hasOptions;
+	end
 
-		mod.onclick = {};
-		mod.clickHints = {};
-		for cfgKey,opts in ns.pairsByKeys(mod.clickOptions) do
-			if (db["clickOptions::"..cfgKey]) and (db["clickOptions::"..cfgKey]~="__NONE") then
-				mod.onclick[db["clickOptions::"..cfgKey]] = opts.func;
-				tinsert(mod.clickHints,ns.LC.color("copper",L[values[db["clickOptions::"..cfgKey]]]).." || "..ns.LC.color("green",L[opts.hint]));
+	function ns.clickOptions.createOptions(modName,modOptions,modEvents) -- executed by ns.Options_AddModuleOptions()
+		local mod = ns.modules[modName];
+		if not (mod and type(mod.clickOptions)=="table") then return end
+
+		-- generate option panel entries
+		modOptions.clickOptions = {};
+		for cfgKey,clickOpts in ns.pairsByKeys(mod.clickOptions) do
+			if type(clickOpts)=="string" then
+				-- copy shared entry
+				mod.clickOptions[cfgKey] = sharedOptions[clickOpts]~=nil and CopyTable(sharedOptions[clickOpts]) or nil;
+				clickOpts = mod.clickOptions[cfgKey];
+			end
+			if clickOpts then
+				local optKey = "clickOptions::"..cfgKey;
+				-- ace option table entry
+				if clickOpts.name==nil then
+					ns.debug("<FIXME:NilClickOptsName>",modName,optKey);
+				end
+				modOptions.clickOptions[optKey] = {
+					type	= "select",
+					name	= L[clickOpts.name],
+					desc	= L["ClickOptDesc"].." "..L[clickOpts.desc],
+					values	= values
+				};
+				modEvents[optKey] = "BE_UPDATE_CLICKOPTIONS";
 			end
 		end
-
-		return (#mod.clickHints>0);
 	end
+
 	function ns.clickOptions.ttAddHints(tt,name,ttColumns,entriesPerLine)
 		local _lines = {};
 		if (type(entriesPerLine)~="number") then entriesPerLine=1; end

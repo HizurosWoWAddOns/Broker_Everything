@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Volume" -- VOLUME
-local ttName,ttColumns,tt,createMenu,createTooltip,module = name.."TT",2;
+local ttName,ttColumns,tt,module,createTooltip = name.."TT",2;
 local updateBrokerButton,getSoundHardware,setSoundHardware
 local icon = "Interface\\AddOns\\"..addon.."\\media\\volume_"
 local VIDEO_VOLUME_TITLE = L["Video Volume"];
@@ -24,13 +24,6 @@ I[name..'_100']  = {iconfile=icon.."100"}	--IconName::Volume_100--
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 function updateBroker()
 	volume.master = tonumber(("%.2f"):format(GetCVar("Sound_MasterVolume")))
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
@@ -231,8 +224,6 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	desc = L["Broker to show current volume and in tooltip all changeable audio options"],
-	label = VOLUME,
 	icon_suffix = "_100",
 	events = {
 		"PLAYER_LOGIN",
@@ -245,22 +236,11 @@ module = {
 		steps = 10,
 		listHardware = true
 	},
-	config_allowed = {
-	},
-	config_header = {type="header", label=VOLUME, align="left", icon=I[name..'_100']},
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="listHardware", label=L["List of hardware"], tooltip=L["Display in tooltip a list of your sound output hardware."] },
-	},
-	config_misc = {
-		{ type="toggle", name="useWheel", label=L["Use MouseWheel"], tooltip=L["Use the MouseWheel to change the volume"] },
-		{ type="slider", name="steps", label=L["Change steps"], tooltip=L["Change the stepping width for volume changes with mousewheel and clicks."], min=1, max=100, default=10, format = "%d" },
-	},
 	clickOptions = {
 		["0_mute"] = {
-			cfg_label = "Mute game sound", -- L["Mute game sound"]
-			cfg_desc = "mute gane sound", -- L["mute game sound"]
-			cfg_default = "_LEFT",
+			name = "Mute game sound", -- L["Mute game sound"]
+			desc = "mute gane sound", -- L["mute game sound"]
+			default = "_LEFT",
 			hint = "Mute game sound",
 			func = function(self,button)
 				local _mod=name;
@@ -270,9 +250,9 @@ module = {
 			end
 		},
 		["1_louder"] = {
-			cfg_label = "Louder", -- L["Louder"]
-			cfg_desc = "make volume louder", -- L["make volume louder"]
-			cfg_default = "__NONE",
+			name = "Louder", -- L["Louder"]
+			desc = "make volume louder", -- L["make volume louder"]
+			default = "__NONE",
 			hint = "Louder",
 			func = function(self,button)
 				local _mod=name;
@@ -285,9 +265,9 @@ module = {
 			end
 		},
 		["2_quieter"] = {
-			cfg_label = "Quieter", -- L["Quieter"]
-			cfg_desc = "make volume quieter", -- L["make volume quieter"]
-			cfg_default = "__NONE",
+			name = "Quieter", -- L["Quieter"]
+			desc = "make volume quieter", -- L["make volume quieter"]
+			default = "__NONE",
 			hint = "Quieter",
 			func = function(self,button)
 				local _mod=name;
@@ -299,18 +279,29 @@ module = {
 				createTooltip(tt,true);
 			end
 		},
-		["3_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self);
-			end
-		}
+		["3_open_menu"] = "OptionMenu"
 	}
 }
+
+function module.options()
+	return {
+		broker = nil,
+		tooltip = {
+			listHardware={ type="toggle", name=L["List of hardware"], desc=L["Display in tooltip a list of your sound output hardware."] },
+		},
+		misc = {
+			useWheel={ type="toggle", name=L["Use MouseWheel"], desc=L["Use the MouseWheel to change the volume"] },
+			steps={ type="range", name=L["Change steps"], desc=L["Change the stepping width for volume changes with mousewheel and clicks."], min=1, max=100 },
+		},
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 function module.init()
 	vol = {
@@ -346,14 +337,14 @@ function module.init()
 end
 
 function module.onevent(self,event,arg1)
-	if event=="PLAYER_ENTERING_WORLD" or event=="SOUND_DEVICE_UPDATE" or (event=="CVAR_UPDATE" and cvars[arg1:lower()]) then
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(name);
+	elseif event=="BE_UPDATE_CFG" or event=="PLAYER_LOGIN" or event=="SOUND_DEVICE_UPDATE" or (event=="CVAR_UPDATE" and cvars[arg1:lower()]) then
 		if not self.hooked then
 			hooksecurefunc("BlizzardOptionsPanel_SetCVarSafe",BlizzardOptionsPanel_SetCVarSafeHook);
 			self.hooked = true;
 		end
 		updateBroker();
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
 	end
 end
 

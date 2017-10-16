@@ -9,7 +9,7 @@ L.Achievements = ACHIEVEMENTS;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Achievements"; -- ACHIEVEMENTS
-local ttName, ttColumns, tt, module, createMenu = name.."TT", 2;
+local ttName, ttColumns, tt, module = name.."TT", 2;
 local categoryIds,bars,count = {92, 96, 97, 95, 168, 169, 201, 15165, 155, 15117, 15246, 15237},{},0;
 
 
@@ -20,13 +20,6 @@ I[name] = {iconfile="interface\\achievementframe\\UI-Achievement-Progressive-Shi
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function listCategories()
 	local categories, AchievementsSum, CompletedSum = {},0,0;
 	local idList = GetCategoryList();
@@ -171,8 +164,6 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	desc = L["Broker to show earned achievements and the curent tracking list"],
-	label = ACHIEVEMENTS,
 	--icon_suffix = "",
 	events = {},
 	updateinterval = nil,
@@ -183,36 +174,37 @@ module = {
 		showProgressBars = true,
 		showCompleted = true
 	},
-	config_allowed = nil,
-	config_header = { type="header", label=ACHIEVEMENTS, align="left", icon=true },
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="showLatest",       label=L["Show latest achievements"],    tooltip=L["Show 5 latest earned achievements in tooltip"]},
-		{ type="toggle", name="showCategory",     label=L["Show achievement categories"], tooltip=L["Show achievement categories in tooltip"]},
-		{ type="toggle", name="showWatchlist",    label=L["Show watch list"],             tooltip=L["Show watch list in tooltip"]},
-		{ type="toggle", name="showProgressBars", label=L["Show progress bars"],          tooltip=L["Show progress bars in tooltip"]},
-		{ type="toggle", name="showCompleted",    label=L["Show completed criteria"],     tooltip=L["Show completed criteria in watch list"]},
-	},
-	config_misc = nil,
 	clickOptions = {
-		["open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
+		["open_menu"] = "OptionMenu"
 	}
-}
+};
+
+function module.options()
+	return {
+		broker = nil,
+		tooltip = {
+			showLatest       = {type="toggle", order=1, name=L["AchieveOptLast"],      desc=L["AchieveOptLastDesc"]},
+			showCategory     = {type="toggle", order=2, name=L["AchieveOptCat"],       desc=L["AchieveOptCatDesc"]},
+			showWatchlist    = {type="toggle", order=3, name=L["AchieveOptWatch"],     desc=L["AchieveOptWatchDesc"]},
+			showProgressBars = {type="toggle", order=4, name=L["AchieveOptBars"],      desc=L["AchieveOptBarsDesc"]},
+			showCompleted    = {type="toggle", order=5, name=L["AchieveOptCompleted"], desc=L["AchieveOptCompletedDesc"]},
+		},
+		misc = nil,
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 -- function module.init() end
 
 function module.onevent(self,event,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	end
 end
 

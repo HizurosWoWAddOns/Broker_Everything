@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "IDs"; -- L["IDs"]
-local ttName,ttColumns,tt,createMenu,module = name.."TT", 4;
+local ttName,ttColumns,tt,module = name.."TT", 4;
 local diffTypes = setmetatable({ -- http://wowpedia.org/API_GetDifficultyInfo / http://wow.gamepedia.com/DifficultyID
 	[1] = 1,	--  1 =  5 Regular
 	[2] = 1,	--  2 =  5 Heroic
@@ -64,13 +64,6 @@ I[name] = {iconfile=[[interface\icons\inv_misc_pocketwatch_02]],coords={0.05,0.9
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function extendInstance(self,info)
 	securecall("SetSavedInstanceExtend", info.index, info.doExtend);
 	securecall("RequestRaidInfo");
@@ -214,7 +207,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show locked raids, dungeons and world bosses"],
 	events = {},
 	updateinterval = nil, --10,
 	timeout = nil, --20,
@@ -236,43 +228,44 @@ module = {
 		showExpiredRaidsClassic = true,
 		showExpiredRaids = true
 	},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="showBosses",              label=L["Show world bosses"],          tooltip=L["Display list of world boss IDs in tooltip"] },
-		{ type="toggle", name="showDungeons",            label=L["Show dungeons"],              tooltip=L["Display list of dungeon IDs in tooltip"] },
-		{ type="toggle", name="showChallenges",          label=L["Show challenges"],            tooltip=L["Display list of challenge IDs in tooltip"] },
-		{ type="toggle", name="showSzenarios",           label=L["Show szenarios"],             tooltip=L["Display list of szenario IDs in tooltip"] },
-		{ type="toggle", name="showRaidsClassic",        label=L["Show classic raids"],         tooltip=L["Display list of classic raid IDs in tooltip"] },
-		{ type="toggle", name="showRaidsLFR",            label=L["Show lfr"],                   tooltip=L["Display list of lfr IDs in tooltip"] },
-		{ type="toggle", name="showRaidsFlex",           label=L["Show flex raids"],            tooltip=L["Display list of flex raid IDs in tooltip"] },
-		{ type="toggle", name="showRaids",               label=L["Show raids"],                 tooltip=L["Display list of raid IDs in tooltip"] },
-		{ type="toggle", name="showEvents",              label=L["Show events"],                tooltip=L["Display list of event IDs in tooltip"] },
-		{ type="separator" },
-		{ type="toggle", name="showExpiredRaidsClassic", label=L["Show expired classic raids"], tooltip=L["Display expired classic raids in tooltip"] },
-		{ type="toggle", name="showExpiredRaids",        label=L["Show expired raids"],         tooltip=L["Display expired raids in tooltip"] },
-	},
-	config_misc = nil,
 	clickOptions = {
-		["5_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self)
-			end
-		}
+		["5_open_menu"] = "OptionMenu"
 	}
 }
+
+function module.options()
+	return {
+		broker = nil,
+		tooltip = {
+			showBosses={ type="toggle", order=1, name=L["Show world bosses"],          desc=L["Display list of world boss IDs in tooltip"] },
+			showDungeons={ type="toggle", order=2, name=L["Show dungeons"],              desc=L["Display list of dungeon IDs in tooltip"] },
+			showChallenges={ type="toggle", order=3, name=L["Show challenges"],            desc=L["Display list of challenge IDs in tooltip"] },
+			showSzenarios={ type="toggle", order=4, name=L["Show szenarios"],             desc=L["Display list of szenario IDs in tooltip"] },
+			showRaidsClassic={ type="toggle", order=5, name=L["Show classic raids"],         desc=L["Display list of classic raid IDs in tooltip"] },
+			showRaidsLFR={ type="toggle", order=6, name=L["Show lfr"],                   desc=L["Display list of lfr IDs in tooltip"] },
+			showRaidsFlex={ type="toggle", order=7, name=L["Show flex raids"],            desc=L["Display list of flex raid IDs in tooltip"] },
+			showRaids={ type="toggle", order=8, name=L["Show raids"],                 desc=L["Display list of raid IDs in tooltip"] },
+			showEvents={ type="toggle", order=9, name=L["Show events"],                desc=L["Display list of event IDs in tooltip"] },
+			separator={type="separator", order=10,},
+			showExpiredRaidsClassic={ type="toggle", order=11, name=L["Show expired classic raids"], desc=L["Display expired classic raids in tooltip"] },
+			showExpiredRaids={ type="toggle", order=12, name=L["Show expired raids"],         desc=L["Display expired raids in tooltip"] },
+		},
+		misc = nil,
+	}
+end
+
+function module.OptionMenu(self,button,Name)
+	if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 -- function module.init() end
 
 function module.onevent(self,event,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	end
 end
 

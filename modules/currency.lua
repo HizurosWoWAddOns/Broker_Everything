@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Currency"; -- CURRENCY
-local ttName,ttColumns,tt,tt2,createMenu,module = name.."TT",5;
+local ttName,ttColumns,tt,tt2,module = name.."TT",5;
 local tt2positions = {
 	["BOTTOM"] = {edgeSelf = "TOP",    edgeParent = "BOTTOM", x =  0, y = -2},
 	["LEFT"]   = {edgeSelf = "RIGHT",  edgeParent = "LEFT",   x = -2, y =  0},
@@ -173,66 +173,6 @@ local function setInTitle(titlePlace, currencyId)
 	updateBroker()
 end
 
-function createMenu(parent)
-	if (tt~=nil) and (tt:IsShown()) then tt:Hide(); end
-
-	ns.EasyMenu.InitializeMenu();
-
-	ns.EasyMenu.addEntry({ label=L["Currency in title - menu"], title=true});
-
-	for place=1, BrokerPlacesMax do
-		local pList,pList2,d;
-		local id = ns.profile[name].currenciesInTitle[place];
-
-		if type(id)=="string" then
-			id = currencyName2Id[id];
-		end
-
-		if id then
-			local d = currencyCache[id];
-			if d then
-				pList = ns.EasyMenu.addEntry({
-					arrow = true,
-					label = (C("dkyellow","%s%d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"],place,d[cIcon],C("ltblue",d[cName])),
-				});
-				ns.EasyMenu.addEntry({ label = C("ltred",L["Remove the currency"]), func=function() setInTitle(place, false); end }, pList);
-				ns.EasyMenu.addEntry({separator=true}, pList);
-			end
-		end
-
-		if not pList then
-			pList = ns.EasyMenu.addEntry({
-				arrow = true,
-				label = (C("dkyellow","%s%d:").."  %s"):format(L["Place"],place,L["Add a currency"])
-			});
-		end
-
-		for i,v in ipairs(currencyList2) do
-			if currencyCache[v] then
-				local n,d = currencyCache[v][cName],true;
-				if ns.profile[name].currenciesInTitle[place]~=v then
-					n,d = C("ltyellow",n),false;
-				end
-				ns.EasyMenu.addEntry({
-					label = n,
-					icon = currencyCache[v][cIcon],
-					disabled = d,
-					func = function() setInTitle(place,v); end
-				}, pList2);
-			else
-				if i>1 then
-					--ns.EasyMenu.addEntry({separator=true},pList);
-				end
-				pList2 = ns.EasyMenu.addEntry({label=C("ltblue",v), arrow=true}, pList);
-			end
-		end
-	end
-
-	ns.EasyMenu.addConfigElements(name,true);
-
-	ns.EasyMenu.ShowMenu(parent);
-end
-
 local function toggleCurrencyHeader(self,currency)
 	ExpandCurrencyList(currency[1],currency[2]);
 	createTooltip(tt,true);
@@ -285,17 +225,6 @@ function createTooltip(tt,update)
 	if ns.profile[name].shortTT == true then
 		tt:AddSeparator(4,0,0,0,0);
 		local c,l = 3,tt:AddLine(C("ltblue",L["Name"]));
-		if ns.profile[name].showWeeklyCap then
-			tt:SetCell(l,c,C("ltblue",L["Weekly"]));
-			c=c+1;
-		end
-		if ns.profile[name].showTotalCap then
-			tt:SetCell(l,c,C("ltblue",L["Max."]));
-			c=c+1;
-		end
-		if ns.profile[name].showSession then
-			tt:SetCell(l,c,C("ltblue",L["Session"]));
-		end
 		tt:AddSeparator()
 	end
 
@@ -370,11 +299,14 @@ function createTooltip(tt,update)
 	end
 end
 
+local function inBrokerValues(info)
+	local key=info[#info];
+	return {};
+end
+
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show your currencies"],
-	label = CURRENCY,
 	icon_suffix = "_Neutral",
 	events = {
 		"PLAYER_LOGIN",
@@ -397,69 +329,118 @@ module = {
 		spacer=0,
 		showIDs = false
 	},
-	config_allowed = {
-		subTTposition = {["AUTO"]=true,["TOP"]=true,["LEFT"]=true,["RIGHT"]=true,["BOTTOM"]=true}
-	},
-	config_header = {type="header", label=CURRENCY, align="left", icon=true},
-	config_broker = {
-		{ type="toggle", name="showCapBroker", label=L["Show total/weekly cap"], tooltip=L["Display currency total cap in tooltip."], event=true },
-		{ type="toggle", name="showCapColorBroker", label=L["Coloring total/weekly cap"], tooltip=L["..."], event=true },
-		{ type="slider", name="spacer",     label=L["Space between currencies"], tooltip=L["Add more space between displayed currencies on broker button"],
-			min			= 0,
-			max			= 10,
-			default		= 0,
-			format		= "%d",
-			event = "BE_DUMMY_EVENT"
-		},
-	},
-	config_tooltip = {
-		{ type="toggle", name="showTotalCap", label=L["Show total cap"], tooltip=L["Display currency total cap in tooltip."] },
-		{ type="toggle", name="showWeeklyCap", label=L["Show weekly cap"], tooltip=L["Display currency weekly earned and cap in tooltip."] },
-		{ type="toggle", name="showCapColor", label=L["Coloring total cap"], tooltip=L["Coloring limited currencies by total and/or weekly cap. If weekly cap not shown then will be colored total value by value which is near on cap."] },
-		{ type="toggle", name="showSession", label=L["Show session earn/loss"], tooltip=L["Display session profit in tooltip"] },
-		{ type="toggle", name="shortTT", label=L["Short Tooltip"], tooltip=L["Display the content of the tooltip shorter"] },
-		{ type="select", name="subTTposition", label=L["Second tooltip"], tooltip=L["Where does the second tooltip for a single currency are displayed from the first tooltip"],
-			values	= {
-				["AUTO"]    = L["Auto"],
-				["TOP"]     = L["Over"],
-				["LEFT"]    = L["Left"],
-				["RIGHT"]   = L["Right"],
-				["BOTTOM"]  = L["Under"]
-			},
-			default = "BOTTOM"
-		},
-		{ type="toggle", name="showIDs", label=L["Show currency id's"], tooltip=L["Display the currency id's in tooltip"] },
-	},
-	config_misc = {"shortNumbers"},
 	clickOptions = {
 		["1_open_character_info"] = {
-			cfg_label = "Open currency pane", -- L["Open currency pane"]
-			cfg_desc = "open the currency pane", -- L["open the currency pane"]
-			cfg_default = "_LEFT",
+			name = "Open currency pane", -- L["Open currency pane"]
+			desc = "open the currency pane", -- L["open the currency pane"]
+			default = "_LEFT",
 			hint = "Open currency pane",
 			func = function(self,button)
 				local _mod=name;
 				securecall("ToggleCharacter","TokenFrame");
 			end
 		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
+		["2_open_menu"] = "OptionMenu"
 	}
 }
+
+function module.options()
+	return {
+		broker = {
+			showCapBroker={ type="toggle", order=1, name=L["Show total/weekly cap"], desc=L["Display currency total cap in tooltip."] },
+			showCapColorBroker={ type="toggle", order=2, name=L["Coloring total/weekly cap"], desc=L["..."] },
+			spacer={ type="range", order=3, name=L["Space between currencies"], desc=L["Add more space between displayed currencies on broker button"], min=0, max=10 },
+			--header={ type="header", order=4, name=L["CurrencyHeadInBroker"] },
+			--inBroker1 = {type="select", order=5, name=L["CurrencyInBroker1"], desc=L["CurrencyInBroker1Desc"], values=inBrokerValues },
+			--inBroker2 = {type="select", order=6, name=L["CurrencyInBroker2"], desc=L["CurrencyInBroker2Desc"], values=inBrokerValues },
+			--inBroker3 = {type="select", order=7, name=L["CurrencyInBroker3"], desc=L["CurrencyInBroker3Desc"], values=inBrokerValues },
+			--inBroker4 = {type="select", order=8, name=L["CurrencyInBroker4"], desc=L["CurrencyInBroker4Desc"], values=inBrokerValues },
+		},
+		tooltip = {
+			showTotalCap={ type="toggle", order=1, name=L["Show total cap"], desc=L["Display currency total cap in tooltip."] },
+			showWeeklyCap={ type="toggle", order=2, name=L["Show weekly cap"], desc=L["Display currency weekly earned and cap in tooltip."] },
+			showCapColor={ type="toggle", order=3, name=L["Coloring total cap"], desc=L["Coloring limited currencies by total and/or weekly cap. If weekly cap not shown then will be colored total value by value which is near on cap."] },
+			showSession={ type="toggle", order=4, name=L["Show session earn/loss"], desc=L["Display session profit in tooltip"] },
+			showIDs={ type="toggle", order=5, name=L["Show currency id's"], desc=L["Display the currency id's in tooltip"] },
+			shortTT={ type="toggle", order=6, name=L["Short Tooltip"], desc=L["Display the content of the tooltip shorter"] },
+			subTTposition={ type="select", order=7, name=L["Second tooltip"], desc=L["Where does the second tooltip for a single currency are displayed from the first tooltip"],
+				values	= {
+					["AUTO"]    = L["Auto"],
+					["TOP"]     = L["Over"],
+					["LEFT"]    = L["Left"],
+					["RIGHT"]   = L["Right"],
+					["BOTTOM"]  = L["Under"]
+				},
+			},
+		},
+		misc = {
+			shortNumbers=1,
+		},
+	}, nil, true
+end
+
+function module.OptionMenu(parent)
+	if (tt~=nil) and (tt:IsShown()) then tt:Hide(); end
+
+	ns.EasyMenu.InitializeMenu();
+
+	ns.EasyMenu.addEntry({ label=L["Currency in title - menu"], title=true});
+
+	for place=1, BrokerPlacesMax do
+		local pList,pList2,d;
+		local id = ns.profile[name].currenciesInTitle[place];
+
+		if type(id)=="string" then
+			id = currencyName2Id[id];
+		end
+
+		if id then
+			local d = currencyCache[id];
+			if d then
+				pList = ns.EasyMenu.addEntry({
+					arrow = true,
+					label = (C("dkyellow","%s%d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"],place,d[cIcon],C("ltblue",d[cName])),
+				});
+				ns.EasyMenu.addEntry({ label = C("ltred",L["Remove the currency"]), func=function() setInTitle(place, false); end }, pList);
+				ns.EasyMenu.addEntry({separator=true}, pList);
+			end
+		end
+
+		if not pList then
+			pList = ns.EasyMenu.addEntry({
+				arrow = true,
+				label = (C("dkyellow","%s%d:").."  %s"):format(L["Place"],place,L["Add a currency"])
+			});
+		end
+
+		for i,v in ipairs(currencyList2) do
+			if currencyCache[v] then
+				local n,d = currencyCache[v][cName],true;
+				if ns.profile[name].currenciesInTitle[place]~=v then
+					n,d = C("ltyellow",n),false;
+				end
+				ns.EasyMenu.addEntry({
+					label = n,
+					icon = currencyCache[v][cIcon],
+					disabled = d,
+					func = function() setInTitle(place,v); end
+				}, pList2);
+			else
+				pList2 = ns.EasyMenu.addEntry({label=C("ltblue",v), arrow=true}, pList);
+			end
+		end
+	end
+
+	ns.EasyMenu.addConfigElements(name,true);
+
+	ns.EasyMenu.ShowMenu(parent);
+end
 
 -- function module.init() end
 
 function module.onevent(self,event,msg)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		updateCurrency("full");
 		updateBroker();

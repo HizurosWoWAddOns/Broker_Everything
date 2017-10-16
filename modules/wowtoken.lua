@@ -24,26 +24,30 @@ I[name] = {iconfile="Interface\\ICONS\\WoW_Token01",coords={0.05,0.95,0.05,0.95}
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show current amount of gold for a WoW Token"],
 	events = {
 		"ADDON_LOADED",
 		"PLAYER_LOGIN",
-		"TOKEN_MARKET_PRICE_UPDATED"
+		"TOKEN_MARKET_PRICE_UPDATED",
+		"GET_ITEM_INFO_RECEIVED"
 	},
 	updateinterval = 120, -- false or integer
 	config_defaults = {
 		diff=true,
 		history=true
 	},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="diff",    label=L["Show difference"], tooltip=L["Show difference of last change in tooltip"]},
-		{ type="toggle", name="history", label=L["Show history"],    tooltip=L["Show history of the 5 last changes in tooltip"]},
-	},
-	config_misc = {"shortNumbers"},
-}
+};
+
+function module.options()
+	return {
+		tooltip = {
+			diff={ type="toggle", name=L["Show difference"], desc=L["Show difference of last change in tooltip"]},
+			history={ type="toggle", name=L["Show history"], desc=L["Show history of the 5 last changes in tooltip"]},
+		},
+		misc = {
+			shortNumbers=true
+		},
+	};
+end
 
 -- function module.init() end
 
@@ -57,8 +61,17 @@ function module.onevent(self,event,msg)
 		end
 		C_Timer.NewTicker(module.updateinterval,C_WowTokenPublic.UpdateMarketPrice);
 	elseif event=="PLAYER_LOGIN" then
-		L[name] = GetItemInfo(122284);
+		local tokenLocalized = GetItemInfo(122284);
+		if tokenLocalized then
+			L[name] = tokenLocalized;
+		end
 		C_WowTokenPublic.UpdateMarketPrice();
+	elseif event=="GET_ITEM_INFO_RECEIVED" and msg==122284 then
+		local tokenLocalized = GetItemInfo(122284);
+		if tokenLocalized then
+			L[name] = tokenLocalized;
+			self:UnregisterEvent(event);
+		end
 	elseif event=="TOKEN_MARKET_PRICE_UPDATED" then
 		if(#Broker_Everything_DataDB[name]==0 or (#Broker_Everything_DataDB[name]>0 and Broker_Everything_DataDB[name][1].money~=price.money))then
 			tinsert(Broker_Everything_DataDB[name],1,{money=price.money,last=price.last});

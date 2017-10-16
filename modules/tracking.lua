@@ -57,8 +57,6 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	desc = L["Broker to show current tracking list with option to change it"],
-	label = TRACKING,
 	events = {
 		"MINIMAP_UPDATE_TRACKING",
 		"PLAYER_LOGIN"
@@ -68,23 +66,20 @@ module = {
 		displaySelection = true,
 		hideMinimapButton = false
 	},
-	config_allowed = {
-	},
-	config_header = {type="header", label=TRACKING, align="left", icon=I[name]},
-	config_broker = {
-		{ type="toggle", name="displaySelection", label=L["Display selection"], tooltip=L["Display one of the selected tracking options in broker text."], event=true },
-	},
-	config_tooltip = nil,
-	config_misc = {
-		{ type="toggle", name="hideMinimapButton", label=L["Hide minimap button"], tooltip=L["Hide blizzard's tracking button on minimap"], event="BE_HIDE_TRACKING", disabled=function()
-				if ns.coexist.check() then
-					return ns.coexist.optionInfo();
-				end
-				return false;
-			end
+}
+
+function module.options()
+	return {
+		broker = {
+			displaySelection={ type="toggle", name=L["Display selection"], desc=L["Display one of the selected tracking options in broker text."] },
+		},
+		tooltip = nil,
+		misc = {
+			hideMinimapButton={ type="toggle", order=1, name=L["Hide minimap button"], desc=L["Hide blizzard's tracking button on minimap"], disabled=ns.coexist.check },
+			hideMinimapButtonInfo={ type="description", order=2, name=ns.coexist.optionInfo, fontSize="medium", hidden=ns.coexist.check }
 		}
 	}
-}
+end
 
 function module.init()
 	if ns.coexist.check() and ns.profile[name].hideMinimapButton then

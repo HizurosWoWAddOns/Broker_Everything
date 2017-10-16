@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Mail" -- BUTTON_LAG_MAIL
-local ttName, tooltip, tt,module = name.."TT"
+local ttName, tooltip, tt, module = name.."TT"
 local alertLocked,onUpdateLocked,hookOn = false,false,false;
 local storedMailLineFaction = "%s - %s |TInterface\\PVPFrame\\PVP-Currency-%s:16:16:0:-1:16:16:0:16:0:16|t";
 local storedMailLineNeutral = "%s - %s";
@@ -39,17 +39,6 @@ local function clearStoredMailsData()
 		end
 	end
 	module.onevent({},"BE_DUMMY_EVENT");
-end
-
-local function createMenu(self,button)
-	if (button=="RightButton") then
-		if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-		ns.EasyMenu.InitializeMenu();
-		ns.EasyMenu.addConfigElements(name);
-		ns.EasyMenu.addEntry({separator=true});
-		ns.EasyMenu.addEntry({ label = C("yellow",L["Reset stored mails data"]), func=clearStoredMailsData, keepShown=false });
-		ns.EasyMenu.ShowMenu(parent);
-	end
 end
 
 local function UpdateStatus(event)
@@ -155,7 +144,7 @@ local function createTooltip(tt)
 			if Broker_Everything_CharacterDB.order[i]~=ns.player.name_realm then
 				local v = Broker_Everything_CharacterDB[Broker_Everything_CharacterDB.order[i]];
 				local n = {strsplit("-",Broker_Everything_CharacterDB.order[i],2)}
-				if v.mail and  not ((ns.profile[name].showAllRealms~=true and n[2]~=ns.realm) or (ns.profile[name].showAllFactions~=true and v.faction~=ns.player.faction)) then
+				if v.mail and ns.showThisChar(name,n[2],v.faction) then
 					if #v.mail.new>0 or #v.mail.stored>0 then
 						local count,countnew,str = #v.mail.stored,#v.mail.new,"";
 						if count==0 and countnew>0 then
@@ -168,7 +157,7 @@ local function createTooltip(tt)
 						end
 
 						tt:AddLine(
-							("%s (%s)"):format(C(v.class,ns.scm(n[1])),C("dkyellow",ns.scm(n[2]))),
+							(v.faction=="Neutral" and storedMailLineNeutral or storedMailLineFaction):format(C(v.class,ns.scm(n[1])),C("dkyellow",ns.scm(n[2])),v.faction),
 							str
 						);
 						noData = false;
@@ -199,9 +188,8 @@ local function createTooltip(tt)
 	end
 
 	if (ns.profile.GeneralOptions.showHints) then
-		tt:AddSeparator(3,0,0,0,0)
-		local l,c = tt:AddLine()
-		tt:SetCell(l,1,C("copper",L["Right-click"]).." || "..C("green",L["Open option menu"]),nil,nil,2);
+		tt:AddSeparator(4,0,0,0,0)
+		ns.clickOptions.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -210,8 +198,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show incoming mails and stored mails on all your chars"],
-	label = BUTTON_LAG_MAIL,
 	events = {
 		"PLAYER_LOGIN",
 		"UPDATE_PENDING_MAIL",
@@ -227,28 +213,38 @@ module = {
 		showRealmNames=true,
 		showCharsFrom=4
 	},
-	config_allowed = nil,
-	config_header = {type="header", label=BUTTON_LAG_MAIL, align="left", icon=I[name]},
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="showDaysLeft", label=L["List mails on chars"], tooltip=L["Display a list of chars on all realms with there mail counts and 3 lowest days before return to sender. Chars with empty mail box aren't displayed."] },
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom"
-	},
-	config_misc = {
-		{ type="toggle", name="playsound", label=L["Play sound on new mail"], tooltip=L["Enable to play a sound on receiving a new mail message. Default is off"] },
-		{ type="toggle", name="hideMinimapMail", label=L["Hide minimap mail icon"], tooltip=L["Hide minimap mail icon"],
-			event = "BE_HIDE_MINIMAPMAIL",
-			disabled = function()
-				if ns.coexist.check() then
-					return ns.coexist.optionInfo();
-				end
-				return false;
-			end
+	clickOptions = {
+		["open_menu"] = "OptionMenu"
+	}
+}
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
+
+function module.options()
+	return {
+		broker = nil,
+		tooltip = {
+			showDaysLeft={ type="toggle", order=1, name=L["List mails on chars"], desc=L["Display a list of chars on all realms with there mail counts and 3 lowest days before return to sender. Chars with empty mail box aren't displayed."] },
+			showAllFactions=2,
+			showRealmNames=3,
+			showCharsFrom=4,
+		},
+		misc = {
+			playsound={ type="toggle", order=1, name=L["Play sound on new mail"], desc=L["Enable to play a sound on receiving a new mail message. Default is off"] },
+			separator={ type="separator", order=2},
+			hideMinimapMail={ type="toggle", order=3, name=L["Hide minimap mail icon"], desc=L["Hide minimap mail icon"], disabled=ns.coexist.check },
+			hideMinimapMailInfo = { type="description", order=4, name=ns.coexist.optionInfo, fontSize="medium", hidden=ns.coexist.check }
 		},
 	},
-}
+	{
+		hideMinimapMail = "BE_HIDE_MINIMAPMAIL",
+	}
+end
 
 function module.init()
 	for i=1, 22 do
@@ -270,6 +266,8 @@ function module.onevent(self,event,msg)
 				ns.unhideFrame("MiniMapMailFrame")
 			end
 		end
+	elseif event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		hooksecurefunc("SendMail",function(targetName)
 			local n,r,_ = strsplit("-",targetName,2);
@@ -284,7 +282,8 @@ function module.onevent(self,event,msg)
 				tinsert(Broker_Everything_CharacterDB[targetName].mail.new,ns.player.name);
 			end
 		end);
-	elseif ns.pastPEW then
+	end
+	if ns.eventPlayerEnteringWorld then
 		if (HasNewMail()) and (ns.profile[name].playsound) and (not alertLocked) then
 			PlaySoundFile("Interface\\Addons\\"..addon.."\\media\\mailalert.mp3", "Master"); -- or SFX?
 			alertLocked=true;

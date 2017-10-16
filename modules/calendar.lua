@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Calendar" -- L["Calendar"]
-local ttName,ttColumns,tt,createMenu,module,calendar_weekend_texture_ids = name.."TT",2;
+local ttName,ttColumns,tt,module,calendar_weekend_texture_ids = name.."TT",2;
 
 
 -- register icon names and default files --
@@ -19,13 +19,6 @@ I[name.."_pending"] = {iconfile="Interface\\Addons\\"..addon.."\\media\\calendar
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) then tt:Hide(); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local num = CalendarGetNumPendingInvites();
@@ -170,7 +163,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show calendar events and invitations"],
+	icon_suffix = nil,
 	events = {
 		"CALENDAR_UPDATE_PENDING_INVITES",
 		"PLAYER_LOGIN"
@@ -183,49 +176,44 @@ module = {
 		showEvents = true,
 		singleLineEvents = false
 	},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = {
-		{ type="toggle", name="shortBroker", label=L["Shorter Broker"], tooltip=L["Reduce the broker text to a number without text"], event=true },
-	},
-	config_tooltip = {
-		{ type="toggle", name="showEvents",  label=L["Show events"], tooltip=L["Display a list of events in tooltip"]},
-		{ type="toggle", name="shortEvents", label=L["Shorter Events"], tooltip=L["Reduce event list height in tooltip"] },
-		{ type="toggle", name="singleLineEvents", label=L["One event per line"], tooltip=L["Display event title and start/end date in a single line in tooltip"]}
-	},
-	config_misc = {
-		{ type="toggle", name="hideMinimapCalendar", label=L["Hide calendar button"], tooltip=L["Hide Blizzard's minimap calendar button"],
-			disabled = function()
-				if ns.coexist.check() then
-					return ns.coexist.optionInfo();
-				end
-				return false;
-			end
-		},
-	},
 	clickOptions = {
 		["1_open_character_info"] = {
-			cfg_label = "Open calendar", -- L["Open calendar"]
-			cfg_desc = "open the calendar", -- L["open the calendar"]
-			cfg_default = "_LEFT",
+			name = "Open calendar", -- L["Open calendar"]
+			desc = "open the calendar", -- L["open the calendar"]
+			default = "_LEFT",
 			hint = "Open calendar", -- L["Open calendar"]
 			func = function(self,button)
 				local _mod=name;
 				securecall("ToggleCalendar");
 			end
 		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self)
-			end
-		}
+		["2_open_menu"] = "OptionMenu"
 	}
 }
+
+function module.options()
+	return {
+		broker = {
+			shortBroker={ type="toggle", order=1, name=L["Shorter Broker"], desc=L["Reduce the broker text to a number without text"]},
+		},
+		tooltip = {
+			showEvents={ type="toggle", order=1, name=L["Show events"], desc=L["Display a list of events in tooltip"]},
+			shortEvents={ type="toggle", order=2, name=L["Shorter Events"], desc=L["Reduce event list height in tooltip"] },
+			singleLineEvents={ type="toggle", order=3, name=L["One event per line"], desc=L["Display event title and start/end date in a single line in tooltip"]}
+		},
+		misc = {
+			hideMinimapCalendar={ type="toggle", order=1, name=L["Hide calendar button"], desc=L["Hide Blizzard's minimap calendar button"], disabled=ns.coexist.check },
+			hideMinimapCalendarInfo={ type="description", order=2, name=ns.coexist.optionInfo, fontSize="medium", hidden=ns.coexist.check }
+		},
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) then tt:Hide(); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 function module.init()
 	calendar_weekend_texture_ids = { -- Calendar_Weekend(.*)
@@ -284,7 +272,7 @@ function module.onevent(self,event,msg)
 			end
 		end
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	else
 		updateBroker();
 	end

@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Framenames" -- L["Framenames"]
-local ttName,module, ldbObject = name.."TT"
+local ttName,ldbObject,module = name.."TT"
 local lastFrame,lastMod,lastCombatState,ticker = false,false,false;
 
 
@@ -106,7 +106,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show names of frames under the mouse"],
 	enabled = false,
 	events = {"PLAYER_LOGIN"},
 	updateinterval = 1/12,
@@ -114,15 +113,20 @@ module = {
 		ownership = "shift",
 		creatureid = "shift"
 	},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = {
-		{ type="select", name="ownership", label=L["Show ownership"], tooltip=L["Display ownership on broker button"], values={none=ADDON_DISABLED, shift=L["On hold shift key"], always=ALWAYS }, default="shift" },
-		{ type="select", name="creatureid", label=L["Show ownership"], tooltip=L["Display creature id on broker button"], values={none=ADDON_DISABLED, shift=L["On hold shift key"], always=ALWAYS }, default="shift" },
-	},
-	config_tooltip = nil,
-	config_misc = nil,
 }
+
+function module.options()
+	local values = {none=ADDON_DISABLED, shift=L["On hold shift key"], always=ALWAYS };
+	return {
+		broker = {
+			sep = {type="separator", order=1 },
+			ownership={ type="select", order=2, name=L["Show ownership"], desc=L["Display ownership on broker button"], values=values},
+			creatureid={ type="select", order=3, name=L["Show ownership"], desc=L["Display creature id on broker button"], values=values},
+		},
+		tooltip = nil,
+		misc = nil,
+	}
+end
 
 function module.onevent(self,event,msg)
 	if event=="PLAYER_LOGIN" then

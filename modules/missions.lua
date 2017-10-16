@@ -9,7 +9,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Missions" -- GARRISON_MISSIONS
-local ttName, ttColumns,ttColumns_default, tt, createMenu,module = name.."TT",6,6
+local ttName, ttColumns,ttColumns_default, tt, module = name.."TT",6,6
 local missions,started = {},{};
 local qualities = {"white","ff1eaa00","ff0070dd","ffa335ee","red"};
 local garrLevel,syLevel,ohLevel = 0,0,0;
@@ -24,13 +24,6 @@ I[name.."Ship"]     = {iconfile="Interface\\Garrison\\GarrisonShipMapIcons", coo
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function stripTime(str,tag)
 	local h, m, s = str:match("(%d+)");
 end
@@ -283,9 +276,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show active and available missions for your followers and ships"],
-	label = GARRISON_MISSIONS,
-	--icon_suffix = "_Neutral",
+	icon_suffix = nil,
 	events = {
 		"PLAYER_LOGIN",
 		"GARRISON_MISSION_LIST_UPDATE",
@@ -308,54 +299,55 @@ module = {
 		showMissionItemLevel = true,
 		showMissionFollowerSlots = true
 	},
-	config_allowed = nil,
-	config_header = {type="header", label=GARRISON_MISSIONS, align="left", icon=I[name]},
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="showChars",       label=L["Show characters"],          tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom",
-
-		{ type="toggle", name="showReady",     label=L["Show ready missions"],     tooltip=L["Show ready missions in tooltip"] },
-		{ type="toggle", name="showActive",    label=L["Show active missions"],    tooltip=L["Show active missions in tooltip"] },
-		{ type="toggle", name="showAvailable", label=L["Show available missions"], tooltip=L["Show available missions in tooltip"] },
-
-		{ type="toggle", name="showMissionType",          label=L["Show mission type"],   tooltip=L["Show mission type in tooltip."] },
-		{ type="toggle", name="showMissionLevel",         label=L["Show mission level"],  tooltip=L["Show mission level in tooltip."] },
-		{ type="toggle", name="showMissionItemLevel",     label=L["Show mission iLevel"], tooltip=L["Show mission item level in tooltip."] },
-		{ type="toggle", name="showMissionFollowerSlots", label=L["Show follower slots"], tooltip=L["Show mission follower slots in tooltip."] },
-	},
-	config_misc = nil,
 	clickOptions = {
 		["1_open_garrison_report"] = {
-			cfg_label = "Open garrison report", -- L["Open garrison report"]
-			cfg_desc = "open the garrison report", -- L["open the garrison report"]
-			cfg_default = "_LEFT",
+			name = "Open garrison report", -- L["Open garrison report"]
+			desc = "open the garrison report", -- L["open the garrison report"]
+			default = "_LEFT",
 			hint = "Open garrison report",
 			func = function(self,button)
 				local _mod=name;
 				securecall("GarrisonLandingPage_Toggle");
 			end
 		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
+		["2_open_menu"] = "OptionMenu"
 	}
 }
+
+function module.options()
+	return {
+		broker = nil,
+		tooltip = {
+			showChars={ type="toggle", order=1, name=L["Show characters"],          desc=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+			showAllFactions=2,
+			showRealmNames=3,
+			showCharsFrom=4,
+
+			showReady={ type="toggle", order=5, name=L["Show ready missions"],     desc=L["Show ready missions in tooltip"] },
+			showActive={ type="toggle", order=6, name=L["Show active missions"],    desc=L["Show active missions in tooltip"] },
+			showAvailable={ type="toggle", order=7, name=L["Show available missions"], desc=L["Show available missions in tooltip"] },
+
+			showMissionType={ type="toggle", order=8, name=L["Show mission type"],   desc=L["Show mission type in tooltip."] },
+			showMissionLevel={ type="toggle", order=9, name=L["Show mission level"],  desc=L["Show mission level in tooltip."] },
+			showMissionItemLevel={ type="toggle", order=10, name=L["Show mission iLevel"], desc=L["Show mission item level in tooltip."] },
+			showMissionFollowerSlots={ type="toggle", order=11, name=L["Show follower slots"], desc=L["Show mission follower slots in tooltip."] },
+		},
+		misc = nil,
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 -- function module.init() end
 
 function module.onevent(self,event,msg)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	else
 		update();
 	end

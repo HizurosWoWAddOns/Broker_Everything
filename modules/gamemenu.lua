@@ -206,8 +206,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show combined list of clickable elements from game menu, microbutton bar. It is not recommended to use it in combat."],
-	label = MAINMENU_BUTTON,
 	events = {
 		"PLAYER_LOGIN",
 		"UPDATE_WEB_TICKET"
@@ -222,21 +220,24 @@ module = {
 		showGMTicket = true,
 		showTaintingEntries = false
 	},
-	config_allowed = nil,
-	config_header = {type="header", label=MAINMENU_BUTTON, align="left", icon=I[name]},
-	config_broker = {
-		{ type="toggle", name="disableOnClick", label=L["Disable Click options"], tooltip=L["Disable the click options on broker button"] },
-		{ type="input",  name="customTitle", label=L["Custom title"], tooltip=L["Set your own Title instead of 'Game Menu'"], event=true },
-	},
-	config_tooltip = {
-		{ type="toggle", name="hideSection2", label=L["Hide section 2"], tooltip=L["Hide section 2 in tooltip"] },
-		{ type="toggle", name="hideSection3", label=L["Hide section 3"], tooltip=L["Hide section 3 in tooltip"] },
-		{ type="toggle", name="customTooltipTitle", label=L["Custom title in tooltip"], tooltip=L["Use custom title as tooltip title"] },
-		{ type="toggle", name="showGMTicket", label=L["Show GMTicket"], tooltip=L["Show GMTickets in tooltip and average wait time in broker button"] },
-		{ type="toggle", name="showTaintingEntries", label=L["Show tainting entries"], tooltip=L["Show all entries their tainting the environment. Be carefull. Can produce error in combat."] }
-	},
-	config_misc = nil,
 }
+
+function module.options()
+	return {
+		broker = {
+			disableOnClick={ type="toggle", order=1, name=L["Disable Click options"], desc=L["Disable the click options on broker button"] },
+			customTitle={ type="input", order=2, name=L["Custom title"], desc=L["Set your own Title instead of 'Game Menu'"] },
+		},
+		tooltip = {
+			hideSection2={ type="toggle", order=1, name=L["Hide section 2"], desc=L["Hide section 2 in tooltip"] },
+			hideSection3={ type="toggle", order=2, name=L["Hide section 3"], desc=L["Hide section 3 in tooltip"] },
+			customTooltipTitle={ type="toggle", order=3, name=L["Custom title in tooltip"], desc=L["Use custom title as tooltip title"] },
+			showGMTicket={ type="toggle", order=4, name=L["Show GMTicket"], desc=L["Show GMTickets in tooltip and average wait time in broker button"] },
+			showTaintingEntries={ type="toggle", order=5, name=L["Show tainting entries"], desc=L["Show all entries their tainting the environment. Be carefull. Can produce error in combat."] }
+		},
+		misc = nil,
+	}
+end
 
 function module.init()
 	ClassIconCoords={

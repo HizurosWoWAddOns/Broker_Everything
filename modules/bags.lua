@@ -9,7 +9,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Bags" -- L["Bags"]
-local ttName,ttColumns,tt,createMenu,module = name.."TT",3;
+local ttName,ttColumns,tt,module = name.."TT",3;
 local IsMerchantOpen,G = false,{};
 local crap = {limit=3,sum=0,items={}};
 local qualityModeValues,qualityModes = {},{};
@@ -23,13 +23,6 @@ I[name] = {iconfile="Interface\\icons\\inv_misc_bag_08",coords={0.05,0.95,0.05,0
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 function crap:info()
 	if ns.profile[name].autoCrapSellingInfo and self.sum>0 then
 		ns.print(L["Auto crap selling - Summary"]..":",ns.GetCoinColorOrTextureString(name,self.sum,{color="white"}));
@@ -196,7 +189,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	desc = L["Broker to show total, used and free slots of your bags"],
+	icon_suffix = nil,
 	events = {
 		"PLAYER_LOGIN",
 		"BAG_UPDATE",
@@ -216,32 +209,11 @@ module = {
 		autoCrapSelling = false,
 		autoCrapSellingInfo = true
 	},
-	config_allowed = {
-		qualityMode = {["1"]=true,["2"]=true,["3"]=true,["4"]=true,["5"]=true,["6"]=true,["7"]=true,["8"]=true}
-	},
-	config_header = nil, -- use default header
-	config_broker = {
-		{ type="toggle", name="freespace",         label=L["Show freespace"],                  tooltip=L["Show bagspace instead used and max. bagslots in broker button"], event=true },
-	},
-	config_tooltip = {
-		{ type="toggle", name="showQuality",       label=L["Show item summary by quality"],    tooltip=L["Display an item summary list by qualities in tooltip"], event=true },
-		{ type="select", name="qualityMode",       label=L["Item summary by quality mode"],    tooltip=L["Choose your favorite"], default="1", values=qualityModeValues },
-		{ type="slider", name="critLowFree",       label=L["Critical low free slots"],         tooltip=L["Select the maximum free slot count to coloring in red."], min=1, max=50, default=5, format = "%d", event=true },
-		{ type="slider", name="warnLowFree",       label=L["Warn low free slots"],             tooltip=L["Select the maximum free slot count to coloring in yellow."], min=2, max=100, default=15, format = "%d", event=true },
-	},
-	config_misc = {
-		{ type="header", label=L["Crap selling options"] },
-		{ type="separator" },
-		{ type="toggle", name="autoCrapSelling", label=L["Enable auto crap selling"], tooltip=L["Enable automatically crap selling on opening a mergant frame"] },
-		{ type="toggle", name="autoCrapSellingInfo", label=L["Earned money summary in chat"], tooltip=L["Post earned money in chat frame"] },
-		true, -- header "Misc options"
-		"shortNumbers",
-	},
 	clickOptions = {
 		["1_open_bags"] = {
-			cfg_label = "Open all bags", -- L["Open all bags"]
-			cfg_desc = "open your bags", -- L["open your bags"]
-			cfg_default = "_LEFT",
+			name = "Open all bags", -- L["Open all bags"]
+			desc = "open your bags", -- L["open your bags"]
+			default = "_LEFT",
 			hint = "Open all bags", -- L["Open all bags"]
 			func = function(self,button)
 				local _mod=name;
@@ -249,9 +221,9 @@ module = {
 			end
 		},
 		["2_toggle_freespace"] = {
-			cfg_label = "Switch display", -- L["Switch display"]
-			cfg_desc = "toggle between free and used/max bagslots in broker button", -- L["toggle between free and used/max bagslots in broker button"]
-			cfg_default = "_RIGHT",
+			name = "Switch display", -- L["Switch display"]
+			desc = "toggle between free and used/max bagslots in broker button", -- L["toggle between free and used/max bagslots in broker button"]
+			default = "_RIGHT",
 			hint = "Switch display",
 			func = function(self,button)
 				local _mod=name;
@@ -259,18 +231,41 @@ module = {
 				module.onevent(self)
 			end
 		},
-		["3_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "__NONE",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
+		["3_open_menu"] = "OptionMenu"
 	}
 }
+
+function module.options()
+	return {
+		broker = {
+			freespace={ type="toggle", order=1, name=L["Show freespace"],                  desc=L["Show bagspace instead used and max. bagslots in broker button"] },
+		},
+		tooltip = {
+			showQuality={ type="toggle", order=1, name=L["Show item summary by quality"],    desc=L["Display an item summary list by qualities in tooltip"], width="double" },
+			qualityMode={ type="select", order=2, name=L["Item summary by quality mode"],    desc=L["Choose your favorite"], values=qualityModeValues, width="double" },
+			critLowFree={ type="range", order=3, name=L["Critical low free slots"],         desc=L["Select the maximum free slot count to coloring in red."], min=1, max=50, },
+			warnLowFree={ type="range", order=4, name=L["Warn low free slots"],             desc=L["Select the maximum free slot count to coloring in yellow."], min=2, max=100, },
+		},
+		misc = {
+			shortNumbers=1,
+			header={ type="header", order=2, name=L["Crap selling options"] },
+			autoCrapSelling={ type="toggle", order=3, name=L["Enable auto crap selling"], desc=L["Enable automatically crap selling on opening a mergant frame"] },
+			autoCrapSellingInfo={ type="toggle", order=4, name=L["Earned money summary in chat"], desc=L["Post earned money in chat frame"] },
+		},
+	},
+	{
+		showQuality=true,
+		critLowFree=true,
+		warnLowFree=true
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 function module.init()
 	for i=0, 7 do G["ITEM_QUALITY"..i.."_DESC"] = _G["ITEM_QUALITY"..i.."_DESC"] end
@@ -357,7 +352,7 @@ end
 
 function module.onevent(self,event,msg)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	elseif event=="MERCHANT_SHOW" and ns.profile[name].autoCrapSelling then
 		IsMerchantOpen = true;
 		C_Timer.After(0.5,function() crap:search() end);

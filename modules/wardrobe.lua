@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Wardrobe"; -- WARDROBE
-local ttName, ttColumns, tt, createMenu, module = name.."TT", 4
+local ldbName, ttName, ttColumns, tt, module = name, name.."TT", 4
 local illusions,weapons = {0,0},{};
 local session = {};
 
@@ -20,13 +20,6 @@ I[name] = {iconfile="INTERFACE\\ICONS\\trade_archaeology",coords={0.05,0.95,0.05
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	obj.text = WARDROBE;
@@ -123,12 +116,9 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	desc = L["Broker to show count of collected transmog apperiences"],
-	label = WARDROBE,
-	--icon_suffix = "_Neutral",
+	icon_suffix = nil,
 	events = {
 		"PLAYER_LOGIN",
-		--"PLAYER_ENTERING_WORLD",
 		--"KNOWN_CURRENCY_TYPES_UPDATE",
 		--"ARTIFACT_UPDATE",
 		--"ARTIFACT_COMPLETE",
@@ -138,18 +128,13 @@ module = {
 	},
 	updateinterval = nil,
 	config_defaults = {},
-	config_allowed = {},
-	config_header = { type="header", label=WARDROBE, align="left", icon=true },
-	config_broker = {},
-	config_tooltip = {},
-	config_misc = {},
 	clickOptions = {
 		-- world map
 		--[[
 		["1_open_archaeology_frame"] = {
-			cfg_label = "Open archaeology frame", -- L["Open archaeology frame"]
-			cfg_desc = "open your archaeology frame", -- L["open your archaeology frame"]
-			cfg_default = "_LEFT",
+			name = "Open archaeology frame", -- L["Open archaeology frame"]
+			desc = "open your archaeology frame", -- L["open your archaeology frame"]
+			default = "_LEFT",
 			hint = "Open archaeology frame", -- L["Open archaeology frame"]
 			func = function(self,button)
 				local _mod=name;
@@ -166,23 +151,25 @@ module = {
 			end
 		},
 		]]
-		["9_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
+		["9_open_menu"] = "OptionMenu"
 	}
 }
+
+-- function module.options() return {} end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 -- function module.init() end
 
 function module.onevent(self,event,...)
-	if event=="PLAYER_LOGIN" then
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(name);
+	elseif event=="PLAYER_LOGIN" then
 		session.armor = {};
 		for i=1, 11 do
 			local v = TRANSMOG_SLOTS[i];
@@ -209,8 +196,6 @@ function module.onevent(self,event,...)
 			sets = (C_TransmogSets.GetBaseSetsCounts())
 		}
 		updateBroker();
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
 	end
 end
 

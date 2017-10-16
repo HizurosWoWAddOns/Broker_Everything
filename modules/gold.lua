@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Gold"; -- BONUS_ROLL_REWARD_MONEY
-local ttName, tt, createMenu, createTooltip,module = name.."TT";
+local ttName, tt, createTooltip, module = name.."TT";
 local login_money = nil;
 local next_try = false;
 local current_money = 0
@@ -22,15 +22,6 @@ I[name] = {iconfile="Interface\\Minimap\\TRACKING\\Auctioneer",coords={0.05,0.95
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.addEntry({separator=true});
-	ns.EasyMenu.addEntry({ label = C("yellow",L["Reset session profit"]), func=function() module.onevent(nil,"PLAYER_LOGIN"); end, keepShown=false });
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function getProfit()
 	local direction,profit = 0,0;
 	if login_money==nil then
@@ -72,7 +63,7 @@ end
 function createTooltip(tt,update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
-	local sAR,sAF = ns.profile[name].showAllRealms==true,ns.profile[name].showAllFactions==true;
+	local sAR,sAF = ns.profile[name].showCharsFrom==4,ns.profile[name].showAllFactions==true;
 	local totalGold,diff_money = {Alliance=0,Horde=0,Neutral=0};
 	totalGold[ns.player.faction] = current_money;
 
@@ -115,7 +106,7 @@ function createTooltip(tt,update)
 
 	if(lineCount>0)then
 		tt:AddSeparator()
-		if ns.profile[name].splitSummaryByFaction then
+		if ns.profile[name].splitSummaryByFaction and ns.profile[name].showAllFactions then
 			tt:AddLine(L["Total Gold"].." |TInterface\\PVPFrame\\PVP-Currency-Alliance:16:16:0:-1:16:16:0:16:0:16|t", ns.GetCoinColorOrTextureString(name,totalGold.Alliance,{inTooltip=true}));
 			tt:AddLine(L["Total Gold"].." |TInterface\\PVPFrame\\PVP-Currency-Horde:16:16:0:-1:16:16:0:16:0:16|t", ns.GetCoinColorOrTextureString(name,totalGold.Horde,{inTooltip=true}));
 		else
@@ -147,8 +138,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show gold of all your chars and lost and earned money for the current session"],
-	label = BONUS_ROLL_REWARD_MONEY,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_MONEY",
@@ -165,24 +154,11 @@ module = {
 		showSessionProfit = true,
 		splitSummaryByFaction = true,
 	},
-	config_allowed = nil,
-	config_header = {type="header", label=BONUS_ROLL_REWARD_MONEY, align="left", icon=I[name]},
-	config_broker = {
-		{ type="toggle", name="showCharGold",         label=L["Show character gold"],     tooltip=L["Show character gold on broker button"], event=true },
-		{ type="toggle", name="showSessionProfit",    label=L["Show session profit"],     tooltip=L["Show session profit on broker button"], event=true },
-		{ type="toggle", name="splitSummaryByFaction", label=L["Split summary by faction"], tooltip=L["Separate summary by faction (Alliance/Horde)"], event=true }
-	},
-	config_tooltip = {
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom"
-	},
-	config_misc = {"shortNumbers"},
 	clickOptions = {
 		["1_open_tokenframe"] = {
-			cfg_label = "Open currency pane", -- L["Open currency pane"]
-			cfg_desc = "open the currency pane", -- L["open the currency pane"]
-			cfg_default = "_LEFT",
+			name = "Open currency pane", -- L["Open currency pane"]
+			desc = "open the currency pane", -- L["open the currency pane"]
+			default = "_LEFT",
 			hint = "Open currency pane",
 			func = function(self,button)
 				local _mod=name;
@@ -190,9 +166,9 @@ module = {
 			end
 		},
 		["2_open_character_info"] = {
-			cfg_label = "Open character info", -- L["Open character info"]
-			cfg_desc = "open the character info", -- L["open the character info"]
-			cfg_default = "__NONE",
+			name = "Open character info", -- L["Open character info"]
+			desc = "open the character info", -- L["open the character info"]
+			default = "__NONE",
 			hint = "Open character info", -- L["Open character info"]
 			func = function(self,button)
 				local _mod=name;
@@ -200,27 +176,45 @@ module = {
 			end
 		},
 		["3_open_bags"] = {
-			cfg_label = "Open all bags", -- L["Open all bags"]
-			cfg_desc = "open your bags", -- L["open your bags"]
-			cfg_default = "__NONE",
+			name = "Open all bags", -- L["Open all bags"]
+			desc = "open your bags", -- L["open your bags"]
+			default = "__NONE",
 			hint = "Open all bags", -- L["Open all bags"]
 			func = function(self,button)
 				local _mod=name;
 				securecall("ToggleAllBags");
 			end
 		},
-		["4_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
+		["4_open_menu"] = "OptionMenu"
 	}
 }
+
+function module.options()
+	return {
+		broker = {
+			showCharGold={ type="toggle", order=1, name=L["Show character gold"],     desc=L["Show character gold on broker button"] },
+			showSessionProfit={ type="toggle", order=2, name=L["Show session profit"],     desc=L["Show session profit on broker button"] },
+		},
+		tooltip = {
+			splitSummaryByFaction={ type="toggle", order=1, name=L["Split summary by faction"], desc=L["Separate summary by faction (Alliance/Horde)"] },
+			showAllFactions=2,
+			showRealmNames=3,
+			showCharsFrom=4,
+		},
+		misc = {
+			shortNumbers=1,
+		},
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.addEntry({separator=true});
+	ns.EasyMenu.addEntry({ label = C("yellow",L["Reset session profit"]), func=function() module.onevent(nil,"PLAYER_LOGIN"); end, keepShown=false });
+	ns.EasyMenu.ShowMenu(self);
+end
 
 function module.init()
 	if ns.toon.gold==nil then
@@ -230,7 +224,7 @@ end
 
 function module.onevent(self,event,msg)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	else
 		current_money = GetMoney();
 		ns.toon.gold = current_money;

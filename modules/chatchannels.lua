@@ -9,7 +9,7 @@ local channels_last =1;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "ChatChannels";
-local ttName,ttColumns,tt,createMenu,ticker,module = name.."TT",2
+local ttName,ttColumns,tt,module,ticker = name.."TT",2
 local iName, iHeader, iCollapsed, iChannelNumber, iCount, iActive, iCategory, iVoiceEnabled, iVoiceActive = 1,2,3,4,5,6,7,8,9;
 local events={PLAYER_LOGIN=1,CHANNEL_UI_UPDATE=1,PARTY_LEADER_CHANGED=1,GROUP_ROSTER_UPDATE=1,CHANNEL_ROSTER_UPDATE=1,MUTELIST_UPDATE=2,IGNORELIST_UPDATE=2}
 local wd = ({
@@ -37,13 +37,6 @@ I[name] = {iconfile="Interface\\chatframe\\ui-chatwhispericon",coords={0.05,0.95
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function addChannel(tbl,index)
 	local data = {GetChannelDisplayInfo(index)};
 	local chatTypeName = "SYSTEM";
@@ -174,7 +167,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show count of users of all chat channels"],
 	--icon_suffix = '',
 	events = {
 		"PLAYER_LOGIN",
@@ -188,40 +180,43 @@ module = {
 	config_defaults = {
 		--inTitle = {}
 	},
-	config_allowed = nil,
-	config_header = {type="header", label=CHAT_CHANNELS, align="left", icon=I[name]},
-	config_broker = nil,
-	config_tooltip = nil,
-	config_misc = {"shortNumbers"},
 	clickOptions = {
 		["1_open_chats"] = {
-			cfg_label = "Open chat channels window", -- L["Open chat channels window"]
-			cfg_desc = "open the chat channels tab on the contact window", -- L["open the chat channels tab on the contact window"]
-			cfg_default = "_LEFT",
+			name = "Open chat channels window", -- L["Open chat channels window"]
+			desc = "open the chat channels tab on the contact window", -- L["open the chat channels tab on the contact window"]
+			default = "_LEFT",
 			hint = "Open chat channels window",
 			func = function(self,button)
 				local _mod=name;
 				securecall("ToggleFriendsFrame",3);
 			end
 		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
+		["2_open_menu"] = "OptionMenu"
 	}
 }
+
+function module.options()
+	return {
+		broker = nil,
+		tooltip = nil,
+		misc = {
+			shortNumbers=true,
+		},
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 -- function module.init() end
 
 function module.onevent(self,event,arg1,arg2,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	elseif event=="CHANNEL_COUNT_UPDATE" then
 		updateChannels(arg1,arg2 or 0)
 	end
@@ -231,7 +226,7 @@ function module.onevent(self,event,arg1,arg2,...)
 			C_Timer.After(5,updater);
 			ticker = C_Timer.NewTicker(module.updateinterval,updater);
 		end
-	elseif event=="d" then
+	elseif event=="d" then -- TODO: what that??
 		updateList()
 	end
 end

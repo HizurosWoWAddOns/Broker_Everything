@@ -9,7 +9,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Garrison" -- GARRISON_LOCATION_TOOLTIP
-local ttName,ttColumns,tt,createMenu,module= name.."TT",7;
+local ttName,ttColumns,tt,module= name.."TT",7;
 local buildings,nBuildings,construct,nConstruct,blueprints3,achievements3 = {},0,{},0,{},{}
 local longer,ticker = false,false;
 local displayAchievements=false;
@@ -31,13 +31,6 @@ local function strCut(str,length) -- TODO: check...
 		return strsub(str,0,length).."...";
 	end
 	return str;
-end
-
-function createMenu(self)
-	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
 end
 
 local function AchievementTooltipShow(self, achievementId)
@@ -120,9 +113,7 @@ local function createTooltip(tt)
 				local name_realm = Broker_Everything_CharacterDB.order[i];
 				local v = Broker_Everything_CharacterDB[name_realm];
 				local charName,realm,_=strsplit("-",name_realm,2);
-				if (ns.profile[name].showAllRealms~=true and realm~=ns.realm) or (ns.profile[name].showAllFactions~=true and v.faction~=ns.player.faction) then
-					-- do nothing
-				elseif(v.missions)then
+				if v.faction~=ns.player.faction and ns.showThisChar(name,realm,v.faction) and v.missions then
 					local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 					if type(realm)=="string" and realm:len()>0 then
 						_,realm = ns.LRI:GetRealmInfo(realm);
@@ -333,8 +324,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show garrison buildings, worker, active work orders, available blueprints, depending achievements and gives you a garrison cache forecast for all your chars"],
-	label = GARRISON_LOCATION_TOOLTIP,
 	events = {
 		"PLAYER_LOGIN",
 		"GARRISON_LANDINGPAGE_SHIPMENTS",
@@ -360,45 +349,46 @@ module = {
 		showRealmNames=true,
 		showCharsFrom=4
 	},
-	config_allowed = nil,
-	config_header = {type="header", label=GARRISON_LOCATION_TOOLTIP, align="left", icon=I[name]},
-	config_broker = {
-		{ type="toggle", name="showCacheForcastInBroker", label=L["Show cache forcast in title"], tooltip=L["Show garrison cache forecast for your current char in broker button"] },
-	},
-	config_tooltip = {
-		{ type="toggle", name="showConstruct",            label=L["Show under construction"],     tooltip=L["Show list of buildings there are under construction in tooltip"] },
-		{ type="toggle", name="showBlueprints",           label=L["Show blueprints"],             tooltip=L["Show available blueprints in tooltip"] },
-		{ type="toggle", name="showAchievements",         label=L["Show archievements"],          tooltip=L["Show necessary archievements to unlock blueprints in tooltip"] },
-		{ type="toggle", name="showCacheForcast",         label=L["Show cache forcast"],          tooltip=L["Show garrison cache forecast for all your characters in tooltip"] },
-		{ type="toggle", name="showChars",                label=L["Show characters"],             tooltip=L["Show a list of your characters with count of ready and active missions in tooltip"] },
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom"
-	},
-	config_misc = nil,
 	clickOptions = {
 		["1_open_garrison_report"] = {
-			cfg_label = "Open garrison report", -- L["Open garrison report"]
-			cfg_desc = "open the garrison report",
-			cfg_default = "_LEFT",
+			name = "Open garrison report", -- L["Open garrison report"]
+			desc = "open the garrison report",
+			default = "_LEFT",
 			hint = "Open garrison report",
 			func = function(self,button)
 				local _mod=name;
 				securecall("GarrisonLandingPage_Toggle");
 			end
 		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
+		["2_open_menu"] = "OptionMenu"
 	}
 }
+
+function module.options()
+	return {
+		broker = {
+			showCacheForcastInBroker={ type="toggle", name=L["Show cache forcast in title"], desc=L["Show garrison cache forecast for your current char in broker button"] },
+		},
+		tooltip = {
+			showConstruct={ type="toggle", order=1, name=L["Show under construction"],     desc=L["Show list of buildings there are under construction in tooltip"] },
+			showBlueprints={ type="toggle", order=2, name=L["Show blueprints"],             desc=L["Show available blueprints in tooltip"] },
+			showAchievements={ type="toggle", order=3, name=L["Show archievements"],          desc=L["Show necessary archievements to unlock blueprints in tooltip"] },
+			showCacheForcast={ type="toggle", order=4, name=L["Show cache forcast"],          desc=L["Show garrison cache forecast for all your characters in tooltip"] },
+			showChars={ type="toggle", order=5, name=L["Show characters"],             desc=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+			showAllFactions=6,
+			showRealmNames=7,
+			showCharsFrom=8,
+		},
+		misc = nil,
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 function module.init()
 	buildings2achievements = {[9]=9129,[25]=9565,[27]=9523,[35]=9703,[38]=9497,[41]=9429,[62]=9453,[66]=9526,[117]=9406,[119]=9406,[121]=9406,[123]=9406,[125]=9406,[127]=9406,[129]=9406,[131]=9406,[134]=9462,[136]=9454,[140]=9468,[142]=9487,[144]=9478,[160]=9495,[163]=9527,[167]=9463};
@@ -409,7 +399,7 @@ end
 
 function module.onevent(self,event,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		if ns.toon.garrison and ns.toon.garrison.cache then
 			for i=1, #Broker_Everything_CharacterDB.order do
@@ -439,7 +429,7 @@ function module.onevent(self,event,...)
 			end);
 		end
 	end
-	if event=="PLAYER_LOGIN" or ns.pastPEW then
+	if event=="PLAYER_LOGIN" or ns.eventPlayerEnteringWorld then
 		local progress,ready=0,0;
 		local garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0;
 		local tmp, names, _, bName, texture, shipmentCapacity, shipmentsReady, shipmentsTotal, creationTime, duration, timeleftString, shipmentsCurrent = {}, {};

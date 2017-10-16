@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "GuildLog" -- L["GuildLog"]
-local ttName,ttColumns,tt,createMenu,module = name.."TT",4
+local ttName,ttColumns,tt,module = name.."TT",4
 local type2locale = {
 	["invite"]	= C("cyan",CALENDAR_STATUS_INVITED),
 	["join"]	= C("green",LFG_LIST_APP_INVITE_ACCEPTED),
@@ -27,13 +27,6 @@ I[name] = {iconfile="Interface\\icons\\inv_misc_note_05",coords={0.05,0.95,0.05,
 
 -- some local functions --
 --------------------------
-function createMenu(parent)
-	if (tt~=nil) and (tt:IsShown()) then tt:Hide(); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(parent);
-end
-
 local function showRealm(Char)
 	local Name,Realm,_ = strsplit("-", Char,2);
 	if ns.profile[name].showRealm and Realm then
@@ -154,7 +147,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show last entries of the guild log"],
 	events = {
 		"PLAYER_LOGIN",
 		"GUILD_ROSTER_UPDATE",
@@ -173,60 +165,58 @@ module = {
 		hideDemote = false,
 		showRealms = true
 	},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="hideInvite",  label=L["Hide invites"],    tooltip=L["Hide all entries with 'Invite' as action."] },
-		{ type="toggle", name="hideJoin",    label=L["Hide joins"],      tooltip=L["Hide all entries with 'Join' as action."] },
-		{ type="toggle", name="hidePromote", label=L["Hide promotions"], tooltip=L["Hide all entries with 'Promote' as action."] },
-		{ type="toggle", name="hideDemote",  label=L["Hide demotions"],  tooltip=L["Hide all entries with 'Demote' as action."] },
-		{ type="toggle", name="hideLeave",   label=L["Hide leaves"],     tooltip=L["Hide all entries with 'Leave' as action."] },
-		{ type="toggle", name="hideRemove",  label=L["Hide removes"],    tooltip=L["Hide all entries with 'Remove' as action."] },
-		{ type="separator" },
-		{ type="toggle", name="showRealm",  label=L["Show realm names"], tooltip=L["Show realm names after character names from other realms (connected realms)."] },
-		{ type="slider", name="max_entries", label=L["Show max. entries"], tooltip=L["Select the maximum number of entries from the guild log, otherwise drag to 'All'."],
-			minText = ACHIEVEMENTFRAME_FILTER_ALL,
-			default = 0,
-			min = 0,
-			max = 100,
-			format = "%d",
-			step = 1,
-			rep = {[0]=ACHIEVEMENTFRAME_FILTER_ALL}
-		},
-		{ type="select", name="displayMode", label=L["Display mode"], tooltip=L["Change the list style."],
-			values	= {
-				["NORMAL"]    = L["Normal list of log entries"],
-				["SPLIT"]    = L["Separate tables by actions and 'Show max. entries' used per table."],
-			},
-			default = "BOTTOM"
-		},
-	},
-	config_misc = nil,
 	clickOptions = {
 		["1_open_guild"] = {
-			cfg_label = "Open guild roster", -- L["Open guild roster"]
-			cfg_desc = "open the guild roster", -- L["open the guild roster"]
-			cfg_default = "_LEFT",
+			name = "Open guild roster", -- L["Open guild roster"]
+			desc = "open the guild roster", -- L["open the guild roster"]
+			default = "_LEFT",
 			hint = "Open guild roster", -- L["Open guild roster"]
 			func = function(self,button)
 				local _mod=name;
 				securecall("ToggleGuildFrame")
 			end
 		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
+		["2_open_menu"] = "OptionMenu"
 	}
 
 }
+
+function module.options()
+	return {
+		broker = nil,
+		tooltip = {
+			hideInvite={ type="toggle", order=1, name=L["Hide invites"],    desc=L["Hide all entries with 'Invite' as action."] },
+			hideJoin={ type="toggle", order=2, name=L["Hide joins"],      desc=L["Hide all entries with 'Join' as action."] },
+			hidePromote={ type="toggle", order=3, name=L["Hide promotions"], desc=L["Hide all entries with 'Promote' as action."] },
+			hideDemote={ type="toggle", order=4, name=L["Hide demotions"],  desc=L["Hide all entries with 'Demote' as action."] },
+			hideLeave={ type="toggle", order=5, name=L["Hide leaves"],     desc=L["Hide all entries with 'Leave' as action."] },
+			hideRemove={ type="toggle", order=6, name=L["Hide removes"],    desc=L["Hide all entries with 'Remove' as action."] },
+			--separator=true,
+			showRealm={ type="toggle", order=7, name=L["Show realm names"], desc=L["Show realm names after character names from other realms (connected realms)."] },
+			max_entries={ type="range", order=8, name=L["Show max. entries"], desc=L["Select the maximum number of entries from the guild log, otherwise drag to 'All'."],
+				--minText = ACHIEVEMENTFRAME_FILTER_ALL,
+				min = 0,
+				max = 100,
+				step = 1,
+				--rep = {[0]=ACHIEVEMENTFRAME_FILTER_ALL}
+			},
+			displayMode={ type="select", order=9, name=L["Display mode"], desc=L["Change the list style."], width="double",
+				values	= {
+					["NORMAL"]    = L["Normal list of log entries"],
+					["SPLIT"]    = L["Separate tables by actions and 'Show max. entries' used per table."],
+				},
+			},
+		},
+		misc = nil,
+	}
+end
+
+function module.OptionMenu(parent)
+	if (tt~=nil) and (tt:IsShown()) then tt:Hide(); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(parent);
+end
 
 -- function module.init() end
 
@@ -234,7 +224,7 @@ function module.onevent(self,event,msg)
 	if event=="PLAYER_LOGIN" or event=="GUILD_ROSTER_UPDATE" then
 		QueryGuildEventLog();
 	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	elseif event=="GUILD_EVENT_LOG_UPDATE" then
 		wipe(logs);
 		local numEvents = GetNumGuildEvents();

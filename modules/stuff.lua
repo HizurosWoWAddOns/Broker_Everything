@@ -116,17 +116,12 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	desc = L["Broker to allow you to do...Stuff! Switch to windowed mode, reload ui, logout and quit."],
 	events = {},
 	updateinterval = nil, -- 10
 	config_defaults = {},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = nil,
-	config_tooltip = nil,
-	config_misc = nil,
 }
 
+-- function module.options() return {} end
 -- function module.init() end
 -- function module.onevent(self,event,msg) end
 -- function module.optionspanel(panel) end

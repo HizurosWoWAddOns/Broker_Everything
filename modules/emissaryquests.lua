@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Emissary Quests";
-local ttName, ttColumns, tt, createMenu, module = name.."TT", 4
+local ttName, ttColumns, tt, module = name.."TT", 4
 local factions,totalQuests,locked = {},{},false;
 local continents = {
 	1007, -- legion
@@ -38,13 +38,6 @@ I[name] = {iconfile="Interface\\QuestFrame\\UI-QuestLog-BookIcon",coords={0.05,0
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function sortFactions(a,b)
 	return a.eventEnding<b.eventEnding;
 end
@@ -153,7 +146,6 @@ local function updateData()
 end
 
 local function createTooltip(tt)
-	local sAR,sAF = ns.profile[name].showAllRealms==true,ns.profile[name].showAllFactions==true;
 	local Time = time();
 	table.sort(factions,sortFactions);
 
@@ -210,7 +202,7 @@ local function createTooltip(tt)
 			if type(realm)=="string" and realm:len()>0 then
 				_,realm = ns.LRI:GetRealmInfo(realm);
 			end
-			realm = sAR==true and C("dkyellow"," - "..ns.scm(realm)) or "";
+			realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or ""; -- TODO: add asterisk or realm option
 			local c,l=2,tt:AddLine(C(v.class,ns.scm(c)) .. realm .. faction);
 			for _,data in pairs(factions)do
 				if data.eventEnding-Time>=0 then
@@ -254,7 +246,7 @@ local function createTooltip(tt)
 
 	if ns.profile.GeneralOptions.showHints and false then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.clickOptions.ttAddHints(tt,name);-- TODO: missing hints?
 	end
 	ns.roundupTooltip(tt);
 end
@@ -263,7 +255,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show world quests"],
 	--icon_suffix = "",
 	events = {
 		"PLAYER_LOGIN",
@@ -276,44 +267,44 @@ module = {
 		showRealmNames=true,
 		showCharsFrom=4
 	},
-	config_allowed = nil,
-	config_header = nil,
-	config_broker = {
-		{ type="toggle", name="shortTitle", label="Show shorter title", tooltip=L["Display '%s' instead of '%s' on chars under level 110 on broker button"]:format(L["Emissary Quests-ShortCut"],L["Emissary Quests"]), event=true }
-	},
-	config_tooltip = {
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom"
-	},
-	config_misc = nil,
 	clickOptions = {
-		["9_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
+		["9_open_menu"] = "OptionMenu"
 	}
 }
+
+function module.options()
+	return {
+		broker = {
+			shortTitle={ type="toggle", order=1, name="Show shorter title", desc=L["Display '%s' instead of '%s' on chars under level 110 on broker button"]:format(L["Emissary Quests-ShortCut"],L["Emissary Quests"]) }
+		},
+		tooltip = {
+			showAllFactions=1,
+			showRealmNames=2,
+			showCharsFrom=3,
+		},
+		misc = nil,
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 -- function module.init() end
 
 function module.onevent(self,event,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		if ns.data[name]==nil then ns.data[name]={}; end
 		if ns.toon[name]==nil then ns.toon[name]={}; end
 		if ns.data[name].factions==nil then ns.data[name].factions = {}; end
 		if ns.toon[name].factions==nil then ns.toon[name].factions = {}; end
-		self.PEW=true;
 	end
-	if self.PEW then
+	if ns.eventPlayerEnteredWorld then
 		updateData();
 	end
 end

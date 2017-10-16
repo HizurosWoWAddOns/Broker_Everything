@@ -263,19 +263,20 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	desc = L["Broker to show swimming, walking, riding and flying speed in broker button, a list of riding skills and currently active speed bonuses"],
-	label = SPEED,
 	events = {"PLAYER_LOGIN"},
 	updateinterval = 0.16, -- false or integer
 	config_defaults = {
 		precision = 0,
 	},
-	config_allowed = {},
-	config_header = {type="header", label=SPEED, align="left", icon=I[name]},
-	config_broker = nil,
-	config_tooltip = { { type="slider", name="precision", label=L["Precision"], tooltip=L["Adjust the count of numbers behind the dot."], min = 0, max = 3, default = 0, format="%d" } },
-	config_misc = nil,
 }
+
+function module.options()
+	return {
+		broker = nil,
+		tooltip = { precision={ type="range", name=L["Precision"], desc=L["Adjust the count of numbers behind the dot."], min = 0, max = 3, step=1 } },
+		misc = nil,
+	}
+end
 
 function module.init()
 	riding_skills = { -- <spellid>, <skill>, <minLevel>, <air speed increase>, <ground speed increase>

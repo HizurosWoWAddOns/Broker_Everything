@@ -8,8 +8,8 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Order hall" -- GARRISON_LOCATION_TOOLTIP
-local ldbName,ttName,ttColumns,tt,createMenu,module = name, name.."TT",3;
+local name = "Order hall" -- L["Order hall"]
+local ldbName,ttName,ttColumns,tt,module = name, name.."TT",3;
 local now = 0;
 local TalentUnavailableReasons = {
 	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_ANOTHER_IS_RESEARCHING] = ORDER_HALL_TALENT_UNAVAILABLE_ANOTHER_IS_RESEARCHING,
@@ -26,13 +26,6 @@ I[name] = {iconfile="Interface\\Icons\\inv_garrison_resource", coords={0.05,0.95
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local title = {};
@@ -226,44 +219,43 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Display order hall upgrade tree and work orders from order hall and kitchen"],
 	events = {},
 	updateinterval = nil, -- 10
 	config_defaults = {},
-	config_allowed = {},
-	config_header = { type="header", label=L[name], align="left", icon=I[name] },
-	config_broker = nil,
-	config_tooltip = {},
-	config_misc = {},
 	clickOptions = {
 		["1_open_garrison_report"] = {
-			cfg_label = "Open garrison report", -- L["Open garrison report"]
-			cfg_desc = "open the garrison report",
-			cfg_default = "_LEFT",
+			name = "Open garrison report", -- L["Open garrison report"]
+			desc = "open the garrison report",
+			default = "_LEFT",
 			hint = "Open garrison report",
 			func = function(self,button)
 				local _mod=name;
 				securecall("GarrisonLandingPage_Toggle");
 			end
 		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
+		--[[
+		["2_open_menu"] = "OptionMenu"
+		--]]
 	}
 }
+
+-- function module.options() return {} end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 -- function module.init() end
 
 function module.onevent(self,event,...)
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(module,ns.profile[name]);
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(name);
+	end
+	if ns.eventPlayerEnteredWorld then
+		--updateBroker();
 	end
 end
 

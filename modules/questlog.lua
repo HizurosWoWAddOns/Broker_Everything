@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Quest Log" -- QUESTLOG_BUTTON
-local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,createMenu,createTooltip,module = name.."TT",name.."TT2",9,2;
+local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module,createTooltip = name.."TT",name.."TT2",9,2;
 local quests,numQuestStatus,sum,url,tt2created,requested
 local urls = {
 	WoWHead = function(id)
@@ -70,13 +70,6 @@ I[name] = {iconfile="Interface\\TARGETINGFRAME\\PortraitQuestBadge",coords={0.05
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) then tt:Hide(); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local fail, active, complete = numQuestStatus.fail, numQuestStatus.active, numQuestStatus.complete;
@@ -331,8 +324,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show count of quests in your questlog and quest titles in tooltip"],
-	label = QUESTLOG_BUTTON,
 	events = {
 		"PLAYER_LOGIN",
 		"QUEST_LOG_UPDATE",
@@ -354,72 +345,74 @@ module = {
 		tooltip2QuestTag = true,
 		tooltip2QuestID = true,
 	},
-	config_allowed = nil,
-	config_header = {type="header", label=QUESTLOG_BUTTON, align="left", icon=I[name]},
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="showQuestIds",       label=L["Show quest id's"], tooltip=L["Show quest id's in tooltip."] },
-		{ type="toggle", name="showQuestZone",      label=L["Show quest zone"], tooltip=L["Show quest zone in tooltip."] },
-		{ type="toggle", name="showQuestTags",      label=L["Show quest tags"], tooltip=L["Show quest tags in tooltip."] },
-		{ type="toggle", name="showQuestTagsShort", label=L["Show short quest tags"], tooltip=L["Show short quest tags in tooltip."] },
-		{ type="toggle", name="showQuestOptions",   label=L["Show quest option"], tooltip=L["Show quest options like track, untrack, share and cancel in tooltip."] },
-		{ type="toggle", name="showPvPWeeklys",     label=L["Show PvP weeklys"], tooltip=L["Show PvP weekly quests in tooltip"]},
-		{ type="select", name="questIdUrl",         label=L["Fav. website"], tooltip=L["Choose your favorite website for further informations to a quest."], event=true,
-			default = "WoWHead",
-			values = {
-				WoWHead = "WoWHead",
-				WoWDB = "WoWDB (english only)",
-				Buffed = "Buffed"
-			}
-		},
-		{
-			type="select", name="separateBy", label=L["Separate quests by"], tooltip=L["Separate the quests by header (like Blizzard) or status"],
-			default = "status",
-			values = {
-				status = "Status",
-				header = "Header",
-				zone = "Zone"
-			}
-		},
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Second tooltip options"] },
-		{ type="separator", inMenuInvisible=true },
-		{ type="toggle", name="tooltip2QuestText", label=L["Show quest text"], tooltip=L["Display quest text in tooltip"] },
-		{ type="toggle", name="tooltip2QuestLevel", label=L["Show quest level"], tooltip=L["Display quest level in tooltip"] },
-		{ type="toggle", name="tooltip2QuestZone", label=L["Show quest zone"], tooltip=L["Display quest zone in tooltip"] },
-		{ type="toggle", name="tooltip2QuestTag", label=L["Show quest tag"], tooltip=L["Display quest tags in tooltip"] },
-		{ type="toggle", name="tooltip2QuestID", label=L["Show quest id"], tooltip=L["Display quest id in tooltip"] },
-	},
-	config_misc = nil,
 	clickOptions = {
 		["1_open_quest_log"] = {
-			cfg_label = "Open quest log", -- L["Open quest log"]
-			cfg_desc = "open the quest log", -- L["open the quest log"]
-			cfg_default = "_LEFT",
+			name = "Open quest log", -- L["Open quest log"]
+			desc = "open the quest log", -- L["open the quest log"]
+			default = "_LEFT",
 			hint = "Open quest log", -- L["Open quest log"]
 			func = function(self,button)
 				local _mod=name;
 				securecall("ToggleQuestLog");
 			end
 		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self)
-			end
-		}
+		["2_open_menu"] = "OptionMenu"
 	}
 }
+
+function module.options()
+	return {
+		broker = nil,
+		tooltip = {
+			showQuestIds={ type="toggle", order=1, name=L["Show quest id's"], desc=L["Show quest id's in tooltip."] },
+			showQuestZone={ type="toggle", order=2, name=L["Show quest zone"], desc=L["Show quest zone in tooltip."] },
+			showQuestTags={ type="toggle", order=3, name=L["Show quest tags"], desc=L["Show quest tags in tooltip."] },
+			showQuestTagsShort={ type="toggle", order=4, name=L["Show short quest tags"], desc=L["Show short quest tags in tooltip."] },
+			showQuestOptions={ type="toggle", order=5, name=L["Show quest option"], desc=L["Show quest options like track, untrack, share and cancel in tooltip."] },
+			showPvPWeeklys={ type="toggle", order=6, name=L["Show PvP weeklys"], desc=L["Show PvP weekly quests in tooltip"]},
+			questIdUrl={ type="select", order=7, name=L["Fav. website"], desc=L["Choose your favorite website for further informations to a quest."],
+				values = {
+					WoWHead = "WoWHead",
+					WoWDB = "WoWDB (english only)",
+					Buffed = "Buffed"
+				}
+			},
+			separateBy={
+				type="select", order=8, name=L["Separate quests by"], desc=L["Separate the quests by header (like Blizzard) or status"],
+				values = {
+					status = "Status",
+					header = "Header",
+					zone = "Zone"
+				}
+			},
+			--={ type="separator", order=9, alpha=0 },
+			header={ type="header", order=10, name=L["Second tooltip options"] },
+			--={ type="separator", order=11, inMenuInvisible=true },
+			tooltip2QuestText={ type="toggle", order=12, name=L["Show quest text"], desc=L["Display quest text in tooltip"] },
+			tooltip2QuestLevel={ type="toggle", order=13, name=L["Show quest level"], desc=L["Display quest level in tooltip"] },
+			tooltip2QuestZone={ type="toggle", order=14, name=L["Show quest zone"], desc=L["Display quest zone in tooltip"] },
+			tooltip2QuestTag={ type="toggle", order=15, name=L["Show quest tag"], desc=L["Display quest tags in tooltip"] },
+			tooltip2QuestID={ type="toggle", order=16, name=L["Show quest id"], desc=L["Display quest id in tooltip"] },
+		},
+		misc = nil,
+	},
+	{
+		questIdUrl=true
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) then tt:Hide(); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 -- function module.init() end
 
 function module.onevent(self,event,msg)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		ns.tradeskills();
 	end

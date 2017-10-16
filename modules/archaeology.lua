@@ -24,13 +24,6 @@ I[name] = {iconfile="INTERFACE\\ICONS\\trade_archaeology",coords={0.05,0.95,0.05
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function limitColors(numFree,default)
 	return (numFree<=10 and "red") or (numFree<=30 and "orange") or (numFree<=50 and "yellow") or default;
 end
@@ -229,8 +222,6 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	desc = L["Broker to show archaeology factions with fragments, keystones and necessary amount of fragments to solve artifacts"],
-	label = PROFESSIONS_ARCHAEOLOGY,
 	--icon_suffix = "_Neutral",
 	events = {
 		"PLAYER_LOGIN",
@@ -245,18 +236,11 @@ module = {
 		inTitle = {},
 		continentOrder=true
 	},
-	config_allowed = {
-		subTTposition = {["AUTO"]=true,["TOP"]=true,["LEFT"]=true,["RIGHT"]=true,["BOTTOM"]=true}
-	},
-	config_header = {type="header", label=PROFESSIONS_ARCHAEOLOGY, align="left", icon=true},
-	config_broker = nil,
-	config_tooltip = { { type="toggle", name="continentOrder", label=L["Order by continent"], tooltip=L["Order archaeology races by continent"] } },
-	config_misc = nil,
 	clickOptions = {
 		["1_open_archaeology_frame"] = {
-			cfg_label = "Open archaeology frame", -- L["Open archaeology frame"]
-			cfg_desc = "open your archaeology frame", -- L["open your archaeology frame"]
-			cfg_default = "_LEFT",
+			name = "Open archaeology frame", -- L["Open archaeology frame"]
+			desc = "open your archaeology frame", -- L["open your archaeology frame"]
+			default = "_LEFT",
 			hint = "Open archaeology frame", -- L["Open archaeology frame"]
 			func = function(self,button)
 				local _mod=name;
@@ -272,18 +256,27 @@ module = {
 				end
 			end
 		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
+		["2_open_menu"] = "OptionMenu"
+
 	}
-}
+};
+
+function module.options()
+	return {
+		broker = nil,
+		tooltip = {
+			continentOrder = { type="toggle", order=1, name=L["Order by continent"], desc=L["Order archaeology races by continent"] }
+		},
+		misc = nil,
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 function module.init()
 	racesOrder = {
@@ -362,7 +355,7 @@ end
 
 function module.onevent(self,event,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		updateRaces(true);
 
@@ -375,7 +368,7 @@ function module.onevent(self,event,...)
 			tradeskill.skill, tradeskill.maxSkill = 0,0;
 		end
 	end
-	if ns.pastPEW then
+	if ns.eventPlayerEnteredWorld then
 		updateRaces(true);
 	end
 end

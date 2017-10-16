@@ -237,8 +237,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module1 = {
-	desc = L["..."],
-	label = RAIDS,
 	--icon_suffix = "",
 	events = {
 		"PLAYER_LOGIN"
@@ -246,20 +244,12 @@ module1 = {
 	updateinterval = nil, -- 10
 	config_defaults = {
 		invertExpansionOrder = true,
+		showID = false
 	},
-	config_allowed = {},
-	config_header = { type="header", label=RAIDS, align="left", icon=true },
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="invertExpansionOrder", label=L["Invert expansion order"], tooltip=L["Invert order by exspansion in tooltip"] }
-	},
-	config_misc = nil,
 	clickOptions = nil
 }
 
 module2 = {
-	desc = L["..."],
-	label = DUNGEONS,
 	--icon_suffix = "",
 	events = {
 		"PLAYER_LOGIN"
@@ -267,16 +257,30 @@ module2 = {
 	updateinterval = nil, -- 10
 	config_defaults = {
 		invertExpansionOrder = true,
+		showID = false
 	},
-	config_allowed = {},
-	config_header = { type="header", label=DUNGEONS, align="left", icon=true },
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="invertExpansionOrder", label=L["Invert expansion order"], tooltip=L["Invert order by exspansion in tooltip"] }
-	},
-	config_misc = nil,
 	clickOptions = nil
 }
+
+function module1.options()
+	return {
+		broker = nil,
+		tooltip = {
+			invertExpansionOrder={ type="toggle", name=L["Invert expansion order"], desc=L["Invert order by exspansion in tooltip"] }
+		},
+		misc = nil,
+	}
+end
+
+function module2.options()
+	return {
+		broker = nil,
+		tooltip = {
+			invertExpansionOrder={ type="toggle", name=L["Invert expansion order"], desc=L["Invert order by exspansion in tooltip"] }
+		},
+		misc = nil,
+	}
+end
 
 function module1.init()
 	-- {<target>,<raidinfo>,<encounterjournalid>}

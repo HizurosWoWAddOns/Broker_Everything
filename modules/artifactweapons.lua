@@ -9,7 +9,7 @@ if ns.build<70000000 then return end
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Artifact weapon" -- L["Artifact weapon"]
-local ttName,ttNameAlt,ttColumns,tt,ttAlt,module,createMenu,createTooltip = name.."TT",name.."TT2", 3;
+local ttName,ttNameAlt,ttColumns,tt,ttAlt,module,createTooltip = name.."TT",name.."TT2", 3;
 local ap_items_found,spec2weapon,knowledgeLevel,obtained,updateBroker, _ = {},{},0,0;
 local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d*)");
 local PATTERN_ARTIFACT_XP_GAIN = gsub(ARTIFACT_XP_GAIN,"%s",".*");
@@ -20,7 +20,7 @@ if ns.build>=73000000 then
 end
 local updateItemStateTry,updateItemState=0;
 local artifactKnowledgeMultiplier = {}
-local AP_MATCH_STRINGS,FISHING_AP_MATCH_STRINGS = {},{};
+local AP_MATCH_STRINGS,FISHING_AP_MATCH_STRINGS;
 ns.artifactpower_items = {};
 ns.artifactrelikts = {};
 
@@ -32,13 +32,6 @@ I[name] = {iconfile=1109508 or ns.icon_fallback,coords={0.05,0.95,0.05,0.95}} --
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 -- TODO: not in use... deprecated?
 local function CalculateArtifactPower(ap,ak) -- artifact_power, artifact_knowledge
 	ap,ak=tonumber(ap) or 0,tonumber(ak) or 0;
@@ -612,7 +605,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	desc = L["Display informations about your obtained artifact weapons on broker and in tooltip"],
+	icon_suffix = nil,
 	events = {
 		"PLAYER_LOGIN",
 		"ARTIFACT_XP_UPDATE",
@@ -636,37 +629,11 @@ module = {
 		showKnowledge = true,
 		showAlt = true,
 	},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = {
-		{ type="toggle", name="showName",   label=L["Show weapon name"],    tooltip=L["Show artifact weapon name in broker button"], event="ARTIFACT_UPDATE"},
-		{ type="toggle", name="showPoints", label=L["Show points"],         tooltip=L["Show spent/available points in broker button"], event="ARTIFACT_UPDATE"},
-		{ type="select", name="showXP",     label=L["Show artifact power"], tooltip=L["Show artifact weapon expierence (artifact power) in broker button"], event="ARTIFACT_UPDATE",
-			values	= {
-				["0"]    = L["Hide"],
-				["1"]    = L["Current / max expierence"],
-				["2"]    = L["Need to next point"],
-			},
-			default = "1"
-		},
-		{ type="toggle", name="showPower",     label=L["Show unspend artifact power"], tooltip=L["Show amount summary of artifact power from items in your backpack in broker button"]},
-		{ type="toggle", name="showKnowledge", label=L["Show artifact knowledge"],     tooltip=L["Show artifact knowledge in broker button"]},
-		{ type="toggle", name="showWarning",   label=L["Show 'not equipped' warning"], tooltip=L["Show 'artifact weapon not equipped' warning in broker button"]},
-	},
-	config_tooltip = {
-		{ type="toggle", name="showRelic",                  label=L["Show artifact relic"],               tooltip=L["Display a list of artifact relic slots in tooltip"]},
-		{ type="toggle", name="showRelicItemLevel",         label=L["Show relic item level"],             tooltip=L["Display relic item level"]},
-		{ type="toggle", name="showRelicIncreaseItemLevel", label=L["Show increase item level by relic"], tooltip=L["Display increase item level by relic"]},
-		{ type="toggle", name="showItems",                  label=L["Show artifact power items"],         tooltip=L["Display a list of artifact power items found in your bag in tooltip"]},
-		{ type="toggle", name="showTotalAP",                label=L["Show total used artifact power"],    tooltip=L["Display amount of total used artifact power on current equipped artifact weapon. That doesn't includes point resets!"]},
-		{ type="toggle", name="showAlt",                    label=L["Show your other artifacts"],         tooltip=L["Display a list of your other artifacts you have obtainted"]}
-	},
-	config_misc = {"shortNumbers"},
 	clickOptions = {
 		["1_open_character_info"] = {
-			cfg_label = "Open character info", -- L["Open character info"]
-			cfg_desc = "open the character info", -- L["open the character info"]
-			cfg_default = "__NONE",
+			name = "Open character info", -- L["Open character info"]
+			desc = "open the character info", -- L["open the character info"]
+			default = "__NONE",
 			hint = "Open character info", -- L["Open character info"]
 			func = function(self,button)
 				local _mod=name;
@@ -674,27 +641,60 @@ module = {
 			end
 		},
 		["2_artifact_frame"] = {
-			cfg_label = "Open artifact frame", -- L["Show artifact frame"]
-			cfg_desc = "open artifact frame", -- L["open artifact frame"]
-			cfg_default = "_LEFT",
+			name = "Open artifact frame", -- L["Show artifact frame"]
+			desc = "open artifact frame", -- L["open artifact frame"]
+			default = "_LEFT",
 			hint = "Open artifact frame",
 			func = function(self,button)
 				local _mod=name;
 				SocketInventoryItem(16);
 			end
 		},
-		["3_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
+		["3_open_menu"] = "OptionMenu"
 	}
-}
+};
+
+function module.options()
+	return {
+		broker = {
+			showName={ type="toggle",   order=1, name=L["Show weapon name"],    desc=L["Show artifact weapon name in broker button"]},
+			showPoints={ type="toggle", order=2, name=L["Show points"],         desc=L["Show spent/available points in broker button"]},
+			showXP={ type="select",     order=3, name=L["Show artifact power"], desc=L["Show artifact weapon expierence (artifact power) in broker button"],
+				values	= {
+					["0"]    = L["Hide"],
+					["1"]    = L["Current / max expierence"],
+					["2"]    = L["Need to next point"],
+				},
+			},
+			showPower={ type="toggle",     order=4, name=L["Show unspend artifact power"], desc=L["Show amount summary of artifact power from items in your backpack in broker button"]},
+			showKnowledge={ type="toggle", order=5, name=L["Show artifact knowledge"],     desc=L["Show artifact knowledge in broker button"]},
+			showWarning={ type="toggle",   order=6, name=L["Show 'not equipped' warning"], desc=L["Show 'artifact weapon not equipped' warning in broker button"]},
+		},
+		tooltip = {
+			showRelic={ type="toggle",                  order=1, name=L["Show artifact relic"],               desc=L["Display a list of artifact relic slots in tooltip"]},
+			showRelicItemLevel={ type="toggle",         order=2, name=L["Show relic item level"],             desc=L["Display relic item level"]},
+			showRelicIncreaseItemLevel={ type="toggle", order=3, name=L["Show increase item level by relic"], desc=L["Display increase item level by relic"]},
+			showItems={ type="toggle",                  order=4, name=L["Show artifact power items"],         desc=L["Display a list of artifact power items found in your bag in tooltip"]},
+			showTotalAP={ type="toggle",                order=5, name=L["Show total used artifact power"],    desc=L["Display amount of total used artifact power on current equipped artifact weapon. That doesn't includes point resets!"]},
+			showAlt={ type="toggle",                    order=6, name=L["Show your other artifacts"],         desc=L["Display a list of your other artifacts you have obtainted"]}
+		},
+		misc = {
+			shortNumbers=1
+		},
+	},
+	{ -- option set function should execute module event function. true="BE_DUMMY_EVENT", [string]=<execute with given event name>
+		showName="ARTIFACT_UPDATE",
+		showPoints="ARTIFACT_UPDATE",
+		showXP="ARTIFACT_UPDATE",
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 function module.init()
 	ns.artifactpower_items = {
@@ -808,7 +808,7 @@ end
 
 function module.onevent(self,event,arg1,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		if ns.toon[name]==nil then
 			ns.toon[name] = {equipped=false,knowledgeLevel=0};
@@ -833,9 +833,8 @@ function module.onevent(self,event,arg1,...)
 		C_Timer.After(2,function()
 			module:onevent("BE_DUMMY_EVENT");
 		end);
-		self.PEW=true;
 	end
-	if self.PEW then
+	if ns.eventPlayerEnteredWorld then
 		--if event=="ARTIFACT_XP_UPDATE" or event=="ARTIFACT_MAX_RANKS_UPDATE" or event=="ARTIFACT_UPDATE" then
 		obtained = C_ArtifactUI.GetNumObtainedArtifacts() or 0;
 		updateBroker();

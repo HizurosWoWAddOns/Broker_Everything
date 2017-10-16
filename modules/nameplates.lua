@@ -208,19 +208,16 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show clickable nameplates options"],
 	events = {
 		"PLAYER_LOGIN",
 		"CVAR_UPDATE"
 	},
 	updateinterval = nil, -- 10
 	config_defaults = {},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = nil,
-	config_tooltip = nil,
-	config_misc = nil
 }
+
+-- function module.options() return {} end
+-- function module.OptionMenu() return {} end
 
 function module.init()
 	nameplateStatus = {

@@ -9,7 +9,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "ClassSpecs"
-local ttName, ttColumns, tt, createMenu, createTalentMenu, module, createTooltip = name.."TT", 4;
+local ttName, ttColumns, tt, module, createTooltip = name.."TT", 4;
 
 
 -- register icon names and default files --
@@ -19,22 +19,6 @@ I[name] = {iconfile=134942,coords={0.05,0.95,0.05,0.95}}; --IconName::ClassSpecs
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
-function createTalentMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	-- 1. pve talents
-	-- 2. pvp talents
-	-- 3. pet talents?
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function infoTooltipShow(self, info)
 	if info then
 		GameTooltip:SetOwner(tt,"ANCHOR_NONE");
@@ -285,7 +269,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show and switch your character specializations"],
+	icon_suffix = nil,
 	events = {
 		"PLAYER_LOGIN",
 		"ACTIVE_TALENT_GROUP_CHANGED",
@@ -305,24 +289,11 @@ module = {
 		showPvPHonor = true,
 		showPvPHonorOnBroker = true
 	},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = {
-		{ type="toggle", name="showPvPHonorOnBroker", label=L["Show PvP honor"], tooltip=L["Show PvP honor on broker button"]}
-	},
-	config_tooltip = {
-		{ type="toggle", name="showTalents", label=L["Show talents"], tooltip=L["Show talents in tooltip"]},
-		{ type="toggle", name="showTalentsShort", label=L["Show short talent list"], tooltip=L["Show short list of PvE talents in tooltip"]},
-		{ type="toggle", name="showPvPTalents", label=L["Show PvP talents"], tooltip=L["Show PvP talents in tooltip"]},
-		{ type="toggle", name="showPvPTalentsShort", label=L["Show short PvP talent list"], tooltip=L["Show short list of PvP talents in tooltip"]},
-		{ type="toggle", name="showPvPHonor", label=L["Show PvP honor"], tooltip=L["Show PvP honor in tooltip"]},
-	},
-	config_misc = nil,
 	clickOptions = {
 		["1_open_specialization"] = {
-			cfg_label = "Open specialization", -- L["Open specialization"]
-			cfg_desc = "open specialization", -- L["open specialization"]
-			cfg_default = "_LEFT",
+			name = "Open specialization", -- L["Open specialization"]
+			desc = "open specialization", -- L["open specialization"]
+			default = "_LEFT",
 			hint = "Open specialization", -- L["Open specialization"]
 			func = function(self,button)
 				local _mod,doSelect=name,false;
@@ -330,9 +301,9 @@ module = {
 			end
 		},
 		["2_open_talents"] = {
-			cfg_label = "Open talents", -- L["Open talents"]
-			cfg_desc = "open talents", -- L["open talents"]
-			cfg_default = "__NONE",
+			name = "Open talents", -- L["Open talents"]
+			desc = "open talents", -- L["open talents"]
+			default = "__NONE",
 			hint = "Open talents", -- L["Open talents"]
 			func = function(self,button)
 				local _mod=name;
@@ -340,9 +311,9 @@ module = {
 			end
 		},
 		["3_open_pvp_talents"] = {
-			cfg_label = "Open pvp talents", -- L["Open pvp talents"]
-			cfg_desc = "open pvp talents", -- L["open pvp talents"]
-			cfg_default = "__NONE",
+			name = "Open pvp talents", -- L["Open pvp talents"]
+			desc = "open pvp talents", -- L["open pvp talents"]
+			default = "__NONE",
 			hint = "Open pvp talents", -- L["Open pvp talents"]
 			func = function(self,button)
 				local _mod=name;
@@ -350,33 +321,56 @@ module = {
 			end
 		},
 		["4_open_pet_specialization"] = {
-			cfg_label = "Open pet specialization", -- L["Open pet specialization"]
-			cfg_desc = "open pet specialization", -- L["open pet specialization"]
-			cfg_default = "__NONE",
+			name = "Open pet specialization", -- L["Open pet specialization"]
+			desc = "open pet specialization", -- L["open pet specialization"]
+			default = "__NONE",
 			hint = "Open pet specialization", -- L["Open pet specialization"]
 			func = function(self,button)
 				local _mod=name;
 				securecall("ToggleTalentFrame",ns.player.class:upper()=="HUNTER" and PET_SPECIALIZATION_TAB or SPECIALIZATION_TAB);
 			end
 		},
-		["6_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
+		["6_open_menu"] = "OptionMenu"
 	}
 }
 
+function module.options()
+	return {
+		broker = {
+			showPvPHonorOnBroker={ type="toggle", order=1, name=L["Show PvP honor"], desc=L["Show PvP honor on broker button"]}
+		},
+		tooltip = {
+			showTalents={ type="toggle", order=1, name=L["Show talents"], desc=L["Show talents in tooltip"]},
+			showTalentsShort={ type="toggle", order=2, name=L["Show short talent list"], desc=L["Show short list of PvE talents in tooltip"]},
+			showPvPTalents={ type="toggle", order=3, name=L["Show PvP talents"], desc=L["Show PvP talents in tooltip"]},
+			showPvPTalentsShort={ type="toggle", order=4, name=L["Show short PvP talent list"], desc=L["Show short list of PvP talents in tooltip"]},
+			showPvPHonor={ type="toggle", order=5, name=L["Show PvP honor"], desc=L["Show PvP honor in tooltip"]},
+		},
+		misc = nil,
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
+
 -- function module.init() end
+
+function module.createTalentMenu(self) -- TODO: fill new function
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	-- 1. pve talents
+	-- 2. pvp talents
+	-- 3. pet talents?
+	ns.EasyMenu.ShowMenu(self);
+end
 
 function module.onevent(self,event,msg,...)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
+		ns.clickOptions.update(name);
 	else
 		local specName = L["No Spec!"]
 		local icon = I(name)

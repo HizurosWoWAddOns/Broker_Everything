@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "XP" -- XP
-local ttName, ttName2, ttColumns, tt, tt2, createMenu, createTooltip,module  = name.."TT", name.."TT2", 3;
+local ttName, ttName2, ttColumns, tt, tt2, module, createTooltip,init  = name.."TT", name.."TT2", 3;
 local data = {};
 local sessionStartLevel = UnitLevel("player");
 local slots,items = {  [1]=HEADSLOT, [3]=SHOULDERSLOT, [5]=CHESTSLOT, [7]=LEGSSLOT, [15]=BACKSLOT, [11]=FINGER0SLOT, [12]=FINGER1SLOT, [998]=L["Guild perk"], [999]=L["Recruite a Friend"]};
@@ -22,13 +22,6 @@ I[name] = {iconfile="interface\\icons\\ability_dualwield",coords={0.05,0.95,0.05
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function deleteCharacterXP(self,name_realm)
 	Broker_Everything_CharacterDB[name_realm].xp = nil;
 	createTooltip(tt);
@@ -200,8 +193,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show experience from all chars in tooltip and the current character in broker button"],
-	label = XP,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_XP_UPDATE",
@@ -221,45 +212,11 @@ module = {
 		showRealmNames=true,
 		showCharsFrom=4
 	},
-	config_allowed = {
-		display = {["1"]=true,["2"]=true,["3"]=true,["4"]=true,["5"]=true},
-	},
-	config_header = {type="header", label=XP, align="left", icon=I[name]},
-	config_broker = {
-		{ type="select", name="display", label=L["Display XP in broker"], tooltip=L["Select to show XP as an absolute value; Deselected will show it as a percentage."],
-			default="1",
-			values={
-				["1"]="Percent \"77%\"",
-				["2"]="Absolute value \"1234/4567\"",
-				["3"]="Til next level \"1242\"",
-				["4"]="Percent + Resting \"77% (>94%)\"",
-				["5"]="Little text bar"
-			},
-			event=true
-		},
-		{ type="select", name="textBarCharacter", label=L["Text bar character"], tooltip=L["Choose character for little text bar"],
-			values = {},
-			default = "=",
-			event=true
-		},
-		{
-			type="slider", name="textBarCharCount", label=L["Text bar num characters"], tooltip=L["..."],
-			min=5, max=200, default=20, format="%d", event=true
-		}
-	},
-	config_tooltip = {
-		{ type="toggle", name="showMyOtherChars", label=L["Show other chars xp"], tooltip=L["Display a list of my chars on same realm with her level and xp"] },
-		{ type="toggle", name="showNonMaxLevelOnly", label=L["Hide characters at maximum level"], tooltip=L["Hide all characters who have reached the level cap."] },
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom"
-	},
-	config_misc = {"shortNumbers"},
 	clickOptions = {
 		["1_switch_mode"] = {
-			cfg_label = "Switch mode", -- L["Switch mode"]
-			cfg_desc = "switch displayed xp data for characters under the level cap", -- L["switch displayed xp data for characters under the level cap"]
-			cfg_default = "_RIGHT",
+			name = "Switch mode", -- L["Switch mode"]
+			desc = "switch displayed xp data for characters under the level cap", -- L["switch displayed xp data for characters under the level cap"]
+			default = "_LEFT",
 			hint = "Switch mode",
 			func = function(self,button)
 				local _mod=name;
@@ -269,18 +226,47 @@ module = {
 				module.onevent(self)
 			end
 		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_LEFT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self)
-			end
-		}
+		["2_open_menu"] = "OptionMenu"
 	}
 };
+
+function module.options()
+	local textBarValues,displayValues = {},{
+		["1"]="Percent \"77%\"",
+		["2"]="Absolute value \"1234/4567\"",
+		["3"]="Til next level \"1242\"",
+		["4"]="Percent + Resting \"77% (>94%)\"",
+		["5"]="Little text bar"
+	};
+	-- add values to config.textBarCharacter
+	for _,v in ipairs(textbarSigns)do
+		textBarValues[v]=v;
+	end
+	return 	{
+		broker = {
+			display={ type="select", order=1, name=L["Display XP in broker"], desc=L["Select to show XP as an absolute value; Deselected will show it as a percentage."], values=displayValues, width="double" },
+			textBarCharacter={ type="select", order=2, name=L["Text bar character"], desc=L["Choose character for little text bar"], values=textBarValues },
+			textBarCharCount={ type="range", order=3, name=L["Text bar num characters"], desc=L["..."], min=5, max=200, }
+		},
+		tooltip = {
+			showMyOtherChars={ type="toggle", order=1, name=L["Show other chars xp"], desc=L["Display a list of my chars on same realm with her level and xp"] },
+			showNonMaxLevelOnly={ type="toggle", order=2, name=L["Hide characters at maximum level"], desc=L["Hide all characters who have reached the level cap."] },
+			showAllFactions=3,
+			showRealmNames=4,
+			showCharsFrom=5
+		},
+		misc = {
+			shortNumbers=true
+		},
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 function module.init()
 	items = { -- Heirlooms with {<percent>,<maxLevel>}
@@ -327,9 +313,9 @@ function module.init()
 		[128169] = {5,100}, [128172] = {5,100}, [128173] = {5,100},
 	};
 	-- add values to config.textBarCharacter
-	for _,v in ipairs(textbarSigns)do
-		module.config_broker[2].values[v]=v;
-	end
+	--for _,v in ipairs(textbarSigns)do
+	--	module.config_broker[2].values[v]=v;
+	--end
 	if ns.toon.xp==nil then
 		ns.toon.xp={};
 	end
@@ -337,78 +323,75 @@ end
 
 function module.onevent(self,event,msg)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
-		return;
-	elseif event=="UNIT_INVENTORY_CHANGED" and msg~="player" then
-		return;
-	end
+		ns.clickOptions.update(name);
+	elseif not (event=="UNIT_INVENTORY_CHANGED" and msg~="player") then
+		if (MAX_PLAYER_LEVEL==UnitLevel("player")) then
+			data = {cur=1,max=1,rest=0,need=0,percentCur=1,percentRest=1,percentStr="100%",restStr="n/a",bonus={},bonusSum=0};
+		else
+			data = {
+				cur = UnitXP("player"),
+				max = UnitXPMax("player"),
+				rest = GetXPExhaustion() or 0,
+			}
+			data.need = data.max-data.cur;
+			data.percentCur = ns.round(data.cur/data.max,2);
+			local cur_rest = data.cur+data.rest;
+			data.percentRest = (cur_rest>data.max) and 1 or ns.round(cur_rest/data.max,2);
+			data.percentStr = math.floor(data.percentCur * 100).."%";
+			data.restStr   = data.percentRest==1 and ">100%+" or ">"..("%1.2f%%"):format(data.percentRest*100);
 
-	if (MAX_PLAYER_LEVEL==UnitLevel("player")) then
-		data = {cur=1,max=1,rest=0,need=0,percentCur=1,percentRest=1,percentStr="100%",restStr="n/a",bonus={},bonusSum=0};
-	else
-		data = {
-			cur = UnitXP("player"),
-			max = UnitXPMax("player"),
-			rest = GetXPExhaustion() or 0,
-		}
-		data.need = data.max-data.cur;
-		data.percentCur = ns.round(data.cur/data.max,2);
-		local cur_rest = data.cur+data.rest;
-		data.percentRest = (cur_rest>data.max) and 1 or ns.round(cur_rest/data.max,2);
-		data.percentStr = math.floor(data.percentCur * 100).."%";
-		data.restStr   = data.percentRest==1 and ">100%+" or ">"..("%1.2f%%"):format(data.percentRest*100);
+			data.bonus     = {};
+			data.bonusSum  = 0;
 
-		data.bonus     = {};
-		data.bonusSum  = 0;
-
-		--- Bonus by inventory items
-		for slotId,slotName in pairs(slots) do
-			local itemId = GetInventoryItemID("player",slotId);
-			if itemId and items[itemId] then
-				local _,_,_,_,_,_,_,_,_,_,_,_,_,_,upgrade = strsplit(":",GetInventoryItemLink("player",slotId));
-				local maxLevel = items[itemId][2]; upgrade=tonumber(upgrade);
-				if upgrade==0 then
-					maxLevel = 60;
-				elseif upgrade==582 then
-					maxLevel = 90;
-				elseif upgrade==583 then
-					maxLevel = 100;
-				elseif upgrade==3592 then
-					maxLevel = 110;
-				end
-				data.bonus[slotId] = {percent=items[itemId][1], outOfLevel=(UnitLevel("player")>maxLevel) and true or nil, maxLevel=maxLevel};
-			end
-		end
-
-		--- Bonus by Guild Perk
-		if IsInGuild() then
-			data.bonus[998] = {percent=10};
-		end
-
-		--- Bonus by Refer-A-Friend
-		local count = 1;
-		if IsInGroup() or IsInRaid() then
-			local raf_boost = false;
-			for i=1, GetNumGroupMembers() or 0 do
-				local m = (IsInRaid() and "raid" or "party")..i;
-				if UnitIsVisible(m) and IsReferAFriendLinked(m) then
-					raf_boost = true;
-					data.bonus[999] = {percent=300};
+			--- Bonus by inventory items
+			for slotId,slotName in pairs(slots) do
+				local itemId = GetInventoryItemID("player",slotId);
+				if itemId and items[itemId] then
+					local _,_,_,_,_,_,_,_,_,_,_,_,_,_,upgrade = strsplit(":",GetInventoryItemLink("player",slotId));
+					local maxLevel = items[itemId][2]; upgrade=tonumber(upgrade);
+					if upgrade==0 then
+						maxLevel = 60;
+					elseif upgrade==582 then
+						maxLevel = 90;
+					elseif upgrade==583 then
+						maxLevel = 100;
+					elseif upgrade==3592 then
+						maxLevel = 110;
+					end
+					data.bonus[slotId] = {percent=items[itemId][1], outOfLevel=(UnitLevel("player")>maxLevel) and true or nil, maxLevel=maxLevel};
 				end
 			end
-		end
 
-		--- bonus summary
-		for i,v in pairs(data.bonus)do
-			if(v.percent and not v.outOfLevel)then
-				data.bonusSum = data.bonusSum + v.percent;
+			--- Bonus by Guild Perk
+			if IsInGuild() then
+				data.bonus[998] = {percent=10};
+			end
+
+			--- Bonus by Refer-A-Friend
+			local count = 1;
+			if IsInGroup() or IsInRaid() then
+				local raf_boost = false;
+				for i=1, GetNumGroupMembers() or 0 do
+					local m = (IsInRaid() and "raid" or "party")..i;
+					if UnitIsVisible(m) and IsReferAFriendLinked(m) then
+						raf_boost = true;
+						data.bonus[999] = {percent=300};
+					end
+				end
+			end
+
+			--- bonus summary
+			for i,v in pairs(data.bonus)do
+				if(v.percent and not v.outOfLevel)then
+					data.bonusSum = data.bonusSum + v.percent;
+				end
 			end
 		end
+
+		ns.toon.xp = data;
+
+		updateBroker();
 	end
-
-	ns.toon.xp = data;
-
-	updateBroker();
 end
 
 -- function module.optionspanel(panel) end

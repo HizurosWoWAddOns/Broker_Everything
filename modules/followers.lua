@@ -11,7 +11,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local nameF,nameS = "Followers","Ships"; -- GARRISON_FOLLOWERS, GARRISON_SHIPYARD_FOLLOWERS
 local ttNameF, ttColumnsF, ttF, moduleF = nameF.."TT", 7;
 local ttNameS, ttColumnsS, ttS, moduleS = nameS.."TT" ,7;
-local followers,ships,champions,troops,createMenu,module_shared = {num=0},{num=0},{num=0},{num=0};
+local followers,ships,champions,troops = {num=0},{num=0},{num=0},{num=0};
 local updateinterval, garrLevel, ohLevel, syLevel = 30,0,0,0;
 local delayF,delayS,ticker=true,true;
 
@@ -24,13 +24,6 @@ I[nameS]  = {iconfile="Interface\\Icons\\Achievement_GarrisonFolLower_Rare", coo
 
 -- some local functions --
 --------------------------
-function createMenu(self,name)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name,nil,name==nameF);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function getFollowers(tableName)
 	local _ = function(count,level,xp,quality,ilevel)
 		local num = ("%04d"):format(count);
@@ -238,17 +231,17 @@ local function createTooltip(tt, name)
 
 			local lst = {};
 			if name==nameF then
-				tinsert(lst,{"followers","FOLLOWERS_ABBREV"});
+				tinsert(lst,{"followers","FollowersAbbrev"});
 				if v.champions then
-					tinsert(lst,{"champions","CHAMPIONS_ABBREV"});
+					tinsert(lst,{"champions","ChampsAbbrev"});
 				end
 			else
-				tinsert(lst,{"ships","FOLLOWERS_ABBREV"});
+				tinsert(lst,{"ships","ShipsAbbrev"});
 			end
 
 			if (ns.player.name_realm~=name_realm) and ns.showThisChar(name,realm,v.faction) then
 				local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-				realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or "";
+				realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or ""; -- TODO: add asterisk or realm option
 
 				local l=tt:AddLine(C(v.class,ns.scm(charName)) .. realm .. faction );
 
@@ -319,7 +312,7 @@ local function createTooltip(tt, name)
 	end
 
 	local title,subTitle,inset=true,true,"";
-
+	-- TODO: tooltip damaged... broker display follower but not in tooltip
 	for _,n in ipairs(tableOrder) do
 		if (tableTitles[n]) then
 			local lst = {};
@@ -481,8 +474,6 @@ end
 -- module functions and variables --
 ------------------------------------
 moduleF = {
-	desc = L["Broker to show a list of your follower with level, quality, experience and more"],
-	label = GARRISON_FOLLOWERS,
 	--icon_suffix = "",
 	events = {
 		"PLAYER_LOGIN",
@@ -502,59 +493,31 @@ moduleF = {
 		hideDisabled=false,
 		hideWorking=false,
 		showChars = true,
-		showAllRealms = false,
-		showAllFactions = true,
+
+		showAllFactions=true,
+		showRealmNames=true,
+		showCharsFrom=4,
+
 		showFollowers = true,
 		showChampions = true,
 		showTroops = true
 	},
-	config_allowed = nil,
-	config_header = {type="header", label=GARRISON_FOLLOWERS, align="left", icon=I[nameF]},
-	config_broker = {
-		{ type="toggle", name="showAllInOne",          label=L["Show all in one"],       tooltip=L["Show all counts of followers, champions and troops as overall summary on broker button. You can disable single types with following toggles."], event="BE_DUMMY_EVENT"},
-		{ type="toggle", name="showFollowersOnBroker", label=L["Show followers"],        tooltip=L["Show followers summary on broker button"], event="BE_DUMMY_EVENT"},
-		{ type="toggle", name="showChampionsOnBroker",  label=L["Show champions"],        tooltip=L["Show champions summary on broker button"], event="BE_DUMMY_EVENT"},
-		{ type="toggle", name="showTroopsOnBroker",    label=L["Show troops"],           tooltip=L["Show troops summary on broker button"], event="BE_DUMMY_EVENT"},
-	},
-	config_tooltip = {
-		{ type="toggle", name="bgColoredStatus", label=L["Background colored row for status"], tooltip=L["Use background colored row for follower status instead to split in separate tables"], event=true },
-		{ type="toggle", name="hideDisabled",    label=L["Hide disabled followers"],           tooltip=L["Hide disabled followers in tooltip"], event=true },
-		{ type="toggle", name="hideWorking",     label=L["Hide working followers"],            tooltip=L["Hide working followers in tooltip"], event=true },
-		{ type="toggle", name="showChars",       label=L["Show characters"],                   tooltip=L["Show a list of your characters with count of chilling, working and followers on missions in tooltip"] },
-		{ type="toggle", name="showAllRealms",   label=L["Show all realms"],                   tooltip=L["Show characters from all realms in tooltip."] },
-		{ type="toggle", name="showAllFactions", label=L["Show all factions"],                 tooltip=L["Show characters from all factions in tooltip."] },
-		{ type="toggle", name="showFollowers",   label=L["Show followers"],                    tooltip=L["Show followers in tooltip"]},
-		{ type="toggle", name="showChampions",   label=L["Show champions"],                    tooltip=L["Show champions in tooltip"]},
-		{ type="toggle", name="showTroops",      label=L["Show troops"],                       tooltip=L["Show troops in tooltip"]},
-	},
-	config_misc = nil,
 	clickOptions = {
 		["1_open_garrison_report"] = {
-			cfg_label = "Open garrison report",
-			cfg_desc = "open the garrison report",
-			cfg_default = "__NONE",
+			name = "Open garrison report",
+			desc = "open the garrison report",
+			default = "__NONE",
 			hint = "Open garrison report",
 			func = function(self,button)
 				local _mod=nameF;
 				securecall("GarrisonLandingPage_Toggle");
 			end
 		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "__NONE",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=nameF;
-				createMenu(self,nameF);
-			end
-		}
+		["2_open_menu"] = "OptionMenu"
 	}
 }
 
 moduleS = {
-	desc = L["Broker to show your naval ships with level, quality, xp and more"],
-	label = GARRISON_SHIPYARD_FOLLOWERS,
 	--icon_suffix = "",
 	events = {
 		"PLAYER_LOGIN",
@@ -567,42 +530,84 @@ moduleS = {
 	config_defaults = {
 		bgColoredStatus = true,
 		showChars = true,
-		showAllRealms = false,
 		showAllFactions = true
 	},
-	config_allowed = nil,
-	config_header = {type="header", label=GARRISON_SHIPYARD_FOLLOWERS, align="left", icon=I[nameS]},
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="showChars",       label=L["Show characters"],          tooltip=L["Show a list of your characters with count of chilling, working and ships on missions in tooltip"] },
-		{ type="toggle", name="showAllRealms",   label=L["Show all realms"],          tooltip=L["Show characters from all realms in tooltip."] },
-		{ type="toggle", name="showAllFactions", label=L["Show all factions"],        tooltip=L["Show characters from all factions in tooltip."] },
-		{ type="toggle", name="bgColoredStatus", label=L["Background colored row for status"], tooltip=L["Use background colored row for follower status instead to split in separate tables"], event=true },
-	},
-	config_misc = nil,
 	clickOptions = {
 		["1_open_garrison_report"] = {
-			cfg_label = "Open garrison report", -- L["Open garrison report"]
-			cfg_desc = "open the garrison report", -- L["open the garrison report"]
-			cfg_default = "__NONE",
+			name = "Open garrison report", -- L["Open garrison report"]
+			desc = "open the garrison report", -- L["open the garrison report"]
+			default = "__NONE",
 			hint = "Open garrison report",
 			func = function(self,button)
 				local _mod=nameS;
 				securecall("GarrisonLandingPage_Toggle");
 			end
 		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "__NONE",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=nameS;
-				createMenu(self,nameS);
-			end
-		}
+		["2_open_menu"] = "OptionMenu"
 	}
 }
+
+function moduleF.OptionMenu(self)
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(nameF);
+	ns.EasyMenu.ShowMenu(self);
+end
+
+function moduleS.OptionMenu(self)
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(nameS);
+	ns.EasyMenu.ShowMenu(self);
+end
+
+function moduleF.options()
+	return {
+		broker = {
+			showAllInOne={ type="toggle", order=1, name=L["Show all in one"],       desc=L["Show all counts of followers, champions and troops as overall summary on broker button. You can disable single types with following toggles."]},
+			showFollowersOnBroker={ type="toggle", order=2, name=L["Show followers"],        desc=L["Show followers summary on broker button"]},
+			showChampionsOnBroker={ type="toggle", order=3, name=L["Show champions"],        desc=L["Show champions summary on broker button"]},
+			showTroopsOnBroker={ type="toggle", order=4, name=L["Show troops"],           desc=L["Show troops summary on broker button"]},
+		},
+		tooltip = {
+			bgColoredStatus={ type="toggle", order=1, name=L["Background colored row for status"], desc=L["Use background colored row for follower status instead to split in separate tables"] },
+			hideDisabled={ type="toggle", order=2, name=L["Hide disabled followers"],           desc=L["Hide disabled followers in tooltip"] },
+			hideWorking={ type="toggle", order=3, name=L["Hide working followers"],            desc=L["Hide working followers in tooltip"]},
+			showChars={ type="toggle", order=4, name=L["Show characters"],                   desc=L["Show a list of your characters with count of chilling, working and followers on missions in tooltip"] },
+			showAllFactions=5,
+			showRealmNames=6,
+			showCharsFrom=7,
+			showFollowers={ type="toggle", order=8, name=L["Show followers"],                    desc=L["Show followers in tooltip"]},
+			showChampions={ type="toggle", order=9, name=L["Show champions"],                    desc=L["Show champions in tooltip"]},
+			showTroops={ type="toggle", order=10, name=L["Show troops"],                       desc=L["Show troops in tooltip"]},
+		},
+		misc = nil,
+	},
+	{
+		bgColoredStatus=true,
+		hideDisabled=true,
+		hideWorking=true,
+	}
+end
+
+function moduleS.options()
+	return {
+		broker = nil,
+		tooltip = {
+			bgColoredStatus={ type="toggle", order=1, name=L["Background colored row for status"], desc=L["Use background colored row for follower status instead to split in separate tables"] },
+			separator={ type="separator", order=2},
+			showChars={ type="toggle", order=3, name=L["Show characters"],          desc=L["Show a list of your characters with count of chilling, working and ships on missions in tooltip"] },
+			showAllFactions=4,
+			showRealmNames=5,
+			showCharsFrom=6
+
+		},
+		misc = nil,
+	},
+	{
+		bgColoredStatus=true
+	}
+end
 
 -- function moduleF.init(self) end
 -- function moduleS.init(self) end

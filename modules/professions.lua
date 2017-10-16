@@ -9,7 +9,7 @@ local C,L,I = ns.LC.color,ns.L,ns.I;
 -----------------------------------------------------------
 local name = "Professions"; -- TRADE_SKILLS
 local ttName,ttName2,ttColumns,tt,tt2,module = name.."TT",name.."TT2",2;
-local professions,db,createMenu,locked = {};
+local professions,db,locked = {};
 local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset = 1,2,3,4,5,6,7,8,9,10; -- GetProfessionInfo
 local nameEnglish,spellId,skillId,disabled = 11, 12, 13, 14; -- custom after GetProfessionInfo
 local spellName,spellLocaleName,spellIcon,spellId = 1,2,3,4;
@@ -247,7 +247,7 @@ local function createTooltip(tt)
 	ns.roundupTooltip(tt);
 end
 
-function createMenu(self,menu)
+local function createMenu(self,menu)
 	if (tt~=nil) then ns.hideTooltip(tt); end
 
 	ns.EasyMenu.InitializeMenu();
@@ -327,8 +327,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	desc = L["Broker to show your profession skills and cooldowns"],
-	label = TRADE_SKILLS,
 	events = {
 		"ADDON_LOADED",
 		"PLAYER_LOGIN",
@@ -355,22 +353,11 @@ module = {
 		showRealmNames=true,
 		showCharsFrom=4
 	},
-	config_allowed = nil,
-	config_header = {type="header", label=TRADE_SKILLS, align="left", icon=I[name]},
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="showCooldowns", label=L["Show cooldowns"], tooltip=L["Show/Hide profession cooldowns from all characters."] },
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom",
-		{ type="toggle", name="showLegionFactionRespices", label=L["Show legion recipes"], tooltip=L["Display a list of legion respices with neccessary faction repution"] }
-	},
-	config_misc = nil,
 	clickOptions = {
 		["1_open_character_info"] = {
-			cfg_label = "Open profession menu", -- L["Open profession menu"]
-			cfg_desc = "open the profession menu", -- L["open the profession menu"]
-			cfg_default = "_LEFT",
+			name = "Open profession menu", -- L["Open profession menu"]
+			desc = "open the profession menu", -- L["open the profession menu"]
+			default = "_LEFT",
 			hint = "Open profession menu",
 			func = function(self,button)
 				local _mod=name;
@@ -378,9 +365,9 @@ module = {
 			end
 		},
 		["2_open_menu"] = {
-			cfg_label = "Open option menu",
-			cfg_desc = "open the option menu",
-			cfg_default = "_RIGHT",
+			name = "Open option menu",
+			desc = "open the option menu",
+			default = "_RIGHT",
 			hint = "Open option menu",
 			func = function(self,button)
 				local _mod=name;
@@ -390,6 +377,20 @@ module = {
 	}
 
 }
+
+function module.options()
+	return {
+		broker = nil,
+		tooltip = {
+			showCooldowns={ type="toggle", order=1, name=L["Show cooldowns"], desc=L["Show/Hide profession cooldowns from all characters."] },
+			showLegionFactionRespices={ type="toggle", order=2, name=L["Show legion recipes"], desc=L["Display a list of legion respices with neccessary faction repution"] },
+			showAllFactions=3,
+			showRealmNames=4,
+			showCharsFrom=5,
+		},
+		misc = nil,
+	}
+end
 
 function module.init()
 	legion_faction_recipes = { -- { <tradeSkillId>, <faction>, <standing>, <itemId>, <recipeId> }
@@ -545,19 +546,13 @@ function module.init()
 end
 
 function module.onevent(self,event,arg1)
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(module,ns.profile[name]);
-		return;
-	elseif event=="ADDON_LOADED" and arg1==addon then
-		if ns.profile[name].showAllRealms~=nil then
-			ns.profile[name].showCharsFrom = 4;
-			ns.profile[name].showAllRealms = nil;
-		end
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(name);
 		return;
 	elseif event=="ADDON_LOADED" and arg1=="Blizzard_TradeSkillUI" then
 		hooksecurefunc(TradeSkillFrame,"RefreshTitle",updateTradeSkill);
 		self:UnregisterEvent(event);
-	elseif ns.pastPEW then
+	elseif event=="PLAYER_LOGIN" or ns.eventPlayerEnteringWorld then
 		if ns.toon[name]==nil then
 			ns.toon[name]={};
 		end

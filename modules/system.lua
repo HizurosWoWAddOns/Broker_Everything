@@ -15,20 +15,20 @@ local ttNameFPS, ttColumnsFPS, ttFPS  = name_fps .."TT",2;
 local ttNameTraf,ttColumnsTraf,ttTraf = name_traf.."TT",2;
 local ttNameLat, ttColumnsLat, ttLat  = name_lat .."TT",2;
 local ttNameMem, ttColumnsMem, ttMem  = name_mem .."TT",3;
-local updateinterval,module_sys,module_fps,module_lat,module_mem,module_traf = 1;
+local module_sys,module_fps,module_lat,module_mem,module_traf
 local latency = {home={cur=0,min=99999,max=0,his={},curStr="",minStr="",maxStr="",brokerStr=""},world={cur=0,min=9999,max=0,his={},curStr="",minStr="",maxStr="",brokerStr=""}};
 local traffic = {inCur=0,inMin=99999,inMax=0,outCur=0,outMin=99999,outMax=0,inCurStr="",inMinStr="",inMaxStr="",outCurStr="",outMinStr="",outMaxStr="",inHis={},outHis={}};
 local fps     = {cur=0,min=-5,max=0,his={},curStr="",minStr="",maxStr=""};
 local memory  = {cur=0,min=0,max=0,his={},list={},curStr="",minStr="",maxStr="",brokerStr="",numAddOns=0,loadedAddOns=0};
-local PEW,netStatTimeout,memoryTimeout,enabled,createMenu,isHooked,memUpdateLock=false,1,2,{};
+local netStatTimeout,memoryTimeout,enabled,module,isHooked,memUpdateLock=1,2,{};
 local version, build, buildDate, interfaceVersion, memUpdateLocked = GetBuildInfo();
-local addonpanels = {};
+local addonpanels,ticker = {};
 local addonpanels_select = {["none"]=L["None (disable right click)"]};
 local clickOptions = {
 	["1_garbage"] = {
-		cfg_label = "Collect garbage", -- L["Collect garbage"]
-		cfg_desc = "collect garbage", -- L["collect garbage"]
-		cfg_default = "__NONE",
+		name = "Collect garbage", -- L["Collect garbage"]
+		desc = "collect garbage", -- L["collect garbage"]
+		default = "__NONE",
 		hint = "Collect garbage", -- L["Collect garbage"]
 		func = function(self,button)
 			local _mod=name_sys;
@@ -36,21 +36,11 @@ local clickOptions = {
 			collectgarbage("collect");
 		end
 	},
-	["2_optionpanel"] = {
-		cfg_label = "Open option panel", -- L["Open option panel"]
-		cfg_desc = "open the option panel", -- L["open the option panel"]
-		cfg_default = "_LEFT",
-		hint = "Open option panel", -- L["Open option panel"]
-		func = function(self,button)
-			local _mod=name_sys;
-			InterfaceOptionsFrame_OpenToCategory(ns.be_option_panel);
-			InterfaceOptionsFrame_OpenToCategory(ns.be_option_panel);
-		end
-	},
+	["2_optionpanel"] = "OptionPanel",
 	["3_addonlist"] = {
-		cfg_label = "Open addon list", -- L["Open addon list"]
-		cfg_desc = "open addon list", -- L["open addon list"]
-		cfg_default = "__NONE",
+		name = "Open addon list", -- L["Open addon list"]
+		desc = "open addon list", -- L["open addon list"]
+		default = "__NONE",
 		hint = "Open addon list", -- L["Open addon list"]
 		func = function(self,button)
 			local _mod=name_sys;
@@ -66,20 +56,11 @@ local clickOptions = {
 		end
 	},
 	-- toggle netstats
-	["4_open_menu"] = {
-		cfg_label = "Open option menu",
-		cfg_desc = "open the option menu",
-		cfg_default = "_RIGHT",
-		hint = "Open option menu",
-		func = function(self,button)
-			local _mod=name_sys;
-			createMenu(self, _mod);
-		end
-	},
+	["4_open_menu"] = "OptionMenu",
 	["5_update_memoryusage"] = {
-		cfg_label = "Update memory usage",
-		cfg_desc = "update memory usage",
-		cfg_default = "__NONE",
+		name = "Update memory usage",
+		desc = "update memory usage",
+		default = "__NONE",
 		hint = "Update memory usage manually",
 		func = function(self,button)
 			local _mod=name_sys;
@@ -123,15 +104,6 @@ local function checkAddonManager()
 			addonpanels_select[d[addonname]] = d[title];
 		end
 	end
-end
-
-function createMenu(parent,name)
-	if not name then return end
-	if (tt) and (tt.key) and (tt.key==name.."TT") then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	-- additional elements...?
-	ns.EasyMenu.addConfigElements(name,nil,true);
-	ns.EasyMenu.ShowMenu(parent);
 end
 
 local function prependHistory(t,n,l)
@@ -579,8 +551,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module_sys = {
-	desc = L["Broker to show system infos like fps, traffic, latency and memory in broker and tooltip"],
-	label = CHAT_MSG_SYSTEM,
+	icon_suffix = nil,
 	events = {},
 	updateinterval = nil,
 	config_defaults = {
@@ -607,177 +578,213 @@ module_sys = {
 		-- misc
 		addonpanel = "none",
 		updateInterval = 300,
-		collectGarbage = true
-	},
-	config_allowed = {
-		updateInterval = {[0]=true,[30]=true,[60]=true,[300]=true,[600]=true,[1200]=true,[2400]=true,[3600]=true}
-	},
-	config_header = { type="header", label=CHAT_MSG_SYSTEM, align="left", icon=I[name_sys] },
-	config_broker = {
-		"minimapButton",
-
-		{ type="toggle", name="showInboundOnBroker",     label=L["Show inbound traffic"],  tooltip=L["Display inbound traffic on broker"] },
-		{ type="toggle", name="showOutboundOnBroker",    label=L["Show outbound traffic"], tooltip=L["Display outbound traffic on broker"] },
-		{ type="toggle", name="showWorldOnBroker",       label=L["Show world latency"],    tooltip=L["Display world latency on broker"] },
-		{ type="toggle", name="showHomeOnBroker",        label=L["Show home latency"],     tooltip=L["Display home latency on broker"] },
-		{ type="toggle", name="showFpsOnBroker",         label=L["Show fps"],              tooltip=L["Display fps on broker"] },
-		{ type="toggle", name="showMemoryUsageOnBroker", label=L["Show memory usage"],     tooltip=L["Display memory usage on broker"] },
-		{ type="toggle", name="showAddOnsCountOnBroker", label=L["Show addons"],           tooltip=L["Display addon count on broker"] },
-
-		{ type="toggle", name="showClientVersionOnBroker",    label=L["Show client version"],    tooltip=L["Display client version on broker"] },
-		{ type="toggle", name="showClientBuildOnBroker",      label=L["Show client build"],      tooltip=L["Display client build number on broker"] },
-		{ type="toggle", name="showInterfaceVersionOnBroker", label=L["Show interface version"], tooltip=L["Display interface version on broker"] },
-	},
-	config_tooltip = {
-		{ type="toggle", name="showTrafficInTooltip",     label=L["Show traffic"],      tooltip=L["Display traffic in tooltip"] },
-		{ type="toggle", name="showLatencyInTooltip",     label=L["Show latency"],      tooltip=L["Display latency in tooltip"] },
-		{ type="toggle", name="showFpsInTooltip",         label=L["Show fps"],          tooltip=L["Display fps in tooltip"] },
-		{ type="toggle", name="showMemoryUsageInTooltip", label=L["Show memory usage"], tooltip=L["Display memory usage in tooltip"] },
-		{ type="toggle", name="showClientInfoInTooltip",  label=L["Show client info"], tooltip=L["Display client info in tooltip"] },
-		{ type="slider", name="numDisplayAddOns",         label=L["Show addons in tooltip"], tooltip=L["Select the maximum number of addons to display, otherwise drag to 'All'."],
-			minText = ACHIEVEMENTFRAME_FILTER_ALL,
-			default = 10,
-			step = 5,
-			min = 0,
-			max = 100,
-			format = "%d",
-			rep = {[0]=ACHIEVEMENTFRAME_FILTER_ALL}
-		},
-	},
-	config_misc = {
-		{ type="select", name="updateInterval", label=L["Update interval"], tooltip=L["Change the update interval or disable it."],
-			default = 300,
-			values = {
-				[0] = DISABLE,
-				[30] = L["All 30 seconds"],
-				[60] = L["One time per minute"],
-				[300] = L["All 5 minutes"],
-				[600] = L["All 10 minutes"],
-				[1200] = L["All 20 minutes"],
-				[2400] = L["All 40 minutes"],
-				[3600] = L["One time per hour"]
-			}
-		},
-		{ type="toggle", name="collectGarbage", label=L["Collect garbage on update"], tooltip=L["Collect garbage on any update of memory usage"] }
 	},
 	clickOptions = clickOptions
 };
 
 module_fps = {
-	desc = L["Broker to show your frames per second in broker button and current session min/max in tooltip"],
 	icon_suffix = "_blue",
 	events = {},
 	updateinterval = nil,
 	config_defaults = {
 		fillCharacter = "0none"
 	},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = nil,
-	config_tooltip = nil,
-	config_misc = {
-		{ type="select", name="fillCharacter", label=L["Prepend character"], tooltip=L["Prepend a character to fill displayed fps up to 3 character."],
-			values = {
-				["0none"] = NONE.."/"..ADDON_DISABLED,
-				["1zero"] = L["0 (zero) > [060 fps]"],
-				["2blank"] = L["blank > [ 60 fps]"],
-				["3undercore"] = L["_ (undercore) > [_60 fps]"]
-			}
-		}
-	},
 };
 
 module_lat = {
-	desc = L["Broker to show current home and world latency"],
+	icon_suffix = nil,
 	events = {},
 	updateinterval = nil,
 	config_defaults = {
 		showHome = true,
 		showWorld = true
 	},
-	config_allowed = {
-	},
-	config_header = { type="header", label=L[name_lat], align="left", icon=I[name_lat] },
-	config_broker = {
-		"minimapButton",
-		{ type="toggle", name="showHome",  label=L["Show home"],  tooltip = L["Enable/Disable the display of the latency to the home realm"] },
-		{ type="toggle", name="showWorld", label=L["Show world"], tooltip = L["Enable/Disable the display of the latency to the world realms"] }
-	},
-	config_tooltip = nil,
-	config_misc = nil,
 };
 
 module_mem = {
-	desc = L["Broker to show memory usage summary and single addons usage"],
-	events = {},
+	icon_suffix = nil,
 	updateinterval = nil,
 	config_defaults = {
 		mem_max_addons = -1,
 		addonpanel = "none",
 		updateInterval = 300,
-		collectGarbage = true
-	},
-	config_allowed = {
-		updateInterval = {[0]=true,[30]=true,[60]=true,[300]=true,[600]=true,[1200]=true,[2400]=true,[3600]=true}
-	},
-	config_header = { type="header", label=L[name_mem], align="left", icon=I[name_mem] },
-	config_broker = nil,
-	config_tooltip = {
-		{ type="slider", name="mem_max_addons", label=L["Show addons in tooltip"], tooltip=L["Select the maximum number of addons to display, otherwise drag to 'All'."],
-			minText = ACHIEVEMENTFRAME_FILTER_ALL,
-			default = -1,
-			min = -1,
-			max = 100,
-			format = "%d",
-			rep = {[-1]=ACHIEVEMENTFRAME_FILTER_ALL}
-		}
-	},
-	config_misc = {
-		{ type="select", name="addonpanel", label=L["Addon panel"], tooltip=L["Choose your addon panel that opens if you rightclick on memory broker or disable the right click option."], default = "none", values = addonpanels_select },
-		{ type="separator", alpha=0 },
-		{ type="header", label=L["Memory usage"], align="center" },
-		{ type="separator" },
-		{ type="select", name="updateInterval", label=L["Update interval"], tooltip=L["Change the update interval or disable it."],
-			default = 300,
-			values = {
-				[0] = DISABLE,
-				[30] = L["All 30 seconds"],
-				[60] = L["One time per minute"],
-				[300] = L["All 5 minutes"],
-				[600] = L["All 10 minutes"],
-				[1200] = L["All 20 minutes"],
-				[2400] = L["All 40 minutes"],
-				[3600] = L["One time per hour"]
-			}
-		},
-		{ type="toggle", name="collectGarbage", label=L["Collect garbage on update"], tooltip=L["Collect garbage on any update of memory usage"] },
-		{ type="desc", text="|n"..table.concat({
-				C("orange",L["Any update of the addon memory usage can cause results in fps drops and 'Script ran too long' error messages!"]),
-				C("white",L["The necessary time to collect memory usage of all addons depends on CPU speed, CPU usage, the number of running addons and other factors."]),
-				C("yellow",L["If you have more than one addon to display memory usage it is recommended to disable the update interval of this addon."])
-			},"|n|n")
-		},
-		true, -- header "Misc options"
-		"shortNumbers",
 	},
 	clickOptions = clickOptions
 }
 
 module_traf = {
-	desc = L["Broker to show the traffic between blizzard and your game client"],
-	icon_suffix = "_blue",
+	icon_suffix = nil,
 	events = {},
 	updateinterval = nil,
 	config_defaults = {
 		showInbound = true,
 		showOutbound = true
 	},
-	config_allowed = nil,
-	config_header = {type="header", label=L[name_traf], align="left", icon=I[name_traf..'_blue']},
-	config_broker = nil,
-	config_tooltip = nil,
-	config_misc = {"shortNumbers"},
 }
+
+function module_sys.options()
+	return {
+		broker = {
+			showInboundOnBroker={ type="toggle", order=1, name=L["Show inbound traffic"],  desc=L["Display inbound traffic on broker"] },
+			showOutboundOnBroker={ type="toggle", order=2, name=L["Show outbound traffic"], desc=L["Display outbound traffic on broker"] },
+
+			showWorldOnBroker={ type="toggle", order=3, name=L["Show world latency"],    desc=L["Display world latency on broker"] },
+			showHomeOnBroker={ type="toggle", order=4, name=L["Show home latency"],     desc=L["Display home latency on broker"] },
+
+			showFpsOnBroker={ type="toggle", order=5, name=L["Show fps"],              desc=L["Display fps on broker"] },
+
+			showMemoryUsageOnBroker={ type="toggle", order=6, name=L["Show memory usage"],     desc=L["Display memory usage on broker"] },
+			showAddOnsCountOnBroker={ type="toggle", order=7, name=L["Show addons"],           desc=L["Display addon count on broker"] },
+
+			showClientVersionOnBroker={ type="toggle", order=8, name=L["Show client version"],    desc=L["Display client version on broker"] },
+			showClientBuildOnBroker={ type="toggle", order=9, name=L["Show client build"],      desc=L["Display client build number on broker"] },
+			showInterfaceVersionOnBroker={ type="toggle", order=10, name=L["Show interface version"], desc=L["Display interface version on broker"] },
+		},
+		tooltip = {
+			showTrafficInTooltip={ type="toggle", order=1, name=L["Show traffic"],      desc=L["Display traffic in tooltip"] },
+			showLatencyInTooltip={ type="toggle", order=2, name=L["Show latency"],      desc=L["Display latency in tooltip"] },
+			showFpsInTooltip={ type="toggle", order=3, name=L["Show fps"],          desc=L["Display fps in tooltip"] },
+			showMemoryUsageInTooltip={ type="toggle", order=4, name=L["Show memory usage"], desc=L["Display memory usage in tooltip"] },
+			showClientInfoInTooltip={ type="toggle", order=5, name=L["Show client info"], desc=L["Display client info in tooltip"] },
+			numDisplayAddOns={ type="range", order=6, name=L["Show addons in tooltip"], desc=L["Select the maximum number of addons to display, otherwise drag to 'All'."],
+				--minText = ACHIEVEMENTFRAME_FILTER_ALL,
+				step = 1,
+				min = 0,
+				max = 100,
+				--format = "%d",
+				--rep = {[0]=ACHIEVEMENTFRAME_FILTER_ALL}
+			},
+		},
+		misc = {
+			updateInterval={ type="select", order=1, name=L["Update interval"], desc=L["Change the update interval or disable it."], width="double",
+				values = {
+					[0] = DISABLE,
+					[30] = L["All 30 seconds"],
+					[60] = L["One time per minute"],
+					[300] = L["All 5 minutes"],
+					[600] = L["All 10 minutes"],
+					[1200] = L["All 20 minutes"],
+					[2400] = L["All 40 minutes"],
+					[3600] = L["One time per hour"]
+				}
+			},
+		},
+	}
+end
+
+function module_lat.options()
+	return {
+		broker = {
+			showHome={ type="toggle", order=1, name=L["Show home"],  desc=L["Enable/Disable the display of the latency to the home realm"] },
+			showWorld={ type="toggle", order=2, name=L["Show world"], desc=L["Enable/Disable the display of the latency to the world realms"] }
+		},
+		tooltip = nil,
+		misc = nil,
+	}
+end
+
+function module_mem.options()
+	return {
+		broker = nil,
+		tooltip = {
+			mem_max_addons={ type="range", name=L["Show addons in tooltip"], desc=L["Select the maximum number of addons to display, otherwise drag to 'All'."],
+				--minText = ACHIEVEMENTFRAME_FILTER_ALL,
+				step = 1,
+				min = -1,
+				max = 100,
+				--rep = {[-1]=ACHIEVEMENTFRAME_FILTER_ALL}
+			}
+		},
+		misc = {
+			shortNumbers=0,
+			addonpanel={ type="select", order=1, name=L["Addon panel"], desc=L["Choose your addon panel that opens if you rightclick on memory broker or disable the right click option."], values=addonpanels_select, width="double" },
+			separator={ type="separator", order=2,  }, -- alpha=0
+			header={ type="header", name=L["Memory usage"], order=3 }, --align="center"
+			separator2={ type="separator", order=5 },
+			updateInterval={ type="select", order=6, name=L["Update interval"], desc=L["Change the update interval or disable it."],
+				values = {
+					[0] = DISABLE,
+					[30] = L["All 30 seconds"],
+					[60] = L["One time per minute"],
+					[300] = L["All 5 minutes"],
+					[600] = L["All 10 minutes"],
+					[1200] = L["All 20 minutes"],
+					[2400] = L["All 40 minutes"],
+					[3600] = L["One time per hour"]
+				}
+			},
+			desc={ type="description", order=8, name="|n"..table.concat({
+					C("orange",L["Any update of the addon memory usage can cause results in fps drops and 'Script ran too long' error messages!"]),
+					C("white",L["The necessary time to collect memory usage of all addons depends on CPU speed, CPU usage, the number of running addons and other factors."]),
+					C("yellow",L["If you have more than one addon to display memory usage it is recommended to disable the update interval of this addon."])
+				},"|n|n"), fontSize="medium"
+			},
+			--true, -- header "Misc options"
+		},
+	}
+end
+
+function module_fps.options()
+	return {
+		broker = nil,
+		tooltip = nil,
+		misc = {
+			fillCharacter={ type="select", order=1, name=L["Prepend character"], desc=L["Prepend a character to fill displayed fps up to 3 character."], width="double",
+				values = {
+					["0none"] = NONE.."/"..ADDON_DISABLED,
+					["1zero"] = L["0 (zero) > [060 fps]"],
+					["2blank"] = L["blank > [ 60 fps]"],
+					["3undercore"] = L["_ (undercore) > [_60 fps]"]
+				}
+			}
+		},
+	}
+end
+
+function module_traf.options()
+	return {
+		broker = nil,
+		tooltip = nil,
+		misc = {
+			shortNumbers=1,
+		}
+	}
+end
+
+function module_sys.OptionMenu(parent)
+	if (tt) and (tt.key) and (tt.key==name_sys.."TT") then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name_sys);
+	ns.EasyMenu.ShowMenu(parent);
+end
+
+function module_fps.OptionMenu(parent)
+	if (tt) and (tt.key) and (tt.key==name_fps.."TT") then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name_fps);
+	ns.EasyMenu.ShowMenu(parent);
+end
+
+function module_lat.OptionMenu(parent)
+	if (tt) and (tt.key) and (tt.key==name_lat.."TT") then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(namelat);
+	ns.EasyMenu.ShowMenu(parent);
+end
+
+function module_mem.OptionMenu(parent)
+	if (tt) and (tt.key) and (tt.key==name_mem.."TT") then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name_mem);
+	ns.EasyMenu.ShowMenu(parent);
+end
+
+function module_traf.OptionMenu(parent)
+	if (tt) and (tt.key) and (tt.key==name_traf.."TT") then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name_traf);
+	ns.EasyMenu.ShowMenu(parent);
+end
 
 function module_sys.init()
 	enabled.sys_mod = true;
@@ -809,14 +816,19 @@ function module_traf.init()
 end
 
 function module_sys.onevent(self,event,msg)
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(module_sys,ns.profile[name_sys]);
+	if event=="BE_UPDATE_CFG" then
+		enabled.fps_sys = (ns.profile[name_sys].showFpsOnBroker or ns.profile[name_sys].showFpsInTooltip);
+		enabled.lat_sys = (ns.profile[name_sys].showWorldOnBroker or ns.profile[name_sys].showHomeOnBroker or ns.profile[name_sys].showLatencyInTooltip);
+		enabled.mem_sys = (ns.profile[name_sys].showMemoryUsageOnBroker or ns.profile[name_sys].showAddOnsCountOnBroker or ns.profile[name_sys].showMemoryUsageInTooltip);
+		enabled.traf_sys = (ns.profile[name_sys].showInboundOnBroker or ns.profile[name_sys].showOutboundOnBroker or ns.profile[name_sys].showTrafficInTooltip);
+	elseif event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(name_sys);
 	end
 end
 
 function module_mem.onevent(self,event,msg)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module_mem,ns.profile[name_mem]);
+		ns.clickOptions.update(name_mem);
 	end
 end
 

@@ -2,19 +2,20 @@
 -- some usefull namespace to locals
 local addon, ns = ...
 local C, L = ns.LC.color, ns.L
+local ACD = LibStub("AceConfigDialog-3.0");
 
 --
 -- Chat command handler
 --
 
+local function sorry()
+	ns.print("Sorry, currently not reimplemented after change to Ace3. Coming soon...");
+end
+
 ns.commands = {
 	options     = {
 		desc = L["Open options panel"],
-		func = function()
-			-- double call. Thanks blizz for ignoring direct open custom option panels on first use.
-			InterfaceOptionsFrame_OpenToCategory(ns.be_option_panel);
-			InterfaceOptionsFrame_OpenToCategory(ns.be_option_panel);
-		end,
+		func = ns.ToggleBlizzOptionPanel
 	},
 	broker = "options",
 	config = "options",
@@ -32,26 +33,12 @@ ns.commands = {
 	reset       = {
 		desc = L["Reset all module settings"],
 		func = function()
-			Broker_EverythingDB.reset = true
-			ReloadUI()
+			--Broker_EverythingDB.reset = true
+			--ReloadUI()
+			sorry();
+			-- TODO: needs update
 		end,
 	},
-	--[[
-	global      = {
-		desc = L["Switch between global and per character saved settings"],
-		func = function()
-			if not Broker_EverythingGlobalDB.global or Broker_EverythingGlobalDB.global == false then
-				if Broker_EverythingGlobalDB["Clock"] == nil then
-					Broker_EverythingGlobalDB = Broker_EverythingDB
-				end			
-				Broker_EverythingGlobalDB.global = true
-			else
-				Broker_EverythingGlobalDB.global = false
-			end 
-			ns.print(L["Cfg"], L["Broker_Everything will use the new setting on next reload."])
-		end,
-	},
-	--]]
 	list        = {
 		desc = L["List of available modules with his status"],
 		func = function()
@@ -78,11 +65,6 @@ ns.commands = {
 		end,
 	},
 	scaling = "tooltip",
-	hidehint = {
-		desc = L["Hide/Show tooltip hint."],
-		func = function()
-		end,
-	},
 	equip = {
 		desc = L["Equip a set."],
 		func = function(cmd)

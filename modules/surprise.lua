@@ -92,16 +92,12 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	desc = L["Broker to have an eye on your suprise item. What is a suprise item? Anything thats needs some days to open it and thats lootable after the time. Can contain random objects like mounts, companions and more."],
 	events = {},
 	updateinterval = nil,
 	config_defaults = {},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = nil,
-	config_tooltip = nil,
-	config_misc = nil,
 }
+
+-- function module.options() return {} end
 
 function module.init()
 	items = {
@@ -128,7 +124,12 @@ function module.init()
 	end
 end
 
--- function module.onevent(self,event,...) end
+function module.onevent(self,event,...)
+	if event=="BE_UPDATE_CFG" then
+		updateBroker();
+	end
+end
+
 -- function module.optionspanel(panel) end
 -- function module.onmousewheel(self,direction) end
 -- function module.ontooltip(tt) end

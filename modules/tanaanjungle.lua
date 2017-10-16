@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Tanaan Jungle Dailies"; -- L["Tanaan Jungle Dailies"]
-local ttName, ttName2, ttColumns, ttColumns2, tt, tt2, createMenu,module = name.."TT",name.."TT2", 2, 2;
+local ttName, ttName2, ttColumns, ttColumns2, tt, tt2, module = name.."TT",name.."TT2", 2, 2;
 local try,dailiesReset,weekliesReset,namesCount,namesNeed,completed,numCompleted,names,questlog,numQuestlog = 6,0,0,0,0,{},{},{},{},{};
 local dubs,elapse,update,updateTimeout = {},0,false,10;
 local ids,zone2hidden,numIDTypes,colorIDTypes,typeOrder,npcs,groupIds,titles;
@@ -28,13 +28,6 @@ I[name] = {iconfile="interface\\icons\\Achievement_Zone_Tanaanjungle", coords={.
 
 -- some local functions --
 --------------------------
-function createMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function updateResetTimes()
 	if dailiesReset>0 then return end
 
@@ -239,8 +232,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	desc = L["Broker to show a list of solved/solvable tanaan jungle bosses, dailys, weeklys and bonus zones"],
-	--icon_suffix = "",
+	icon_suffix = nil,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_REGEN_ENABLED",
@@ -254,38 +246,39 @@ module = {
 		showRealmNames=true,
 		showCharsFrom=4
 	},
-	config_allowed = nil,
-	config_header = nil, -- use default header
-	config_broker = nil,
-	config_tooltip = {
-		{ type="toggle", name="showQuestIDs", label=L["Show QuestIDs"],   tooltip=L["Show/Hide QuestIDs in tooltip"] },
-		{ type="toggle", name="showChars",    label=L["Show characters"], tooltip=L["Show a list of your characters with count of ready and available targets in tooltip"] },
-		"showAllFactions",
-		"showRealmNames",
-		"showCharsFrom"
-	},
-	config_misc = nil,
 	clickOptions = {
 		["1_open_questlog"] = {
-			cfg_label = "Open questlog", -- L["Open questlog"]
-			cfg_desc = "open your bags", -- L["open your questlog"]
-			cfg_default = "_LEFT",
+			name = "Open questlog", -- L["Open questlog"]
+			desc = "open your bags", -- L["open your questlog"]
+			default = "_LEFT",
 			hint = "Open questlog", -- L["Open questlog"]
 			func = function(self,button)
 			end
 		},
-		["2_open_menu"] = {
-			cfg_label = "Open option menu", -- L["Open option menu"]
-			cfg_desc = "open the option menu", -- L["open the option menu"]
-			cfg_default = "_RIGHT",
-			hint = "Open option menu", -- L["Open option menu"]
-			func = function(self,button)
-				local _mod=name; -- for error tracking
-				createMenu(self);
-			end
-		}
+		["2_open_menu"] = "OptionMenu"
 	}
 }
+
+function module.options()
+	return {
+		broker = nil,
+		tooltip = {
+			showQuestIDs={ type="toggle", order=1, name=L["Show QuestIDs"],   desc=L["Show/Hide QuestIDs in tooltip"] },
+			showChars={ type="toggle", order=2, name=L["Show characters"], desc=L["Show a list of your characters with count of ready and available targets in tooltip"] },
+			showAllFactions=3,
+			showRealmNames=4,
+			showCharsFrom=5
+		},
+		misc = nil,
+	}
+end
+
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 function module.init()
 	ids = ns.player.faction=="Alliance" and {
@@ -355,7 +348,9 @@ function module.init()
 end
 
 function module.onevent(self,event,...)
-		if event=="PLAYER_LOGIN" then
+	if event=="BE_UPDATE_CLICKOPTIONS" then
+		ns.clickOptions.update(name);
+	elseif event=="PLAYER_LOGIN" then
 		updateResetTimes();
 
 		if ns.toon==nil then
@@ -376,8 +371,6 @@ function module.onevent(self,event,...)
 		end);
 	elseif event=="QUEST_LOG_UPDATE" then
 		elapse,update=0,true;
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module,ns.profile[name]);
 	end
 end
 

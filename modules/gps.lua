@@ -34,9 +34,9 @@ local foundItems, foundToys, teleports, portals, spells = {},{},{},{},{};
 local _classSpecialSpellIds,_teleportIds,_portalIds,_itemIds,_itemReplacementIds,_itemMustBeEquipped,_itemFactions = {},{},{},{},{},{},{};
 local sharedClickOptions = {
 	["1_open_world_map"] = {
-		cfg_label = "Open world map",
-		cfg_desc = "open the world map",
-		cfg_default = "_LEFT",
+		name = "Open world map",
+		desc = "open the world map",
+		default = "_LEFT",
 		hint = "Open World map",
 		func = function(self,button)
 			local _mod=name;
@@ -44,9 +44,9 @@ local sharedClickOptions = {
 		end
 	},
 	["2_open_transport_menu"] = {
-		cfg_label = "Open transport menu",
-		cfg_desc = "open the transport menu",
-		cfg_default = "_RIGHT",
+		name = "Open transport menu",
+		desc = "open the transport menu",
+		default = "_RIGHT",
 		hint = "Open transport menu",
 		func = function(self,button,name)
 			local _mod=name;
@@ -54,18 +54,23 @@ local sharedClickOptions = {
 			createTooltip2(self,name);
 		end
 	},
-	["3_open_menu"] = {
-		cfg_label = "Open option menu",
-		cfg_desc = "open the option menu",
-		cfg_default = "__NONE",
-		hint = "Open option menu",
-		func = function(self,button)
-			local _mod=name;
-			createMenu(self)
-		end
-	}
+	["3_open_menu"] = "OptionMenu"
 }
-
+local sharedMisc = {
+	shortMenu={ type="toggle", name=L["Short transport menu"], desc=L["Display the transport menu without names of spells and items behind the icons."]},
+	coordsFormat={ type="select",
+		name	= L["Coordination format"],
+		desc	= L["How would you like to view coordinations."],
+		values	= {
+			["%s, %s"]     = "10.3, 25.4",
+			["%s / %s"]    = "10.3 / 25.4",
+			["%s/%s"]      = "10.3/25.4",
+			["%s | %s"]    = "10.3 | 25.4",
+			["%s||%s"]     = "10.3||25.4"
+		},
+	},
+	precision={ type="range", name=L["Precision"], desc=L["Change how much digits display after the dot."], min=0, max=3 }
+}
 
 -- register icon names and default files --
 -------------------------------------------
@@ -76,19 +81,6 @@ I[name3] = {iconfile=134269,coords={0.05,0.95,0.05,0.95}}				--IconName::ZoneTex
 
 -- some local functions --
 --------------------------
-function createMenu(self,nameX)
-	if (tt1~=nil) then tt1=ns.hideTooltip(tt1); end
-	if (tt2~=nil) then tt2=ns.hideTooltip(tt2); end
-	if (tt3~=nil) then tt3=ns.hideTooltip(tt3); end
-	if (tt4~=nil) then tt4=ns.hideTooltip(tt4); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name0);
-	if (nameX) then
-		ns.EasyMenu.addConfigElements(nameX,true);
-	end
-	ns.EasyMenu.ShowMenu(self);
-end
-
 local function setSpell(tb,id)
 	if IsSpellKnown(id) then
 		local sName, _, icon, _, _, _, _, _, _ = GetSpellInfo(id);
@@ -435,7 +427,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module1 = {
-	desc = L["Broker to show the name of the current zone and the coordinates"],
 	events = {},
 	updateinterval = nil,
 	config_defaults = {
@@ -444,19 +435,10 @@ module1 = {
 		coordsFormat = "%s, %s",
 		shortMenu = false
 	},
-	config_prepend = name0,
-	config_header = {type="header", label=L[name1], align="left", icon=I[name1]},
-	config_broker = {
-		"minimapButton",
-		{ type="select", name="bothZones", label=L["Display zone names"], tooltip=L["Display in broker zone and subzone if exists or one of it."], default="2", values=zoneDisplayValues }
-	},
-	config_tooltip = nil,
-	config_misc = nil,
 	clickOptions = sharedClickOptions
 }
 
 module2 = {
-	desc = L["Broker to show your current coordinates"],
 	enabled = false,
 	events = {},
 	updateinterval = nil,
@@ -465,16 +447,10 @@ module2 = {
 		coordsFormat = "%s, %s",
 		shortMenu = false
 	},
-	config_prepend = name0,
-	config_header = {type="header", label=L[name2], align="left", icon=I[name2]},
-	config_broker = nil,
-	config_tooltip = nil,
-	config_misc = nil,
 	clickOptions = sharedClickOptions
 }
 
 module3 = {
-	desc = L["Broker to show the name of the current zone"],
 	enabled = false,
 	events = {},
 	updateinterval = nil,
@@ -484,16 +460,54 @@ module3 = {
 		coordsFormat = "%s, %s",
 		shortMenu = false
 	},
-	config_prepend = name0,
-	config_header = {type="header", label=L[name3], align="left", icon=I[name3]},
-	config_broker = {
-		"minimapButton",
-		{ type="select", name="bothZones", label=L["Display zone names"], tooltip=L["Display in broker zone and subzone if exists or one of it."], default="2", values=zoneDisplayValues }
-	},
-	config_tooltip = nil,
-	config_misc = nil,
 	clickOptions = sharedClickOptions
 }
+
+function module1.options()
+	return {
+		broker = {
+			bothZones={ type="select", name=L["Display zone names"], desc=L["Display in broker zone and subzone if exists or one of it."], values=zoneDisplayValues, width="double" }
+		},
+		misc = sharedMisc
+	}
+end
+
+function module2.options()
+	return {
+		broker = nil,
+		misc = sharedMisc
+	}
+end
+
+function module3.options()
+	return {
+		broker = {
+			bothZones={ type="select", name=L["Display zone names"], desc=L["Display in broker zone and subzone if exists or one of it."], values=zoneDisplayValues, width="double" }
+		},
+		misc = sharedMisc
+	}
+end
+
+function module1.OptionMenu(self)
+	if (tt1~=nil) then tt1=ns.hideTooltip(tt1); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name1);
+	ns.EasyMenu.ShowMenu(self);
+end
+
+function module2.OptionMenu(self)
+	if (tt2~=nil) then tt2=ns.hideTooltip(tt2); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name2);
+	ns.EasyMenu.ShowMenu(self);
+end
+
+function module3.OptionMenu(self)
+	if (tt3~=nil) then tt3=ns.hideTooltip(tt3); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name3);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 function module1.init()
 	if init then init() init=nil end
@@ -509,19 +523,19 @@ end
 
 function module1.onevent(self,event,msg)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module1,ns.profile[name1]);
+		ns.clickOptions.update(name1);
 	end
 end
 
 function module2.onevent(self,event,msg)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module2,ns.profile[name2]);
+		ns.clickOptions.update(name2);
 	end
 end
 
 function module3.onevent(self,event,msg)
 	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(module3,ns.profile[name3]);
+		ns.clickOptions.update(name3);
 	end
 end
 
