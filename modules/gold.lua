@@ -90,7 +90,8 @@ function createTooltip(tt,update)
 		if (v.gold) and (ns.player.name_realm~=name_realm) and ns.showThisChar(name,realm,v.faction) then
 			local faction = v.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 			if type(realm)=="string" and realm:len()>0 then
-				_,realm = ns.LRI:GetRealmInfo(realm);
+				local _,_realm = ns.LRI:GetRealmInfo(realm);
+				if _realm then realm = _realm; end
 			end
 			local realm = sAR==true and C("dkyellow"," - "..ns.scm(realm)) or "";
 			local line, column = tt:AddLine( C(v.class,ns.scm(charName)) .. realm .. faction, ns.GetCoinColorOrTextureString(name,v.gold,{inTooltip=true}));

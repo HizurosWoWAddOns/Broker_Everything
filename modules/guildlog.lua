@@ -31,7 +31,8 @@ local function showRealm(Char)
 	local Name,Realm,_ = strsplit("-", Char,2);
 	if ns.profile[name].showRealm and Realm then
 		if type(Realm)=="string" and Realm:len()>0 then
-			_,Realm = ns.LRI:GetRealmInfo(Realm);
+			local _,_realm = ns.LRI:GetRealmInfo(realm);
+			if _realm then realm = _realm; end
 		end
 		return Name..C("ltgray","-")..C("dkyellow",Realm);
 	end

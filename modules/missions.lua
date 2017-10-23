@@ -61,7 +61,8 @@ local function createTooltip(tt)
 				local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 				if ns.profile[name].showRealmNames and realm~=ns.realm then
 					if type(realm)=="string" and realm:len()>0 then
-						_,realm = ns.LRI:GetRealmInfo(realm);
+						local _,_realm = ns.LRI:GetRealmInfo(realm);
+						if _realm then realm = _realm; end
 					end
 					realm = C("dkyellow"," - "..ns.scm(realm));
 				elseif realm~=ns.realm then

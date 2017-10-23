@@ -197,7 +197,8 @@ local function createTooltip(tt)
 			if v.level>=100 and v.tanaanjungle and ns.showThisChar(name,r,v.faction) then
 				local bbt = {}; -- broker button text
 				if type(r)=="string" and r:len()>0 then
-					_,r = ns.LRI:GetRealmInfo(r);
+					local _,_realm = ns.LRI:GetRealmInfo(r);
+					if _realm then r = _realm; end
 				end
 				for _,i in ipairs(typeOrder) do
 					local num = 0;

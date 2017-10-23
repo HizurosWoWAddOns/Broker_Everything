@@ -311,7 +311,8 @@ local function createTooltip(tt)
 								if ns.profile[name].showRealm=="1" then
 									local realm,_ = ti[realmName];
 									if type(realm)=="string" and realm:len()>0 then
-										_,realm = ns.LRI:GetRealmInfo(realm);
+										local _,_realm = ns.LRI:GetRealmInfo(realm);
+										if _realm then realm = _realm; end
 									end
 									tt:SetCell(l,6,C("white",realm));			-- 6
 								end
@@ -383,7 +384,8 @@ local function createTooltip(tt)
 						if ns.profile[name].showRealm=="2" then
 							local realm,_ = v[cRealm];
 							if type(realm)=="string" and realm:len()>0 then
-								_,realm = ns.LRI:GetRealmInfo(realm);
+								local _,_realm = ns.LRI:GetRealmInfo(realm);
+								if _realm then realm = _realm; end
 							end
 							nameStr = nameStr..C("dkyellow","-"..ns.scm(realm));
 						else
@@ -410,7 +412,8 @@ local function createTooltip(tt)
 					if ns.profile[name].showRealm=="1" then
 						local realm = v[cRealm];
 						if type(realm)=="string" and realm:len()>0 then
-							_,realm = ns.LRI:GetRealmInfo(realm);
+							local _,_realm = ns.LRI:GetRealmInfo(realm);
+							if _realm then realm = _realm; end
 						end
 						tt:SetCell(l,6,C("white",realm));
 					end

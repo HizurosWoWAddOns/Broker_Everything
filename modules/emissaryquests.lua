@@ -197,10 +197,11 @@ local function createTooltip(tt)
 		local name_realm = Broker_Everything_CharacterDB.order[i];
 		local v,cell = Broker_Everything_CharacterDB[name_realm],2;
 		local c,realm,_ = strsplit("-",name_realm,2);
-		if v.level>=110 and v[name] and ns.showThisChar(name,realm,v.faction) then
+		if realm and v.level>=110 and v[name] and ns.showThisChar(name,realm,v.faction) then
 			local faction = v.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 			if type(realm)=="string" and realm:len()>0 then
-				_,realm = ns.LRI:GetRealmInfo(realm);
+				local _,_realm = ns.LRI:GetRealmInfo(realm);
+				if _realm then realm = _realm; end
 			end
 			realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or ""; -- TODO: add asterisk or realm option
 			local c,l=2,tt:AddLine(C(v.class,ns.scm(c)) .. realm .. faction);

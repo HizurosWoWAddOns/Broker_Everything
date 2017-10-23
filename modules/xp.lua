@@ -150,7 +150,8 @@ function createTooltip(tt)
 			if showThisChar(name_realm,v) then
 				local Name,Realm,_ = strsplit("-",name_realm,2);
 				if type(Realm)=="string" and Realm:len()>0 then
-					_,Realm = ns.LRI:GetRealmInfo(Realm);
+					local _,_realm = ns.LRI:GetRealmInfo(Realm);
+					if _realm then Realm = _realm; end
 				end
 				local factionSymbol = "";
 				if v.faction and v.faction~="Neutral" then

@@ -238,7 +238,8 @@ local function createTooltip2(self,info)
 	tt2:AddHeader(C("dkyellow",NAME), C(v[mClassFile],ns.scm(v[mName])));
 	tt2:AddSeparator();
 	if type(realm)=="string" and realm:len()>0 then
-		_,realm = ns.LRI:GetRealmInfo(realm);
+		local _,_realm = ns.LRI:GetRealmInfo(realm);
+		if _realm then realm = _realm; end
 	end
 	tt2:AddLine(C("ltblue",L["Realm"]),C("dkyellow",ns.scm(realm)));
 	if ns.profile[name].showZoneInTT2 then
@@ -278,7 +279,8 @@ local function tooltipAddLine(v,me)
 		if (ns.profile[name].showRealmname) then
 			realm = v[mRealm];
 			if type(realm)=="string" and realm:len()>0 then
-				_,realm = ns.LRI:GetRealmInfo(realm);
+				local _,_realm = ns.LRI:GetRealmInfo(realm);
+				if _realm then realm = _realm; end
 			end
 			realm = C("white","-")..C("dkyellow", ns.scm(realm));
 		else
@@ -359,7 +361,8 @@ local function createTooltip(tt,update)
 		realm = guild[gRealm];
 		if (ns.profile[name].showRealmname) then
 			if type(realm)=="string" and realm:len()>0 then
-				_,realm = ns.LRI:GetRealmInfo(realm);
+				local _,_realm = ns.LRI:GetRealmInfo(realm);
+				if _realm then realm = _realm; end
 			end
 			realm = C("gray"," - ")..C("dkyellow",ns.scm(realm));
 		else
@@ -398,7 +401,8 @@ local function createTooltip(tt,update)
 			if guild[gRealmNoSpacer]~=a[app_realm] then
 				if (ns.profile[name].showRealmname) then
 					if type(realm)=="string" and realm:len()>0 then
-						_,realm = ns.LRI:GetRealmInfo(realm);
+						local _,_realm = ns.LRI:GetRealmInfo(realm);
+						if _realm then realm = _realm; end
 					end
 					realm = C("white","-")..C("dkyellow", ns.scm(realm));
 				else
