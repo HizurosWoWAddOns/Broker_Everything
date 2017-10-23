@@ -24,7 +24,32 @@ local function ownership(p,f)
 	return secure==true and "Blizzard" or taint;
 end
 
-local function updater()
+
+-- module functions and variables --
+------------------------------------
+module = {
+	events = {},
+	onupdate_interval = 0.12,
+	config_defaults = {
+		ownership = "shift",
+		creatureid = "shift"
+	},
+}
+
+function module.options()
+	local values = {none=ADDON_DISABLED, shift=L["On hold shift key"], always=ALWAYS };
+	return {
+		broker = {
+			sep = {type="separator", order=1 },
+			ownership={ type="select", order=2, name=L["Show ownership"], desc=L["Display ownership on broker button"], values=values},
+			creatureid={ type="select", order=3, name=L["Show ownership"], desc=L["Display creature id on broker button"], values=values},
+		}
+	}
+end
+
+-- function module.onevent(self,event,msg) end
+
+function module.onupdate()
 	local f = GetMouseFocus();
 	local mod = IsShiftKeyDown();
 	local combat = InCombatLockdown();
@@ -99,38 +124,6 @@ local function updater()
 		end
 
 		ldbObject.text = str;
-	end
-end
-
-
--- module functions and variables --
-------------------------------------
-module = {
-	enabled = false,
-	events = {"PLAYER_LOGIN"},
-	updateinterval = 1/12,
-	config_defaults = {
-		ownership = "shift",
-		creatureid = "shift"
-	},
-}
-
-function module.options()
-	local values = {none=ADDON_DISABLED, shift=L["On hold shift key"], always=ALWAYS };
-	return {
-		broker = {
-			sep = {type="separator", order=1 },
-			ownership={ type="select", order=2, name=L["Show ownership"], desc=L["Display ownership on broker button"], values=values},
-			creatureid={ type="select", order=3, name=L["Show ownership"], desc=L["Display creature id on broker button"], values=values},
-		},
-		tooltip = nil,
-		misc = nil,
-	}
-end
-
-function module.onevent(self,event,msg)
-	if event=="PLAYER_LOGIN" then
-		ticker = C_Timer.NewTicker(module.updateinterval,updater);
 	end
 end
 

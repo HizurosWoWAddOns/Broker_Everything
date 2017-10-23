@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Tanaan Jungle Dailies"; -- L["Tanaan Jungle Dailies"]
 local ttName, ttName2, ttColumns, ttColumns2, tt, tt2, module = name.."TT",name.."TT2", 2, 2;
 local try,dailiesReset,weekliesReset,namesCount,namesNeed,completed,numCompleted,names,questlog,numQuestlog = 6,0,0,0,0,{},{},{},{},{};
-local dubs,elapse,update,updateTimeout = {},0,false,10;
+local dubs,updateLock,updateTimeout = {},true,10;
 local ids,zone2hidden,numIDTypes,colorIDTypes,typeOrder,npcs,groupIds,titles;
 -- [<questId>] = <number> ( 1=bosses, 2=zone dailies, 3=hidden zone dailies, 4=bonus zone dailies, 5=random dailies, 6=weeklies )
 --[=[
@@ -91,7 +91,13 @@ local function updateLocaleNames()
 	end
 end
 
+local function doUpdateFunc()
+	doUpdate=true;
+end
+
 local function updateQuestStatus()
+	if updateLock then return end
+	updateLock = true;
 	local t,c,nC,Q,cQ = time(),{},{},0,0;
 	for id,v in pairs(ids)do
 		Q=Q+1;
@@ -117,11 +123,8 @@ local function updateQuestStatus()
 			tinsert(bbt,C(colorIDTypes[i], numCompleted[i]) .. "/" .. C(colorIDTypes[i], numIDTypes[i]));
 		end
 		ns.LDB:GetDataObjectByName(module.ldbName).text = table.concat(bbt,", ");
-	else
-		C_Timer.After(1, function()
-			elapse,update=0,true;
-		end);
 	end
+	updateLock = false;
 end
 
 local function listQuests(TT,questlog,completed,numCompleted)
@@ -184,7 +187,7 @@ local function createTooltip(tt)
 	end
 
 	updateResetTimes();
-	updateQuestStatus();
+	--updateQuestStatus();
 
 	if ns.profile[name].showChars then
 		tt:AddSeparator(4,0,0,0,0);
@@ -357,17 +360,15 @@ function module.onevent(self,event,...)
 			ns.toon.tanaanjungle={};
 		end
 
+		updateQuestStatus();
+
 		C_Timer.After(3, updateLocaleNames);
-		C_Timer.NewTicker(module.updateinterval,function() update=true; updateQuestStatus() end);
-	elseif event=="PLAYER_REGEN_ENABLED" then
-		C_Timer.After(3, function()
-			elapse,update=0,true;
-		end);
 	elseif event=="QUEST_LOG_UPDATE" then
-		elapse,update=0,true;
+		updateQuestStatus();
 	end
 end
 
+-- function module.onupdate() end
 -- function module.onupdate(self,elapse) end
 -- function module.optionspanel(panel) end
 -- function module.onmousewheel(self,direction) end

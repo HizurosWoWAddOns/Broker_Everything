@@ -520,12 +520,13 @@ local function updateAll()
 end
 
 local function init()
-	C_Timer.NewTicker(5,updateAll);
+	C_Timer.NewTicker(2,updateAll);
 end
 
 -- module variables for registration --
 ---------------------------------------
 module_sys = {
+	enabled = true,
 	events = {},
 	config_defaults = {
 		-- broker button options

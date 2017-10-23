@@ -304,6 +304,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	enabled = true,
 	events = {
 		"UNIT_INVENTORY_CHANGED",
 		"EQUIPMENT_SWAP_FINISHED",

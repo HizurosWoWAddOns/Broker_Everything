@@ -417,7 +417,8 @@ end
 
 -- module functions and variables --
 ------------------------------------
-module1 = {
+module1 = { -- GPS
+	enabled = true,
 	events = {},
 	config_defaults = {
 		bothZones = "2",
@@ -428,8 +429,7 @@ module1 = {
 	clickOptions = sharedclickOptions
 }
 
-module2 = {
-	enabled = false,
+module2 = { -- Location
 	events = {},
 	config_defaults = {
 		precision = 0,
@@ -439,8 +439,7 @@ module2 = {
 	clickOptions = sharedclickOptions
 }
 
-module3 = {
-	enabled = false,
+module3 = { -- ZoneText
 	events = {},
 	config_defaults = {
 		bothZones = "2",

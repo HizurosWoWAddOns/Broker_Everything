@@ -25,12 +25,10 @@ I[name] = {iconfile="Interface\\ICONS\\WoW_Token01",coords={0.05,0.95,0.05,0.95}
 ------------------------------------
 module = {
 	events = {
-		"ADDON_LOADED",
 		"PLAYER_LOGIN",
-		"TOKEN_MARKET_PRICE_UPDATED",
-		"GET_ITEM_INFO_RECEIVED"
+		"TOKEN_MARKET_PRICE_UPDATED"
 	},
-	updateinterval = 120, -- false or integer
+	onupdate_interval = 120,
 	config_defaults = {
 		diff=true,
 		history=true
@@ -52,26 +50,14 @@ end
 -- function module.init() end
 
 function module.onevent(self,event,msg)
-	if(event=="ADDON_LOADED" and msg==addon)then
+	if event=="PLAYER_LOGIN" then
 		if Broker_Everything_DataDB[name]==nil then
 			Broker_Everything_DataDB[name] = {};
 		end
 		if(#Broker_Everything_DataDB[name]>0 and Broker_Everything_DataDB[name][1].last<time()-(60*30))then
 			wipe(Broker_Everything_DataDB[name]);
 		end
-		C_Timer.NewTicker(module.updateinterval,C_WowTokenPublic.UpdateMarketPrice);
-	elseif event=="PLAYER_LOGIN" then
-		local tokenLocalized = GetItemInfo(122284);
-		if tokenLocalized then
-			L[name] = tokenLocalized;
-		end
 		C_WowTokenPublic.UpdateMarketPrice();
-	elseif event=="GET_ITEM_INFO_RECEIVED" and msg==122284 then
-		local tokenLocalized = GetItemInfo(122284);
-		if tokenLocalized then
-			L[name] = tokenLocalized;
-			self:UnregisterEvent(event);
-		end
 	elseif event=="TOKEN_MARKET_PRICE_UPDATED" then
 		if(#Broker_Everything_DataDB[name]==0 or (#Broker_Everything_DataDB[name]>0 and Broker_Everything_DataDB[name][1].money~=price.money))then
 			tinsert(Broker_Everything_DataDB[name],1,{money=price.money,last=price.last});
@@ -93,6 +79,10 @@ function module.onevent(self,event,msg)
 			obj.text = ns.GetCoinColorOrTextureString(name,current,{hideLowerZeros=true});
 		end
 	end
+end
+
+function module.onupdate()
+	C_WowTokenPublic.UpdateMarketPrice();
 end
 
 -- function module.optionspanel(panel) end

@@ -224,6 +224,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
+	enabled = true,
 	icon_suffix = "_100",
 	events = {
 		"PLAYER_LOGIN",

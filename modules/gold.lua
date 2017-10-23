@@ -139,6 +139,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	enabled = true,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_MONEY",

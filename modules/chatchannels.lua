@@ -173,8 +173,12 @@ module = {
 		"CHANNEL_COUNT_UPDATE",
 		"CHANNEL_ROSTER_UPDATE"
 	},
-	updateinterval = 30, -- 10
+	onupdate_interval = 30,
 	config_defaults = {},
+	clickOptionsRename = {
+		["chats"] = "1_open_chats",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
 		["chats"] = {"Chat channels window","call",{"ToggleFriendsFrame",3}}, -- L["Chat channels window"]
 		["menu"] = "OptionMenu"

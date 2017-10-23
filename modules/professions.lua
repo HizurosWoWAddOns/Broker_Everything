@@ -265,6 +265,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	enabled = true,
 	events = {
 		"ADDON_LOADED",
 		"PLAYER_LOGIN",

@@ -310,11 +310,6 @@ local function updateBlueprints(Data)
 	end
 end
 
-local function updater()
-	C_Garrison.RequestLandingPageShipmentInfo(); -- stupid event triggering to get new data
-	C_Garrison.RequestShipmentInfo();
-end
-
 
 -- module functions and variables --
 ------------------------------------
@@ -331,7 +326,7 @@ module = {
 		"GARRISON_UPGRADEABLE_RESULT",
 		"SHOW_LOOT_TOAST"
 	},
-	updateinterval = 30, -- 10
+	onupdate_interval = 30, -- 10
 	config_defaults = {
 		showConstruct = true,
 		showBlueprints = true,
@@ -421,10 +416,6 @@ function module.onevent(self,event,arg1,...)
 		local progress,ready=0,0;
 		local garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0;
 		local tmp, names, _, bName, texture, shipmentCapacity, shipmentsReady, shipmentsTotal, creationTime, duration, timeleftString, shipmentsCurrent = {}, {};
-
-		if not ticker and garrLevel>0 then
-			ticker = C_Timer.NewTicker(module.updateinterval,updater);
-		end
 
 		wipe(construct); wipe(blueprints3); wipe(achievements3);
 		longer,nConstruct,nBuildings = false,0,0;
@@ -547,7 +538,7 @@ function module.onevent(self,event,arg1,...)
 							end
 							tinsert(achievements3,{
 								id = aid,
-								name = ns.strCut(aname,25),
+								name = strCut(aname,25),
 								icon = aicon,
 								bname = pname,25,
 								bicon = icon,
@@ -628,6 +619,13 @@ function module.onevent(self,event,arg1,...)
 		ohLevel = LE_GARRISON_TYPE_7_0~=nil and C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
 	end
 
+end
+
+function module.onupdate()
+	if garrLevel>0 or ohLevel>0 then
+		C_Garrison.RequestLandingPageShipmentInfo(); -- stupid event triggering to get new data
+		C_Garrison.RequestShipmentInfo();
+	end
 end
 
 -- function module.optionspanel(panel) end

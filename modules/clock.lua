@@ -71,14 +71,11 @@ local function createTooltip(tt,update)
 	end
 end
 
-local function updater(self)
+local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local h24 = ns.profile[name].format24;
 	local dSec = ns.profile[name].showSeconds;
 	obj.text = ns.profile[name].timeLocal and ns.LT.GetTimeString("LocalTime",h24,dSec) or ns.LT.GetTimeString("GameTime",h24,dSec)
-	if tt~=nil and tt.key==name.."TT" and tt:IsShown() then
-		createTooltip(tt,true);
-	end
 end
 
 local function dateFormatValues()
@@ -105,8 +102,8 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	events = {"PLAYER_LOGIN","TIME_PLAYED_MSG"},
-	updateinterval = 1,
+	events = {"TIME_PLAYED_MSG"},
+	onupdate_interval = 1,
 	timeout = 30,
 	config_defaults = {
 		format24 = true,
@@ -170,10 +167,15 @@ end
 function module.onevent(self,event,...)
 	if event=="BE_UPDATE_CFG" then
 		ns.ClickOpts.update(name);
-	elseif event=="PLAYER_LOGIN" then
-		C_Timer.NewTicker(module.updateinterval,updater);
 	elseif event=="TIME_PLAYED_MSG" then
 		played = true
+	end
+end
+
+function module.onupdate()
+	updateBroker();
+	if tt~=nil and tt.key==name.."TT" and tt:IsShown() then
+		createTooltip(tt,true);
 	end
 end
 

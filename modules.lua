@@ -36,27 +36,22 @@ function ns.toggleMinimapButton(modName,setValue)
 	end
 end
 
+local function OnEventWrapper(self,...)
+	self.onevent(self.eventFrame,...);
+end
+
 local function moduleInit(name)
 	local mod = ns.modules[name];
 
-	-- module load on demand like
-	if mod.noBroker or mod.enabled==nil then
-		mod.enabled=true;
-	end
-
 	-- check if savedvariables for module present?
-	if not mod.noOptions and ns.profile[name].enabled==nil then
-		ns.profile[name].enabled = mod.enabled;
+	if ns.profile[name] and ns.profile[name].enabled==nil then
+		ns.profile[name].enabled = mod.enabled or false;
 	end
 
 	-- register options
-	if not mod.noBroker then
-		ns.Options_AddModuleOptions(name);
-	end
+	ns.Options_AddModuleOptions(name);
 
-	if mod.noOptions or (mod.noOptions==nil and ns.profile[name].enabled==true) then
-		local onclick;
-
+	if ns.profile[name].enabled==true then
 		-- module init
 		if mod.init then
 			mod.init();
@@ -77,49 +72,52 @@ local function moduleInit(name)
 		end
 
 		-- LDB init
-		if (not mod.noBroker) then
-			if (not mod.onenter) and mod.ontooltip then
-				mod.ontooltipshow = mod.ontooltip;
-			end
-
-			local icon = ns.I(name .. (mod.icon_suffix or ""));
-			local iColor = ns.profile.GeneralOptions.iconcolor;
-			mod.ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
-			mod.obj = ns.LDB:NewDataObject(mod.ldbName, {
-				-- button data
-				type          = "data source",
-				label         = mod.label or L[name],
-				text          = mod.text or L[name],
-				icon          = icon.iconfile, -- default or custom icon
-				staticIcon    = icon.staticIcon or icon.iconfile, -- default icon only
-				iconCoords    = icon.coords or {0, 1, 0, 1},
-
-				-- button event functions
-				OnEnter       = mod.onenter or nil,
-				OnLeave       = mod.onleave or nil,
-				OnClick       = onclick,
-				OnTooltipShow = mod.ontooltipshow or nil,
-
-				-- let user know who registered the broker
-				-- displayable by broker dispay addons...
-				-- DataBrokerGroups using it in option panel.
-				parent        = addon
-			});
-
-			ns.updateIconColor(name);
-
-			-- register minimap button on demand
-			ns.toggleMinimapButton(name);
+		if (not mod.onenter) and mod.ontooltip then
+			mod.ontooltipshow = mod.ontooltip;
 		end
+
+		local icon = ns.I(name .. (mod.icon_suffix or ""));
+		local iColor = ns.profile.GeneralOptions.iconcolor;
+		mod.ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
+		mod.obj = ns.LDB:NewDataObject(mod.ldbName, {
+			-- button data
+			type          = "data source",
+			label         = L[name],
+			text          = L[name],
+			icon          = icon.iconfile, -- default or custom icon
+			staticIcon    = icon.staticIcon or icon.iconfile, -- default icon only
+			iconCoords    = icon.coords or {0, 1, 0, 1},
+
+			-- button event functions
+			OnEnter       = mod.onenter or nil,
+			OnLeave       = mod.onleave or nil,
+			OnClick       = onclick,
+			OnTooltipShow = mod.ontooltipshow or nil,
+
+			-- let user know who registered the broker
+			-- displayable by broker dispay addons...
+			-- DataBrokerGroups using it in option panel.
+			parent        = addon
+		});
+
+		ns.updateIconColor(name);
+
+		-- register minimap button on demand
+		ns.toggleMinimapButton(name);
 
 		-- event/update handling
 		if (mod.onevent and mod.events) or (mod.onupdate) then
-			mod.eventFrame=CreateFrame("Frame");
+			if not mod.noEventFrame then
+				mod.eventFrame=CreateFrame("Frame");
+			else
+				mod.eventFrame={};
+			end
 			mod.eventFrame.modName = name;
 			if type(mod.onevent)=="function" and type(mod.events)=="table" then
 				mod.eventFrame:SetScript("OnEvent",mod.onevent);
-				mod.onevent(mod.eventFrame,"BE_UPDATE_CFG");
-				mod.OnEvent(mod.eventFrame,"BE_UPDATE_CFG","ClickOpt");
+				mod.OnEvent = OnEventWrapper;
+				mod:OnEvent("BE_UPDATE_CFG");
+				mod:OnEvent("BE_UPDATE_CFG","ClickOpt");
 				for _, e in pairs(mod.events) do
 					if e=="ADDON_LOADED" then
 						mod.onevent(mod.eventFrame,e,addon);
@@ -132,12 +130,14 @@ local function moduleInit(name)
 		end
 
 		-- timeout function
-		if (type(mod.ontimeout)=="function") and (type(mod.timeout)=="number") and (mod.timeout>0) then
-			if (mod.afterEvent) then
-				C_Timer.After(mod.timeout,mod.ontimeout);
-			else
-				C_Timer.After(mod.timeout,mod.ontimeout);
-			end
+		if type(mod.ontimeout)=="function" and type(mod.timeout)=="number" and mod.timeout>0 then
+			C_Timer.After(mod.timeout,mod.ontimeout);
+		end
+
+		-- onupdate function
+		-- frame script OnUpdate ticking to too fast... C_Timer is better
+		if type(mod.onupdate)=="function" and type(mod.onupdate_interval)=="number" and mod.onupdate_interval>0 then
+			mod.onupdate_ticker = C_Timer.NewTicker(mod.onupdate_interval,mod.onupdate);
 		end
 
 		-- chat command registration

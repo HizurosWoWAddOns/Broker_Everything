@@ -333,10 +333,6 @@ end
 
 function module.onevent(self,event,msg)
 	if event=="PLAYER_LOGIN" then
-		C_Timer.NewTicker(module.updateinterval,function()
-			local currentSpeed = GetUnitSpeed( UnitInVehicle("player") and "vehicle" or "player" );
-			ns.LDB:GetDataObjectByName(module.ldbName).text = ("%."..ns.profile[name].precision.."f"):format(currentSpeed / 7 * 100 ) .. "%";
-		end);
 		for i=1, #trainer_faction do
 			ns.ScanTT.query({
 				["type"]="unit",
@@ -347,6 +343,13 @@ function module.onevent(self,event,msg)
 			});
 		end
 	end
+end
+
+function module.onupdate()
+	local currentSpeed = GetUnitSpeed( UnitInVehicle("player") and "vehicle" or "player" );
+	local str = ("%."..ns.profile[name].precision.."f"):format(currentSpeed / 7 * 100 ) .. "%";
+	local l = 4 + (ns.profile[name].precision>0 and ns.profile[name].precision+1 or 0) - str:len();
+	ns.LDB:GetDataObjectByName(module.ldbName).text = strrep(" ",l)..str;
 end
 
 -- function module.optionspanel(panel) end
