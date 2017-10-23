@@ -23,49 +23,25 @@ local netStatTimeout,memoryTimeout,enabled,module,isHooked,memUpdateLock=1,2,{};
 local version, build, buildDate, interfaceVersion, memUpdateLocked = GetBuildInfo();
 local addonpanels,ticker = {};
 local addonpanels_select = {["none"]=L["None (disable right click)"]};
+local clickOptionsRename = {
+	["options"] = "2_optionpanel",
+	["addons"] = "3_addonlist",
+	["menu"] = "4_open_menu",
+	--["memoryusage"] = "5_update_memoryusage"
+};
 local clickOptions = {
-	["1_garbage"] = {
-		name = "Collect garbage", -- L["Collect garbage"]
-		desc = "collect garbage", -- L["collect garbage"]
-		default = "__NONE",
-		hint = "Collect garbage", -- L["Collect garbage"]
-		func = function(self,button)
-			local _mod=name_sys;
-			ns.print(L["Collecting Garbage..."]);
-			collectgarbage("collect");
-		end
-	},
-	["2_optionpanel"] = "OptionPanel",
-	["3_addonlist"] = {
-		name = "Open addon list", -- L["Open addon list"]
-		desc = "open addon list", -- L["open addon list"]
-		default = "__NONE",
-		hint = "Open addon list", -- L["Open addon list"]
-		func = function(self,button)
-			local _mod=name_sys;
-			local ap = ns.profile[name_sys].addonpanel;
-			if (ap~="none") then
-				if (ap~="Blizzard's Addons Panel") then
-					if not IsAddOnLoaded(ap) then LoadAddOn(ap) end
-				end
-				if (addonpanels[ap]) and (addonpanels[ap](true)) then
-					addonpanels[ap]();
-				end
-			end
-		end
-	},
+	["1_garbage"] = false, -- deprecated option. false should automatically remove savedvariables entry
+	["options"] = "OptionPanel",
+	["addons"] = {"Addon list","module","addonpanel"}, -- L["Addon list"]
 	-- toggle netstats
-	["4_open_menu"] = "OptionMenu",
-	["5_update_memoryusage"] = {
-		name = "Update memory usage",
-		desc = "update memory usage",
-		default = "__NONE",
-		hint = "Update memory usage manually",
-		func = function(self,button)
-			local _mod=name_sys;
-			createMenu(self, _mod);
-		end
-	}
+	["menu"] = "OptionMenu",
+	-- ["memoryusage"] = {"Update memory usage","direct",function() TODO: missing code for update memory usage end }
+};
+local clickOptionsDefaults = {
+	options = "_LEFT",
+	addons = "__NONE",
+	--memoryusage = "__NONE",
+	menu = "_RIGHT"
 };
 
 
@@ -337,7 +313,7 @@ local function createTooltip(tt, name, ttName, update)
 		end
 		if (ns.profile.GeneralOptions.showHints) then
 			tt:AddSeparator(4,0,0,0,0)
-			ns.clickOptions.ttAddHints(tt,name_sys);
+			ns.ClickOpts.ttAddHints(tt,name_sys);
 		end
 
 	elseif name_fps==name then
@@ -381,7 +357,7 @@ local function createTooltip(tt, name, ttName, update)
 		tt:SetCell(l,3,memory.curStr,nil,nil,1);
 		if (ns.profile.GeneralOptions.showHints) then
 			tt:AddSeparator(4,0,0,0,0)
-			ns.clickOptions.ttAddHints(tt,name_mem);
+			ns.ClickOpts.ttAddHints(tt,name_mem);
 		end
 
 	elseif name_traf==name then
@@ -621,6 +597,12 @@ module_traf = {
 	},
 }
 
+ns.ClickOpts.addDefaults(module_sys,clickOptionsDefaults);
+ns.ClickOpts.addDefaults(module_mem,clickOptionsDefaults);
+
+module_sys.addonpanel = addonpanel;
+module_mem.addonpanel = addonpanel;
+
 function module_sys.options()
 	return {
 		broker = {
@@ -750,41 +732,6 @@ function module_traf.options()
 	}
 end
 
-function module_sys.OptionMenu(parent)
-	if (tt) and (tt.key) and (tt.key==name_sys.."TT") then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name_sys);
-	ns.EasyMenu.ShowMenu(parent);
-end
-
-function module_fps.OptionMenu(parent)
-	if (tt) and (tt.key) and (tt.key==name_fps.."TT") then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name_fps);
-	ns.EasyMenu.ShowMenu(parent);
-end
-
-function module_lat.OptionMenu(parent)
-	if (tt) and (tt.key) and (tt.key==name_lat.."TT") then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(namelat);
-	ns.EasyMenu.ShowMenu(parent);
-end
-
-function module_mem.OptionMenu(parent)
-	if (tt) and (tt.key) and (tt.key==name_mem.."TT") then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name_mem);
-	ns.EasyMenu.ShowMenu(parent);
-end
-
-function module_traf.OptionMenu(parent)
-	if (tt) and (tt.key) and (tt.key==name_traf.."TT") then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name_traf);
-	ns.EasyMenu.ShowMenu(parent);
-end
-
 function module_sys.init()
 	enabled.sys_mod = true;
 	if init then init() init=nil end
@@ -820,32 +767,31 @@ function module_sys.onevent(self,event,msg)
 		enabled.lat_sys = (ns.profile[name_sys].showWorldOnBroker or ns.profile[name_sys].showHomeOnBroker or ns.profile[name_sys].showLatencyInTooltip);
 		enabled.mem_sys = (ns.profile[name_sys].showMemoryUsageOnBroker or ns.profile[name_sys].showAddOnsCountOnBroker or ns.profile[name_sys].showMemoryUsageInTooltip);
 		enabled.traf_sys = (ns.profile[name_sys].showInboundOnBroker or ns.profile[name_sys].showOutboundOnBroker or ns.profile[name_sys].showTrafficInTooltip);
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name_sys);
+		ns.ClickOpts.update(name_sys);
 	end
 end
 
 function module_mem.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name_mem);
+	if event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name_mem);
 	end
 end
 
 function module_fps.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name_fps);
+	if event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name_fps);
 	end
 end
 
 function module_lat.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name_lat);
+	if event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name_lat);
 	end
 end
 
 function module_traf.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name_traf);
+	if event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name_traf);
 	end
 end
 

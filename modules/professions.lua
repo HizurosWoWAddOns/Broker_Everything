@@ -242,72 +242,9 @@ local function createTooltip(tt)
 		local l,c = tt:AddLine()
 		local _,_,mod = ns.DurationOrExpireDate();
 		ns.AddSpannedLine(tt,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]));
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
-end
-
-local function createMenu(self,menu)
-	if (tt~=nil) then ns.hideTooltip(tt); end
-
-	ns.EasyMenu.InitializeMenu();
-
-	if (menu=="professions") then
-		ns.EasyMenu.addEntry({ label = L["Open"], title = true });
-		ns.EasyMenu.addEntry({ separator = true });
-
-		for i,v in ipairs(professions) do
-			if (v[spellId]) and (not v[disabled]) then
-				ns.EasyMenu.addEntry({
-					label = v[nameLocale],
-					icon = v[icon],
-					func = function() securecall("CastSpellByName",v[nameLocale]); end,
-					disabled = not ((v[skill]) and (v[skill]>0));
-				});
-			end
-		end
-	elseif (menu=="options") then
-		ns.EasyMenu.addEntry({ label = L["In title"], title = true });
-
-		local numProfs,numLearned = (ns.player.class=="ROGUE") and 7 or 6,0;
-		for i=1, numProfs do
-			if (professions[i]) then
-				numLearned = numLearned+1;
-			end
-		end
-
-		for I=1, 3 do
-			local d,e,p = ns.profile[name].inTitle;
-			if (d[I]) and (professions[d[I]]) then
-				e=professions[d[I]];
-				p=ns.EasyMenu.addEntry({ label = (C("dkyellow","%s%d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"], I, e[icon], C("ltblue",e[nameLocale])), arrow = true, disabled=(numLearned==0) });
-				ns.EasyMenu.addEntry({
-					label = (C("ltred","%s").." |T%s:20:20:0:0|t %s"):format(CALENDAR_VIEW_EVENT_REMOVE,e[icon],C("ltblue",e[nameLocale])),
-					func = function()
-						Title_Set(I,nil);
-					end
-				},p);
-				ns.EasyMenu.addEntry({ separator=true },p);
-			else
-				p=ns.EasyMenu.addEntry({ label = (C("dkyellow","%s%d:").."  %s"):format(L["Place"],I,L["Add a profession"]), arrow = true, disabled=(numLearned==0) });
-			end
-			for i=1, numProfs do
-				local v = professions[i];
-				if (v) then
-					ns.EasyMenu.addEntry({
-						label = v[nameLocale],
-						icon = v[icon],
-						func = function() Title_Set(I,i) end,
-						disabled = (not v[nameLocale])
-					},p);
-				end
-			end
-		end
-
-		ns.EasyMenu.addConfigElements(name,true);
-	end
-
-	ns.EasyMenu.ShowMenu(self);
 end
 
 local function updateTradeSkill(self)
@@ -353,30 +290,80 @@ module = {
 		showRealmNames=true,
 		showCharsFrom=4
 	},
+	clickOptionsRename = {
+		["profmenu"] = "1_open_character_info",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
-		["1_open_character_info"] = {
-			name = "Open profession menu", -- L["Open profession menu"]
-			desc = "open the profession menu", -- L["open the profession menu"]
-			default = "_LEFT",
-			hint = "Open profession menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self,"professions")
-			end
-		},
-		["2_open_menu"] = {
-			name = "Open option menu",
-			desc = "open the option menu",
-			default = "_RIGHT",
-			hint = "Open option menu",
-			func = function(self,button)
-				local _mod=name;
-				createMenu(self,"options")
-			end
-		}
+		["profmenu"] = {"Profession menu","module","ProfessionMenu"}, -- L["Profession menu"]
+		["menu"] = "OptionMenuCustom"
 	}
 
 }
+
+ns.ClickOpts.addDefaults(module,{
+	profmenu = "_LEFT",
+	menu = "_RIGHT"
+});
+
+function module.ProfessionMenu()
+	if (tt~=nil) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addEntry({ label = L["Open"], title = true });
+	ns.EasyMenu.addEntry({ separator = true });
+	for i,v in ipairs(professions) do
+		if (v[spellId]) and (not v[disabled]) then
+			ns.EasyMenu.addEntry({
+				label = v[nameLocale],
+				icon = v[icon],
+				func = function() securecall("CastSpellByName",v[nameLocale]); end,
+				disabled = not ((v[skill]) and (v[skill]>0));
+			});
+		end
+	end
+	ns.EasyMenu.ShowMenu(self);
+end
+
+function module.OptionMenu()
+	if (tt~=nil) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addEntry({ label = L["In title"], title = true });
+	local numProfs,numLearned = (ns.player.class=="ROGUE") and 7 or 6,0;
+	for i=1, numProfs do
+		if (professions[i]) then
+			numLearned = numLearned+1;
+		end
+	end
+	for I=1, 3 do
+		local d,e,p = ns.profile[name].inTitle;
+		if (d[I]) and (professions[d[I]]) then
+			e=professions[d[I]];
+			p=ns.EasyMenu.addEntry({ label = (C("dkyellow","%s%d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"], I, e[icon], C("ltblue",e[nameLocale])), arrow = true, disabled=(numLearned==0) });
+			ns.EasyMenu.addEntry({
+				label = (C("ltred","%s").." |T%s:20:20:0:0|t %s"):format(CALENDAR_VIEW_EVENT_REMOVE,e[icon],C("ltblue",e[nameLocale])),
+				func = function()
+					Title_Set(I,nil);
+				end
+			},p);
+			ns.EasyMenu.addEntry({ separator=true },p);
+		else
+			p=ns.EasyMenu.addEntry({ label = (C("dkyellow","%s%d:").."  %s"):format(L["Place"],I,L["Add a profession"]), arrow = true, disabled=(numLearned==0) });
+		end
+		for i=1, numProfs do
+			local v = professions[i];
+			if (v) then
+				ns.EasyMenu.addEntry({
+					label = v[nameLocale],
+					icon = v[icon],
+					func = function() Title_Set(I,i) end,
+					disabled = (not v[nameLocale])
+				},p);
+			end
+		end
+	end
+	ns.EasyMenu.addConfigElements(name,true);
+	ns.EasyMenu.ShowMenu(self);
+end
 
 function module.options()
 	return {
@@ -546,8 +533,8 @@ function module.init()
 end
 
 function module.onevent(self,event,arg1)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 		return;
 	elseif event=="ADDON_LOADED" and arg1=="Blizzard_TradeSkillUI" then
 		hooksecurefunc(TradeSkillFrame,"RefreshTitle",updateTradeSkill);

@@ -223,7 +223,7 @@ local function createTooltip(tt)
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(3,0,0,0,0)
 		ns.AddSpannedLine(tt,C("copper",L["Hold shift"]).." || "..C("green",L["Show your other chars"]));
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -246,18 +246,20 @@ module = {
 		showRealmNames=true,
 		showCharsFrom=4
 	},
+	clickOptionsRename = {
+		["questlog"] = "1_open_questlog",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
-		["1_open_questlog"] = {
-			name = "Open questlog", -- L["Open questlog"]
-			desc = "open your bags", -- L["open your questlog"]
-			default = "_LEFT",
-			hint = "Open questlog", -- L["Open questlog"]
-			func = function(self,button)
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
+		["questlog"] = "QuestLog",
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	questlog = "_LEFT",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -271,13 +273,6 @@ function module.options()
 		},
 		misc = nil,
 	}
-end
-
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
 end
 
 function module.init()
@@ -348,8 +343,8 @@ function module.init()
 end
 
 function module.onevent(self,event,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+	if event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		updateResetTimes();
 

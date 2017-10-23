@@ -64,7 +64,7 @@ local function createTooltip(tt,update)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(3,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	if not update then
 		ns.roundupTooltip(tt);
@@ -117,51 +117,39 @@ module = {
 		showDate = true,
 		dateFormat = "%Y-%m-%d"
 	},
+	clickOptionsRename = {
+		["timemanager"] = "1_timemanager",
+		["time"] = "2_toggle_time",
+		["calendar"] = "3_calendar",
+		["hoursmode"] = "4_hours_mode",
+		["menu"] = "5_open_menu"
+	},
 	clickOptions = {
-		["1_timemanager"] = {
-			name = "Open time manager", -- L["Open time manager"]
-			desc = "open the time manager", -- L["open the time manager"]
-			default = "_LEFT",
-			hint = "Open time manager", -- L["Open time manager"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleTimeManager");
-			end
-		},
-		["2_toggle_time"] = {
-			name = "Local or realm time", -- L["Local or realm time"]
-			desc = "switch between local and realm time", -- L["switch between local and realm time"]
-			default = "_RIGHT",
-			hint = "Local or realm time",
-			func = function(self,button)
-				local _mod=name;
-				ns.profile[name].timeLocal = not ns.profile[name].timeLocal;
-			end
-		},
-		["3_calendar"] = {
-			name = "Open calendar", -- L["Open calendar"]
-			desc = "open the calendar", -- L["open the calendar"]
-			default = "SHIFTRIGHT",
-			hint = "Open calendar",
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCalendar");
-			end
-		},
-		["4_hours_mode"] = {
-			name = "12 / 24 hours mode", -- L["12 / 24 hours mode"]
-			desc = "switch between 12 and 24 time format", -- L["switch between 12 and 24 time format"]
-			default = "SHIFTLEFT",
-			hint = "12 / 24 hours mode",
-			func = function(self,button)
-				local _mod=name;
-				ns.profile[name].format24 = not ns.profile[name].format24;
-			end
-		},
-		["5_open_menu"] = "OptionMenu"
+		["timemanager"] = {"Time manager","call","ToggleTimeManager"}, -- L["Open time manager"]
+		["time"] = {"Switch (local or realm time)","module","switchTime"}, -- L["Switch (local or realm time)"]
+		["calendar"] = {"Calendar","call","ToggleCalendar"}, -- L["Calendar"]
+		["hoursmode"] = {"Switch (12 or 24 hours)","module","switchHoursMode"}, -- L["Switch (12 or 24 hours)"]
+		["menu"] = "OptionMenu"
 		-- open blizzards stopwatch?
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	timemanager = "_LEFT",
+	calendar = "SHIFTRIGHT",
+	hoursmode = "SHIFTLEFT",
+	time = "_RIGHT",
+	menu = "__NONE"
+});
+
+function module.switchTime()
+	ns.profile[name].timeLocal = not ns.profile[name].timeLocal;
+end
+
+function module.switchHoursMode()
+	ns.profile[name].format24 = not ns.profile[name].format24;
+end
+
 
 function module.options()
 	return {
@@ -179,18 +167,11 @@ function module.options()
 	}
 end
 
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 -- function module.init() end
 
 function module.onevent(self,event,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+	if event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		C_Timer.NewTicker(module.updateinterval,updater);
 	elseif event=="TIME_PLAYED_MSG" then

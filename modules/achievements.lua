@@ -146,7 +146,7 @@ local function createTooltip(tt)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -173,10 +173,15 @@ module = {
 		showProgressBars = true,
 		showCompleted = true
 	},
+	clickOptionsRename = {
+		["menu"] = "open_menu"
+	},
 	clickOptions = {
-		["open_menu"] = "OptionMenu"
+		["menu"] = "OptionMenu"
 	}
 };
+
+ns.ClickOpts.addDefaults(module,"menu","_RIGHT");
 
 function module.options()
 	return {
@@ -192,18 +197,11 @@ function module.options()
 	}
 end
 
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 -- function module.init() end
 
 function module.onevent(self,event,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+	if event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name);
 	end
 end
 

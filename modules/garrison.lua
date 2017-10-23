@@ -288,10 +288,10 @@ local function createTooltip(tt)
 		tt:AddSeparator(4,0,0,0,0);
 		local _,_,mod = ns.DurationOrExpireDate();
 		if (displayAchievements) then
-			ns.AddSpannedLine(tt,C("ltblue",L["Click"]).." || "..C("green",L["Open achievement"]));
+			ns.AddSpannedLine(tt,C("ltblue",L["MouseBtn"]).." || "..C("green",L["Open achievement"]));
 		end
 		ns.AddSpannedLine(tt,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]));
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -349,20 +349,20 @@ module = {
 		showRealmNames=true,
 		showCharsFrom=4
 	},
+	clickOptionsRename = {
+		["garrreport"] = "1_open_garrison_report",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
-		["1_open_garrison_report"] = {
-			name = "Open garrison report", -- L["Open garrison report"]
-			desc = "open the garrison report",
-			default = "_LEFT",
-			hint = "Open garrison report",
-			func = function(self,button)
-				local _mod=name;
-				securecall("GarrisonLandingPage_Toggle");
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
+		["garrreport"] = "GarrisonReport",
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	garrreport = "_LEFT",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -383,13 +383,6 @@ function module.options()
 	}
 end
 
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 function module.init()
 	buildings2achievements = {[9]=9129,[25]=9565,[27]=9523,[35]=9703,[38]=9497,[41]=9429,[62]=9453,[66]=9526,[117]=9406,[119]=9406,[121]=9406,[123]=9406,[125]=9406,[127]=9406,[129]=9406,[131]=9406,[134]=9462,[136]=9454,[140]=9468,[142]=9487,[144]=9478,[160]=9495,[163]=9527,[167]=9463};
 	blueprintsL3 = {[9]=111967,[25]=111969,[27]=111971,[35]=109065,[38]=109063,[41]=109255,[62]=111996,[66]=112003,[117]=111991,[119]=111930,[121]=111989,[123]=109257,[125]=111973,[127]=111993,[129]=111979,[131]=111975,[134]=111928,[136]=111997,[140]=111977,[142]=111983,[144]=111987,[160]=111981,[163]=111985,[167]=111999};
@@ -397,9 +390,9 @@ function module.init()
 	plot_order=setmetatable({[59]=1,[63]=2,[67]=3,[81]=4,[98]=5,[23]=6,[24]=7,[22]=8,[25]=9,[18]=10,[19]=11,[20]=12},{__index=function(t,k) local c=0; for i,v in pairs(t)do if(v>c)then c=v; end end c=c+1; rawset(t,k,c); return c; end});
 end
 
-function module.onevent(self,event,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+function module.onevent(self,event,arg1,...)
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		if ns.toon.garrison and ns.toon.garrison.cache then
 			for i=1, #Broker_Everything_CharacterDB.order do

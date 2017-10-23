@@ -311,8 +311,8 @@ function createTooltip(tt, update, from)
 		if (GroupQuestCount>0) then
 			ns.AddSpannedLine(tt,C("ltblue",L["Hold shift"]).." || "..C("green",L["Show group member name with same quests"]),nil,"LEFT");
 		end
-		ns.AddSpannedLine(tt,C("ltblue",L["Click"]).." || "..C("green",L["Open QuestLog and select quest"]),nil,"LEFT");
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.AddSpannedLine(tt,C("ltblue",L["MouseBtn"]).." || "..C("green",L["Open QuestLog and select quest"]),nil,"LEFT");
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 
 	if not update then
@@ -345,20 +345,20 @@ module = {
 		tooltip2QuestTag = true,
 		tooltip2QuestID = true,
 	},
+	clickOptionsRename = {
+		["questlog"] = "1_open_quest_log",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
-		["1_open_quest_log"] = {
-			name = "Open quest log", -- L["Open quest log"]
-			desc = "open the quest log", -- L["open the quest log"]
-			default = "_LEFT",
-			hint = "Open quest log", -- L["Open quest log"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleQuestLog");
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
+		["questlog"] = "QuestLog",
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	questlog = "_LEFT",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -401,18 +401,11 @@ function module.options()
 	}
 end
 
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) then tt:Hide(); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 -- function module.init() end
 
 function module.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+	if event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		ns.tradeskills();
 	end

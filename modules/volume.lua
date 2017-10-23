@@ -194,9 +194,9 @@ function createTooltip(tt, update)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(5,0,0,0,0)
-		tt:AddLine(C("ltblue",L["Click"])..      " || "..C("green",L["On/Off"]));
+		tt:AddLine(C("ltblue",L["MouseBtn"])..      " || "..C("green",L["On/Off"]));
 		tt:AddLine(C("ltblue",L["Mousewheel"]).. " || "..C("green",L["Louder"].."/"..L["Quieter"]));
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 
 	if not update then
@@ -236,52 +236,48 @@ module = {
 		steps = 10,
 		listHardware = true
 	},
+	clickOptionsRename = {
+		["mute"] = "0_mute",
+		["louder"] = "1_louder",
+		["quieter"] = "2_quieter",
+		["menu"] = "3_open_menu"
+	},
 	clickOptions = {
-		["0_mute"] = {
-			name = "Mute game sound", -- L["Mute game sound"]
-			desc = "mute gane sound", -- L["mute game sound"]
-			default = "_LEFT",
-			hint = "Mute game sound",
-			func = function(self,button)
-				local _mod=name;
-				BlizzardOptionsPanel_SetCVarSafe("Sound_EnableAllSound",BlizzardOptionsPanel_GetCVarSafe("Sound_EnableAllSound")==0 and 1 or 0);
-				updateBroker();
-				createTooltip(tt,true);
-			end
-		},
-		["1_louder"] = {
-			name = "Louder", -- L["Louder"]
-			desc = "make volume louder", -- L["make volume louder"]
-			default = "__NONE",
-			hint = "Louder",
-			func = function(self,button)
-				local _mod=name;
-				if volume.master==1 then return end
-				volume.master = volume.master + (ns.profile[name].steps / 100);
-				if volume.master>1 then volume.master=1 elseif volume.master<0 then volume.master=0; end
-				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master);
-				updateBroker();
-				createTooltip(tt,true);
-			end
-		},
-		["2_quieter"] = {
-			name = "Quieter", -- L["Quieter"]
-			desc = "make volume quieter", -- L["make volume quieter"]
-			default = "__NONE",
-			hint = "Quieter",
-			func = function(self,button)
-				local _mod=name;
-				if volume.master==0 then return end
-				volume.master = volume.master - (ns.profile[name].steps / 100)
-				if volume.master>1 then volume.master=1 elseif volume.master<0 then volume.master=0; end
-				BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master);
-				updateBroker();
-				createTooltip(tt,true);
-			end
-		},
-		["3_open_menu"] = "OptionMenu"
+		["mute"] = {"Mute game sound","module","mute"}, -- L["Mute game sound"]
+		["louder"] = {"Louder","module","volumeAdjust"}, -- L["Louder"]
+		["quieter"] = {"Quieter","module","volumeAdjust"}, -- L["Quieter"]
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	mute = "_LEFT",
+	louder = "__NONE",
+	quieter = "__NONE",
+	menu = "_RIGHT"
+});
+
+function module.volumeAdjust(self,button,modName,action)
+	local cap,new = volume.master,0;
+	if action=="louder" then
+		cap,new = 1,volume.master + (ns.profile[name].steps / 100);
+		if new > cap then new=1; end
+	elseif action=="quieter" then
+		cap,new = 0,volume.master-(ns.profile[name].steps / 100);
+		if new < cap then new=0; end
+	end
+	if volume.master==cap then return; end
+	volume.master = new;
+	BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master);
+	updateBroker();
+	createTooltip(tt,true);
+end
+
+function module.mute()
+	BlizzardOptionsPanel_SetCVarSafe("Sound_EnableAllSound",BlizzardOptionsPanel_GetCVarSafe("Sound_EnableAllSound")==0 and 1 or 0);
+	updateBroker();
+	createTooltip(tt,true);
+end
 
 function module.options()
 	return {
@@ -294,13 +290,6 @@ function module.options()
 			steps={ type="range", name=L["Change steps"], desc=L["Change the stepping width for volume changes with mousewheel and clicks."], min=1, max=100 },
 		},
 	}
-end
-
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
 end
 
 function module.init()
@@ -337,8 +326,8 @@ function module.init()
 end
 
 function module.onevent(self,event,arg1)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	elseif event=="BE_UPDATE_CFG" or event=="PLAYER_LOGIN" or event=="SOUND_DEVICE_UPDATE" or (event=="CVAR_UPDATE" and cvars[arg1:lower()]) then
 		if not self.hooked then
 			hooksecurefunc("BlizzardOptionsPanel_SetCVarSafe",BlizzardOptionsPanel_SetCVarSafeHook);

@@ -199,7 +199,7 @@ function createTooltip(tt)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddLine(" ")
-		tt:SetCell(tt:AddLine(), 1, C("ltblue",L["Click"]).." || "..C("green",L["Names/Nameplates on/off"]), nil, nil, ttColumns)
+		tt:SetCell(tt:AddLine(), 1, C("ltblue",L["MouseBtn"]).." || "..C("green",L["Names/Nameplates on/off"]), nil, nil, ttColumns)
 	end
 	ns.roundupTooltip(tt);
 end

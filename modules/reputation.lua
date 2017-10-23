@@ -365,7 +365,7 @@ function createTooltip(tt)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 
@@ -397,20 +397,20 @@ module = {
 		watchedFormatOnBroker = "Percent",
 		rewardBeyondExalted = "value_max"
 	},
+	clickOptionsRename = {
+		["reputation"] = "1_open_reputation",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
-		["1_open_reputation"] = {
-			name = "Open reputation pane", -- L["Open reputation pane"]
-			desc = "open the reputation pane", -- L["open the reputation pane"]
-			default = "_LEFT",
-			hint = "Open reputation pane",
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","ReputationFrame");
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
+		["reputation"] = {"Reputation","call",{"ToggleCharacter","ReputationFrame"}}, -- L["Reputation"]
+		["menu"] = "OptionMenuCustom"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	reputation = "_LEFT",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -468,9 +468,9 @@ end
 
 -- function module.init() end
 
-function module.onevent(self,event,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+function module.onevent(self,event,arg1,...)
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	end
 	if not self.loadedBodyguards then
 		local glvl = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0);

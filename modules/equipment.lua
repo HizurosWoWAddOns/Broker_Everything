@@ -217,8 +217,8 @@ local function createTooltip(tt)
 				end
 				if (ns.profile.GeneralOptions.showHints) then
 					tt:AddSeparator();
-					ns.AddSpannedLine(tt, C("ltblue",L["Click"]).." "..C("green",L["to equip"]) .." - ".. C("ltblue",L["Ctrl+Click"]).." "..C("green",L["to delete"]));
-					ns.AddSpannedLine(tt, C("ltblue",L["Shift+Click"]).." "..C("green",L["to update/save"]));
+					ns.AddSpannedLine(tt, C("ltblue",L["MouseBtn"]).." "..C("green",L["to equip"]) .." - ".. C("ltblue",L["ModKeyC"].."+"..L["MouseBtn"]).." "..C("green",L["to delete"]));
+					ns.AddSpannedLine(tt, C("ltblue",L["ModKeyS"].."+"..L["MouseBtn"]).." "..C("green",L["to update/save"]));
 				end
 			else
 				ns.AddSpannedLine(tt,L["No equipment sets found"]);
@@ -295,7 +295,7 @@ local function createTooltip(tt)
 	line, column = nil, nil
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0);
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -332,31 +332,28 @@ module = {
 		showUpgrades = true,
 		showShorterInfo = false
 	},
+	clickOptionsRename = {
+		["charinfo"] = "1_open_character_info",
+		["sets"] = "3_open_equipment_sets_tab",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
-		["1_open_character_info"] = {
-			name = "Open character info", -- L["Open character info"]
-			desc = "open the character info", -- L["open the character info"]
-			default = "_LEFT",
-			hint = "Open character info", -- L["Open character info"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","PaperDollFrame");
-			end
-		},
-		["3_open_equipment_sets_tab"] = {
-			name = "Open equipment manager tab", -- L["Open equipment manager tab"]
-			desc = "open the equipment manager tab on character info", -- L["open the equipment manager tab on character info"]
-			default = "__NONE",
-			hint = "Open equipment manager tab", -- L["Open equipment manager tab"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","PaperDollFrame");
-				securecall("PaperDollFrame_SetSidebar",nil,3);
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
+		["charinfo"] = "CharacterInfo",
+		["sets"] = {"Equipment manager","module","equipMan"}, -- L["Equipment manager"]
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	charinfo = "_LEFT",
+	sets = "__NONE",
+	menu = "_RIGHT"
+});
+
+function module.equipMan(self,button)
+	securecall("ToggleCharacter","PaperDollFrame");
+	securecall("PaperDollFrame_SetSidebar",nil,3);
+end
 
 function module.options()
 	return {
@@ -379,13 +376,6 @@ function module.options()
 		},
 		misc = nil,
 	}
-end
-
-function module.OptionMenu(self,button,modName)
-	if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
 end
 
 function module.init()
@@ -472,8 +462,8 @@ function module.init()
 end
 
 function module.onevent(self,event,arg1,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		ns.items.RegisterCallback(name,UpdateInventory,"inv");
 		hooksecurefunc("UpgradeItem",updateBroker);

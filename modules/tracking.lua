@@ -125,7 +125,7 @@ function module.ontooltip(tooltip)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddLine(" ")
-		tt:AddLine(C("copper",L["Click"]).." || "..C("green",L["Open tracking menu"]))
+		tt:AddLine(C("copper",L["MouseBtn"]).." || "..C("green",L["Open tracking menu"]))
 	end
 end
 

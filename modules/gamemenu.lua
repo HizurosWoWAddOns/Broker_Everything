@@ -192,11 +192,11 @@ local function createTooltip(tt)
 		tt:AddSeparator(4, 0, 0, 0, 0)
 		line, column = tt:AddLine()
 		tt:SetCell(line, 1,
-			C("copper", L["Left-click"]).." || "..C("green", LOGOUT)
+			C("copper", L["MouseBtnL"]).." || "..C("green", LOGOUT)
 			.."|n"..
-			C("copper", L["Right-click"]).." || "..C("green", EXIT_GAME)
+			C("copper", L["MouseBtnR"]).." || "..C("green", EXIT_GAME)
 			.."|n"..
-			C("copper", L["Shift+Left-click"]).." || "..C("green", L["Reload UI"])
+			C("copper", L["ModKeyS"].."+"..L["MouseBtnL"]).." || "..C("green", L["Reload UI"])
 		, nil, nil, 2);
 	end
 	ns.roundupTooltip(tt);

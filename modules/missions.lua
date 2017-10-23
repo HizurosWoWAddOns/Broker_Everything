@@ -213,7 +213,7 @@ local function createTooltip(tt)
 				ns.AddSpannedLine(tt,C("copper",L["Hold shift"]).." || "..C("green",L["Show followers on missions"]));
 			end
 		end
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -299,20 +299,20 @@ module = {
 		showMissionItemLevel = true,
 		showMissionFollowerSlots = true
 	},
+	clickOptionsRename = {
+		["garrreport"] = "1_open_garrison_report",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
-		["1_open_garrison_report"] = {
-			name = "Open garrison report", -- L["Open garrison report"]
-			desc = "open the garrison report", -- L["open the garrison report"]
-			default = "_LEFT",
-			hint = "Open garrison report",
-			func = function(self,button)
-				local _mod=name;
-				securecall("GarrisonLandingPage_Toggle");
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
+		["garrreport"] = "GarrisonReport",
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	garrreport = "_LEFT",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -336,18 +336,11 @@ function module.options()
 	}
 end
 
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 -- function module.init() end
 
-function module.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+function module.onevent(self,event,arg1)
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	else
 		update();
 	end

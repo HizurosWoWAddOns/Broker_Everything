@@ -197,7 +197,7 @@ local function createTooltip(tt)
 			local _,_,mod = ns.DurationOrExpireDate();
 			tt:SetCell(tt:AddLine(),1,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]),nil,nil,ttColumns);
 		end
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 
 	ns.roundupTooltip(tt);
@@ -228,10 +228,17 @@ module = {
 		showExpiredRaidsClassic = true,
 		showExpiredRaids = true
 	},
+	clickOptionsRename = {
+		["menu"] = "5_open_menu"
+	},
 	clickOptions = {
-		["5_open_menu"] = "OptionMenu"
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -254,18 +261,11 @@ function module.options()
 	}
 end
 
-function module.OptionMenu(self,button,Name)
-	if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 -- function module.init() end
 
 function module.onevent(self,event,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+	if event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name);
 	end
 end
 

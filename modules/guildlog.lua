@@ -138,7 +138,7 @@ local function createTooltip(tt)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -165,21 +165,21 @@ module = {
 		hideDemote = false,
 		showRealms = true
 	},
+	clickOptionsRename = {
+		["guild"] = "1_open_guild",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
-		["1_open_guild"] = {
-			name = "Open guild roster", -- L["Open guild roster"]
-			desc = "open the guild roster", -- L["open the guild roster"]
-			default = "_LEFT",
-			hint = "Open guild roster", -- L["Open guild roster"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleGuildFrame")
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
+		["guild"] = "Guild",
+		["menu"] = "OptionMenu"
 	}
 
 }
+
+ns.ClickOpts.addDefaults(module,{
+	guild = "_LEFT",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -211,20 +211,13 @@ function module.options()
 	}
 end
 
-function module.OptionMenu(parent)
-	if (tt~=nil) and (tt:IsShown()) then tt:Hide(); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(parent);
-end
-
 -- function module.init() end
 
 function module.onevent(self,event,msg)
 	if event=="PLAYER_LOGIN" or event=="GUILD_ROSTER_UPDATE" then
 		QueryGuildEventLog();
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+	elseif event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name);
 	elseif event=="GUILD_EVENT_LOG_UPDATE" then
 		wipe(logs);
 		local numEvents = GetNumGuildEvents();

@@ -344,14 +344,6 @@ function ns.Options_AddModuleDefaults(modName)
 			end
 		end
 	end
-
-	-- add clickOption defaults
-	if mod and type(mod.clickOptions)=="table" then
-		for cfgKey,clickOpts in pairs(mod.clickOptions) do
-			local optKey = "clickOptions::"..cfgKey;
-			dbDefaults.profile[modName][optKey] = clickOpts.default or "__NONE";
-		end
-	end
 end
 
 local function ModName(info)
@@ -391,7 +383,7 @@ function ns.Options_AddModuleOptions(modName)
 			ns.debug("<FIXME:NilDefaultTable>",modName);
 		end
 
-		ns.clickOptions.createOptions(modName,modOptions,modEvents);
+		ns.ClickOpts.createOptions(modName,modOptions);
 
 		for k, v in pairs(modOptions)do
 			local name, order = v.name, v.order;
@@ -481,15 +473,6 @@ function ns.RegisterOptions()
 
 		for profileName,profileData in pairs(Broker_Everything_AceDB.profiles)do
 			for modName,modData in pairs(profileData)do
-				-- migrate clickoption keys
-				for optName, optValue in pairs(modData)do
-					local name = optName:match("^clickOptions::[0-9]*_(.*)$");
-					if name then
-						modData["ClkOpts:"..name] = optValue;
-						modData[optName] = nil;
-					end
-				end
-
 				-- migrate showAllRealms
 				if modData.showAllRealms~=nil then
 					modData.showCharsFrom = 4;
@@ -522,6 +505,18 @@ function ns.RegisterOptions()
 
 	LibStub("AceConfig-3.0"):RegisterOptionsTable(addonLabel, options);
 	LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonLabel);
+
+	local ClickOptPrefixOld = "clickOptions::";
+	for modName, modcfg in pairs(db.profile)do
+		-- migrate clickOptions Prefix
+		for k,v in pairs(modcfg)do
+			if k:find(ClickOptPrefixOld) then
+				local K = k:gsub(ClickOptPrefixOld,ns.ClickOpts.prefix);
+				db.profile[modName][K] = db.profile[modName][k];
+				db.profile[modName][k] = nil;
+			end
+		end
+	end
 end
 
 function ns.ToggleBlizzOptionPanel()

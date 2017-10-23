@@ -154,7 +154,7 @@ local function createTooltip(tt)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0);
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -176,20 +176,20 @@ module = {
 		showEvents = true,
 		singleLineEvents = false
 	},
+	clickOptionsRename = {
+		["charinfo"] = "1_open_character_info",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
-		["1_open_character_info"] = {
-			name = "Open calendar", -- L["Open calendar"]
-			desc = "open the calendar", -- L["open the calendar"]
-			default = "_LEFT",
-			hint = "Open calendar", -- L["Open calendar"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCalendar");
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
+		["charinfo"] = "CharacterInfo",
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	charinfo = "_LEFT",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -206,13 +206,6 @@ function module.options()
 			hideMinimapCalendarInfo={ type="description", order=2, name=ns.coexist.optionInfo, fontSize="medium", hidden=ns.coexist.check }
 		},
 	}
-end
-
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) then tt:Hide(); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
 end
 
 function module.init()
@@ -258,8 +251,10 @@ function module.init()
 	end
 end
 
-function module.onevent(self,event,msg)
-	if event=="BE_UPDATE_CFG" then
+function module.onevent(self,event,arg1)
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
+	elseif event=="BE_UPDATE_CFG" then
 		if ns.coexist.check() then
 			if ns.profile[name].hideMinimapCalendar then
 				GameTimeFrame:Hide();
@@ -271,8 +266,6 @@ function module.onevent(self,event,msg)
 				GameTimeFrame:Show();
 			end
 		end
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
 	else
 		updateBroker();
 	end

@@ -1738,33 +1738,47 @@ end
 -- clickOptions System      --
 -- ------------------------ --
 do
-	local values = {
-		["__NONE"]     = "Disabled",			-- ADDON_DISABLED
-		["_CLICK"]     = L["ClickOpt"],
-		["_LEFT"]      = L["ClickOptL"],
-		["_RIGHT"]     = L["ClickOptR"],
-		["ALTCLICK"]   = L["ClickOptA"]..L["ClickOpt"],
-		["ALTLEFT"]    = L["ClickOptA"]..L["ClickOptL"],
-		["ALTRIGHT"]   = L["ClickOptA"]..L["ClickOptR"],
-		["SHIFTCLICK"] = L["ClickOptS"]..L["ClickOpt"],
-		["SHIFTLEFT"]  = L["ClickOptS"]..L["ClickOptL"],
-		["SHIFTRIGHT"] = L["ClickOptS"]..L["ClickOptR"],
-		["CTRLCLICK"]  = L["ClickOptC"]..L["ClickOpt"],
-		["CTRLLEFT"]   = L["ClickOptC"]..L["ClickOptL"],
-		["CTRLRIGHT"]  = L["ClickOptC"]..L["ClickOptR"],
+	ns.ClickOpts = {prefix="ClickOpt:"};
+	local shared,values = {},{
+		["__NONE"]     = ADDON_DISABLED,
+		["_CLICK"]     = L["MouseBtn"],
+		["_LEFT"]      = L["MouseBtnL"],
+		["_RIGHT"]     = L["MouseBtnR"],
+		["ALTCLICK"]   = L["ModKeyA"].."+"..L["MouseBtn"],
+		["ALTLEFT"]    = L["ModKeyA"].."+"..L["MouseBtnL"],
+		["ALTRIGHT"]   = L["ModKeyA"].."+"..L["MouseBtnR"],
+		["SHIFTCLICK"] = L["ModKeyS"].."+"..L["MouseBtn"],
+		["SHIFTLEFT"]  = L["ModKeyS"].."+"..L["MouseBtnL"],
+		["SHIFTRIGHT"] = L["ModKeyS"].."+"..L["MouseBtnR"],
+		["CTRLCLICK"]  = L["ModKeyC"].."+"..L["MouseBtn"],
+		["CTRLLEFT"]   = L["ModKeyC"].."+"..L["MouseBtnL"],
+		["CTRLRIGHT"]  = L["ModKeyC"].."+"..L["MouseBtnR"],
 	};
-	local sharedOptions = {
-		OptionMenu = {name="ClickOptMenu",desc="ClickOptMenuDesc",hint="ClickOptMenuHint",default="_RIGHT",func="OptionMenu"},
-		OptionPanel = {name="ClickOptPanel",desc="ClickOptPanelDesc",hint="ClickOptPanelHint",default="__NONE",func="ns.ToggleBlizzOptionPanel"},
+	function shared.OptionMenu(self,button,modName)
+		if (openTooltip~=nil) and (openTooltip:IsShown()) then ns.hideTooltip(openTooltip); end
+		ns.EasyMenu.InitializeMenu();
+		ns.EasyMenu.addConfigElements(modName);
+		ns.EasyMenu.ShowMenu(self);
+	end
+	local sharedClickOptions = {
+		OptionMenu  = {"ClickOptMenu","shared","OptionMenu"},
+		OptionMenuCustom = {"ClickOptMenu","module","OptionMenu"},
+		OptionPanel = {"ClickOptPanel","namespace","ToggleBlizzOptionPanel"},
+		CharacterInfo = {"ClickOptCharInfo","call",{"ToggleCharacter","PaperDollFrame"}},
+		GarrisonReport = {"ClickOptGarrReport","call","GarrisonLandingPage_Toggle"},
+		Guild = {"ClickOptGuild","call","ToggleGuildFrame"},
+		Currency = {"ClickOptCurrency","call",{"ToggleCharacter","TokenFrame"}},
+		QuestLog = {"ClickOptQuestLog","call","ToggleQuestLog"}
 	};
-	ns.clickOptions = {};
+	local iLabel,iSrc,iFnc = 1,2,3;
 
-	function ns.clickOptions.func(self,button,name)
-		if not ((ns.modules[name]) and (ns.modules[name].onclick)) then return; end
+	function ns.ClickOpts.func(self,button,modName)
+		local mod = ns.modules[modName];
+		if not (mod and mod.onclick) then return; end
 
 		-- click(plan)A = combine modifier if pressed with named button (left,right)
 		-- click(panl)B = combine modifier if pressed with left or right mouse button without expliced check.
-		local clickA,clickB="","";
+		local clickA,clickB,act,actName="","";
 
 		-- check modifier
 		if (IsAltKeyDown()) then		clickA=clickA.."ALT";   clickB=clickB.."ALT"; end
@@ -1788,36 +1802,80 @@ do
 		-- planB
 		clickB=clickB.."CLICK";
 
-		if (ns.modules[name].onclick[clickA]) then
-			ns.modules[name].onclick[clickA](self,button,name);
-		elseif (ns.modules[name].onclick[clickB]) then
-			ns.modules[name].onclick[clickB](self,button,name);
+		if (mod.onclick[clickA]) then
+			actName = mod.onclick[clickA];
+			act = mod.clickOptions[actName];
+		elseif (mod.onclick[clickB]) then
+			actName = mod.onclick[clickB];
+			act = mod.clickOptions[actName];
+		end
+
+		if act then
+			local fnc
+			if act[iSrc]=="direct" then
+				fnc = act[iFnc];
+			elseif act[iSrc]=="module" then
+				fnc = mod[act[iFnc]];
+			elseif act[iSrc]=="namespace" then
+				fnc = ns[act[iFnc]];
+			elseif act[iSrc]=="shared" then
+				fnc = shared[act[iFnc]];
+			elseif act[iSrc]=="call" then
+				if type(act[iFnc])=="table" then
+					securecall(unpack(act[iFnc]));
+				else
+					securecall(act[iFnc]);
+				end
+				return;
+			end
+			if fnc then
+				fnc(self,button,modName,actName);
+			end
 		end
 	end
 
-	function ns.clickOptions.update(modName) -- BE_UPDATE_CLICKOPTION
+	function ns.ClickOpts.update(modName) -- executed on event BE_UPDATE_CFG from active modules
+		-- name, desc, default, func
 		local mod = ns.modules[modName];
 		if not (mod and type(mod.clickOptions)=="table") then return end
 		local hasOptions = false;
 		mod.onclick = {};
 		mod.clickHints = {};
 
-		for cfgKey,clickOpts in ns.pairsByKeys(mod.clickOptions) do
-			local clickOpts = mod.clickOptions[cfgKey];
-			local key = ns.profile[modName]["clickOptions::"..cfgKey];
+		local order = mod.clickOptionsOrder or {};
+		if #order==0 then
+			for actName in ns.pairsByKeys(mod.clickOptions) do
+				tinsert(order,actName);
+			end
+		end
+
+		for _, actName in ipairs(order)do
+			local act = mod.clickOptions[actName];
+			local cfgKey,altKey = ns.ClickOpts.prefix..actName;
+			if mod.clickOptionsRename and mod.clickOptionsRename[cfgKey] then
+				altKey = mod.clickOptionsRename[cfgKey];
+			end
+			if ns.profile[modName][altKey]~=nil then
+				ns.profile[modName][cfgKey] = ns.profile[modName][altKey];
+				ns.profile[modName][altKey] = nil;
+			end
+			local key = ns.profile[modName][cfgKey];
 			if key and key~="__NONE" then
-				local func = clickOpts.func
-				if type(func)=="string" then
-					local nsFunc = func:match("^ns\.(.*)$");
-					if nsFunc then
-						func = ns[nsFunc];
-					elseif mod[func] then
-						func = mod[func];
-					end
+				local fSrc,func = act[iSrc];
+				if fSrc=="direct" then
+					func = act[iFnc];
+				elseif fSrc=="module" then
+					func = mod[act[iFnc]];
+				elseif fSrc=="namespace" then
+					func = ns[act[iFnc]];
+				elseif fSrc=="shared" then
+					func = shared[act[iFnc]];
+				elseif fSrc=="call" then
+					func = _G[type(act[iFnc])=="table" and act[iFnc][1] or act[iFnc]];
 				end
-				if func then
-					mod.onclick[key] = func;
-					tinsert(mod.clickHints,ns.LC.color("copper",L[values[key]]).." || "..ns.LC.color("green",L[clickOpts.hint]));
+				if func and type(func)=="function" then
+					mod.onclick[key] = actName;
+					tinsert(mod.clickHints,ns.LC.color("copper",values[key]).." || "..ns.LC.color("green",L[act[iLabel]]));
 					hasOptions = true;
 				end
 			end
@@ -1825,36 +1883,35 @@ do
 		return hasOptions;
 	end
 
-	function ns.clickOptions.createOptions(modName,modOptions,modEvents) -- executed by ns.Options_AddModuleOptions()
+	function ns.ClickOpts.createOptions(modName,modOptions) -- executed by ns.Options_AddModuleOptions()
 		local mod = ns.modules[modName];
 		if not (mod and type(mod.clickOptions)=="table") then return end
 
 		-- generate option panel entries
-		modOptions.clickOptions = {};
+		modOptions.ClickOpts = {};
 		for cfgKey,clickOpts in ns.pairsByKeys(mod.clickOptions) do
-			if type(clickOpts)=="string" then
+			if type(clickOpts)=="string" and sharedClickOptions[clickOpts] then
 				-- copy shared entry
-				mod.clickOptions[cfgKey] = sharedOptions[clickOpts]~=nil and CopyTable(sharedOptions[clickOpts]) or nil;
+				mod.clickOptions[cfgKey] = sharedClickOptions[clickOpts];
 				clickOpts = mod.clickOptions[cfgKey];
 			end
 			if clickOpts then
-				local optKey = "clickOptions::"..cfgKey;
+				local optKey = ns.ClickOpts.prefix..cfgKey;
 				-- ace option table entry
-				if clickOpts.name==nil then
-					ns.debug("<FIXME:NilClickOptsName>",modName,optKey);
+				if clickOpts[iLabel]==nil then
+					--ns.debug("<FIXME:ClickOptsName-Nil>",modName,optKey);
 				end
-				modOptions.clickOptions[optKey] = {
+				modOptions.ClickOpts[optKey] = {
 					type	= "select",
-					name	= L[clickOpts.name],
-					desc	= L["ClickOptDesc"].." "..L[clickOpts.desc],
+					name	= L[clickOpts[iLabel]],
+					desc	= L["ClickOptDesc"].." "..L[clickOpts[iLabel]],
 					values	= values
 				};
-				modEvents[optKey] = "BE_UPDATE_CLICKOPTIONS";
 			end
 		end
 	end
 
-	function ns.clickOptions.ttAddHints(tt,name,ttColumns,entriesPerLine)
+	function ns.ClickOpts.ttAddHints(tt,name,ttColumns,entriesPerLine)
 		local _lines = {};
 		if (type(entriesPerLine)~="number") then entriesPerLine=1; end
 		if (ns.modules[name].clickHints) then
@@ -1879,6 +1936,22 @@ do
 					tt:AddLine(v);
 				end
 			end
+		end
+	end
+
+	function ns.ClickOpts.getShared(name)
+		return sharedClickOptions[name];
+	end
+
+	function ns.ClickOpts.addDefaults(module,key,value)
+		assert(module);
+		local tKey = type(key);
+		if tKey=="table" then
+			for k,v in pairs(key) do
+				ns.ClickOpts.addDefaults(module,k,v);
+			end
+		elseif tKey=="string" then
+			module.config_defaults[ns.ClickOpts.prefix..key] = value;
 		end
 	end
 end

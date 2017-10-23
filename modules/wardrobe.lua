@@ -107,7 +107,7 @@ local function createTooltip(tt)
 
 	if ns.profile.GeneralOptions.showHints and false then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -128,47 +128,26 @@ module = {
 	},
 	updateinterval = nil,
 	config_defaults = {},
+	clickOptionsRename = {
+		["menu"] = "9_open_menu"
+	},
 	clickOptions = {
-		-- world map
-		--[[
-		["1_open_archaeology_frame"] = {
-			name = "Open archaeology frame", -- L["Open archaeology frame"]
-			desc = "open your archaeology frame", -- L["open your archaeology frame"]
-			default = "_LEFT",
-			hint = "Open archaeology frame", -- L["Open archaeology frame"]
-			func = function(self,button)
-				local _mod=name;
-				if ( not ArchaeologyFrame ) then
-					ArchaeologyFrame_LoadUI()
-				end
-				if ( ArchaeologyFrame ) then
-					if(ArchaeologyFrame:IsShown())then
-						securecall("ArchaeologyFrame_Hide")
-					else
-						securecall("ArchaeologyFrame_Show")
-					end
-				end
-			end
-		},
-		]]
-		["9_open_menu"] = "OptionMenu"
+		--["wardrobe"] = {"Wardrobe","call",""}, -- problematically. colectionframe will be tained on open...
+		["menu"] = "OptionMenu"
 	}
 }
 
+ns.ClickOpts.addDefaults(module,{
+	-- wardrobe = "_LEFT",
+	menu = "_RIGHT"
+});
+
 -- function module.options() return {} end
-
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 -- function module.init() end
 
 function module.onevent(self,event,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+	if event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		session.armor = {};
 		for i=1, 11 do

@@ -461,17 +461,17 @@ local function createTooltip(tt,update)
 
 		if (ns.profile[name].showApplicants) and guild[gNumApplicants] and (guild[gNumApplicants]>0) then
 			local l = tt:AddLine();
-			tt:SetCell(l,1,C("orange",L["Click"]).." || "..C("green","Open guild applications"),nil,"LEFT",ttColumns);
+			tt:SetCell(l,1,C("orange",L["MouseBtn"]).." || "..C("green","Guild applications"),nil,"LEFT",ttColumns);
 		end
 
 		if (ttColumns>4) then
 			local l = tt:AddLine();
-			tt:SetCell(l,1,C("ltblue",L["Click"]).." || "..C("green",L["Whisper with a member"]) .." - ".. C("ltblue",L["Alt+Click"]).." || "..C("green",L["Invite a member"]),nil,"LEFT",ttColumns);
+			tt:SetCell(l,1,C("ltblue",L["MouseBtn"]).." || "..C("green",L["Whisper"]) .." - ".. C("ltblue",L["ModKeyA"].."+"..L["MouseBtn"]).." || "..C("green",L["Group invite"]),nil,"LEFT",ttColumns);
 		else
 			local l = tt:AddLine();
-			tt:SetCell(l,1,C("ltblue",L["Click"]).." || "..C("green",L["Whisper with a member"]),nil,"LEFT",ttColumns);
+			tt:SetCell(l,1,C("ltblue",L["MouseBtn"]).." || "..C("green",L["Whisper"]),nil,"LEFT",ttColumns);
 			local l = tt:AddLine();
-			tt:SetCell(l,1,C("ltblue",L["Alt+Click"]).." || "..C("green",L["Invite a member"]),nil,"LEFT",ttColumns);
+			tt:SetCell(l,1,C("ltblue",L["ModKeyA"].."+"..L["MouseBtn"]).." || "..C("green",L["Group invite"]),nil,"LEFT",ttColumns);
 		end
 
 		if (module.clickHints) then
@@ -557,20 +557,20 @@ module = {
 		splitTables = false,
 		showMembersLevelUp = true
 	},
+	clickOptionsRename = {
+		["guild"] = "1_open_guild",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
-		["1_open_guild"] = {
-			name = "Open guild roster", -- L["Open guild roster"]
-			desc = "open the guild roster", -- L["open the guild roster"]
-			default = "_LEFT",
-			hint = "Open guild roster", -- L["Open guild roster"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleGuildFrame")
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
+		["guild"] = "Guild",
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	guild = "_LEFT",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -610,18 +610,11 @@ function module.options()
 	}
 end
 
-function module.OptionMenu(self,button,modName)
-	if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 -- function module.init() end
 
 function module.onevent(self,event,msg,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+	if event=="BE_UPDATE_CFG" and msg and msg:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" or event=="LF_GUILD_RECRUIT_LIST_CHANGED" then
 		RequestGuildApplicantsList();
 	elseif event=="CHAT_MSG_SYSTEM" then

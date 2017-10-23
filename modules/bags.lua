@@ -180,7 +180,7 @@ local function createTooltip(tt)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0);
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -209,31 +209,29 @@ module = {
 		autoCrapSelling = false,
 		autoCrapSellingInfo = true
 	},
+	clickOptionsRename = {
+		["bags"] = "1_open_bags",
+		["space"] = "2_toggle_freespace",
+		["menu"] = "3_open_menu"
+	},
 	clickOptions = {
-		["1_open_bags"] = {
-			name = "Open all bags", -- L["Open all bags"]
-			desc = "open your bags", -- L["open your bags"]
-			default = "_LEFT",
-			hint = "Open all bags", -- L["Open all bags"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleAllBags");
-			end
-		},
-		["2_toggle_freespace"] = {
-			name = "Switch display", -- L["Switch display"]
-			desc = "toggle between free and used/max bagslots in broker button", -- L["toggle between free and used/max bagslots in broker button"]
-			default = "_RIGHT",
-			hint = "Switch display",
-			func = function(self,button)
-				local _mod=name;
-				ns.profile[name].freespace = not ns.profile[name].freespace;
-				module.onevent(self)
-			end
-		},
-		["3_open_menu"] = "OptionMenu"
+		["bags"] = {"Open all bags","call","ToggleAllBags"}, -- L["Open all bags"]
+		["space"] = {"Switch (free or used/max bag space)","module","switch"}, -- L["Switch (free or used/max bag space)"]
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	bags = "_LEFT",
+	space = "_RIGHT",
+	menu = "__NONE"
+});
+
+function module.switch(self,button)
+	ns.profile[name].freespace = not ns.profile[name].freespace;
+	module.onevent(self,"BE_DUMMY_EVENT");
+end
+
 
 function module.options()
 	return {
@@ -258,13 +256,6 @@ function module.options()
 		critLowFree=true,
 		warnLowFree=true
 	}
-end
-
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
 end
 
 function module.init()
@@ -350,9 +341,9 @@ function module.init()
 	};
 end
 
-function module.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+function module.onevent(self,event,arg1)
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	elseif event=="MERCHANT_SHOW" and ns.profile[name].autoCrapSelling then
 		IsMerchantOpen = true;
 		C_Timer.After(0.5,function() crap:search() end);

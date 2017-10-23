@@ -121,7 +121,7 @@ local function createTooltip(tt,update)
 	end
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(3,0,0,0,0);
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	if not update then
 		ns.roundupTooltip(tt);
@@ -181,19 +181,15 @@ module = {
 		--inTitle = {}
 	},
 	clickOptions = {
-		["1_open_chats"] = {
-			name = "Open chat channels window", -- L["Open chat channels window"]
-			desc = "open the chat channels tab on the contact window", -- L["open the chat channels tab on the contact window"]
-			default = "_LEFT",
-			hint = "Open chat channels window",
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleFriendsFrame",3);
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
+		["chats"] = {"Chat channels window","call",{"ToggleFriendsFrame",3}}, -- L["Chat channels window"]
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	chats = "_LEFT",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -205,18 +201,12 @@ function module.options()
 	}
 end
 
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 -- function module.init() end
 
 function module.onevent(self,event,arg1,arg2,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+	local msg = ...;
+	if event=="BE_UPDATE_CFG" and msg and msg:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	elseif event=="CHANNEL_COUNT_UPDATE" then
 		updateChannels(arg1,arg2 or 0)
 	end

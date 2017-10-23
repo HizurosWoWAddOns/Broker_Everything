@@ -244,9 +244,9 @@ local function createTooltip(tt)
 		tt:SetCell(tt:AddLine(), 1, C("gray",L["No chars found for this realm or realm group to display"]), nil, "CENTER", 0);
 	end
 
-	if ns.profile.GeneralOptions.showHints and false then
+	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,name);-- TODO: missing hints?
+		ns.ClickOpts.ttAddHints(tt,name);-- TODO: missing hints?
 	end
 	ns.roundupTooltip(tt);
 end
@@ -267,10 +267,15 @@ module = {
 		showRealmNames=true,
 		showCharsFrom=4
 	},
+	clickOptionsRename = {
+		["menu"] = "9_open_menu"
+	},
 	clickOptions = {
-		["9_open_menu"] = "OptionMenu"
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,"menu","_RIGHT");
 
 function module.options()
 	return {
@@ -286,18 +291,11 @@ function module.options()
 	}
 end
 
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 -- function module.init() end
 
-function module.onevent(self,event,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+function module.onevent(self,event,arg1,...)
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		if ns.data[name]==nil then ns.data[name]={}; end
 		if ns.toon[name]==nil then ns.toon[name]={}; end

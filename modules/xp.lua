@@ -182,9 +182,9 @@ function createTooltip(tt)
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0);
 		if (ns.profile[name].showMyOtherChars) then
-			ns.AddSpannedLine(tt,C("ltblue",L["Click"]).." || "..C("green",L["Delete a character from the list"]));
+			ns.AddSpannedLine(tt,C("ltblue",L["MouseBtn"]).." || "..C("green",L["Delete a character from the list"]));
 		end
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -212,23 +212,27 @@ module = {
 		showRealmNames=true,
 		showCharsFrom=4
 	},
+	clickOptionsRename = {
+		["switch"] = "1_switch_mode",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
-		["1_switch_mode"] = {
-			name = "Switch mode", -- L["Switch mode"]
-			desc = "switch displayed xp data for characters under the level cap", -- L["switch displayed xp data for characters under the level cap"]
-			default = "_LEFT",
-			hint = "Switch mode",
-			func = function(self,button)
-				local _mod=name;
-				local cur = tonumber(ns.profile[name].display);
-				local new = cur==5 and 1 or cur+1;
-				ns.profile[name].display = tostring(new);
-				module.onevent(self)
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
+		["switch"] = {"Switch (percent, absolute, til next and more)","module","switch"}, -- L["Switch (percent, absolute, til next and more)"]
+		["menu"] = "OptionMenu"
 	}
 };
+
+ns.ClickOpts.addDefaults(module,{
+	switch = "_LEFT",
+	menu = "_RIGHT"
+});
+
+function module.switch(self)
+	local cur = tonumber(ns.profile[name].display);
+	local new = cur==5 and 1 or cur+1;
+	ns.profile[name].display = tostring(new);
+	module.onevent(self)
+end
 
 function module.options()
 	local textBarValues,displayValues = {},{
@@ -259,13 +263,6 @@ function module.options()
 			shortNumbers=true
 		},
 	}
-end
-
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
 end
 
 function module.init()
@@ -322,8 +319,8 @@ function module.init()
 end
 
 function module.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+	if event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name);
 	elseif not (event=="UNIT_INVENTORY_CHANGED" and msg~="player") then
 		if (MAX_PLAYER_LEVEL==UnitLevel("player")) then
 			data = {cur=1,max=1,rest=0,need=0,percentCur=1,percentRest=1,percentStr="100%",restStr="n/a",bonus={},bonusSum=0};

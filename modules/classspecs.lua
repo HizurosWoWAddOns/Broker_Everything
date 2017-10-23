@@ -257,8 +257,8 @@ function createTooltip(tt,update)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0);
-		tt:SetCell(tt:AddLine(),1,C("ltblue",L["Click"]).." || "..C("green",L["Activate specialization"]),nil,"LEFT",ttColumns);
-		ns.clickOptions.ttAddHints(tt,name);
+		tt:SetCell(tt:AddLine(),1,C("ltblue",L["MouseBtn"]).." || "..C("green",L["Activate specialization"]),nil,"LEFT",ttColumns);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	if not update then
 		ns.roundupTooltip(tt);
@@ -289,50 +289,29 @@ module = {
 		showPvPHonor = true,
 		showPvPHonorOnBroker = true
 	},
+	clickOptionsRename = {
+		["pvespec"] = "1_open_specialization",
+		["pvetalents"] = "2_open_talents",
+		["pvptalents"] = "3_open_pvp_talents",
+		["petspec"] = "4_open_pet_specialization",
+		["menu"] = "6_open_menu"
+	},
 	clickOptions = {
-		["1_open_specialization"] = {
-			name = "Open specialization", -- L["Open specialization"]
-			desc = "open specialization", -- L["open specialization"]
-			default = "_LEFT",
-			hint = "Open specialization", -- L["Open specialization"]
-			func = function(self,button)
-				local _mod,doSelect=name,false;
-				securecall("ToggleTalentFrame",SPECIALIZATION_TAB);
-			end
-		},
-		["2_open_talents"] = {
-			name = "Open talents", -- L["Open talents"]
-			desc = "open talents", -- L["open talents"]
-			default = "__NONE",
-			hint = "Open talents", -- L["Open talents"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleTalentFrame",TALENTS_TAB);
-			end
-		},
-		["3_open_pvp_talents"] = {
-			name = "Open pvp talents", -- L["Open pvp talents"]
-			desc = "open pvp talents", -- L["open pvp talents"]
-			default = "__NONE",
-			hint = "Open pvp talents", -- L["Open pvp talents"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleTalentFrame",PVP_TALENTS_TAB);
-			end
-		},
-		["4_open_pet_specialization"] = {
-			name = "Open pet specialization", -- L["Open pet specialization"]
-			desc = "open pet specialization", -- L["open pet specialization"]
-			default = "__NONE",
-			hint = "Open pet specialization", -- L["Open pet specialization"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleTalentFrame",ns.player.class:upper()=="HUNTER" and PET_SPECIALIZATION_TAB or SPECIALIZATION_TAB);
-			end
-		},
-		["6_open_menu"] = "OptionMenu"
+		["pvespec"] = {"Specialization","call",{"ToggleTalentFrame",SPECIALIZATION_TAB}}, -- L["Specialization"]
+		["pvetalents"] = {"Talents","call",{"ToggleTalentFrame",TALENTS_TAB}}, -- L["Talents"]
+		["pvptalents"] = {"PvP talents","call",{"ToggleTalentFrame",PVP_TALENTS_TAB}}, -- L["PvP talents"]
+		["petspec"] = {"Pet specialization","call",{"ToggleTalentFrame",ns.player.class:upper()=="HUNTER" and PET_SPECIALIZATION_TAB or SPECIALIZATION_TAB}}, -- L["Pet specialization"]
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	pvespec = "_LEFT",
+	pvetalents = "__NONE",
+	pvptalents = "__NONE",
+	petspec = "__NONE",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -350,13 +329,6 @@ function module.options()
 	}
 end
 
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 -- function module.init() end
 
 function module.createTalentMenu(self) -- TODO: fill new function
@@ -368,9 +340,9 @@ function module.createTalentMenu(self) -- TODO: fill new function
 	ns.EasyMenu.ShowMenu(self);
 end
 
-function module.onevent(self,event,msg,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+function module.onevent(self,event,arg1,...)
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	else
 		local specName = L["No Spec!"]
 		local icon = I(name)

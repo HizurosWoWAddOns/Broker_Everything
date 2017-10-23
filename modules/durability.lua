@@ -9,7 +9,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I;
 -----------------------------------------------------------
 local name,_ = "Durability"; -- DURABILITY
 local ttName,tt,module = name.."TT";
-local hiddenTooltip,createMenu
+local hiddenTooltip
 local last_repairs = {};
 local merchant = {repair=false,costs=0,diff=0,single=0};
 local discount = {[5]=0.95,[6]=0.9,[7]=0.85,[8]=0.8};
@@ -226,7 +226,7 @@ local function createTooltip(tt)
 	end
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0);
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -259,20 +259,20 @@ module = {
 		lowestItem = true,
 		chatRepairInfo = false
 	},
+	clickOptionsRename = {
+		["charinfo"] = "1_open_character_info",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
-		["1_open_character_info"] = {
-			name = "Open character info", -- L["Open character info"]
-			desc = "open the character info", -- L["open the character info"]
-			default = "_LEFT",
-			hint = "Open character info", -- L["Open character info"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","PaperDollFrame");
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
+		["charinfo"] = "CharacterInfo", -- _LEFT
+		["menu"] = "OptionMenuCustom"
 	}
 };
+
+ns.ClickOpts.addDefaults(module,{
+	charinfo = "_LEFT",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -362,9 +362,9 @@ function module.init()
 	end);
 end
 
-function module.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+function module.onevent(self,event,arg1)
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 		return;
 	elseif event=="MERCHANT_SHOW" then
 		local costs, canRepair = GetRepairAllCost();

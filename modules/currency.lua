@@ -329,20 +329,20 @@ module = {
 		spacer=0,
 		showIDs = false
 	},
+	clickOptionsRename = {
+		["charinfo"] = "1_open_character_info",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
-		["1_open_character_info"] = {
-			name = "Open currency pane", -- L["Open currency pane"]
-			desc = "open the currency pane", -- L["open the currency pane"]
-			default = "_LEFT",
-			hint = "Open currency pane",
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","TokenFrame");
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
+		["charinfo"] = "CharacterInfo", -- _LEFT
+		["menu"] = "OptionMenuCustom"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	charinfo = "_LEFT",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -438,9 +438,9 @@ end
 
 -- function module.init() end
 
-function module.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+function module.onevent(self,event,arg1)
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		updateCurrency("full");
 		updateBroker();
@@ -449,7 +449,7 @@ function module.onevent(self,event,msg)
 	else
 		local id;
 		if event=="CHAT_MSG_CURRENCY" then -- detecting new currencies
-			id = tonumber(msg:lower():match("hcurrency:(%d*)"));
+			id = tonumber(arg1:lower():match("hcurrency:(%d*)"));
 		end
 		updateCurrency( id and currencyCache[id]==nil and "full" or nil );
 		updateBroker();

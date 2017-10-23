@@ -212,8 +212,8 @@ local function createTooltip(tt)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.AddSpannedLine(tt,C("ltblue",L["Click"]).." || "..C("green",L["Open archaeology frame with choosen faction"]));
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.AddSpannedLine(tt,C("ltblue",L["MouseBtn"]).." || "..C("green",L["Open archaeology frame with choosen faction"]));
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -236,30 +236,21 @@ module = {
 		inTitle = {},
 		continentOrder=true
 	},
+	clickOptionsRename = {
+		["archaeology"] = "1_open_archaeology_frame",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
-		["1_open_archaeology_frame"] = {
-			name = "Open archaeology frame", -- L["Open archaeology frame"]
-			desc = "open your archaeology frame", -- L["open your archaeology frame"]
-			default = "_LEFT",
-			hint = "Open archaeology frame", -- L["Open archaeology frame"]
-			func = function(self,button)
-				local _mod=name;
-				if ( not ArchaeologyFrame ) then
-					ArchaeologyFrame_LoadUI()
-				end
-				if ( ArchaeologyFrame ) then
-					if(ArchaeologyFrame:IsShown())then
-						securecall("ArchaeologyFrame_Hide")
-					else
-						securecall("ArchaeologyFrame_Show")
-					end
-				end
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
+		["archaeology"] = {"Archaeology","module","ToggleArchaeologyFrame"}, -- L["Archaeology"]
+		["menu"] = "OptionMenu"
 
 	}
 };
+
+ns.ClickOpts.addDefaults(module,{
+	archaeology = "_LEFT",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -269,13 +260,6 @@ function module.options()
 		},
 		misc = nil,
 	}
-end
-
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
 end
 
 function module.init()
@@ -353,9 +337,9 @@ function module.init()
 	};
 end
 
-function module.onevent(self,event,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+function module.onevent(self,event,arg1,...)
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		updateRaces(true);
 
@@ -387,6 +371,14 @@ end
 -- function module.onclick(self,button) end
 -- function module.ondblclick(self,button) end
 
+function module.ToggleArchaeologyFrame(self,button)
+	if not ArchaeologyFrame then
+		ArchaeologyFrame_LoadUI()
+	end
+	if ArchaeologyFrame then
+		securecall("ArchaeologyFrame_"..(ArchaeologyFrame:IsShown() and "Hide" or "Show"));
+	end
+end
 
 -- final module registration --
 -------------------------------

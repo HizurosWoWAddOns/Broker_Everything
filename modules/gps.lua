@@ -15,7 +15,7 @@ local name2 = "Location"; -- L["Location"]
 local name3 = "ZoneText"; -- L["ZoneText"]
 local updateinterval,module1,module2,module3 = 0.12;
 local ttName1, ttName2, ttName3, ttName4 = name1.."TT", name2.."TT", name3.."TT", "TransportMenuTT";
-local ttColumns,ttColumns4,onleave,createTooltip2,createMenu = 3,5;
+local ttColumns,ttColumns4,onleave,createTooltip2 = 3,5;
 local tt1, tt2, tt3, tt4, items;
 local tt5positions = {
 	["LEFT"]   = {edgeSelf = "RIGHT",  edgeParent = "LEFT",   x = -2, y =  0},
@@ -32,30 +32,21 @@ local zoneDisplayValues = {
 }
 local foundItems, foundToys, teleports, portals, spells = {},{},{},{},{};
 local _classSpecialSpellIds,_teleportIds,_portalIds,_itemIds,_itemReplacementIds,_itemMustBeEquipped,_itemFactions = {},{},{},{},{},{},{};
-local sharedClickOptions = {
-	["1_open_world_map"] = {
-		name = "Open world map",
-		desc = "open the world map",
-		default = "_LEFT",
-		hint = "Open World map",
-		func = function(self,button)
-			local _mod=name;
-			securecall("ToggleFrame",WorldMapFrame)
-		end
-	},
-	["2_open_transport_menu"] = {
-		name = "Open transport menu",
-		desc = "open the transport menu",
-		default = "_RIGHT",
-		hint = "Open transport menu",
-		func = function(self,button,name)
-			local _mod=name;
-			if InCombatLockdown() then return; end
-			createTooltip2(self,name);
-		end
-	},
-	["3_open_menu"] = "OptionMenu"
-}
+local sharedclickOptionsRename = {
+	["1_open_world_map"] = "worldmap",
+	["2_open_transport_menu"] = "transport",
+	["3_open_menu"] = "menu"
+};
+local sharedclickOptions = {
+	["worldmap"] = {"World map","call",{"ToggleFrame",WorldMapFrame}},
+	["transport"] = {"Transport menu","module","transportMenu"},
+	["menu"] = "OptionMenu"
+};
+local sharedclickOptionsDefaults = {
+	worldmap = "_LEFT",
+	transport = "_RIGHT",
+	menu = "__NONE"
+};
 local sharedMisc = {
 	shortMenu={ type="toggle", name=L["Short transport menu"], desc=L["Display the transport menu without names of spells and items behind the icons."]},
 	coordsFormat={ type="select",
@@ -225,7 +216,7 @@ local function createTooltip(tt,ttName,modName)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,modName);
+		ns.ClickOpts.ttAddHints(tt,modName);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -276,7 +267,7 @@ local function tpmAddObject(tt,p,l,c,v,t,name)
 	end
 end
 
-function createTooltip2(self,name)
+function transportMenu(self,button,name)
 	if InCombatLockdown() then return; end
 	if (tt1~=nil) then tt1=ns.hideTooltip(tt1); end
 	if (tt2~=nil) then tt2=ns.hideTooltip(tt2); end
@@ -435,7 +426,7 @@ module1 = {
 		coordsFormat = "%s, %s",
 		shortMenu = false
 	},
-	clickOptions = sharedClickOptions
+	clickOptions = sharedclickOptions
 }
 
 module2 = {
@@ -447,7 +438,7 @@ module2 = {
 		coordsFormat = "%s, %s",
 		shortMenu = false
 	},
-	clickOptions = sharedClickOptions
+	clickOptions = sharedclickOptions
 }
 
 module3 = {
@@ -460,8 +451,16 @@ module3 = {
 		coordsFormat = "%s, %s",
 		shortMenu = false
 	},
-	clickOptions = sharedClickOptions
+	clickOptions = sharedclickOptions
 }
+
+ns.ClickOpts.addDefaults(module1,sharedclickOptionsDefaults);
+ns.ClickOpts.addDefaults(module2,sharedclickOptionsDefaults);
+ns.ClickOpts.addDefaults(module3,sharedclickOptionsDefaults);
+
+module1.transportMenu = transportMenu;
+module2.transportMenu = transportMenu;
+module3.transportMenu = transportMenu;
 
 function module1.options()
 	return {
@@ -488,27 +487,6 @@ function module3.options()
 	}
 end
 
-function module1.OptionMenu(self)
-	if (tt1~=nil) then tt1=ns.hideTooltip(tt1); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name1);
-	ns.EasyMenu.ShowMenu(self);
-end
-
-function module2.OptionMenu(self)
-	if (tt2~=nil) then tt2=ns.hideTooltip(tt2); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name2);
-	ns.EasyMenu.ShowMenu(self);
-end
-
-function module3.OptionMenu(self)
-	if (tt3~=nil) then tt3=ns.hideTooltip(tt3); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name3);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 function module1.init()
 	if init then init() init=nil end
 end
@@ -522,20 +500,20 @@ function module3.init()
 end
 
 function module1.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name1);
+	if event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name1);
 	end
 end
 
 function module2.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name2);
+	if event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name2);
 	end
 end
 
 function module3.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name3);
+	if event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name3);
 	end
 end
 

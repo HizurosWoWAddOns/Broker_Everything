@@ -163,9 +163,9 @@ function createTooltip(tt)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0);
-		ns.AddSpannedLine(tt,C("ltblue",L["Left-click"]).." || "..C("green",L["Edit note"]));
-		ns.AddSpannedLine(tt,C("ltblue",L["Right-click"]).." || "..C("green",L["Delete note"]));
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.AddSpannedLine(tt,C("ltblue",L["MouseBtnL"]).." || "..C("green",L["Edit note"]));
+		ns.AddSpannedLine(tt,C("ltblue",L["MouseBtnR"]).." || "..C("green",L["Delete note"]));
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -180,20 +180,24 @@ module = {
 	},
 	updateinterval = 30, -- 10
 	config_defaults = {},
+	clickOptionsRename = {
+		["newnote"] = "1_new_note",
+		["menu"] = "9_open_menu"
+	},
 	clickOptions = {
-		["1_new_note"] = {
-			name = "Add new note",
-			desc = "add new note",
-			default = "__NONE",
-			hint = "Add new note",
-			func = function(self,button)
-				local _mod=name;
-				note_edit({},nil,"LeftButton");
-			end
-		},
-		["9_open_menu"] = "OptionMenu"
+		["newnote"] = {"Add new note","module","newNote"},
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	newnote = "__NONE",
+	menu = "_RIGHT"
+});
+
+function module.newNote()
+	note_edit({},nil,"LeftButton");
+end
 
 function module.options()
 	return {
@@ -205,22 +209,15 @@ function module.options()
 	}
 end
 
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 function module.init()
 	if ns.data[name]==nil then
 		ns.data[name] = {}; -- TODO: really neccessary?
 	end
 end
 
-function module.onevent(self,event,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+function module.onevent(self,event,arg1,...)
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	else
 		updateBroker();
 	end

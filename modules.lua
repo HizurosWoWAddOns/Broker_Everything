@@ -64,12 +64,13 @@ local function moduleInit(name)
 		end
 
 		-- new clickOptions system
+		local onclick;
 		if (type(mod.clickOptions)=="table") then
-			local active = ns.clickOptions.update(name);
+			local active = ns.ClickOpts.update(name);
 			if active then
 				function onclick(self,button)
-					ns.clickOptions.func(self,button,name);
-				end;
+					ns.ClickOpts.func(self,button,name);
+				end
 			end
 		elseif (type(mod.onclick)=="function") then
 			onclick = mod.onclick;
@@ -118,7 +119,7 @@ local function moduleInit(name)
 			if type(mod.onevent)=="function" and type(mod.events)=="table" then
 				mod.eventFrame:SetScript("OnEvent",mod.onevent);
 				mod.onevent(mod.eventFrame,"BE_UPDATE_CFG");
-				mod.onevent(mod.eventFrame,"BE_UPDATE_CLICKOPTION");
+				mod.OnEvent(mod.eventFrame,"BE_UPDATE_CFG","ClickOpt");
 				for _, e in pairs(mod.events) do
 					if e=="ADDON_LOADED" then
 						mod.onevent(mod.eventFrame,e,addon);

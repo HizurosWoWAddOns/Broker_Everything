@@ -100,13 +100,13 @@ local function createTooltip(tt)
 		tt:AddLine(" ")
 		line, column = nil, nil
 		tt:AddLine(
-			C("copper",L["Left-click"]).." || "..C("green",LOGOUT)
+			C("copper",L["MouseBtnL"]).." || "..C("green",LOGOUT)
 			.."|n"..
-			C("copper",L["Right-click"]).." || "..C("green",L["Quit game"])
+			C("copper",L["MouseBtnR"]).." || "..C("green",L["Quit game"])
 			--.."|n"..
-			--C("copper",L["Shift+Left-click"]).." || "..C("green",L["Switch window/fullscreen mode"])
+			--C("copper",L["ModKeyS"].."+"..L["MouseBtnL"]).." || "..C("green",L["Switch window/fullscreen mode"])
 			.."|n"..
-			C("copper",L["Shift+Left-click"]).." || "..C("green",L["Reload UI"])
+			C("copper",L["ModKeyS"].."+"..L["MouseBtnL"]).." || "..C("green",L["Reload UI"])
 		)
 	end
 	ns.roundupTooltip(tt);

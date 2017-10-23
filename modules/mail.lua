@@ -189,7 +189,7 @@ local function createTooltip(tt)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -213,17 +213,17 @@ module = {
 		showRealmNames=true,
 		showCharsFrom=4
 	},
+	clickOptionsRename = {
+		["menu"] = "open_menu"
+	},
 	clickOptions = {
-		["open_menu"] = "OptionMenu"
+		["menu"] = "OptionMenu"
 	}
 }
 
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
+ns.ClickOpts.addDefaults(module,{
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -258,7 +258,9 @@ function module.init()
 end
 
 function module.onevent(self,event,msg)
-	if event=="BE_UPDATE_CFG" then
+	if event=="BE_UPDATE_CFG" and msg and msg:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
+	elseif event=="BE_UPDATE_CFG" then
 		if ns.coexist.check() then
 			if ns.profile[name].hideMinimapMail then
 				ns.hideFrame("MiniMapMailFrame")
@@ -266,8 +268,6 @@ function module.onevent(self,event,msg)
 				ns.unhideFrame("MiniMapMailFrame")
 			end
 		end
-	elseif event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		hooksecurefunc("SendMail",function(targetName)
 			local n,r,_ = strsplit("-",targetName,2);
@@ -305,7 +305,7 @@ function module.onenter(self)
 end
 
 -- function module.onleave(self) end
--- function module.onclick = createMenu; --function(self,button) end -- TODO: migrate to clickOptions
+-- function module.onclick = --function(self,button) end -- TODO: migrate to clickOptions
 -- function module.ondblclick(self,button) end
 
 

@@ -594,7 +594,7 @@ function createTooltip(tt)
 	-- add hints if player want see it :D
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(3,0,0,0,0);
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 
 	-- little roundup for tooltip
@@ -629,30 +629,23 @@ module = {
 		showKnowledge = true,
 		showAlt = true,
 	},
+	clickOptionsRename = {
+		["charinfo"] = "1_open_character_info",
+		["artifactframe"] = "2_artifact_frame",
+		["menu"] = "3_open_menu"
+	},
 	clickOptions = {
-		["1_open_character_info"] = {
-			name = "Open character info", -- L["Open character info"]
-			desc = "open the character info", -- L["open the character info"]
-			default = "__NONE",
-			hint = "Open character info", -- L["Open character info"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","PaperDollFrame");
-			end
-		},
-		["2_artifact_frame"] = {
-			name = "Open artifact frame", -- L["Show artifact frame"]
-			desc = "open artifact frame", -- L["open artifact frame"]
-			default = "_LEFT",
-			hint = "Open artifact frame",
-			func = function(self,button)
-				local _mod=name;
-				SocketInventoryItem(16);
-			end
-		},
-		["3_open_menu"] = "OptionMenu"
+		["charinfo"] = "CharacterInfo",
+		["artifactframe"] = {"Artifact frame","call",{"SocketInventoryItem",16}}, -- L["Artifact frame"]
+		["menu"] = "OptionMenu"
 	}
 };
+
+ns.ClickOpts.addDefaults(module,{
+	charinfo = "__NONE",
+	artifactframe = "_LEFT",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -687,13 +680,6 @@ function module.options()
 		showPoints="ARTIFACT_UPDATE",
 		showXP="ARTIFACT_UPDATE",
 	}
-end
-
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
 end
 
 function module.init()
@@ -807,8 +793,8 @@ function module.init()
 end
 
 function module.onevent(self,event,arg1,...)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		if ns.toon[name]==nil then
 			ns.toon[name] = {equipped=false,knowledgeLevel=0};

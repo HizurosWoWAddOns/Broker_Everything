@@ -454,8 +454,8 @@ local function createTooltip(tt)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(3,0,0,0,0);
-		tt:SetCell(tt:AddLine(),1,C("ltblue",L["Click"]).." || "..C("green",L["Whisper with a friend"]) .." - ".. C("ltblue",L["Alt+Click"]).." || "..C("green",L["Invite a friend"]),nil,nil,columns);
-		ns.clickOptions.ttAddHints(tt,name,nil,2);
+		tt:SetCell(tt:AddLine(),1,C("ltblue",L["MouseBtn"]).." || "..C("green",L["Whisper"]) .." - ".. C("ltblue",L["ModKeyA"].."+"..L["MouseBtn"]).." || "..C("green",L["Group invite"]),nil,nil,columns);
+		ns.ClickOpts.ttAddHints(tt,name,nil,2);
 	end
 
 	ns.roundupTooltip(tt);
@@ -510,20 +510,20 @@ module = {
 		showGameTT2 = false,
 		showNotesTT2 = false
 	},
+	clickOptionsRename = {
+		["friends"] = "1_open_character_info",
+		["menu"] = "2_open_menu"
+	},
 	clickOptions = {
-		["1_open_character_info"] = {
-			name = "Open friends roster", -- L["Open friends roster"]
-			desc = "open the friends roster", -- L["open the friends roster"]
-			default = "_LEFT",
-			hint = "Open friends roster",
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleFriendsFrame",1);
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
+		["friends"] = {"Friends roster","call",{"ToggleFriendsFrame",1}}, -- L["Friends roster"]
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	friends = "_LEFT",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -591,18 +591,11 @@ function module.options()
 	}
 end
 
-function module.OptionMenu(self,button,modName)
-	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.ShowMenu(self);
-end
-
 -- function module.init() end
 
-function module.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+function module.onevent(self,event,arg1)
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		if type(ns.profile[name].showBattleTags)=="boolean" then
 			ns.profile[name].showBattleTags = ns.profile[name].showBattleTags and "3" or "0";

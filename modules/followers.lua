@@ -14,6 +14,18 @@ local ttNameS, ttColumnsS, ttS, moduleS = nameS.."TT" ,7;
 local followers,ships,champions,troops = {num=0},{num=0},{num=0},{num=0};
 local updateinterval, garrLevel, ohLevel, syLevel = 30,0,0,0;
 local delayF,delayS,ticker=true,true;
+local clickOptionsRename = {
+	["1_open_garrison_report"] = "garrreport",
+	["2_open_menu"] = "OptionMenu"
+};
+local  clickOptions = {
+	["garrreport"] = "GarrisonReport",
+	["menu"] = "OptionMenu"
+};
+local clickOptionsDefaults = {
+	garrreport = "__NONE",
+	menu = "_RIGHT"
+};
 
 
 -- register icon names and default files --
@@ -466,7 +478,7 @@ local function createTooltip(tt, name)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0);
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -502,19 +514,8 @@ moduleF = {
 		showChampions = true,
 		showTroops = true
 	},
-	clickOptions = {
-		["1_open_garrison_report"] = {
-			name = "Open garrison report",
-			desc = "open the garrison report",
-			default = "__NONE",
-			hint = "Open garrison report",
-			func = function(self,button)
-				local _mod=nameF;
-				securecall("GarrisonLandingPage_Toggle");
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
-	}
+	clickOptionsRename = clickOptionsRename,
+	clickOptions = clickOptions
 }
 
 moduleS = {
@@ -532,34 +533,12 @@ moduleS = {
 		showChars = true,
 		showAllFactions = true
 	},
-	clickOptions = {
-		["1_open_garrison_report"] = {
-			name = "Open garrison report", -- L["Open garrison report"]
-			desc = "open the garrison report", -- L["open the garrison report"]
-			default = "__NONE",
-			hint = "Open garrison report",
-			func = function(self,button)
-				local _mod=nameS;
-				securecall("GarrisonLandingPage_Toggle");
-			end
-		},
-		["2_open_menu"] = "OptionMenu"
-	}
+	clickOptionsRename = clickOptionsRename,
+	clickOptions = clickOptions
 }
 
-function moduleF.OptionMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(nameF);
-	ns.EasyMenu.ShowMenu(self);
-end
-
-function moduleS.OptionMenu(self)
-	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(nameS);
-	ns.EasyMenu.ShowMenu(self);
-end
+ns.ClickOpts.addDefaults(moduleF,clickOptionsDefaults);
+ns.ClickOpts.addDefaults(moduleS,clickOptionsDefaults);
 
 function moduleF.options()
 	return {
@@ -613,8 +592,8 @@ end
 -- function moduleS.init(self) end
 
 function moduleF.onevent(self,event)
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(moduleF,ns.profile[nameF]);
+	if (event=="BE_UPDATE_CFG") then
+		ns.ClickOpts.update(moduleF,ns.profile[nameF]);
 	elseif UnitLevel("player")>=90 then
 		if (delayF==true) then
 			delayF = false;
@@ -634,9 +613,9 @@ function moduleF.onevent(self,event)
 	end
 end
 
-function moduleS.onevent(self,event)
-	if (event=="BE_UPDATE_CLICKOPTIONS") then
-		ns.clickOptions.update(moduleS,ns.profile[nameS]);
+function moduleS.onevent(self,event,arg1)
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(moduleS,ns.profile[nameS]);
 	elseif UnitLevel("player")>=90 then
 		if (delayS==true) then
 			delayS = false;

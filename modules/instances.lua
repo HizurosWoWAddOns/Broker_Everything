@@ -190,7 +190,7 @@ function createTooltip(tt,name,mode)
 
 	--if ns.profile.GeneralOptions.showHints then
 	--	tt:AddSeparator(4,0,0,0,0)
-	--	ns.clickOptions.ttAddHints(tt,name);
+	--	ns.ClickOpts.ttAddHints(tt,name);
 	--end
 	ns.roundupTooltip(tt);
 end

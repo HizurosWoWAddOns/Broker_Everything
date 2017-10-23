@@ -125,8 +125,8 @@ function createTooltip(tt,update)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0);
-		ns.AddSpannedLine(tt,C("ltblue",L["Right-click"]).." || "..C("green",L["Remove entry"]));
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.AddSpannedLine(tt,C("ltblue",L["MouseBtnR"]).." || "..C("green",L["Remove entry"]));
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 
 	if not update then
@@ -154,40 +154,26 @@ module = {
 		showSessionProfit = true,
 		splitSummaryByFaction = true,
 	},
+	clickOptionsRename = {
+		["1_open_tokenframe"] = "currency",
+		["2_open_character_info"] = "charinfo",
+		["3_open_bags"] = "bags",
+		["4_open_menu"] = "menu"
+	},
 	clickOptions = {
-		["1_open_tokenframe"] = {
-			name = "Open currency pane", -- L["Open currency pane"]
-			desc = "open the currency pane", -- L["open the currency pane"]
-			default = "_LEFT",
-			hint = "Open currency pane",
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","TokenFrame");
-			end
-		},
-		["2_open_character_info"] = {
-			name = "Open character info", -- L["Open character info"]
-			desc = "open the character info", -- L["open the character info"]
-			default = "__NONE",
-			hint = "Open character info", -- L["Open character info"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleCharacter","PaperDollFrame");
-			end
-		},
-		["3_open_bags"] = {
-			name = "Open all bags", -- L["Open all bags"]
-			desc = "open your bags", -- L["open your bags"]
-			default = "__NONE",
-			hint = "Open all bags", -- L["Open all bags"]
-			func = function(self,button)
-				local _mod=name;
-				securecall("ToggleAllBags");
-			end
-		},
-		["4_open_menu"] = "OptionMenu"
+		["currency"] = "Currency",
+		["charinfo"] = "CharacterInfo",
+		["bags"] = {"Open all bags","call","ToggleAllBags"}, -- L["Open all bags"]
+		["menu"] = "OptionMenuCustom"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	currency = "_LEFT",
+	charinfo = "__NONE",
+	bags = "__NONE",
+	menu = "_RIGHT"
+});
 
 function module.options()
 	return {
@@ -222,9 +208,9 @@ function module.init()
 	end
 end
 
-function module.onevent(self,event,msg)
-	if event=="BE_UPDATE_CLICKOPTIONS" then
-		ns.clickOptions.update(name);
+function module.onevent(self,event,arg1)
+	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
+		ns.ClickOpts.update(name);
 	else
 		current_money = GetMoney();
 		ns.toon.gold = current_money;
