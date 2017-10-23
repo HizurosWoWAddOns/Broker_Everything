@@ -222,6 +222,12 @@ end
 -- ttMode [ 1: close on leave broker button (bool/nil) | 2: dont use hiddenMouseOver (bool/nil) ],
 -- ttParent [ 1: parent frame element (frame) | 2: anchor direction (string) | 3: alternative anchor target (frame/optional) ]
 
+local function MouseIsOver(region, topOffset, bottomOffset, leftOffset, rightOffset)
+	if region and region.IsMouseOver then -- stupid blizzard does not check if exists...
+		return region:IsMouseOver(topOffset, bottomOffset, leftOffset, rightOffset);
+	end
+end
+
 local function hideOnLeave(self)
 	local _, hiddenMouseOverAnchor = hiddenMouseOver:GetPoint();
 	if self.parent and self.parent[1] and (MouseIsOver(self.parent[1]) or (self.parent[1]==hiddenMouseOverAnchor and MouseIsOver(hiddenMouseOver))) then return end -- mouse is over broker and/or extended broker button area
