@@ -513,7 +513,7 @@ end
 -- missing real found function    --
 -- ------------------------------ --
 function ns.round(num,precision)
-	return tonumber(("%."..(tonumber(precision) or 0).."f"):format(num));
+	return tonumber(("%."..(tonumber(precision) or 0).."f"):format(num or 0)) or 0;
 end
 
 
@@ -530,24 +530,6 @@ function ns.pairsByKeys(t, f)
 	local i = 0      -- iterator variable
 	local function iter()   -- iterator function
 		i = i + 1
-		if a[i] == nil then
-			return nil
-		else
-			return a[i], t[a[i]]
-		end
-	end
-	return iter
-end
-
-function ns.reversePairsByKeys(t, f)
-	local a = {}
-	for n in ipairs(t) do
-		table.insert(a,n)
-	end
-	table.sort(a, f)
-	local i = #a
-	local function iter()
-		i = i - 1
 		if a[i] == nil then
 			return nil
 		else
@@ -1346,15 +1328,13 @@ end
 -- screen capture mode - string replacement function     --
 -- ----------------------------------------------------- --
 function ns.scm(str,all)
-	if (type(str)=="string") and (strlen(str)>0) and (ns.profile.GeneralOptions.scm==true) then
-		if (all) then
-			return strrep("*",(strlen(str)));
-		else
-			return strsub(str,1,1)..strrep("*",(strlen(str)-1));
-		end
-	else
-		return str;
+	if str==nil then return "" end
+	str = tostring(str);
+	local length = str:len();
+	if length>0 and ns.profile.GeneralOptions.scm==true then
+		str = all and strrep("*",length) or strsub(str,1,1)..strrep("*",length-1);
 	end
+	return str;
 end
 
 
@@ -1413,7 +1393,11 @@ do
 
 	local pat = "%06d%s";
 	local function sortAceOptions(a,b)
-		return pat:format(a.order or 100,a.name or "")<pat:format(b.order or 100,b.name or "");
+		local ao,bo = a.order or 100, b.order or 100;
+		if a.order~=b.order then
+			return a.order < b.order;
+		end
+		return a.name < b.order;
 	end
 
 	local beTypeFunc = {
@@ -1576,6 +1560,32 @@ do
 
 	self.addEntries = self.addEntry;
 
+	local grpOrder = {"broker","tooltip","misc","ClickOpts"};
+
+	local function pairsByOptionGroup(t)
+		local a = {}
+		for n in pairs(t) do
+			for i,v in ipairs(grpOrder)do
+				if n:find("^"..v) then
+					n = i.."."..n;
+					break;
+				end
+			end
+			table.insert(a, n);
+		end
+		table.sort(a);
+		local i,_ = 0;
+		local function iter()
+			i = i + 1
+			if a[i] == nil then
+				return nil
+			end
+			_,a[i] = strsplit(".",a[i],2);
+			return a[i], t[a[i]];
+		end
+		return iter
+	end
+
 	function self.addConfigElements(modName,separator,noTitle)
 		local noFirstSep,options = true,ns.getModOptionTable(modName);
 		local showLabel=true;
@@ -1583,9 +1593,8 @@ do
 			showLabel = false;
 		end
 		if options then
-			--local label = {broker=L["OptBroker"],tooltip=L["OptTooltip"],misc=L["OptMisc"],clickOptions=L["OptClickOptions"]};
-			for _,group in ipairs({"broker","tooltip","misc","clickOptions"})do
-				if options[group] and type(options[group].args)=="table" then
+			for _,optGrp in pairsByOptionGroup(options)do
+				if optGrp and type(optGrp.args)=="table" then
 					-- add group header
 					if separator then
 						self.addEntry({ separator=true });
@@ -1597,20 +1606,20 @@ do
 						end
 						separator=true
 					end
-					self.addEntry({ label=options[group].name, title=true });
+					self.addEntry({ label=optGrp.name, title=true });
 
 					-- replace shared option entries
-					for key, value in pairs(options[group])do
+					for key, value in pairs(optGrp)do
 						if ns.sharedOptions[key] then
 							local order = tonumber(value);
-							options[group][key] = CopyTable(ns.sharedOptions[key]);
-							options[group][key].order = order;
+							optGrp[key] = CopyTable(ns.sharedOptions[key]);
+							optGrp[key].order = order;
 						end
 					end
 
 					-- sort group table
-					table.sort(options[group].args,sortAceOptions);
-					for key, value in pairs(options[group].args)do
+					table.sort(optGrp.args,sortAceOptions);
+					for key, value in pairs(optGrp.args)do
 
 						local hide = (value.hidden==true) or (value.disabled==true) or false;
 						if not hide and type(value.hidden)=="function" then
