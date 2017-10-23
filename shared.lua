@@ -381,7 +381,7 @@ end
 --- sometimes it is better to let other addons the control about something ---
   --------------------------------------------------------------------------
 do
-	local found,list = {},{
+	local found,list = false,{
 		-- ["<addon name>"] = "<msg>",
 		["Carbonite"]			= "CoExistUnsave",
 		["DejaMinimap"]			= "CoExistUnsave",
@@ -394,24 +394,31 @@ do
 		["SquareMap"]			= "CoExistUnsave",
 	};
 	ns.coexist = {};
-	function ns.coexist.check()
-		wipe(found);
-		for name in pairs(list) do
-			if (GetAddOnInfo(name)) and (GetAddOnEnableState(ns.player.name,name)==2) then
-				tinsert(found,name);
+	function ns.coexist.check(info)
+		if found==false then
+			found = {};
+			for name in pairs(list) do
+				if (GetAddOnInfo(name)) and (GetAddOnEnableState(ns.player.name,name)==2) then
+					tinsert(found,name);
+				end
 			end
 		end
-		return #found>0;
+		local b = #found>0;
+		if info and info[#info]:find("Info$") then
+			return not b;
+		end
+		return b;
 	end
 
 	function ns.coexist.optionInfo()
 		-- This option is disabled because:
 		-- <addon> >> <msg>
 		local msgs = {};
-		for name in pairs(found)do
-			tinsert(msgs, C("ltblue",name)..C("ltgray"," >> ")..list[name]);
+		ns.debug("<optioninfo>",#found);
+		for i=1, #found do
+			tinsert(msgs, ns.LC.color("ltblue",found[i])..ns.LC.color("ltgray"," >> ")..list[found[i]]);
 		end
-		return C("orange",L["CoExistDisabled"]).."\n"
+		return ns.LC.color("orange",L["CoExistDisabled"]).."\n"
 			.. table.concat(msgs,"\n");
 	end
 end
