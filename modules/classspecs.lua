@@ -269,7 +269,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	icon_suffix = nil,
 	events = {
 		"PLAYER_LOGIN",
 		"ACTIVE_TALENT_GROUP_CHANGED",
@@ -280,7 +279,6 @@ module = {
 		"PLAYER_SPECIALIZATION_CHANGED",
 		"CHAT_MSG_SYSTEM" -- for loot spec changes -.-
 	},
-	updateinterval = nil, -- 10
 	config_defaults = {
 		showTalents = true,
 		showTalentsShort = false,
@@ -331,7 +329,7 @@ end
 
 -- function module.init() end
 
-function module.createTalentMenu(self) -- TODO: fill new function
+function module.createTalentMenu(self)
 	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 	ns.EasyMenu.InitializeMenu();
 	-- 1. pve talents

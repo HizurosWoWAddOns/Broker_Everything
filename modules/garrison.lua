@@ -26,13 +26,6 @@ I[name] = {iconfile="Interface\\Icons\\inv_garrison_resource", coords={0.05,0.95
 
 -- some local functions --
 --------------------------
-local function strCut(str,length) -- TODO: check...
-	if (strlen(str)>length) then
-		return strsub(str,0,length).."...";
-	end
-	return str;
-end
-
 local function AchievementTooltipShow(self, achievementId)
 	GameTooltip:SetOwner(self,"ANCHOR_NONE");
 	if (select(1,self:GetCenter()) > (select(1,UIParent:GetWidth()) / 2)) then
@@ -79,8 +72,8 @@ local function createTooltip(tt)
 	local building = "|T%s:14:14:0:0:64:64:4:56:4:56|t "..C("ltgray","(%d%s)").." "..C("ltyellow","%s");
 
 	local _ = function(n)
-		if (IsShiftKeyDown()) then -- TODO: modifier key adjustable...
-			return date("%Y-%m-%d %H:%M",time() + n); -- TODO: timestring adjustable...
+		if (IsShiftKeyDown()) then
+			return date("%Y-%m-%d %H:%M",time() + n);
 		end
 		return SecondsToTime(n,true);
 	end;
@@ -554,7 +547,7 @@ function module.onevent(self,event,arg1,...)
 							end
 							tinsert(achievements3,{
 								id = aid,
-								name = strCut(aname,25),
+								name = ns.strCut(aname,25),
 								icon = aicon,
 								bname = pname,25,
 								bicon = icon,

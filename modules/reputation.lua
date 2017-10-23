@@ -379,12 +379,10 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	icon_suffix = nil,
 	events = {
 		"PLAYER_LOGIN",
 		"UPDATE_FACTION"
 	},
-	updateinterval = nil, --0.5, -- 10
 	config_defaults = {
 		bgBars = "single",
 		standingText = true,

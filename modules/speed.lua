@@ -17,12 +17,6 @@ local riding_skills,licences,bonus_spells,replace_unknown,trainer_faction = {},{
 I[name] = {iconfile="Interface\\Icons\\Ability_Rogue_Sprint",coords={0.05,0.95,0.05,0.95}}; --IconName::Speed--
 
 
--- possible click option
-	--if not PetJournalParent then PetJournal_LoadUI() end
-	--securecall("TogglePetJournal",1)
-
-
-
 -- some local functions --
 --------------------------
 local function updateTrainerName(data)
@@ -264,10 +258,10 @@ end
 ---------------------------------------
 module = {
 	events = {"PLAYER_LOGIN"},
-	updateinterval = 0.16, -- false or integer
+	onupdate_interval = 0.16,
 	config_defaults = {
 		precision = 0,
-	},
+	}
 }
 
 function module.options()

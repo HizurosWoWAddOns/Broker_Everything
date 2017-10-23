@@ -4,7 +4,6 @@
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
--- TODO: auto sell trash on vendor as option
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
@@ -189,7 +188,6 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	icon_suffix = nil,
 	events = {
 		"PLAYER_LOGIN",
 		"BAG_UPDATE",
@@ -197,7 +195,6 @@ module = {
 		"MERCHANT_SHOW",
 		"MERCHANT_CLOSED"
 	},
-	updateinterval = nil, -- 10
 	config_defaults = {
 		freespace = true,
 		critLowFree = 5,

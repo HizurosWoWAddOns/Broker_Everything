@@ -222,7 +222,6 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	--icon_suffix = "_Neutral",
 	events = {
 		"PLAYER_LOGIN",
 		"KNOWN_CURRENCY_TYPES_UPDATE",
@@ -231,7 +230,6 @@ module = {
 		"CURRENCY_DISPLAY_UPDATE",
 		"CHAT_MSG_SKILL"
 	},
-	updateinterval = nil,
 	config_defaults = {
 		inTitle = {},
 		continentOrder=true
@@ -254,11 +252,9 @@ ns.ClickOpts.addDefaults(module,{
 
 function module.options()
 	return {
-		broker = nil,
 		tooltip = {
 			continentOrder = { type="toggle", order=1, name=L["Order by continent"], desc=L["Order archaeology races by continent"] }
-		},
-		misc = nil,
+		}
 	}
 end
 

@@ -154,7 +154,6 @@ module = {
 		"GUILD_EVENT_LOG_UPDATE"
 		-- guild roster update or so...
 	},
-	updateinterval = nil, -- 10
 	config_defaults = {
 		max_entries = 0,
 		displayMode = "NORMAL",

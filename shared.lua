@@ -305,9 +305,7 @@ function ns.roundupTooltip(tooltip)
 	if not tooltip then return end
 	tooltip:UpdateScrolling(GetScreenHeight() * (ns.profile.GeneralOptions.maxTooltipHeight/100));
 	tooltip:SetClampedToScreen(true);
-	if not tooltip:IsShown() then
-		tooltip:Show();
-	end
+	tooltip:Show();
 end
 
 function ns.hideTooltip(tooltip)
@@ -349,7 +347,7 @@ ns.tooltipModifiers = {
 	RIGHTALT   = {l="RA", f="RightAlt"},
 	CTRL       = {l="C",  f="Control"},
 	LEFTCTRL   = {l="LC", f="LeftControl"},
-	RIGHTCTRL  = {l="Rc", f="RightControl"}
+	RIGHTCTRL  = {l="RC", f="RightControl"}
 }
 
 function ns.tooltipChkOnShowModifier(bool)
@@ -1670,7 +1668,6 @@ do
 									},p);
 								end
 							elseif value.type=="range" then
-								-- TODO: currently no idea how i can add a slider into blizzard's dropdown menu.
 							end
 						end
 					end

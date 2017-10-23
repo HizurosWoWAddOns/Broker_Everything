@@ -201,7 +201,6 @@ module = {
 		"ENABLE_XP_GAIN",
 		"UNIT_INVENTORY_CHANGED"
 	},
-	updateinterval = nil, -- 10
 	config_defaults = {
 		display = "1",
 		showMyOtherChars = true,

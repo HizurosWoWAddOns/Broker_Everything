@@ -32,7 +32,6 @@ I[name] = {iconfile=1109508 or ns.icon_fallback,coords={0.05,0.95,0.05,0.95}} --
 
 -- some local functions --
 --------------------------
--- TODO: not in use... deprecated?
 local function CalculateArtifactPower(ap,ak) -- artifact_power, artifact_knowledge
 	ap,ak=tonumber(ap) or 0,tonumber(ak) or 0;
 	if ak > 0 then
@@ -605,7 +604,6 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	icon_suffix = nil,
 	events = {
 		"PLAYER_LOGIN",
 		"ARTIFACT_XP_UPDATE",
@@ -614,7 +612,6 @@ module = {
 		"UNIT_INVENTORY_CHANGED",
 		"CURRENCY_DISPLAY_UPDATE"
 	},
-	updateinterval = nil, -- 10
 	config_defaults = {
 		showName = true,
 		showPoints = true,
@@ -727,7 +724,6 @@ function module.init()
 		[147479]=1, [147480]=1, [147481]=1, [147482]=1, [147483]=1, [147484]=1, [147485]=1, [147486]=1, [147513]=1, [147548]=1, [147549]=1, [147550]=1,
 		[147551]=1, [147579]=1, [147581]=1, [147718]=1, [147719]=1, [147720]=1, [147721]=1, [147808]=1, [147809]=1, [147810]=1, [147811]=1, [147812]=1,
 		[147814]=1, [147818]=1, [147819]=1, [147842]=1
-		-- TODO: needs update
 	};
 
 	artifactKnowledgeMultiplier = {

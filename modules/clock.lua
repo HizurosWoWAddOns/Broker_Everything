@@ -105,11 +105,9 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	icon_suffix = nil,
 	events = {"PLAYER_LOGIN","TIME_PLAYED_MSG"},
 	updateinterval = 1,
 	timeout = 30,
-	timeoutAfterEvent = "PLAYER_LOGIN",
 	config_defaults = {
 		format24 = true,
 		timeLocal = true,

@@ -210,7 +210,6 @@ module = {
 		"PLAYER_LOGIN",
 		"UPDATE_WEB_TICKET"
 	},
-	updateinterval = nil, -- 10
 	config_defaults = {
 		customTitle = "",
 		hideSection2 = false,

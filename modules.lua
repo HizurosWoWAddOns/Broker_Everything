@@ -127,7 +127,6 @@ local function moduleInit(name)
 						mod.onevent(mod.eventFrame,e);
 					end
 					mod.eventFrame:RegisterEvent(e);
-					-- TODO: performance issue?
 				end
 			end
 		end

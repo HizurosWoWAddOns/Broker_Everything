@@ -277,14 +277,12 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	icon_suffix = nil,
 	events = {
 		"PLAYER_LOGIN",
 		"GARRISON_MISSION_LIST_UPDATE",
 		"GARRISON_MISSION_STARTED",
 		"GARRISON_MISSION_FINISHED"
 	},
-	updateinterval = nil,
 	config_defaults = {
 		showAvailable = true,
 		showActive = true,

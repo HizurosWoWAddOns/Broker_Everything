@@ -211,13 +211,10 @@ module = {
 	events = {
 		"PLAYER_LOGIN",
 		"CVAR_UPDATE"
-	},
-	updateinterval = nil, -- 10
-	config_defaults = {},
+	}
 }
 
 -- function module.options() return {} end
--- function module.OptionMenu() return {} end
 
 function module.init()
 	nameplateStatus = {

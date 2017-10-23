@@ -208,10 +208,6 @@ end
 ------------------------------------
 module = {
 	events = {},
-	updateinterval = nil, --10,
-	timeout = nil, --20,
-	timeout_used = false,
-	timeout_args = nil,
 	config_defaults = {
 		-- show types
 		showBosses = true,

@@ -233,13 +233,11 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	icon_suffix = nil,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_REGEN_ENABLED",
 		"QUEST_LOG_UPDATE"
 	},
-	updateinterval = 10,
 	config_defaults = {
 		showQuestIDs = false,
 		showChars = true,

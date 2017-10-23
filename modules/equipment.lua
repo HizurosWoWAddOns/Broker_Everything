@@ -304,7 +304,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	icon_suffix = nil,
 	events = {
 		"UNIT_INVENTORY_CHANGED",
 		"EQUIPMENT_SWAP_FINISHED",
@@ -315,7 +314,6 @@ module = {
 		"PLAYER_UNGHOST",
 		"ITEM_UPGRADE_MASTER_UPDATE"
 	},
-	updateinterval = nil, -- 10
 	config_defaults = {
 		showSets = true,
 		showInventory = true,

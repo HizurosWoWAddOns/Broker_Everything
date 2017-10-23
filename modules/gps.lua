@@ -15,7 +15,7 @@ local name2 = "Location"; -- L["Location"]
 local name3 = "ZoneText"; -- L["ZoneText"]
 local updateinterval,module1,module2,module3 = 0.12;
 local ttName1, ttName2, ttName3, ttName4 = name1.."TT", name2.."TT", name3.."TT", "TransportMenuTT";
-local ttColumns,ttColumns4,onleave,createTooltip2 = 3,5;
+local ttColumns,ttColumns4,onleave = 3,5;
 local tt1, tt2, tt3, tt4, items;
 local tt5positions = {
 	["LEFT"]   = {edgeSelf = "RIGHT",  edgeParent = "LEFT",   x = -2, y =  0},
@@ -419,7 +419,6 @@ end
 ------------------------------------
 module1 = {
 	events = {},
-	updateinterval = nil,
 	config_defaults = {
 		bothZones = "2",
 		precision = 0,
@@ -432,7 +431,6 @@ module1 = {
 module2 = {
 	enabled = false,
 	events = {},
-	updateinterval = nil,
 	config_defaults = {
 		precision = 0,
 		coordsFormat = "%s, %s",
@@ -444,7 +442,6 @@ module2 = {
 module3 = {
 	enabled = false,
 	events = {},
-	updateinterval = nil,
 	config_defaults = {
 		bothZones = "2",
 		precision = 0,

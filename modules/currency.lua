@@ -292,7 +292,7 @@ function createTooltip(tt,update)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.clickOptions.ttAddHints(tt,name);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	if not update then
 		ns.roundupTooltip(tt);
@@ -313,7 +313,6 @@ module = {
 		"CURRENCY_DISPLAY_UPDATE",
 		"CHAT_MSG_CURRENCY"
 	},
-	updateinterval = nil, -- 10
 	config_defaults = {
 		shortTT = false,
 		subTTposition = "AUTO",

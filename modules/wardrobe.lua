@@ -116,17 +116,9 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	icon_suffix = nil,
 	events = {
 		"PLAYER_LOGIN",
-		--"KNOWN_CURRENCY_TYPES_UPDATE",
-		--"ARTIFACT_UPDATE",
-		--"ARTIFACT_COMPLETE",
-		--"CURRENCY_DISPLAY_UPDATE",
-		--"GET_ITEM_INFO_RECEIVED",
-		--"CHAT_MSG_SKILL"
 	},
-	updateinterval = nil,
 	config_defaults = {},
 	clickOptionsRename = {
 		["menu"] = "9_open_menu"

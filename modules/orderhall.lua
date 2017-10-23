@@ -219,8 +219,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	events = {},
-	updateinterval = nil, -- 10
 	config_defaults = {},
 	clickOptionsRename = {
 		["garrreport"] = "1_open_garrison_report",

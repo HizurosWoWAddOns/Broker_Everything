@@ -486,7 +486,6 @@ module = {
 		"PLAYER_LOGIN",
 		"CHAT_MSG_SYSTEM"
 	},
-	updateinterval = nil, -- 10
 	config_defaults = {
 		-- broker button
 		splitFriendsBroker = true,

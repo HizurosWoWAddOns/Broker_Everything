@@ -35,7 +35,7 @@ local clickOptions = {
 	["addons"] = {"Addon list","module","addonpanel"}, -- L["Addon list"]
 	-- toggle netstats
 	["menu"] = "OptionMenu",
-	-- ["memoryusage"] = {"Update memory usage","direct",function() TODO: missing code for update memory usage end }
+	-- ["memoryusage"] = {"Update memory usage","direct",function() end }
 };
 local clickOptionsDefaults = {
 	options = "_LEFT",
@@ -526,9 +526,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module_sys = {
-	icon_suffix = nil,
 	events = {},
-	updateinterval = nil,
 	config_defaults = {
 		-- broker button options
 		showInboundOnBroker = true,
@@ -560,16 +558,13 @@ module_sys = {
 module_fps = {
 	icon_suffix = "_blue",
 	events = {},
-	updateinterval = nil,
 	config_defaults = {
 		fillCharacter = "0none"
 	},
 };
 
 module_lat = {
-	icon_suffix = nil,
 	events = {},
-	updateinterval = nil,
 	config_defaults = {
 		showHome = true,
 		showWorld = true
@@ -577,8 +572,6 @@ module_lat = {
 };
 
 module_mem = {
-	icon_suffix = nil,
-	updateinterval = nil,
 	config_defaults = {
 		mem_max_addons = -1,
 		addonpanel = "none",
@@ -588,9 +581,7 @@ module_mem = {
 }
 
 module_traf = {
-	icon_suffix = nil,
 	events = {},
-	updateinterval = nil,
 	config_defaults = {
 		showInbound = true,
 		showOutbound = true
@@ -666,14 +657,12 @@ end
 
 function module_mem.options()
 	return {
-		broker = nil,
 		tooltip = {
 			mem_max_addons={ type="range", name=L["Show addons in tooltip"], desc=L["Select the maximum number of addons to display, otherwise drag to 'All'."],
 				--minText = ACHIEVEMENTFRAME_FILTER_ALL,
 				step = 1,
 				min = -1,
 				max = 100,
-				--rep = {[-1]=ACHIEVEMENTFRAME_FILTER_ALL}
 			}
 		},
 		misc = {
@@ -707,8 +696,6 @@ end
 
 function module_fps.options()
 	return {
-		broker = nil,
-		tooltip = nil,
 		misc = {
 			fillCharacter={ type="select", order=1, name=L["Prepend character"], desc=L["Prepend a character to fill displayed fps up to 3 character."], width="double",
 				values = {
@@ -724,8 +711,6 @@ end
 
 function module_traf.options()
 	return {
-		broker = nil,
-		tooltip = nil,
 		misc = {
 			shortNumbers=1,
 		}

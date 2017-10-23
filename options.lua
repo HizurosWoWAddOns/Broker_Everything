@@ -2,9 +2,6 @@
 local addon, ns = ...
 local addonLabel = addon;
 local C, L, I = ns.LC.color, ns.L, ns.I;
-
--- TODO: modul optionen von nicht aktiven modulen werden nicht mit angezeigt in AceOptions
-
 local dbDefaults,db = {
 	profile = {
 		GeneralOptions = {

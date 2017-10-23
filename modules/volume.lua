@@ -230,7 +230,6 @@ module = {
 		"CVAR_UPDATE",
 		"SOUND_DEVICE_UPDATE"
 	},
-	updateinterval = nil, --5,
 	config_defaults = {
 		useWheel = false,
 		steps = 10,

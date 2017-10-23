@@ -237,29 +237,23 @@ end
 -- module functions and variables --
 ------------------------------------
 module1 = {
-	--icon_suffix = "",
 	events = {
 		"PLAYER_LOGIN"
 	},
-	updateinterval = nil, -- 10
 	config_defaults = {
 		invertExpansionOrder = true,
 		showID = false
-	},
-	clickOptions = nil
+	}
 }
 
 module2 = {
-	--icon_suffix = "",
 	events = {
 		"PLAYER_LOGIN"
 	},
-	updateinterval = nil, -- 10
 	config_defaults = {
 		invertExpansionOrder = true,
 		showID = false
-	},
-	clickOptions = nil
+	}
 }
 
 function module1.options()

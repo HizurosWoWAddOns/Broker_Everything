@@ -234,7 +234,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	icon_suffix = nil,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_DEAD",
@@ -244,7 +243,6 @@ module = {
 		"PLAYER_MONEY",
 		"CHAT_MSG_MONEY"
 	},
-	updateinterval = nil,
 	config_defaults = {
 		goldColor = false,
 		inBroker = "percent",

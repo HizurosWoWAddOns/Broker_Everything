@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Achievements"; -- ACHIEVEMENTS
+local name = "Achievements";
 local ttName, ttColumns, tt, module = name.."TT", 2;
 local categoryIds,bars,count = {92, 96, 97, 95, 168, 169, 201, 15165, 155, 15117, 15246, 15237},{},0;
 
@@ -163,9 +163,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	--icon_suffix = "",
 	events = {},
-	updateinterval = nil,
 	config_defaults = {
 		showLatest = true,
 		showCategory = true,
@@ -185,15 +183,13 @@ ns.ClickOpts.addDefaults(module,"menu","_RIGHT");
 
 function module.options()
 	return {
-		broker = nil,
 		tooltip = {
 			showLatest       = {type="toggle", order=1, name=L["AchieveOptLast"],      desc=L["AchieveOptLastDesc"]},
 			showCategory     = {type="toggle", order=2, name=L["AchieveOptCat"],       desc=L["AchieveOptCatDesc"]},
 			showWatchlist    = {type="toggle", order=3, name=L["AchieveOptWatch"],     desc=L["AchieveOptWatchDesc"]},
 			showProgressBars = {type="toggle", order=4, name=L["AchieveOptBars"],      desc=L["AchieveOptBarsDesc"]},
 			showCompleted    = {type="toggle", order=5, name=L["AchieveOptCompleted"], desc=L["AchieveOptCompletedDesc"]},
-		},
-		misc = nil,
+		}
 	}
 end
 

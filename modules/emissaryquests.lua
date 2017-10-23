@@ -203,7 +203,7 @@ local function createTooltip(tt)
 				local _,_realm = ns.LRI:GetRealmInfo(realm);
 				if _realm then realm = _realm; end
 			end
-			realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or ""; -- TODO: add asterisk or realm option
+			realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or "";
 			local c,l=2,tt:AddLine(C(v.class,ns.scm(c)) .. realm .. faction);
 			for _,data in pairs(factions)do
 				if data.eventEnding-Time>=0 then
@@ -247,7 +247,7 @@ local function createTooltip(tt)
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0)
-		ns.ClickOpts.ttAddHints(tt,name);-- TODO: missing hints?
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
@@ -256,12 +256,10 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	--icon_suffix = "",
 	events = {
 		"PLAYER_LOGIN",
 		"QUEST_LOG_UPDATE"
 	},
-	updateinterval = nil,
 	config_defaults = {
 		shortTitle = false,
 		showAllFactions=true,

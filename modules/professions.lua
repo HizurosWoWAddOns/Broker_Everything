@@ -281,7 +281,6 @@ module = {
 		"BAG_UPDATE_DELAYED",
 		"GET_ITEM_INFO_RECEIVED",
 	},
-	updateinterval = nil, -- 10
 	config_defaults = {
 		showCooldowns = true,
 		showDigSiteStatus = true,

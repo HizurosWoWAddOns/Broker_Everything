@@ -178,7 +178,6 @@ module = {
 		"PLAYER_LOGIN",
 		"NEUTRAL_FACTION_SELECT_RESULT"
 	},
-	updateinterval = 30, -- 10
 	config_defaults = {},
 	clickOptionsRename = {
 		["newnote"] = "1_new_note",
@@ -211,7 +210,7 @@ end
 
 function module.init()
 	if ns.data[name]==nil then
-		ns.data[name] = {}; -- TODO: really neccessary?
+		ns.data[name] = {};
 	end
 end
 

@@ -61,11 +61,10 @@ module = {
 		"MINIMAP_UPDATE_TRACKING",
 		"PLAYER_LOGIN"
 	},
-	updateinterval = nil, -- 10
 	config_defaults = {
 		displaySelection = true,
 		hideMinimapButton = false
-	},
+	}
 }
 
 function module.options()

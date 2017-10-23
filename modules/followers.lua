@@ -253,7 +253,7 @@ local function createTooltip(tt, name)
 
 			if (ns.player.name_realm~=name_realm) and ns.showThisChar(name,realm,v.faction) then
 				local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-				realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or ""; -- TODO: add asterisk or realm option
+				realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or "";
 
 				local l=tt:AddLine(C(v.class,ns.scm(charName)) .. realm .. faction );
 
@@ -324,7 +324,6 @@ local function createTooltip(tt, name)
 	end
 
 	local title,subTitle,inset=true,true,"";
-	-- TODO: tooltip damaged... broker display follower but not in tooltip
 	for _,n in ipairs(tableOrder) do
 		if (tableTitles[n]) then
 			local lst = {};
@@ -486,7 +485,6 @@ end
 -- module functions and variables --
 ------------------------------------
 moduleF = {
-	--icon_suffix = "",
 	events = {
 		"PLAYER_LOGIN",
 		"GARRISON_FOLLOWER_LIST_UPDATE",
@@ -494,7 +492,6 @@ moduleF = {
 		"GARRISON_FOLLOWER_XP_CHANGED",
 		"GARRISON_FOLLOWER_REMOVED",
 	},
-	updateinterval = nil,
 	config_defaults = {
 		showAllInOne = true,
 		showFollowersOnBroker = true,
@@ -527,7 +524,6 @@ moduleS = {
 		"GARRISON_FOLLOWER_XP_CHANGED",
 		"GARRISON_FOLLOWER_REMOVED",
 	},
-	updateinterval = nil,
 	config_defaults = {
 		bgColoredStatus = true,
 		showChars = true,

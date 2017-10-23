@@ -145,7 +145,6 @@ module = {
 		"PLAYER_TRADE_MONEY",
 		"TRADE_MONEY_CHANGED",
 	},
-	updateinterval = nil, -- 10
 	config_defaults = {
 		goldColor = nil,
 		showAllFactions=true,

@@ -36,7 +36,6 @@ ns.commands = {
 			--Broker_EverythingDB.reset = true
 			--ReloadUI()
 			sorry();
-			-- TODO: needs update
 		end,
 	},
 	list        = {

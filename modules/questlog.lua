@@ -328,7 +328,6 @@ module = {
 		"PLAYER_LOGIN",
 		"QUEST_LOG_UPDATE",
 	},
-	updateinterval = 1, -- 10
 	config_defaults = {
 		showQuestTags = true,
 		showQuestIds = true,

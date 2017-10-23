@@ -204,7 +204,6 @@ module = {
 		"MAIL_CLOSED",
 		"MAIL_SHOW"
 	},
-	updateinterval = 60,
 	config_defaults = {
 		playsound = false,
 		showDaysLeft = true,
@@ -254,7 +253,6 @@ function module.init()
 	if ns.coexist.check() and ns.profile[name].hideMinimapMail then
 		ns.hideFrame("MiniMapMailFrame");
 	end
-	-- TODO: add db data integrity check script here
 end
 
 function module.onevent(self,event,msg)
@@ -305,7 +303,7 @@ function module.onenter(self)
 end
 
 -- function module.onleave(self) end
--- function module.onclick = --function(self,button) end -- TODO: migrate to clickOptions
+-- function module.onclick(self,button) end
 -- function module.ondblclick(self,button) end
 
 

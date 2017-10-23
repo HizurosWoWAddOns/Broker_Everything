@@ -538,7 +538,6 @@ module = {
 		"PLAYER_LOGIN",
 		"PLAYER_GUILD_UPDATE",
 	},
-	updateinterval = nil,
 	config_defaults = {
 		-- guild
 		showRep = true,

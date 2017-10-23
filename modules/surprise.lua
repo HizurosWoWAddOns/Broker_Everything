@@ -93,7 +93,6 @@ end
 ---------------------------------------
 module = {
 	events = {},
-	updateinterval = nil,
 	config_defaults = {},
 }
 

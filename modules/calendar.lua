@@ -163,12 +163,10 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	icon_suffix = nil,
 	events = {
 		"CALENDAR_UPDATE_PENDING_INVITES",
 		"PLAYER_LOGIN"
 	},
-	updateinterval = nil, -- 10
 	config_defaults = {
 		hideMinimapCalendar = false,
 		shortBroker = false,

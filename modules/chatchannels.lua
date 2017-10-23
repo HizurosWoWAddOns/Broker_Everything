@@ -96,7 +96,7 @@ local function createTooltip(tt,update)
 	for i,v in ipairs(channels) do
 		local channel, header, collapsed, channelNumber, count, active, category = unpack(v);
 
-		if(header)then
+		if header then
 			tt:AddSeparator(4,0,0,0,0);
 			local l=tt:AddLine(C("ltblue",channel));
 			if(collapsed)then
@@ -167,19 +167,14 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	--icon_suffix = '',
 	events = {
 		"PLAYER_LOGIN",
-		"PARTY_LEADER_CHANGED",
-		"GROUP_ROSTER_UPDATE",
 		"CHANNEL_UI_UPDATE",
 		"CHANNEL_COUNT_UPDATE",
 		"CHANNEL_ROSTER_UPDATE"
 	},
 	updateinterval = 30, -- 10
-	config_defaults = {
-		--inTitle = {}
-	},
+	config_defaults = {},
 	clickOptions = {
 		["chats"] = {"Chat channels window","call",{"ToggleFriendsFrame",3}}, -- L["Chat channels window"]
 		["menu"] = "OptionMenu"
@@ -216,7 +211,7 @@ function module.onevent(self,event,arg1,arg2,...)
 			C_Timer.After(5,updater);
 			ticker = C_Timer.NewTicker(module.updateinterval,updater);
 		end
-	elseif event=="d" then -- TODO: what that??
+	elseif event=="d" then
 		updateList()
 	end
 end
