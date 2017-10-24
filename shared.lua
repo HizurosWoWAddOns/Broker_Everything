@@ -1260,6 +1260,7 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 	if(not opts.sep)then
 		opts.sep=" ";
 	end
+
 	if(not opts.hideLowerZeros)then
 		opts.hideLowerZeros=false;
 		if (ns.profile.GeneralOptions.goldHideLowerZeros==true)then
@@ -1267,24 +1268,16 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 		end
 	end
 
-	if(not opts.hideCopper)then
-		opts.hideCopper=false;
-		if(ns.profile.GeneralOptions.goldHideCopper==true)then
-			opts.hideCopper=true;
-		end
+	if not (opts.hideMoney) then
+		opts.hideMoney = tonumber(ns.profile.GeneralOptions.goldHide);
 	end
 
-	if(not opts.hideSilver)then
-		opts.hideSilver=false;
-		if(ns.profile.GeneralOptions.goldHideSilver==true)then
-			opts.hideSilver=true;
-		end
-	end
-
-	if(opts.hideSilver)then
+	if(opts.hideMoney==2)then
 		amount = floor(amount/10000)*10000;
-	elseif(opts.hideCopper)then
+		opts.hideLowerZeros=true;
+	elseif(opts.hideMoney==1)then
 		amount = floor(amount/100)*100;
+		opts.hideLowerZeros=true;
 	end
 
 	local gold, silver, copper, t, i = floor(amount/10000), mod(floor(amount/100),100), mod(floor(amount),100), {}, 1

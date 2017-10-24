@@ -2,6 +2,8 @@
 local addon, ns = ...
 local addonLabel = addon;
 local C, L, I = ns.LC.color, ns.L, ns.I;
+local migrateAll = true;
+
 local dbDefaults,db = {
 	profile = {
 		GeneralOptions = {
@@ -16,8 +18,7 @@ local dbDefaults,db = {
 			scm = false,
 			ttModifierKey1 = "NONE",
 			ttModifierKey2 = "NONE",
-			goldHideCopper = false,
-			goldHideSilver = false,
+			goldHide = "0",
 			goldHideLowerZeros = false,
 			separateThousands = true,
 			showAddOnLoaded = true
@@ -77,7 +78,7 @@ local function calcDataSize(info,obj)
 	elseif obj_t=="boolean" then
 		return 2;
 	elseif obj_t=="number" then
-		return strlen(string.format("%x",obj));
+		return (floor(obj/2147483647)+1)*8;
 	end
 	return strlen(tostring(objStr));
 end
@@ -97,11 +98,6 @@ local function noReload()
 	return false;
 end
 
--- module events on option changed
-local moduleEvents = {
-	--
-}
-
 -- option set/get function
 local function opt(info,value,...)
 	-- section = GeneralOptions or module names
@@ -119,9 +115,20 @@ local function opt(info,value,...)
 		else
 			if ... then value={value,...}; end
 			db.profile[section][key]=value;
-			ns.modules[section]:onevent("BE_UPDATE_CFG");
-			if moduleEvents[section] and moduleEvents[section][key] then
-				ns.modules[section]:onevent(moduleEvents[section][key]);
+			if section=="GeneralOptions" then
+				for modName,mod in pairs(ns.modules)do
+					if mod.OnEvent then
+						mod:OnEvent("BE_UPDATE_CFG",key);
+					else
+						ns.debug("<BE_UPDATE_CFG>","Missing onevent function in module:",modName);
+					end
+				end
+			else
+				if ns.modules[section].OnEvent then
+					ns.modules[section]:OnEvent("BE_UPDATE_CFG",key);
+				else
+					ns.debug("<BE_UPDATE_CFG>","Missing onevent function in module:",section);
+				end
 			end
 		end
 	end
@@ -162,20 +169,34 @@ local options = {
 			type = "group", order = 1,
 			name = L["OptGeneral"],
 			args = {
-				gold = {
+				misc = {
 					type = "group", order = 1, inline = true,
-					name = L["OptMoney"],
+					name = C("ff00aaff",L["OptMisc"]),
 					args = {
-						goldColor          = {type="toggle",order=1,name=L["OptGoldColor"], desc=L["OptGoldColorDesc"]},
-						goldHideCopper     = {type="toggle",order=2,name=L["OptHideCopper"],desc=L["OptHideCopperDesc"]},
-						goldHideSilver     = {type="toggle",order=3,name=L["OptHideSilver"],desc=L["OptHideSilverDesc"]},
-						goldHideLowerZeros = {type="toggle",order=4,name=L["OptHideZeros"], desc=L["OptHideZerosDesc"]},
-						separateThousands  = {type="toggle",order=5,name=L["OptDigitGroup"],desc=L["OptDigitGroupDesc"]},
+						showAddOnLoaded = { type="toggle", order=1, name=L["Show 'AddOn Loaded...'"], desc=L["Show 'AddOn Loaded...' message on logins and UI reloads"] },
+						suffixColour    = { type="toggle", order=2, name=L["Suffix coloring"], desc=L["Enable/Disable class coloring of the information display suffixes. (eg, ms, fps etc)"] },
+						usePrefix       = { type="toggle", order=3, name=L["Use prefix"], desc=L["Use prefix 'BE..' on module registration at LibDataBroker. This fix problems with other addons with same broker names but effect your current settings in panel addons like Bazooka or Titan Panel."] },
+					}
+				},
+				gold = {
+					type = "group", order = 2, inline = true,
+					name = C("ff00aaff",L["OptMoney"]),
+					args = {
+						goldColor          = {type="toggle",order=1,name=L["Gold coloring"],    desc=L["GoldColorDesc"]},
+						separateThousands  = {type="toggle",order=2,name=L["Digit grouping"],desc=L["DigitGroupDesc"]},
+						goldHideLowerZeros = {type="toggle",order=3,name=L["Hide lower zeros"], desc=L["HideZerosDesc"]},
+						goldHide           = {type="select", order=4,name=L["HideMoney"],       desc=L["HideMoneyDesc"],
+							values={
+								["0"]=NONE,
+								["1"]=L["Copper"],
+								["2"]=L["Copper & Silver"]
+							}
+						}
 					}
 				},
 				tooltip = {
-					type = "group", order = 2, inline = true,
-					name = L["OptTooltip"],
+					type = "group", order = 3, inline = true,
+					name = C("ff00aaff",L["OptTooltip"]),
 					args = {
 						tooltipScale     = {type="toggle",order=1,name=L["OptTTScale"],desc=L["OptTTScaleDesc"]},
 						scm              = {type="toggle",order=2,name=L["OptSCM"],desc=L["OptSCMDesc"]},
@@ -186,8 +207,8 @@ local options = {
 					}
 				},
 				icons = {
-					type = "group", order = 3, inline = true,
-					name = L["OptIcons"],
+					type = "group", order = 4, inline = true,
+					name = C("ff00aaff",L["OptIcons"]),
 					args = {
 						iconcolor = {type="color", order=1,name=L["Icon color"],desc=L["Change the color of the icons"]},
 						iconset   = {type="select",order=2,name=L["Iconsets"],desc=L["Choose an custom iconset"],values=getIconSets(),width="double"},
@@ -195,15 +216,6 @@ local options = {
 							type = "description", order = 3,
 							name = L["OptIconSetsInfo"] .. " " .. C("dkyellow","https://www.wowinterface.com/downloads/info22790.html")
 						}
-					}
-				},
-				misc = {
-					type = "group", order = 0, inline = true,
-					name = L["OptMisc"],
-					args = {
-						showAddOnLoaded = { type="toggle", order=1, name=L["Show 'AddOn Loaded...'"], desc=L["Show 'AddOn Loaded...' message on logins and UI reloads"] },
-						suffixColour    = { type="toggle", order=2, name=L["Suffix coloring"], desc=L["Enable/Disable class coloring of the information display suffixes. (eg, ms, fps etc)"] },
-						usePrefix       = { type="toggle", order=3, name=L["Use prefix"], desc=L["Use prefix 'BE..' on module registration at LibDataBroker. This fix problems with other addons with same broker names but effect your current settings in panel addons like Bazooka or Titan Panel."] },
 					}
 				},
 			}
@@ -328,15 +340,17 @@ function ns.Options_AddModuleDefaults(modName)
 	ns.profile[modName] = setmetatable({section=modName},nsProfileMT);
 	local mod = ns.modules[modName];
 
-	-- normal defaults
-	dbDefaults.profile[modName] = mod.config_defaults or {};
+	if mod then
+		-- normal defaults
+		dbDefaults.profile[modName] = mod.config_defaults or {};
 
-	-- add shared option defaults
-	if mod.options then
-		for _,group in pairs(mod.options())do
-			for key,value in pairs(group)do
-				if sharedDefaults[key]~=nil and dbDefaults.profile[modName][key]==nil then
-					dbDefaults.profile[modName][key] = sharedDefaults[key];
+		-- add shared option defaults
+		if mod.options then
+			for _,group in pairs(mod.options())do
+				for key,value in pairs(group)do
+					if sharedDefaults[key]~=nil and dbDefaults.profile[modName][key]==nil then
+						dbDefaults.profile[modName][key] = sharedDefaults[key];
+					end
 				end
 			end
 		end
@@ -372,8 +386,7 @@ function ns.Options_AddModuleOptions(modName)
 			args = {
 			}
 		}
-		local modOptions, modEvents = ns.modules[modName].options();
-		modEvents = modEvents or {};
+		local modOptions = ns.modules[modName].options();
 
 		if dbDefaults.profile[modName]==nil then
 			dbDefaults.profile[modName]={}; -- should never be nil... :D
@@ -387,29 +400,22 @@ function ns.Options_AddModuleOptions(modName)
 			if k:find("^broker") then
 				name = name or L["OptBroker"];
 				order = order or 1;
-				if modEvents[k]==nil then
-					modEvents[k]="BE_DUMMY_EVENT";
-				end
 			elseif k:find("^tooltip") then
 				name = name or L["OptTooltip"];
 				order = order or 2;
 			elseif k:find("^misc") then
 				name = name or L["OptMisc"];
 				order = order or 98;
-			elseif k:find("^clickOptions") then
+			elseif k:find("^ClickOpts") then
 				name = name or L["OptClickOptions"];
 				order = 99;
 			end
 			optionWalker(modName,k,v);
 			options.args.modOptions.args[modName].args[k] = {
-				type="group", name=name, order=order, inline=true, args=v
+				type="group", name=C("ff00aaff",name), order=order, inline=true, args=v
 			}
-			if modEvents[k]==true then
-				modEvents[k]="BE_DUMMY_EVENT";
-			end
 		end
 
-		moduleEvents[modName] = modEvents;
 	end
 end
 
@@ -446,7 +452,7 @@ function ns.RegisterOptions()
 	end
 
 	-- db migration to ace
-	if Broker_Everything_AceDB.profileKeys==nil then
+	if Broker_Everything_AceDB.profileKeys==nil and Broker_Everything_ProfileDB.use_profile~=nil then
 		-- migrate profile keys to ace
 		Broker_Everything_AceDB.profileKeys = {}
 		for char_realm, profileName in pairs(Broker_Everything_ProfileDB.use_profile)do
@@ -462,7 +468,12 @@ function ns.RegisterOptions()
 
 	if Broker_Everything_AceDB.profiles==nil then
 		-- migrate profiles to ace
-		Broker_Everything_AceDB.profiles=CopyTable(Broker_Everything_ProfileDB.profiles);
+		Broker_Everything_AceDB.profiles = {};
+
+		if Broker_Everything_ProfileDB.profiles then
+			Broker_Everything_AceDB.profiles=CopyTable(Broker_Everything_ProfileDB.profiles);
+		end
+
 		if Broker_Everything_AceDB.profiles[DEFAULT]~=nil then
 			Broker_Everything_AceDB.profiles.Default = Broker_Everything_AceDB.profiles[DEFAULT];
 			Broker_Everything_AceDB.profiles[DEFAULT] = nil;
