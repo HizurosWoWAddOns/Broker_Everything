@@ -543,36 +543,30 @@ end
 -- ------------------------------------ --
 -- FormatLargeNumber function advanced  --
 -- ------------------------------------ --
-local suffixes1,suffixes2,floatformat = {"K","M","G","T","P","E"},{},"%0.1f";
-function ns.FormatLargeNumber(modName,value,tooltip)
-	local shortNumbers,doShortcut = false,true;
-	if type(modName)=="boolean" then
-		shortNumbers = modName;
-	elseif modName and ns.profile[modName] then
-		shortNumbers = ns.profile[modName].shortNumbers;
-	end
-	if tooltip and IsShiftKeyDown() then
-		doShortcut = false;
-	end
-	value = tonumber(value) or 0;
-	if shortNumbers and doShortcut then
-		local suffix = "";
-		if value>=1000 then
-			for i=1, #suffixes1 do
-				value,suffix = value/1000,suffixes1[i];
-				if value<1000 then
+do
+	local floatformat,sizes = "%0.1f",{ -- L["SizeSuffix-10E"..sizes[i]]
+		18,15,12,9,6,3 -- Qi Qa T B M K (Qi Qa Tr Bi Mi Th?)
+	};
+	function ns.FormatLargeNumber(modName,value,tooltip)
+		local shortNumbers,doShortcut = false, not (tooltip and IsShiftKeyDown());
+		if type(modName)=="boolean" then
+			shortNumbers = modName;
+		elseif modName and ns.profile[modName] then
+			shortNumbers = ns.profile[modName].shortNumbers;
+		end
+		value = tonumber(value) or 0;
+		if shortNumbers and doShortcut then
+			for i=1, #sizes do
+				if value>=(10^sizes[i]) then
+					value = floatformat:format(value/(10^sizes[i]))..L["SizeSuffix-10E"..sizes[i]];
 					break;
 				end
 			end
+		elseif ns.profile.GeneralOptions.separateThousands then
+			value = FormatLargeNumber(value);
 		end
-		if floor(value)~=value then
-			value = floatformat:format(value)
-		end
-		value = value..suffix;
-	elseif ns.profile.GeneralOptions.separateThousands then
-		value = FormatLargeNumber(value);
+		return value;
 	end
-	return value;
 end
 
 
