@@ -34,6 +34,30 @@ local commands = {
 			end
 		end,
 	},
+	toggle = {
+		desc = L["CmdToggleInfo"],
+		func = function(arg)
+			--cmd = cmd:gsub("^%l", string.upper);
+			if not ns.modules[arg] then
+				local lArg = arg:lower();
+				for k in pairs(ns.modules)do
+					if k:lower() == lArg then
+						arg = k;
+						break;
+					end
+				end
+			end
+			if ns.modules[arg] then
+				ns.profile[arg].enabled = not ns.profile[arg].enabled;
+				if ns.profile[arg].enabled then
+					ns.moduleInit(arg);
+					ns.print(spacer,arg,ADDON_ENABLED);
+				else
+					ns.print(spacer,arg,ADDON_DISABLED,L["CmdNeedReload"]);
+				end
+			end
+		end
+	},
 	equip = {
 		desc = L["Equip a set."],
 		func = function(cmd)
