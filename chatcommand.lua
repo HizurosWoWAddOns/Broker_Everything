@@ -67,14 +67,14 @@ local commands = {
 	equip = {
 		desc = L["Equip a set."],
 		func = function(cmd)
-			local num = GetNumEquipmentSets()
+			local num = C_EquipmentSet.GetNumEquipmentSets()
 			if cmd == nil then
 				ns.print(BAG_FILTER_EQUIPMENT,L["Usage: /be equip <SetName>"])
 				ns.print(BAG_FILTER_EQUIPMENT,L["Available Sets:"])
 
-				if num~=0 then
-					for i=1, num do
-						local eName, icon, setID, isEquipped, totalItems, equippedItems, inventoryItems, missingItems, ignoredSlots = GetEquipmentSetInfo(i)
+				if num>0 then
+					for i=0, num-1 do -- very rare in wow... equipment set index starts with 0 instead of 1
+						local eName, icon, setID, isEquipped, totalItems, equippedItems, inventoryItems, missingItems, ignoredSlots = C_EquipmentSet.GetEquipmentSetInfo(i);
 						ns.print(BAG_FILTER_EQUIPMENT,C((isEquipped and "yellow") or (missingItems>0 and "red") or "ltblue",eName))
 					end
 				else
@@ -82,8 +82,8 @@ local commands = {
 				end
 			else
 				local validEquipment
-				for i=1, GetNumEquipmentSets() do
-					local eName, _, _, isEquipped, _, _, _, _ = GetEquipmentSetInfo(i)
+				for i=1, C_EquipmentSet.GetNumEquipmentSets() do
+					local eName, _, _, isEquipped, _, _, _, _ = C_EquipmentSet.GetEquipmentSetInfo(i)
 					if cmd==eName then validEquipment = true end
 				end
 				if (not validEquipment) then
