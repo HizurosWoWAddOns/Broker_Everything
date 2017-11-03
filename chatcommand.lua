@@ -19,17 +19,6 @@ local commands = {
 	},
 	broker = "options",
 	config = "options",
-	max_addons  = {
-		desc = L["Change number of displayed addons in module memory."],
-		func = function(arg)
-			ns.profile.Memory.max_addons = tonumber(arg)
-			if ns.profile.Memory.max_addons > 0 then
-				ns.print(L["Cfg"], L["Showing a maximum of %d addons."]:format(ns.profile.Memory.mem_max_addons))
-			else
-				ns.print(L["Cfg"], L["Showing all addons."])
-			end
-		end,
-	},
 	reset       = {
 		desc = L["Reset all module settings"],
 		func = function()
@@ -53,17 +42,6 @@ local commands = {
 			end
 		end,
 	},
-	tooltip     = {
-		desc = L["Enable/disable tooltip scaling."],
-		func = function()
-			if ns.profile.GeneralOptions.tooltipScale == true then
-				ns.profile.GeneralOptions.tooltipScale = false
-			else
-				ns.profile.GeneralOptions.tooltipScale = true
-			end
-		end,
-	},
-	scaling = "tooltip",
 	equip = {
 		desc = L["Equip a set."],
 		func = function(cmd)
