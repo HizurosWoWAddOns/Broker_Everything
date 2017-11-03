@@ -74,7 +74,7 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 		ns.moduleInit();
 
 		if ns.profile.GeneralOptions.showAddOnLoaded then
-			ns.print(L["AddOn loaded..."]);
+			ns.print(L["AddOnLoaded"]);
 		end
 
 		ns.eventAddOnLoaded = true;

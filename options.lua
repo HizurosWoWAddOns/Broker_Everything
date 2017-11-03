@@ -156,60 +156,60 @@ local options = {
 			name = "",
 			args = {
 				spacer = { type="description", order=1, name=" ", width="half"},
-				reload = { type="execute", order=2, name=L["OptReloadUI"], func=ReloadUI },
-				info = { type="description", order=3, name=C("orange",L["OptReloadUIRequired"]), fontSize="medium", width="double", hidden=noReload},
+				reload = { type="execute", order=2, name=L["ReloadUI"], func=ReloadUI },
+				info = { type="description", order=3, name=C("orange",L["ReloadUIRequired"]), fontSize="medium", width="double", hidden=noReload},
 			},
 			hidden = true
 		},
 		GeneralOptions = {
 			type = "group", order = 1,
-			name = L["OptGeneral"],
+			name = L["General"],
 			args = {
 				misc = {
 					type = "group", order = 1, inline = true,
-					name = C("ff00aaff",L["OptMisc"]),
+					name = C("ff00aaff",L["Misc"]),
 					args = {
-						showAddOnLoaded = { type="toggle", order=1, name=L["Show 'AddOn Loaded...'"], desc=L["Show 'AddOn Loaded...' message on logins and UI reloads"] },
-						suffixColour    = { type="toggle", order=2, name=L["Suffix coloring"], desc=L["Enable/Disable class coloring of the information display suffixes. (eg, ms, fps etc)"] },
-						usePrefix       = { type="toggle", order=3, name=L["Use prefix"], desc=L["Use prefix 'BE..' on module registration at LibDataBroker. This fix problems with other addons with same broker names but effect your current settings in panel addons like Bazooka or Titan Panel."] },
+						showAddOnLoaded = { type="toggle",order=1,name=L["AddOnLoaded"],desc=L["AddOnLoadedDesc"] },
+						suffixColour    = { type="toggle",order=2,name=L["SuffixColor"],desc=L["SuffixColorDesc"] },
+						usePrefix       = { type="toggle",order=3,name=L["Prefix"],desc=L["PrefixDesc"] }
 					}
 				},
 				gold = {
 					type = "group", order = 2, inline = true,
-					name = C("ff00aaff",L["OptMoney"]),
+					name = C("ff00aaff",MONEY),
 					args = {
-						goldColor          = {type="toggle",order=1,name=L["Gold coloring"],    desc=L["GoldColorDesc"]},
-						separateThousands  = {type="toggle",order=2,name=L["Digit grouping"],desc=L["DigitGroupDesc"]},
-						goldHideLowerZeros = {type="toggle",order=3,name=L["Hide lower zeros"], desc=L["HideZerosDesc"]},
-						goldHide           = {type="select", order=4,name=L["HideMoney"],       desc=L["HideMoneyDesc"],
+						goldColor          = {type="toggle",order=1,name=L["GoldColor"],desc=L["GoldColorDesc"]},
+						separateThousands  = {type="toggle",order=2,name=L["DigitGroup"],desc=L["DigitGroupDesc"]},
+						goldHideLowerZeros = {type="toggle",order=3,name=L["HideZeros"],desc=L["HideZerosDesc"]},
+						goldHide           = {type="select",order=4,name=L["HideMoney"],desc=L["HideMoneyDesc"],
 							values={
 								["0"]=NONE,
 								["1"]=L["Copper"],
-								["2"]=L["Copper & Silver"]
+								["2"]=L["Copper & silver"]
 							}
 						}
 					}
 				},
 				tooltip = {
 					type = "group", order = 3, inline = true,
-					name = C("ff00aaff",L["OptTooltip"]),
+					name = C("ff00aaff",L["Tooltip"]),
 					args = {
-						scm              = {type="toggle",order=2,name=L["OptSCM"],desc=L["OptSCMDesc"]},
-						showHints        = {type="toggle",order=3,name=L["OptTTHints"],desc=L["OptTTHintsDesc"]},
-						maxTooltipHeight = {type="range", order=5,name=L["Max. Tooltip height"], desc=L["Adjust the maximum of tooltip height in percent of your screen height."],min=10, max=90},
-						ttModifierKey1   = {type="select",order=4,name=L["Show tooltip"],desc=L["Hold modifier key to display tooltip"],values=ttModifierValues,width="double"},
-						ttModifierKey2   = {type="select",order=6,name=L["Allow mouseover"],desc=L["Hold modifier key to use mouseover in tooltip"],values=ttModifierValues,width="double"},
+						scm              = {type="toggle",order=1,name=L["SCM"],desc=L["SCMDesc"]},
+						showHints        = {type="toggle",order=2,name=L["TTHints"],desc=L["TTHintsDesc"]},
+						maxTooltipHeight = {type="range", order=3,name=L["TTMaxHeight"],desc=L["TTMaxHeightDesc"],min=10, max=90},
+						ttModifierKey1   = {type="select",order=4,name=L["TTShowMod"],desc=L["TTShowModDesc"],values=ttModifierValues,width="double"},
+						ttModifierKey2   = {type="select",order=5,name=L["TTMouse"],desc=L["TTMouseDesc"],values=ttModifierValues,width="double"},
 					}
 				},
 				icons = {
 					type = "group", order = 4, inline = true,
-					name = C("ff00aaff",L["OptIcons"]),
+					name = C("ff00aaff",L["Icons"]),
 					args = {
-						iconcolor = {type="color", order=1,name=L["Icon color"],desc=L["Change the color of the icons"]},
-						iconset   = {type="select",order=2,name=L["Iconsets"],desc=L["Choose an custom iconset"],values=getIconSets(),width="double"},
+						iconcolor = {type="color", order=1,name=L["IconColor"],desc=L["IconColorDesc"]},
+						iconset   = {type="select",order=2,name=L["IconSets"],desc=L["IconSetsDesc"],values=getIconSets(),width="double"},
 						iconsetinfo = {
-							type = "description", order = 3,
-							name = L["OptIconSetsInfo"]
+							type = "description", order = 3, fontSize = "medium",
+							name = C("dkyellow",L["IconSetsInfo"])
 						},
 						iconsetlink = {
 							type = "input", order = 4, width = "full",
@@ -223,36 +223,39 @@ local options = {
 		},
 		modEnable = {
 			type = "group", order = 2,
-			name = L["OptModToggle"],
+			name = L["ModsToggle"],
+			desc = L["ModsToggleDesc"],
 			childGroups = "tab",
 			args = {
 			}
 		},
 		modOptions = { -- dummy group
 			type = "group", order = 3,
+			name = L["Modules"],
+			desc = L["ModulesDesc"],
 			childGroups="tree",
-			name = L["OptMods"],
 			args = {},
 		},
 		chars = {
 			type = "group", order = 4, --fontSize="normal",
-			name = L["OptCharData"],
+			name = L["CharData"],
+			desc = L["CharDataDesc"],
 			childGroups="tab",
 			args = {
-				infoheader = { type = "description",   order=1, name=C("dkyellow",L["OptCharInfoHeader"]), fontSize="medium" },
+				infoheader = { type = "description",   order=1, name=C("dkyellow",L["CharDataHeader"]), fontSize="medium" },
 				info1_2 = {
 					type = "description", order= 2,
-					name =  C("ltgreen",L["OptCharInfo1"]) .. "\n" .. L["OptCharInfo1Desc"].. "\n\n" ..
-							C("ltgreen",L["OptCharInfo2"]) .. "\n" .. L["OptCharInfo2Desc"] .."\n "
+					name =  C("ltgreen",L["CharData1"]) .. "\n" .. L["CharData1Desc"].. "\n\n" ..
+							C("ltgreen",L["CharData2"]) .. "\n" .. L["CharData2Desc"] .."\n "
 				},
-				info3 = { type="description", order=6, name=C("ltgreen",L["OptCharInfo3"]), width="normal"},
+				info3 = { type="description", order=6, name=C("ltgreen",L["CharData3"]), width="normal"},
 				delete = {
 					type = "execute", order=7, width="double",
-					name = L["OptCharDelAll"], desc = L["OptCharDelAllDesc"]
+					name = L["CharDataDelAll"], desc = L["CharDataDelAllDesc"]
 				},
 				list = {
 					type = "group", order=8,
-					name = L["OptCharList"],
+					name = L["CharDataList"],
 					childGroups="tab",
 					args = {
 					}
@@ -264,10 +267,10 @@ local options = {
 }
 
 ns.sharedOptions = {
-	shortNumbers    = { type="toggle", name=L["Short numbers"], desc=L["Display short numbers like 123K instead of 123000"]},
-	showAllFactions = { type="toggle", name=L["Show all factions"], desc=L["Show characters from all factions (alliance, horde and neutral) in tooltip"]},
-	showRealmNames  = { type="toggle", name=L["Show realm names"], desc=L["Show realm names behind charater names in tooltip"]},
-	showCharsFrom   = { type="select", name=L["Show chars from"], desc=L["Show characters from connected realms, same battlegroup or all realms in tooltip"],
+	shortNumbers    = { type="toggle", name=L["ShortNum"], desc=L["ShortNumDesc"]},
+	showAllFactions = { type="toggle", name=L["AllFactions"], desc=L["AllFactionsDesc"]},
+	showRealmNames  = { type="toggle", name=L["RealmNames"], desc=L["RealmNamesDesc"]},
+	showCharsFrom   = { type="select", name=L["CharsFrom"], desc=L["CharsFromDesc"],
 		values=ns.showCharsFrom_Values,
 	}
 }
@@ -313,7 +316,7 @@ local function optionWalker(modName,group,lst)
 			else
 				lst[k]=nil;
 			end
-		else
+		elseif tV=="table" then
 			if v.type=="separator" then
 				v.type = "description";
 				v.name = " ";
@@ -329,7 +332,7 @@ local function optionWalker(modName,group,lst)
 	if group=="broker" then
 		lst.minimap = {
 			type = "toggle", order = 0,
-			name = L["OptMinimap"], desc=L["OptMinimapDesc"]
+			name = L["Minimap"], desc=L["MinimapDesc"]
 		}
 	end
 end
@@ -406,16 +409,16 @@ function ns.Options_AddModuleOptions(modName)
 			local name, order = v.name, v.order;
 			v.name,v.order = nil,nil;
 			if k:find("^broker") then
-				name = name or L["OptBroker"];
+				name = name or L["Broker"];
 				order = order or 1;
 			elseif k:find("^tooltip") then
-				name = name or L["OptTooltip"];
+				name = name or L["Tooltip"];
 				order = order or 2;
 			elseif k:find("^misc") then
-				name = name or L["OptMisc"];
+				name = name or L["Misc"];
 				order = order or 98;
 			elseif k:find("^ClickOpts") then
-				name = name or L["OptClickOptions"];
+				name = name or L["ClickOptions"];
 				order = 99;
 			end
 			optionWalker(modName,k,v);

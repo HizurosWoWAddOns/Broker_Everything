@@ -11,13 +11,13 @@ local spacer = "||"
 
 local commands = {
 	options     = {
-		desc = L["Open options panel"],
+		desc = L["Option panel"],
 		func = ns.ToggleBlizzOptionPanel
 	},
 	broker = "options",
 	config = "options",
 	reset       = {
-		desc = L["Reset all module settings"],
+		desc = L["CmdResetInfo"],
 		func = ns.resetConfigs
 	},
 	list        = {
@@ -60,20 +60,19 @@ local commands = {
 		end
 	},
 	equip = {
-		desc = L["Equip a set."],
+		desc = L["CmdEquipInfo"],
 		func = function(cmd)
 			local num = C_EquipmentSet.GetNumEquipmentSets()
 			if cmd == nil then
-				ns.print(spacer,L["Usage: /be equip <SetName>"])
-				ns.print(spacer,L["Available Sets:"])
-
+				ns.print(spacer,L["CmdEquipUsage"]);
+				ns.print(spacer,L["CmdEquipSets"]);
 				if num>0 then
 					for i=0, num-1 do -- very rare in wow... equipment set index starts with 0 instead of 1
 						local eName, icon, setID, isEquipped, totalItems, equippedItems, inventoryItems, missingItems, ignoredSlots = C_EquipmentSet.GetEquipmentSetInfo(i);
-						ns.print(spacer,C((isEquipped and "yellow") or (missingItems>0 and "red") or "ltblue",eName))
+						ns.print(spacer,C((isEquipped and "yellow") or (missingItems>0 and "red") or "ltblue",eName),missingItems>0 and " - "..C("ltyellow",L["CmdEquipMiss"]:format(missingItems)) or nil);
 					end
 				else
-					ns.print(spacer,L["No sets found"])
+					ns.print(spacer,L["No sets found"]);
 				end
 			else
 				local validEquipment
@@ -82,7 +81,7 @@ local commands = {
 					if cmd==eName then validEquipment = true end
 				end
 				if (not validEquipment) then
-					ns.print(spacer,L["Name of Equipmentset are invalid"])
+					ns.print(spacer,L["CmdEquipInvalid"])
 				else
 					ns.toggleEquipment(cmd)
 				end
@@ -90,7 +89,7 @@ local commands = {
 		end
 	},
 	version = {
-		desc = L["Display current version of Broker_Everything"],
+		desc = L["CmdVersion"],
 		func = function()
 			ns.print(GAME_VERSION_LABEL,GetAddOnMetadata(addon,"Version"));
 		end

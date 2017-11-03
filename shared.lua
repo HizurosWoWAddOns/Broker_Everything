@@ -1698,7 +1698,7 @@ do
 
 		self.addEntry({separator=true});
 		--self.addEntry({label=CANCEL, func=function() LibDropDownMenu_List1:Hide(); end});
-		self.addEntry({label=L["CloseMenu"], func=function() LibDropDownMenu_List1:Hide(); if callbackOnClose then callbackOnClose() end end});
+		self.addEntry({label=L["Close menu"], func=function() LibDropDownMenu_List1:Hide(); if callbackOnClose then callbackOnClose() end end});
 
 		if openTooltip then
 			ns.hideTooltip(openTooltip,openTooltip.key,true,false,true);

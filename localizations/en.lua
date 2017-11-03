@@ -16,6 +16,7 @@ ns.L = setmetatable({}, {
 		L[k] = v;
 	end,
 	__index = function(t, k)
+		local k=tostring(k);
 		if ns.debugMode then
 			return L[k] or "<"..k..">";
 		end
@@ -38,6 +39,7 @@ L["Followers"] = GARRISON_FOLLOWERS
 L["Friendly"] = FACTION_STANDING_LABEL5
 L["Game Menu"] = MAINMENU_BUTTON
 L["Garrison"] = GARRISON_LOCATION_TOOLTIP
+L["General"] = GENERAL
 L["Gold"] = BONUS_ROLL_REWARD_MONEY
 L["Guild"] = GUILD
 L["Hated"] = FACTION_STANDING_LABEL1
@@ -62,6 +64,7 @@ L["Volume"] = VOLUME
 L["Wardrobe"] = WARDROBE
 L["XP"] = XP
 L["Disabled"] = ADDON_DISABLED
+L["Misc"] = AUCTION_SUBCATEGORY_OTHER or CALENDAR_TYPE_OTHER
 
 
 -- localization by Blizzard - step 2
@@ -69,19 +72,19 @@ L["FPS"] = FRAMERATE_LABEL:gsub(":",""):gsub("：",""):trim();
 L["Home"], L["World"] = MAINMENUBAR_LATENCY_LABEL:match("%((.*)%).*%((.*)%)");
 L["Officer notes"] = OFFICER_NOTE_COLON:gsub(":",""):gsub("：",""):trim();
 
-
 -- localization by Blizzard - step 3 (by events)
 local byItemId = {
 	-- [<itemId>] = "<english name>",
-	[122284] = "WoWToken",
 };
 
 function ns.LocalizationsOnEvent(event,...) -- executed by core.lua > Broker_Everything:SetScript("OnEvent"...
-	if event=="PLAYER_LOGIN" then
-		local result,name;
+	if event=="ADDON_LOADED" and addon==... then
+		local name;
 		for id, key in pairs(byItemId) do
 			name = GetItemInfo(id);
-			if name then L[key] = name; end
+			if name then
+				L[key] = name;
+			end
 		end
 	elseif event=="GET_ITEM_INFO_RECEIVED" then
 		local id = ...;
@@ -91,6 +94,21 @@ function ns.LocalizationsOnEvent(event,...) -- executed by core.lua > Broker_Eve
 	end
 end
 
+-- localization by ;) - step 3
+local locale = GetLocale();
+L["WoWToken"] = ({
+	deDE="WoW-Marke",
+	esES="Ficha de WoW",
+	esMX="Ficha de WoW",
+	frFR="Jeton WoW",
+	itIT="Gettone WoW",
+	koKR="WoW 토큰",
+	ptBR="Ficha de WoW",
+	ptPT="Ficha de WoW",
+	ruRU="Жетон WoW",
+	zhCN="魔兽世界时光徽章",
+	zhTW="魔獸代幣"
+})[locale] or "WoW Token";
 
 -- last step: localization filled by curse packager
 --@localization(locale="enUS", format="lua_additive_table", handle-subnamespaces="none", handle-unlocalized="ignore")@
