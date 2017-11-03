@@ -27,6 +27,7 @@ function ns.resetConfigs()
 	wipe(Broker_Everything_ProfileDB);
 	wipe(Broker_Everything_DataDB);
 	wipe(Broker_Everything_AceDB);
+	ReloadUI();
 end
 
 Broker_Everything:SetScript("OnEvent", function (self, event, ...)

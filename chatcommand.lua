@@ -8,10 +8,6 @@ local ACD = LibStub("AceConfigDialog-3.0");
 -- Chat command handler
 --
 
-local function sorry()
-	ns.print("Sorry, currently not reimplemented after change to Ace3. Coming soon...");
-end
-
 local commands = {
 	options     = {
 		desc = L["Open options panel"],
@@ -21,11 +17,7 @@ local commands = {
 	config = "options",
 	reset       = {
 		desc = L["Reset all module settings"],
-		func = function()
-			--Broker_EverythingDB.reset = true
-			--ReloadUI()
-			sorry();
-		end,
+		func = ns.resetConfigs
 	},
 	list        = {
 		desc = L["List of available modules with his status"],
