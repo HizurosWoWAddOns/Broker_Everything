@@ -414,9 +414,8 @@ do
 		-- This option is disabled because:
 		-- <addon> >> <msg>
 		local msgs = {};
-		ns.debug("<optioninfo>",#found);
 		for i=1, #found do
-			tinsert(msgs, ns.LC.color("ltblue",found[i])..ns.LC.color("ltgray"," >> ")..list[found[i]]);
+			tinsert(msgs, ns.LC.color("ltblue",found[i]).."\n"..ns.LC.color("ltgray"," >> ")..L[list[found[i]]]);
 		end
 		return ns.LC.color("orange",L["CoExistDisabled"]).."\n"
 			.. table.concat(msgs,"\n");
@@ -1976,10 +1975,10 @@ do
 		[QUEST_TAG_PVP]       = {L["QuestTagPVP"],"violet"},
 		[QUEST_TAG_DUNGEON]   = L["QuestTagND"],
 		[QUEST_TAG_HEROIC]    = L["QuestTagHD"],
-		[QUEST_TAG_RAID]      = L["QuestTagRD"],
-		[QUEST_TAG_RAID10]    = L["QuestTagRD10"],
-		[QUEST_TAG_RAID25]    = L["QuestTagRD25"],
-		[QUEST_TAG_SCENARIO]  = L["QuestTagSC"],
+		[QUEST_TAG_RAID]      = L["QuestTagR"],
+		[QUEST_TAG_RAID10]    = L["QuestTagR"]..10,
+		[QUEST_TAG_RAID25]    = L["QuestTagR"]..25,
+		[QUEST_TAG_SCENARIO]  = L["QuestTagS"],
 		[QUEST_TAG_ACCOUNT]   = L["QuestTagACC"],
 		[QUEST_TAG_LEGENDARY] = {L["QuestTagLEG"],"orange"},
 		TRADE_SKILLS          = {L["QuestTagTS"],"green"},
