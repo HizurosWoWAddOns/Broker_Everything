@@ -12,7 +12,7 @@ local function sorry()
 	ns.print("Sorry, currently not reimplemented after change to Ace3. Coming soon...");
 end
 
-ns.commands = {
+local commands = {
 	options     = {
 		desc = L["Open options panel"],
 		func = ns.ToggleBlizzOptionPanel
@@ -101,6 +101,12 @@ ns.commands = {
 		end
 	}
 }
+
+function ns.AddChatCommand(key,data)
+	if not commands[key] then
+		commands[key] = data;
+	end
+end
 
 SlashCmdList["BROKER_EVERYTHING"] = function(cmd)
 	local cmd, arg = strsplit(" ", cmd, 2)

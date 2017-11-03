@@ -142,9 +142,10 @@ local function moduleInit(name)
 
 		-- chat command registration
 		if (mod.chatcommands) then
-			for i,v in pairs(mod.chatcommands) do
-				if (type(i)=="string") and (ns.commands[i]==nil) then -- prevents overriding
-					ns.commands[i] = v;
+			for k,v in pairs(mod.chatcommands) do
+				if (type(k)=="string") then -- prevents overriding
+					ns.AddChatCommand(k,v);
+					-- ns.AddChatCommand("<string>",{desc="<string>",func=function()end});
 				end
 			end
 		end
