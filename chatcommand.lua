@@ -105,23 +105,6 @@ SlashCmdList["BROKER_EVERYTHING"] = function(cmd)
 	if ns.commands[cmd]~=nil and type(ns.commands[cmd].func)=="function" then
 		ns.commands[cmd].func(arg);
 	end
-
-	cmd = cmd:gsub("^%l", string.upper)
-	for k, v in pairs(ns.profile) do
-		if k == cmd then
-			local x = ns.profile[cmd].enabled
-			print(tostring(x))
-			if x == true then
-				ns.profile[cmd].enabled = false
-				print(tostring(ns.profile[cmd].enabled))
-					ns.print(L["Cfg"], L["Disabling %s on next reload."]:format(cmd)) -- cmd
-				else
-					ns.profile[cmd].enabled = true
-					ns.print(L["Cfg"], L["Enabling %s on next reload."]:format(cmd)) -- cmd
-			end
-		end
-	end
-
 end
 
 
