@@ -1081,6 +1081,7 @@ do
 	};
 end
 
+
 -- --------------------- --
 -- scanTooltip functions --
 -- --------------------- --
@@ -1240,6 +1241,7 @@ do
 		end
 	end
 end
+
 
 -- ----------------------------------------------------- --
 -- goldColor function to display amount of gold          --
@@ -1771,12 +1773,12 @@ do
 		OptionMenuCustom = {"ClickOptMenu","module","OptionMenu"},
 		OptionPanel = {"ClickOptPanel","namespace","ToggleBlizzOptionPanel"},
 		CharacterInfo = {"ClickOptCharInfo","call",{"ToggleCharacter","PaperDollFrame"}},
-		GarrisonReport = {"ClickOptGarrReport","call","GarrisonLandingPage_Toggle"},
-		Guild = {"ClickOptGuild","call","ToggleGuildFrame"},
-		Currency = {"ClickOptCurrency","call",{"ToggleCharacter","TokenFrame"}},
-		QuestLog = {"ClickOptQuestLog","call","ToggleQuestLog"}
+		GarrisonReport = {GARRISON_LANDING_PAGE_TITLE,"call","GarrisonLandingPage_Toggle"}, --"ClickOptGarrReport"
+		Guild = {GUILD,"call","ToggleGuildFrame"}, -- "ClickOptGuild"
+		Currency = {CURRENCY,"call",{"ToggleCharacter","TokenFrame"}}, -- "ClickOptCurrency"
+		QuestLog = {QUEST_LOG,"call","ToggleQuestLog"} -- "ClickOptQuestLog"
 	};
-	local iLabel,iSrc,iFnc = 1,2,3;
+	local iLabel,iSrc,iFnc,iPrefix = 1,2,3,4;
 
 	function ns.ClickOpts.func(self,button,modName)
 		local mod = ns.modules[modName];
@@ -1850,24 +1852,29 @@ do
 
 		local order = mod.clickOptionsOrder or {};
 		if #order==0 then
-			for actName in ns.pairsByKeys(mod.clickOptions) do
-				tinsert(order,actName);
+			for actName, actData in ns.pairsByKeys(mod.clickOptions) do
+				if actData then
+					tinsert(order,actName);
+				end
 			end
 		end
 
 		for _, actName in ipairs(order)do
 			local act = mod.clickOptions[actName];
-			local cfgKey,altKey = ns.ClickOpts.prefix..actName;
+			local cfgKey = ns.ClickOpts.prefix..actName;
 			if mod.clickOptionsRename and mod.clickOptionsRename[cfgKey] then
-				altKey = mod.clickOptionsRename[cfgKey];
-			end
-			if ns.profile[modName][altKey]~=nil then
-				ns.profile[modName][cfgKey] = ns.profile[modName][altKey];
-				ns.profile[modName][altKey] = nil;
+				local altKey = mod.clickOptionsRename[cfgKey];
+				if ns.profile[modName](altKey)~=nil then
+					ns.profile[modName][cfgKey] = ns.profile[modName][altKey];
+					ns.profile[modName][altKey] = nil;
+				end
 			end
 			local key = ns.profile[modName][cfgKey];
 			if key and key~="__NONE" then
-				local fSrc,func = act[iSrc];
+				local fSrc,func,prx = act[iSrc],"%s";
+				if act[iPrefix]~=false then
+					prx = L["ClickOptOpen"];
+				end
 				if fSrc=="direct" then
 					func = act[iFnc];
 				elseif fSrc=="module" then
@@ -1881,7 +1888,7 @@ do
 				end
 				if func and type(func)=="function" then
 					mod.onclick[key] = actName;
-					tinsert(mod.clickHints,ns.LC.color("copper",values[key]).." || "..ns.LC.color("green",L[act[iLabel]]));
+					tinsert(mod.clickHints,ns.LC.color("copper",values[key]).." || "..ns.LC.color("green",prx:format(L[act[iLabel]])));
 					hasOptions = true;
 				end
 			end
