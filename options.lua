@@ -194,11 +194,10 @@ local options = {
 					type = "group", order = 3, inline = true,
 					name = C("ff00aaff",L["OptTooltip"]),
 					args = {
-						tooltipScale     = {type="toggle",order=1,name=L["OptTTScale"],desc=L["OptTTScaleDesc"]},
 						scm              = {type="toggle",order=2,name=L["OptSCM"],desc=L["OptSCMDesc"]},
 						showHints        = {type="toggle",order=3,name=L["OptTTHints"],desc=L["OptTTHintsDesc"]},
-						ttModifierKey1   = {type="select",order=4,name=L["Show tooltip"],desc=L["Hold modifier key to display tooltip"],values=ttModifierValues,width="double"},
 						maxTooltipHeight = {type="range", order=5,name=L["Max. Tooltip height"], desc=L["Adjust the maximum of tooltip height in percent of your screen height."],min=10, max=90},
+						ttModifierKey1   = {type="select",order=4,name=L["Show tooltip"],desc=L["Hold modifier key to display tooltip"],values=ttModifierValues,width="double"},
 						ttModifierKey2   = {type="select",order=6,name=L["Allow mouseover"],desc=L["Hold modifier key to use mouseover in tooltip"],values=ttModifierValues,width="double"},
 					}
 				},
@@ -210,7 +209,13 @@ local options = {
 						iconset   = {type="select",order=2,name=L["Iconsets"],desc=L["Choose an custom iconset"],values=getIconSets(),width="double"},
 						iconsetinfo = {
 							type = "description", order = 3,
-							name = L["OptIconSetsInfo"] .. " " .. C("dkyellow","https://www.wowinterface.com/downloads/info22790.html")
+							name = L["OptIconSetsInfo"]
+						},
+						iconsetlink = {
+							type = "input", order = 4, width = "full",
+							name = "",
+							get = function() return "http://www.wowinterface.com/downloads/info22790.html"; end,
+							set = function() end
 						}
 					}
 				},
@@ -387,8 +392,19 @@ function ns.Options_AddModuleOptions(modName)
 
 		ns.ClickOpts.createOptions(modName,modOptions);
 
+		local hasBrokerOpts = false;
+		for k in pairs(modOptions)do
+			if k:find("^broker") then
+				hasBrokerOpts = true;
+				break;
+			end
+		end
+		if not hasBrokerOpts then
+			modOptions.broker = {};
+		end
 		for k, v in pairs(modOptions)do
 			local name, order = v.name, v.order;
+			v.name,v.order = nil,nil;
 			if k:find("^broker") then
 				name = name or L["OptBroker"];
 				order = order or 1;
@@ -461,6 +477,7 @@ function ns.RegisterOptions()
 	if Broker_Everything_AceDB.profiles==nil then
 		-- migrate profiles to ace
 		Broker_Everything_AceDB.profiles = {};
+		local ClickOptPrefixOld = "clickOptions::";
 
 		if Broker_Everything_ProfileDB.profiles then
 			Broker_Everything_AceDB.profiles=CopyTable(Broker_Everything_ProfileDB.profiles);
@@ -477,6 +494,15 @@ function ns.RegisterOptions()
 				if modData.showAllRealms~=nil then
 					modData.showCharsFrom = 4;
 					modData.showAllRealms = nil;
+				end
+			end
+
+			-- migrate clickOptions Prefix
+			for k,v in pairs(modData)do
+				if k:find(ClickOptPrefixOld) then
+					local K = k:gsub(ClickOptPrefixOld,ns.ClickOpts.prefix);
+					modData[K] = modData[k];
+					modData[k] = nil;
 				end
 			end
 
@@ -505,18 +531,6 @@ function ns.RegisterOptions()
 
 	LibStub("AceConfig-3.0"):RegisterOptionsTable(addonLabel, options);
 	LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonLabel);
-
-	local ClickOptPrefixOld = "clickOptions::";
-	for modName, modcfg in pairs(db.profile)do
-		-- migrate clickOptions Prefix
-		for k,v in pairs(modcfg)do
-			if k:find(ClickOptPrefixOld) then
-				local K = k:gsub(ClickOptPrefixOld,ns.ClickOpts.prefix);
-				db.profile[modName][K] = db.profile[modName][k];
-				db.profile[modName][k] = nil;
-			end
-		end
-	end
 end
 
 function ns.ToggleBlizzOptionPanel()
