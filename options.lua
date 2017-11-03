@@ -35,16 +35,19 @@ ns.showCharsFrom_Values = {
 
 local nsProfileMT = {
 	__newindex = function(t,k,v)
-		db.profile[t.section][k] = v;
+		local s = rawget(t,"section");
+		if s and db.profile[s] then
+			db.profile[s][k] = v;
+		end
 	end,
 	__index = function(t,k)
 		local s = rawget(t,"section");
-		assert(s,"Error: section not defined? "..tostring(k));
-		local v = db.profile[s][k];
-		if v==nil then
-			ns.debug("<FIXME:nsProfileMT:NilOption>",t.section,k);
+		if s and db.profile[s] then
+			local v = db.profile[s][k];
+			if v==nil then
+				return v;
+			end
 		end
-		return v;
 	end
 };
 
@@ -119,15 +122,11 @@ local function opt(info,value,...)
 				for modName,mod in pairs(ns.modules)do
 					if mod.OnEvent then
 						mod:OnEvent("BE_UPDATE_CFG",key);
-					else
-						ns.debug("<BE_UPDATE_CFG>","Missing onevent function in module:",modName);
 					end
 				end
 			else
 				if ns.modules[section].OnEvent then
 					ns.modules[section]:OnEvent("BE_UPDATE_CFG",key);
-				else
-					ns.debug("<BE_UPDATE_CFG>","Missing onevent function in module:",section);
 				end
 			end
 		end
@@ -139,9 +138,6 @@ local function opt(info,value,...)
 	else
 		if type(db.profile[section][key])=="table" then
 			return unpack(db.profile[section][key]);
-		end
-		if db.profile[section][key]==nil then
-			ns.debug("<FIXME:opt:NilOptions>",tostring(section),tostring(key));
 		end
 		return db.profile[section][key];
 	end
@@ -318,12 +314,9 @@ local function optionWalker(modName,group,lst)
 				v.name = " ";
 			end
 			if v.type=="slider" or v.type=="desc" then
-				ns.debug("<FIXME:BadType>",k,modName);
 				lst[k]=nil;
 			end
-
 			if (v.default or v.inMenuInvisible or v.text or v.isSubMenu or v.alpha or v.tooltip or v.label or v.format or v.rep or v.minText or v.maxText)~=nil  then
-				ns.debug("<FIXME:BadKey>",k,modName);
 				lst[k]=nil;
 			end
 		end
@@ -390,7 +383,6 @@ function ns.Options_AddModuleOptions(modName)
 
 		if dbDefaults.profile[modName]==nil then
 			dbDefaults.profile[modName]={}; -- should never be nil... :D
-			ns.debug("<FIXME:NilDefaultTable>",modName);
 		end
 
 		ns.ClickOpts.createOptions(modName,modOptions);

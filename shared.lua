@@ -1911,9 +1911,6 @@ do
 			if clickOpts then
 				local optKey = ns.ClickOpts.prefix..cfgKey;
 				-- ace option table entry
-				if clickOpts[iLabel]==nil then
-					--ns.debug("<FIXME:ClickOptsName-Nil>",modName,optKey);
-				end
 				modOptions.ClickOpts[optKey] = {
 					type	= "select",
 					name	= L[clickOpts[iLabel]],
