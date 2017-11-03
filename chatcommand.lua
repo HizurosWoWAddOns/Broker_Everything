@@ -7,6 +7,7 @@ local ACD = LibStub("AceConfigDialog-3.0");
 --
 -- Chat command handler
 --
+local spacer = "||"
 
 local commands = {
 	options     = {
@@ -20,16 +21,16 @@ local commands = {
 		func = ns.resetConfigs
 	},
 	list        = {
-		desc = L["List of available modules with his status"],
+		desc = L["CmdStatusInfo"],
 		func = function()
-			ns.print(L["Cfg"], L["Data modules:"])
+			ns.print(spacer, L["Modules"])
 			for k, v in ns.pairsByKeys(ns.modules) do
-				if v and v.noBroker~=true and ns.profile[k] then
-					local stat = {"red","Off"}
+				if v and ns.profile[k] then
+					local c,s = "red",OFF;
 					if ns.profile[k].enabled==true then
-						stat = {"green","On"}
+						c,s = "green",L["On"];
 					end
-					ns.print(L["Cfg"], (k==L[k] and "%s | %s" or "%s | %s - ( %s )"):format(C(stat[1],stat[2]),C("ltyellow",k),L[k]))
+					ns.print(spacer, (k==L[k] and "%s | %s" or "%s | %s - ( %s )"):format(C(c,s),C("ltyellow",k),L[k]))
 				end
 			end
 		end,
@@ -63,16 +64,16 @@ local commands = {
 		func = function(cmd)
 			local num = C_EquipmentSet.GetNumEquipmentSets()
 			if cmd == nil then
-				ns.print(BAG_FILTER_EQUIPMENT,L["Usage: /be equip <SetName>"])
-				ns.print(BAG_FILTER_EQUIPMENT,L["Available Sets:"])
+				ns.print(spacer,L["Usage: /be equip <SetName>"])
+				ns.print(spacer,L["Available Sets:"])
 
 				if num>0 then
 					for i=0, num-1 do -- very rare in wow... equipment set index starts with 0 instead of 1
 						local eName, icon, setID, isEquipped, totalItems, equippedItems, inventoryItems, missingItems, ignoredSlots = C_EquipmentSet.GetEquipmentSetInfo(i);
-						ns.print(BAG_FILTER_EQUIPMENT,C((isEquipped and "yellow") or (missingItems>0 and "red") or "ltblue",eName))
+						ns.print(spacer,C((isEquipped and "yellow") or (missingItems>0 and "red") or "ltblue",eName))
 					end
 				else
-					ns.print(BAG_FILTER_EQUIPMENT,L["No sets found"])
+					ns.print(spacer,L["No sets found"])
 				end
 			else
 				local validEquipment
@@ -81,7 +82,7 @@ local commands = {
 					if cmd==eName then validEquipment = true end
 				end
 				if (not validEquipment) then
-					ns.print(BAG_FILTER_EQUIPMENT,L["Name of Equipmentset are invalid"])
+					ns.print(spacer,L["Name of Equipmentset are invalid"])
 				else
 					ns.toggleEquipment(cmd)
 				end
@@ -107,27 +108,25 @@ SlashCmdList["BROKER_EVERYTHING"] = function(cmd)
 	cmd = cmd:lower()
 
 	if cmd=="" then
-		ns.print(INFO, L["Chat command list for /be & /broker_everything"])
-		local cmds = {};
-		for i,v in pairs(ns.commands)do tinsert(cmds,i); end
-		table.sort(cmds);
-		for _,name in pairs(cmds) do
-			local obj = ns.commands[name];
-			if type(obj)=="string" then
-				ns.print(INFO, ("%s - alias of %s"):format(C("yellow",name),C("yellow",obj)))
-			else
-				ns.print(INFO, ("%s - %s"):format(C("yellow",name),obj.desc))
+		ns.print(spacer, L["CmdUsage"])
+		for name,obj in ns.pairsByKeys(commands) do
+			if type(obj)=="string" and commands[obj] and commands[obj].desc then
+				obj = commands[obj];
+			end
+			if obj.desc then
+				ns.print(spacer, ("%s - %s"):format(C("yellow",name),obj.desc))
 			end
 		end
 		return
 	end
 
-	if ns.commands[cmd]~=nil and type(ns.commands[cmd])=="string" then
-		cmd = ns.commands[cmd];
+	if commands[cmd]~=nil and type(commands[cmd])=="string" then
+		cmd = commands[cmd];
 	end
 
-	if ns.commands[cmd]~=nil and type(ns.commands[cmd].func)=="function" then
-		ns.commands[cmd].func(arg);
+	if commands[cmd]~=nil and type(commands[cmd].func)=="function" then
+		commands[cmd].func(arg);
+		return;
 	end
 end
 
