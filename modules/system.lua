@@ -341,7 +341,7 @@ local function createTooltip(tt, name, ttName, update)
 
 	elseif name_mem==name then
 		tt:AddSeparator(4,0,0,0,0);
-		tt:SetCell(tt:AddLine(C("ltgreen",L["Addon"])),2,C("ltgreen",L["Memory Usage"]),nil,nil,2);
+		tt:SetCell(tt:AddLine(C("ltgreen",L["Addon"])),2,C("ltgreen",L["Memory usage"]),nil,nil,2);
 		tt:AddSeparator()
 		table.sort(memory.list,function(a,b) return a.cur>b.cur; end);
 		local maxAddons = tonumber(ns.profile[name].mem_max_addons) or 0;
@@ -648,8 +648,8 @@ end
 function module_lat.options()
 	return {
 		broker = {
-			showHome={ type="toggle", order=1, name=L["Show home"],  desc=L["Enable/Disable the display of the latency to the home realm"] },
-			showWorld={ type="toggle", order=2, name=L["Show world"], desc=L["Enable/Disable the display of the latency to the world realms"] }
+			showHome={ type="toggle", order=1, name=L["Home latency"],  desc=L["Display home latency"] },
+			showWorld={ type="toggle", order=2, name=L["World latency"], desc=L["Display world latency"] }
 		},
 		tooltip = nil,
 		misc = nil,
@@ -659,8 +659,7 @@ end
 function module_mem.options()
 	return {
 		tooltip = {
-			mem_max_addons={ type="range", name=L["Show addons in tooltip"], desc=L["Select the maximum number of addons to display, otherwise drag to 'All'."],
-				--minText = ACHIEVEMENTFRAME_FILTER_ALL,
+			mem_max_addons={ type="range", name=L["Number of addons"], desc=L["Select the maximum number of addons to display, otherwise drag to '0' to display all."],
 				step = 1,
 				min = 0,
 				max = 100,
