@@ -95,9 +95,9 @@ local function createTooltip(tt)
 
 	--line, column = tt:AddLine(L["Quit Game"])
 	--tt:SetLineScript(line, "OnMouseUp", Quit);
-
-	tt:AddLine(L["Quit and Logout function are no longer usable by addons."]);
-	tt:AddLine(L["Critism on this change should be address at contact blizzard.Critism of this change should be addressed at blizzard."]);
+	tt:AddLine(" ");
+	tt:AddLine(C("dkyellow",L["Quit and Logout function are\nno longer usable by addons."]));
+	tt:AddLine(C("dkyellow",L["Critism of this change should\nbe addressed at blizzard."]));
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddLine(" ")
@@ -108,7 +108,7 @@ local function createTooltip(tt)
 			--C("copper",L["MouseBtnR"]).." || "..C("green",L["Quit game"])
 			--.."|n"..
 			--C("copper",L["ModKeyS"].."+"..L["MouseBtnL"]).." || "..C("green",L["Switch window/fullscreen mode"])
-			.."|n"..
+			--.."|n"..
 			C("copper",L["ModKeyS"].."+"..L["MouseBtnL"]).." || "..C("green",L["Reload UI"])
 		)
 	end
