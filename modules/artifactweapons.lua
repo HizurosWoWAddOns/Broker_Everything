@@ -32,19 +32,6 @@ I[name] = {iconfile=1109508 or ns.icon_fallback,coords={0.05,0.95,0.05,0.95}} --
 
 -- some local functions --
 --------------------------
-local function CalculateArtifactPower(ap,ak) -- artifact_power, artifact_knowledge
-	ap,ak=tonumber(ap) or 0,tonumber(ak) or 0;
-	if ak > 0 then
-		ap = tonumber(("%.0f"):format(ap*(artifactKnowledgeMultiplier[ak]+1)));
-		local n = tonumber(strsub(ap,-1));
-		if n<3 then
-			ap = ap-n;
-		elseif n<=7 then
-			ap = ap-n+5;
-		end
-	end
-	return ap;
-end
 
 local function ttMatchString(line,matchString)
 	local artefact_power;
@@ -392,7 +379,7 @@ local function createTooltip2(parent,artifactID)
 	if missingdata then
 		tt:AddSeparator(4,0,0,0,0);
 		l=tt:AddLine();
-		tt:SetCell(l,1,ns.strWrap(C("orange",L["ArtifactMissingData"]),64),nil,"CENTER",0);
+		tt:SetCell(l,1,ns.strWrap(C("orange",L["Missing artifact weapon data"]),64),nil,"CENTER",0);
 	end
 
 	ns.roundupTooltip(tt);
@@ -647,26 +634,26 @@ ns.ClickOpts.addDefaults(module,{
 function module.options()
 	return {
 		broker = {
-			showName={ type="toggle",   order=1, name=L["Show weapon name"],    desc=L["Show artifact weapon name in broker button"]},
-			showPoints={ type="toggle", order=2, name=L["Show points"],         desc=L["Show spent/available points in broker button"]},
-			showXP={ type="select",     order=3, name=L["Show artifact power"], desc=L["Show artifact weapon expierence (artifact power) in broker button"],
+			showName   = { type="toggle", order=1, name=L["OptArtName"],   desc=L["OptArtNameDesc"]},
+			showPoints = { type="toggle", order=2, name=L["OptArtPoints"], desc=L["OptArtPointsDesc"]},
+			showXP     = { type="select", order=3, name=L["OptArtPower"],  desc=L["OptArtPowerDesc"],
 				values	= {
 					["0"]    = L["Hide"],
-					["1"]    = L["Current / max expierence"],
+					["1"]    = L["Current / max xp"],
 					["2"]    = L["Need to next point"],
 				},
 			},
-			showPower={ type="toggle",     order=4, name=L["Show unspend artifact power"], desc=L["Show amount summary of artifact power from items in your backpack in broker button"]},
-			showKnowledge={ type="toggle", order=5, name=L["Show artifact knowledge"],     desc=L["Show artifact knowledge in broker button"]},
-			showWarning={ type="toggle",   order=6, name=L["Show 'not equipped' warning"], desc=L["Show 'artifact weapon not equipped' warning in broker button"]},
+			showPower     = { type="toggle", order=4, name=L["OptArtUnusedDesc"],  desc=L["OptArtUnusedDesc"]},
+			showKnowledge = { type="toggle", order=5, name=L["OptArtKnowledge"],   desc=L["OptArtKnowledgeDesc"]},
+			showWarning   = { type="toggle", order=6, name=L["OptartNotEquipped"], desc=L["OptArtNotEquippedDesc"]},
 		},
 		tooltip = {
-			showRelic={ type="toggle",                  order=1, name=L["Show artifact relic"],               desc=L["Display a list of artifact relic slots in tooltip"]},
-			showRelicItemLevel={ type="toggle",         order=2, name=L["Show relic item level"],             desc=L["Display relic item level"]},
-			showRelicIncreaseItemLevel={ type="toggle", order=3, name=L["Show increase item level by relic"], desc=L["Display increase item level by relic"]},
-			showItems={ type="toggle",                  order=4, name=L["Show artifact power items"],         desc=L["Display a list of artifact power items found in your bag in tooltip"]},
-			showTotalAP={ type="toggle",                order=5, name=L["Show total used artifact power"],    desc=L["Display amount of total used artifact power on current equipped artifact weapon. That doesn't includes point resets!"]},
-			showAlt={ type="toggle",                    order=6, name=L["Show your other artifacts"],         desc=L["Display a list of your other artifacts you have obtainted"]}
+			showRelic                  = { type="toggle", order=1, name=L["OptArtRelic"],        desc=L["OptArtRelicDesc"]},
+			showRelicItemLevel         = { type="toggle", order=2, name=L["OptArtRelicILvl"],    desc=L["OptArtRelicILvlDesc"]},
+			showRelicIncreaseItemLevel = { type="toggle", order=3, name=L["OptArtReliciLvlInc"], desc=L["OptArtReliciLvlIncDesc"]},
+			showItems                  = { type="toggle", order=4, name=L["OptArtPowerItems"],   desc=L["OptArtPowerItemsDesc"]},
+			showTotalAP                = { type="toggle", order=5, name=L["OptArtPowerTotal"],   desc=L["OptArtPowerTotalDesc"]},
+			showAlt                    = { type="toggle", order=6, name=L["OptArtOthers"],       desc=L["OptArtOthersDesc"]}
 		},
 		misc = {
 			shortNumbers=1
@@ -683,9 +670,9 @@ function module.init()
 	ns.artifactpower_items = {
 		-- >0 = known amount of artifact power
 		-- -1 = special actifact power items
-		[127999]=1, [128000]=1, [128021]=1, [128022]=1, [128026]=1, [130144]=1, [130149]=1, [130152]=1, [130153]=1, [130159]=1, [130160]=1, [130165]=1,
+		[127999]=2, [128000]=2, [128021]=2, [128022]=2, [128026]=2, [130144]=1, [130149]=1, [130152]=1, [130153]=1, [130159]=1, [130160]=1, [130165]=1,
 		[131728]=1, [131732]=1, [131751]=1, [131753]=1, [131758]=1, [131763]=1, [131778]=1, [131784]=1, [131785]=1, [131789]=1, [131795]=1, [131802]=1,
-		[131808]=1, [132361]=1, [132897]=1, [132923]=1, [132950]=1, [134118]=1, [134133]=1, [136360]=1, [138480]=1, [138487]=1, [138726]=1, [138732]=1,
+		[131808]=1, [132361]=1, [132897]=1, [132923]=1, [132950]=1, [134118]=2, [134133]=2, [136360]=1, [138480]=1, [138487]=1, [138726]=2, [138732]=1,
 		[138781]=1, [138782]=1, [138783]=1, [138784]=1, [138785]=1, [138786]=1, [138812]=1, [138813]=1, [138814]=1, [138816]=1, [138839]=1, [138864]=1,
 		[138865]=1, [138880]=1, [138881]=1, [138885]=1, [138886]=1, [139413]=1, [139506]=1, [139507]=1, [139508]=1, [139509]=1, [139510]=1, [139511]=1,
 		[139512]=1, [139608]=1, [139609]=1, [139610]=1, [139611]=1, [139612]=1, [139613]=1, [139614]=1, [139615]=1, [139616]=1, [139617]=1, [139652]=1,
@@ -716,14 +703,21 @@ function module.init()
 		[143740]=1, [143741]=1, [143742]=1, [143743]=1, [143744]=1, [143745]=1, [143746]=1, [143747]=1, [143749]=1, [143757]=1, [143844]=1, [143868]=1,
 		[143869]=1, [143870]=1, [143871]=1, [144266]=1, [144267]=1, [144268]=1, [144269]=1, [144270]=1, [144271]=1, [144272]=1, [144297]=1, [146122]=1,
 		[146123]=1, [146124]=1, [146125]=1, [146126]=1, [146127]=1, [146128]=1, [146129]=1, [146309]=1, [146313]=1, [146314]=1, [146315]=1, [146316]=1,
-		[146318]=1, [146319]=1, [146320]=1, [146321]=1, [146322]=1, [146323]=1, [146324]=1, [146325]=1, [146326]=1, [146327]=1, [146329]=1, [146662]=1,
+		[146318]=1, [146319]=1, [146320]=1, [146321]=1, [146322]=1, [146323]=1, [146324]=1, [146325]=1, [146326]=1, [146327]=1, [146329]=2, [146662]=1,
 		[146663]=1, [146664]=1, [146671]=1, [147198]=1, [147199]=1, [147200]=1, [147201]=1, [147202]=1, [147203]=1, [147293]=1, [147398]=1, [147399]=1,
 		[147400]=1, [147401]=1, [147402]=1, [147403]=1, [147404]=1, [147405]=1, [147406]=1, [147407]=1, [147408]=1, [147409]=1, [147441]=1, [147442]=1,
 		[147444]=1, [147456]=1, [147457]=1, [147458]=1, [147459]=1, [147460]=1, [147461]=1, [147462]=1, [147463]=1, [147464]=1, [147465]=1, [147466]=1,
 		[147467]=1, [147468]=1, [147469]=1, [147470]=1, [147471]=1, [147472]=1, [147473]=1, [147474]=1, [147475]=1, [147476]=1, [147477]=1, [147478]=1,
-		[147479]=1, [147480]=1, [147481]=1, [147482]=1, [147483]=1, [147484]=1, [147485]=1, [147486]=1, [147513]=1, [147548]=1, [147549]=1, [147550]=1,
+		[147479]=1, [147480]=1, [147481]=1, [147482]=1, [147483]=1, [147484]=1, [147485]=1, [147486]=1, [147513]=2, [147548]=1, [147549]=1, [147550]=1,
 		[147551]=1, [147579]=1, [147581]=1, [147718]=1, [147719]=1, [147720]=1, [147721]=1, [147808]=1, [147809]=1, [147810]=1, [147811]=1, [147812]=1,
-		[147814]=1, [147818]=1, [147819]=1, [147842]=1
+		[147814]=1, [147818]=1, [147819]=1, [147842]=1, [150931]=1, [151240]=1, [151241]=1, [151242]=1, [151243]=1, [151244]=1, [151245]=1, [151246]=1,
+		[151247]=1, [151556]=1, [151561]=1, [151619]=1, [151620]=1, [151696]=1, [151697]=1, [151698]=1, [151699]=1, [151700]=1, [151789]=1, [151914]=1,
+		[151915]=1, [151916]=1, [151917]=1, [151918]=1, [151919]=1, [151920]=1, [151921]=1, [151922]=1, [152430]=1, [152431]=1, [152432]=1, [152433]=1,
+		[152434]=1, [152435]=1, [152504]=1, [152651]=1, [152653]=1, [152654]=1, [152700]=1, [152706]=1, [152707]=1, [152708]=1, [152709]=1, [152710]=1,
+		[152711]=1, [152712]=1, [152713]=1, [152937]=1, [152938]=1, [152939]=1, [152962]=1, [152984]=1, [153001]=1, [153007]=1, [153008]=1, [153009]=1,
+		[153046]=1, [153047]=1, [153048]=1, [153052]=1, [153159]=1, [153160]=1, [153161]=1, [153162]=1, [153163]=1, [153164]=1, [153165]=1, [153198]=1,
+		[153199]=1, [153200]=1, [153201]=1, [153217]=1, [153218]=1, [153220]=1, [153221]=1, [153222]=1, [153223]=1, [153224]=1, [153225]=1, [153246]=1,
+		[153259]=1, [153266]=1, [153278]=1, [155657]=1
 	};
 
 	artifactKnowledgeMultiplier = {
