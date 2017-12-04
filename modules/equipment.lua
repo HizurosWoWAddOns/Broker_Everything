@@ -329,7 +329,7 @@ module = {
 		showSetName = true,
 		showGreenText = true,
 		showUpgrades = true,
-		showShorterInfo = false
+		showShorterInfo = true
 	},
 	clickOptionsRename = {
 		["charinfo"] = "1_open_character_info",
