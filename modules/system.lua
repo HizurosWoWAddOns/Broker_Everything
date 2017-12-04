@@ -43,6 +43,12 @@ local clickOptionsDefaults = {
 	--memoryusage = "__NONE",
 	menu = "_RIGHT"
 };
+local addonGroups = {
+	["^DBM%-"] = "Deadly Boss Mod",
+	["^Auc%:"] = "Auctioneer",
+	["^Altoholic"] = "Altoholic",
+	["^DataStore"] = "Altoholic",
+}
 
 
 -- register icon names and default files --
@@ -223,19 +229,52 @@ local function updateMemory()
 	--
 	setMemoryTimeout();
 	if not (enabled.sys_mod or enabled.mem_mod) then return end
-	memory.numAddOns=GetNumAddOns();
-	local lst,sum,numLoadedAddOns = {},0,0;
-	for i=1, memory.numAddOns do
-		local Name, Title, Notes, Loadable, Reason = GetAddOnInfo(i);
-		if IsAddOnLoaded(Name) then
-			local tmp = {name=Name,cur=floor(GetAddOnMemoryUsage(i)*1000),min=0,max=0,curStr="",minStr="",maxStr=""};
-			min(tmp,"min","cur");
-			max(tmp,"max","cur");
-			memoryStr(tmp,"cur");
-			memoryStr(tmp,"min");
-			memoryStr(tmp,"max");
-			sum = sum + tmp.cur;
-			tinsert(lst,tmp);
+	local num=GetNumAddOns();
+	local lst,grps,sum,numLoadedAddOns = {},{},0,0;
+	memory.numAddOns=0;
+	for i=1, num do
+		local Name = GetAddOnInfo(i);
+		local IsLoaded = IsAddOnLoaded(Name);
+
+		local group = false;
+		for pat,gName in pairs(addonGroups)do
+			if Name:find(pat) then
+				group = gName;
+				break;
+			end
+		end
+
+		if not group then
+			if IsLoaded then
+				local tmp = {name=Name,cur=floor(GetAddOnMemoryUsage(i)*1000),min=0,max=0,curStr="",minStr="",maxStr=""};
+				min(tmp,"min","cur");
+				max(tmp,"max","cur");
+				memoryStr(tmp,"cur");
+				memoryStr(tmp,"min");
+				memoryStr(tmp,"max");
+				sum = sum + tmp.cur;
+				tinsert(lst,tmp);
+			end
+			memory.numAddOns=memory.numAddOns+1;
+		else
+			if grps[group]==nil then
+				grps[group] = {name=group,cur=0,min=0,max=0,curStr="",minStr="",maxStr=""};
+				memory.numAddOns=memory.numAddOns+1;
+			end
+			if IsLoaded then
+				grps[group].cur=grps[group].cur+floor(GetAddOnMemoryUsage(i)*1000);
+			end
+		end
+	end
+	for _,grp in pairs(grps)do
+		if grp.cur>0 then
+			min(grp,"min","cur");
+			max(grp,"max","cur");
+			memoryStr(grp,"cur");
+			memoryStr(grp,"min");
+			memoryStr(grp,"max");
+			sum = sum + grp.cur;
+			tinsert(lst,grp);
 		end
 	end
 	memory.list = lst;
