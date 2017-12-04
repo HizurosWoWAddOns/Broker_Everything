@@ -120,7 +120,7 @@ local function createTooltip(tt)
 		local ids = {GetTrackedAchievements()};
 		if(#ids>0)then
 			tt:AddSeparator(4,0,0,0,0);
-			tt:AddLine(C("ltblue",L["AchieveWatch"]));
+			tt:AddLine(C("ltblue",L["Watch list"]));
 			tt:AddSeparator();
 			for i=1, #ids do
 				local id, Name, points, completed, month, day, year, description, flags, icon, rewardText, isGuild, wasEarnedByMe, earnedBy = GetAchievementInfo(ids[i]);
@@ -184,11 +184,11 @@ ns.ClickOpts.addDefaults(module,"menu","_RIGHT");
 function module.options()
 	return {
 		tooltip = {
-			showLatest       = {type="toggle", order=1, name=L["AchieveOptLast"],      desc=L["AchieveOptLastDesc"]},
-			showCategory     = {type="toggle", order=2, name=L["AchieveOptCat"],       desc=L["AchieveOptCatDesc"]},
-			showWatchlist    = {type="toggle", order=3, name=L["AchieveOptWatch"],     desc=L["AchieveOptWatchDesc"]},
-			showProgressBars = {type="toggle", order=4, name=L["AchieveOptBars"],      desc=L["AchieveOptBarsDesc"]},
-			showCompleted    = {type="toggle", order=5, name=L["AchieveOptCompleted"], desc=L["AchieveOptCompletedDesc"]},
+			showLatest       = {type="toggle", order=1, name=L["OptAchievLast"],      desc=L["OptAchievLastDesc"]},
+			showCategory     = {type="toggle", order=2, name=L["OptAchievCat"],       desc=L["OptAchievCatDesc"]},
+			showWatchlist    = {type="toggle", order=3, name=L["Watch list"],         desc=L["OptAchievWatchDesc"]},
+			showProgressBars = {type="toggle", order=4, name=L["OptAchievBars"],      desc=L["OptAchievBarsDesc"]},
+			showCompleted    = {type="toggle", order=5, name=L["OptAchievCompleted"], desc=L["OptAchievCompletedDesc"]},
 		}
 	}
 end
