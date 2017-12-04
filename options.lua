@@ -58,7 +58,7 @@ ns.profile = {
 setmetatable(ns.profile,{__index=function(t,k) rawset(t,k,{enabled=true}) end});
 
 -- some values tables and functions
-local ttModifierValues = {NONE = L["Default (no modifier)"]};
+local ttModifierValues = {NONE = L["ModKeyDefault"]};
 for i,v in pairs(ns.tooltipModifiers) do ttModifierValues[i] = L["ModKey"..v.l]; end
 
 local function calcDataSize(info,obj)

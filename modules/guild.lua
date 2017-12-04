@@ -315,7 +315,7 @@ local function tooltipAddLine(v,me)
 
 	local l=tt:AddLine(
 		v[mLevel],
-		C(v[mClassFile],MobIcon .. ns.scm(v[mName]) .. realm),
+		status..C(v[mClassFile],MobIcon .. ns.scm(v[mName]) .. realm),
 		(ns.profile[name].showZone) and Zone or "", -- [3]
 		(ns.profile[name].showNotes) and ns.scm(v[mNote]) or "", -- [4]
 		(ns.profile[name].showONotes) and ns.scm(v[mOfficerNote]) or "", -- [5]
@@ -579,33 +579,37 @@ ns.ClickOpts.addDefaults(module,{
 function module.options()
 	return {
 		broker = {
-			showApplicantsBroker={ type="toggle", order=1, name=L["Show applicants on broker"], desc=L["Show applicants on broker button"] },
-			showMobileChatterBroker={ type="toggle", order=2, name=L["Show mobile chatter on broker"], desc=L["Show count of mobile chatter on broker button"]},
-			showTotalMembersBroker={ type="toggle", order=3, name=L["Show total members count on broker"], desc=L["Show total members count on broker button"] },
+			showApplicantsBroker    = { type="toggle", order=1, name=L["Applicants"], desc=L["Show applicants on broker button"] },
+			showMobileChatterBroker = { type="toggle", order=2, name=L["Mobile app user"], desc=L["Show count of mobile chatter on broker button"]},
+			showTotalMembersBroker  = { type="toggle", order=3, name=L["Total members count"], desc=L["Show total members count on broker button"] },
 		},
-		tooltip = {
-			header={ type="header", order=1, name=L["Main tooltip options"] },
-			showRep={ type="toggle", order=3, name=L["Show guild reputation"], desc=L["Enable/Disable the display of Guild Reputation in tooltip"] },
-			showMOTD={ type="toggle", order=4, name=L["Show Guild MotD"], desc=L["Show Guild Message of the Day in tooltip"] },
-			showRealmname={ type="toggle", order=5, name=L["Show realm name"], desc=L["Show realm names behind guild and character names in tooltip. Guilds and characters from connected-realms gets an asterisk behind the names if this option is unchecked."] },
-			showZone={ type="toggle", order=6, name=L["Show zone"], desc=L["Show current zone from guild members in tooltip"]},
-			showNotes={ type="toggle", order=7, name=L["Show notes"], desc=L["Show notes from guild members in tooltip"]},
-			showONotes={ type="toggle", order=8, name=L["Show officer notes"], desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"]},
-			showRank={ type="toggle", order=9, name=L["Show rank"], desc=L["Show rank name from guild members in tooltip"]},
-			showProfessions={ type="toggle", order=10, name=L["Show professions"], desc=L["Show professions from guild members in tooltip"] },
-			showApplicants={ type="toggle", order=11, name=L["Show applicants"], desc=L["Show applicants in tooltip"] },
-			showMobileChatter={ type="toggle", order=12, name=L["Show mobile chatter"], desc=L["Show mobile chatter in tooltip (Armory App users)"] },
-			splitTables={ type="toggle", order=13, name=L["Separate mobile chatter"], desc=L["Display mobile chatter with own table in tooltip"] },
-
-			header2={ type="header", order=15, name=L["Secondary tooltip options"] },
-			desc={ type="description", order=17, name=L["The secondary tooltip will be displayed by moving the mouse over a guild member in main tooltip. The tooltip will be displayed if one of the following options activated."], fontSize="medium"},
-			showZoneInTT2={ type="toggle", order=18, name=L["Show zone"], desc=L["Show current zone from guild member"]},
-			showNotesInTT2={ type="toggle", order=19, name=L["Show notes"], desc=L["Show notes from guild member"]},
-			showONotesInTT2={ type="toggle", order=20, name=L["Show officer notes"], desc=L["Show officer notes from guild member"]},
-			showRankInTT2={ type="toggle", order=21, name=L["Show rank"], desc=L["Show rank from guild member"]},
-			showProfessionsInTT2={ type="toggle", order=22, name=L["Show professions"], desc=L["Show professions from guild member"]}
+		tooltip1 = {
+			name = L["Main tooltip options"],
+			order = 2,
+			showRep           = { type="toggle", order= 1, name=GUILD_REPUTATION, desc=L["Enable/Disable the display of Guild Reputation in tooltip"] },
+			showMOTD          = { type="toggle", order= 2, name=L["Guild MotD"], desc=L["Show Guild Message of the Day in tooltip"] },
+			showRealmname     = { type="toggle", order= 3, name=L["Realm name"], desc=L["Show realm names behind guild and character names in tooltip. Guilds and characters from connected-realms gets an asterisk behind the names if this option is unchecked."] },
+			showZone          = { type="toggle", order= 4, name=ZONE, desc=L["Show current zone from guild members in tooltip"]},
+			showNotes         = { type="toggle", order= 5, name=L["Notes"], desc=L["Show notes from guild members in tooltip"]},
+			showONotes        = { type="toggle", order= 6, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"]},
+			showRank          = { type="toggle", order= 7, name=RANK, desc=L["Show rank name from guild members in tooltip"]},
+			showProfessions   = { type="toggle", order= 8, name=TRADE_SKILLS, desc=L["Show professions from guild members in tooltip"] },
+			showApplicants    = { type="toggle", order= 9, name=L["Applicants"], desc=L["Show applicants in tooltip"] },
+			showMobileChatter = { type="toggle", order=10, name=L["Mobile app user"], desc=L["Show mobile chatter in tooltip (Armory App users)"] },
+			splitTables       = { type="toggle", order=11, name=L["Separate mobile app user"], desc=L["Display mobile chatter with own table in tooltip"] },
+		},
+		tooltip2 = {
+			name = L["Secondary tooltip options"],
+			order = 3,
+			desc                 = { type="description", order=1, name=L["The secondary tooltip will be displayed by moving the mouse over a guild member in main tooltip. The tooltip will be displayed if one of the following options activated."], fontSize="medium"},
+			showZoneInTT2        = { type="toggle",      order=2, name=ZONE, desc=L["Show current zone from guild member"]},
+			showNotesInTT2       = { type="toggle",      order=3, name=L["Notes"], desc=L["Show notes from guild member"]},
+			showONotesInTT2      = { type="toggle",      order=4, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild member"]},
+			showRankInTT2        = { type="toggle",      order=5, name=RANK, desc=L["Show rank from guild member"]},
+			showProfessionsInTT2 = { type="toggle",      order=6, name=TRADE_SKILLS, desc=L["Show professions from guild member"]}
 		},
 		misc = {
+			order = 4,
 			showMembersLevelUp={ type="toggle", order=1, name=L["Show level up notification"], desc=L["Show guild member level up notification in chat frame. (This is not a gratulation bot!)"]},
 		},
 	},

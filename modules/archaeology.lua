@@ -253,7 +253,7 @@ ns.ClickOpts.addDefaults(module,{
 function module.options()
 	return {
 		tooltip = {
-			continentOrder = { type="toggle", order=1, name=L["Order by continent"], desc=L["Order archaeology races by continent"] }
+			continentOrder = { type="toggle", order=1, name=L["OptArchOrder"], desc=L["OptArchOrderDesc"] }
 		}
 	}
 end

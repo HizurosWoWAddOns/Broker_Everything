@@ -248,11 +248,18 @@ function module.options()
 	end
 	return 	{
 		broker = {
+			order=1,
 			display={ type="select", order=1, name=L["Display XP in broker"], desc=L["Select to show XP as an absolute value; Deselected will show it as a percentage."], values=displayValues, width="double" },
+		},
+		broker2 = {
+			order=2,
+			name = L["Text bar"],
+			textBarInfo      = { type="description", order=1, name=L["Text bar is a simple row of colored characters act like status, reputation or xp bar but without textures."],   fontSize="medium" },
 			textBarCharacter={ type="select", order=2, name=L["Text bar character"], desc=L["Choose character for little text bar"], values=textBarValues },
 			textBarCharCount={ type="range", order=3, name=L["Text bar num characters"], desc=L["..."], min=5, max=200, }
 		},
 		tooltip = {
+			order=3,
 			showMyOtherChars={ type="toggle", order=1, name=L["Show other chars xp"], desc=L["Display a list of my chars on same realm with her level and xp"] },
 			showNonMaxLevelOnly={ type="toggle", order=2, name=L["Hide characters at maximum level"], desc=L["Hide all characters who have reached the level cap."] },
 			showAllFactions=3,
@@ -260,6 +267,7 @@ function module.options()
 			showCharsFrom=5
 		},
 		misc = {
+			order=4,
 			shortNumbers=true
 		},
 	}

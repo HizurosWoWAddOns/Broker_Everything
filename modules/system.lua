@@ -598,28 +598,28 @@ module_mem.addonpanel = addonpanel;
 function module_sys.options()
 	return {
 		broker = {
-			showInboundOnBroker={ type="toggle", order=1, name=L["Show inbound traffic"],  desc=L["Display inbound traffic on broker"] },
-			showOutboundOnBroker={ type="toggle", order=2, name=L["Show outbound traffic"], desc=L["Display outbound traffic on broker"] },
+			showInboundOnBroker  = { type="toggle", order=1, name=L["Inbound traffic"],  desc=L["Display inbound traffic on broker"] },
+			showOutboundOnBroker = { type="toggle", order=2, name=L["Outbound traffic"], desc=L["Display outbound traffic on broker"] },
 
-			showWorldOnBroker={ type="toggle", order=3, name=L["Show world latency"],    desc=L["Display world latency on broker"] },
-			showHomeOnBroker={ type="toggle", order=4, name=L["Show home latency"],     desc=L["Display home latency on broker"] },
+			showWorldOnBroker    = { type="toggle", order=3, name=L["World latency"],    desc=L["Display world latency on broker"] },
+			showHomeOnBroker     = { type="toggle", order=4, name=L["Home latency"],     desc=L["Display home latency on broker"] },
 
-			showFpsOnBroker={ type="toggle", order=5, name=L["Show fps"],              desc=L["Display fps on broker"] },
+			showFpsOnBroker      = { type="toggle", order=5, name=L["FPS"],              desc=L["Display fps on broker"] },
 
-			showMemoryUsageOnBroker={ type="toggle", order=6, name=L["Show memory usage"],     desc=L["Display memory usage on broker"] },
-			showAddOnsCountOnBroker={ type="toggle", order=7, name=L["Show addons"],           desc=L["Display addon count on broker"] },
+			showMemoryUsageOnBroker = { type="toggle", order=6, name=L["Memory usage"],     desc=L["Display memory usage on broker"] },
+			showAddOnsCountOnBroker = { type="toggle", order=7, name=ADDONS,           desc=L["Display addon count on broker"] },
 
-			showClientVersionOnBroker={ type="toggle", order=8, name=L["Show client version"],    desc=L["Display client version on broker"] },
-			showClientBuildOnBroker={ type="toggle", order=9, name=L["Show client build"],      desc=L["Display client build number on broker"] },
-			showInterfaceVersionOnBroker={ type="toggle", order=10, name=L["Show interface version"], desc=L["Display interface version on broker"] },
+			showClientVersionOnBroker    = { type="toggle", order=8, name=L["Client version"],    desc=L["Display client version on broker"] },
+			showClientBuildOnBroker      = { type="toggle", order=9, name=L["Client build"],      desc=L["Display client build number on broker"] },
+			showInterfaceVersionOnBroker = { type="toggle", order=10, name=L["Interface version"], desc=L["Display interface version on broker"] },
 		},
 		tooltip = {
-			showTrafficInTooltip={ type="toggle", order=1, name=L["Show traffic"],      desc=L["Display traffic in tooltip"] },
-			showLatencyInTooltip={ type="toggle", order=2, name=L["Show latency"],      desc=L["Display latency in tooltip"] },
-			showFpsInTooltip={ type="toggle", order=3, name=L["Show fps"],          desc=L["Display fps in tooltip"] },
-			showMemoryUsageInTooltip={ type="toggle", order=4, name=L["Show memory usage"], desc=L["Display memory usage in tooltip"] },
-			showClientInfoInTooltip={ type="toggle", order=5, name=L["Show client info"], desc=L["Display client info in tooltip"] },
-			numDisplayAddOns={ type="range", order=6, name=L["Show addons in tooltip"], desc=L["Select the maximum number of addons to display, otherwise drag to 'All'."],
+			showTrafficInTooltip     = { type="toggle", order=1, name=L["Traffic"],      desc=L["Display traffic in tooltip"] },
+			showLatencyInTooltip     = { type="toggle", order=2, name=L["Latency"],      desc=L["Display latency in tooltip"] },
+			showFpsInTooltip         = { type="toggle", order=3, name=L["FPS"],          desc=L["Display fps in tooltip"] },
+			showMemoryUsageInTooltip = { type="toggle", order=4, name=L["Memory usage"], desc=L["Display memory usage in tooltip"] },
+			showClientInfoInTooltip  = { type="toggle", order=5, name=L["Client info"], desc=L["Display client info in tooltip"] },
+			numDisplayAddOns         = { type="range",  order=6, name=ADDONS, desc=L["Select the maximum number of addons to display, otherwise drag to 'All'."],
 				--minText = ACHIEVEMENTFRAME_FILTER_ALL,
 				step = 1,
 				min = 0,
@@ -662,15 +662,15 @@ function module_mem.options()
 			mem_max_addons={ type="range", name=L["Show addons in tooltip"], desc=L["Select the maximum number of addons to display, otherwise drag to 'All'."],
 				--minText = ACHIEVEMENTFRAME_FILTER_ALL,
 				step = 1,
-				min = -1,
+				min = 0,
 				max = 100,
 			}
 		},
 		misc = {
 			shortNumbers=0,
 			addonpanel={ type="select", order=1, name=L["Addon panel"], desc=L["Choose your addon panel that opens if you rightclick on memory broker or disable the right click option."], values=addonpanels_select, width="double" },
-			separator={ type="separator", order=2,  }, -- alpha=0
-			header={ type="header", name=L["Memory usage"], order=3 }, --align="center"
+			separator={ type="separator", order=2,  },
+			header={ type="header", name=L["Memory usage"], order=3 },
 			separator2={ type="separator", order=5 },
 			updateInterval={ type="select", order=6, name=L["Update interval"], desc=L["Change the update interval or disable it."],
 				values = {
@@ -686,7 +686,7 @@ function module_mem.options()
 			},
 			desc={ type="description", order=8, name="|n"..table.concat({
 					C("orange",L["Any update of the addon memory usage can cause results in fps drops and 'Script ran too long' error messages!"]),
-					C("white",L["The necessary time to collect memory usage of all addons depends on CPU speed, CPU usage, the number of running addons and other factors."]),
+					C("white",L["The necessary time to collect memory usage of all addons depends on CPU speed, CPU usage, the number of running addons and more."]),
 					C("yellow",L["If you have more than one addon to display memory usage it is recommended to disable the update interval of this addon."])
 				},"|n|n"), fontSize="medium"
 			},

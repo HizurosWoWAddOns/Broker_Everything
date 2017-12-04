@@ -192,7 +192,7 @@ function module.options()
 			hideLeave={ type="toggle", order=5, name=L["Hide leaves"],     desc=L["Hide all entries with 'Leave' as action."] },
 			hideRemove={ type="toggle", order=6, name=L["Hide removes"],    desc=L["Hide all entries with 'Remove' as action."] },
 			--separator=true,
-			showRealm={ type="toggle", order=7, name=L["Show realm names"], desc=L["Show realm names after character names from other realms (connected realms)."] },
+			showRealm={ type="toggle", order=7, name=L["Realm name"], desc=L["Show realm names after character names from other realms (connected realms)."] },
 			max_entries={ type="range", order=8, name=L["Show max. entries"], desc=L["Select the maximum number of entries from the guild log, otherwise drag to 'All'."],
 				--minText = ACHIEVEMENTFRAME_FILTER_ALL,
 				min = 0,

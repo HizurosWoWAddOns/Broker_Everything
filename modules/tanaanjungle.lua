@@ -267,7 +267,7 @@ function module.options()
 	return {
 		broker = nil,
 		tooltip = {
-			showQuestIDs={ type="toggle", order=1, name=L["Show QuestIDs"],   desc=L["Show/Hide QuestIDs in tooltip"] },
+			showQuestIDs={ type="toggle", order=1, name=L["QuestIDs"],   desc=L["Show QuestIDs in tooltip"] },
 			showChars={ type="toggle", order=2, name=L["Show characters"], desc=L["Show a list of your characters with count of ready and available targets in tooltip"] },
 			showAllFactions=3,
 			showRealmNames=4,

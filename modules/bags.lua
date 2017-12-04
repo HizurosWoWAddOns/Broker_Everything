@@ -133,7 +133,7 @@ local function updateBroker()
 	if ns.profile[name].freespace == false then
 		txt = u .. "/" .. t
 	elseif ns.profile[name].freespace == true then
-		txt = (t - u) .. " ".. L["free"]
+		txt = (t - u) .. " ".. L["Free"]
 	end
 
 	if f<=min1 then

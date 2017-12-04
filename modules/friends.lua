@@ -581,8 +581,8 @@ function module.options()
 					["2"]=L["Status text"],
 				},
 			},
-			showZone={ type="toggle", order=8, name=L["Show zone"], desc=L["Display zone in tooltip"] },
-			showNotes={ type="toggle", order=9, name=L["Show notes"], desc=L["Display notes in tooltip"] },
+			showZone={ type="toggle", order=8, name=ZONE, desc=L["Display zone in tooltip"] },
+			showNotes={ type="toggle", order=9, name=L["Notes"], desc=L["Display notes in tooltip"] },
 		},
 		tooltip2 = {
 			name=L["Second tooltip options"],

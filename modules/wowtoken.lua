@@ -38,8 +38,8 @@ module = {
 function module.options()
 	return {
 		tooltip = {
-			diff={ type="toggle", name=L["Show difference"], desc=L["Show difference of last change in tooltip"]},
-			history={ type="toggle", name=L["Show history"], desc=L["Show history of the 5 last changes in tooltip"]},
+			diff={ type="toggle", name=L["Difference"], desc=L["Show difference of last change in tooltip"]},
+			history={ type="toggle", name=L["History"], desc=L["Show history of the 5 last changes in tooltip"]},
 		},
 		misc = {
 			shortNumbers=true

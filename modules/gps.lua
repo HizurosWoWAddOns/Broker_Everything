@@ -461,7 +461,7 @@ module3.transportMenu = transportMenu;
 function module1.options()
 	return {
 		broker = {
-			bothZones={ type="select", name=L["Display zone names"], desc=L["Display in broker zone and subzone if exists or one of it."], values=zoneDisplayValues, width="double" }
+			bothZones={ type="select", name=L["Display zone names"], desc=L["Display in broker zone and subzone if exists or one of it."], values=zoneDisplayValues }
 		},
 		misc = sharedMisc
 	}
@@ -477,7 +477,7 @@ end
 function module3.options()
 	return {
 		broker = {
-			bothZones={ type="select", name=L["Display zone names"], desc=L["Display in broker zone and subzone if exists or one of it."], values=zoneDisplayValues, width="double" }
+			bothZones={ type="select", name=L["Display zone names"], desc=L["Display in broker zone and subzone if exists or one of it."], values=zoneDisplayValues }
 		},
 		misc = sharedMisc
 	}
