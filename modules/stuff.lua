@@ -90,19 +90,22 @@ local function createTooltip(tt)
 	line, column = tt:AddLine(L["Reload UI"])
 	tt:SetLineScript(line, "OnMouseUp", reloadUI); -- Use static Popup to avoid taint.
 
-	line, column = tt:AddLine(LOGOUT)
-	tt:SetLineScript(line, "OnMouseUp", Logout);
+	--line, column = tt:AddLine(LOGOUT)
+	--tt:SetLineScript(line, "OnMouseUp", Logout);
 
-	line, column = tt:AddLine(L["Quit Game"])
-	tt:SetLineScript(line, "OnMouseUp", Quit);
+	--line, column = tt:AddLine(L["Quit Game"])
+	--tt:SetLineScript(line, "OnMouseUp", Quit);
+
+	tt:AddLine(L["Quit and Logout function are no longer usable by addons."]);
+	tt:AddLine(L["Critism on this change should be address at contact blizzard.Critism of this change should be addressed at blizzard."]);
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddLine(" ")
 		line, column = nil, nil
 		tt:AddLine(
-			C("copper",L["MouseBtnL"]).." || "..C("green",LOGOUT)
-			.."|n"..
-			C("copper",L["MouseBtnR"]).." || "..C("green",L["Quit game"])
+			--C("copper",L["MouseBtnL"]).." || "..C("green",LOGOUT)
+			--.."|n"..
+			--C("copper",L["MouseBtnR"]).." || "..C("green",L["Quit game"])
 			--.."|n"..
 			--C("copper",L["ModKeyS"].."+"..L["MouseBtnL"]).." || "..C("green",L["Switch window/fullscreen mode"])
 			.."|n"..
@@ -141,7 +144,7 @@ end
 function module.onclick(self,button)
 	if ns.profile[name].disableOnClick then return end
 	local shift = IsShiftKeyDown()
-
+	--[[
 	local _= function(id)
 		local a = clickActions[id] or {"Error",function() end};
 		if (id~=nextAction) then
@@ -157,13 +160,16 @@ function module.onclick(self,button)
 			a[2]();
 		end
 	end
+	--]]
 
 	if (button=="LeftButton") and (not shift) then
-		_(1); -- logout
+		-- _(1); -- logout
+		ns.print(L["Sorry, this option is no longer available. The use of \"%s\" function are blocked by blizzard."]:format("Logout"));
 	elseif (button=="RightButton") and (not shift) then
-		_(2); -- quit
+		-- _(2); -- quit
+		ns.print(L["Sorry, this option is no longer available. The use of \"%s\" function are blocked by blizzard."]:format("Quit"));
 	elseif (button=="LeftButton") and (shift) then
-		_(3); -- reload
+		ReloadUI();
 	elseif (button=="RightButton") and (shift) then
 		-- _(4); -- display mode
 	end

@@ -348,8 +348,8 @@ function module.init()
 		{sep=true, taint=true}, -- section 3
 		{name=VIDEO_OPTIONS_WINDOWED.."/"..VIDEO_OPTIONS_FULLSCREEN, 				iconName="Fullscreen",			macro="/script SetCVar('gxWindow', 1 - GetCVar('gxWindow')) RestartGx()",	taint=true,	--[[, view=IsMacClient()~=true]]},
 		{name=L["Reload UI"],			iconName="ReloadUi",			macro="/reload",																taint=true},
-		{name=LOGOUT,					iconName="Logout",				macro="/logout",																taint=true},
-		{name=EXIT_GAME,				iconName="ExitGame",			macro="/quit",																	taint=true}
+		--{name=LOGOUT,					iconName="Logout",				macro="/logout",																taint=true},
+		--{name=EXIT_GAME,				iconName="ExitGame",			macro="/quit",																	taint=true}
 	}
 end
 
@@ -401,9 +401,11 @@ function module.onclick(self, button)
 	end
 
 	if (button=="LeftButton") and (not shift) then
-		_(1); -- logout
+		--_(1); -- logout
+		ns.print(L["Sorry, this option is no longer available. The use of \"%s\" function are blocked by blizzard."]:format("Logout"));
 	elseif (button=="RightButton") and (not shift) then
-		_(2); -- quit
+		--_(2); -- quit
+		ns.print(L["Sorry, this option is no longer available. The use of \"%s\" function are blocked by blizzard."]:format("Quit"));
 	elseif (button=="LeftButton") and (shift) then
 		_(3); -- reload
 	elseif (button=="RightButton") and (shift) then
