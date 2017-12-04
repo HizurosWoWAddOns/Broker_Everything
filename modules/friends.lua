@@ -153,7 +153,7 @@ local function createTooltip2(self,data)
 		tt2:SetCell(tt2:AddLine(),1,ns.scm(data.note,true),nil,"LEFT",0);
 	end
 	-- broadcast
-	if ns.profile[name].showBroadcastTT2 and data.broadcast:len()>0 then
+	if ns.profile[name].showBroadcastTT2 and data.broadcast and data.broadcast:len()>0 then
 		tt2:AddSeparator(4,0,0,0,0);
 		tt2:SetCell(tt2:AddLine(),1,C(color1,BATTLENET_BROADCAST),nil,nil,0);
 		tt2:AddSeparator();
@@ -503,6 +503,7 @@ module = {
 		showFaction = "2",
 		showZone = true,
 		showNotes = true,
+		showTotalCount = true,
 
 		-- tooltip 2
 		showBroadcastTT2 = true,
@@ -536,7 +537,10 @@ function module.options()
 			showBNFriendsBroker={ type="toggle", order=3, name=L["Show BattleNet friends"], desc=L["Display count of BattleNet friends on Broker if 'Split friends on Broker' enabled otherwise add BattleNet friends to summary count."] },
 			showTotalCount={ type="toggle", order=4, name=L["Show total count"], desc=L["Display total count of friens and/or BattleNet friends on broker button"] },
 		},
-		tooltip = {
+		tooltip1 = {
+			name = L["Main tooltip options"],
+			order = 2,
+
 			showFriends={ type="toggle", order=1, name=L["Show friends"],           desc=L["Display friends in tooltip"] },
 			showBNFriends={ type="toggle", order=2, name=L["Show BattleNet friends"], desc=L["Display BattleNet friends in tooltip"] },
 			showBattleTags={ type="select", order=3, name=L["Show BattleTag/RealID"],  desc=L["Display BattleTag and/or RealID in tooltip"], width="double",
@@ -579,8 +583,11 @@ function module.options()
 			},
 			showZone={ type="toggle", order=8, name=L["Show zone"], desc=L["Display zone in tooltip"] },
 			showNotes={ type="toggle", order=9, name=L["Show notes"], desc=L["Display notes in tooltip"] },
+		},
+		tooltip2 = {
+			name=L["Second tooltip options"],
+			order = 3,
 
-			header={ type="header", order=10, name=L["Second tooltip options"] },
 			desc={ type="description", order=11, name=L["The secondary tooltip will be displayed by moving the mouse over a friend in main tooltip. The tooltip will be displayed if one of the following options activated."], fontSize="medium"},
 			showBroadcastTT2={ type="toggle", order=12, name=L["Show broadcast message"], desc=L["Display broadcast message in tooltip (BattleNet friend only)"] },
 			showBattleTagTT2={ type="toggle", order=13, name=L["Show BattleTag"], desc=L["Display BattleTag in tooltip (BattleNet friend only)"] },
