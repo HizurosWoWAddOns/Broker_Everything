@@ -322,13 +322,7 @@ function module.init()
 	};
 	-- note: little problem with not stagging speed increasement spells...
 
-	replace_unknown = {
-		a11446 = {L["Broken Isles Flying"], nil, L["Patch 7.2"], {L["Broken Isles Pathfinder, Part Two"]," ","a11190","a11543","a11544",--[["a11546",]]"a11545"," ",L["Reward: Broken Isles Flying"]}},
-		a11543 = L["Explore the broken shore"],
-		a11544 = L["Defender of the broken isles"],
-		a11545 = L["Legionfall Commander"],
-		--a11546 = L["Breaching the Tomb "] -- requirement canceled by blizzard
-	};
+	-- replace_unknown = { };
 end
 
 function module.onevent(self,event,msg)
