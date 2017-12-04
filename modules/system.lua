@@ -81,6 +81,18 @@ local function checkAddonManager()
 	end
 end
 
+local function addonpanel(self,button)
+	local ap = ns.profile[name_sys].addonpanel;
+	if (ap~="none") then
+		if (ap~="Blizzard's Addons Panel") then
+			if not IsAddOnLoaded(ap) then LoadAddOn(ap) end
+		end
+		if (addonpanels[ap]) and (addonpanels[ap](true)) then
+			addonpanels[ap]();
+		end
+	end
+end
+
 local function prependHistory(t,n,l)
 	local l = type(l)=="number" and l+1 or 51;
 	tinsert(t,1,n);
@@ -530,13 +542,13 @@ module_sys = {
 	events = {},
 	config_defaults = {
 		-- broker button options
-		showInboundOnBroker = true,
-		showOutboundOnBroker = true,
+		showInboundOnBroker = false,
+		showOutboundOnBroker = false,
 		showWorldOnBroker = true,
 		showHomeOnBroker = true,
 		showFpsOnBroker = true,
 		showMemoryUsageOnBroker = true,
-		showAddOnsCountOnBroker = true,
+		showAddOnsCountOnBroker = false,
 		showClientVersionOnBroker = false,
 		showClientBuildOnBroker = false,
 		showInterfaceVersionOnBroker = false,
