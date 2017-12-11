@@ -44,7 +44,7 @@ local nsProfileMT = {
 		local s = rawget(t,"section");
 		if s and db.profile[s] then
 			local v = db.profile[s][k];
-			if v==nil then
+			if v~=nil then
 				return v;
 			end
 		end
