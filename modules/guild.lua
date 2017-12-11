@@ -273,7 +273,6 @@ end
 local function tooltipAddLine(v,me)
 	if not (tt and tt.key and tt.key==ttName) then return end
 
-	local status = ( (v[mIsAway]==1) and C("gold","[AFK] ") ) or ( (v[mIsAway]==2) and C("ltred","[DND] ") ) or "";
 	local ts1, ts2 = "","";
 	if ns.profile[name].showProfessions and tradeskills[v[mFullName]] then
 		if tradeskills[v[mFullName]][1] then
@@ -286,23 +285,21 @@ local function tooltipAddLine(v,me)
 		end
 	end
 
-	local MobIcon, Zone = "",v[mZone];
+	local Zone = v[mZone];
 	if v[mIsMobile] and not v[mOnline] then
 		Zone=C("cyan",REMOTE_CHAT);
 	end
+
+	local status;
 	if v[mIsMobile] then
-		if v[mIsAway]==2 then
-			MobIcon = MOBILE_BUSY_ICON.." ";
-		elseif v[mIsAway]==1 then
-			MobIcon = MOBILE_AWAY_ICON.." "
-		else
-			MobIcon = ChatFrame_GetMobileEmbeddedTexture(73/255, 177/255, 73/255).." ";
-		end
+		status = (v[mIsAway]==2 and MOBILE_BUSY_ICON) or (v[mIsAway]==1 and MOBILE_AWAY_ICON) or ChatFrame_GetMobileEmbeddedTexture(73/255, 177/255, 73/255)
+	else
+		status = ("|T%s:0|t"):format(_G["FRIENDS_TEXTURE_"  .. ((v[mIsAway]==1 and "AFK") or (v[mIsAway]==2 and "DND") or "ONLINE")]);
 	end
 
 	local l=tt:AddLine(
 		v[mLevel],
-		status..C(v[mClassFile],MobIcon .. ns.scm(v[mName])) .. ns.showRealmName(name,v[mRealm]),
+		status .. " " .. C(v[mClassFile],ns.scm(v[mName])) .. ns.showRealmName(name,v[mRealm]),
 		(ns.profile[name].showZone) and Zone or "", -- [3]
 		(ns.profile[name].showNotes) and ns.scm(v[mNote]) or "", -- [4]
 		(ns.profile[name].showONotes) and ns.scm(v[mOfficerNote]) or "", -- [5]
