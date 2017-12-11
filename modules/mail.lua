@@ -10,8 +10,8 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Mail" -- BUTTON_LAG_MAIL
 local ttName, tooltip, tt, module = name.."TT"
 local alertLocked,onUpdateLocked,hookOn = false,false,false;
-local storedMailLineFaction = "%s - %s |TInterface\\PVPFrame\\PVP-Currency-%s:16:16:0:-1:16:16:0:16:0:16|t";
-local storedMailLineNeutral = "%s - %s";
+local storedMailLineFaction = "%s%s |TInterface\\PVPFrame\\PVP-Currency-%s:16:16:0:-1:16:16:0:16:0:16|t";
+local storedMailLineNeutral = "%s%s";
 local icons = {}
 
 
@@ -157,7 +157,7 @@ local function createTooltip(tt)
 						end
 
 						tt:AddLine(
-							(v.faction=="Neutral" and storedMailLineNeutral or storedMailLineFaction):format(C(v.class,ns.scm(n[1])),C("dkyellow",ns.scm(n[2])),v.faction),
+							(v.faction=="Neutral" and storedMailLineNeutral or storedMailLineFaction):format(C(v.class,ns.scm(n[1])),ns.showRealmName(name,n[2]),v.faction),
 							str
 						);
 						noData = false;

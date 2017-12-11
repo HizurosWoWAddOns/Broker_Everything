@@ -204,11 +204,7 @@ local function createTooltip(tt)
 							if (cd1>0) or (sep) then
 								tinsert(lst,{type="sep",data={4,0,0,0,0}});
 							end
-							if type(charRealm)=="string" and charRealm:len()>0 then
-								local _,_realm = ns.LRI:GetRealmInfo(charRealm);
-								if _realm then charRealm = _realm; end
-							end
-							tinsert(lst,{type="line",data={C("ltblue",ns.scm(charName).." - "..ns.scm(charRealm)),C("ltblue",L[durationHeader])}});
+							tinsert(lst,{type="line",data={C("ltblue",ns.scm(charName))..ns.showRealmName(name,charRealm),C("ltblue",L[durationHeader])}});
 							tinsert(lst,{type="sep",data={nil}});
 							char_header = true;
 							sep=true;

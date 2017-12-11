@@ -199,10 +199,6 @@ local function createTooltip(tt)
 			local c,r,_ = strsplit("-",name_realm,2);
 			if v.level>=100 and v.tanaanjungle and ns.showThisChar(name,r,v.faction) then
 				local bbt = {}; -- broker button text
-				if type(r)=="string" and r:len()>0 then
-					local _,_realm = ns.LRI:GetRealmInfo(r);
-					if _realm then r = _realm; end
-				end
 				for _,i in ipairs(typeOrder) do
 					local num = 0;
 					if v.tanaanjungle.completed then
@@ -214,7 +210,7 @@ local function createTooltip(tt)
 					end
 					tinsert(bbt,C(colorIDTypes[i], num) .. "/" .. C(colorIDTypes[i], numIDTypes[i]));
 				end
-				local l=tt:AddLine(C(v.class,ns.scm(c)),table.concat(bbt,", "));
+				local l=tt:AddLine(C(v.class,ns.scm(c))..ns.showRealmName(name,r),table.concat(bbt,", "));
 				if(name_realm==ns.player.name_realm)then
 					tt:SetLineColor(l, 0.1, 0.3, 0.6);
 				end

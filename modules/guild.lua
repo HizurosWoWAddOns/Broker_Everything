@@ -274,19 +274,6 @@ local function tooltipAddLine(v,me)
 	if not (tt and tt.key and tt.key==ttName) then return end
 
 	local status = ( (v[mIsAway]==1) and C("gold","[AFK] ") ) or ( (v[mIsAway]==2) and C("ltred","[DND] ") ) or "";
-	local realm,_ = "";
-	if guild[gRealmNoSpacer]~=v[mRealm] then
-		if (ns.profile[name].showRealmname) then
-			realm = v[mRealm];
-			if type(realm)=="string" and realm:len()>0 then
-				local _,_realm = ns.LRI:GetRealmInfo(realm);
-				if _realm then realm = _realm; end
-			end
-			realm = C("white","-")..C("dkyellow", ns.scm(realm));
-		else
-			realm = C("dkyellow","*");
-		end
-	end
 	local ts1, ts2 = "","";
 	if ns.profile[name].showProfessions and tradeskills[v[mFullName]] then
 		if tradeskills[v[mFullName]][1] then
@@ -315,7 +302,7 @@ local function tooltipAddLine(v,me)
 
 	local l=tt:AddLine(
 		v[mLevel],
-		status..C(v[mClassFile],MobIcon .. ns.scm(v[mName]) .. realm),
+		status..C(v[mClassFile],MobIcon .. ns.scm(v[mName])) .. ns.showRealmName(name,v[mRealm]),
 		(ns.profile[name].showZone) and Zone or "", -- [3]
 		(ns.profile[name].showNotes) and ns.scm(v[mNote]) or "", -- [4]
 		(ns.profile[name].showONotes) and ns.scm(v[mOfficerNote]) or "", -- [5]
@@ -355,23 +342,8 @@ local function createTooltip(tt,update)
 		return;
 	end
 
-	local realm,_ = "";
-
-	if ns.realm~=guild[gRealm] then
-		realm = guild[gRealm];
-		if (ns.profile[name].showRealmname) then
-			if type(realm)=="string" and realm:len()>0 then
-				local _,_realm = ns.LRI:GetRealmInfo(realm);
-				if _realm then realm = _realm; end
-			end
-			realm = C("gray"," - ")..C("dkyellow",ns.scm(realm));
-		else
-			realm = C("dkyellow","*");
-		end
-	end
-
 	local l = tt:AddHeader();
-	tt:SetCell(l,1,C("dkyellow",GUILD) .. "  " .. C("green",ns.scm(guild[gName])) .. realm, nil,"LEFT",ttColumns);
+	tt:SetCell(l,1,C("dkyellow",GUILD) .. "  " .. C("green",ns.scm(guild[gName])) .. ns.showRealmName(name,guild[gRealm]), nil,"LEFT",ttColumns);
 
 	tt:AddSeparator(4,0,0,0,0);
 
@@ -397,19 +369,6 @@ local function createTooltip(tt,update)
 		tt:AddSeparator();
 		for i, a in ipairs(applicants) do
 			if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
-			local realm,_ = a[app_realm];
-			if guild[gRealmNoSpacer]~=a[app_realm] then
-				if (ns.profile[name].showRealmname) then
-					if type(realm)=="string" and realm:len()>0 then
-						local _,_realm = ns.LRI:GetRealmInfo(realm);
-						if _realm then realm = _realm; end
-					end
-					realm = C("white","-")..C("dkyellow", ns.scm(realm));
-				else
-					realm = C("dkyellow","*");
-				end
-			end
-
 			local roles = {};
 			if a[app_bTank] then table.insert(roles,TANK); end
 			if a[app_bHealer] then table.insert(roles,HEALER); end
@@ -417,7 +376,7 @@ local function createTooltip(tt,update)
 
 			local l = tt:AddLine(
 				a[app_level],
-				C(a[app_class], ns.scm(a[app_name])) .. realm,
+				C(a[app_class], ns.scm(a[app_name])) .. ns.showRealmName(name,a[app_realm]),
 				table.concat(roles,", "),
 				date("%Y-%m-%d",time()+a[app_timeLeft])
 			);
@@ -545,7 +504,7 @@ module = {
 		showMOTD = true,
 
 		-- guild members
-		showRealmname = true,
+		showRealmNames = true,
 		showZone = true,		showZoneInTT2 = false,
 		showNotes = true,		showNotesInTT2 = false,
 		showONotes = true,		showONotesInTT2 = false,
@@ -588,7 +547,7 @@ function module.options()
 			order = 2,
 			showRep           = { type="toggle", order= 1, name=GUILD_REPUTATION, desc=L["Enable/Disable the display of Guild Reputation in tooltip"] },
 			showMOTD          = { type="toggle", order= 2, name=L["Guild MotD"], desc=L["Show Guild Message of the Day in tooltip"] },
-			showRealmname     = { type="toggle", order= 3, name=L["Realm name"], desc=L["Show realm names behind guild and character names in tooltip. Guilds and characters from connected-realms gets an asterisk behind the names if this option is unchecked."] },
+			showRealmNames    = 3,
 			showZone          = { type="toggle", order= 4, name=ZONE, desc=L["Show current zone from guild members in tooltip"]},
 			showNotes         = { type="toggle", order= 5, name=L["Notes"], desc=L["Show notes from guild members in tooltip"]},
 			showONotes        = { type="toggle", order= 6, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"]},

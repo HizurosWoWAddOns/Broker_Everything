@@ -108,21 +108,7 @@ local function createTooltip(tt)
 				local charName,realm,_=strsplit("-",name_realm,2);
 				if v.faction~=ns.player.faction and ns.showThisChar(name,realm,v.faction) and v.missions then
 					local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-					if type(realm)=="string" and realm:len()>0 then
-						local _,_realm = ns.LRI:GetRealmInfo(realm);
-						if _realm then realm = _realm; end
-						realm = C("dkyellow"," - "..ns.scm(realm));
-					else
-						realm="";
-					end
-					local l=tt:AddLine(C(v.class,ns.scm(charName)) .. realm .. faction );
-					if(name_realm==ns.player.name_realm)then
-						--- background highlight
-					end
-
-					if(IsShiftKeyDown())then
-					else
-					end
+					local l=tt:AddLine(C(v.class,ns.scm(charName)) .. ns.showRealmName(name,realm) .. faction );
 					if(name_realm==ns.player.name_realm)then
 						tt:SetLineColor(l, 0.1, 0.3, 0.6);
 					end

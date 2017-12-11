@@ -59,18 +59,7 @@ local function createTooltip(tt)
 			local charName,realm=strsplit("-",name_realm,2);
 			if v.missions and v.missions.followers and ns.showThisChar(name,realm,v.faction) then
 				local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-				if ns.profile[name].showRealmNames and realm~=ns.realm then
-					if type(realm)=="string" and realm:len()>0 then
-						local _,_realm = ns.LRI:GetRealmInfo(realm);
-						if _realm then realm = _realm; end
-					end
-					realm = C("dkyellow"," - "..ns.scm(realm));
-				elseif realm~=ns.realm then
-					realm = C("dkyellow"," *");
-				else
-					realm = "";
-				end
-				local l=tt:AddLine(C(v.class,ns.scm(charName)) .. realm .. faction );
+				local l=tt:AddLine(C(v.class,ns.scm(charName)) .. ns.showRealmName(name,realm) .. faction );
 				local get = function(Type)
 					local c,p,n,l=0,0,0,0; -- completed, progress, time next, time last
 					if type(v.missions[Type])=="table" then

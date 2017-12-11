@@ -126,6 +126,22 @@ function ns.showThisChar(modName,realm,faction)
 	return true;
 end
 
+function ns.showRealmName(mod,name,color,prepDash)
+	if not (ns.realm_short==name or ns.realm==name) then
+		if ns.profile[mod].showRealmNames then
+			if type(name)=="string" and name:len()>0 then
+				local _,_name = ns.LRI:GetRealmInfo(name);
+				if _name then
+					return (prepDash~=false and ns.LC.color("white"," - "))..ns.LC.color(color or "dkyellow", ns.scm(name));
+				end
+			end
+		else
+			return ns.LC.color("dkyellow"," *");
+		end
+	end
+	return "";
+end
+
 
   ---------------------------------------
 --- nice little print function          ---

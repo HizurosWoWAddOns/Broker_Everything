@@ -203,8 +203,7 @@ local function createTooltip(tt)
 				local _,_realm = ns.LRI:GetRealmInfo(realm);
 				if _realm then realm = _realm; end
 			end
-			realm = realm~=ns.realm and C("dkyellow"," - "..ns.scm(realm)) or "";
-			local c,l=2,tt:AddLine(C(v.class,ns.scm(c)) .. realm .. faction);
+			local c,l=2,tt:AddLine(C(v.class,ns.scm(c)) .. ns.showRealmName(name,realm) .. faction);
 			for _,data in pairs(factions)do
 				if data.eventEnding-Time>=0 then
 					local toon = v[name].factions[data.factionID] or {};
