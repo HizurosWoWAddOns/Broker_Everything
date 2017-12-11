@@ -4,7 +4,7 @@
 ## Author: Hizuro, Ekaterina, Hungtar
 ## Version: @project-version@
 ## SavedVariables: Broker_Everything_ProfileDB, Broker_Everything_DataDB, Broker_Everything_CharacterDB, Broker_Everything_AceDB
-## OptionalDeps: LibStub, CallbackHandler-1.0, LibSharedMedia-3.0, LibDataBroker-1.1, LibDBIcon-1.0, LibQTip-1.0, LibColors-1.0, LibRealmInfo, LibTime-1.0
+## OptionalDeps: LibStub, CallbackHandler-1.0, LibSharedMedia-3.0, LibDataBroker-1.1, LibDBIcon-1.0, LibQTip-1.0, LibColors-1.0, LibRealmInfo, LibTime-1.0, Ace3
 
 #@no-lib-strip@
 libs\LibStub\LibStub.lua

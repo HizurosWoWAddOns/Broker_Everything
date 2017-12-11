@@ -41,6 +41,22 @@ externals:
 		url: git://github.com/Phanx/LibRealmInfo.git
 		tag: latest
 
+	libs/AceGUI-3.0:
+		url: https://repos.wowace.com/wow/ace3/trunk/AceGUI-3.0
+		tag: latest
+
+	libs/AceConfig-3.0:
+		url: https://repos.wowace.com/wow/ace3/trunk/AceConfig-3.0
+		tag: latest
+
+	libs/AceDB-3.0:
+		url: https://repos.wowace.com/wow/ace3/trunk/AceDB-3.0
+		tag: latest
+
+	libs/AceDBOptions-3.0:
+		url: https://repos.wowace.com/wow/ace3/trunk/AceDBOptions-3.0
+		tag: latest
+
 enable-nolib-creation: yes
 
 ignore:
