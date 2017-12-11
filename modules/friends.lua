@@ -134,7 +134,7 @@ local function createTooltip2(self,data)
 	if data.client==BNET_CLIENT_WOW then
 		-- realm
 		if (data.realm) then
-			tt2:SetCell(tt2:AddLine(C(color1,L["Realm"])),2,data.realm,nil,"RIGHT",0);
+			tt2:SetCell(tt2:AddLine(C(color1,L["Realm"])),2,ns.scm(data.realm),nil,"RIGHT",0);
 		end
 		-- faction
 		if ns.profile[name].showFactionTT2 then
@@ -158,7 +158,9 @@ local function createTooltip2(self,data)
 		tt2:SetCell(tt2:AddLine(),1,C(color1,BATTLENET_BROADCAST),nil,nil,0);
 		tt2:AddSeparator();
 		local broadcast = data.broadcast;
-		if not ns.profile.GeneralOptions.scm then
+		if ns.profile.GeneralOptions.scm then
+			broadcast="***"; -- dummy text
+		else
 			broadcast=ns.strWrap(broadcast,48);
 		end
 		tt2:SetCell(tt2:AddLine(),1,broadcast,nil,"LEFT",0);
