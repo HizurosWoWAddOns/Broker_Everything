@@ -249,7 +249,7 @@ local function createTooltip(tt)
 						local bcIcon = ti[broadcastText]~="" and "|Tinterface\\chatframe\\ui-chatinput-focusicon:0|t" or "";
 						if visible[fi[accountName]..ti[client]..ti[zoneName]] then
 							-- filter duplicates...
-						elseif (nt>1 and ti[client]~="App") or nt==1 then
+						elseif (nt>1 and ti[client]~="App" and ti[client]~="BSAp") or nt==1 then
 							local isBNColor=false;
 							visible[fi[accountName]..ti[client]..ti[zoneName]] = true;
 							if ti[toonName]=="" or ti[client]=="Hero" then
