@@ -181,7 +181,7 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 	elseif data.type=="battlenet" then
 		-- battlenet whisper
 		if IsAltKeyDown() then
-			if self.client=="WoW" then
+			if data.client=="WoW" then
 				BNInviteFriend(data.toonID);
 			end
 		else
