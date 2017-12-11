@@ -467,9 +467,9 @@ local function createTooltip(tt, name)
 
 	if none then
 		if name==nameF then
-			tt:AddLine(L["No followers found..."]);
+			tt:AddLine(C("gray",L["No followers found..."]));
 		else
-			tt:AddLine(L["No ships found..."]);
+			tt:AddLine(C("gray",L["No ships found..."]));
 		end
 	end
 
