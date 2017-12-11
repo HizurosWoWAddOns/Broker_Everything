@@ -316,11 +316,11 @@ local function createTooltip(tt)
 										local _,_realm = ns.LRI:GetRealmInfo(realm);
 										if _realm then realm = _realm; end
 									end
-									tt:SetCell(l,6,C("white",realm));			-- 6
+									tt:SetCell(l,6,C(ns.realms[realm] and "green" or "white",realm));			-- 6
 								end
 								-- faction (own column)
 								if ns.profile[name].showFaction=="2" then
-									tt:SetCell(l,7,C("white",_G["FACTION_"..ti[faction]:upper()] or ti[faction]));		-- 7
+									tt:SetCell(l,7,C( (ns.player.faction=="Horde" and ns.player.factionL==ti[faction] and "red") or "shaman",_G["FACTION_"..ti[faction]:upper()] or ti[faction]));		-- 7
 								elseif ns.profile[name].showFaction=="3" then
 									tt:SetCell(l,7,"|TInterface\\PVPFrame\\PVP-Currency-"..ti[faction]..":16:16:0:-1:32:32:2:30:2:30|t");
 								end
@@ -417,11 +417,11 @@ local function createTooltip(tt)
 							local _,_realm = ns.LRI:GetRealmInfo(realm);
 							if _realm then realm = _realm; end
 						end
-						tt:SetCell(l,6,C("white",realm));
+						tt:SetCell(l,6,C("green",realm));
 					end
 					-- faction
 					if ns.profile[name].showFaction=="2" then
-						tt:SetCell(l,7,C("white",ns.player.factionL or ns.player.faction));
+						tt:SetCell(l,7,C(ns.player.faction=="Horde" and "red" or "ltblue",ns.player.factionL or ns.player.faction));
 					elseif ns.profile[name].showFaction=="3" then
 						tt:SetCell(l,7,"|TInterface\\PVPFrame\\PVP-Currency-"..ns.player.faction..":16:16:0:-1:32:32:2:30:2:30|t");
 					end
