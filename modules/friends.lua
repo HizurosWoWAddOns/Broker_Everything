@@ -320,7 +320,7 @@ local function createTooltip(tt)
 								end
 								-- faction (own column)
 								if ns.profile[name].showFaction=="2" then
-									tt:SetCell(l,7,C( (ti[faction]=="Horde" and "red") or "shaman",_G["FACTION_"..ti[faction]:upper()] or ti[faction]));		-- 7
+									tt:SetCell(l,7,C( (ti[faction]=="Horde" and "red") or "ff0077ff",_G["FACTION_"..ti[faction]:upper()] or ti[faction]));		-- 7
 								elseif ns.profile[name].showFaction=="3" then
 									tt:SetCell(l,7,"|TInterface\\PVPFrame\\PVP-Currency-"..ti[faction]..":16:16:0:-1:32:32:2:30:2:30|t");
 								end
