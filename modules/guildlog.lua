@@ -27,18 +27,6 @@ I[name] = {iconfile="Interface\\icons\\inv_misc_note_05",coords={0.05,0.95,0.05,
 
 -- some local functions --
 --------------------------
-local function showRealm(Char)
-	local Name,Realm,_ = strsplit("-", Char,2);
-	if ns.profile[name].showRealm and Realm then
-		if type(Realm)=="string" and Realm:len()>0 then
-			local _,_realm = ns.LRI:GetRealmInfo(realm);
-			if _realm then realm = _realm; end
-		end
-		return Name..C("ltgray","-")..C("dkyellow",Realm);
-	end
-	return Name..(Realm and C("dkyellow","*") or "");
-end
-
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local doHide = {
@@ -80,10 +68,15 @@ local function createTooltip(tt)
 				if (logs[num].type=="promote" or logs[num].type=="demote") then
 					act = act .. " ("..logs[num].rank..")";
 				end
+				local Name,Realm,_ = strsplit("-", logs[num].char ,2);
+				local byName,byRealm;
+				if logs[num].by then
+					byName,byRealm = strsplit("-", logs[num].by ,2);
+				end
 				tt:AddLine(
 					act,
-					showRealm(logs[num].char),
-					(logs[num].by) and showRealm(logs[num].by) or "",
+					Name .. ns.showRealmName(name,Realm),
+					(byName) and byName .. ns.showRealmName(name,byRealm) or "",
 					logs[num].recent
 				);
 			end
@@ -115,15 +108,14 @@ local function createTooltip(tt)
 				local c = 0;
 				for num=1, #logs do
 					if (logs[num].type==action) and (c<limit) then
-						local ch,r = strsplit("-",logs[num].char,2);
-						if (ns.profile[name].showRealm) then
-							ch = ch..(r and C("dkyellow","*") or "");
-						else
-							ch = ch..(r and C("gray","-")..C("dkyellow",r) or "");
+						local Name,Realm = strsplit("-",logs[num].char,2);
+						local byName,byRealm;
+						if logs[num].by then
+							byName,byRealm = strsplit("-",logs[num].by,2);
 						end
 						tt:AddLine(
-							showRealm(logs[num].char),
-							(logs[num].by) and showRealm(logs[num].by) or "",
+							Name .. ns.showRealmName(name,Realm),
+							(byName) and byName .. ns.showRealmName(name,byRealm) or "",
 							(logs[num].type=="promote" or logs[num].type=="demote") and logs[num].rank or "",
 							logs[num].recent
 						);
@@ -163,7 +155,7 @@ module = {
 		hideInvite = false,
 		hidePromote = false,
 		hideDemote = false,
-		showRealms = true
+		showRealmNames = true
 	},
 	clickOptionsRename = {
 		["guild"] = "1_open_guild",
@@ -192,7 +184,7 @@ function module.options()
 			hideLeave={ type="toggle", order=5, name=L["Hide leaves"],     desc=L["Hide all entries with 'Leave' as action."] },
 			hideRemove={ type="toggle", order=6, name=L["Hide removes"],    desc=L["Hide all entries with 'Remove' as action."] },
 			--separator=true,
-			showRealm={ type="toggle", order=7, name=L["Realm name"], desc=L["Show realm names after character names from other realms (connected realms)."] },
+			showRealmNames=7,
 			max_entries={ type="range", order=8, name=L["Show max. entries"], desc=L["Select the maximum number of entries from the guild log, otherwise drag to 'All'."],
 				--minText = ACHIEVEMENTFRAME_FILTER_ALL,
 				min = 0,
