@@ -398,7 +398,7 @@ function module.onevent(self,event,arg1,...)
 			end);
 		end
 	end
-	if event=="PLAYER_LOGIN" or ns.eventPlayerEnteringWorld then
+	if event=="PLAYER_LOGIN" or ns.eventPlayerEnteredWorld then
 		local progress,ready=0,0;
 		local garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0;
 		local tmp, names, _, bName, texture, shipmentCapacity, shipmentsReady, shipmentsTotal, creationTime, duration, timeleftString, shipmentsCurrent = {}, {};

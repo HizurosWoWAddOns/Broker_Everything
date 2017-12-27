@@ -96,8 +96,7 @@ local function createTooltip(tt)
 	--line, column = tt:AddLine(L["Quit Game"])
 	--tt:SetLineScript(line, "OnMouseUp", Quit);
 	tt:AddLine(" ");
-	tt:AddLine(C("dkyellow",L["Quit and Logout function are\nno longer usable by addons."]));
-	tt:AddLine(C("dkyellow",L["Critism of this change should\nbe addressed at blizzard."]));
+	tt:AddLine(C("orange",L["Currently Quit and Logout function are\nnot usable by addons."]));
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddLine(" ")

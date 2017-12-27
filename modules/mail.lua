@@ -281,7 +281,7 @@ function module.onevent(self,event,msg)
 			end
 		end);
 	end
-	if ns.eventPlayerEnteringWorld then
+	if ns.eventPlayerEnteredWorld then
 		if (HasNewMail()) and (ns.profile[name].playsound) and (not alertLocked) then
 			PlaySoundFile("Interface\\Addons\\"..addon.."\\media\\mailalert.mp3", "Master"); -- or SFX?
 			alertLocked=true;

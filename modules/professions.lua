@@ -536,7 +536,7 @@ function module.onevent(self,event,arg1)
 	elseif event=="ADDON_LOADED" and arg1=="Blizzard_TradeSkillUI" then
 		hooksecurefunc(TradeSkillFrame,"RefreshTitle",updateTradeSkill);
 		self:UnregisterEvent(event);
-	elseif event=="PLAYER_LOGIN" or ns.eventPlayerEnteringWorld then
+	elseif event=="PLAYER_LOGIN" or ns.eventPlayerEnteredWorld then
 		if ns.toon[name]==nil then
 			ns.toon[name]={};
 		end

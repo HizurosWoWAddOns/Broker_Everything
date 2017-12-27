@@ -445,7 +445,7 @@ function module.onevent(self,event,arg1)
 		updateBroker();
 		hooksecurefunc("SetCurrencyUnused",updateCurrency);
 		hooksecurefunc("ExpandCurrencyList",updateCurrency);
-	else
+	elseif ns.eventPlayerEnteredWorld then
 		local id;
 		if event=="CHAT_MSG_CURRENCY" then -- detecting new currencies
 			id = tonumber(arg1:lower():match("hcurrency:(%d*)"));
