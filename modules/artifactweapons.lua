@@ -13,7 +13,7 @@ local ttName,ttNameAlt,ttColumns,tt,ttAlt,module,createTooltip = name.."TT",name
 local ap_items_found,spec2weapon,knowledgeLevel,obtained,updateBroker, _ = {},{},0,0;
 local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d*)");
 local PATTERN_ARTIFACT_XP_GAIN = gsub(ARTIFACT_XP_GAIN,"%s",".*");
-local PATTERN_SECOND_NUMBERS,akUpgrade = {};
+local number_pattern,akUpgrade = {};
 local artifactKnowledgeMultiplier_cap, artifactLocked = 40; -- 50
 if ns.build>=73000000 then
 	artifactKnowledgeMultiplier_cap = 55; -- 7.3
@@ -34,30 +34,32 @@ I[name] = {iconfile=1109508 or ns.icon_fallback,coords={0.05,0.95,0.05,0.95}} --
 --------------------------
 
 local function ttMatchString(line,matchString)
-	local artefact_power;
+	local artifact_power;
 	if type(matchString)=="table" then
-		artefact_power = line:match(matchString[1]);
-		if not artefact_power then
-			artefact_power = line:match(matchString[2]);
+		artifact_power = line:match(matchString[1]);
+		if not artifact_power then
+			artifact_power = line:match(matchString[2]);
 		end
 	else
-		artefact_power = line:match(matchString);
+		artifact_power = line:match(matchString);
 	end
 
-	if artefact_power then
-		local pat;
-		if artefact_power:find(PATTERN_SECOND_NUMBERS[1]) then
-			pat = PATTERN_SECOND_NUMBERS[1];
-		elseif artefact_power:find(PATTERN_SECOND_NUMBERS[2]) then
-			pat = PATTERN_SECOND_NUMBERS[2];
+	if artifact_power then
+		local pat,expo=nil,0;
+		for k,v in ns.pairsByKeys(number_pattern)do
+			if artifact_power:find(v) then
+				pat = v;
+				expo = tonumber((k:gsub("n10E(%d*)_%d","%1")));
+				break;
+			end
 		end
 		if pat then
-			artefact_power = artefact_power:gsub("(%d*)[,%.](%d)[ ]?"..pat,"%1%200000"):gsub("(%d*)[ ]?"..pat,"%1000000");
+			artifact_power = tonumber((artifact_power:gsub("(%d*)[,%.](%d)[ ]?"..pat,"%1.%2"):gsub("(%d*)[ ]?"..pat,"%1"))) * (10^expo);
+		else
+			artifact_power = artifact_power:gsub("[,%.]","");
 		end
-		artefact_power = artefact_power:gsub("[,%.]","");
 	end
-
-	return tonumber(artefact_power);
+	return tonumber(artifact_power);
 end
 
 function updateItemState()
@@ -775,10 +777,19 @@ function module.init()
 		zhTW = "將魚丟回水中，為你的釣魚神器取得(.*)點神兵之力",
 	})[ns.locale];
 
-	PATTERN_SECOND_NUMBERS[1] = SECOND_NUMBER:gsub("%|7(.*):(.*);","%1");
-	PATTERN_SECOND_NUMBERS[2] = SECOND_NUMBER:gsub("%|7(.*):(.*);","%2");
-	if PATTERN_SECOND_NUMBERS[1]:len()<PATTERN_SECOND_NUMBERS[2]:len() then
-		PATTERN_SECOND_NUMBERS[1],PATTERN_SECOND_NUMBERS[2] = PATTERN_SECOND_NUMBERS[2],PATTERN_SECOND_NUMBERS[1];
+	number_pattern.n10E06_1,number_pattern.n10E06_2 = strsplit(":",(SECOND_NUMBER:gsub("%\1247(.*);","%1")));
+	if number_pattern.n10E06_1:len()<number_pattern.n10E06_2:len() then
+		number_pattern.n10E06_1,number_pattern.n10E06_2 = number_pattern.n10E06_2,number_pattern.n10E06_1;
+	end
+
+	number_pattern.n10E09_1,number_pattern.n10E09_2 = strsplit(":",(THIRD_NUMBER:gsub("%\1247(.*);","%1")));
+	if number_pattern.n10E09_1:len()<number_pattern.n10E09_2:len() then
+		number_pattern.n10E09_1,number_pattern.n10E09_2 = number_pattern.n10E09_2,number_pattern.n10E09_1;
+	end
+
+	number_pattern.n10E12_1,number_pattern.n10E12_2 = strsplit(":",(FOURTH_NUMBER:gsub("%\1247(.*);","%1")));
+	if number_pattern.n10E12_1:len()<number_pattern.n10E12_2:len() then
+		number_pattern.n10E12_1,number_pattern.n10E12_2 = number_pattern.n10E12_2,number_pattern.n10E12_1;
 	end
 end
 
