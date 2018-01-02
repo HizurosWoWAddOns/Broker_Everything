@@ -18,21 +18,23 @@ local LRx, LRy =  5, 27;
 local off, on = strtrim(gsub(ERR_FRIEND_OFFLINE_S,"%%s","")), strtrim(gsub(ERR_FRIEND_ONLINE_SS,"\124Hplayer:%%s\124h%[%%s%]\124h",""));
 local gameIconPos = setmetatable({},{ __index = function(t,k) return format("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",DSw,DSh,ULx,ULy,LLx,LLy,URx,URy,LRx,LRy) end})
 local _BNet_GetClientTexture = BNet_GetClientTexture
-local gameShortcut = setmetatable({},{ __index = function(t, k) return k end });
-gameShortcut[BNET_CLIENT_WTCG] = "HS";
-gameShortcut[BNET_CLIENT_SC2] = "Sc2";
-gameShortcut[BNET_CLIENT_OVERWATCH] = "Ow";
-gameShortcut[BNET_CLIENT_HEROES] = "HotS";
-local gameNames = {
-	[BNET_CLIENT_WTCG]="Hearthstone",
-	[BNET_CLIENT_WOW]="World of Warcraft",
+local gameShortcut = setmetatable({
+	[BNET_CLIENT_WTCG] = "HS",
+	[BNET_CLIENT_OVERWATCH] = "OW",
+	[BNET_CLIENT_HEROES] = "HotS",
+	["BSAp"] = "Mobile",
+},{ __index = function(t, k) return k end });
+local gameNames = setmetatable({
+	[BNET_CLIENT_APP]="Blizzard Desktop App",
+	["BSAp"] = "Blizzard Mobile App",
 	[BNET_CLIENT_D3]="Diablo 3",
-	[BNET_CLIENT_HEROES]="Heroes of the Storme",
+	[BNET_CLIENT_DESTINY2]="Destiny 2",
+	[BNET_CLIENT_HEROES]="Heroes of the Storm",
 	[BNET_CLIENT_OVERWATCH]="Overwatch",
 	[BNET_CLIENT_SC2]="Starcraft 2",
-	--[BNET_CLIENT_CLNT]=""
-	[BNET_CLIENT_APP]="Battle.net-Client"
-}
+	[BNET_CLIENT_WOW]="World of Warcraft",
+	[BNET_CLIENT_WTCG]="Hearthstone",
+},{ __index = function(t, k) return k end });
 
 
 -- register icon names and default files --
