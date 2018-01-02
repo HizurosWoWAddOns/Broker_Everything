@@ -14,10 +14,7 @@ local ap_items_found,spec2weapon,knowledgeLevel,obtained,updateBroker, _ = {},{}
 local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d*)");
 local PATTERN_ARTIFACT_XP_GAIN = gsub(ARTIFACT_XP_GAIN,"%s",".*");
 local number_pattern,akUpgrade = {};
-local artifactKnowledgeMultiplier_cap, artifactLocked = 40; -- 50
-if ns.build>=73000000 then
-	artifactKnowledgeMultiplier_cap = 55; -- 7.3
-end
+local artifactKnowledgeMultiplier_cap, artifactLocked = 55;
 local updateItemStateTry,updateItemState=0;
 local artifactKnowledgeMultiplier = {}
 local AP_MATCH_STRINGS,FISHING_AP_MATCH_STRINGS;
@@ -32,6 +29,9 @@ I[name] = {iconfile=1109508 or ns.icon_fallback,coords={0.05,0.95,0.05,0.95}} --
 
 -- some local functions --
 --------------------------
+local function sort_up_down(a,b)
+	return a:len()>b:len();
+end
 
 local function ttMatchString(line,matchString)
 	local artifact_power;
@@ -46,10 +46,10 @@ local function ttMatchString(line,matchString)
 
 	if artifact_power then
 		local pat,expo=nil,0;
-		for k,v in ns.pairsByKeys(number_pattern)do
-			if artifact_power:find(v) then
-				pat = v;
-				expo = tonumber((k:gsub("n10E(%d*)_%d","%1")));
+		for _,v in ipairs(number_pattern)do
+			if artifact_power:find(v[1]) then
+				pat = v[1];
+				expo = v[2];
 				break;
 			end
 		end
@@ -777,19 +777,12 @@ function module.init()
 		zhTW = "將魚丟回水中，為你的釣魚神器取得(.*)點神兵之力",
 	})[ns.locale];
 
-	number_pattern.n10E06_1,number_pattern.n10E06_2 = strsplit(":",(SECOND_NUMBER:gsub("%\1247(.*);","%1")));
-	if number_pattern.n10E06_1:len()<number_pattern.n10E06_2:len() then
-		number_pattern.n10E06_1,number_pattern.n10E06_2 = number_pattern.n10E06_2,number_pattern.n10E06_1;
-	end
-
-	number_pattern.n10E09_1,number_pattern.n10E09_2 = strsplit(":",(THIRD_NUMBER:gsub("%\1247(.*);","%1")));
-	if number_pattern.n10E09_1:len()<number_pattern.n10E09_2:len() then
-		number_pattern.n10E09_1,number_pattern.n10E09_2 = number_pattern.n10E09_2,number_pattern.n10E09_1;
-	end
-
-	number_pattern.n10E12_1,number_pattern.n10E12_2 = strsplit(":",(FOURTH_NUMBER:gsub("%\1247(.*);","%1")));
-	if number_pattern.n10E12_1:len()<number_pattern.n10E12_2:len() then
-		number_pattern.n10E12_1,number_pattern.n10E12_2 = number_pattern.n10E12_2,number_pattern.n10E12_1;
+	for _,expo in ipairs({{SECOND_NUMBER,6},{THIRD_NUMBER,9},{FOURTH_NUMBER,12}})do
+		local strs = {strsplit(":",(expo[1]:gsub("%\1247(.*);","%1")))};
+		table.sort(strs,sort_up_down);
+		for i,v in pairs(strs)do
+			table.insert(number_pattern,{v,expo[2]});
+		end
 	end
 end
 
