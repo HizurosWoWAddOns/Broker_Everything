@@ -42,7 +42,7 @@ local nsProfileMT = {
 	end,
 	__index = function(t,k)
 		local s = rawget(t,"section");
-		if s and db.profile[s] then
+		if s and db and db.profile[s] then
 			local v = db.profile[s][k];
 			if v~=nil then
 				return v;
@@ -498,14 +498,13 @@ function ns.RegisterOptions()
 					modData.showCharsFrom = 4;
 					modData.showAllRealms = nil;
 				end
-			end
-
-			-- migrate clickOptions Prefix
-			for k,v in pairs(modData)do
-				if k:find(ClickOptPrefixOld) then
-					local K = k:gsub(ClickOptPrefixOld,ns.ClickOpts.prefix);
-					modData[K] = modData[k];
-					modData[k] = nil;
+				-- migrate clickOptions Prefix
+				for k,v in pairs(modData)do
+					if k:find(ClickOptPrefixOld) then
+						local K = k:gsub(ClickOptPrefixOld,ns.ClickOpts.prefix);
+						modData[K] = modData[k];
+						modData[k] = nil;
+					end
 				end
 			end
 
