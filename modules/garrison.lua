@@ -524,7 +524,7 @@ function module.onevent(self,event,arg1,...)
 							end
 							tinsert(achievements3,{
 								id = aid,
-								name = strCut(aname,25),
+								name = ns.strCut(aname,25),
 								icon = aicon,
 								bname = pname,25,
 								bicon = icon,
