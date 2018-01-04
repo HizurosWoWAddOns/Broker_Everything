@@ -77,7 +77,7 @@ local function UpdateStatus(event)
 		local names = {};
 		if #charDB_mail.stored>0 then
 			 for i=1, #charDB_mail.stored do
-				local n = strsplit("-",charDB_mail.stored[i].sender,2);
+				local n = strsplit("-",charDB_mail.stored[i].sender or UNKNOWN,2);
 				names[n]=true;
 			 end
 		end
