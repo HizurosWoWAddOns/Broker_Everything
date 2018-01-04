@@ -36,7 +36,7 @@ ns.showCharsFrom_Values = {
 local nsProfileMT = {
 	__newindex = function(t,k,v)
 		local s = rawget(t,"section");
-		if s and db.profile[s] then
+		if s and db and db.profile[s] then
 			db.profile[s][k] = v;
 		end
 	end,
@@ -103,6 +103,7 @@ end
 
 -- option set/get function
 local function opt(info,value,...)
+	if not db then return end
 	-- section = GeneralOptions or module names
 	local key,section,isModEnable=info[#info],info[#info-2],(info[#info-1]=="modEnable");
 	if value~=nil then
