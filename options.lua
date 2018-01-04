@@ -51,11 +51,7 @@ local nsProfileMT = {
 	end
 };
 
-ns.profile = {
-	GeneralOptions=setmetatable({section="GeneralOptions"},nsProfileMT)
-}
-
-setmetatable(ns.profile,{__index=function(t,k) rawset(t,k,{enabled=true}) end});
+ns.profile = {GeneralOptions=setmetatable({section="GeneralOptions"},nsProfileMT)};
 
 -- some values tables and functions
 local ttModifierValues = {NONE = L["ModKeyDefault"]};
@@ -133,7 +129,7 @@ local function opt(info,value,...)
 		end
 	end
 	if isModEnable then
-		return db.profile[key].enabled;
+		return (db and key and db.profile and db.profile[key] and db.profile[key].enabled);
 	elseif key=="minimap" then
 		return not db.profile[section][key].hide;
 	else
@@ -339,10 +335,10 @@ local function optionWalker(modName,group,lst)
 end
 
 function ns.Options_AddModuleDefaults(modName)
-	ns.profile[modName] = setmetatable({section=modName},nsProfileMT);
 	local mod = ns.modules[modName];
-
 	if mod then
+		ns.profile[modName] = setmetatable({section=modName},nsProfileMT);
+
 		-- normal defaults
 		dbDefaults.profile[modName] = mod.config_defaults or {};
 

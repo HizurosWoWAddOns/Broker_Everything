@@ -7,9 +7,7 @@ setmetatable(ns.modules,{
 	__newindex = function(t,name,data)
 		rawset(t,name,data);
 		-- first step... register defaults
-		if type(data.config_defaults)=="table" then
-			ns.Options_AddModuleDefaults(name);
-		end
+		ns.Options_AddModuleDefaults(name);
 	end
 });
 
@@ -44,7 +42,7 @@ local function moduleInit(name)
 	local mod = ns.modules[name];
 
 	-- check if savedvariables for module present?
-	if ns.profile[name] and ns.profile[name].enabled==nil then
+	if ns.profile[name].enabled==nil then
 		ns.profile[name].enabled = mod.enabled or false;
 	end
 
@@ -120,9 +118,9 @@ local function moduleInit(name)
 				mod:OnEvent("BE_UPDATE_CFG","ClickOpt");
 				for _, e in pairs(mod.events) do
 					if e=="ADDON_LOADED" then
-						mod.onevent(mod.eventFrame,e,addon);
+						mod:OnEvent(e,addon);
 					elseif e=="PLAYER_LOGIN" and ns.eventPlayerEnteredWorld then -- for later enabled modules
-						mod.onevent(mod.eventFrame,e);
+						mod:OnEvent(e);
 					end
 					mod.eventFrame:RegisterEvent(e);
 				end
