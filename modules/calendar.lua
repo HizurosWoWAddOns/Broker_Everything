@@ -179,13 +179,15 @@ module = {
 		["menu"] = "2_open_menu"
 	},
 	clickOptions = {
+		["calendar"] = {"Calendar","call","ToggleCalendar"},
 		["charinfo"] = "CharacterInfo",
 		["menu"] = "OptionMenu"
 	}
 }
 
 ns.ClickOpts.addDefaults(module,{
-	charinfo = "_LEFT",
+	calendar = "_LEFT",
+	charinfo = "__NONE",
 	menu = "_RIGHT"
 });
 
