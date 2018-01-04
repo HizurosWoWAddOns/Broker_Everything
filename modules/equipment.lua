@@ -157,7 +157,7 @@ local function equipOnClick(self,equipSetID)
 		local setName = C_EquipmentSet.GetEquipmentSetInfo(equipSetID);
 		local dialog = StaticPopup_Show('CONFIRM_SAVE_EQUIPMENT_SET', setName);
 		if dialog then
-			dialog.data = self.equipSetID;
+			dialog.data = equipSetID;
 		end
 	elseif (IsControlKeyDown()) then
 		if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
