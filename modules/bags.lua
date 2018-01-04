@@ -66,6 +66,9 @@ end
 local function BagsFreeUsed()
 	local t = GetContainerNumSlots(0) or 0; -- new: sometimes returns nil on startup
 	local f = GetContainerNumFreeSlots(0) or 0;
+	if t==0 then
+		return 0,0;
+	end
 
 	for i=1,NUM_BAG_SLOTS do
 		local idtoinv = ContainerIDToInventoryID(i);
