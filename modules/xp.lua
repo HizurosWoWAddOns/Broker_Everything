@@ -256,7 +256,7 @@ function module.options()
 			name = L["Text bar"],
 			textBarInfo      = { type="description", order=1, name=L["Text bar is a simple row of colored characters act like status, reputation or xp bar but without textures."],   fontSize="medium" },
 			textBarCharacter={ type="select", order=2, name=L["Text bar character"], desc=L["Choose character for little text bar"], values=textBarValues },
-			textBarCharCount={ type="range", order=3, name=L["Text bar num characters"], desc=L["..."], min=5, max=200, }
+			textBarCharCount={ type="range", order=3, name=L["Text bar num characters"], desc=L["..."], min=5, max=200, step=1 }
 		},
 		tooltip = {
 			order=3,

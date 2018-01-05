@@ -60,7 +60,7 @@ local sharedMisc = {
 			["%s||%s"]     = "10.3||25.4"
 		},
 	},
-	precision={ type="range", name=L["Precision"], desc=L["Change how much digits display after the dot."], min=0, max=3 }
+	precision={ type="range", name=L["Precision"], desc=L["Change how much digits display after the dot."], min=0, max=3, step=1 }
 }
 
 -- register icon names and default files --

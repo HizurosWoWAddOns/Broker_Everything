@@ -186,13 +186,7 @@ function module.options()
 			hideRemove={ type="toggle", order=6, name=L["Hide removes"],    desc=L["Hide all entries with 'Remove' as action."] },
 			--separator=true,
 			showRealmNames=7,
-			max_entries={ type="range", order=8, name=L["Show max. entries"], desc=L["Select the maximum number of entries from the guild log, otherwise drag to 'All'."],
-				--minText = ACHIEVEMENTFRAME_FILTER_ALL,
-				min = 0,
-				max = 100,
-				step = 1,
-				--rep = {[0]=ACHIEVEMENTFRAME_FILTER_ALL}
-			},
+			max_entries={ type="range", order=8, name=L["Show max. entries"], desc=L["Select the maximum number of entries from the guild log, otherwise drag to 'All'."], min = 0, max = 100, step = 1},
 			displayMode={ type="select", order=9, name=L["Display mode"], desc=L["Change the list style."], width="double",
 				values	= {
 					["NORMAL"]    = L["Normal list of log entries"],

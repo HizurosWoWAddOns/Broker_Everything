@@ -287,7 +287,7 @@ function module.options()
 		},
 		misc = {
 			useWheel={ type="toggle", name=L["Use MouseWheel"], desc=L["Use the MouseWheel to change the volume"] },
-			steps={ type="range", name=L["Change steps"], desc=L["Change the stepping width for volume changes with mousewheel and clicks."], min=1, max=100 },
+			steps={ type="range", name=L["Change steps"], desc=L["Change the stepping width for volume changes with mousewheel and clicks."], min=1, max=100, step=1 },
 		},
 	}
 end

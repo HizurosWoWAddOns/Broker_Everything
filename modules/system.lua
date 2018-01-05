@@ -674,14 +674,7 @@ function module_sys.options()
 			showFpsInTooltip         = { type="toggle", order=3, name=L["FPS"],          desc=L["Display fps in tooltip"] },
 			showMemoryUsageInTooltip = { type="toggle", order=4, name=L["Memory usage"], desc=L["Display memory usage in tooltip"] },
 			showClientInfoInTooltip  = { type="toggle", order=5, name=L["Client info"], desc=L["Display client info in tooltip"] },
-			numDisplayAddOns         = { type="range",  order=6, name=ADDONS, desc=L["Select the maximum number of addons to display, otherwise drag to 'All'."],
-				--minText = ACHIEVEMENTFRAME_FILTER_ALL,
-				step = 1,
-				min = 0,
-				max = 100,
-				--format = "%d",
-				--rep = {[0]=ACHIEVEMENTFRAME_FILTER_ALL}
-			},
+			numDisplayAddOns         = { type="range",  order=6, name=ADDONS, desc=L["Select the maximum number of addons to display, otherwise drag to 'All'."], step = 1, min = 0, max = 100},
 		},
 		misc = {
 			updateInterval={ type="select", order=1, name=L["Update interval"], desc=L["Change the update interval or disable it."], width="double",
@@ -714,11 +707,7 @@ end
 function module_mem.options()
 	return {
 		tooltip = {
-			mem_max_addons={ type="range", name=L["Number of addons"], desc=L["Select the maximum number of addons to display, otherwise drag to '0' to display all."],
-				step = 1,
-				min = 0,
-				max = 100,
-			}
+			mem_max_addons={ type="range", name=L["Number of addons"], desc=L["Select the maximum number of addons to display, otherwise drag to '0' to display all."], step = 1, min = 0, max = 100}
 		},
 		misc = {
 			shortNumbers=0,

@@ -298,7 +298,7 @@ function module.options()
 			chatRepairInfo={ type="toggle", order=6, name=L["Repair info"], desc=L["Post repair actions in chatframe"] },
 			listCosts={ type="toggle", order=7, name=L["List of repair costs"], desc=L["Display a list of the last repair costs in tooltip"] },
 			saveCosts={ type="toggle", order=8, name=L["Save repair costs"], desc=L["Save the list of repair costs over the session"] },
-			maxCosts={ type="range", order=9, name=L["Max. list entries"], desc=L["Choose how much entries the list of repair costs can have."], min=1, max=50 },
+			maxCosts={ type="range", order=9, name=L["Max. list entries"], desc=L["Choose how much entries the list of repair costs can have."], min=1, max=50, step=1 },
 		},
 	},
 	{
