@@ -490,12 +490,13 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	enabled = true,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_GUILD_UPDATE",
 	},
 	config_defaults = {
+		enabled = true,
+
 		-- guild
 		showRep = true,
 		showMOTD = true,

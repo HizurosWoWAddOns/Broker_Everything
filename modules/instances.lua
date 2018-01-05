@@ -241,6 +241,7 @@ module1 = {
 		"PLAYER_LOGIN"
 	},
 	config_defaults = {
+		enabled = false,
 		invertExpansionOrder = true,
 		showID = false
 	}
@@ -251,6 +252,7 @@ module2 = {
 		"PLAYER_LOGIN"
 	},
 	config_defaults = {
+		enabled = false,
 		invertExpansionOrder = true,
 		showID = false
 	}

@@ -418,9 +418,9 @@ end
 -- module functions and variables --
 ------------------------------------
 module1 = { -- GPS
-	enabled = true,
 	events = {},
 	config_defaults = {
+		enabled = true,
 		bothZones = "2",
 		precision = 0,
 		coordsFormat = "%s, %s",
@@ -432,6 +432,7 @@ module1 = { -- GPS
 module2 = { -- Location
 	events = {},
 	config_defaults = {
+		enabled = false,
 		precision = 0,
 		coordsFormat = "%s, %s",
 		shortMenu = false
@@ -442,6 +443,7 @@ module2 = { -- Location
 module3 = { -- ZoneText
 	events = {},
 	config_defaults = {
+		enabled = false,
 		bothZones = "2",
 		precision = 0,
 		coordsFormat = "%s, %s",

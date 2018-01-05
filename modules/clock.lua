@@ -106,6 +106,7 @@ module = {
 	onupdate_interval = 1,
 	timeout = 30,
 	config_defaults = {
+		enabled = false,
 		format24 = true,
 		timeLocal = true,
 		showSeconds = false,

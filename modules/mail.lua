@@ -205,6 +205,7 @@ module = {
 		"MAIL_SHOW"
 	},
 	config_defaults = {
+		enabled = false,
 		playsound = false,
 		showDaysLeft = true,
 		hideMinimapMail = false,

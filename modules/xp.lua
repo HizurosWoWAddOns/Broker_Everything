@@ -201,6 +201,7 @@ module = {
 		"UNIT_INVENTORY_CHANGED"
 	},
 	config_defaults = {
+		enabled = false,
 		display = "1",
 		showMyOtherChars = true,
 		showNonMaxLevelOnly = false,

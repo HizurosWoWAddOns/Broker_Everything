@@ -260,6 +260,7 @@ module = {
 		"QUEST_LOG_UPDATE"
 	},
 	config_defaults = {
+		enabled = false,
 		shortTitle = false,
 		showAllFactions=true,
 		showRealmNames=true,

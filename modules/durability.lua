@@ -244,6 +244,7 @@ module = {
 		"CHAT_MSG_MONEY"
 	},
 	config_defaults = {
+		enabled = false,
 		goldColor = false,
 		inBroker = "percent",
 		colorSet = "set1",

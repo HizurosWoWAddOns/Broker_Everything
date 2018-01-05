@@ -30,6 +30,7 @@ module = {
 	},
 	onupdate_interval = 120,
 	config_defaults = {
+		enabled = false,
 		diff=true,
 		history=true
 	},

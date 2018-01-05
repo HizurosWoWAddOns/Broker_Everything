@@ -261,7 +261,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	enabled = true,
 	events = {
 		"ADDON_LOADED",
 		"PLAYER_LOGIN",
@@ -279,6 +278,7 @@ module = {
 		"GET_ITEM_INFO_RECEIVED",
 	},
 	config_defaults = {
+		enabled = true,
 		showCooldowns = true,
 		showDigSiteStatus = true,
 		showLegionFactionRespices = true,

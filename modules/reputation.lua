@@ -384,6 +384,7 @@ module = {
 		"UPDATE_FACTION"
 	},
 	config_defaults = {
+		enabled = false,
 		bgBars = "single",
 		standingText = true,
 		showSession = true,

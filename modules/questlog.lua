@@ -329,6 +329,7 @@ module = {
 		"QUEST_LOG_UPDATE",
 	},
 	config_defaults = {
+		enabled = false,
 		showQuestTags = true,
 		showQuestIds = true,
 		showQuestZone = true,

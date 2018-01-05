@@ -602,6 +602,7 @@ module = {
 		"CURRENCY_DISPLAY_UPDATE"
 	},
 	config_defaults = {
+		enabled = false,
 		showName = true,
 		showPoints = true,
 		showXP = "1",

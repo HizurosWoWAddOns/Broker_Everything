@@ -168,6 +168,7 @@ module = {
 		"PLAYER_LOGIN"
 	},
 	config_defaults = {
+		enabled = false,
 		hideMinimapCalendar = false,
 		shortBroker = false,
 		shortEvents = true,

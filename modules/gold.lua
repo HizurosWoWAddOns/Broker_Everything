@@ -134,7 +134,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	enabled = true,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_MONEY",
@@ -142,6 +141,7 @@ module = {
 		"TRADE_MONEY_CHANGED",
 	},
 	config_defaults = {
+		enabled = true,
 		goldColor = nil,
 		showAllFactions=true,
 		showRealmNames=true,

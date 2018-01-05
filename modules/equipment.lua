@@ -304,7 +304,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	enabled = true,
 	events = {
 		"UNIT_INVENTORY_CHANGED",
 		"EQUIPMENT_SWAP_FINISHED",
@@ -316,6 +315,7 @@ module = {
 		"ITEM_UPGRADE_MASTER_UPDATE"
 	},
 	config_defaults = {
+		enabled = true,
 		showSets = true,
 		showInventory = true,
 		showEmptySlots = false,

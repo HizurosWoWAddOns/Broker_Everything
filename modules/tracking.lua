@@ -62,6 +62,7 @@ module = {
 		"PLAYER_LOGIN"
 	},
 	config_defaults = {
+		enabled = false,
 		displaySelection = true,
 		hideMinimapButton = false
 	}

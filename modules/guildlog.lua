@@ -147,6 +147,7 @@ module = {
 		-- guild roster update or so...
 	},
 	config_defaults = {
+		enabled = false,
 		max_entries = 0,
 		displayMode = "NORMAL",
 		hideJoin = false,

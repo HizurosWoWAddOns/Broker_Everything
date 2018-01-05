@@ -491,6 +491,7 @@ moduleF = {
 		"GARRISON_FOLLOWER_REMOVED",
 	},
 	config_defaults = {
+		enabled = false,
 		showAllInOne = true,
 		showFollowersOnBroker = true,
 		showChampionsOnBroker = true,
@@ -523,6 +524,7 @@ moduleS = {
 		"GARRISON_FOLLOWER_REMOVED",
 	},
 	config_defaults = {
+		enabled = false,
 		bgColoredStatus = true,
 		showChars = true,
 		showAllFactions = true

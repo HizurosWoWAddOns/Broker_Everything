@@ -209,6 +209,7 @@ end
 module = {
 	events = {},
 	config_defaults = {
+		enabled = false,
 		-- show types
 		showBosses = true,
 		showDungeons = true,

@@ -314,6 +314,7 @@ module = {
 	},
 	onupdate_interval = 30, -- 10
 	config_defaults = {
+		enabled = false,
 		showConstruct = true,
 		showBlueprints = true,
 		showAchievements = true,

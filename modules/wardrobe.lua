@@ -119,7 +119,9 @@ module = {
 	events = {
 		"PLAYER_LOGIN",
 	},
-	config_defaults = {},
+	config_defaults = {
+		enabled = false,
+	},
 	clickOptionsRename = {
 		["menu"] = "9_open_menu"
 	},

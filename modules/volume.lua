@@ -224,7 +224,6 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	enabled = true,
 	icon_suffix = "_100",
 	events = {
 		"PLAYER_LOGIN",
@@ -232,6 +231,7 @@ module = {
 		"SOUND_DEVICE_UPDATE"
 	},
 	config_defaults = {
+		enabled = true,
 		useWheel = false,
 		steps = 10,
 		listHardware = true

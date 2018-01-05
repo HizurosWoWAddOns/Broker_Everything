@@ -219,7 +219,9 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	config_defaults = {},
+	config_defaults = {
+		enabled = false
+	},
 	clickOptionsRename = {
 		["garrreport"] = "1_open_garrison_report",
 		--["menu"] = "2_open_menu"

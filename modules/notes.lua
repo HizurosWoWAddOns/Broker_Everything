@@ -178,7 +178,9 @@ module = {
 		"PLAYER_LOGIN",
 		"NEUTRAL_FACTION_SELECT_RESULT"
 	},
-	config_defaults = {},
+	config_defaults = {
+		enabled = false,
+	},
 	clickOptionsRename = {
 		["newnote"] = "1_new_note",
 		["menu"] = "9_open_menu"

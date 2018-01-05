@@ -472,7 +472,6 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	enabled = true,
 	events = {
 		"BATTLETAG_INVITE_SHOW", -- ?
 		"BN_BLOCK_LIST_UPDATED",
@@ -492,6 +491,7 @@ module = {
 		"CHAT_MSG_SYSTEM"
 	},
 	config_defaults = {
+		enabled = true,
 		-- broker button
 		splitFriendsBroker = true,
 		showFriendsBroker = true,

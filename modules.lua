@@ -41,11 +41,6 @@ end
 local function moduleInit(name)
 	local mod = ns.modules[name];
 
-	-- check if savedvariables for module present?
-	if ns.profile[name].enabled==nil then
-		ns.profile[name].enabled = mod.enabled or false;
-	end
-
 	-- register options
 	ns.Options_AddModuleOptions(name);
 

@@ -273,6 +273,7 @@ module = {
 		"GARRISON_MISSION_FINISHED"
 	},
 	config_defaults = {
+		enabled = false,
 		showAvailable = true,
 		showActive = true,
 		showReady = true,

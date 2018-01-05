@@ -211,6 +211,9 @@ module = {
 	events = {
 		"PLAYER_LOGIN",
 		"CVAR_UPDATE"
+	},
+	config_defaults = {
+		enabled = false
 	}
 }
 

@@ -280,6 +280,7 @@ module = {
 		"CHAT_MSG_SYSTEM" -- for loot spec changes -.-
 	},
 	config_defaults = {
+		enabled = false,
 		showTalents = true,
 		showTalentsShort = false,
 		showPvPTalents = true,

@@ -164,7 +164,9 @@ module = {
 		"CHANNEL_ROSTER_UPDATE"
 	},
 	onupdate_interval = 30,
-	config_defaults = {},
+	config_defaults = {
+		enabled = false,
+	},
 	clickOptionsRename = {
 		["chats"] = "1_open_chats",
 		["menu"] = "2_open_menu"

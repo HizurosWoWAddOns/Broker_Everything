@@ -260,6 +260,7 @@ module = {
 	events = {"PLAYER_LOGIN"},
 	onupdate_interval = 0.16,
 	config_defaults = {
+		enabled = false,
 		precision = 0,
 	}
 }

@@ -199,6 +199,7 @@ module = {
 		"MERCHANT_CLOSED"
 	},
 	config_defaults = {
+		enabled = true,
 		freespace = true,
 		critLowFree = 5,
 		warnLowFree = 15,

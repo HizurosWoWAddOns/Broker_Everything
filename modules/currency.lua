@@ -314,6 +314,7 @@ module = {
 		"CHAT_MSG_CURRENCY"
 	},
 	config_defaults = {
+		enabled = false,
 		shortTT = false,
 		subTTposition = "AUTO",
 		currenciesInTitle = {false,false,false,false},

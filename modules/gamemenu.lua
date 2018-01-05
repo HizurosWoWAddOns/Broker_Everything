@@ -211,6 +211,7 @@ module = {
 		"UPDATE_WEB_TICKET"
 	},
 	config_defaults = {
+		enabled = false,
 		customTitle = "",
 		hideSection2 = false,
 		hideSection3 = false,

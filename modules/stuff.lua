@@ -119,7 +119,9 @@ end
 ---------------------------------------
 module = {
 	events = {},
-	config_defaults = {},
+	config_defaults = {
+		enabled = false,
+	},
 }
 
 -- function module.options() return {} end

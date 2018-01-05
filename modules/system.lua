@@ -577,9 +577,9 @@ end
 -- module variables for registration --
 ---------------------------------------
 module_sys = {
-	enabled = true,
 	events = {},
 	config_defaults = {
+		enabled = true,
 		-- broker button options
 		showInboundOnBroker = false,
 		showOutboundOnBroker = false,
@@ -611,6 +611,7 @@ module_fps = {
 	icon_suffix = "_blue",
 	events = {},
 	config_defaults = {
+		enabled = false,
 		fillCharacter = "0none"
 	},
 };
@@ -618,6 +619,7 @@ module_fps = {
 module_lat = {
 	events = {},
 	config_defaults = {
+		enabled = false,
 		showHome = true,
 		showWorld = true
 	},
@@ -625,6 +627,7 @@ module_lat = {
 
 module_mem = {
 	config_defaults = {
+		enabled = false,
 		mem_max_addons = -1,
 		addonpanel = "none",
 		updateInterval = 300,
@@ -635,6 +638,7 @@ module_mem = {
 module_traf = {
 	events = {},
 	config_defaults = {
+		enabled = false,
 		showInbound = true,
 		showOutbound = true
 	},

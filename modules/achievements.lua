@@ -165,6 +165,7 @@ end
 module = {
 	events = {},
 	config_defaults = {
+		enabled = false,
 		showLatest = true,
 		showCategory = true,
 		showWatchlist = true,

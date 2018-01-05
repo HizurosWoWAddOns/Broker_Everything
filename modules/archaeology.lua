@@ -231,6 +231,7 @@ module = {
 		"CHAT_MSG_SKILL"
 	},
 	config_defaults = {
+		enabled = false,
 		inTitle = {},
 		continentOrder=true
 	},

@@ -31,6 +31,7 @@ module = {
 	events = {},
 	onupdate_interval = 0.12,
 	config_defaults = {
+		enabled = false,
 		ownership = "shift",
 		creatureid = "shift"
 	},
