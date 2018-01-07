@@ -489,34 +489,39 @@ function ns.RegisterOptions()
 		end
 
 		for profileName,profileData in pairs(Broker_Everything_AceDB.profiles)do
-			for modName,modData in pairs(profileData)do
-				-- migrate showAllRealms
-				if modData.showAllRealms~=nil then
-					modData.showCharsFrom = 4;
-					modData.showAllRealms = nil;
-				end
-				-- migrate clickOptions Prefix
-				for k,v in pairs(modData)do
-					if k:find(ClickOptPrefixOld) then
-						local K = k:gsub(ClickOptPrefixOld,ns.ClickOpts.prefix);
-						modData[K] = modData[k];
-						modData[k] = nil;
+			if type(profileData)~="table" then
+				-- delete invalid profiles
+				Broker_Everything_AceDB.profiles[profileName]=nil;
+			else
+				for modName,modData in pairs(profileData)do
+					-- migrate showAllRealms
+					if modData.showAllRealms~=nil then
+						modData.showCharsFrom = 4;
+						modData.showAllRealms = nil;
+					end
+					-- migrate clickOptions Prefix
+					for k,v in pairs(modData)do
+						if k:find(ClickOptPrefixOld) then
+							local K = k:gsub(ClickOptPrefixOld,ns.ClickOpts.prefix);
+							modData[K] = modData[k];
+							modData[k] = nil;
+						end
 					end
 				end
-			end
 
-			-- migrate some option entries from shared_module
-			local modName="GPS / Location / ZoneText";
-			if profileData[modName] then
-				for key,value in pairs(profileData[modName])do
-					if profileData.GPS==nil then profileData.GPS={} end
-					if profileData.Location==nil then profileData.Location={} end
-					if profileData.ZoneText==nil then profileData.ZoneText={} end
-					profileData.GPS[key]=value;
-					profileData.Location[key]=value;
-					profileData.ZoneText[key]=value;
+				-- migrate some option entries from shared_module
+				local modName="GPS / Location / ZoneText";
+				if profileData[modName] then
+					for key,value in pairs(profileData[modName])do
+						if profileData.GPS==nil then profileData.GPS={} end
+						if profileData.Location==nil then profileData.Location={} end
+						if profileData.ZoneText==nil then profileData.ZoneText={} end
+						profileData.GPS[key]=value;
+						profileData.Location[key]=value;
+						profileData.ZoneText[key]=value;
+					end
+					profileData[modName]=nil;
 				end
-				profileData[modName]=nil;
 			end
 		end
 	end
