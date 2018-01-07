@@ -25,8 +25,9 @@ local factionName = setmetatable({},{__index=function(t,k)
 	end
 	return v or k;
 end});
+
 L[name] = BOUNTY_BOARD_LOCKED_TITLE;
-if L["Emissary Quests-ShortCut"]=="Emissary Quests-ShortCut" then
+if not rawget(L,"Emissary Quests-ShortCut") then
 	L["Emissary Quests-ShortCut"] = "EQ";
 end
 
@@ -295,13 +296,17 @@ end
 function module.onevent(self,event,arg1,...)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
-	elseif event=="PLAYER_LOGIN" then
-		if ns.data[name]==nil then ns.data[name]={}; end
-		if ns.toon[name]==nil then ns.toon[name]={}; end
-		if ns.data[name].factions==nil then ns.data[name].factions = {}; end
-		if ns.toon[name].factions==nil then ns.toon[name].factions = {}; end
-	end
-	if ns.eventPlayerEnteredWorld then
+	elseif ns.eventPlayerEnteredWorld then
+		if ns.data[name]==nil then
+			ns.data[name]={factions={}};
+		elseif ns.data[name].factions==nil then
+			ns.data[name].factions = {};
+		end
+		if ns.toon[name]==nil then
+			ns.toon[name]={factions={}};
+		elseif ns.toon[name].factions==nil then
+			ns.toon[name].factions = {};
+		end
 		updateData();
 	end
 end
