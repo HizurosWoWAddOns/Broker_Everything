@@ -548,8 +548,11 @@ function module.onevent(self,event,arg1,...)
 		cache[cBuildings] = #buildings;
 
 		if (event=="SHOW_LOOT_TOAST") then
-			local typeIdentifier, _, quantity, _, _, isPersonal, lootSource = ...;
+			local typeIdentifier, _, quantity, _, _, isPersonal, lootSource = arg1,...;
 			if (isPersonal==true) and (typeIdentifier=="currency") and (lootSource==10) then
+				if ns.toon.garrison_cache==nil then
+					ns.toon.garrison_cache={0,false};
+				end
 				if(ns.toon.garrison_cache[1]~=nil and ns.toon.garrison_cache[1]~=0)then
 					local forcast = floor((time()-ns.toon.garrison_cache[1])/600);
 					if(quantity>500)then
@@ -569,7 +572,10 @@ function module.onevent(self,event,arg1,...)
 		tinsert(title, C("ltblue",ready) .."/".. C("orange",progress - ready) );
 
 		if (ns.profile[name].showCacheForcastInBroker) then
-			if(ns.toon.garrison_cache[1]==nil or ns.toon.garrison_cache[1]==0)then
+			if ns.toon.garrison_cache==nil then
+				ns.toon.garrison_cache={0,false};
+			end
+			if ns.toon.garrison_cache[1]==nil or ns.toon.garrison_cache[1]==0 then
 				tinsert(title, C("orange","n/a") );
 			else
 				local colCache,colCap,cap = "white","white",500;
