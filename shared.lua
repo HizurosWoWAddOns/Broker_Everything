@@ -1538,7 +1538,7 @@ do
 						D.event();
 					end
 					if (P) and (not entry.keepShownOnClick) then
-						if (_G["DropDownList1"]) then _G["DropDownList1"]:Hide(); end
+						if (_G["LibDropDownMenu_List1"]) then _G["LibDropDownMenu_List1"]:Hide(); end
 					end
 				end;
 			end
