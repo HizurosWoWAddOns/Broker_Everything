@@ -86,14 +86,22 @@ local function GetSession(factionID,current)
 end
 
 function updateBroker()
-	local txt,mode = REPUTATION,ns.profile[name].watchedFormatOnBroker;
+	local txt = REPUTATION;
 	local Name, standingId, barMin, barMax, barValue, factionID = GetWatchedFactionInfo();
-	barMax = standingId==8 and 999 or (barMax - barMin);
-	local barValue2 = barValue - barMin;
-	barMin = 0;
 
 	if Name then
-		local tmp = {};
+		local tmp,mode,barValue2 = {},ns.profile[name].watchedFormatOnBroker;
+		local friendID,friendRep,_,_,_,_,_,friendThreshold,nextFriendThreshold = GetFriendshipReputation(factionID);
+		if friendID~=nil then
+			if nextFriendThreshold then
+				barMin, barMax, barValue = friendThreshold, nextFriendThreshold, friendRep;
+			else
+				barMin, barMax, barValue = 0, 1, 1;
+			end
+		elseif standingId==8 then
+			barValue,barMax = barValue+999,barMax+999;
+		end
+		barMax,barValue2,barMin = barMax-barMin,barValue-barMin,0;
 		if ns.profile[name].watchedNameOnBroker then
 			tinsert(tmp,Name);
 		end
@@ -109,7 +117,7 @@ function updateBroker()
 		if ns.profile[name].watchedStandingOnBroker then
 			tinsert(tmp,_G["FACTION_STANDING_LABEL"..standingId]);
 		end
-		if ns.profile[name].watchedSessionBroker then
+		if ns.profile[name].watchedSessionBroker and not (friendID and not nextFriendThreshold) then
 			local val = GetSession(factionID,barValue);
 			if val~="" then
 				tinsert(tmp,val);
@@ -225,7 +233,7 @@ local function ttAddLine(tt,mode,data,count,childLevel)
 		tinsert(line,ns.FormatLargeNumber(name,_barMax-_barValue,true).." "..L["need"]);
 	end
 
-	if not data[rewardPercent] and ns.profile[name].showSession and data[barValue] and session[data[factionID]] then
+	if not data[rewardPercent] and ns.profile[name].showSession and data[barValue] and session[data[factionID]] and (not data.hideSession) then
 		tinsert(line,GetSession(data[factionID],data[barValue]));
 	end
 
@@ -317,6 +325,7 @@ function createTooltip(tt)
 					data[barMin], data[barMax], data[barValue] = friendThreshold, nextFriendThreshold, friendRep;
 				else
 					data[barMin], data[barMax], data[barValue] = 0, 1, 1;
+					data.hideSession = true
 				end
 			elseif data[standingID]==8 then
 				data[barValue] = data[barValue]+999;
@@ -461,7 +470,7 @@ function module.OptionMenu(self,button,modName)
 	ns.EasyMenu.InitializeMenu();
 	ns.EasyMenu.addConfigElements(name);
 	ns.EasyMenu.addEntry({separator=true});
-	ns.EasyMenu.addEntry({ label = C("yellow",L["Reset session earn/loss reputation"]), func=resetSession, keepShown=false });
+	ns.EasyMenu.addEntry({ label = C("yellow",L["Reset session earn/loss counter"]), func=resetSession, keepShown=false });
 	ns.EasyMenu.ShowMenu(self);
 end
 
