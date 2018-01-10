@@ -14,7 +14,7 @@ local buildings,nBuildings,construct,nConstruct,blueprints3,achievements3 = {},0
 local longer,ticker = false,false;
 local displayAchievements=false;
 local buildings2achievements,blueprintsL3,jobslots,plot_order={},{},{},{};
-local garrLevel, ohLevel, syLevel = 0,0,0;
+local garrLevel, syLevel = 0,0;
 local merchant=false;
 local UseContainerItemHooked = false;
 
@@ -218,9 +218,7 @@ local function createTooltip(tt)
 		for i=1, #Broker_Everything_CharacterDB.order do
 			local v = Broker_Everything_CharacterDB[Broker_Everything_CharacterDB.order[i]];
 			local c,r = strsplit("-",Broker_Everything_CharacterDB.order[i],2);
-			if not ns.showThisChar(name,r,v.faction) or v.garrison==nil or (v.garrison~=nil and (v.garrison[1]==nil) or (v.garrison[1]==0))then
-				-- do nothing
-			elseif (v.garrison_cache and v.garrison_cache[1]) then
+			if ns.showThisChar(name,r,v.faction) and v.garrison and v.garrison_cache and v.garrison_cache[1]>0 then
 				local k=Broker_Everything_CharacterDB.order[i];
 				local l,_=tt:AddLine();
 				local charName,realm = strsplit("-",k,2);
@@ -238,9 +236,7 @@ local function createTooltip(tt)
 					factionSymbol = " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t";
 				end
 				tt:SetCell(l,1,C(v.class or "white", charName)..(realm or "")..factionSymbol,nil,nil,ttColumns-1);
-				if(v.garrison_cache[1]==0)then
-					tt:SetCell(l,ttColumns, C("orange","n/a"));
-				else
+				if(v.garrison_cache and v.garrison_cache[1]>0)then
 					local cache = floor((time()-v.garrison_cache[1])/600);
 					local cap = (v.garrison_cache[2]) and 1000 or 500;
 					if(v.garrison_cache[2]~=nil and cache>=cap)then
@@ -250,6 +246,8 @@ local function createTooltip(tt)
 						cap = C("dkyellow",cap);
 					end
 					tt:SetCell(l,ttColumns, ("~ %s/%s"):format(cache,cap)); -- 10 minutes = 1 garrison resource
+				else
+					tt:SetCell(l,ttColumns, C("orange","n/a"));
 				end
 				if(k==ns.player.name_realm)then
 					tt:SetLineColor(l, 0.1, 0.3, 0.6);
@@ -301,6 +299,7 @@ end
 ------------------------------------
 module = {
 	events = {
+		"ADDON_LOADED",
 		"PLAYER_LOGIN",
 		"GARRISON_LANDINGPAGE_SHIPMENTS",
 		"GARRISON_UPDATE",
@@ -370,7 +369,7 @@ end
 function module.onevent(self,event,arg1,...)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
-	elseif event=="PLAYER_LOGIN" then
+	elseif event=="ADDON_LOADED" and arg1==addon then
 		if ns.toon.garrison and ns.toon.garrison.cache then
 			for i=1, #Broker_Everything_CharacterDB.order do
 				local k = Broker_Everything_CharacterDB.order[i];
@@ -383,6 +382,10 @@ function module.onevent(self,event,arg1,...)
 					Broker_Everything_CharacterDB[k].garrison = {};
 				end
 			end
+		end
+
+		if ns.toon.garrison_cache==nil then
+			ns.toon.garrison_cache={0,false};
 		end
 
 		if not ns.toon.garrison_cache then
@@ -398,8 +401,7 @@ function module.onevent(self,event,arg1,...)
 				module.onevent(self,"BE_CUSTOM_EVENT");
 			end);
 		end
-	end
-	if event=="PLAYER_LOGIN" or ns.eventPlayerEnteredWorld then
+	elseif event=="PLAYER_LOGIN" or (ns.eventPlayerEnteredWorld and event~="BE_UPDATE_CFG") then
 		local progress,ready=0,0;
 		local garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0;
 		local tmp, names, _, bName, texture, shipmentCapacity, shipmentsReady, shipmentsTotal, creationTime, duration, timeleftString, shipmentsCurrent = {}, {};
@@ -550,9 +552,6 @@ function module.onevent(self,event,arg1,...)
 		if (event=="SHOW_LOOT_TOAST") then
 			local typeIdentifier, _, quantity, _, _, isPersonal, lootSource = arg1,...;
 			if (isPersonal==true) and (typeIdentifier=="currency") and (lootSource==10) then
-				if ns.toon.garrison_cache==nil then
-					ns.toon.garrison_cache={0,false};
-				end
 				if(ns.toon.garrison_cache[1]~=nil and ns.toon.garrison_cache[1]~=0)then
 					local forcast = floor((time()-ns.toon.garrison_cache[1])/600);
 					if(quantity>500)then
@@ -565,19 +564,12 @@ function module.onevent(self,event,arg1,...)
 			end
 		end
 
-		local ohLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
-
 		local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 		local title = {};
 		tinsert(title, C("ltblue",ready) .."/".. C("orange",progress - ready) );
 
 		if (ns.profile[name].showCacheForcastInBroker) then
-			if ns.toon.garrison_cache==nil then
-				ns.toon.garrison_cache={0,false};
-			end
-			if ns.toon.garrison_cache[1]==nil or ns.toon.garrison_cache[1]==0 then
-				tinsert(title, C("orange","n/a") );
-			else
+			if ns.toon.garrison_cache[1]>0 then
 				local colCache,colCap,cap = "white","white",500;
 				local cache = floor((time()-ns.toon.garrison_cache[1])/600);
 
@@ -594,6 +586,8 @@ function module.onevent(self,event,arg1,...)
 					end
 				end
 				tinsert(title, C(colCache,cache) .."/".. C(colCap,cap) );
+			else
+				tinsert(title, C("orange","n/a") );
 			end
 		end
 
@@ -602,20 +596,16 @@ function module.onevent(self,event,arg1,...)
 
 	-- garrison level
 	garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0;
+
 	-- shipyard level
 	if garrLevel>0 then
 		local lvl = C_Garrison.GetOwnedBuildingInfoAbbrev(98);
 		if lvl then syLevel=lvl-204; end
 	end
-	-- order hall level?
-	if ns.build>70000000 then
-		ohLevel = LE_GARRISON_TYPE_7_0~=nil and C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
-	end
-
 end
 
 function module.onupdate()
-	if garrLevel>0 or ohLevel>0 then
+	if garrLevel>0 then
 		C_Garrison.RequestLandingPageShipmentInfo(); -- stupid event triggering to get new data
 		C_Garrison.RequestShipmentInfo();
 	end
