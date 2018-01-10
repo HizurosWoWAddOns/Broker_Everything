@@ -163,6 +163,7 @@ local function updateCharacterDB(equipped)
 			pointsSpent=pointsSpent,
 			maxPoints=maxPoints,
 			xp=xp,
+			artifactTier=artifactTier,
 			artifactXP=artifactXP,
 			xpForNextPoint=xpForNextPoint,
 			xpTotal=xpTotal,
