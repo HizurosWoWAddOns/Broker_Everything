@@ -518,17 +518,19 @@ function ns.RegisterOptions()
 				Broker_Everything_AceDB.profiles[profileName]=nil;
 			else
 				for modName,modData in pairs(profileData)do
-					-- migrate showAllRealms
-					if modData.showAllRealms~=nil then
-						modData.showCharsFrom = 4;
-						modData.showAllRealms = nil;
-					end
-					-- migrate clickOptions Prefix
-					for k,v in pairs(modData)do
-						if k:find(ClickOptPrefixOld) then
-							local K = k:gsub(ClickOptPrefixOld,ns.ClickOpts.prefix);
-							modData[K] = modData[k];
-							modData[k] = nil;
+					if modName and type(modData)=="table" then
+						-- migrate showAllRealms
+						if modData.showAllRealms~=nil then
+							modData.showCharsFrom = 4;
+							modData.showAllRealms = nil;
+						end
+						-- migrate clickOptions Prefix
+						for k,v in pairs(modData)do
+							if k:find(ClickOptPrefixOld) then
+								local K = k:gsub(ClickOptPrefixOld,ns.ClickOpts.prefix);
+								modData[K] = modData[k];
+								modData[k] = nil;
+							end
 						end
 					end
 				end
