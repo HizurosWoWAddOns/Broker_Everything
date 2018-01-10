@@ -133,6 +133,7 @@ end
 
 local function updateCharacterDB(equipped)
 	local artifact_frame = (ArtifactFrame and ArtifactFrame:IsShown() and ArtifactFrame.PerksTab and ArtifactFrame.PerksTab:IsShown());
+	local artifact_forge = (ArtifactRelicForgeFrame and ArtifactRelicForgeFrame:IsShown());
 	local itemID, altItemID, itemName, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop, artifactTier = C_ArtifactUI[artifact_frame and "GetArtifactInfo" or "GetEquippedArtifactInfo"]();
 	if itemID and itemID~=0 then
 		local numPoints, artifactXP, xpForNextPoint = MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp,artifactTier);
@@ -173,7 +174,7 @@ local function updateCharacterDB(equipped)
 		ns.toon[name].obtained[itemID] = true;
 
 		-- update relict slots. (only possible with open artifact frame)
-		if artifact_frame then
+		if artifact_frame or artifact_forge then
 			for i,v in ipairs(ArtifactFrame.PerksTab.TitleContainer.RelicSlots)do
 				if not v.relicType then
 					artifactLocked = ARTIFACT_VISIT_FORGE_TO_START;
@@ -504,8 +505,7 @@ function createTooltip(tt)
 						end
 						local n = (v.color and C(v.color,v.name)..ilvl) or (v.locked and C("red", LOCKED)) or C("ltgray",EMPTY);
 						local icon = v.locked and "|TInterface\\LFGFrame\\UI-LFG-ICON-LOCK:14:14:0:0:32:32:0:25:0:25|t " or "|T"..(v.icon or ns.icon_fallback)..":0|t ";
-						local _type = v.type or UNKNOWN;
-						local label = _G["RELIC_SLOT_TYPE_" .. _type:upper()] .. " " .. RELICSLOT;
+						local label = (v.type and _G["RELIC_SLOT_TYPE_" .. v.type:upper()] or UNKNOWN) .. " " .. RELICSLOT;
 						local l=tt:AddLine(C("white",i..". ")..C("ltgreen",label));
 						tt:SetCell(l,2,icon .. n,nil,nil,0);
 						if v.locked or v.link then
