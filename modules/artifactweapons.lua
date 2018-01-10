@@ -196,22 +196,7 @@ local function updateCharacterDB(equipped)
 		end
 
 		-- update knowledge
-		local _,level = GetCurrencyInfo(1171);
-		local timeSince,timeToNext,weekInSec = 0,0,604800;
-		if level==40 then
-			timeSince = time()-1504072800;
-			local weeks = timeSince/weekInSec; -- weeks
-			local weeksFloored = floor(weeks);
-			level = level + weeksFloored + 1;
-			timeToNext = (weeksFloored+1-weeks)*weekInSec;
-			ns.toon[name].timeToNextAK = (weeksFloored+1-weeks)*weekInSec;
-		end
-		if level>artifactKnowledgeMultiplier_cap then
-			level = artifactKnowledgeMultiplier_cap;
-		end
-		if level and ns.toon[name].knowledgeLevel~=level then
-			ns.toon[name].knowledgeLevel = level;
-		end
+		ns.toon[name].knowledgeLevel = artifactKnowledgeMultiplier_cap;
 	end
 end
 
