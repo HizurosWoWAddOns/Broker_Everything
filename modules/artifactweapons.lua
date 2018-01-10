@@ -337,7 +337,7 @@ local function createTooltip2(parent,artifactID)
 		missingdata = true;
 	end
 
-	-- sent points
+	-- spent points
 	if item.maxPoints and item.pointsSpent and item.numPoints then
 		l=tt:AddLine();
 		tt:SetCell(l,1,C("ltgreen",L["Spent points"]),nil,nil,2);
@@ -347,17 +347,15 @@ local function createTooltip2(parent,artifactID)
 	end
 
 	-- spent power
-	--[[
-	if ns.profile[name].showTotalAP then
-		local _,_,_,_,xp,ps=C_ArtifactUI.GetEquippedArtifactInfo();
-		for i=1,ps-1 do
-			xp=xp+C_ArtifactUI.GetCostForPointAtRank(i,artifactTier);
+	if ns.profile[name].showTotalAP and item.artifactTier then
+		local xp = item.xp;
+		for i=1, item.pointsSpent-1 do
+			xp=xp+C_ArtifactUI.GetCostForPointAtRank(i,item.artifactTier);
 		end
 		l=tt:AddLine();
 		tt:SetCell(l,1,C("ltgreen",L["Total spend power"]),nil,nil,2);
 		tt:SetCell(l,3,C("ltyellow",ns.FormatLargeNumber(name,xp,true)));
 	end
-	]]
 
 	-- item level
 	if item.itemLevel then
