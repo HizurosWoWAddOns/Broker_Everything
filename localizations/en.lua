@@ -17,10 +17,12 @@ ns.L = setmetatable({}, {
 	end,
 	__index = function(t, k)
 		local k=tostring(k);
-		if ns.debugMode then--@do-not-package@
+		if ns.debugMode then
+--@do-not-package@
 			if k=="nil" then
 				ns.debug("<FIXME:Localization:NilKey>",debugstack());
-			end--@end-do-not-package@
+			end
+--@end-do-not-package@
 			return L[k] or "<"..k..">";
 		end
 		return L[k] or k;
