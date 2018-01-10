@@ -184,7 +184,11 @@ local function updateCharacterDB(equipped)
 					_,_,color,linktype,itemid,data,itemname = v.relicLink:find("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
 					icon = GetItemIcon(itemid);
 				end
-				ns.toon[name][itemID].relic[i]={id=tonumber(itemid),color=color,icon=icon,name=itemname,type=v.relicType,locked=v.lockedReason or false,link=v.relicLink};
+				local affected = {C_ArtifactUI.GetPowersAffectedByRelic(i)};
+				for I,A in ipairs(affected) do
+					affected[I] = (C_ArtifactUI.GetPowerInfo(A) or {}).spellID or UNKNOWN
+				end
+				ns.toon[name][itemID].relic[i]={id=tonumber(itemid),color=color,icon=icon,name=itemname,type=v.relicType,locked=v.lockedReason or false,link=v.relicLink,affected=affected};
 				if v.relicLink then
 					ns.ScanTT.query({type="link",link=v.relicLink,obj={awItemID=itemID,relicIndex=i},callback=GetRelicTooltipData});
 				end
@@ -285,6 +289,26 @@ local function itemTooltipShow(self,info)
 		GameTooltip:AddLine(info.locked,.78,.78,.78,true);
 	elseif info.link then
 		GameTooltip:SetHyperlink(info.link);
+	end
+	if type(info.affected)=="table" then
+		local regions = {GameTooltip:GetRegions()};
+		for r=1, #regions do
+			if regions[r].GetText then
+				local str = regions[r]:GetText();
+				if str and str==" " then
+					local text = "";
+					for i=2, #info.affected do
+						local spell = GetSpellInfo(info.affected[i]);
+						if spell then
+							text = text .. RELIC_TOOLTIP_RANK_INCREASE:format(1,spell) .. "\n";
+						end
+					end
+					regions[r]:SetText(text.." ");
+					regions[r]:SetTextColor(1,1,1);
+					break;
+				end
+			end
+		end
 	end
 	GameTooltip:Show();
 end
