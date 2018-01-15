@@ -9,7 +9,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Speed"; -- SPEED
 local ttName, ttColumns, tt, module = name.."TT", 2
-local riding_skills,licences,bonus_spells,replace_unknown,trainer_faction = {},{},{},{},{};
+local riding_skills,licences,bonus_spells,replace_unknown,trainer_faction,deprecated_licences = {},{},{},{},{},{};
 
 
 -- register icon names and default files --
@@ -229,7 +229,9 @@ local function createTooltip(tt)
 			if(Name)then
 				-- learned
 				local color1, color2, info = "green", "ltgray", " ";
-				if lvl<v[2] then
+				if deprecated_licences[v[1]] then
+					color1,info = ready and "green" or "gray",L["Deprecated"];
+				elseif lvl<v[2] then
 					-- need level
 					color1,info = "red", L["Need level"].." "..v[2];
 				elseif achievement and not ready then
@@ -288,6 +290,13 @@ function module.init()
 		{54197,    68, {[485]=1,[486]=1,[510]=1,[504]=1,[488]=1,[490]=1,[491]=1,[541]=1,[492]=1,[493]=1,[495]=1,[501]=1,[496]=1}},
 		{90267,    60, {[4]=1,[9]=1,[11]=1,[13]=1,[14]=1,[16]=1,[17]=1,[19]=1,[20]=1,[21]=1,[22]=1,[23]=1,[24]=1,[26]=1,[27]=1,[28]=1,[29]=1,[30]=1,[32]=1,[34]=1,[35]=1,[36]=1,[37]=1,[38]=1,[39]=1,[40]=1,[41]=1,[42]=1,[43]=1,[61]=1,[81]=1,[101]=1,[121]=1,[141]=1,[161]=1,[181]=1,[182]=1,[201]=1,[241]=1,[261]=1,[281]=1,[301]=1,[321]=1,[341]=1,[362]=1,[381]=1,[382]=1,[462]=1,[463]=1,[464]=1,[471]=1,[476]=1,[480]=1,[499]=1,[502]=1,[545]=1,[606]=1,[607]=1,[610]=1,[611]=1,[613]=1,[614]=1,[615]=1,[640]=1,[673]=1,[684]=1,[685]=1,[689]=1,[700]=1,[708]=1,[709]=1,[720]=1,[772]=1,[795]=1,[864]=1,[866]=1,[888]=1,[889]=1,[890]=1,[891]=1,[892]=1,[893]=1,[894]=1,[895]=1}},
 	};
+	if ns.build>=73500000 then
+		deprecated_licences = {
+			[115913]=1,
+			[54197]=1,
+			[90267]=1,
+		};
+	end
 	trainer_faction = UnitFactionGroup("player")=="Alliance" and {
 		-- { <factionID>, <npcID>, <zoneID>, <x>, <y> }
 		{  72, 43693, 301, 77.6, 67.2},
