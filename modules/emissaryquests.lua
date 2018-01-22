@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Emissary Quests";
-local ttName, ttColumns, tt, module = name.."TT", 4
+local ttName, ttColumns, tt, module = name.."TT", 6
 local factions,totalQuests,locked = {},{},false;
 local continents = {
 	1007, -- legion
@@ -108,14 +108,18 @@ end
 local function updateData()
 	if locked then return end locked = true;
 	local Time = ceil(time()/60)*60;
+	local endings = {};
 	for c=1, #continents do
 		local bounties,location,locked = GetQuestBountyInfoForMapID(continents[c]); -- empty table on chars lower than 110
 		for i=1, #bounties do
 			local TimeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(bounties[i].questID);
 			bounties[i].eventEnding = 0;
 			if TimeLeft then
-				local timeLeftSeconds = C_TaskQuest.GetQuestTimeLeftMinutes(bounties[i].questID)*60;
+				local timeLeftSeconds = TimeLeft*60;
 				bounties[i].eventEnding = Time+timeLeftSeconds-1;
+				local hours = floor(TimeLeft/60);
+				endings[hours] = bounties[i].questID;
+				bounties[i].eventEndingHours = hours;
 			end
 			bounties[i].continent = continents[c];
 			if bounties[i].factionID==0 then
@@ -139,6 +143,12 @@ local function updateData()
 
 	wipe(factions);
 	for i,v in pairs(ns.data[name].factions)do
+		if not v.eventEndingHours then
+			v.eventEndingHours = floor((v.eventEnding-Time)/3600);
+		end
+		if endings[v.eventEndingHours] and endings[v.eventEndingHours]~=v.questID then
+			v.eventEnding=0;
+		end
 		tinsert(factions,v);
 	end
 
@@ -156,7 +166,7 @@ local function createTooltip(tt)
 
 	tt:AddSeparator(4,0,0,0,0);
 	local l=tt:AddLine(C("ltblue",FACTION));
-	tt:SetCell(l,2,C("ltblue",TIME_REMAINING:gsub(":",""):gsub("：",""):trim()),nil,"RIGHT",3);
+	tt:SetCell(l,2,C("ltblue",TIME_REMAINING:gsub(":",""):gsub("：",""):trim()),nil,"RIGHT",0);
 	tt:AddSeparator();
 	for _,v in pairs(factions)do
 		if v.eventEnding-Time>=0 then
@@ -165,7 +175,7 @@ local function createTooltip(tt)
 				color1,color2 = "gray","gray";
 			end
 			local l=tt:AddLine("|T"..v.icon..":14:14:0:0:64:64:4:56:4:56|t "..C(color1,factionName[v.factionID]));
-			tt:SetCell(l,2,C(color2,SecondsToTime(v.eventEnding-Time)),nil,"RIGHT",3);
+			tt:SetCell(l,2,C(color2,SecondsToTime(v.eventEnding-Time)),nil,"RIGHT",0);
 		end
 	end
 	if UnitLevel("player")<110 then
