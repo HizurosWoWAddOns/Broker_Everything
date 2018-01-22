@@ -350,7 +350,7 @@ function module.onevent(self,event,arg1)
 		C_Timer.After(0.5,function() crap:search() end);
 	elseif event=="MERCHANT_CLOSED" then
 		IsMerchantOpen = false;
-	else
+	elseif ns.eventPlayerEnteredWorld then
 		updateBroker();
 	end
 end
