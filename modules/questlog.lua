@@ -24,7 +24,7 @@ local urls = {
 	end
 	--
 }
-local Level, LevelPrefix, Title, Header, Color, Status, Type, ShortType, QuestId, Index, Title2, Text = 1,2,3,4,5,6,7,8,9,10,11,12;
+local Level, Title, Header, Color, Status, Type, ShortType, QuestId, Index, IsHidden, Text = 1,2,3,4,5,6,7,8,9,10,11,12;
 local Zone = 13;
 local frequencies = {
 	[LE_QUEST_FREQUENCY_DAILY] = {"*",DAILY},
@@ -273,7 +273,7 @@ function createTooltip(tt, update, from)
 					tt:SetCell(select(1,tt:AddLine()),1,C(s[2],s[3]),nil,"LEFT",ttColumns);
 					table.sort(quests,function(a,b) return (a[Title2] or a[Title])<(b[Title2] or b[Title]) end);
 					for _,obj in pairs(quests)do
-						if obj[Status]==s[1] then
+						if obj[Status]==s[1] and (not obj[IsHidden]==true) then
 							ttAddLine(obj);
 						end
 					end
@@ -412,24 +412,37 @@ function module.onevent(self,event,msg)
 	if event=="PLAYER_LOGIN" or event=="QUEST_LOG_UPDATE" then
 		local numEntries, numQuests = GetNumQuestLogEntries()
 		local header, status, isBounty, _ = false;
-		local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, qText,qObjectives = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- GetQuestLogTitle(index)
+		local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, isHidden, isScaling = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- GetQuestLogTitle(index)
 		sum,quests,numQuestStatus = numQuests,{},{fail=0,complete=0,active=0};
 
 		for index=1, numEntries do
 			local q = {GetQuestLogTitle(index)};
-			q[qText],q[qObjectives] = GetQuestLogQuestText(index);
 			if q[isHeader]==true then
 				header = q[title];
 			elseif header then
 				local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(q[questID]);
 				local tagNameLong = tagName;
+				q.text,q.objectives = GetQuestLogQuestText(index);
+
+				-- second way to check quest is completed. GetQuestLogTitle argument 6 aren't longer secure enough.
+				local numObjectives = GetNumQuestLeaderBoards(index);
+				local fin = true;
+				if tonumber(numObjectives) then
+					for objectiveIndex = 1, numObjectives do
+						local text, objectiveType, finished = GetQuestLogLeaderBoard(objectiveIndex, index);
+						if (not finished) and fin then
+							fin=false;
+						end
+					end
+				end
+
 				if tagName==GROUP and q[suggestedGroup]>0 then
 					tagNameLong = tagName.."["..q[suggestedGroup].."]";
 				elseif tagName==PLAYER_DIFFICULTY2 then
 					tagNameLong = LFG_TYPE_DUNGEON.." ("..tagName..")";
 				end
 				local tags,shortTags = {},{};
-				if q[qText]:find(_PLAYER_DIFFICULTY6) or q[qObjectives]:find(_PLAYER_DIFFICULTY6) then
+				if q.text:find(_PLAYER_DIFFICULTY6) or q.objectives:find(_PLAYER_DIFFICULTY6) then
 					tinsert(tags,LFG_TYPE_DUNGEON.." ("..PLAYER_DIFFICULTY6..")");
 					tinsert(shortTags,C(ns.questTags.DUNGEON_MYTHIC[2],ns.questTags.DUNGEON_MYTHIC[1]));
 				elseif ns.questTags[tagID] then
@@ -443,7 +456,7 @@ function module.onevent(self,event,msg)
 				if ns.tradeskills[header] then
 					tinsert(tags,TRADE_SKILLS);
 					tinsert(shortTags,C(ns.questTags.TRADE_SKILLS[2],ns.questTags.TRADE_SKILLS[1]));
-				elseif q[qText]:find(TRACKER_HEADER_WORLD_QUESTS) then
+				elseif q.text:find(TRACKER_HEADER_WORLD_QUESTS) then
 					tinsert(tags,TRACKER_HEADER_WORLD_QUESTS);
 					tinsert(shortTags,C(ns.questTags.WORLD_QUESTS[2],ns.questTags.WORLD_QUESTS[1]));
 				end
@@ -461,10 +474,9 @@ function module.onevent(self,event,msg)
 					tinsert(tags," ");
 				end
 
-				status = (q[isComplete]==-1 and "fail") or (q[isComplete==1] and "complete") or "active";
+				status = (q[isComplete]==-1 and "fail") or ((q[isComplete==1] or fin) and "complete") or "active";
 				table.insert(quests,{
 					q[level],
-					" ",
 					q[title],
 					header,GetQuestDifficultyColor(q[level]),
 					status,
@@ -472,8 +484,8 @@ function module.onevent(self,event,msg)
 					table.concat(shortTags,""),
 					q[questID],
 					index,
-					nil,
-					q[qText],
+					q[isHidden],
+					q.text,
 					mapId or 0
 				});
 				numQuestStatus[status]=numQuestStatus[status]+1;
