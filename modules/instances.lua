@@ -17,6 +17,7 @@ local hide = {
 	[322] = true, -- pandaria world bosses // no raid
 	[557] = true, -- draenor world bosses // no raid
 	[822] = true, -- legion world bosses // no raid
+	[959] = true, -- legion invasionpoints (argus) // no raid
 }
 -- some entries have not exact matching names between encounter journal and raidinfo frame
 local rename_il,rename_ej,ignore_ej = {},{},{};
@@ -47,7 +48,10 @@ local function updateInstances(name,mode)
 			if rename_il[name] then
 				name = rename_il[name];
 			end
-			activeRaids[name] = {data[instanceReset],currentTime,data[encounterProgress],data[numEncounters],data[difficultyName]};
+			if activeRaids[name]==nil then
+				activeRaids[name] = {new=true};
+			end
+			activeRaids[name][data[difficultyName]] = {data[instanceReset],currentTime,data[encounterProgress],data[numEncounters]};
 		end
 	end
 	for i=1, (NUM_LE_EXPANSION_LEVELS+1) do
@@ -93,19 +97,31 @@ local function createTooltip2(self,instance)
 		end
 
 		if r==ns.realm then
-			local state,diff = C("gray",L["Free"]),"";
-			if v[name] and v[name][id] and (v[name][id][1]+v[name][id][2])>t then
-				state = C("orange",L["In progress"]);
-				if v[name][id][5] and v[name][id][5]~="" then
-					diff = C("ltgray",v[name][id][5])..", ";
-				end
-				if v[name][id][3]==v[name][id][4] then
-					state = C("green",L["Cleared"]);
-				else
-					state = state..fState:format(v[name][id][3],v[name][id][4]);
+			local diffState = {};
+			if v[name] and v[name][id] then
+				if v[name][id].new then
+					for diffName, data in ns.pairsByKeys(v[name][id]) do
+						if type(data)=="table" and (data[1]+data[2])>t then
+							local diff,state = C("ltgray",diffName)..", ",C("orange",L["In progress"]);
+							if data[3]==data[4] then
+								state = C("green",L["Cleared"]);
+							else
+								state = state..fState:format(data[3],data[4]);
+							end
+							tinsert(diffState,diff..state);
+						end
+					end
+				elseif (v[name][id][1]+v[name][id][2])>t and v[name][id][5] and v[name][id][5]~="" then
+					local diff,state = C("ltgray",v[name][id][5])..", ", C("orange",L["In progress"]);
+					if v[name][id][3]==v[name][id][4] then
+						state = C("green",L["Cleared"]);
+					else
+						state = state..fState:format(v[name][id][3],v[name][id][4]);
+					end
+					tinsert(diffState,diff..state);
 				end
 			end
-			GameTooltip:AddDoubleLine(C(v.class,c)..factionSymbol,diff..state);
+			GameTooltip:AddDoubleLine(C(v.class,c)..factionSymbol,#diffState==0 and C("gray",L["Free"]) or table.concat(diffState,"\n"));
 		end
 	end
 
@@ -155,32 +171,44 @@ function createTooltip(tt,name,mode)
 			instance_id, instance_name = EJ_GetInstanceByIndex(index, mode);
 			while instance_id~=nil do
 				if not hide[instance_id] then
-					local status,encounter,diff,id = C("gray",L["Free"]),"","","";
+					local status,diff,encounter,id = {},{},"","";
 					if ignore_ej[instance_name] then
-						status = "";
+						status = false;
 					elseif rename_ej[instance_name] then
 						instance_name = rename_ej[instance_name];
 					end
-					if activeRaids[instance_name] then
-						status,diff = C("orange",L["In progress"]),C("ltgray",activeRaids[instance_name][5]);
-						if activeRaids[instance_name][3]==activeRaids[instance_name][4] then
-							status = C("green",L["Cleared"]);
-						else
-							status = status..fState:format(activeRaids[instance_name][3],activeRaids[instance_name][4]);
+					if status then
+						if activeRaids[instance_name] then
+							for diffName, data in ns.pairsByKeys(activeRaids[instance_name])do
+								if type(data)=="table" then
+									local s,d = C("orange",L["In progress"]),C("ltgray",diffName);
+									if data[3]==data[4] then
+										s = C("green",L["Cleared"]);
+									else
+										s = s .. fState:format(data[3],data[4]);
+									end
+									tinsert(status,s);
+									tinsert(diff,d);
+								end
+							end
 						end
-					end
-					if ns.profile[name].showID then
-						id = C("gray"," ("..instance_id..")");
-					end
-					local l=tt:AddLine(C("ltyellow","    "..instance_name)..id, status, diff);
+						if ns.profile[name].showID then
+							id = C("gray"," ("..instance_id..")");
+						end
+						local l=tt:AddLine(
+							C("ltyellow","    "..instance_name)..id,
+							#status==0 and C("gray",L["Free"]) or table.concat(status,"\n"),
+							#diff==0 and "" or table.concat(diff,"\n")
+						);
 
-					tt:SetLineScript(l,"OnEnter",createTooltip2,{instance_id,name,instance_name});
-					tt:SetLineScript(l,"OnLeave",hideTooltip2);
+						tt:SetLineScript(l,"OnEnter",createTooltip2,{instance_id,name,instance_name});
+						tt:SetLineScript(l,"OnLeave",hideTooltip2);
 
-					if ns.toon[name]==nil then
-						ns.toon[name]={};
+						if ns.toon[name]==nil then
+							ns.toon[name]={};
+						end
+						ns.toon[name][instance_id] = activeRaids[instance_name];
 					end
-					ns.toon[name][instance_id] = activeRaids[instance_name];
 				end
 				index = index + 1;
 				instance_id, instance_name = EJ_GetInstanceByIndex(index, mode);
