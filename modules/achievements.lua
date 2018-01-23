@@ -9,7 +9,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Achievements";
 local ttName, ttColumns, tt, module = name.."TT", 2;
-local categoryIds,bars,count = {92, 96, 97, 95, 168, 169, 201, 15165, 155, 15117, 15246, 15237},{},0;
+local bars,count,session = {},0,{};
 
 
 -- register icon names and default files --
@@ -62,6 +62,29 @@ local function updateBars()
 	end
 end
 
+local function updateBroker()
+	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
+	local txt = {};
+
+	local now = GetTotalAchievementPoints();
+	local diff = now-session.total;
+	if ns.profile[name].showPoints then
+		if ns.profile[name].showPointsSess and diff>0 then
+			now=now.." +"..diff;
+		end
+		tinsert(txt,C("dkyellow",now));
+	elseif ns.profile[name].showPointsSess and diff>0 then
+		tinsert(txt,C("dkyellow","+"..diff));
+	end
+
+	obj.text = #txt>0 and table.concat(txt,", ") or ACHIEVEMENTS;
+end
+
+local function resetSessionCounter()
+	wipe(session);
+	session.total = GetTotalAchievementPoints();
+end
+
 local function progressBar(tt, l, low, high)
 	count=count+1;
 	if(not ns.profile[name].showProgressBars)then
@@ -86,7 +109,12 @@ end
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	if tt.lines~=nil then tt:Clear(); end
-	tt:AddHeader(C("dkyellow",ACHIEVEMENTS));
+	local l = tt:AddHeader(C("dkyellow",ACHIEVEMENTS));
+
+	local now = GetTotalAchievementPoints();
+	local diff = now-session.total;
+	now = C("dkyellow",now) .. (diff>0 and C("ltgreen"," +"..diff) or "");
+	tt:SetCell(l,2,now,nil,"RIGHT",0);
 	count=0;
 
 	if(ns.profile[name].showLatest)then
@@ -163,20 +191,25 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	events = {},
+	events = {
+		"PLAYER_LOGIN",
+		"ACHIEVEMENT_EARNED"
+	},
 	config_defaults = {
 		enabled = false,
 		showLatest = true,
 		showCategory = true,
 		showWatchlist = true,
 		showProgressBars = true,
-		showCompleted = true
+		showCompleted = true,
+		showPoints = true,
+		showPointsSess = true,
 	},
 	clickOptionsRename = {
 		["menu"] = "open_menu"
 	},
 	clickOptions = {
-		["menu"] = "OptionMenu"
+		["menu"] = "OptionMenuCustom"
 	}
 };
 
@@ -184,6 +217,10 @@ ns.ClickOpts.addDefaults(module,"menu","_RIGHT");
 
 function module.options()
 	return {
+		broker = {
+			showPoints      = {type="toggle", order=1, name=L["AchieveBrokerPoints"],     desc=L["AchieveBrokerPointsDesc"]},
+			showPointsSess  = {type="toggle", order=2, name=L["AchieveBrokerPointsSess"], desc=L["AchieveBrokerPointsSessDesc"]},
+		},
 		tooltip = {
 			showLatest       = {type="toggle", order=1, name=L["OptAchievLast"],      desc=L["OptAchievLastDesc"]},
 			showCategory     = {type="toggle", order=2, name=L["OptAchievCat"],       desc=L["OptAchievCatDesc"]},
@@ -194,11 +231,25 @@ function module.options()
 	}
 end
 
+function module.OptionMenu(self,button,modName)
+	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
+	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu.addEntry({separator=true});
+	ns.EasyMenu.addEntry({ label = C("yellow",L["Reset session earn/loss counter"]), func=resetSessionCounter, keepShown=false });
+	ns.EasyMenu.ShowMenu(self);
+end
+
 -- function module.init() end
 
 function module.onevent(self,event,...)
-	if event=="BE_UPDATE_CFG" then
+	if event=="BE_UPDATE_CFG" and (...) and (...):find("^ClickOpt") then
 		ns.ClickOpts.update(name);
+	elseif event=="PLAYER_LOGIN" then
+		resetSessionCounter()
+	end
+	if ns.eventPlayerEnteredWorld then
+		updateBroker();
 	end
 end
 
