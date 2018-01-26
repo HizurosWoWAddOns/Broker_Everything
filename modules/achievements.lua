@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Achievements";
-local ttName, ttColumns, tt, module = name.."TT", 2;
+local ttName, ttColumns, tt, module = name.."TT", 3;
 local bars,count,session = {},0,{};
 
 
@@ -81,8 +81,15 @@ local function updateBroker()
 end
 
 local function resetSessionCounter()
+	local id, points, _
 	wipe(session);
 	session.total = GetTotalAchievementPoints();
+	local categories = listCategories();
+	for i=1, #categories do
+		if categories[i][3]~=true then
+			session[i] = categories[i][4];
+		end
+	end
 end
 
 local function progressBar(tt, l, low, high)
@@ -138,7 +145,8 @@ local function createTooltip(tt)
 			if(categories[i][3]==true)then
 				tt:AddLine("  "..C("ltyellow",categories[i][2]), categories[i][4]);
 			else
-				local l = tt:AddLine("  "..C("ltyellow",categories[i][2]), categories[i][4].." / "..categories[i][3]);
+				local earned = categories[i][4] - session[i];
+				local l = tt:AddLine("  "..C("ltyellow",categories[i][2]), categories[i][4].." / "..categories[i][3],earned>0 and C("ltgreen","+"..earned) or "");
 				progressBar(tt,l,categories[i][4], categories[i][3]);
 			end
 		end
@@ -259,7 +267,7 @@ end
 
 function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "CENTER", "RIGHT", "LEFT"},{false},{self},{OnHide=tooltipOnHide});
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "RIGHT", "RIGHT", "LEFT"},{false},{self},{OnHide=tooltipOnHide});
 	createTooltip(tt);
 	C_Timer.After(0.5,updateBars);
 end
