@@ -108,6 +108,7 @@ function module.init()
 		[94295] = {ITEM_DURATION, "tooltip", 4}, -- Primal Egg
 		[118705] = {ITEM_DURATION, "tooltip", 4}, -- Warm Goren Egg
 		[127396] = {ITEM_DURATION, "tooltip", 4}, -- Strange Green Fruit
+		[153190] = {ITEM_DURATION, "tooltip", 3}, -- Fel-Spotted Egg
 		-- 2 items with cooldown time
 		[19462] = {ITEM_COOLDOWN, "duration"}, -- Unhatched Jubling Egg
 		-- 3 lootable items
@@ -116,7 +117,8 @@ function module.init()
 		[44718] = {ITEM_LOOTABLE}, -- Ripe Disgusting Jar (prev.: Disgusting Jar)
 		[94296] = {ITEM_LOOTABLE}, -- Cracked Primal Egg (prev.: Primal Egg)
 		[118706] = {ITEM_LOOTABLE}, -- Cracked Goren Egg
-		[127395] = {ITEM_LOOTABLE} -- Ripened Strange Fruit
+		[127395] = {ITEM_LOOTABLE}, -- Ripened Strange Fruit
+		[153191] = {ITEM_LOOTABLE} -- Cracked Fel-Spotted Egg
 	}
 
 	ns.items.RegisterPreScanCallback(name,resetFunc);
