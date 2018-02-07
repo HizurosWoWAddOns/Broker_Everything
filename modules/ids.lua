@@ -69,6 +69,17 @@ local function extendInstance(self,info)
 	securecall("RequestRaidInfo");
 end
 
+local function EncounterTT_Show(frame,index)
+	GameTooltip:SetOwner(frame, "ANCHOR_NONE");
+	GameTooltip:SetPoint(ns.GetTipAnchor(frame,"horizontal",tt));
+	GameTooltip:SetInstanceLockEncountersComplete(index);
+	GameTooltip:Show();
+end
+
+local function EncounterTT_Hide()
+	GameTooltip:Hide();
+end
+
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local allNothing,iniNothing = true,true;
@@ -180,6 +191,8 @@ local function createTooltip(tt)
 						if doExtend then
 							tt:SetCellScript(l,4,"OnMouseUp", extendInstance, {index=v.index,doExtend=doExtend});
 						end
+						tt:SetLineScript(l,"OnEnter", EncounterTT_Show, v.index);
+						tt:SetLineScript(l,"OnLeave", EncounterTT_Hide);
 					end
 					allNothing = false;
 					iniNothing = false;
