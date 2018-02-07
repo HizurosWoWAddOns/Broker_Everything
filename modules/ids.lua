@@ -165,6 +165,7 @@ local function createTooltip(tt)
 							end
 							duration = C("ltgray",duration);
 						else
+							doExtend = false;
 							duration = C("gray",RAID_INSTANCE_EXPIRES_EXPIRED);
 						end
 						local l=tt:AddLine(
@@ -176,7 +177,7 @@ local function createTooltip(tt)
 							),
 							duration or ""
 						);
-						if not duration then
+						if doExtend then
 							tt:SetCellScript(l,4,"OnMouseUp", extendInstance, {index=v.index,doExtend=doExtend});
 						end
 					end
