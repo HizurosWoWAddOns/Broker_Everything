@@ -90,6 +90,7 @@ local function resetSessionCounter()
 			session[i] = categories[i][4];
 		end
 	end
+	updateBroker();
 end
 
 local function progressBar(tt, l, low, high)
@@ -255,8 +256,7 @@ function module.onevent(self,event,...)
 		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		resetSessionCounter()
-	end
-	if ns.eventPlayerEnteredWorld then
+	elseif ns.eventPlayerEnteredWorld then
 		updateBroker();
 	end
 end
