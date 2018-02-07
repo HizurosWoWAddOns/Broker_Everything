@@ -24,6 +24,7 @@
 	<Script file="modules/archaeology.lua"/>
 	<Script file="modules/artifactweapons.lua"/>
 	<Script file="modules/bags.lua"/>
+	<Script file="modules/brokenislesinvasions.lua"/>
 	<Script file="modules/calendar.lua"/>
 	<Script file="modules/chatchannels.lua"/>
 	<Script file="modules/classspecs.lua"/>

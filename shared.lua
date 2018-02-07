@@ -148,9 +148,9 @@ end
   ---------------------------------------
 ns.debugMode = ("@project-version@"=="@".."project-version".."@"); -- the first part will be replaced by packager.
 function ns.print(...)
-	local colors,t,c = {"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"},{},1;
-	for i,v in ipairs({...}) do
-		v = tostring(v);
+	local a,colors,t,c = {...},{"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"},{},1;
+	for i=1, #a do
+		v = tostring(a[i]);
 		if i==1 and v~="" then
 			tinsert(t,"|cff0099ff"..addon.."|r:"); c=2;
 		end
