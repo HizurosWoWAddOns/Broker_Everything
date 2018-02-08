@@ -9,11 +9,9 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Currency"; -- CURRENCY
 local ttName,ttColumns,tt,tt2,module = name.."TT",5;
-local cName, cIcon, cCount, cEarnedThisWeek, cWeeklyMax, cTotalMax, cIsUnused = 1,2,3,4,5,6,7,8,9,10,11;
-local currencies,currencyName2Id,createTooltip = {},{};
-local currencyCache,currencySession = {},{};
-local currencyList,currencyList2 = {},{};
-local last,BrokerPlacesMax = 0,4;
+local cName, cIcon, cCount, cEarnedThisWeek, cWeeklyMax, cTotalMax, cIsUnused, cID = 1,2,3,4,5,6,7,8,9,10,11,12;
+local currencyList,currencyList2,currencyCache,currencySession,currencyName2Id = {},{},{},{},{};
+local BrokerPlacesMax,createTooltip = 4;
 
 
 -- register icon names and default files --
@@ -29,38 +27,48 @@ local function GetSign(d)
 	return (d==1 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (d==-1 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
 end
 
-local function CapColor(colors,str,count,mCount,count2,mCount2)
-	local col,c = colors[1],0;
-	if mCount>0 then
-		c = mCount-count;
-	end
-	if count2 and mCount2 then
-		local tmp=mCount2-count2;
-		if mCount==0 or tmp<c then
-			mCount=mCount2;
-			c=tmp;
+local function CapColor(colors,str,nonZero,count,mCount,count2,mCount2)
+	local col,c = nonZero and colors[1] or "gray",0;
+	if nonZero then
+		if mCount>0 then
+			c = mCount-count;
 		end
-	end
-	if mCount>0 then
-		if mCount<=100 then
-			if c<ceil(mCount*.1) then -- 10%
-				col=colors[4];
-			elseif c<ceil(mCount*.2) then -- 20%
-				col=colors[3];
-			elseif c<ceil(mCount*.3) then -- 30%
-				col=colors[2];
+		if count2 and mCount2 then
+			local tmp=mCount2-count2;
+			if mCount==0 or tmp<c then
+				mCount=mCount2;
+				c=tmp;
 			end
-		else
-			if c<ceil(mCount*.05) then -- 5%
+		end
+		if mCount>0 then
+			local c2,c3,c4 = .25,.125,.05; -- 25%, 12.5%, 5%
+			if mCount<=100 then
+				c2,c3,c4 = .3,.2,.1; -- 30%, 20%, 10%
+			end
+			if c<ceil(mCount*c4) then
 				col=colors[4];
-			elseif c<ceil(mCount*.125) then -- 10%
+			elseif c<ceil(mCount*c3) then
 				col=colors[3];
-			elseif c<ceil(mCount*.25) then -- 25%
+			elseif c<ceil(mCount*c2) then
 				col=colors[2];
 			end
 		end
 	end
 	return C(col,str);
+end
+
+local function GetCurrency(index)
+	local t,isHeader,isExpanded,_={};
+	t[cName], isHeader, isExpanded, t[cIsUnused], _, t[cCount], t[cIcon], t[cTotalMax], t[cWeeklyMax], t[cEarnedThisWeek] = GetCurrencyListInfo(index);
+	if not isHeader then
+		t[cID] = tonumber(GetCurrencyListLink(index):match("currency:(%d+)"));
+		_,_,_,_,t[cWeeklyMax] = GetCurrencyInfo(t[cID]); -- missing weekly max as numeric value from GetCurrencyListInfo...
+		currencyName2Id[t[cName]] = t[cID];
+		if currencySession[t[cID]]==nil then
+			currencySession[t[cID]] = t[cCount];
+		end
+	end
+	return t, isHeader, isExpanded;
 end
 
 local function updateCurrency(mode)
@@ -69,20 +77,14 @@ local function updateCurrency(mode)
 	wipe(currencyList);
 	local num = GetCurrencyListSize();
 	for i=1, num do
-		local t,id,isHeader,isExpanded = {};
-		t[cName], isHeader, isExpanded, t[cIsUnused], _, t[cCount], t[cIcon], t[cTotalMax], t[cWeeklyMax], t[cEarnedThisWeek] = GetCurrencyListInfo(i);
+		local t,isHeader,isExpanded = GetCurrency(i);
 		if isHeader and not isExpanded then
 			tinsert(collapsed,i);
 		end
 		if not isHeader then
-			id = tonumber(GetCurrencyListLink(i):match("currency:(%d+)"));
-			currencyName2Id[t[cName]] = id;
-			currencyCache[id] = t;
-			if currencySession[id]==nil then
-				currencySession[id] = t[cCount];
-			end
+			currencyCache[t[cID]] = t;
 		end
-		currencyList[i] = id or t[cName];
+		currencyList[i] = t[cID] or t[cName];
 	end
 
 	if mode=="full" then
@@ -93,17 +95,11 @@ local function updateCurrency(mode)
 		end
 		local num = GetCurrencyListSize();
 		for i=1, num do
-			local t,id,isHeader = {};
-			t[cName], isHeader, _, t[cIsUnused], _, t[cCount], t[cIcon], t[cTotalMax], t[cWeeklyMax], t[cEarnedThisWeek] = GetCurrencyListInfo(i);
+			local t,isHeader = GetCurrency(i);
 			if not isHeader then
-				id = tonumber(GetCurrencyListLink(i):match("currency:(%d+)"));
-				currencyName2Id[t[cName]] = id;
-				if currencySession[id]==nil then
-					currencySession[id] = t[cCount];
-				end
-				tmp[id]=t;
+				tmp[t[cID]]=t;
 			end
-			currencyList2[i] = id or t[cName];
+			currencyList2[i] = t[cID] or t[cName];
 		end
 		for i=1, #collapsed do
 			ExpandCurrencyList(collapsed[i],0);
@@ -140,8 +136,13 @@ local function updateBroker()
 				if ns.profile[name].showCapBroker and c[cTotalMax]>0 then
 					str = str.."/"..ns.FormatLargeNumber(name,c[cTotalMax]);
 				end
-				if ns.profile[name].showCapColorBroker and (c[cTotalMax]>0 or c[cWeeklyMax]) then
-					str = CapColor({"green","yellow","orange","red"},str,c[cCount],tonumber(c[cTotalMax]),tonumber(c[cEarnedThisWeek]),tonumber(c[cWeeklyMax]));
+				if ns.profile[name].showCapColorBroker and (c[cTotalMax]>0 or c[cWeeklyMax]>0) then
+					local t = {{"green","yellow","orange","red"},str,c[cCount]>0,c[cCount],c[cTotalMax]};
+					if c[cWeeklyMax]>0 then
+						tinsert(t,c[cEarnedThisWeek]);
+						tinsert(t,c[cWeeklyMax]);
+					end
+					str = CapColor(unpack(t));
 				end
 				tinsert(elems, str.."|T"..c[cIcon]..":0|t");
 			end
@@ -220,31 +221,41 @@ function createTooltip(tt,update)
 		elseif currencyCache[v] then
 			local t,c = currencyCache[v],3;
 			local str = ns.FormatLargeNumber(name,t[cCount],true);
+
+			-- cap
 			if ns.profile[name].showTotalCap and t[cTotalMax]>0 then
 				str = str .."/".. ns.FormatLargeNumber(name,t[cTotalMax],true);
-			end
-			if ns.profile[name].showCapColor and (t[cTotalMax]>0 or t[cWeeklyMax]) then
-				local params = {t[cCount],tonumber(t[cTotalMax])};
-				if not ns.profile[name].showWeeklyCap and t[cWeeklyMax] then
-					tinsert(params,tonumber(t[cEarnedThisWeek]));
-					tinsert(params,tonumber(t[cWeeklyMax]));
+
+				-- cap coloring
+				if ns.profile[name].showCapColor then
+					str = CapColor(t[cWeeklyMax]>0 and {"dkgreen","dkyellow","dkorange","dkred"} or {"green","yellow","orange","red"},str,t[cCount]>0,t[cCount],t[cTotalMax]);
 				end
-				str = CapColor({"green","yellow","orange","red"},str,unpack(params));
 			end
+
+			-- weekly cap
+			if ns.profile[name].showWeeklyCap and t[cWeeklyMax]>0 then
+				local wstr = "("..ns.FormatLargeNumber(name,t[cEarnedThisWeek],true).."/"..ns.FormatLargeNumber(name,t[cWeeklyMax],true)..")";
+
+				-- cap coloring
+				if ns.profile[name].showCapColor then
+					wstr = CapColor({"green","yellow","orange","red"},wstr,t[cCount]>0,t[cEarnedThisWeek],t[cWeeklyMax]);
+				end
+
+				str = wstr.." "..str;
+			end
+
+			-- show currency id
 			local id = "";
 			if ns.profile[name].showIDs then
 				id = C("gray"," ("..v..")");
 			end
+
 			local l = tt:AddLine(
-				"    "..C("ltyellow",t[cName])..id,
+				"    "..C(t[cCount]==0 and "gray" or "ltyellow",t[cName])..id,
 				str.."  |T"..t[cIcon]..":14:14:0:0:64:64:4:56:4:56|t"
 			);
-			if ns.profile[name].showWeeklyCap then
-				if tonumber(t[cEarnedThisWeek]) and tonumber(t[cWeeklyMax]) then
-					tt:SetCell(l,c,CapColor({"green","yellow","orange","red"},t[cEarnedThisWeek].."/"..t[cWeeklyMax],tonumber(t[cEarnedThisWeek]),tonumber(t[cWeeklyMax])));
-				end
-				c=c+1;
-			end
+
+			-- session earn/loss
 			if ns.profile[name].showSession then
 				local color,num = false,t[cCount]-currencySession[v];
 				if num>0 then
@@ -270,6 +281,7 @@ function createTooltip(tt,update)
 		tt:AddSeparator(4,0,0,0,0)
 		ns.ClickOpts.ttAddHints(tt,name);
 	end
+
 	if not update then
 		ns.roundupTooltip(tt);
 	end
@@ -415,9 +427,12 @@ function module.onevent(self,event,arg1)
 	elseif ns.eventPlayerEnteredWorld then
 		local id;
 		if event=="CHAT_MSG_CURRENCY" then -- detecting new currencies
-			id = tonumber(arg1:lower():match("hcurrency:(%d*)"));
+			id = tonumber(arg1:match("currency:(%d*)"));
+			if not currencyCache[id] then
+				id = "full"
+			end
 		end
-		updateCurrency( id and currencyCache[id]==nil and "full" or nil );
+		updateCurrency(id);
 		updateBroker();
 		if (tt) and (tt.key) and (tt.key==ttName) and (tt:IsShown()) then
 			createTooltip(tt,true);
