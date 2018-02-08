@@ -9,12 +9,6 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Currency"; -- CURRENCY
 local ttName,ttColumns,tt,tt2,module = name.."TT",5;
-local tt2positions = {
-	["BOTTOM"] = {edgeSelf = "TOP",    edgeParent = "BOTTOM", x =  0, y = -2},
-	["LEFT"]   = {edgeSelf = "RIGHT",  edgeParent = "LEFT",   x = -2, y =  0},
-	["RIGHT"]  = {edgeSelf = "LEFT",   edgeParent = "RIGHT",  x =  2, y =  0},
-	["TOP"]    = {edgeSelf = "BOTTOM", edgeParent = "TOP",    x =  0, y =  2}
-}
 local cName, cIcon, cCount, cEarnedThisWeek, cWeeklyMax, cTotalMax, cIsUnused = 1,2,3,4,5,6,7,8,9,10,11;
 local currencies,currencyName2Id,createTooltip = {},{};
 local currencyCache,currencySession = {},{};
@@ -187,25 +181,7 @@ local function tooltip2Show(self,currencyIndex)
 		tt2=GameTooltip;
 	end
 	tt2:SetOwner(tt,"ANCHOR_NONE");
-
-	if ns.profile[name].subTTposition == "AUTO" then
-		local tL,tR,tT,tB = ns.getBorderPositions(tt);
-		local uW = UIParent:GetWidth();
-		if tB<200 then
-			pos = tt2positions["TOP"];
-		elseif tL<200 then
-			pos = tt2positions["RIGHT"];
-		elseif tR<200 then
-			pos = tt2positions["LEFT"];
-		else
-			pos = tt2positions["BOTTOM"];
-		end
-	else
-		pos = tt2positions[ns.profile[name].subTTposition];
-	end
-
-	tt2:SetPoint(pos.edgeSelf,tt,pos.edgeParent, pos.x , pos.y);
-	-- changes for user choosen direction
+	tt2:SetPoint(ns.GetTipAnchor(self,"horizontal",tt));
 	tt2:ClearLines();
 	tt2:SetCurrencyToken(currencyIndex); -- tokenId / the same index number if needed by GetCurrencyListInfo
 	tt2:Show();
@@ -316,7 +292,6 @@ module = {
 	config_defaults = {
 		enabled = false,
 		shortTT = false,
-		subTTposition = "AUTO",
 		currenciesInTitle = {false,false,false,false},
 		favCurrencies = {},
 		favMode=false,
@@ -363,15 +338,6 @@ function module.options()
 			showSession={ type="toggle", order=4, name=L["Show session earn/loss"], desc=L["Display session profit in tooltip"] },
 			showIDs={ type="toggle", order=5, name=L["Show currency id's"], desc=L["Display the currency id's in tooltip"] },
 			shortTT={ type="toggle", order=6, name=L["Short Tooltip"], desc=L["Display the content of the tooltip shorter"] },
-			subTTposition={ type="select", order=7, name=L["Second tooltip"], desc=L["Where does the second tooltip for a single currency are displayed from the first tooltip"],
-				values	= {
-					["AUTO"]    = L["Auto"],
-					["TOP"]     = L["Over"],
-					["LEFT"]    = L["Left"],
-					["RIGHT"]   = L["Right"],
-					["BOTTOM"]  = L["Under"]
-				},
-			},
 		},
 		misc = {
 			shortNumbers=1,
