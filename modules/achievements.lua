@@ -106,8 +106,8 @@ local function progressBar(tt, l, low, high)
 		bars[count].Bar:SetVertexColor(0,0.39,0.07);
 	end
 	bars[count]:SetParent(tt.lines[l]);
-	bars[count]:SetPoint("TOPLEFT",tt.lines[l].cells[1],"TOPLEFT");
-	bars[count]:SetPoint("BOTTOMRIGHT",tt.lines[l].cells[ttColumns],"BOTTOMRIGHT");
+	bars[count]:SetPoint("TOPLEFT",tt.lines[l],"TOPLEFT",-1,1);
+	bars[count]:SetPoint("BOTTOMRIGHT",tt.lines[l],"BOTTOMRIGHT",1,-1);
 	bars[count]:Show();
 	bars[count].cur = low;
 	bars[count].all = high;
