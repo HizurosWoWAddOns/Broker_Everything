@@ -150,17 +150,18 @@ ns.debugMode = ("@project-version@"=="@".."project-version".."@"); -- the first 
 function ns.print(...)
 	local a,colors,t,c = {...},{"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"},{},1;
 	for i=1, #a do
-		v = tostring(a[i]);
 		if i==1 then
-			local str = v=="||" and v or addon;
-			if v~="" then
-				tinsert(t,"|cff0099ff"..str.."|r:"); c=2;
+			-- first entry special: true = shortcut, false = next in blue, nil = hide, string = prepend addon name in blue
+			if a[1]~=nil or a[1]~=false then
+				tinsert(t,"|cff0099ff"..((a[1]==true and L[addon.."_Shortcut"]) or (a[1]==false and a[2]) or addon).."|r:"); c=2;
 			end
+		else
+			local v = tostring(a[i]);
+			if not v:match("||c") then
+				v,c = "|cff"..colors[c]..v.."|r", c<#colors and c+1 or 1;
+			end
+			tinsert(t,v);
 		end
-		if not v:match("||c") then
-			v,c = "|cff"..colors[c]..v.."|r", c<#colors and c+1 or 1;
-		end
-		tinsert(t,v);
 	end
 	print(unpack(t));
 end

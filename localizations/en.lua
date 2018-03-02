@@ -115,6 +115,8 @@ L["WoWToken"] = ({
 	zhTW="魔獸代幣"
 })[locale] or "WoW Token";
 
+L[addon.."_Shortcut"] = "BE";
+
 -- last step: localization filled by curse packager
 --@localization(locale="enUS", format="lua_additive_table", handle-subnamespaces="none", handle-unlocalized="ignore")@
 

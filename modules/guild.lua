@@ -8,16 +8,17 @@ local C,L,I=ns.LC.color,ns.L,ns.I;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Guild"; -- GUILD
-local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module = name.."TT", name.."TT2",9,2;
+local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module = name.."TT", name.."TT2",10,2;
 local off,on = strtrim(ERR_FRIEND_OFFLINE_S:gsub("%%s","(.*)")),strtrim(ERR_FRIEND_ONLINE_SS:gsub("[\124:%[%]]","#"):gsub("%%s","(.*)"));
 local tradeskillsLockUpdate,tradeskillsLastUpdate,tradeskillsUpdateTimeout = false,0,20;
 local guild, player, members, membersName2Index, mobile, tradeskills, applicants = {},{},{},{},{},{},{};
 local doGuildUpdate,doMembersUpdate, doTradeskillsUpdate, doApplicantsUpdate, doUpdateTooltip,updaterLocked = false,false,false,false,false,false;
 local gName, gDesc, gRealm, gRealmNoSpacer, gMotD, gNumMembers, gNumMembersOnline, gNumMobile, gNumApplicants = 1,2,3,4,5,6,7,8,9;
 local pStanding, pStandingText, pStandingMin, pStandingMax, pStandingValue = 1,2,3,4,5;
-local mFullName, mName, mRealm, mRank, mRankIndex, mLevel, mClassLocale, mZone, mNote, mOfficerNote, mOnline, mIsAway, mClassFile, mAchievementPoints, mAchievementRank, mIsMobile, mCanSoR, mStanding, mStandingText = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19;
+local mFullName, mName, mRealm, mRank, mRankIndex, mLevel, mClassLocale, mZone, mNote, mOfficerNote, mOnline, mIsAway, mClassFile, mAchievementPoints, mAchievementRank, mIsMobile, mCanSoR, mStanding, mGUID, mStandingText, mRaceName, mRaceId = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22;
 local tsName, tsIcon, tsValue, tsID = 1,2,3,4;
 local app_index, app_name, app_realm, app_level, app_class, app_bQuest, app_bDungeon, app_bRaid, app_bPvP, app_bRP, app_bWeekdays, app_bWeekends, app_bTank, app_bHealer, app_bDamage, app_comment, app_timeSince, app_timeLeft = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18; -- applicants table entry indexes
+local raceCache = {};
 local MOBILE_BUSY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-BusyMobile:14:14:0:0:16:16:0:16:0:16|t";
 local MOBILE_AWAY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-AwayMobile:14:14:0:0:16:16:0:16:0:16|t";
 local last,membersUpdateTicker = {};
@@ -58,13 +59,24 @@ local function updateMembers()
 	local tmp,tmpNames, _ = {},{};
 	guild[gNumMobile] = 0;
 	for i=1, guild[gNumMembers] do
-		local m,old = {};
-		m[mFullName], m[mRank], m[mRankIndex], m[mLevel], m[mClassLocale], m[mZone], m[mNote], m[mOfficerNote], m[mOnline], m[mIsAway], m[mClassFile], m[mAchievementPoints], m[mAchievementRank], m[mIsMobile], m[mCanSoR], m[mStanding] = GetGuildRosterInfo(i);
+		local m,old,_ = {};
+		m[mFullName], m[mRank], m[mRankIndex], m[mLevel], m[mClassLocale], m[mZone], m[mNote], m[mOfficerNote], m[mOnline], m[mIsAway], m[mClassFile], _, _, m[mIsMobile], _, m[mStanding], m[mGUID] = GetGuildRosterInfo(i);
 		tmpNames[m[mFullName]]=i;
 		m[mName], m[mRealm] = strsplit("-",m[mFullName],2);
 		m[mStandingText] = _G["FACTION_STANDING_LABEL"..m[mStanding]];
 		if m[mIsMobile] and m[mOnline] then
 			guild[gNumMobile] = guild[gNumMobile]+1;
+		end
+		if m[mGUID] then
+			if raceCache[m[mGUID]] then
+				m[mRaceName], m[mRaceId] = unpack(raceCache[m[mGUID]]);
+			else
+				_, _, m[mRaceName], m[mRaceId] = GetPlayerInfoByGUID(m[mGUID]);
+				raceCache[m[mGUID]] = {m[mRaceName], m[mRaceId]};
+			end
+		end
+		if not m[mRealm] then
+			m[mRealm] = ns.realm_short;
 		end
 		if membersName2Index[m[mFullName]] and members[membersName2Index[m[mFullName]]] then
 			old = members[membersName2Index[m[mFullName]]];
@@ -221,6 +233,9 @@ local function createTooltip2(self,info)
 		if _realm then realm = _realm; end
 	end
 	tt2:AddLine(C("ltblue",L["Realm"]),C("dkyellow",ns.scm(realm)));
+	if ns.profile[name].showRaceInTT2 then
+		tt2:AddLine(C("ltblue",RACE),v[mRaceName]);
+	end
 	if ns.profile[name].showZoneInTT2 then
 		tt2:AddLine(C("ltblue",ZONE),v[mZone]);
 	end
@@ -279,12 +294,13 @@ local function tooltipAddLine(v,me)
 	local l=tt:AddLine(
 		v[mLevel],
 		status .. " " .. C(v[mClassFile],ns.scm(v[mName])) .. ns.showRealmName(name,v[mRealm]),
-		(ns.profile[name].showZone) and Zone or "", -- [3]
-		(ns.profile[name].showNotes) and ns.scm(v[mNote]) or "", -- [4]
-		(ns.profile[name].showONotes) and ns.scm(v[mOfficerNote]) or "", -- [5]
-		(ns.profile[name].showRank) and ns.scm(v[mRank]) or "", -- [6]
-		ts1, -- [7]
-		ts2 -- [8]
+		(ns.profile[name].showRace) and v[mRaceName] or "", -- [3]
+		(ns.profile[name].showZone) and Zone or "", -- [4]
+		(ns.profile[name].showNotes) and ns.scm(v[mNote]) or "", -- [5]
+		(ns.profile[name].showONotes) and ns.scm(v[mOfficerNote]) or "", -- [6]
+		(ns.profile[name].showRank) and ns.scm(v[mRank]) or "", -- [7]
+		ts1, -- [8]
+		ts2 -- [9]
 	);
 
 	if ts1 and tradeskills[v[mFullName]] and tradeskills[v[mFullName]][1] then
@@ -366,14 +382,15 @@ local function createTooltip(tt,update)
 	local l=tt:AddLine(
 		C("ltyellow",LEVEL), -- [1]
 		C("ltyellow",CHARACTER), -- [2]
-		(ns.profile[name].showZone) and C("ltyellow",ZONE) or "", -- [3]
-		(ns.profile[name].showNotes) and C("ltyellow",LABEL_NOTE) or "", -- [4]
-		(ns.profile[name].showONotes and CanViewOfficerNote()) and C("ltyellow",OFFICER_NOTE_COLON) or "", -- [5]
-		(ns.profile[name].showRank) and C("ltyellow",RANK) or "" -- [6]
+		(ns.profile[name].showRace) and C("ltyellow",RACE) or "", -- [3]
+		(ns.profile[name].showZone) and C("ltyellow",ZONE) or "", -- [4]
+		(ns.profile[name].showNotes) and C("ltyellow",LABEL_NOTE) or "", -- [5]
+		(ns.profile[name].showONotes and CanViewOfficerNote()) and C("ltyellow",OFFICER_NOTE_COLON) or "", -- [6]
+		(ns.profile[name].showRank) and C("ltyellow",RANK) or "" -- [7]
 	);
 
 	if ns.profile[name].showProfessions then
-		tt:SetCell(l, 7,C("ltyellow",TRADE_SKILLS), nil,nil,2); -- [7,8]
+		tt:SetCell(l, 7,C("ltyellow",TRADE_SKILLS), nil,nil,2); -- [8,9]
 	end
 
 	tt:AddSeparator();
@@ -482,6 +499,7 @@ module = {
 
 		-- guild members
 		showRealmNames = true,
+		showRace = true,		showRaceInTT2 = false,
 		showZone = true,		showZoneInTT2 = false,
 		showNotes = true,		showNotesInTT2 = false,
 		showONotes = true,		showONotesInTT2 = false,
@@ -527,19 +545,21 @@ function module.options()
 			showRep           = { type="toggle", order= 1, name=GUILD_REPUTATION, desc=L["Enable/Disable the display of Guild Reputation in tooltip"] },
 			showMOTD          = { type="toggle", order= 2, name=L["Guild MotD"], desc=L["Show Guild Message of the Day in tooltip"] },
 			showRealmNames    = 3,
-			showZone          = { type="toggle", order= 4, name=ZONE, desc=L["Show current zone from guild members in tooltip"]},
-			showNotes         = { type="toggle", order= 5, name=L["Notes"], desc=L["Show notes from guild members in tooltip"]},
-			showONotes        = { type="toggle", order= 6, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"]},
-			showRank          = { type="toggle", order= 7, name=RANK, desc=L["Show rank name from guild members in tooltip"]},
-			showProfessions   = { type="toggle", order= 8, name=TRADE_SKILLS, desc=L["Show professions from guild members in tooltip"] },
-			showApplicants    = { type="toggle", order= 9, name=L["Applicants"], desc=L["Show applicants in tooltip"] },
-			showMobileChatter = { type="toggle", order=10, name=L["Mobile app user"], desc=L["Show mobile chatter in tooltip (Armory App users)"] },
-			splitTables       = { type="toggle", order=11, name=L["Separate mobile app user"], desc=L["Display mobile chatter with own table in tooltip"] },
+			showRace          = { type="toggle", order= 4, name=RACE, desc=L["Show race from guild members in tooltip"]},
+			showZone          = { type="toggle", order= 5, name=ZONE, desc=L["Show current zone from guild members in tooltip"]},
+			showNotes         = { type="toggle", order= 6, name=L["Notes"], desc=L["Show notes from guild members in tooltip"]},
+			showONotes        = { type="toggle", order= 7, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"]},
+			showRank          = { type="toggle", order= 8, name=RANK, desc=L["Show rank name from guild members in tooltip"]},
+			showProfessions   = { type="toggle", order= 9, name=TRADE_SKILLS, desc=L["Show professions from guild members in tooltip"] },
+			showApplicants    = { type="toggle", order=10, name=L["Applicants"], desc=L["Show applicants in tooltip"] },
+			showMobileChatter = { type="toggle", order=11, name=L["Mobile app user"], desc=L["Show mobile chatter in tooltip (Armory App users)"] },
+			splitTables       = { type="toggle", order=12, name=L["Separate mobile app user"], desc=L["Display mobile chatter with own table in tooltip"] },
 		},
 		tooltip2 = {
 			name = L["Secondary tooltip options"],
 			order = 3,
 			desc                 = { type="description", order=1, name=L["The secondary tooltip will be displayed by moving the mouse over a guild member in main tooltip. The tooltip will be displayed if one of the following options activated."], fontSize="medium"},
+			showRaceInTT2        = { type="toggle",      order=2, name=RACE, desc=L["Show race from guild member"]},
 			showZoneInTT2        = { type="toggle",      order=2, name=ZONE, desc=L["Show current zone from guild member"]},
 			showNotesInTT2       = { type="toggle",      order=3, name=L["Notes"], desc=L["Show notes from guild member"]},
 			showONotesInTT2      = { type="toggle",      order=4, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild member"]},
