@@ -367,10 +367,6 @@ function module.onevent(self,event,msg)
 				end
 			end
 
-			--- Bonus by Guild Perk
-			if IsInGuild() then
-				data.bonus[998] = {percent=10};
-			end
 
 			--- Bonus by Refer-A-Friend
 			local count = 1;
