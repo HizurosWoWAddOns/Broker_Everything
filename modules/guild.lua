@@ -495,7 +495,9 @@ module = {
 		showMobileChatterBroker = true,
 		showTotalMembersBroker = true,
 		splitTables = false,
-		showMembersLevelUp = true
+		showMembersLevelUp = true,
+		showMembersNotes = false,
+		showMembersOffNotes = false
 	},
 	clickOptionsRename = {
 		["guild"] = "1_open_guild",
@@ -546,7 +548,9 @@ function module.options()
 		},
 		misc = {
 			order = 4,
-			showMembersLevelUp={ type="toggle", order=1, name=L["Show level up notification"], desc=L["Show guild member level up notification in chat frame. (This is not a gratulation bot!)"]},
+			showMembersLevelUp  = { type="toggle", order=1, name=L["Show level up notification"], desc=L["Show guild member level up notification in chat frame. (This is not a gratulation bot!)"]},
+			showMembersNotes    = { type="toggle", order=2, name=L["Show notes in login"], desc=L["Display member notes in chat window after his/her login message"] },
+			showMembersOffNotes = { type="toggle", order=3, name=L["Show off. notes on login"], desc=L["Display member officer notes in chat window after his/her login message"] },
 		},
 	},
 	{
@@ -573,6 +577,26 @@ function module.onevent(self,event,msg,...)
 				local i = membersName2Index[Name];
 				-- update online status; GUILD_ROSTER_UPDATE/GetGuildRosterInfo trigger too slow real uodates
 				members[i][mOnline] = (On~=nil);
+				if On then
+					-- On/Off post notes of guild members in general chat.
+					local t={};
+					if ns.profile[name].showMembersNotes then
+						local str = strtrim(members[i][mNote]);
+						if str:len()>0 then
+							tinsert(t,C("ltgray",NOTE_COLON).." "..C("ltblue",str));
+						end
+					end
+					if ns.profile[name].showMembersOffNotes then
+						local str = strtrim(members[i][mOfficerNote]);
+						if str:len()>0 then
+							tinsert(t,C("ltgray",GUILD_OFFICERNOTES_LABEL).." "..C("ltblue",str));
+						end
+					end
+					if #t>0 then
+						tinsert(t,1,C("ltgray",LFG_LIST_GUILD_MEMBER)..": "..C(members[i][mClassFile],members[i][mName]));
+						ns.print(true,table.concat(t," || "));
+					end
+				end
 			end
 			return;
 		end
@@ -604,7 +628,7 @@ function module.onevent(self,event,msg,...)
 			self:RegisterEvent("LF_GUILD_RECRUIT_LIST_CHANGED");
 			self:RegisterEvent("LF_GUILD_RECRUITS_UPDATED");
 			self:RegisterEvent("CHAT_MSG_SYSTEM");
-			doGuildUpdate     = true;
+			doGuildUpdate      = true;
 			doMembersUpdate    = true;
 			doApplicantsUpdate = true;
 		end
