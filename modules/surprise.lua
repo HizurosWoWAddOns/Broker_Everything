@@ -108,6 +108,7 @@ function module.init()
 		[94295] = {ITEM_DURATION, "tooltip", 4}, -- Primal Egg
 		[118705] = {ITEM_DURATION, "tooltip", 4}, -- Warm Goren Egg
 		[127396] = {ITEM_DURATION, "tooltip", 4}, -- Strange Green Fruit
+		[137599] = {ITEM_DURATION, "tooltip", 5}, -- Pulsating Sac
 		[153190] = {ITEM_DURATION, "tooltip", 3}, -- Fel-Spotted Egg
 		-- 2 items with cooldown time
 		[19462] = {ITEM_COOLDOWN, "duration"}, -- Unhatched Jubling Egg
@@ -118,6 +119,7 @@ function module.init()
 		[94296] = {ITEM_LOOTABLE}, -- Cracked Primal Egg (prev.: Primal Egg)
 		[118706] = {ITEM_LOOTABLE}, -- Cracked Goren Egg
 		[127395] = {ITEM_LOOTABLE}, -- Ripened Strange Fruit
+		[137608] = {ITEM_LOOTABLE}, -- Growling Sac
 		[153191] = {ITEM_LOOTABLE} -- Cracked Fel-Spotted Egg
 	}
 
