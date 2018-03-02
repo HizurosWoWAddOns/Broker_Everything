@@ -438,10 +438,10 @@ function module.options()
 			watchedStandingOnBroker     = { type="toggle", order=2, name=L["Standing of watched faction"], desc=L["Display standing of watched faction on broker button"] },
 			watchedSessionBroker        = { type="toggle", order=3, name=L["Earn/loss of watched faction"], desc=L["Display earn/loss reputation of watched faction on broker button"] },
 			--watchedFormatOnBroker={ type="select", order=4, name=L["Format of watched faction"], desc=L["Choose display format of watched faction"], values=formats },
-			watchedCountOnBroker        = { type="toggle", order=4, name=L["Count of watched faction"], desc=L["Choose display format of watched faction"] },
-			watchedCountPercentOnBroker = { type="toggle", order=5, name=L["Percent count of watched faction"], desc=L["Choose display format of watched faction"] },
-			watchedNeedOnBroker         = { type="toggle", order=6, name=L["Need of watched faction"], desc=L["Choose display format of watched faction"] },
-			watchedNeedPercentOnBroker  = { type="toggle", order=7, name=L["Need (percent) of watched faction"], desc=L["Choose display format of watched faction"] },
+			watchedCountOnBroker        = { type="toggle", order=4, name=L["Count of watched faction"],          desc=L["Display current/max reputation of watched faction on broker button"] },
+			watchedCountPercentOnBroker = { type="toggle", order=5, name=L["Percent count of watched faction"],  desc=L["Display percent value of watched faction reputation on broker button"] },
+			watchedNeedOnBroker         = { type="toggle", order=6, name=L["Need of watched faction"],           desc=L["Display count of needed reputation to next standing of watched faction on broker button"] },
+			watchedNeedPercentOnBroker  = { type="toggle", order=7, name=L["Need (percent) of watched faction"], desc=L["Display percent value of need reputation of watched faction on broker button"] },
 			--favsOnly={ type="toggle", order=5, name=L["Favorites only"], desc=L["Show favorites only in tooltip"] }
 		},
 		tooltip = {
