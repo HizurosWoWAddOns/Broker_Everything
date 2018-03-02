@@ -463,6 +463,8 @@ end
 function module.onevent(self,event,arg1,...)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
+	elseif event=="ADDON_LOADED" and arg1=="Blizzard_ArtifactUI" and ArtifactRelicForgeFrame then
+		ArtifactRelicForgeFrame:HookScript("OnHide",updateBroker);
 	elseif event=="PLAYER_LOGIN" then
 		ns.items.RegisterCallback(name,UpdateInventory,"inv");
 		hooksecurefunc("UpgradeItem",updateBroker);
