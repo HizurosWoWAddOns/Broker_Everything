@@ -90,7 +90,7 @@ function updateBroker()
 	local Name, standingId, barMin, barMax, barValue, factionID = GetWatchedFactionInfo();
 
 	if Name then
-		local tmp,mode,barValue2 = {},ns.profile[name].watchedFormatOnBroker;
+		local tmp,barValue2 = {};
 		local friendID,friendRep,_,_,_,_,_,friendThreshold,nextFriendThreshold = GetFriendshipReputation(factionID);
 		if friendID~=nil then
 			if nextFriendThreshold then
@@ -105,14 +105,19 @@ function updateBroker()
 		if ns.profile[name].watchedNameOnBroker then
 			tinsert(tmp,Name);
 		end
-		if(mode=="Percent")then
-			tinsert(tmp,("%1.1f%%"):format(barValue2/barMax*100));
-		elseif(mode=="PercentNeed")then
-			tinsert(tmp,("%1.1f%% "..L["need"]):format(100-(barValue2/barMax*100)));
-		elseif(mode=="Number")then
-			tinsert(tmp,ns.FormatLargeNumber(name,barValue2).."/"..ns.FormatLargeNumber(name,barMax));
-		elseif(mode=="NumberNeed")then
-			tinsert(tmp,ns.FormatLargeNumber(name,barMax-barValue2).." "..L["need"]);
+		if ns.profile[name].watchedCountOnBroker then
+			if ns.profile[name].watchedCountPercentOnBroker then
+				tinsert(tmp,("%1.1f%%"):format(barValue2/barMax*100));
+			else
+				tinsert(tmp,ns.FormatLargeNumber(name,barValue2).."/"..ns.FormatLargeNumber(name,barMax));
+			end
+		end
+		if ns.profile[name].watchedNeedOnBroker then
+			if ns.profile[name].watchedNeedPercentOnBroker then
+				tinsert(tmp,("%1.1f%% "..L["need"]):format(100-(barValue2/barMax*100)));
+			else
+				tinsert(tmp,ns.FormatLargeNumber(name,barMax-barValue2).." "..L["need"]);
+			end
 		end
 		if ns.profile[name].watchedStandingOnBroker then
 			tinsert(tmp,_G["FACTION_STANDING_LABEL"..standingId]);
@@ -402,7 +407,13 @@ module = {
 		watchedNameOnBroker = true,
 		watchedStandingOnBroker = true,
 		watchedSessionBroker = true,
-		watchedFormatOnBroker = "Percent",
+		--watchedFormatOnBroker = "Percent",
+
+		watchedCountOnBroker       = true,
+		watchedCountPercentOnBroker= true,
+		watchedNeedOnBroker        = false,
+		watchedNeedPercentOnBroker = false,
+
 		rewardBeyondExalted = "value_max"
 	},
 	clickOptionsRename = {
@@ -423,10 +434,14 @@ ns.ClickOpts.addDefaults(module,{
 function module.options()
 	return {
 		broker = {
-			watchedNameOnBroker={ type="toggle", order=1, name=L["Name of watched faction"], desc=L["Display name of watched faction on broker button"] },
-			watchedStandingOnBroker={ type="toggle", order=2, name=L["Standing of watched faction"], desc=L["Display standing of watched faction on broker button"] },
-			watchedSessionBroker={ type="toggle", order=3, name=L["Earn/loss of watched faction"], desc=L["Display earn/loss reputation of watched faction on broker button"] },
-			watchedFormatOnBroker={ type="select", order=4, name=L["Format of watched faction"], desc=L["Choose display format of watched faction"], values=formats },
+			watchedNameOnBroker         = { type="toggle", order=1, name=L["Name of watched faction"], desc=L["Display name of watched faction on broker button"] },
+			watchedStandingOnBroker     = { type="toggle", order=2, name=L["Standing of watched faction"], desc=L["Display standing of watched faction on broker button"] },
+			watchedSessionBroker        = { type="toggle", order=3, name=L["Earn/loss of watched faction"], desc=L["Display earn/loss reputation of watched faction on broker button"] },
+			--watchedFormatOnBroker={ type="select", order=4, name=L["Format of watched faction"], desc=L["Choose display format of watched faction"], values=formats },
+			watchedCountOnBroker        = { type="toggle", order=4, name=L["Count of watched faction"], desc=L["Choose display format of watched faction"] },
+			watchedCountPercentOnBroker = { type="toggle", order=5, name=L["Percent count of watched faction"], desc=L["Choose display format of watched faction"] },
+			watchedNeedOnBroker         = { type="toggle", order=6, name=L["Need of watched faction"], desc=L["Choose display format of watched faction"] },
+			watchedNeedPercentOnBroker  = { type="toggle", order=7, name=L["Need (percent) of watched faction"], desc=L["Choose display format of watched faction"] },
 			--favsOnly={ type="toggle", order=5, name=L["Favorites only"], desc=L["Show favorites only in tooltip"] }
 		},
 		tooltip = {
@@ -458,10 +473,15 @@ function module.options()
 		},
 	},
 	{
-		watchedNameOnBroker="UPDATE_FACTION",
-		watchedStandingOnBroker="UPDATE_FACTION",
-		watchedSessionBroker=="UPDATE_FACTION",
-		watchedFormatOnBroker="UPDATE_FACTION",
+		watchedNameOnBroker        = "UPDATE_FACTION",
+		watchedStandingOnBroker    = "UPDATE_FACTION",
+		watchedSessionBroker       = "UPDATE_FACTION",
+		--watchedFormatOnBroker      = "UPDATE_FACTION",
+		watchedCountOnBroker       = "UPDATE_FACTION",
+		watchedCountPercentOnBroker= "UPDATE_FACTION",
+		watchedNeedOnBroker        = "UPDATE_FACTION",
+		watchedNeedPercentOnBroker = "UPDATE_FACTION",
+
 	}
 end
 
@@ -479,6 +499,31 @@ end
 function module.onevent(self,event,arg1,...)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
+	end
+	if event=="PLAYER_LOGIN" then
+		if ns.profile[name].watchedFormatOnBroker~=nil then
+			local mode = ns.profile[name].watchedFormatOnBroker;
+			ns.profile[name].watchedCountOnBroker       = false
+			ns.profile[name].watchedCountPercentOnBroker= false
+			ns.profile[name].watchedNeedOnBroker        = false
+			ns.profile[name].watchedNeedPercentOnBroker = false
+			if(mode=="Percent")then
+				ns.profile[name].watchedCountOnBroker       = true;
+				ns.profile[name].watchedCountPercentOnBroker= true;
+				--tinsert(tmp,("%1.1f%%"):format(barValue2/barMax*100));
+			elseif(mode=="PercentNeed")then
+				ns.profile[name].watchedNeedOnBroker        = true;
+				ns.profile[name].watchedNeedPercentOnBroker = true;
+				--tinsert(tmp,("%1.1f%% "..L["need"]):format(100-(barValue2/barMax*100)));
+			elseif(mode=="Number")then
+				ns.profile[name].watchedCountOnBroker       = true;
+				--tinsert(tmp,ns.FormatLargeNumber(name,barValue2).."/"..ns.FormatLargeNumber(name,barMax));
+			elseif(mode=="NumberNeed")then
+				ns.profile[name].watchedNeedOnBroker        = true;
+				--tinsert(tmp,ns.FormatLargeNumber(name,barMax-barValue2).." "..L["need"]);
+			end
+			ns.profile[name].watchedFormatOnBroker=nil;
+		end
 	end
 	if not self.loadedBodyguards then
 		local glvl = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0);
