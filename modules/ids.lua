@@ -8,8 +8,8 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "IDs"; -- L["IDs"]
-local ttName,ttColumns,tt,module = name.."TT", 4;
-local diffTypes = setmetatable({ -- http://wowpedia.org/API_GetDifficultyInfo / http://wow.gamepedia.com/DifficultyID
+local ttName,ttColumns,tt,module,activeEncounter = name.."TT", 4;
+local BossKillQueryUpdate,diffTypes = false,setmetatable({ -- http://wowpedia.org/API_GetDifficultyInfo / http://wow.gamepedia.com/DifficultyID
 	[1] = 1,	--  1 =  5 Regular
 	[2] = 1,	--  2 =  5 Heroic
 
@@ -67,6 +67,12 @@ I[name] = {iconfile=[[interface\icons\inv_misc_pocketwatch_02]],coords={0.05,0.9
 local function extendInstance(self,info)
 	securecall("SetSavedInstanceExtend", info.index, info.doExtend);
 	securecall("RequestRaidInfo");
+end
+
+local function RequestRaidInfoUpdate()
+	if BossKillQueryUpdate then
+		RequestRaidInfo();
+	end
 end
 
 local function EncounterTT_Show(frame,index)
@@ -221,7 +227,11 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	events = {},
+	events = {
+		"PLAYER_LOGIN",
+		"UPDATE_INSTANCE_INFO",
+		"BOSS_KILL"
+	},
 	config_defaults = {
 		enabled = false,
 		-- show types
@@ -275,8 +285,17 @@ end
 -- function module.init() end
 
 function module.onevent(self,event,...)
+	local _
 	if event=="BE_UPDATE_CFG" then
 		ns.ClickOpts.update(name);
+	elseif event=="PLAYER_LOGIN" then
+		RequestRaidInfo(); -- trigger UPDATE_INSTANCE_INFO
+	elseif event=="BOSS_KILL" then -- triggered 3 times per bosskill.
+		local encounterID, name = ...;
+		BossKillQueryUpdate=true;
+		C_Timer.After(0.15,RequestRaidInfoUpdate);
+	elseif event=="UPDATE_INSTANCE_INFO" then
+		BossKillQueryUpdate=false;
 	end
 end
 
