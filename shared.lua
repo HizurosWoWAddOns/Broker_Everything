@@ -151,8 +151,11 @@ function ns.print(...)
 	local a,colors,t,c = {...},{"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"},{},1;
 	for i=1, #a do
 		v = tostring(a[i]);
-		if i==1 and v~="" then
-			tinsert(t,"|cff0099ff"..addon.."|r:"); c=2;
+		if i==1 then
+			local str = v=="||" and v or addon;
+			if v~="" then
+				tinsert(t,"|cff0099ff"..str.."|r:"); c=2;
+			end
 		end
 		if not v:match("||c") then
 			v,c = "|cff"..colors[c]..v.."|r", c<#colors and c+1 or 1;
@@ -164,7 +167,7 @@ end
 
 function ns.debug(...)
 	if ns.debugMode then
-		ns.print("debug",...);
+		ns.print("<debug>",...);
 	end
 end
 

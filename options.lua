@@ -471,32 +471,66 @@ function ns.Options_AddModuleOptions(modName)
 end
 
 local function buildCharDataOptions()
+	wipe(options.args.chars.args.list.args);
 	local lst = options.args.chars.args.list.args;
 	-- Broker_Everything_CharacterDB
 	-- Broker_Everything_CharacterDB.order
 	for order,name_realm in ipairs(Broker_Everything_CharacterDB.order)do
-		local charName, realm = strsplit("%-",name_realm,2);
-		local class = Broker_Everything_CharacterDB[name_realm].class;
-		lst[name_realm] = {
-			type = "group", order = order, inline=true,
-			name = "",
-			args = {
-				label = {
-					type = "description", order=1, width="normal", fontSize = "medium",
-					name = C(class,charName).."\n"..C("gray",realm),
-				},
-				[name_realm] = {
-					type = "description", order = 2, width = "half",
-					name = calcDataSize,
-				},
-				up   = {type="execute", order=3, width="half", name=L["Up"]},
-				down = {type="execute", order=4, width="half", name=L["Down"]},
-				del  = {type="execute", order=5, width="half", name=DELETE},
+		if Broker_Everything_CharacterDB[name_realm] then
+			local charName, realm = strsplit("%-",name_realm,2);
+			local class = Broker_Everything_CharacterDB[name_realm].class;
+			lst[name_realm] = {
+				type = "group", order = order, inline=true,
+				name = "",
+				args = {
+					label = {
+						type = "description", order=1, width="normal", fontSize = "medium",
+						name = C(class,charName).."\n"..C("gray",realm),
+					},
+					[name_realm] = {
+						type = "description", order = 2, width = "half",
+						name = calcDataSize,
+					},
+					up   = {type="execute", order=3, width="half", name=L["Up"], disabled=(order==1) },
+					down = {type="execute", order=4, width="half", name=L["Down"], disabled=(order==#Broker_Everything_CharacterDB.order) },
+					del  = {type="execute", order=5, width="half", name=DELETE, disabled=(name_realm==ns.player.name_realm) },
+				}
 			}
-		}
+		end
 	end
 end
 
+function options.args.chars.func(info,button,a,b) -- function for buttons 'Up', 'Down' and 'Delete' for single character and 'Delete all'
+	local key,char = info[#info],info[#info-1];
+	if key=="up" or key=="down" then
+		local cur
+		for i,v in ipairs(Broker_Everything_CharacterDB.order)do
+			if char==v then
+				cur = i;
+				break;
+			end
+		end
+		if key=="up" then
+			Broker_Everything_CharacterDB.order[cur],Broker_Everything_CharacterDB.order[cur-1] = Broker_Everything_CharacterDB.order[cur-1],Broker_Everything_CharacterDB.order[cur];
+		else -- down
+			Broker_Everything_CharacterDB.order[cur],Broker_Everything_CharacterDB.order[cur+1] = Broker_Everything_CharacterDB.order[cur+1],Broker_Everything_CharacterDB.order[cur];
+		end
+		buildCharDataOptions();
+	elseif key=="del" then -- delete single character
+		Broker_Everything_CharacterDB[char] = nil;
+		local place
+		for i,v in ipairs(Broker_Everything_CharacterDB.order)do
+			if char==v then
+				tremove(Broker_Everything_CharacterDB.order,i);
+				break;
+			end
+		end
+		buildCharDataOptions();
+	elseif key=="delete" then -- delete all
+		Broker_Everything_CharacterDB = {};
+		ReloadUI();
+	end
+end
 function ns.RegisterOptions()
 	if Broker_Everything_AceDB==nil then
 		Broker_Everything_AceDB = {}
