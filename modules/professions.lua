@@ -59,13 +59,17 @@ I[name] = {iconfile="Interface\\Icons\\INV_Misc_Book_09.png",coords={0.05,0.95,0
 
 -- some local functions --
 --------------------------
-local function Title_Update()
+local function updateBroker()
 	local inTitle,db,v = {},ns.profile[name].inTitle;
 
 	for i=1, 4 do
 		v = db[i];
 		if (v) and (professions[v]) and (professions[v][icon]) then
-			table.insert(inTitle, ("%d/%d|T%s:0|t"):format(professions[v][skill],professions[v][maxSkill],professions[v][icon]));
+			local modifier = "";
+			if professions[v][rankModifier]>0 then
+				modifier = C("green","+"..professions[v][rankModifier]);
+			end
+			table.insert(inTitle, ("%s/%s|T%s:0|t"):format(professions[v][skill]..modifier,professions[v][maxSkill],professions[v][icon]));
 		end
 	end
 
@@ -76,7 +80,7 @@ end
 local function Title_Set(place,obj)
 	local db = ns.profile[name].inTitle;
 	db[place] = (db[place]~=obj) and obj or false;
-	Title_Update();
+	updateBroker();
 end
 
 local function GetTimeLeft(a,b)
@@ -122,11 +126,14 @@ local function createTooltip(tt)
 		local ts = {};
 		for i,v in ipairs(professions) do
 			if (v[maxSkill]==v[skill]) then
-				local c1,c2,s,m="ltyellow","ltgray",v[skill] or 0,v[maxSkill] or 0;
+				local c1,c2,s,m,modifier="ltyellow","gray2",v[skill] or 0,v[maxSkill] or 0,"";
 				if (m==0) then
 					c1,c2,s,m = "gray","gray","-","-";
 				end
-				tt:AddLine((iconnameLocale):format(v[icon],C(c1,v[nameLocale])),C(c2,s.."/"..m));
+				if v[rankModifier]>0 then
+					modifier = C("green","+"..v[rankModifier]);
+				end
+				tt:AddLine((iconnameLocale):format(v[icon],C(c1,v[nameLocale])),C(c2,s)..modifier..C(c2,"/"..m));
 			else
 				tt:AddLine((iconnameLocale):format(v[icon] or ns.icon_fallback,C("ltyellow",v[nameLocale] or "?")),("%d/%d"):format(v[skill] or 0,v[maxSkill] or 0));
 			end
@@ -642,7 +649,7 @@ function module.onevent(self,event,arg1)
 				end
 			end
 		end
-		Title_Update();
+		updateBroker();
 	end
 end
 
