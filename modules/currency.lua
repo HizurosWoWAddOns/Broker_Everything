@@ -335,7 +335,7 @@ function module.options()
 	return {
 		broker = {
 			showCapBroker={ type="toggle", order=1, name=L["Show total/weekly cap"], desc=L["Display currency total cap in tooltip."] },
-			showCapColorBroker={ type="toggle", order=2, name=L["Coloring total/weekly cap"], desc=L["..."] },
+			showCapColorBroker={ type="toggle", order=2, name=L["Coloring total/weekly cap"], desc=L["Display total/weekly caps in different colors"] },
 			spacer={ type="range", order=3, name=L["Space between currencies"], desc=L["Add more space between displayed currencies on broker button"], min=0, max=10, step=1 },
 			--header={ type="header", order=4, name=L["CurrencyHeadInBroker"] },
 			--inBroker1 = {type="select", order=5, name=L["CurrencyInBroker1"], desc=L["CurrencyInBroker1Desc"], values=inBrokerValues },
