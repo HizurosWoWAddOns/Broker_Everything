@@ -12,7 +12,8 @@ local name2 = "Dungeons" -- DUNGEONS
 local ttName1, ttName2, ttColumns, tt1, tt2, createTooltip, module1, module2 = name1.."TT", name2.."TT", 5
 local fState,symbol,renameIt = C("ltgray"," (%d/%d)"),"|Tinterface\\buttons\\UI-%sButton-Up:0|t ",{};
 local instanceName, instanceID, instanceReset, instanceDifficulty, locked, extended, instanceIDMostSig, isRaid, maxPlayers, difficultyName, numEncounters, encounterProgress=1,2,3,4,5,6,7,8,9,10,11,12; -- GetSavedInstanceInfo
-local activeRaids,PL_collected,PEW_collected = {},true,true;
+local activeRaids,PL_collected,PEW_collected,activeEncounter = {},true,true;
+local BossKillQueryUpdate,UpdateInstaceInfoLock = false,{};
 local hide = {
 	[322] = true, -- pandaria world bosses // no raid
 	[557] = true, -- draenor world bosses // no raid
@@ -39,7 +40,14 @@ I[name2] = {iconfile="interface\\minimap\\dungeon", coords={0.25,0.75,0.25,0.75}
 
 -- some local functions --
 --------------------------
+local function RequestRaidInfoUpdate()
+	if BossKillQueryUpdate then
+		RequestRaidInfo();
+	end
+end
+
 local function updateInstances(name,mode)
+	if EncounterJournal and EncounterJournal:IsShown() then return end -- prevent use of EJ_SelectTier while EncounterJournal is shown
 	local currentTime,num = time(),GetNumSavedInstances();
 	for i=1, num do
 		local data = {GetSavedInstanceInfo(i)};
@@ -72,6 +80,7 @@ local function updateInstances(name,mode)
 			instance_id, instance_name = EJ_GetInstanceByIndex(index, mode);
 		end
 	end
+	UpdateInstaceInfoLock[name] = nil;
 end
 
 local function createTooltip2(self,instance)
@@ -79,7 +88,7 @@ local function createTooltip2(self,instance)
 	local t = time();
 
 	GameTooltip:SetOwner(self,"ANCHOR_NONE");
-	GameTooltip:SetPoint(ns.GetTipAnchor(self,"horizontal",tt));
+	GameTooltip:SetPoint(ns.GetTipAnchor(self,"horizontal",tt1 or tt2));
 	GameTooltip:SetFrameLevel(self:GetFrameLevel()+1);
 
 	GameTooltip:ClearLines();
@@ -223,8 +232,8 @@ function createTooltip(tt,name,mode)
 	ns.roundupTooltip(tt);
 end
 
-local function update()
-	if #renameIt>0 then
+local function OnEvent(self,event,...)
+	if event=="PLAYER_LOGIN" then
 		for _,v in ipairs(renameIt)do
 			local B,A = (EJ_GetInstanceInfo(v[3]));
 			if v[2]>0 then
@@ -247,17 +256,24 @@ local function update()
 			end
 		end
 		wipe(renameIt);
-	end
-	local mode,name = false,name2;
-	if self==module1.eventFrame then
-		mode,name = true,name1;
-	end
-	updateInstances(name,mode);
-end
 
-local function OnEvent(self,event,...)
-	if event=="PLAYER_LOGIN" then
-		C_Timer.After(5, update);
+		RequestRaidInfo(); -- trigger UPDATE_INSTANCE_INFO
+	elseif event=="BOSS_KILL" then
+		local encounterID, name = ...;
+		BossKillQueryUpdate=true;
+		C_Timer.After(0.14,RequestRaidInfoUpdate);
+	elseif event=="UPDATE_INSTANCE_INFO" then
+		local mode,name = false,name2;
+		if self==module1.eventFrame then
+			mode,name = true,name1;
+		end
+		BossKillQueryUpdate=false;
+		if not UpdateInstaceInfoLock[name] then
+			UpdateInstaceInfoLock[name] = true;
+			C_Timer.After(0.3, function()
+				updateInstances(name,mode);
+			end);
+		end
 	end
 end
 
@@ -266,7 +282,9 @@ end
 ------------------------------------
 module1 = {
 	events = {
-		"PLAYER_LOGIN"
+		"PLAYER_LOGIN",
+		"UPDATE_INSTANCE_INFO",
+		"BOSS_KILL"
 	},
 	config_defaults = {
 		enabled = false,
@@ -277,7 +295,9 @@ module1 = {
 
 module2 = {
 	events = {
-		"PLAYER_LOGIN"
+		"PLAYER_LOGIN",
+		"UPDATE_INSTANCE_INFO",
+		"BOSS_KILL"
 	},
 	config_defaults = {
 		enabled = false,
