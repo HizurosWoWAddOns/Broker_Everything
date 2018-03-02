@@ -163,6 +163,7 @@ local function createTooltip(tt)
 				local id, Name, points, completed, month, day, year, description, flags, icon, rewardText, isGuild, wasEarnedByMe, earnedBy = GetAchievementInfo(ids[i]);
 				local l = tt:AddLine(C("ltyellow",ns.strCut(Name,56)));
 				local num = GetAchievementNumCriteria(id);
+				local plainCriteria = {};
 				for i=1, num do
 					local criteriaString, criteriaType, criteriaCompleted, quantity, reqQuantity, charName, _flags, assetID, quantityString = GetAchievementCriteriaInfo(id, i);
 					if ( bit.band(_flags, EVALUATION_TREE_FLAG_PROGRESS_BAR) == EVALUATION_TREE_FLAG_PROGRESS_BAR ) then
@@ -171,8 +172,15 @@ local function createTooltip(tt)
 						local l=tt:AddLine("  " .. C(criteriaCompleted and colorCompleted or color,description),quantityString);
 						progressBar(tt,l,quantity,reqQuantity);
 					elseif( not criteriaCompleted or ns.profile[name].showCompleted)then
-						tt:AddLine("  " .. C(criteriaCompleted and "green" or "ltgray",ns.strWrap(criteriaString,52,2)));
+						if ns.profile[name].criteriaPerLine then
+							tt:AddLine("  " .. C(criteriaCompleted and "green" or "ltgray",ns.strWrap(criteriaString,52,2)));
+						else
+							tinsert(plainCriteria,C(criteriaCompleted and "green" or "ltgray",criteriaString,52,2));
+						end
 					end
+				end
+				if #plainCriteria>0 then
+					tt:SetCell(tt:AddLine(),1,"  "..ns.strWrap(table.concat(plainCriteria," || "),92,2),nil,nil,0);
 				end
 				if num==0 then
 					tt:AddLine("  " ..  C(criteriaCompleted and "green" or "ltgray",ns.strWrap(description,52,2)));
@@ -213,6 +221,7 @@ module = {
 		showCompleted = true,
 		showPoints = true,
 		showPointsSess = true,
+		criteriaPerLine = false,
 	},
 	clickOptionsRename = {
 		["menu"] = "open_menu"
@@ -231,11 +240,12 @@ function module.options()
 			showPointsSess  = {type="toggle", order=2, name=L["AchieveBrokerPointsSess"], desc=L["AchieveBrokerPointsSessDesc"]},
 		},
 		tooltip = {
-			showLatest       = {type="toggle", order=1, name=L["OptAchievLast"],      desc=L["OptAchievLastDesc"]},
-			showCategory     = {type="toggle", order=2, name=L["OptAchievCat"],       desc=L["OptAchievCatDesc"]},
-			showWatchlist    = {type="toggle", order=3, name=L["Watch list"],         desc=L["OptAchievWatchDesc"]},
-			showProgressBars = {type="toggle", order=4, name=L["OptAchievBars"],      desc=L["OptAchievBarsDesc"]},
-			showCompleted    = {type="toggle", order=5, name=L["OptAchievCompleted"], desc=L["OptAchievCompletedDesc"]},
+			showLatest       = {type="toggle", order=1, name=L["OptAchievLast"],       desc=L["OptAchievLastDesc"]},
+			showCategory     = {type="toggle", order=2, name=L["OptAchievCat"],        desc=L["OptAchievCatDesc"]},
+			showWatchlist    = {type="toggle", order=3, name=L["Watch list"],          desc=L["OptAchievWatchDesc"]},
+			showProgressBars = {type="toggle", order=4, name=L["OptAchievBars"],       desc=L["OptAchievBarsDesc"]},
+			showCompleted    = {type="toggle", order=5, name=L["OptAchievCompleted"],  desc=L["OptAchievCompletedDesc"]},
+			criteriaPerLine  = {type="toggle", order=6, name=L["OptAchievCriteriaPL"], desc=L["OptAchievCriteriaPL"]},
 		}
 	}
 end
