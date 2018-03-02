@@ -8,8 +8,8 @@ local C,L,I=ns.LC.color,ns.L,ns.I;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Guild"; -- GUILD
-local ttName, ttName2,ttColumns,ttColumns2,tt,tt2,module = name.."TT", name.."TT2",9,2;
-local off, on = strtrim(gsub(ERR_FRIEND_OFFLINE_S,"%%s","(.*)")), strtrim(gsub(ERR_FRIEND_ONLINE_SS,"\124Hplayer:%%s\124h%[%%s%]\124h","(.*)"));
+local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module = name.."TT", name.."TT2",9,2;
+local off,on = strtrim(ERR_FRIEND_OFFLINE_S:gsub("%%s","(.*)")),strtrim(ERR_FRIEND_ONLINE_SS:gsub("[\124:%[%]]","#"):gsub("%%s","(.*)"));
 local tradeskillsLockUpdate,tradeskillsLastUpdate,tradeskillsUpdateTimeout = false,0,20;
 local guild, player, members, membersName2Index, mobile, tradeskills, applicants = {},{},{},{},{},{},{};
 local doGuildUpdate,doMembersUpdate, doTradeskillsUpdate, doApplicantsUpdate, doUpdateTooltip,updaterLocked = false,false,false,false,false,false;
@@ -21,24 +21,6 @@ local app_index, app_name, app_realm, app_level, app_class, app_bQuest, app_bDun
 local MOBILE_BUSY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-BusyMobile:14:14:0:0:16:16:0:16:0:16|t";
 local MOBILE_AWAY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-AwayMobile:14:14:0:0:16:16:0:16:0:16|t";
 local last,membersUpdateTicker = {};
-local IsOnline = setmetatable({},{
-	__index = function(t,k) return 0; end,
-	__call = function(t,act,name)
-		if act=="#" then
-			return rawget(t,"#") or 1; -- missing __len
-		elseif act>=1 then
-			if not rawget(t,name) then
-				t['#']=t['#']+1;
-			end
-			t[name] = act;
-		elseif act==0 and rawget(t,name) then
-			t[name] = nil;
-			if t['#']>1 then
-				t['#']=t['#']-1;
-			end
-		end
-	end
-});
 
 
 -- register icon names and default files --
@@ -81,9 +63,6 @@ local function updateMembers()
 		tmpNames[m[mFullName]]=i;
 		m[mName], m[mRealm] = strsplit("-",m[mFullName],2);
 		m[mStandingText] = _G["FACTION_STANDING_LABEL"..m[mStanding]];
-		if IsOnline[m[mFullName]]==0 and m[mOnline] then
-			IsOnline(1,m[mFullName]);
-		end
 		if m[mIsMobile] and m[mOnline] then
 			guild[gNumMobile] = guild[gNumMobile]+1;
 		end
@@ -583,25 +562,19 @@ function module.onevent(self,event,msg,...)
 	elseif event=="PLAYER_LOGIN" or event=="LF_GUILD_RECRUIT_LIST_CHANGED" then
 		RequestGuildApplicantsList();
 	elseif event=="CHAT_MSG_SYSTEM" then
-		local On,Off = msg:match(on), msg:match(off);
+		msg = msg:gsub("[\124:%[%]]","#");
+		local On,Off = (msg:match(on)),(msg:match(off));
 		if On or Off then
-			if On then
-				On = On:gsub("\124Hplayer:%%s\124h%[",""):gsub("%]\124h","");
-			end
 			local Name = tostring(On or Off);
 			if not Name:find("-") then
 				Name = Name .."-".. ns.realm_short;
 			end
-			if not membersName2Index[Name] then
-				return; -- it is not a guild member. don't update for toons from friendlist.
+			if membersName2Index[Name] then
+				local i = membersName2Index[Name];
+				-- update online status; GUILD_ROSTER_UPDATE/GetGuildRosterInfo trigger too slow real uodates
+				members[i][mOnline] = (On~=nil);
 			end
-			if On then
-				IsOnline(time(),Name);
-			elseif Off then
-				IsOnline(0,Name);
-			end
-			doGuildUpdate = true;
-			doMembersUpdate = true;
+			return;
 		end
 	elseif event=="GUILD_ROSTER_UPDATE" or event=="LF_GUILD_RECRUITS_UPDATED" or event=="BE_DUMMY_EVENT" then
 		doGuildUpdate = true;
