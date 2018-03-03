@@ -91,13 +91,15 @@ function updateBroker()
 
 	if Name then
 		local tmp,barValue2 = {};
-		local friendID,friendRep,_,_,_,_,_,friendThreshold,nextFriendThreshold = GetFriendshipReputation(factionID);
+		local friendID,friendRep,_,_,_,_,friendStandingText,friendThreshold,nextFriendThreshold = GetFriendshipReputation(factionID);
+		local standingText = _G["FACTION_STANDING_LABEL"..standingId];
 		if friendID~=nil then
 			if nextFriendThreshold then
 				barMin, barMax, barValue = friendThreshold, nextFriendThreshold, friendRep;
 			else
 				barMin, barMax, barValue = 0, 1, 1;
 			end
+			standingText = friendStandingText;
 		elseif standingId==8 then
 			barValue,barMax = barValue+999,barMax+999;
 		end
@@ -120,7 +122,7 @@ function updateBroker()
 			end
 		end
 		if ns.profile[name].watchedStandingOnBroker then
-			tinsert(tmp,_G["FACTION_STANDING_LABEL"..standingId]);
+			tinsert(tmp,standingText);
 		end
 		if ns.profile[name].watchedSessionBroker and not (friendID and not nextFriendThreshold) then
 			local val = GetSession(factionID,barValue);
