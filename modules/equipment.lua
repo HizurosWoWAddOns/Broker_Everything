@@ -15,6 +15,11 @@ local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSub
 local slots = {"HEAD","NECK","SHOULDER","SHIRT","CHEST","WAIST","LEGS","FEET","WRIST","HANDS","FINGER0","FINGER1","TRINKET0","TRINKET1","BACK","MAINHAND","SECONDARYHAND","RANGED"};
 local inventory,enchantSlots = {iLevelMin=0,iLevelMax=0},{}; -- (enchantSlots) -1 = [iLevel<600], 0 = both, 1 = [iLevel=>600]
 local warlords_crafted,tSetItems = {},{};
+local ignoreWeapon = {
+	["0"] = L["Do not ignore"],
+	["1"] = L["Ignore all"],
+	["2"] = L["Ignore artifact weapons"],
+};
 
 
 -- register icon names and default files --
@@ -147,11 +152,11 @@ local function equipOnClick(self,equipSetID)
 	if (IsShiftKeyDown()) then
 		if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
 		local main = ns.items.GetInventoryItemBySlotIndex(16);
-		if main and main.level>=750 and main.rarity==6 then
+		if (ns.profile[name].ignoreMainHand=="2" and main and main.rarity==6) or ns.profile[name].ignoreMainHand=="1" then
 			C_EquipmentSet.IgnoreSlotForSave(16);
 		end
 		local off = ns.items.GetInventoryItemBySlotIndex(17);
-		if off and off.level>=750 and main.rarity==6 then
+		if (ns.profile[name].ignoreOffHand=="2" and off and off.rarity==6) or ns.profile[name].ignoreOffHand=="1" then
 			C_EquipmentSet.IgnoreSlotForSave(17);
 		end
 		local setName = C_EquipmentSet.GetEquipmentSetInfo(equipSetID);
@@ -329,7 +334,10 @@ module = {
 		showSetName = true,
 		showGreenText = true,
 		showUpgrades = true,
-		showShorterInfo = true
+		showShorterInfo = true,
+
+		ignoreMainHand = "2",
+		ignoreOffHand = "2"
 	},
 	clickOptionsRename = {
 		["charinfo"] = "1_open_character_info",
@@ -357,23 +365,26 @@ end
 function module.options()
 	return {
 		broker = {
-			showCurrentSet={ type="toggle", order=1, name=L["Show current set"],                             desc=L["Display your current equipment set on broker button"]},
-			showItemLevel={ type="toggle", order=2, name=L["Show average item level"],                      desc=L["Display your average item level on broker button"]},
+			showCurrentSet={ type="toggle", order=1, name=L["Show current set"], desc=L["Display your current equipment set on broker button"]},
+			showItemLevel={ type="toggle", order=2, name=L["Show average item level"], desc=L["Display your average item level on broker button"]},
 			showShorterInfo={ type="toggle", order=3, name=L["Show shorter Info for 'Unknown set' and more"], desc=L["Display shorter Info on broker button. 'Set?' instead of 'Unknown set'. 'No sets' instead of 'No sets found'."]}
 		},
 		tooltip = {
-			showSets={ type="toggle", order=1, name=L["Show equipment sets"],               desc=L["Display a list of your equipment sets"]},
-			showInventory={ type="toggle", order=2, name=L["Show inventory"],                    desc=L["Display a list of currently equipped items"]},
-			showEmptySlots={ type="toggle", order=3, name=L["Show emtpy slots"],                  desc=L["Display empty equipment slots"]},
-			showNotEnchanted={ type="toggle", order=4, name=L["Show 'not enchanted' mark"],         desc=L["Display a red # on not enchanted/enchantable items"]},
-			showEmptyGems={ type="toggle", order=5, name=L["Show 'empty socket' mark"],          desc=L["Display a yellow # on items with empty sockets"]},
-			showTSet={ type="toggle", order=6, name=L["Show T-Set"],                        desc=L["Display a T-Set label on items"]},
-			showSetName={ type="toggle", order=7, name=L["Show Set name"],                     desc=L["Display set name on items"]},
-			showGreenText={ type="toggle", order=8, name=L["Show green text"],                   desc=L["Display green text line from item tooltip like titanforged"]},
-			showUpgrades={ type="toggle", order=9,  name=L["Show upgrade info"],                 desc=L["Display upgrade info like 2/6"]},
-			fullyUpgraded={ type="toggle", order=10, name=L["Darker blue for fully upgraded"],    desc=L["Display upgrade counter in darker blue on fully upgraded items"]},
+			showSets={ type="toggle", order=1, name=L["Show equipment sets"], desc=L["Display a list of your equipment sets"]},
+			showInventory={ type="toggle", order=2, name=L["Show inventory"], desc=L["Display a list of currently equipped items"]},
+			showEmptySlots={ type="toggle", order=3, name=L["Show emtpy slots"], desc=L["Display empty equipment slots"]},
+			showNotEnchanted={ type="toggle", order=4, name=L["Show 'not enchanted' mark"], desc=L["Display a red # on not enchanted/enchantable items"]},
+			showEmptyGems={ type="toggle", order=5, name=L["Show 'empty socket' mark"], desc=L["Display a yellow # on items with empty sockets"]},
+			showTSet={ type="toggle", order=6, name=L["Show T-Set"], desc=L["Display a T-Set label on items"]},
+			showSetName={ type="toggle", order=7, name=L["Show Set name"], desc=L["Display set name on items"]},
+			showGreenText={ type="toggle", order=8, name=L["Show green text"], desc=L["Display green text line from item tooltip like titanforged"]},
+			showUpgrades={ type="toggle", order=9, name=L["Show upgrade info"], desc=L["Display upgrade info like 2/6"]},
+			fullyUpgraded={ type="toggle", order=10, name=L["Darker blue for fully upgraded"], desc=L["Display upgrade counter in darker blue on fully upgraded items"]},
 		},
-		misc = nil,
+		misc = {
+			ignoreMainHand={ type="select", order=1, name=L["Ignore main hand"], desc=L["'Save set' should ignore main hand weapon"], values=ignoreWeapon },
+			ignoreOffHand={ type="select", order=2, name=L["Ignore off-hand"], desc=L["'Save set' should ignore off-hand weapon"], values=ignoreWeapon }
+		},
 	}
 end
 
