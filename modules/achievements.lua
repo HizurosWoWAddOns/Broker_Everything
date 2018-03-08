@@ -154,6 +154,7 @@ local function createTooltip(tt)
 	end
 
 	if(ns.profile[name].showWatchlist)then
+		local limit = 48; -- 52
 		local ids = {GetTrackedAchievements()};
 		if(#ids>0)then
 			tt:AddSeparator(4,0,0,0,0);
@@ -169,21 +170,21 @@ local function createTooltip(tt)
 					if ( bit.band(_flags, EVALUATION_TREE_FLAG_PROGRESS_BAR) == EVALUATION_TREE_FLAG_PROGRESS_BAR ) then
 						local color          = (ns.profile[name].showProgressBars) and "white" or "ltgray";
 						local colorCompleted = (not ns.profile[name].showProgressBars) and "ltgreen" or "green";
-						local l=tt:AddLine("  " .. C(criteriaCompleted and colorCompleted or color,description),quantityString);
+						local l=tt:AddLine("  " .. C(criteriaCompleted and colorCompleted or color,ns.strWrap(description,limit,2)),quantityString);
 						progressBar(tt,l,quantity,reqQuantity);
 					elseif( not criteriaCompleted or ns.profile[name].showCompleted)then
 						if ns.profile[name].criteriaPerLine then
-							tt:AddLine("  " .. C(criteriaCompleted and "green" or "ltgray",ns.strWrap(criteriaString,52,2)));
+							tt:AddLine("  " .. C(criteriaCompleted and "green" or "ltgray",ns.strWrap(criteriaString,limit,2)));
 						else
-							tinsert(plainCriteria,C(criteriaCompleted and "green" or "ltgray",criteriaString,52,2));
+							tinsert(plainCriteria,C(criteriaCompleted and "green" or "ltgray",criteriaString,limit,2));
 						end
 					end
 				end
 				if #plainCriteria>0 then
-					tt:SetCell(tt:AddLine(),1,"  "..ns.strWrap(table.concat(plainCriteria," || "),92,2),nil,nil,0);
+					tt:SetCell(tt:AddLine(),1,"  "..ns.strWrap(table.concat(plainCriteria,", "),limit*2,2),nil,nil,0);
 				end
 				if num==0 then
-					tt:AddLine("  " ..  C(criteriaCompleted and "green" or "ltgray",ns.strWrap(description,52,2)));
+					tt:AddLine("  " ..  C(criteriaCompleted and "green" or "ltgray",ns.strWrap(description,limit,2)));
 				end
 			end
 		end

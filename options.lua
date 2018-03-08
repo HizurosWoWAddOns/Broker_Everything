@@ -52,7 +52,7 @@ local nsProfileMT = {
 				return v;
 --@do-not-package@
 			else
-				ns.debug("<FIXME:nsProfileMT:NilValue",tostring(s),tostring(k));
+				ns.debug("<FIXME:nsProfileMT:NilValue>",tostring(s),tostring(k));
 --@end-do-not-package@
 			end
 --@do-not-package@
