@@ -15,10 +15,10 @@ local guild, player, members, membersName2Index, mobile, tradeskills, applicants
 local doGuildUpdate,doMembersUpdate, doTradeskillsUpdate, doApplicantsUpdate, doUpdateTooltip,updaterLocked = false,false,false,false,false,false;
 local gName, gDesc, gRealm, gRealmNoSpacer, gMotD, gNumMembers, gNumMembersOnline, gNumMobile, gNumApplicants = 1,2,3,4,5,6,7,8,9;
 local pStanding, pStandingText, pStandingMin, pStandingMax, pStandingValue = 1,2,3,4,5;
-local mFullName, mName, mRealm, mRank, mRankIndex, mLevel, mClassLocale, mZone, mNote, mOfficerNote, mOnline, mIsAway, mClassFile, mAchievementPoints, mAchievementRank, mIsMobile, mCanSoR, mStanding, mGUID, mStandingText, mRaceName, mRaceId = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22;
+local mFullName, mName, mRealm, mRank, mRankIndex, mLevel, mClassLocale, mZone, mNote, mOfficerNote, mOnline, mIsAway, mClassFile, mAchievementPoints, mAchievementRank, mIsMobile, mCanSoR, mStanding, mGUID, mStandingText, mRaceId = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21;
 local tsName, tsIcon, tsValue, tsID = 1,2,3,4;
 local app_index, app_name, app_realm, app_level, app_class, app_bQuest, app_bDungeon, app_bRaid, app_bPvP, app_bRP, app_bWeekdays, app_bWeekends, app_bTank, app_bHealer, app_bDamage, app_comment, app_timeSince, app_timeLeft = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18; -- applicants table entry indexes
-local raceCache = {};
+local raceCache,raceById = {},{};
 local MOBILE_BUSY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-BusyMobile:14:14:0:0:16:16:0:16:0:16|t";
 local MOBILE_AWAY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-AwayMobile:14:14:0:0:16:16:0:16:0:16|t";
 local last,membersUpdateTicker = {};
@@ -56,10 +56,10 @@ end
 
 local function updateMembers()
 	if not IsInGuild() then wipe(members); wipe(membersName2Index); return; end
-	local tmp,tmpNames, _ = {},{};
+	local tmp,tmpNames,missingData,_ = {},{},{};
 	guild[gNumMobile] = 0;
 	for i=1, guild[gNumMembers] do
-		local m,old,_ = {};
+		local m,old,RaceName,_ = {};
 		m[mFullName], m[mRank], m[mRankIndex], m[mLevel], m[mClassLocale], m[mZone], m[mNote], m[mOfficerNote], m[mOnline], m[mIsAway], m[mClassFile], _, _, m[mIsMobile], _, m[mStanding], m[mGUID] = GetGuildRosterInfo(i);
 		tmpNames[m[mFullName]]=i;
 		m[mName], m[mRealm] = strsplit("-",m[mFullName],2);
@@ -69,10 +69,15 @@ local function updateMembers()
 		end
 		if m[mGUID] then
 			if raceCache[m[mGUID]] then
-				m[mRaceName], m[mRaceId] = unpack(raceCache[m[mGUID]]);
+				m[mRaceId] = raceCache[m[mGUID]];
 			else
-				_, _, m[mRaceName], m[mRaceId] = GetPlayerInfoByGUID(m[mGUID]);
-				raceCache[m[mGUID]] = {m[mRaceName], m[mRaceId]};
+				_, _, RaceName, m[mRaceId] = GetPlayerInfoByGUID(m[mGUID]);
+				if RaceName then
+					raceById[m[mRaceId]] = RaceName;
+					raceCache[m[mGUID]] = m[mRaceId];
+				else
+					tinsert(missingData,m[mGUID]);
+				end
 			end
 		end
 		if not m[mRealm] then
@@ -89,6 +94,17 @@ local function updateMembers()
 			end
 		end
 		tinsert(tmp,m);
+	end
+	if #missingData>0 then
+		C_Timer.After(1,function()
+			for i=1, #missingData do
+				local _, _, RaceName, RaceId = GetPlayerInfoByGUID(missingData[i]);
+				if RaceName then
+					raceById[RaceId] = RaceName;
+					raceCache[missingData[i]] = RaceId;
+				end
+			end
+		end);
 	end
 	members = tmp;
 	membersName2Index = tmpNames;
@@ -233,8 +249,8 @@ local function createTooltip2(self,info)
 		if _realm then realm = _realm; end
 	end
 	tt2:AddLine(C("ltblue",L["Realm"]),C("dkyellow",ns.scm(realm)));
-	if ns.profile[name].showRaceInTT2 then
-		tt2:AddLine(C("ltblue",RACE),v[mRaceName]);
+	if ns.profile[name].showRaceInTT2 and v[mRaceId] and racebyId[v[mRaceId]] then
+		tt2:AddLine(C("ltblue",RACE),racebyId[v[mRaceId]]);
 	end
 	if ns.profile[name].showZoneInTT2 then
 		tt2:AddLine(C("ltblue",ZONE),v[mZone]);
@@ -294,7 +310,7 @@ local function tooltipAddLine(v,me)
 	local l=tt:AddLine(
 		v[mLevel],
 		status .. " " .. C(v[mClassFile],ns.scm(v[mName])) .. ns.showRealmName(name,v[mRealm]),
-		(ns.profile[name].showRace) and v[mRaceName] or "", -- [3]
+		(ns.profile[name].showRace and v[mRaceId] and raceById[v[mRaceId]]) and raceById[v[mRaceId]] or "", -- [3]
 		(ns.profile[name].showZone) and Zone or "", -- [4]
 		(ns.profile[name].showNotes) and ns.scm(v[mNote]) or "", -- [5]
 		(ns.profile[name].showONotes) and ns.scm(v[mOfficerNote]) or "", -- [6]
@@ -672,6 +688,7 @@ function module.onenter(self)
 			"RIGHT", -- level
 			"LEFT" -- name
 		};
+		tinsert(ttAlignings,"LEFT"); -- race
 		tinsert(ttAlignings,"CENTER"); -- zone
 		tinsert(ttAlignings,"LEFT"); -- notes
 		tinsert(ttAlignings,"LEFT"); -- onotes
