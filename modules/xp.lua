@@ -270,6 +270,8 @@ function module.options()
 			order=4,
 			shortNumbers=true
 		},
+	}, {
+		display = true
 	}
 end
 
@@ -327,7 +329,7 @@ function module.init()
 end
 
 function module.onevent(self,event,msg)
-	if event=="BE_UPDATE_CFG" then
+	if event=="BE_UPDATE_CFG" and msg and msg:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 	elseif not (event=="UNIT_INVENTORY_CHANGED" and msg~="player") then
 		if (MAX_PLAYER_LEVEL==UnitLevel("player")) then

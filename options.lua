@@ -478,22 +478,22 @@ local function buildCharDataOptions()
 	for order,name_realm in ipairs(Broker_Everything_CharacterDB.order)do
 		if Broker_Everything_CharacterDB[name_realm] then
 			local charName, realm = strsplit("%-",name_realm,2);
-			local class = Broker_Everything_CharacterDB[name_realm].class;
+			local label = C(Broker_Everything_CharacterDB[name_realm].class,charName).."\n"..C("gray",realm);
 			lst[name_realm] = {
 				type = "group", order = order, inline=true,
 				name = "",
 				args = {
 					label = {
 						type = "description", order=1, width="normal", fontSize = "medium",
-						name = C(class,charName).."\n"..C("gray",realm),
+						name = label,
 					},
 					[name_realm] = {
 						type = "description", order = 2, width = "half",
 						name = calcDataSize,
 					},
-					up   = {type="execute", order=3, width="half", name=L["Up"], disabled=(order==1) },
-					down = {type="execute", order=4, width="half", name=L["Down"], disabled=(order==#Broker_Everything_CharacterDB.order) },
-					del  = {type="execute", order=5, width="half", name=DELETE, disabled=(name_realm==ns.player.name_realm) },
+					up   = {type="execute", order=3, width="half", name=L["Up"], desc=label, disabled=(order==1) },
+					down = {type="execute", order=4, width="half", name=L["Down"], desc=label, disabled=(order==#Broker_Everything_CharacterDB.order) },
+					del  = {type="execute", order=5, width="half", name=DELETE, desc=label, disabled=(name_realm==ns.player.name_realm) },
 				}
 			}
 		end

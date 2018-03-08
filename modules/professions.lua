@@ -64,9 +64,9 @@ local function updateBroker()
 
 	for i=1, 4 do
 		v = db[i];
-		if (v) and (professions[v]) and (professions[v][icon]) then
+		if v and professions[v] and professions[v][icon] and professions[v][skill] and professions[v][maxSkill] then
 			local modifier = "";
-			if professions[v][rankModifier]>0 then
+			if professions[v][rankModifier] and professions[v][rankModifier]>0 then
 				modifier = C("green","+"..professions[v][rankModifier]);
 			end
 			table.insert(inTitle, ("%s/%s|T%s:0|t"):format(professions[v][skill]..modifier,professions[v][maxSkill],professions[v][icon]));
@@ -130,7 +130,7 @@ local function createTooltip(tt)
 				if (m==0) then
 					c1,c2,s,m = "gray","gray","-","-";
 				end
-				if v[rankModifier]>0 then
+				if v[rankModifier] and v[rankModifier]>0 then
 					modifier = C("green","+"..v[rankModifier]);
 				end
 				tt:AddLine((iconnameLocale):format(v[icon],C(c1,v[nameLocale])),C(c2,s)..modifier..C(c2,"/"..m));

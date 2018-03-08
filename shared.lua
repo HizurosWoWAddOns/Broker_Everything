@@ -148,20 +148,17 @@ end
   ---------------------------------------
 ns.debugMode = ("@project-version@"=="@".."project-version".."@"); -- the first part will be replaced by packager.
 function ns.print(...)
-	local a,colors,t,c = {...},{"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"},{},1;
+	local a,colors,t,c,v = {...},{"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"},{},1;
+	tinsert(a,1,"|cff0099ff"..((a[1]==true and L[addon.."_Shortcut"]) or (a[1]=="||" and "||") or addon).."|r"..(a[1]~="||" and ":" or ""));
+	if type(a[2])=="boolean" or a[2]=="||" then
+		tremove(a,2);
+	end
 	for i=1, #a do
-		if i==1 then
-			-- first entry special: true = shortcut, false = next in blue, nil = hide, string = prepend addon name in blue
-			if a[1]~=nil or a[1]~=false then
-				tinsert(t,"|cff0099ff"..((a[1]==true and L[addon.."_Shortcut"]) or (a[1]==false and a[2]) or addon).."|r:"); c=2;
-			end
-		else
-			local v = tostring(a[i]);
-			if not v:match("||c") then
-				v,c = "|cff"..colors[c]..v.."|r", c<#colors and c+1 or 1;
-			end
-			tinsert(t,v);
+		v = tostring(a[i]);
+		if not v:match("||c") then
+			v,c = "|cff"..colors[c]..v.."|r", c<#colors and c+1 or 1;
 		end
+		tinsert(t,v);
 	end
 	print(unpack(t));
 end
