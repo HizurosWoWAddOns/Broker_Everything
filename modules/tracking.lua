@@ -75,26 +75,24 @@ function module.options()
 		},
 		tooltip = nil,
 		misc = {
-			hideMinimapButton={ type="toggle", order=1, name=L["Hide minimap button"], desc=L["Hide blizzard's tracking button on minimap"], disabled=ns.coexist.check },
-			hideMinimapButtonInfo={ type="description", order=2, name=ns.coexist.optionInfo, fontSize="medium", hidden=ns.coexist.check }
+			hideMinimapButton={ type="toggle", order=1, name=L["Hide minimap button"], desc=L["Hide blizzard's tracking button on minimap"], width="full", disabled=ns.coexist.IsNotAlone },
+			hideMinimapButtonInfo={ type="description", order=2, name=ns.coexist.optionInfo, fontSize="medium", hidden=ns.coexist.IsNotAlone }
 		}
 	}
 end
 
 function module.init()
-	if ns.coexist.check() and ns.profile[name].hideMinimapButton then
-		ns.hideFrame("MiniMapTracking");
+	if (not ns.coexist.IsNotAlone()) and ns.profile[name].hideMinimapButton then
+		ns.hideFrames("MiniMapTracking",true);
+		ns.hideFrames("MiniMapTrackingButton",true);
 	end
 end
 
 function module.onevent(self,event,msg)
 	if event=="BE_UPDATE_CFG" then
-		if ns.coexist.check() then
-			if ns.profile[name].hideMinimapButton then
-				ns.hideFrame("MiniMapTracking");
-			else
-				ns.unhideFrame("MiniMapTracking");
-			end
+		if not ns.coexist.IsNotAlone() then
+			ns.hideFrames("MiniMapTracking",ns.profile[name].hideMinimapButton);
+			ns.hideFrames("MiniMapTrackingButton",ns.profile[name].hideMinimapButton);
 		end
 	elseif event=="MINIMAP_UPDATE_TRACKING" and menuOpened and LibDropDownMenu_List1:IsShown() then
 		ns.EasyMenu.Refresh(1);

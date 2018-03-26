@@ -235,10 +235,9 @@ function module.options()
 			showCharsFrom=4,
 		},
 		misc = {
-			playsound={ type="toggle", order=1, name=L["Play sound on new mail"], desc=L["Enable to play a sound on receiving a new mail message. Default is off"] },
-			separator={ type="separator", order=2},
-			hideMinimapMail={ type="toggle", order=3, name=L["Hide minimap mail icon"], desc=L["Hide minimap mail icon"], disabled=ns.coexist.check },
-			hideMinimapMailInfo = { type="description", order=4, name=ns.coexist.optionInfo, fontSize="medium", hidden=ns.coexist.check }
+			playsound={ type="toggle", order=1, name=L["Play sound on new mail"], desc=L["Enable to play a sound on receiving a new mail message. Default is off"], width="full" },
+			hideMinimapMail={ type="toggle", order=2, name=L["Hide minimap mail icon"], desc=L["Hide minimap mail icon"], width="full", disabled=ns.coexist.IsNotAlone },
+			hideMinimapMailInfo = { type="description", order=3, name=ns.coexist.optionInfo, fontSize="medium", hidden=ns.coexist.IsNotAlone }
 		},
 	},
 	{
@@ -251,8 +250,8 @@ function module.init()
 		local I = ("inv_letter_%02d"):format(i);
 		icons[I] = "|Tinterface\\icons\\"..I..":16:16:0:0|t";
 	end
-	if ns.coexist.check() and ns.profile[name].hideMinimapMail then
-		ns.hideFrame("MiniMapMailFrame");
+	if (not ns.coexist.IsNotAlone()) and ns.profile[name].hideMinimapMail then
+		ns.hideFrames("MiniMapMailFrame",true);
 	end
 end
 
@@ -260,12 +259,8 @@ function module.onevent(self,event,msg)
 	if event=="BE_UPDATE_CFG" and msg and msg:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 	elseif event=="BE_UPDATE_CFG" then
-		if ns.coexist.check() then
-			if ns.profile[name].hideMinimapMail then
-				ns.hideFrame("MiniMapMailFrame")
-			else
-				ns.unhideFrame("MiniMapMailFrame")
-			end
+		if not ns.coexist.IsNotAlone() then
+			ns.hideFrames("MiniMapMailFrame",ns.profile[name].hideMinimapMail);
 		end
 	elseif event=="PLAYER_LOGIN" then
 		hooksecurefunc("SendMail",function(targetName)

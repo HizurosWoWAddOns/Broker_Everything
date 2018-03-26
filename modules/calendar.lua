@@ -203,8 +203,8 @@ function module.options()
 			singleLineEvents={ type="toggle", order=3, name=L["One event per line"], desc=L["Display event title and start/end date in a single line in tooltip"]}
 		},
 		misc = {
-			hideMinimapCalendar={ type="toggle", order=1, name=L["Hide calendar button"], desc=L["Hide Blizzard's minimap calendar button"], disabled=ns.coexist.check },
-			hideMinimapCalendarInfo={ type="description", order=2, name=ns.coexist.optionInfo, fontSize="medium", hidden=ns.coexist.check }
+			hideMinimapCalendar={ type="toggle", order=1, name=L["Hide calendar button"], desc=L["Hide Blizzard's minimap calendar button"], disabled=ns.coexist.IsNotAlone },
+			hideMinimapCalendarInfo={ type="description", order=2, name=ns.coexist.optionInfo, fontSize="medium", hidden=ns.coexist.IsNotAlone }
 		},
 	}
 end
@@ -246,9 +246,8 @@ function module.init()
 		[1129685] = "WrathOfTheLichKingOngoing",
 		[1129686] = "WrathOfTheLichKingStart",
 	}
-	if ns.coexist.check() and ns.profile[name].hideMinimapCalendar then
-		GameTimeFrame:Hide();
-		GameTimeFrame.Show = dummyFunc;
+	if (not ns.coexist.IsNotAlone()) and ns.profile[name].hideMinimapCalendar then
+		ns.hideFrames("GameTimeFrame",true);
 	end
 end
 
@@ -256,16 +255,8 @@ function module.onevent(self,event,arg1)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 	elseif event=="BE_UPDATE_CFG" then
-		if ns.coexist.check() then
-			if ns.profile[name].hideMinimapCalendar then
-				GameTimeFrame:Hide();
-				GameTimeFrame.ShowOrig = GameTimeFrame.Show
-				GameTimeFrame.Show = dummyFunc;
-			else
-				GameTimeFrame.Show = GameTimeFrame.ShowOrig
-				GameTimeFrame.ShowOrig = nil;
-				GameTimeFrame:Show();
-			end
+		if not ns.coexist.IsNotAlone() then
+			ns.hideFrames("GameTimeFrame",ns.profile[name].hideMinimapCalendar);
 		end
 	else
 		updateBroker();

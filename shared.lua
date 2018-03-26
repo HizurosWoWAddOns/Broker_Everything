@@ -411,7 +411,7 @@ do
 		["SquareMap"]			= "CoExistUnsave",
 	};
 	ns.coexist = {};
-	function ns.coexist.check(info)
+	function ns.coexist.IsNotAlone(info)
 		if found==false then
 			found = {};
 			for name in pairs(list) do
@@ -421,7 +421,7 @@ do
 			end
 		end
 		local b = #found>0;
-		if info and info[#info]:find("Info$") then
+		if info and info[#info]:find("Info$") then -- for Ace3 Options (<hidden|disabled>=<thisFunction>)
 			return not b;
 		end
 		return b;
@@ -1347,23 +1347,22 @@ end
 -- Hide blizzard elements   --
 -- ------------------------ --
 do
-	local hidden = CreateFrame("Frame",addon.."_HideFrames")
-	hidden.origParent = {}
-	hidden:Hide()
+	local hideFrames = CreateFrame("Frame",addon.."_HideFrames",UIParent);
+	hideFrames.origParent = {};
+	hideFrames:Hide();
 
-	function ns.hideFrame(frameName)
-		local pName = _G[frameName]:GetParent():GetName()
-		if pName==nil then
-			return false
-		end
-		hidden.origParent[frameName] = pName
-		_G[frameName]:SetParent(hidden)
-	end
-
-	function ns.unhideFrame(frameName)
-		if hidden.origParent[frameName]~=nil then
-			_G[frameName]:SetParent(hidden.origParent[frameName])
-			hidden.origParent[frameName] = nil
+	function ns.hideFrames(frameName,hideIt)
+		local frame = _G[frameName];
+		if frame and hideIt then
+			local parent = frame:GetParent();
+			if parent==nil or parent==hideFrames then
+				return false
+			end
+			hideFrames.origParent[frameName] = parent;
+			frame:SetParent(hideFrames);
+		elseif frame and hideFrames.origParent[frameName] then
+			frame:SetParent(hideFrames.origParent[frameName]);
+			hideFrames.origParent[frameName] = nil;
 		end
 	end
 end
