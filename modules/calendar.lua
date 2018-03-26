@@ -203,7 +203,7 @@ function module.options()
 			singleLineEvents={ type="toggle", order=3, name=L["One event per line"], desc=L["Display event title and start/end date in a single line in tooltip"]}
 		},
 		misc = {
-			hideMinimapCalendar={ type="toggle", order=1, name=L["Hide calendar button"], desc=L["Hide Blizzard's minimap calendar button"], disabled=ns.coexist.IsNotAlone },
+			hideMinimapCalendar={ type="toggle", order=1, name=L["Hide calendar button"], desc=L["Hide Blizzard's minimap calendar button"], width="full", disabled=ns.coexist.IsNotAlone },
 			hideMinimapCalendarInfo={ type="description", order=2, name=ns.coexist.optionInfo, fontSize="medium", hidden=ns.coexist.IsNotAlone }
 		},
 	}

@@ -304,7 +304,8 @@ local sharedDefaults = {
 	shortNumbers = true,
 	showAllFactions = true,
 	showRealmNames = true,
-	showCharsFrom = 2
+	showCharsFrom = 2,
+	minimap = {hide=false}
 }
 
 local coords=nil;
@@ -380,7 +381,7 @@ function ns.Options_AddModuleDefaults(modName)
 		end
 --@end-do-not-package@
 		-- normal defaults
-		dbDefaults.profile[modName] = mod.config_defaults or {};
+		dbDefaults.profile[modName] = mod.config_defaults or {enabled=false};
 
 		-- add shared option defaults
 		if mod.options then
@@ -533,16 +534,16 @@ function options.args.chars.func(info,button,a,b) -- function for buttons 'Up', 
 end
 function ns.RegisterOptions()
 	if Broker_Everything_AceDB==nil then
-		Broker_Everything_AceDB = {}
+		Broker_Everything_AceDB = {};
 	end
 
 	-- db migration to ace
 	if Broker_Everything_AceDB.profileKeys==nil and Broker_Everything_ProfileDB.use_profile~=nil then
 		-- migrate profile keys to ace
-		Broker_Everything_AceDB.profileKeys = {}
+		Broker_Everything_AceDB.profileKeys = {};
 		for char_realm, profileName in pairs(Broker_Everything_ProfileDB.use_profile)do
 			if profileName==DEFAULT then
-				profileName="Default"
+				profileName="Default";
 			end
 			local charName,realmName = strsplit("-",char_realm,2); -- aceDB has whitespaces around the dash between char and realm names. split and rejoin
 			if realmName then
@@ -553,53 +554,49 @@ function ns.RegisterOptions()
 
 	if Broker_Everything_AceDB.profiles==nil then
 		-- migrate profiles to ace
-		Broker_Everything_AceDB.profiles = {};
 		local ClickOptPrefixOld = "clickOptions::";
-
+		Broker_Everything_AceDB.profiles = {};
 		if Broker_Everything_ProfileDB.profiles then
-			Broker_Everything_AceDB.profiles=CopyTable(Broker_Everything_ProfileDB.profiles);
-		end
+			for profileName,profileData in pairs(Broker_Everything_ProfileDB.profiles)do
+				if type(profileData)=="table" then -- ignore invalid profiles
+					local data = CopyTable(profileData); -- clone data for secure fallback option to old version
 
-		if Broker_Everything_AceDB.profiles[DEFAULT]~=nil then
-			Broker_Everything_AceDB.profiles.Default = Broker_Everything_AceDB.profiles[DEFAULT];
-			Broker_Everything_AceDB.profiles[DEFAULT] = nil;
-		end
+					if DEFAULT~="Default" and profileName==DEFAULT and Broker_Everything_ProfileDB.Default==nil then
+						profileName="Default";
+					end
 
-		for profileName,profileData in pairs(Broker_Everything_AceDB.profiles)do
-			if type(profileData)~="table" then
-				-- delete invalid profiles
-				Broker_Everything_AceDB.profiles[profileName]=nil;
-			else
-				for modName,modData in pairs(profileData)do
-					if modName and type(modData)=="table" then
-						-- migrate showAllRealms
-						if modData.showAllRealms~=nil then
-							modData.showCharsFrom = 4;
-							modData.showAllRealms = nil;
-						end
-						-- migrate clickOptions Prefix
-						for k,v in pairs(modData)do
-							if k:find(ClickOptPrefixOld) then
-								local K = k:gsub(ClickOptPrefixOld,ns.ClickOpts.prefix);
-								modData[K] = modData[k];
-								modData[k] = nil;
+					for modName,modData in pairs(data) do
+						if modName and type(modData)=="table" then
+							-- migrate showAllRealms
+							if modData.showAllRealms==true then
+								modData.showCharsFrom = 4;
+								modData.showAllRealms = nil;
+							end
+							-- migrate clickOptions Prefix
+							for k,v in pairs(modData)do
+								if k:find(ClickOptPrefixOld) then
+									local K = k:gsub(ClickOptPrefixOld,ns.ClickOpts.prefix);
+									modData[K] = modData[k];
+									modData[k] = nil;
+								end
 							end
 						end
 					end
-				end
 
-				-- migrate some option entries from shared_module
-				local modName="GPS / Location / ZoneText";
-				if profileData[modName] then
-					for key,value in pairs(profileData[modName])do
-						if profileData.GPS==nil then profileData.GPS={} end
-						if profileData.Location==nil then profileData.Location={} end
-						if profileData.ZoneText==nil then profileData.ZoneText={} end
-						profileData.GPS[key]=value;
-						profileData.Location[key]=value;
-						profileData.ZoneText[key]=value;
+					-- migrate some option entries from shared_module
+					local modName="GPS / Location / ZoneText";
+					if data[modName] then
+						for key,value in pairs(data[modName])do
+							if data.GPS==nil then data.GPS={} end
+							if data.Location==nil then data.Location={} end
+							if data.ZoneText==nil then data.ZoneText={} end
+							data.GPS[key]=value;
+							data.Location[key]=value;
+							data.ZoneText[key]=value;
+						end
+						data[modName]=nil;
 					end
-					profileData[modName]=nil;
+					Broker_Everything_AceDB.profiles[profileName]=data;
 				end
 			end
 		end

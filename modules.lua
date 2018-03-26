@@ -7,6 +7,9 @@ setmetatable(ns.modules,{
 	__newindex = function(t,name,data)
 		rawset(t,name,data);
 		-- first step... register defaults
+		if data.config_defaults and data.config_defaults.minimap==nil then
+			data.config_defaults.minimap = {hide=false};
+		end
 		ns.Options_AddModuleDefaults(name);
 	end
 });
