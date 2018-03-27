@@ -42,7 +42,7 @@ I[name] = {iconfile="Interface\\Icons\\inv_garrison_resource", coords={0.05,0.95
 -- some local functions --
 --------------------------
 -- talentType = (InstantWQ|?)
-function GetClassTalentTreeInfoByType(garrType,talentType)
+local function GetClassTalentTreeInfoByType(garrType,talentType)
 	local garrTalentTreeID,_,_,classId = 0,UnitClass("player");
 	local talentIds = (ClassTalents[garrType] and ClassTalents[garrType][talentType] and ClassTalents[garrType][talentType]) or false;
 	if talentIds then
