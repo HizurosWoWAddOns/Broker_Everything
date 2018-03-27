@@ -4,6 +4,21 @@
 local addon, ns = ...
 if ns.build<70000000 then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
+local ClassTalents = {
+	-- legion
+	[LE_GARRISON_TYPE_7_0] = {
+		-- 18 hours instant world quest
+		InstantWQ = {
+			-- [<talentId>] = {<classId>,<itemId>}
+			[410] = {reagentItem=140157}, -- warrior
+			[399] = {reagentItem=140155}, -- paladin
+			[432] = {reagentItem=139888}, -- death knight
+			[388] = {reagentItem=140038}, -- mage
+			[367] = {reagentItem=139892}, -- warlock
+			[421] = {reagentItem=140158}, -- demon hunter
+		}
+	}
+};
 
 
 -- module own local variables and local cached functions --
@@ -26,6 +41,32 @@ I[name] = {iconfile="Interface\\Icons\\inv_garrison_resource", coords={0.05,0.95
 
 -- some local functions --
 --------------------------
+-- talentType = (InstantWQ|?)
+function GetClassTalentTreeInfoByType(garrType,talentType)
+	local garrTalentTreeID,_,_,classId = 0,UnitClass("player");
+	local talentIds = (ClassTalents[garrType] and ClassTalents[garrType][talentType] and ClassTalents[garrType][talentType]) or false;
+	if talentIds then
+		local treeIDs = C_Garrison.GetTalentTreeIDsByClassID(garrType, classId);
+		if (treeIDs and #treeIDs > 0) then
+			garrTalentTreeID = treeIDs[1];
+		end
+		local _, _, tree = C_Garrison.GetTalentTreeInfoForID(garrTalentTreeID);
+		if tree and #tree>0 then
+			for i=1, #tree do
+				if talentIds[tree[i].id] then
+					if type(talentIds[tree[i].id])=="table" then
+						for k,v in pairs(talentIds[tree[i].id])do
+							tree[i][k] = v;
+						end
+					end
+					return tree[i];
+				end
+			end
+		end
+	end
+	return;
+end
+
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local title = {};
@@ -173,6 +214,24 @@ local function createTooltip(tt)
 			end
 		end
 
+		-- instantWQ info
+		local InstantWQ = GetClassTalentTreeInfoByType(LE_GARRISON_TYPE_7_0,"InstantWQ");
+		if InstantWQ and InstantWQ.selected and InstantWQ.researched then
+			tt:AddSeparator(4,0,0,0,0);
+			tt:AddLine(C("ltblue",InstantWQ.name));
+			tt:AddSeparator();
+			local start, duration, enable = GetSpellCooldown(InstantWQ.perkSpellID);
+			if start==0 then
+				tt:SetCell(tt:AddLine(C("ltyellow",TALENT)),2,C("green",L["ReadyToUse"]),nil,"RIGHT",0);
+			else
+				local seconds = duration-(GetTime()-start);
+				tt:SetCell(tt:AddLine(C("ltyellow",L["Cooldown"])),2,SecondsToTime(seconds),nil,"RIGHT",0);
+			end
+			local itemName = GetItemInfo(InstantWQ.reagentItem);
+			local inBag = ns.items.exist(InstantWQ.reagentItem);
+			tt:SetCell(tt:AddLine(C("ltyellow",SPELL_REAGENTS:gsub("\124n","")..(itemName or "?"))),2,inBag and C("green","Is in your bag") or C("red","Is not in your bag"),nil,"RIGHT",0);
+		end
+
 		-- create shipment list
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",L["Shipments"]));
@@ -205,7 +264,7 @@ local function createTooltip(tt)
 			tt:SetCell(tt:AddLine(),1,C("gray",L["No active shipments found..."]),nil,"CENTER",0);
 		end
 	else
-		tt:AddLine(L["You have not unlocked your order hall"]);
+		tt:SetCell(tt:AddLine(),1,L["You have not unlocked your order hall"],nil,"CENTER",0);
 	end
 
 	if (ns.profile.GeneralOptions.showHints) then
@@ -219,6 +278,9 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	events = {
+		"PLAYER_LOGIN"
+	},
 	config_defaults = {
 		enabled = false
 	},
@@ -243,6 +305,12 @@ ns.ClickOpts.addDefaults(module,{
 function module.onevent(self,event,arg1,...)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
+	end
+	if event=="PLAYER_LOGIN" then
+		local InstantWQ = GetClassTalentTreeInfoByType(LE_GARRISON_TYPE_7_0,"InstantWQ");
+		if InstantWQ and InstantWQ.reagentItem then
+			GetItemInfo(InstantWQ.reagentItem);
+		end
 	end
 	if ns.eventPlayerEnteredWorld then
 		--updateBroker();
