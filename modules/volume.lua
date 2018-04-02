@@ -84,8 +84,8 @@ local function updateTooltip()
 	createTooltip(tt, true);
 end
 
-local function toggleEntry(self, v, button)
-	ns.SetCVar(self.info.toggle,tostring(self.info.inv),self.info.toggle);
+local function toggleEntry(self, info, button)
+	ns.SetCVar(info.toggle,tostring(info.inv),info.toggle);
 	updateBroker();
 	createTooltip(tt,true);
 end
