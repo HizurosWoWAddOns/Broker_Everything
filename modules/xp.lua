@@ -210,7 +210,7 @@ module = {
 
 		showAllFactions=true,
 		showRealmNames=true,
-		showCharsFrom=4
+		showCharsFrom="2"
 	},
 	clickOptionsRename = {
 		["switch"] = "1_switch_mode",

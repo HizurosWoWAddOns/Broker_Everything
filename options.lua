@@ -27,10 +27,10 @@ local dbDefaults,db = {
 };
 
 ns.showCharsFrom_Values = {
-	ns.realm,
-	L["Connected realms"],
-	L["Same battlegroup"],
-	L["All realms"]
+	["1"] = ns.realm,
+	["2"] = L["Connected realms"],
+	["3"] = L["Same battlegroup"],
+	["4"] = L["All realms"]
 }
 
 local nsProfileMT = {
@@ -304,7 +304,7 @@ local sharedDefaults = {
 	shortNumbers = true,
 	showAllFactions = true,
 	showRealmNames = true,
-	showCharsFrom = 2,
+	showCharsFrom = "2",
 	minimap = {hide=false}
 }
 
@@ -569,7 +569,7 @@ function ns.RegisterOptions()
 						if modName and type(modData)=="table" then
 							-- migrate showAllRealms
 							if modData.showAllRealms==true then
-								modData.showCharsFrom = 4;
+								modData.showCharsFrom = "4";
 								modData.showAllRealms = nil;
 							end
 							-- migrate clickOptions Prefix
@@ -600,6 +600,23 @@ function ns.RegisterOptions()
 				end
 			end
 		end
+	end
+
+	local AceDBfixCurrent = 1;
+	if not ns.data.AceDBfix then
+		ns.data.AceDBfix = 0;
+	end
+	if ns.data.AceDBfix<AceDBfixCurrent then
+		for pName,pData in pairs(Broker_Everything_AceDB.profiles)do
+			for mName,mData in pairs(pData)do
+				for oKey,oValue in pairs(mData)do
+					if ns.data.AceDBfix<1 and oKey=="showCharsFrom" and type(oValue)=="number" then
+						mData[oKey] = tostring(oValue);
+					end
+				end
+			end
+		end
+		ns.data.AceDBfix=AceDBfixCurrent;
 	end
 
 	buildCharDataOptions();

@@ -243,7 +243,7 @@ module = {
 		showChars = true,
 		showAllFactions=true,
 		showRealmNames=true,
-		showCharsFrom=4
+		showCharsFrom="2"
 	},
 	clickOptionsRename = {
 		["questlog"] = "1_open_questlog",

@@ -504,7 +504,7 @@ moduleF = {
 
 		showAllFactions=true,
 		showRealmNames=true,
-		showCharsFrom=4,
+		showCharsFrom="2",
 
 		showFollowers = true,
 		showChampions = true,

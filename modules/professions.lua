@@ -292,7 +292,7 @@ module = {
 		inTitle = {},
 		showAllFactions=true,
 		showRealmNames=true,
-		showCharsFrom=4
+		showCharsFrom="2"
 	},
 	clickOptionsRename = {
 		["profmenu"] = "1_open_character_info",

@@ -275,7 +275,7 @@ module = {
 		shortTitle = false,
 		showAllFactions=true,
 		showRealmNames=true,
-		showCharsFrom=4
+		showCharsFrom="2"
 	},
 	clickOptionsRename = {
 		["menu"] = "9_open_menu"

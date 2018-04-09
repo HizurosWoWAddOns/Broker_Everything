@@ -202,7 +202,7 @@ local function createTooltip(tt)
 	local slotName = "";
 	if (durabilityLslot) and (durabilityLslot~=0) then
 		if (slotNames[durabilityLslot]) then
-			slotName = (" (%s)"):format(L[slotNames[durabilityLslot]]);
+			slotName = (" (%s)"):format(slotNames[durabilityLslot]);
 		end
 	end
 

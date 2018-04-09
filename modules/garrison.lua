@@ -323,7 +323,7 @@ module = {
 		showChars = true,
 		showAllFactions=true,
 		showRealmNames=true,
-		showCharsFrom=4
+		showCharsFrom="2"
 	},
 	clickOptionsRename = {
 		["garrreport"] = "1_open_garrison_report",
