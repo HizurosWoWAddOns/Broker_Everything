@@ -234,7 +234,7 @@ function createTooltip(tt, update, from)
 	local GroupQuestCount=0;
 
 	wipe(hide);
-	if ns.profile[name].showPvPWeeklys then
+	if not ns.profile[name].showPvPWeeklys then
 		hide[44891] = true; -- PvP 2vs2
 		hide[44908] = true; -- PvP 3vs3
 		hide[44909] = true; -- PvP battlefield
