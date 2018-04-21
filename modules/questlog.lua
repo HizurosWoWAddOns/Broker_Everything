@@ -25,7 +25,6 @@ local urls = {
 	--
 }
 local Level, Title, Header, Color, Status, Type, ShortType, QuestId, Index, IsHidden, Text = 1,2,3,4,5,6,7,8,9,10,11,12;
-local Zone = 13;
 local frequencies = {
 	[LE_QUEST_FREQUENCY_DAILY] = {"*",DAILY},
 	[LE_QUEST_FREQUENCY_WEEKLY] = {"**",WEEKLY},
@@ -169,13 +168,13 @@ local function ttAddLine(obj)
 			end
 		end
 		if (#GroupQuest>0) then
-			obj[Title2] = ("%s [%d]"):format(obj[Title],#GroupQuest);
+			obj.Title2 = ("%s [%d]"):format(obj[Title],#GroupQuest);
 		end
 	end
 
 	tt:SetCell(l,cell,C(color,obj[Level])); cell=cell+1; -- [1]
 	if ns.profile[name].showQuestTagsShort then tt:SetCell(l,cell,obj[ShortType]); end cell=cell+1; -- [2]
-	tt:SetCell(l,cell,C(color,ns.strCut(obj[Title2] or obj[Title],32))); cell=cell+1; -- [3]
+	tt:SetCell(l,cell,C(color,ns.strCut(obj.Title2 or obj[Title],32))); cell=cell+1; -- [3]
 	if ns.profile[name].showQuestZone then
 		local mapName = " ";
 		if obj[QuestId] and questZones[obj[QuestId]] and questZones[obj[QuestId]].mapName then
@@ -271,7 +270,7 @@ function createTooltip(tt, update, from)
 					end
 					firstHeader = false;
 					tt:SetCell(select(1,tt:AddLine()),1,C(s[2],s[3]),nil,"LEFT",ttColumns);
-					table.sort(quests,function(a,b) return (a[Title2] or a[Title])<(b[Title2] or b[Title]) end);
+					table.sort(quests,function(a,b) return (a.Title2 or a[Title])<(b.Title2 or b[Title]) end);
 					for _,obj in pairs(quests)do
 						if obj[Status]==s[1] and (not obj[IsHidden]==true) then
 							ttAddLine(obj);
