@@ -33,8 +33,8 @@ externals:
 		url: https://repos.curseforge.com/wow/libtime-1-0
 		tag: latest
 
-	libs/LibDropDownMenu:
-		url: git://github.com/hizuro/LibDropDownMenu.git
+	libs/!NoTaint_UIDropDownMenu:
+		url: svn://svn.wowinterface.com/NoTaint_UIDropDownMenu_Update-1134/trunk
 		tag: latest
 
 	libs/LibRealmInfo:
@@ -82,7 +82,6 @@ ignore:
 	- libs/LibColors-1.0/LibColors-1.0.toc
 	- libs/LibTime-1.0/LibTime-1.0.toc
 	- libs/LibSharedMedia-3.0/lib.xml
-	- libs/LibDropDownMenu/README.md
-	- libs/LibDropDownMenu/LibDropDownMenu.toc
+	- libs/!NoTaint_UIDropDownMenu/LibStub
 
 license-output: LICENSE.txt

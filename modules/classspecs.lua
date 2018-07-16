@@ -332,11 +332,11 @@ end
 
 function module.createTalentMenu(self)
 	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu:InitializeMenu();
 	-- 1. pve talents
 	-- 2. pvp talents
 	-- 3. pet talents?
-	ns.EasyMenu.ShowMenu(self);
+	ns.EasyMenu:ShowMenu(self);
 end
 
 function module.onevent(self,event,arg1,...)

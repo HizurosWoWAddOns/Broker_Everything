@@ -249,11 +249,11 @@ end
 
 function module.OptionMenu(self,button,modName)
 	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addConfigElements(name);
-	ns.EasyMenu.addEntry({separator=true});
-	ns.EasyMenu.addEntry({ label = C("yellow",L["Reset session earn/loss counter"]), func=resetSessionCounter, keepShown=false });
-	ns.EasyMenu.ShowMenu(self);
+	ns.EasyMenu:InitializeMenu();
+	ns.EasyMenu:AddConfig(name);
+	ns.EasyMenu:AddEntry({separator=true});
+	ns.EasyMenu:AddEntry({ label = C("yellow",L["Reset session earn/loss counter"]), func=resetSessionCounter, keepShown=false });
+	ns.EasyMenu:ShowMenu(self);
 end
 
 -- function module.init() end

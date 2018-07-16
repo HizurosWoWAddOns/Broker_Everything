@@ -312,13 +312,13 @@ end
 function module.OptionMenu(self,button,modName)
 	if (tt~=nil) and (tt:IsShown()) then ns.hideTooltip(tt); end
 
-	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu:InitializeMenu();
 
-	ns.EasyMenu.addConfigElements(name);
+	ns.EasyMenu:AddConfig(name);
 
-	ns.EasyMenu.addEntry({ separator = true });
+	ns.EasyMenu:AddEntry({ separator = true });
 
-	ns.EasyMenu.addEntry({
+	ns.EasyMenu:AddEntry({
 		label = L["Reset last repairs"],
 		colorName = "yellow",
 		func  = function()
@@ -328,7 +328,7 @@ function module.OptionMenu(self,button,modName)
 		disabled = (false)
 	});
 
-	ns.EasyMenu.ShowMenu(self);
+	ns.EasyMenu:ShowMenu(self);
 end
 
 function module.init()

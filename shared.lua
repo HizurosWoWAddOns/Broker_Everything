@@ -13,7 +13,6 @@ ns.LDBI = LibStub("LibDBIcon-1.0");
 ns.LSM = LibStub("LibSharedMedia-3.0");
 ns.LT = LibStub("LibTime-1.0");
 ns.LC = LibStub("LibColors-1.0");
-ns.LDDM = LibStub("LibDropDownMenu");
 ns.LRI = LibStub("LibRealmInfo");
 
 
@@ -1372,18 +1371,17 @@ end
 -- EasyMenu wrapper --
 -- ---------------- --
 do
-	ns.EasyMenu = {};
-	local self = ns.EasyMenu;
-	self.menu = {};
-	self.controlGroups = {};
-	self.IsPrevSeparator = false;
+	ns.EasyMenu = CreateFrame("Frame", addon.."_Lib_UIDropDownMenu", UIParent, "Lib_UIDropDownMenuTemplate");
+	ns.EasyMenu.menu, ns.EasyMenu.controlGroups,ns.EasyMenu.IsPrevSeparator = {},{},false;
+	local grpOrder,pat = {"broker","tooltip","misc","ClickOpts"},"%06d%s";
+
 	local cvarTypeFunc = {
 		bool = function(D)
 			if (type(D.cvar)=="table") then
 				--?
 			elseif (type(D.cvar)=="string") then
 				function D.checked() return (GetCVar(D.cvar)=="1") end;
-				function D.func() SetCVar(D.cvar,GetCVar(D.cvar)=="1" and "0" or "1"); end;
+				function D.func() SetCVar(D.cvar,GetCVar(D.cvar)=="1" and "0" or "1",D.cvarEvent); end;
 			end
 		end,
 		slider = function(...)
@@ -1394,15 +1392,6 @@ do
 		str = function(...)
 		end
 	};
-
-	local pat = "%06d%s";
-	local function sortAceOptions(a,b)
-		local ao,bo = a.order or 100, b.order or 100;
-		if a.order~=b.order then
-			return a.order < b.order;
-		end
-		return a.name < b.order;
-	end
 
 	local beTypeFunc = {
 		bool = function(d)
@@ -1426,29 +1415,57 @@ do
 		end
 	};
 
-	function self.InitializeMenu()
-		if (not self.frame) then
-			self.frame = CreateFrame("Frame", addon.."EasyMenu", UIParent, "LibDropDownMenuTemplate");
+	local function sortAceOptions(a,b)
+		local ao,bo = a.order or 100, b.order or 100;
+		if a.order~=b.order then
+			return a.order < b.order;
 		end
-		wipe(self.menu);
-		return self.frame;
+		return a.name < b.order;
 	end
 
-	function self.addEntry(D,P)
+	local function pairsByOptionGroup(t)
+		local a = {}
+		for n in pairs(t) do
+			for i,v in ipairs(grpOrder)do
+				if n:find("^"..v) then
+					n = i.."."..n;
+					break;
+				end
+			end
+			table.insert(a, n);
+		end
+		table.sort(a);
+		local i,_ = 0;
+		local function iter()
+			i = i + 1
+			if a[i] == nil then
+				return nil
+			end
+			_,a[i] = strsplit(".",a[i],2);
+			return a[i], t[a[i]];
+		end
+		return iter
+	end
+
+	local function LibCloseDropDownMenus()
+		Lib_CloseDropDownMenus();
+	end
+
+	function ns.EasyMenu:AddEntry(D,P)
 		local entry= {};
 
 		if (type(D)=="table") and (#D>0) then -- numeric table = multible entries
 			self.IsPrevSeparator = false;
 			for i,v in ipairs(D) do
-				self.addEntry(v,parent);
+				self:AddEntry(v,parent);
 			end
 			return;
 
 		elseif (D.childs) then -- child elements
 			self.IsPrevSeparator = false;
-			local parent = self.addEntry({ label=D.label, arrow=true, disabled=D.disabled },P);
+			local parent = self:AddEntry({ label=D.label, arrow=true, disabled=D.disabled },P);
 			for i,v in ipairs(D.childs) do
-				self.addEntry(v,parent);
+				self:AddEntry(v,parent);
 			end
 			return;
 
@@ -1459,10 +1476,10 @@ do
 			else
 				wipe(self.controlGroups[D.groupName])
 			end
-			local parent = self.addEntry({ label=D.label, arrow=true, disabled=D.disabled },P);
+			local parent = self:AddEntry({ label=D.label, arrow=true, disabled=D.disabled },P);
 			parent.controlGroup=self.controlGroups[D.groupName];
 			for i,v in ipairs(D.optionGroup) do
-				tinsert(self.controlGroups[D.groupName],self.addEntry(v,parent));
+				tinsert(self.controlGroups[D.groupName],self:AddEntry(v,parent));
 			end
 			return;
 
@@ -1472,7 +1489,7 @@ do
 			end
 			self.IsPrevSeparator = true;
 			entry = { text = "", dist = 0, isTitle = true, notCheckable = true, isNotRadio = true, sUninteractable = true, iconOnly = true, icon = "Interface\\Common\\UI-TooltipDivider-Transparent", tCoordLeft = 0, tCoordRight = 1, tCoordTop = 0, tCoordBottom = 1, tFitDropDownSizeX = true, tSizeX = 0, tSizeY = 8 };
-			entry.iconInfo = entry; -- looks like stupid? is necessary to work. (thats blizzard)
+			entry.iconInfo = entry;
 
 		else
 			self.IsPrevSeparator = false;
@@ -1482,6 +1499,7 @@ do
 			entry.notClickable     = not not D.noclick;
 			entry.isNotRadio       = not D.radio;
 			entry.keepShownOnClick = true;
+			entry.noClickSound     = true;
 
 			if (D.keepShown==false) then
 				entry.keepShownOnClick = false;
@@ -1496,11 +1514,7 @@ do
 			end
 
 			if (D.checked~=nil) then
-				--if type(D.checked)=="function" then
-				--	entry.checked = D.checked(D);
-				--else
-					entry.checked = D.checked;
-				--end
+				entry.checked = D.checked;
 				if (entry.keepShownOnClick==nil) then
 					entry.keepShownOnClick = false;
 				end
@@ -1538,13 +1552,10 @@ do
 						D.event();
 					end
 					if (P) and (not entry.keepShownOnClick) then
-						if (_G["LibDropDownMenu_List1"]) then _G["LibDropDownMenu_List1"]:Hide(); end
+						LibCloseDropDownMenus();
 					end
 				end;
 			end
-
-			-- gxRestart
-			-- gameRestart
 
 			if (not D.title) and (not D.disabled) and (not D.arrow) and (not D.checked) and (not D.func) then
 				entry.disabled = true;
@@ -1562,38 +1573,10 @@ do
 		return false;
 	end
 
-	self.addEntries = self.addEntry;
-
-	local grpOrder = {"broker","tooltip","misc","ClickOpts"};
-
-	local function pairsByOptionGroup(t)
-		local a = {}
-		for n in pairs(t) do
-			for i,v in ipairs(grpOrder)do
-				if n:find("^"..v) then
-					n = i.."."..n;
-					break;
-				end
-			end
-			table.insert(a, n);
-		end
-		table.sort(a);
-		local i,_ = 0;
-		local function iter()
-			i = i + 1
-			if a[i] == nil then
-				return nil
-			end
-			_,a[i] = strsplit(".",a[i],2);
-			return a[i], t[a[i]];
-		end
-		return iter
-	end
-
-	function self.addConfigElements(modName,separator,noTitle)
+	function ns.EasyMenu:AddConfig(modName,hideFirstLabel,noTitle)
 		local noFirstSep,options = true,ns.getModOptionTable(modName);
 		local showLabel=true;
-		if separator then
+		if hideFirstLabel then
 			showLabel = false;
 		end
 		if options then
@@ -1601,16 +1584,16 @@ do
 				if optGrp and type(optGrp.args)=="table" then
 					-- add group header
 					if separator then
-						self.addEntry({ separator=true });
+						self:AddEntry({ separator=true });
 					else
 						if showLabel then
-							self.addEntry({ label = L[modName], title = true });
-							self.addEntry({ separator=true });
+							self:AddEntry({ label = L[modName], title = true });
+							self:AddEntry({ separator=true });
 							showLabel=false;
 						end
 						separator=true
 					end
-					self.addEntry({ label=optGrp.name, title=true });
+					self:AddEntry({ label=optGrp.name, title=true });
 
 					-- replace shared option entries
 					for key, value in pairs(optGrp)do
@@ -1635,10 +1618,10 @@ do
 
 						if not hide then
 							if value.type=="separator" then
-								self.addEntry({ separator=true });
+								self:AddEntry({ separator=true });
 							elseif value.type=="header" then
-								self.addEntry({ separator=true });
-								self.addEntry({ label=value.name, title=true });
+								self:AddEntry({ separator=true });
+								self:AddEntry({ label=value.name, title=true });
 							elseif value.type=="toggle" then
 								local tooltip = nil;
 								if value.desc then
@@ -1647,7 +1630,7 @@ do
 										tooltip[2] = tooltip[2]();
 									end
 								end
-								self.addEntry({
+								self:AddEntry({
 									label = gsub(value.name,"|n"," "),
 									checked = function()
 										if key=="minimap" then
@@ -1670,7 +1653,7 @@ do
 								if type(tooltip[2])=="function" then
 									tooltip[2] = tooltip[2]();
 								end
-								local p = self.addEntry({
+								local p = self:AddEntry({
 									label = value.name,
 									tooltip = tooltip,
 									arrow = true
@@ -1680,7 +1663,7 @@ do
 									values = values({modName,"",key});
 								end
 								for valKey,valLabel in ns.pairsByKeys(values) do
-									self.addEntry({
+									self:AddEntry({
 										label = valLabel,
 										radio = valKey,
 										keepShown = false,
@@ -1703,8 +1686,19 @@ do
 		end
 	end
 
-	function self.ShowMenu(parent, parentX, parentY, callbackOnClose)
-		local anchor, x, y, displayMode = "cursor", nil, nil, "MENU"
+	function ns.EasyMenu:Refresh(level)
+		if level then
+			Lib_UIDropDownMenu_Refresh(self,nil,level);
+		end
+		Lib_UIDropDownMenu_RefreshAll(self);
+	end
+
+	function ns.EasyMenu:InitializeMenu()
+		wipe(self.menu);
+	end
+
+	function ns.EasyMenu:ShowMenu(parent, parentX, parentY, initializeFunction)
+		local anchor, x, y = "cursor"
 
 		if (parent) then
 			anchor = parent;
@@ -1712,31 +1706,14 @@ do
 			y = parentY or 0;
 		end
 
-		self.addEntry({separator=true});
-		--self.addEntry({label=CANCEL, func=function() LibDropDownMenu_List1:Hide(); end});
-		self.addEntry({label=L["Close menu"], func=function() LibDropDownMenu_List1:Hide(); if callbackOnClose then callbackOnClose() end end});
-
 		if openTooltip then
 			ns.hideTooltip(openTooltip,openTooltip.key,true,false,true);
 		end
 
-		ns.LDDM.UIDropDownMenu_Initialize(self.frame, ns.LDDM.EasyMenu_Initialize, displayMode, nil, self.menu);
-		ns.LDDM.ToggleDropDownMenu(1, nil, self.frame, anchor, x, y, self.menu, nil, nil);
-	end
+		self:AddEntry({separator=true}, pList);
+		self:AddEntry({label=L["Close menu"], func=LibCloseDropDownMenus});
 
-	function self.ShowDropDown(parent)
-		local displaymode = nil;
-
-		ns.LDDM.UIDropDownMenu_Initialize(self.frame, ns.LDDM.EasyMenu_Initialize);
-		ns.LDDM.ToggleDropDownMenu(nil, nil, self.frame);
-	end
-
-	function self.Refresh(level)
-		ns.LDDM.UIDropDownMenu_Refresh(self.frame,nil,level);
-	end
-
-	function self.RefreshAll()
-		ns.LDDM.UIDropDownMenu_RefreshAll(self.frame);
+		Lib_EasyMenu(self.menu, self,anchor, x, y, "MENU");
 	end
 end
 
@@ -1779,9 +1756,9 @@ do
 	};
 	function shared.OptionMenu(self,button,modName)
 		if (openTooltip~=nil) and (openTooltip:IsShown()) then ns.hideTooltip(openTooltip); end
-		ns.EasyMenu.InitializeMenu();
-		ns.EasyMenu.addConfigElements(modName);
-		ns.EasyMenu.ShowMenu(self);
+		ns.EasyMenu:InitializeMenu();
+		ns.EasyMenu:AddConfig(modName);
+		ns.EasyMenu:ShowMenu(self);
 	end
 	local sharedClickOptions = {
 		OptionMenu  = {"ClickOptMenu","shared","OptionMenu"},
@@ -2045,6 +2022,7 @@ do
 		end
 	end
 end
+
 
 -- -----------------
 -- text bar

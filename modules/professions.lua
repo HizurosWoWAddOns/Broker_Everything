@@ -312,12 +312,12 @@ ns.ClickOpts.addDefaults(module,{
 
 function module.ProfessionMenu()
 	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addEntry({ label = L["Open"], title = true });
-	ns.EasyMenu.addEntry({ separator = true });
+	ns.EasyMenu:InitializeMenu();
+	ns.EasyMenu:AddEntry({ label = L["Open"], title = true });
+	ns.EasyMenu:AddEntry({ separator = true });
 	for i,v in ipairs(professions) do
 		if (v[spellId]) and (not v[disabled]) then
-			ns.EasyMenu.addEntry({
+			ns.EasyMenu:AddEntry({
 				label = v[nameLocale],
 				icon = v[icon],
 				func = function() securecall("CastSpellByName",v[nameLocale]); end,
@@ -325,13 +325,13 @@ function module.ProfessionMenu()
 			});
 		end
 	end
-	ns.EasyMenu.ShowMenu(self);
+	ns.EasyMenu:ShowMenu(self);
 end
 
 function module.OptionMenu()
 	if (tt~=nil) then ns.hideTooltip(tt); end
-	ns.EasyMenu.InitializeMenu();
-	ns.EasyMenu.addEntry({ label = L["In title"], title = true });
+	ns.EasyMenu:InitializeMenu();
+	ns.EasyMenu:AddEntry({ label = L["In title"], title = true });
 	local numProfs,numLearned = (ns.player.class=="ROGUE") and 7 or 6,0;
 	for i=1, numProfs do
 		if (professions[i]) then
@@ -342,21 +342,21 @@ function module.OptionMenu()
 		local d,e,p = ns.profile[name].inTitle;
 		if (d[I]) and (professions[d[I]]) then
 			e=professions[d[I]];
-			p=ns.EasyMenu.addEntry({ label = (C("dkyellow","%s%d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"], I, e[icon], C("ltblue",e[nameLocale])), arrow = true, disabled=(numLearned==0) });
-			ns.EasyMenu.addEntry({
+			p=ns.EasyMenu:AddEntry({ label = (C("dkyellow","%s%d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"], I, e[icon], C("ltblue",e[nameLocale])), arrow = true, disabled=(numLearned==0) });
+			ns.EasyMenu:AddEntry({
 				label = (C("ltred","%s").." |T%s:20:20:0:0|t %s"):format(CALENDAR_VIEW_EVENT_REMOVE,e[icon],C("ltblue",e[nameLocale])),
 				func = function()
 					Title_Set(I,nil);
 				end
 			},p);
-			ns.EasyMenu.addEntry({ separator=true },p);
+			ns.EasyMenu:AddEntry({ separator=true },p);
 		else
-			p=ns.EasyMenu.addEntry({ label = (C("dkyellow","%s%d:").."  %s"):format(L["Place"],I,L["Add a profession"]), arrow = true, disabled=(numLearned==0) });
+			p=ns.EasyMenu:AddEntry({ label = (C("dkyellow","%s%d:").."  %s"):format(L["Place"],I,L["Add a profession"]), arrow = true, disabled=(numLearned==0) });
 		end
 		for i=1, numProfs do
 			local v = professions[i];
 			if (v) then
-				ns.EasyMenu.addEntry({
+				ns.EasyMenu:AddEntry({
 					label = v[nameLocale],
 					icon = v[icon],
 					func = function() Title_Set(I,i) end,
@@ -365,8 +365,8 @@ function module.OptionMenu()
 			end
 		end
 	end
-	ns.EasyMenu.addConfigElements(name,true);
-	ns.EasyMenu.ShowMenu(self);
+	ns.EasyMenu:AddConfig(name,true);
+	ns.EasyMenu:ShowMenu(self);
 end
 
 function module.options()

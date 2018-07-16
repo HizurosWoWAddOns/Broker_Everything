@@ -292,6 +292,7 @@ local function inBrokerValues(info)
 	return {};
 end
 
+
 -- module functions and variables --
 ------------------------------------
 module = {
@@ -360,9 +361,9 @@ end
 function module.OptionMenu(parent)
 	if (tt~=nil) and (tt:IsShown()) then tt:Hide(); end
 
-	ns.EasyMenu.InitializeMenu();
+	ns.EasyMenu:InitializeMenu();
 
-	ns.EasyMenu.addEntry({ label=L["Currency in title - menu"], title=true});
+	ns.EasyMenu:AddEntry({ label=L["Currency in title - menu"], title=true});
 
 	for place=1, BrokerPlacesMax do
 		local pList,pList2,d;
@@ -375,17 +376,17 @@ function module.OptionMenu(parent)
 		if id then
 			local d = currencyCache[id];
 			if d then
-				pList = ns.EasyMenu.addEntry({
+				pList = ns.EasyMenu:AddEntry({
 					arrow = true,
 					label = (C("dkyellow","%s%d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"],place,d[cIcon],C("ltblue",d[cName])),
 				});
-				ns.EasyMenu.addEntry({ label = C("ltred",L["Remove the currency"]), func=function() setInTitle(place, false); end }, pList);
-				ns.EasyMenu.addEntry({separator=true}, pList);
+				ns.EasyMenu:AddEntry({ label = C("ltred",L["Remove the currency"]), func=function() setInTitle(place, false); end }, pList);
+				ns.EasyMenu:AddEntry({separator=true}, pList);
 			end
 		end
 
 		if not pList then
-			pList = ns.EasyMenu.addEntry({
+			pList = ns.EasyMenu:AddEntry({
 				arrow = true,
 				label = (C("dkyellow","%s%d:").."  %s"):format(L["Place"],place,L["Add a currency"])
 			});
@@ -397,21 +398,21 @@ function module.OptionMenu(parent)
 				if ns.profile[name].currenciesInTitle[place]~=v then
 					n,d = C("ltyellow",n),false;
 				end
-				ns.EasyMenu.addEntry({
+				ns.EasyMenu:AddEntry({
 					label = n,
 					icon = currencyCache[v][cIcon],
 					disabled = d,
 					func = function() setInTitle(place,v); end
 				}, pList2);
 			else
-				pList2 = ns.EasyMenu.addEntry({label=C("ltblue",v), arrow=true}, pList);
+				pList2 = ns.EasyMenu:AddEntry({label=C("ltblue",v), arrow=true}, pList);
 			end
 		end
 	end
 
-	ns.EasyMenu.addConfigElements(name,true);
+	ns.EasyMenu:AddConfig(name,true);
 
-	ns.EasyMenu.ShowMenu(parent);
+	ns.EasyMenu:ShowMenu(parent);
 end
 
 -- function module.init() end
