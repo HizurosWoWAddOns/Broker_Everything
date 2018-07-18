@@ -606,13 +606,18 @@ function ns.RegisterOptions()
 	if not ns.data.AceDBfix then
 		ns.data.AceDBfix = 0;
 	end
-	if ns.data.AceDBfix<AceDBfixCurrent then
+
+	if ns.data.AceDBfix<AceDBfixCurrent and type(Broker_Everything_AceDB.profiles)=="table" then
 		for pName,pData in pairs(Broker_Everything_AceDB.profiles)do
-			for mName,mData in pairs(pData)do
-				for oKey,oValue in pairs(mData)do
-					if ns.data.AceDBfix<1 and oKey=="showCharsFrom" and type(oValue)=="number" then
-						mData[oKey] = tostring(oValue);
-					end
+			if type(pData)=="table" then
+				for mName,mData in pairs(pData)do
+					if type(mData)=="table" then
+						for oKey,oValue in pairs(mData)do
+							if ns.data.AceDBfix<1 and oKey=="showCharsFrom" and type(oValue)=="number" then
+								mData[oKey] = tostring(oValue);
+							end
+						end
+					ebd
 				end
 			end
 		end
