@@ -322,9 +322,19 @@ local function createTooltip(tt)
 								end
 								-- faction (own column)
 								if ns.profile[name].showFaction=="2" then
-									tt:SetCell(l,7,C( (ti[faction]=="Horde" and "red") or "ff0077ff",_G["FACTION_"..ti[faction]:upper()] or ti[faction]));		-- 7
+									local color = "green";
+									if ti[faction]=="Alliance" then
+										color = "ff0077ff"
+									elseif ti[faction]=="Horde" then
+										color = "red"
+									end
+									tt:SetCell(l,7,C(color,_G["FACTION_"..ti[faction]:upper()] or ti[faction]));		-- 7
 								elseif ns.profile[name].showFaction=="3" then
-									tt:SetCell(l,7,"|TInterface\\PVPFrame\\PVP-Currency-"..ti[faction]..":16:16:0:-1:32:32:2:30:2:30|t");
+									if ti[faction]=="Neutral" then
+										tt:SetCell(l,7,"|TInterface\\minimap\\tracking\\battlemaster:16:16:0:-1:32:32:2:30:2:30|t");
+									else
+										tt:SetCell(l,7,"|TInterface\\PVPFrame\\PVP-Currency-"..ti[faction]..":16:16:0:-1:32:32:2:30:2:30|t");
+									end
 								end
 							elseif ns.profile[name].showZone then
 								-- zone or current screen
