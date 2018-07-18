@@ -14,6 +14,30 @@ local icon = "Interface\\AddOns\\"..addon.."\\media\\volume_"
 local VIDEO_VOLUME_TITLE = L["Video Volume"];
 local volume,cvars,updateBroker,vol = {},{};
 
+if not ENABLE_DSP_EFFECTS then
+	if LOCALE_deDE then
+		L.ENABLE_DSP_EFFECTS = "Todesritterstimmen"
+	elseif LOCALE_esES or LOCALE_esMX then
+		L.ENABLE_DSP_EFFECTS = "Voces caballeros de la M."
+	elseif LOCALE_frFR then
+		L.ENABLE_DSP_EFFECTS = "Voix ch. de la mort"
+	elseif LOCALE_itIT then
+		L.ENABLE_DSP_EFFECTS = "Voci Cavalieri della Morte"
+	elseif LOCALE_koKR then
+		L.ENABLE_DSP_EFFECTS = "죽음의 기사 음성"
+	elseif LOCALE_ptBR or LOCALE_ptPT then
+		L.ENABLE_DSP_EFFECTS = "Vozes de CdM"
+	elseif LOCALE_ruRU then
+		L.ENABLE_DSP_EFFECTS = "Голоса рыцарей смерти"
+	elseif LOCALE_zhCN then
+		L.ENABLE_DSP_EFFECTS = "死亡骑士语音"
+	elseif LOCALE_zhTW then
+		L.ENABLE_DSP_EFFECTS = "死亡騎士語音"
+	else
+		L.ENABLE_DSP_EFFECTS = "Death Knight Voices"
+	end
+end
+
 -- register icon names and default files --
 -------------------------------------------
 I[name..'_0']    = {iconfile=icon.."0"}		--IconName::Volume_0--
@@ -119,7 +143,12 @@ function createTooltip(tt, update)
 	for i,v in ipairs(vol) do
 		local color,disabled
 
-		if (v.hide) then
+		local label = _G[v.locale];
+		if not label then
+			label = L[v.locale];
+		end
+
+		if (v.hide) or not label then
 			-- do nothing
 		elseif type(v.toggle)=="string" then
 			l,c = tt:AddLine();
@@ -146,7 +175,7 @@ function createTooltip(tt, update)
 				tt:SetLineScript(l,"OnMouseUp",updateTooltip);
 			end
 
-			tt:SetCell(l,1,strrep(" ",3 * v.inset)..C(color,_G[v.locale]));
+			tt:SetCell(l,1,strrep(" ",3 * v.inset)..C(color,label));
 
 			if v.percent~=nil then
 				v.pnow = tonumber(("%.2f"):format(GetCVar(v.percent)));
@@ -164,7 +193,7 @@ function createTooltip(tt, update)
 			end
 		elseif (v.special=="hardware") and (ns.profile[name].listHardware) then
 			tt:AddSeparator(3,0,0,0,0);
-			tt:AddHeader(C("dkyellow",_G[v.locale])..(InCombatLockdown() and C("orange"," (disabled in combat)") or ""));
+			tt:AddHeader(C("dkyellow",label)..(InCombatLockdown() and C("orange"," (disabled in combat)") or ""));
 			tt:AddSeparator();
 
 			local lst,num,sel = getSoundHardware();
