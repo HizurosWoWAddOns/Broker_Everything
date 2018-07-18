@@ -9,52 +9,38 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "IDs"; -- L["IDs"]
 local ttName,ttColumns,tt,module,activeEncounter = name.."TT", 4;
-local BossKillQueryUpdate,diffTypes = false,setmetatable({ -- http://wowpedia.org/API_GetDifficultyInfo / http://wow.gamepedia.com/DifficultyID
-	[1] = 1,	--  1 =  5 Regular
-	[2] = 1,	--  2 =  5 Heroic
-
-	[3] = 4,	--  3 = 10 Normal
-	[4] = 4,	--  4 = 25 Normal
-	[5] = 4,	--  5 = 10 Heroic
-	[6] = 4,	--  6 = 25 Heroic
-	[7] = 5,	--  7 = 25 LFR
-
-	[8] = 2,	--  8 =  5 Challenge
-	[9] = 4,	--  9 = 40 man classic raids
-
-	--[10] = 0,	-- 10 = unknown
-
-	[11] = 3,	-- 11 = 5 Szenario Heroic
-	[12] = 3,	-- 12 = 5 Szenario Normal
-
-	--[13] = 0,	-- 13 = unknown
-
-	[14] = 7,	-- 14 = 10-30 Normal
-	[15] = 7,	-- 15 = 10-30 Heroic
-	[16] = 7,	-- 16 = 20 Mystic
-	[17] = 7,	-- 17 = 10-30 LFR
-
-	[18] = 8,	-- 18 = ? Event
-	[19] = 8,	-- 19 = ? Event
-	[20] = 8,	-- 20 = ? Event Scenario
-
-	--[21] = 0,	-- 21 = unknown
-	--[22] = 0,	-- 22 = unknown
-
-	[23] = 1,	-- 23 = Mythic dungeons
-	[24] = 1,	-- 24 = timewalker dungeons
-	[25] = 3,	-- 25 = PvP scenarios
-},{__index=function(t,k) rawset(t,k,0); return 0; end});
 local diffName = {
-	"Dungeons",			-- [1]
-	"Challenges",		-- [2]
-	"Szenarios",		-- [3]
-	"Raids (Classic)",	-- [4]
-	"Raids (LFR)",		-- [5]
-	"Raids (Flex)",		-- [6]
-	"Raids",			-- [7]
-	"Events"			-- [8]
+	LFG_TYPE_DUNGEON, -- dungeons [1]
+	TRACKER_HEADER_SCENARIO, -- scenarios [2]
+	PLAYER_DIFFICULTY3, -- lfr [3]
+	LFG_TYPE_RAID, -- raids [4]
+	-- event [5]
 };
+diffName[5] = GetDifficultyInfo(18);
+diffName[6] = RAID_DIFFICULTY1:gsub("(%d+)","%%d");
+
+local BossKillQueryUpdate,diffTypes = false,setmetatable({ -- http://wowpedia.org/API_GetDifficultyInfo / http://wow.gamepedia.com/DifficultyID
+	[14] = 4,	-- 14 / 10-30 raid / normal
+	[15] = 4,	-- 15 / 10-30 raid / heroic
+	[16] = 4,	-- 16 / 20 raid / mystic
+},{
+	__index=function(t,k)
+		local isType = 1;
+		local info = GetDifficultyInfo(k);
+		if info:find(diffName[6]) then
+			isType = 4; -- raid
+		else
+			for i=1, #diffName do
+				if info:find(diffName[i]) then
+					isType = i;
+					break;
+				end
+			end
+		end
+		rawset(t,k,isType);
+		return isType;
+	end
+});
 
 
 -- register icon names and default files --
@@ -151,13 +137,10 @@ local function createTooltip(tt)
 		if (count>0) then
 			local showDiff = { -- show difficulty
 				{ns.profile[name].showDungeons,    false},										--"Dungeons", -- [1]
-				{ns.profile[name].showChallenges,  false},										--"Challenges", -- [2]
-				{ns.profile[name].showSzenarios,   false},										--"Szenarios", -- [3]
-				{ns.profile[name].showRaidsClassic,ns.profile[name].showExpiredRaidsClassic},	--"Raids (Classic)", -- [4]
-				{ns.profile[name].showRaidsLFR,    false},										--"Raids (LFR)", -- [5]
-				{ns.profile[name].showRaidsFlex,   false},										--"Raids (Flex)", -- [6]
-				{ns.profile[name].showRaids,       ns.profile[name].showExpiredRaids},			--"Raids", -- [7]
-				{ns.profile[name].showEvents,      false},										--"Events" -- [8]
+				{ns.profile[name].showSzenarios,   false},										--"Szenarios", -- [2]
+				{ns.profile[name].showRaidsLFR,    false},										--"Raids (LFR)", -- [3]
+				{ns.profile[name].showRaids,       ns.profile[name].showExpiredRaids},			--"Raids", -- [4]
+				{ns.profile[name].showEvents,      false},										--"Events" -- [5]
 			};
 			for diff, data in ns.pairsByKeys(lst) do
 				if diff~=0 and showDiff[diff][1] and (diffCounter[diff][2]>0 or (diffCounter[diff][1]>0 and showDiff[diff][2])) then
@@ -237,16 +220,12 @@ module = {
 		-- show types
 		showBosses = true,
 		showDungeons = true,
-		showChallenges = true,
 		showSzenarios = true,
-		showRaidsClassic = true,
 		showRaidsLFR = true,
-		showRaidsFlex = true,
 		showRaids = true,
 		showEvents = true,
 
 		-- show expired types
-		showExpiredRaidsClassic = true,
 		showExpiredRaids = true
 	},
 	clickOptionsRename = {
@@ -267,16 +246,12 @@ function module.options()
 		tooltip = {
 			showBosses={ type="toggle", order=1, name=L["Show world bosses"],          desc=L["Display list of world boss IDs in tooltip"] },
 			showDungeons={ type="toggle", order=2, name=L["Show dungeons"],              desc=L["Display list of dungeon IDs in tooltip"] },
-			showChallenges={ type="toggle", order=3, name=L["Show challenges"],            desc=L["Display list of challenge IDs in tooltip"] },
-			showSzenarios={ type="toggle", order=4, name=L["Show szenarios"],             desc=L["Display list of szenario IDs in tooltip"] },
-			showRaidsClassic={ type="toggle", order=5, name=L["Show classic raids"],         desc=L["Display list of classic raid IDs in tooltip"] },
-			showRaidsLFR={ type="toggle", order=6, name=L["Show lfr"],                   desc=L["Display list of lfr IDs in tooltip"] },
-			showRaidsFlex={ type="toggle", order=7, name=L["Show flex raids"],            desc=L["Display list of flex raid IDs in tooltip"] },
-			showRaids={ type="toggle", order=8, name=L["Show raids"],                 desc=L["Display list of raid IDs in tooltip"] },
-			showEvents={ type="toggle", order=9, name=L["Show events"],                desc=L["Display list of event IDs in tooltip"] },
-			separator={type="separator", order=10,},
-			showExpiredRaidsClassic={ type="toggle", order=11, name=L["Show expired classic raids"], desc=L["Display expired classic raids in tooltip"] },
-			showExpiredRaids={ type="toggle", order=12, name=L["Show expired raids"],         desc=L["Display expired raids in tooltip"] },
+			showSzenarios={ type="toggle", order=3, name=L["Show szenarios"],             desc=L["Display list of szenario IDs in tooltip"] },
+			showRaidsLFR={ type="toggle", order=4, name=L["Show lfr"],                   desc=L["Display list of lfr IDs in tooltip"] },
+			showRaids={ type="toggle", order=5, name=L["Show raids"],                 desc=L["Display list of raid IDs in tooltip"] },
+			showEvents={ type="toggle", order=6, name=L["Show events"],                desc=L["Display list of event IDs in tooltip"] },
+			separator={type="separator", order=7,},
+			showExpiredRaids={ type="toggle", order=9, name=L["Show expired raids"],         desc=L["Display expired raids in tooltip"] },
 		},
 		misc = nil,
 	}
