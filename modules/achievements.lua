@@ -67,6 +67,10 @@ local function updateBroker()
 	local txt = {};
 
 	local now = GetTotalAchievementPoints();
+	if not session.total then
+		session.total = now
+	end
+
 	local diff = now-session.total;
 	if ns.profile[name].showPoints then
 		if ns.profile[name].showPointsSess and diff>0 then
