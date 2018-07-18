@@ -269,8 +269,8 @@ local function hideOnUpdate(self, elapse)
 end
 
 local function hookDragStart(self)
-	if brokerDragHooks[self] and brokerDragHooks[self]:IsShown() then
-		ns.hideTooltip(brokerDragHooks[self])
+	if brokerDragHooks[self] and brokerDragHooks[self][1]==brokerDragHooks[self][2].key and brokerDragHooks[self][2]:IsShown() then
+		ns.hideTooltip(brokerDragHooks[self][2]);
 	end
 end
 
@@ -284,6 +284,7 @@ function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
 	end
 	local modifier = ns.profile.GeneralOptions.ttModifierKey2;
 	local tooltip = ns.LQT:Acquire(unpack(ttData)); openTooltip = tooltip;
+
 	tooltip.parent,tooltip.mode,tooltip.scripts = ttParent,ttMode,ttScripts;
 	tooltip.mode[1] = tooltip.mode[1]==true or (modifier~="NONE" and ns.tooltipChkOnShowModifier(modifier,false))
 	if ns.profile.GeneralOptions.tooltipScale==true then
@@ -299,15 +300,13 @@ function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
 	end
 	tooltip:SetScript("OnUpdate",hideOnUpdate);
 	tooltip:SetScript("OnLeave",hideOnLeave);
-	-- Tiptac Support for LibQTip Tooltips
-	if tooltip and _G.TipTac and _G.TipTac.AddModifiedTip then
-		-- Pass true as second parameter because hooking OnHide causes C stack overflows
-		_G.TipTac:AddModifiedTip(tooltip, true);
+
+	if _G.TipTac and _G.TipTac.AddModifiedTip then
+		_G.TipTac:AddModifiedTip(tooltip, true); -- Tiptac Support for LibQTip Tooltips
+	elseif AddOnSkins and AddOnSkins.SkinTooltip then
+		AddOnSkins:SkinTooltip(tooltip); -- AddOnSkins support
 	end
-	-- AddOnSkins support
-	if AddOnSkins and AddOnSkins.SkinTooltip then
-		AddOnSkins:SkinTooltip(tooltip);
-	end
+
 	tooltip:SetClampedToScreen(true);
 	tooltip:SetPoint(ns.GetTipAnchor(unpack(ttParent)));
 
@@ -317,7 +316,7 @@ function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
 			-- close tooltips if broker button fire OnDragStart
 			ttParent[1]:HookScript("OnDragStart",hookDragStart);
 		end
-		brokerDragHooks[ttParent[1]]=tooltip;
+		brokerDragHooks[ttParent[1]]={tooltip.key,tooltip};
 	end
 
 	return tooltip;
@@ -862,7 +861,7 @@ do
 				if(items[id]==nil)then items[id]={}; end
 				local obj,lvl = {type="inventory",slotName=slotNames[slotIndex],slotIndex=slotIndex,slot=slotIndex,durability={},id=id,unknown1=unknown1,gems={},empty_gem=false};
 				obj.link = GetInventoryItemLink("player",slotIndex);
-				obj.name, _, obj.rarity, obj.level, _, obj.itemType, obj.subType, _, obj.itemEquipLoc, obj.icon, obj.price = GetItemInfo(obj.link);
+				obj.name, _, obj.rarity, obj.level, _, obj.itemType, obj.subType, obj.stackCount, obj.itemEquipLoc, obj.icon, obj.price = GetItemInfo(obj.link);
 				if INVTYPES[obj.itemEquipLoc]~=obj.itemType then
 					obj.itemType=INVTYPES[obj.itemEquipLoc]; -- since 7.1 - GetItemInfo response incorrect itemType for armor and weapons
 				end
@@ -1968,6 +1967,17 @@ end
 -- shared data for questlog & world quests --
 -- --------------------------------------- --
 do
+	local QUEST_TAG_GROUP     = LE_QUEST_TAG_TYPE_GROUP     or QUEST_TAG_GROUP     or "grp" -- missing in bfa
+	local QUEST_TAG_PVP       = LE_QUEST_TAG_TYPE_PVP       or QUEST_TAG_PVP       or "pvp"
+	local QUEST_TAG_DUNGEON   = LE_QUEST_TAG_TYPE_DUNGEON   or QUEST_TAG_DUNGEON   or "d"
+	local QUEST_TAG_HEROIC    = LE_QUEST_TAG_TYPE_HEROIC    or QUEST_TAG_HEROIC    or "hc" -- missing in bfa
+	local QUEST_TAG_RAID      = LE_QUEST_TAG_TYPE_RAID      or QUEST_TAG_RAID      or "r"
+	local QUEST_TAG_RAID10    = LE_QUEST_TAG_TYPE_RAID10    or QUEST_TAG_RAID10    or "r10"  -- missing in bfa
+	local QUEST_TAG_RAID25    = LE_QUEST_TAG_TYPE_RAID25    or QUEST_TAG_RAID25    or "r25" -- missing in bfa
+	local QUEST_TAG_SCENARIO  = LE_QUEST_TAG_TYPE_SCENARIO  or QUEST_TAG_SCENARIO  or "s"  -- missing in bfa
+	local QUEST_TAG_ACCOUNT   = LE_QUEST_TAG_TYPE_ACCOUNT   or QUEST_TAG_ACCOUNT   or "a"  -- missing in bfa
+	local QUEST_TAG_LEGENDARY = LE_QUEST_TAG_TYPE_LEGENDARY or QUEST_TAG_LEGENDARY or "leg"  -- missing in bfa
+
 	ns.questTags = {
 		[QUEST_TAG_GROUP]     = L["QuestTagGRP"],
 		[QUEST_TAG_PVP]       = {L["QuestTagPVP"],"violet"},
