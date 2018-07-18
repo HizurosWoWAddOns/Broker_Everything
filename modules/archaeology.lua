@@ -224,9 +224,9 @@ end
 module = {
 	events = {
 		"PLAYER_LOGIN",
-		"KNOWN_CURRENCY_TYPES_UPDATE",
+		--"KNOWN_CURRENCY_TYPES_UPDATE", -- alerted in 8.0
 		"ARTIFACT_UPDATE",
-		"ARTIFACT_COMPLETE",
+		--"ARTIFACT_COMPLETE", -- alerted in 8.0
 		"CURRENCY_DISPLAY_UPDATE",
 		"CHAT_MSG_SKILL"
 	},

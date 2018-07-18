@@ -12,7 +12,7 @@ local ttName, ttName2, ttColumns, tt, tt2, module, createTooltip,init  = name.."
 local data = {};
 local sessionStartLevel = UnitLevel("player");
 local slots,items = {  [1]=HEADSLOT, [3]=SHOULDERSLOT, [5]=CHESTSLOT, [7]=LEGSSLOT, [15]=BACKSLOT, [11]=FINGER0SLOT, [12]=FINGER1SLOT, [998]=L["Guild perk"], [999]=L["Recruite a Friend"]};
-local textbarSigns = {"=","-","#","||","/","\\","+",">","•"};
+local textbarSigns = {"=","-","#","||","/","\\","+",">","•","⁄"};
 
 
 -- register icon names and default files --
