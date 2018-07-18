@@ -280,25 +280,8 @@ local function createTooltip2(self,info)
 	ns.roundupTooltip(tt2, nil, "horizontal", tt);
 end
 
-local function tooltipAddLine(v,me)
+local function tooltipAddLine(v,flags)
 	if not (tt and tt.key and tt.key==ttName) then return end
-
-	local ts1, ts2 = "","";
-	if ns.profile[name].showProfessions and tradeskills[v[mFullName]] then
-		if tradeskills[v[mFullName]][1] then
-			local t = tradeskills[v[mFullName]][1];
-			ts1 = "|T"..t[tsIcon]..":0|t "..t[tsValue];
-		end
-		if tradeskills[v[mFullName]][2] then
-			local t = tradeskills[v[mFullName]][2];
-			ts2 = "|T"..t[tsIcon]..":0|t "..t[tsValue];
-		end
-	end
-
-	local Zone = v[mZone];
-	if v[mIsMobile] and not v[mOnline] then
-		Zone=C("cyan",REMOTE_CHAT);
-	end
 
 	local status;
 	if v[mIsMobile] then
@@ -307,17 +290,51 @@ local function tooltipAddLine(v,me)
 		status = ("|T%s:0|t"):format(_G["FRIENDS_TEXTURE_"  .. ((v[mIsAway]==1 and "AFK") or (v[mIsAway]==2 and "DND") or "ONLINE")]);
 	end
 
-	local l=tt:AddLine(
+	local line = {
 		v[mLevel],
 		status .. " " .. C(v[mClassFile],ns.scm(v[mName])) .. ns.showRealmName(name,v[mRealm]),
-		(ns.profile[name].showRace and v[mRaceId] and raceById[v[mRaceId]]) and raceById[v[mRaceId]] or "", -- [3]
-		(ns.profile[name].showZone) and Zone or "", -- [4]
-		(ns.profile[name].showNotes) and ns.scm(v[mNote]) or "", -- [5]
-		(ns.profile[name].showONotes) and ns.scm(v[mOfficerNote]) or "", -- [6]
-		(ns.profile[name].showRank) and ns.scm(v[mRank]) or "", -- [7]
-		ts1, -- [8]
-		ts2 -- [9]
-	);
+	};
+
+	if flags.showRace then
+		tinsert(line,v[mRaceId] and raceById[v[mRaceId]] and raceById[v[mRaceId]] or ""); -- race
+	end
+	if flags.showZone then
+		local Zone = v[mZone] or "?";
+		if v[mIsMobile] and not v[mOnline] then
+			Zone=C("cyan",REMOTE_CHAT);
+		end
+		tinsert(line,Zone); -- zone
+	end
+	if flags.showNotes then
+		tinsert(line,ns.scm(v[mNote])); -- notes
+	end
+	if flags.showONotes and CanViewOfficerNote() then -- extend if
+		tinsert(line,ns.scm(v[mOfficerNote])); -- onotes
+	end
+	if flags.showRank then
+		local rankID="";
+		if flags.showRank and flags.showRankID then
+			rankID = " "..C("gray","("..v[mRankIndex]..")");
+		end
+		tinsert(line,C(v[mRankIndex]==0 and "green" or "white",ns.scm(v[mRank]))..rankID); -- rank
+	end
+	if flags.showProfessions then
+		local ts1, ts2 = "","";
+		if ns.profile[name].showProfessions and tradeskills[v[mFullName]] then
+			if tradeskills[v[mFullName]][1] then
+				local t = tradeskills[v[mFullName]][1];
+				ts1 = "|T"..t[tsIcon]..":0|t "..t[tsValue];
+			end
+			if tradeskills[v[mFullName]][2] then
+				local t = tradeskills[v[mFullName]][2];
+				ts2 = "|T"..t[tsIcon]..":0|t "..t[tsValue];
+			end
+		end
+		tinsert(line,ts1); -- professions 1
+		tinsert(line,ts2); -- professions 2
+	end
+
+	local l=tt:AddLine(unpack(line));
 
 	if ts1 and tradeskills[v[mFullName]] and tradeskills[v[mFullName]][1] then
 		tt:SetCellScript(l, 7, "OnMouseUp", GetMemberRecipes,{name=v[mFullName],id=tradeskills[v[mFullName]][1][4]});
@@ -373,7 +390,13 @@ local function createTooltip(tt,update)
 	end
 
 	if (ns.profile[name].showApplicants) and type(guild[gNumApplicants])=="number" and (guild[gNumApplicants]>0) then
-		local line,column = tt:AddLine(C("orange",LEVEL),C("orange",L["Applicant"]),C("orange",L["Roles"]),C("orange",RAID_INSTANCE_EXPIRES_EXPIRED),C("orange",COMMENT));
+		local line,column = tt:AddLine(
+			C("orange",LEVEL),
+			C("orange",L["Applicant"]),
+			C("orange",L["Roles"]),
+			C("orange",RAID_INSTANCE_EXPIRES_EXPIRED),
+			C("orange",COMMENT)
+		);
 		tt:AddSeparator();
 		for i, a in ipairs(applicants) do
 			if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
@@ -395,17 +418,36 @@ local function createTooltip(tt,update)
 		tt:AddSeparator(4,0,0,0,0);
 	end
 
-	local l=tt:AddLine(
+	local flags = {
+		showRace=ns.profile[name].showRace,
+		showZone=ns.profile[name].showZone,
+		showNotes=ns.profile[name].showNotes,
+		showONotes=(ns.profile[name].showONotes and CanViewOfficerNote()),
+		showRank=ns.profile[name].showRank,
+		showRankID=ns.profile[name].showRankID,
+		showProfessions=ns.profile[name].showProfessions
+	};
+	local titles = {
 		C("ltyellow",LEVEL), -- [1]
 		C("ltyellow",CHARACTER), -- [2]
-		(ns.profile[name].showRace) and C("ltyellow",RACE) or "", -- [3]
-		(ns.profile[name].showZone) and C("ltyellow",ZONE) or "", -- [4]
-		(ns.profile[name].showNotes) and C("ltyellow",LABEL_NOTE) or "", -- [5]
-		(ns.profile[name].showONotes and CanViewOfficerNote()) and C("ltyellow",OFFICER_NOTE_COLON) or "", -- [6]
-		(ns.profile[name].showRank) and C("ltyellow",RANK) or "" -- [7]
-	);
-
-	if ns.profile[name].showProfessions then
+	};
+	if flags.showRace then
+		tinsert(titles,C("ltyellow",RACE));
+	end
+	if flags.showZone then
+		tinsert(titles,C("ltyellow",ZONE));
+	end
+	if flags.showNotes then
+		tinsert(titles,C("ltyellow",LABEL_NOTE));
+	end
+	if flags.showONotes and CanViewOfficerNote() then -- extend if
+		tinsert(titles,C("ltyellow",OFFICER_NOTE_COLON));
+	end
+	if flags.showRank then
+		tinsert(titles,C("ltyellow",RANK));
+	end
+	local l=tt:AddLine(unpack(titles));
+	if flags.showProfessions then
 		tt:SetCell(l, 7,C("ltyellow",TRADE_SKILLS), nil,nil,2); -- [8,9]
 	end
 
@@ -414,7 +456,7 @@ local function createTooltip(tt,update)
 	for i,v in ipairs(members)do
 		if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
 		if v[mOnline] and ((not v[mIsMobile]) or (ns.profile[name].showMobileChatter and v[mIsMobile] and not ns.profile[name].splitTables)) then
-			tooltipAddLine(v);
+			tooltipAddLine(v,flags);
 		end
 	end
 
@@ -423,7 +465,7 @@ local function createTooltip(tt,update)
 		for i,v in ipairs(members)do
 			if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
 			if v[mOnline] and v[mIsMobile] then
-				tooltipAddLine(v);
+				tooltipAddLine(v,flags);
 			end
 		end
 	end
@@ -520,6 +562,7 @@ module = {
 		showNotes = true,		showNotesInTT2 = false,
 		showONotes = true,		showONotesInTT2 = false,
 		showRank = true,		showRankInTT2 = false,
+		showRankID = false,
 		showProfessions = true,	showProfessionsInTT2 = false,
 
 		-- misc
@@ -566,10 +609,12 @@ function module.options()
 			showNotes         = { type="toggle", order= 6, name=L["Notes"], desc=L["Show notes from guild members in tooltip"]},
 			showONotes        = { type="toggle", order= 7, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"]},
 			showRank          = { type="toggle", order= 8, name=RANK, desc=L["Show rank name from guild members in tooltip"]},
-			showProfessions   = { type="toggle", order= 9, name=TRADE_SKILLS, desc=L["Show professions from guild members in tooltip"] },
-			showApplicants    = { type="toggle", order=10, name=L["Applicants"], desc=L["Show applicants in tooltip"] },
-			showMobileChatter = { type="toggle", order=11, name=L["Mobile app user"], desc=L["Show mobile chatter in tooltip (Armory App users)"] },
-			splitTables       = { type="toggle", order=12, name=L["Separate mobile app user"], desc=L["Display mobile chatter with own table in tooltip"] },
+			showRankID        = { type="toggle", order= 9, name=RANK.."ID", desc=L["Show rank id from guild members in tooltip"]},
+			showProfessions   = { type="toggle", order=10, name=TRADE_SKILLS, desc=L["Show professions from guild members in tooltip"] },
+			showApplicants    = { type="toggle", order=11, name=L["Applicants"], desc=L["Show applicants in tooltip"] },
+			showMobileChatter = { type="toggle", order=12, name=L["Mobile app user"], desc=L["Show mobile chatter in tooltip (Armory App users)"] },
+			splitTables       = { type="toggle", order=13, name=L["Separate mobile app user"], desc=L["Display mobile chatter with own table in tooltip"] },
+
 		},
 		tooltip2 = {
 			name = L["Secondary tooltip options"],
@@ -682,22 +727,39 @@ end
 function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	local ttAlignings = {"LEFT"};
+	ttColumns = 1;
 
 	if IsInGuild() then
 		ttAlignings = {
 			"RIGHT", -- level
 			"LEFT" -- name
 		};
-		tinsert(ttAlignings,"LEFT"); -- race
-		tinsert(ttAlignings,"CENTER"); -- zone
-		tinsert(ttAlignings,"LEFT"); -- notes
-		tinsert(ttAlignings,"LEFT"); -- onotes
-		tinsert(ttAlignings,"LEFT"); -- rank
-		tinsert(ttAlignings,"LEFT"); -- professions 1
-		tinsert(ttAlignings,"LEFT"); -- professions 2
-	end
 
-	ttColumns = #ttAlignings;
+		if ns.profile[name].showRace then
+			tinsert(ttAlignings,"LEFT"); -- race
+		end
+		if ns.profile[name].showZone then
+			tinsert(ttAlignings,"CENTER"); -- zone
+		end
+		if ns.profile[name].showNotes then
+			tinsert(ttAlignings,"LEFT"); -- notes
+		end
+		if ns.profile[name].showONotes and CanViewOfficerNote() then -- extend if
+			tinsert(ttAlignings,"LEFT"); -- onotes
+		end
+		if ns.profile[name].showRank then
+			tinsert(ttAlignings,"LEFT"); -- rank
+		end
+		if ns.profile[name].showProfessions then
+			tinsert(ttAlignings,"LEFT"); -- professions 1
+			tinsert(ttAlignings,"LEFT"); -- professions 2
+		end
+
+		ttColumns = #ttAlignings;
+		if ns.profile[name].showApplicants then
+			ttColumns = max(ttColumns,5); -- min 5 cols for applicants
+		end
+	end
 
 	tt = ns.acquireTooltip({ttName, ttColumns,unpack(ttAlignings)},{false},{self});
 	createTooltip(tt);
