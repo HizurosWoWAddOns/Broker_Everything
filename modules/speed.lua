@@ -55,14 +55,25 @@ local function tooltipOnEnter(self,data)
 		for i=1, #trainer_faction do
 			local v = trainer_faction[i];
 			if faction~=v[1] then
-				if faction then
-					GameTooltip:AddLine(" ");
-				end
 				local fname,_,fstanding,fmin,fmax,fval = GetFactionInfoByID(v[1]);
-				GameTooltip:AddDoubleLine(C("gray",fname),C("gray",ttFactionLine:format(_G["FACTION_STANDING_LABEL"..fstanding],((fval-fmin)/(fmax-fmin))*100 ) ) );
-				faction = v[1];
+				if fname and fmin~=fmax then
+					if faction then
+						GameTooltip:AddLine(" ");
+					end
+					GameTooltip:AddDoubleLine(C("gray",fname),C("gray",ttFactionLine:format(_G["FACTION_STANDING_LABEL"..fstanding],((fval-fmin)/(fmax-fmin))*100 ) ) );
+					faction = v[1];
+				end
 			end
-			GameTooltip:AddDoubleLine(v[6] or UNKNOWN, ttTrainerLine:format(GetMapNameByID(v[3]), v[4], v[5] ) );
+			local mapName
+			if GetMapNameByID then -- pre BfA
+				mapName = GetMapNameByID(v[3]);
+			else
+				local mapInfo = C_Map.GetMapInfo(v[3]);
+				if mapInfo then
+					mapName = mapInfo.name;
+				end
+			end
+			GameTooltip:AddDoubleLine(v[6] or UNKNOWN, ttTrainerLine:format(mapName, v[4], v[5] ) ); -- TODO: BfA - removed function
 			--GetMapNameByID()
 			--GetFactionInfoByID()
 		end
@@ -140,12 +151,12 @@ local function createTooltip(tt)
 			local Name, rank, icon, castTime, minRange, maxRange = GetSpellInfo(spell[Id]);
 			local Link = GetSpellLink(spell[Id]);
 
-			if(spell[CustomText]==true)then
-				rank = {strsplit(" ",rank)};
+			if spell[CustomText]==true and rank then
+				rank = {strsplit(" ",rank)}; -- TODO: missing rank in bfa?
 				spell[CustomText] = rank[2] or rank[1];
 			end
 
-			if(spell[CustomText])then
+			if type(spell[CustomText])=="string" then
 				custom = " "..C("ltgray","("..spell[CustomText]..")");
 			end
 
@@ -154,8 +165,11 @@ local function createTooltip(tt)
 				if(spell[Special])then
 					if(spell[Special][1]=="SPELL")then
 						local n = GetSpellInfo(spell[Special][2]);
-						if(UnitDebuff("player",n))then
-							active=true;
+						for i=1, 10 do
+							if UnitDebuff("player",i)==n then -- BfA -- changed arg2 to numeric index only
+								active=true;
+								break;
+							end
 						end
 					elseif(spell[Special][1]=="TIME")then
 						local h = GetGameTime();
