@@ -136,7 +136,7 @@ local function updateCharacterDB(equipped)
 	local artifact_forge = (ArtifactRelicForgeFrame and ArtifactRelicForgeFrame:IsShown());
 	local itemID, altItemID, itemName, icon, xp, pointsSpent, quality, artifactAppearanceID, appearanceModID, itemAppearanceID, altItemAppearanceID, altOnTop, artifactTier = C_ArtifactUI[artifact_frame and "GetArtifactInfo" or "GetEquippedArtifactInfo"]();
 	if itemID and itemID~=0 then
-		local numPoints, artifactXP, xpForNextPoint = MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp,artifactTier);
+		local numPoints, artifactXP, xpForNextPoint = 0,0,0; --MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp,artifactTier);
 		local maxPoints = numPoints+pointsSpent;
 
 		local relic = {};
@@ -212,7 +212,7 @@ function updateBroker()
 	updateCharacterDB(itemID);
 
 	if itemID then
-		local numPoints, artifactXP, xpForNextPoint = MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp,artifactTier);
+		local numPoints, artifactXP, xpForNextPoint = 0,0,0; --MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp,artifactTier);
 		local maxPoints = numPoints+pointsSpent;
 
 		if ns.profile[name].showName then
@@ -462,7 +462,7 @@ function createTooltip(tt)
 			-- tt:SetCell(l,3,C("ltyellow",specname));
 
 			-- get/calculate points and expirience
-			local numPoints, artifactXP, xpForNextPoint = MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp,artifactTier);
+			local numPoints, artifactXP, xpForNextPoint = 0,0,0; --MainMenuBar_GetNumArtifactTraitsPurchasableFromXP(pointsSpent,xp,artifactTier);
 			local maxPoints = numPoints+pointsSpent;
 
 			-- display spent artifact power
@@ -604,7 +604,7 @@ module = {
 	events = {
 		"PLAYER_LOGIN",
 		"ARTIFACT_XP_UPDATE",
-		"ARTIFACT_MAX_RANKS_UPDATE",
+		--"ARTIFACT_MAX_RANKS_UPDATE",-- alerted in 8.0
 		"ARTIFACT_UPDATE",
 		"UNIT_INVENTORY_CHANGED",
 		"CURRENCY_DISPLAY_UPDATE"
