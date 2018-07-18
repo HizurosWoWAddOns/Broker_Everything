@@ -337,6 +337,7 @@ module = {
 		questIdUrl = "WoWHead",
 		separateBy = "status",
 		showPvPWeeklys = true,
+		showWorldQuests = true,
 		-- second tooltip options
 		tooltip2QuestText = true,
 		tooltip2QuestLevel = true,
@@ -363,13 +364,15 @@ function module.options()
 	return {
 		broker = nil,
 		tooltip = {
+			order=1,
 			showQuestIds={ type="toggle", order=1, name=L["Show quest id's"], desc=L["Show quest id's in tooltip."] },
 			showQuestZone={ type="toggle", order=2, name=L["Show quest zone"], desc=L["Show quest zone in tooltip."] },
 			showQuestTags={ type="toggle", order=3, name=L["Show quest tags"], desc=L["Show quest tags in tooltip."] },
 			showQuestTagsShort={ type="toggle", order=4, name=L["Show short quest tags"], desc=L["Show short quest tags in tooltip."] },
 			showQuestOptions={ type="toggle", order=5, name=L["Show quest option"], desc=L["Show quest options like track, untrack, share and cancel in tooltip."] },
 			showPvPWeeklys={ type="toggle", order=6, name=L["Show PvP weeklys"], desc=L["Show PvP weekly quests in tooltip"]},
-			questIdUrl={ type="select", order=7, name=L["Fav. website"], desc=L["Choose your favorite website for further informations to a quest."],
+			showWorldQuests={ type="toggle", order=7, name=L["Show world quests"], desc=L["Show quests to complete 4 world quests for a faction in tooltip."], width="full" },
+			questIdUrl={ type="select", order=8, name=L["Fav. website"], desc=L["Choose your favorite website for further informations to a quest."],
 				values = {
 					WoWHead = "WoWHead",
 					WoWDB = "WoWDB (english only)",
@@ -377,21 +380,22 @@ function module.options()
 				}
 			},
 			separateBy={
-				type="select", order=8, name=L["Separate quests by"], desc=L["Separate the quests by header (like Blizzard) or status"],
+				type="select", order=9, name=L["Separate quests by"], desc=L["Separate the quests by header (like Blizzard) or status"],
 				values = {
 					status = "Status",
 					header = "Header",
 					zone = "Zone"
 				}
 			},
-			--={ type="separator", order=9, alpha=0 },
-			header={ type="header", order=10, name=L["Second tooltip options"] },
-			--={ type="separator", order=11, inMenuInvisible=true },
-			tooltip2QuestText={ type="toggle", order=12, name=L["Show quest text"], desc=L["Display quest text in tooltip"] },
-			tooltip2QuestLevel={ type="toggle", order=13, name=L["Show quest level"], desc=L["Display quest level in tooltip"] },
-			tooltip2QuestZone={ type="toggle", order=14, name=L["Show quest zone"], desc=L["Display quest zone in tooltip"] },
-			tooltip2QuestTag={ type="toggle", order=15, name=L["Show quest tag"], desc=L["Display quest tags in tooltip"] },
-			tooltip2QuestID={ type="toggle", order=16, name=L["Show quest id"], desc=L["Display quest id in tooltip"] },
+		},
+		tooltip2 = {
+			order=2,
+			name = L["Second tooltip options"],
+			tooltip2QuestText={ type="toggle", order=1, name=L["Show quest text"], desc=L["Display quest text in tooltip"] },
+			tooltip2QuestLevel={ type="toggle", order=2, name=L["Show quest level"], desc=L["Display quest level in tooltip"] },
+			tooltip2QuestZone={ type="toggle", order=3, name=L["Show quest zone"], desc=L["Display quest zone in tooltip"] },
+			tooltip2QuestTag={ type="toggle", order=4, name=L["Show quest tag"], desc=L["Display quest tags in tooltip"] },
+			tooltip2QuestID={ type="toggle", order=5, name=L["Show quest id"], desc=L["Display quest id in tooltip"] },
 		},
 		misc = nil,
 	},
@@ -465,8 +469,16 @@ function module.onevent(self,event,msg)
 				end
 				local mapId,mapName;
 				if not questZones[q[questID]] and not WorldMapFrame:IsShown() then
-					mapId = securecall("GetQuestWorldMapAreaID",q[questID]);
-					mapName = GetMapNameByID(mapId);
+					mapId = securecall(GetQuestUiMapID and "GetQuestUiMapID" or "GetQuestWorldMapAreaID",q[questID]); -- TODO: BfA - removed function
+					--mapName = GetMapNameByID(mapId); -- TODO: BfA - removed function
+					if GetMapNameByID then -- pre BfA
+						mapName = GetMapNameByID(mapId);
+					else
+						local mapInfo = C_Map.GetMapInfo(mapId);
+						if mapInfo then
+							mapName = mapInfo.name;
+						end
+					end
 					questZones[q[questID]] = {mapId=mapId,mapName=mapName};
 				end
 				if #tags==0 then
