@@ -15,7 +15,9 @@ local oldStart, interval, length = 1517644800, 66600, 21600;
 if GetCurrentRegionName()=="EU" then
 	oldStart = 1517682600;
 end
-
+local uiMapIDs = {
+	630, 634, 641, 650
+};
 
 -- register icon names and default files --
 -------------------------------------------
@@ -30,14 +32,25 @@ local function updateInvasionState()
 	nextInvasionStart = interval-lastInvasionStart;
 
 	if lastInvasionStart <= length and (not WorldMapFrame:IsShown()) and (not currentInvasion) then
-		SetMapByID(1007);
-		local numPOIs = GetNumMapLandmarks();
-		--ns.debug("<check1>",numPOIs);
-		for i=1, numPOIs do
-			local landmarkType, name, description, textureIndex, x, y, mapLinkID, inBattleMap, graveyardID, areaID, poiID, isObjectIcon, atlasIcon, displayAsBanner, mapFloor, textureKitPrefix = C_WorldMap.GetMapLandmarkInfo(i);
-			if atlasIcon=="legioninvasion-map-icon-portal" then
-				currentInvasion = poiID
-				break;
+		if SetMapByID then
+			SetMapByID(1007);
+			local numPOIs = GetNumMapLandmarks();
+			for i=1, numPOIs do
+				local landmarkType, name, description, textureIndex, x, y, mapLinkID, inBattleMap, graveyardID, areaID, poiID, isObjectIcon, atlasIcon, displayAsBanner, mapFloor, textureKitPrefix = C_WorldMap.GetMapLandmarkInfo(i);
+				if atlasIcon=="legioninvasion-map-icon-portal" then
+					currentInvasion = poiID
+					break;
+				end
+			end
+		elseif C_Map.RequestPreloadMap then
+			for i=1, #uiMapIDs do
+				local invasionID = C_InvasionInfo.GetInvasionForUiMapID(uiMapIDs[i]);
+				if invasionID then
+					local invasionInfo = C_InvasionInfo.GetInvasionInfo(invasionID);
+					if invasionInfo then
+						break;
+					end
+				end
 			end
 		end
 	elseif currentInvasion and lastInvasionStart > length then
@@ -61,10 +74,20 @@ local function createTooltip(tt)
 	local l = tt:AddHeader(C("dkyellow",L[name]));
 
 	if lastInvasionStart <= length and currentInvasion then
-		local color,map = "gray","Zone?";
-		local poiInfo = C_WorldMap.GetAreaPOIInfo(1007,currentInvasion,0);
+		local map = false;
+		if SetMapByID then
+			local poiInfo = C_WorldMap.GetAreaPOIInfo(1007,currentInvasion,0);
+			if poiInfo then
+				map = poiInfo.description;
+			end
+		elseif C_Map.RequestPreloadMap then
+			local mapInfo = C_Map.GetMapInfo(currentInvasion);
+			if mapInfo then
+				map = mapInfo.name;
+			end
+		end
 		tt:AddSeparator(4,0,0,0,0);
-		tt:SetCell(tt:AddLine(),1,C("red",poiInfo.description),nil,"CENTER",0);
+		tt:SetCell(tt:AddLine(),1,C(map and "red" or "gray",map or "Zone?"),nil,"CENTER",0);
 		tt:SetCell(tt:AddLine(),1,C("ltgreen",BRAWL_TOOLTIP_ENDS:format(SecondsToTime(length-lastInvasionStart))),nil,"CENTER",0);
 	end
 
