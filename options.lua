@@ -532,6 +532,7 @@ function options.args.chars.func(info,button,a,b) -- function for buttons 'Up', 
 		ReloadUI();
 	end
 end
+
 function ns.RegisterOptions()
 	if Broker_Everything_AceDB==nil then
 		Broker_Everything_AceDB = {};
@@ -617,7 +618,7 @@ function ns.RegisterOptions()
 								mData[oKey] = tostring(oValue);
 							end
 						end
-					ebd
+					end
 				end
 			end
 		end
