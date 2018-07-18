@@ -8,8 +8,13 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Calendar" -- L["Calendar"]
-local ttName,ttColumns,tt,module,calendar_weekend_texture_ids = name.."TT",2;
-
+local ttName,ttColumns,tt,module = name.."TT",4;
+local zf="%02d";
+local state2string = {
+	C("orange",L["(ends soon)"]), -- [1]
+	C("yellow",L["(starts soon)"]), -- [2]
+	C("green",L["(current)"]), -- [3]
+};
 
 -- register icon names and default files --
 -------------------------------------------
@@ -21,7 +26,7 @@ I[name.."_pending"] = {iconfile="Interface\\Addons\\"..addon.."\\media\\calendar
 --------------------------
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
-	local num = CalendarGetNumPendingInvites();
+	local num = C_Calendar.GetNumPendingInvites();
 
 	local icon = I(name..(num~=0 and "_pending" or ""))
 	obj.iconCoords = icon.coords
@@ -40,18 +45,31 @@ local function updateBroker()
 	end
 end
 
+local function GetDateNumeric(eventDate)
+	return tonumber(eventDate.year..zf:format(eventDate.month)..zf:format(eventDate.monthDay)..zf:format(eventDate.hour)..zf:format(eventDate.minute));  -- a simple yyyymmddhhii
+end
+
+local fDateString = C("ltyellow","%04d-%02d-%02d ")..C("ltgray","%02d:%02d");
+local function GetDateString(eventDate)
+	return string.format(fDateString,eventDate.year,eventDate.month,eventDate.monthDay,eventDate.hour,eventDate.minute);
+end
+
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local _=function(y,m,d) return y*10000+m*100+d; end
 	if (ns.tooltipChkOnShowModifier(false)) then tooltip:Hide(); return; end
 
-	local numInvites = CalendarGetNumPendingInvites()
-	local weekday, month, day, year = CalendarGetDate();
-	local today=_(year,month,day);
+	local numInvites = C_Calendar.GetNumPendingInvites()
+	local dateNumeric = tonumber(date("%Y%m%d%H%M"));
+
+	local _time = time();
+	local endsSoonNumeric = tonumber(date("%Y%m%d%H%M",_time - 10800)); -- 3hrs
+	local startsSoonNumeric = tonumber(date("%Y%m%d%H%M",_time + 43200)); -- 12hrs
+	ns.debug(dateNumeric,endsSoonNumeric,startsSoonNumeric);
 
 	if tt.lines~=nil then tt:Clear(); end
-	tt:AddHeader(C("dkyellow",L[name]),C("ltgreen",(" %d-%02d-%02d"):format(year,month,day)));
+	tt:AddHeader(C("dkyellow",L[name]),C("ltgreen",date("%Y-%m-%d")));
 	tt:AddSeparator();
 
 	if numInvites == 0 then
@@ -60,48 +78,33 @@ local function createTooltip(tt)
 		tt:AddLine(C("white",numInvites.." "..(numInvites==1 and L["Invitation"] or L["Invitations"])));
 	end
 
-	if ns.profile[name].showEvents then
+	local showEvents = tonumber(ns.profile[name].showEvents);
+	if showEvents>0 then
 		--- collect events of this month
 		local holidays = {};
-		local NameToIndex={};
-		local fDate = "%04d-%02d-%02d %02d:%02d";
 		for i,monthOffset in ipairs({-1,0,1})do
-			local month, year, numDays, firstWeekday = CalendarGetMonth(monthOffset);
-			for day=1, numDays do
-				local numEvents = CalendarGetNumDayEvents(monthOffset, day);
+			local monthInfo = C_Calendar.GetMonthInfo(monthOffset);
+			for day=1, monthInfo.numDays do
+				local numEvents = C_Calendar.GetNumDayEvents(monthOffset, day);
 				for eIndex=1, numEvents do
-					local title, hour, minute, calendarType, sequenceType, eventType, eventTexture = CalendarGetDayEvent(monthOffset, day, eIndex);
-					if(title)then
-						local u = (type(eventTexture)=="string" and eventTexture:match("calendar_weekend(.*)"))
-							or calendar_weekend_texture_ids[eventTexture]
-							or false;
-						local unique = u and title..u or false;
-						if(sequenceType=="START")then
-							tinsert(holidays,{
-								title=title,
-								startStr=fDate:format(year,month,day,hour,minute),
-								startNum=_(year,month,day),
-								stopStr="",
-								stopNum=0,
-								state=4,
-								unique = unique
-							});
-							NameToIndex[unique or title]=#holidays;
-						end
-						if(sequenceType=="END" and NameToIndex[unique or title])then
-							local I = NameToIndex[unique or title];
-							holidays[I].stopStr=fDate:format(year,month,day,hour,minute);
-							holidays[I].stopNum=_(year,month,day);
-
-							if(today>holidays[I].stopNum)then
-								holidays[I].state=0; -- past
-							elseif(today>=holidays[I].startNum and today<=holidays[I].stopNum)then
-								holidays[I].state=1; -- current
-							else
-								holidays[I].state=2; -- future
+					local event = C_Calendar.GetDayEvent(monthOffset, day, eIndex);
+					if event and event.title then
+						if event.sequenceType=="START" or event.numSequenceDays==1 then
+							event.startNumeric = GetDateNumeric(event.startTime);
+							event.startString = GetDateString(event.startTime);
+							event.endNumeric = GetDateNumeric(event.endTime);
+							event.endString = GetDateString(event.endTime);
+							event.state=4; -- future
+							if event.endNumeric < dateNumeric then
+								event.state=0; -- past
+							elseif event.endNumeric <= endsSoonNumeric then
+								event.state=1; -- ends soon
+							elseif event.startNumeric >= dateNumeric and event.startNumeric <= startsSoonNumeric then
+								event.state=2; -- starts soon
+							elseif event.startNumeric <= dateNumeric then
+								event.state=3; -- current
 							end
-
-							NameToIndex[unique or title]=nil;
+							tinsert(holidays,event);
 						end
 					end
 				end
@@ -109,42 +112,26 @@ local function createTooltip(tt)
 		end
 
 		if #holidays>0 then
-			local separator,soon = false;
+			local separator = false;
 			tt:AddSeparator(4,0,0,0,0);
-			tt:AddLine(C("dkyellow",EVENTS_LABEL));
+			if showEvents==2 then
+				tt:AddLine(C("dkyellow",EVENTS_LABEL),C("ltblue",L["Starts"]),"",C("ltblue",L["Ends"]));
+			else
+				tt:AddLine(C("dkyellow",EVENTS_LABEL));
+			end
 			tt:AddSeparator();
 			for i,v in ipairs(holidays)do
+				local title = C("ltblue",v.title);
 				if(v.state>0)then
-					if(ns.profile[name].shortEvents)then
-						if ns.profile[name].singleLineEvents then
-							tt:AddLine(
-								C("ltblue",v.title).." "..( (v.state==1 and C("green",L["(current)"])) or (v.state==2 and not soon and C("yellow",L["(soon)"])) or " " ),
-								C("ltyellow",v.startStr.." "..L["to"].." "..v.stopStr)
-							);
-						else
-							if separator then
-								tt:AddSeparator(1,.64,.64,.64,1);
-							end
-							tt:SetCell(tt:AddLine(),1,C("ltblue",v.title).." "..( (v.state==1 and C("green",L["(current)"])) or (v.state==2 and not soon and C("yellow",L["(soon)"])) or " " ),nil,nil,ttColumns);
-							tt:AddLine(C("ltyellow",v.startStr),C("ltyellow",v.stopStr));
-						end
+					local state = state2string[v.state] or "";
+					if showEvents==2 then
+						tt:AddLine(title.." "..state,v.startString,"-",v.endString);
 					else
-						if ns.profile[name].singleLineEvents then
-							if separator then
-								tt:AddSeparator(4,0,0,0,0);
-							end
-							tt:AddLine(C("ltblue",v.title),C("ltyellow",v.startStr));
-							tt:AddLine( (v.state==1 and C("green",L["(current)"])) or (v.state==2 and not soon and C("yellow",L["(soon)"])) or " ",C("ltyellow",L["to"].." "..v.stopStr));
-						else
-							if separator then
-								tt:AddSeparator(1,.64,.64,.64,1);
-							end
-							tt:SetCell(tt:AddLine(),1,C("ltblue",v.title),nil,nil,ttColumns);
-							tt:AddLine(C("ltyellow",v.startStr),C("ltyellow",v.stopStr));
+						if separator then
+							tt:AddSeparator(1,.64,.64,.64,1);
 						end
-					end
-					if(v.state==2)then
-						soon=1;
+						tt:AddLine(title,v.startString);
+						tt:AddLine(state,"- "..v.endString);
 					end
 					separator = true;
 				end
@@ -171,9 +158,7 @@ module = {
 		enabled = false,
 		hideMinimapCalendar = false,
 		shortBroker = false,
-		shortEvents = true,
-		showEvents = true,
-		singleLineEvents = false
+		showEvents = 1
 	},
 	clickOptionsRename = {
 		["charinfo"] = "1_open_character_info",
@@ -198,9 +183,14 @@ function module.options()
 			shortBroker={ type="toggle", order=1, name=L["Shorter Broker"], desc=L["Reduce the broker text to a number without text"]},
 		},
 		tooltip = {
-			showEvents={ type="toggle", order=1, name=L["Show events"], desc=L["Display a list of events in tooltip"]},
-			shortEvents={ type="toggle", order=2, name=L["Shorter Events"], desc=L["Reduce event list height in tooltip"] },
-			singleLineEvents={ type="toggle", order=3, name=L["One event per line"], desc=L["Display event title and start/end date in a single line in tooltip"]}
+			showEvents={
+				type = "select", order=1, name=L["Show events"], desc=L["Display a list of events in tooltip"], width="full",
+				values = {
+					[0]=L["No events"],
+					[1]=L["Show events"],
+					[2]=L["One event per line"]
+				}
+			}
 		},
 		misc = {
 			hideMinimapCalendar={ type="toggle", order=1, name=L["Hide calendar button"], desc=L["Hide Blizzard's minimap calendar button"], width="full", disabled=ns.coexist.IsNotAlone },
@@ -210,44 +200,21 @@ function module.options()
 end
 
 function module.init()
-	calendar_weekend_texture_ids = { -- Calendar_Weekend(.*)
-		[1129666] = "ApexisEnd",
-		[1129667] = "ApexisOngoing",
-		[1129668] = "ApexisStart",
-		[1129669] = "BattlegroundsEnd",
-		[1129670] = "BattlegroundsOngoing",
-		[1129671] = "BattlegroundsStart",
-		[1663861] = "BlackTempleStart",
-		[1129672] = "BurningCrusadeEnd",
-		[1129673] = "BurningCrusadeOngoing",
-		[1129674] = "BurningCrusadeStart",
-		[1304686] = "CataclysmEnd",
-		[1304687] = "CataclysmOngoing",
-		[1304688] = "CataclysmStart",
-		[1467045] = "LegionEnd",
-		[1467046] = "LegionOngoing",
-		[1467047] = "LegionStart",
-		[1530588] = "MistsofPandariaEnd",
-		[1530589] = "MistsofPandariaOngoing",
-		[1530590] = "MistsofPandariaStart",
-		[1129675] = "PetBattlesEnd",
-		[1129676] = "PetBattlesOngoing",
-		[1129677] = "PetBattlesStart",
-		[1129678] = "PvPSkirmishEnd",
-		[1129679] = "PvPSkirmishOngoing",
-		[1129680] = "PvPSkirmishStart",
-		[1129681] = "WarlordsOfDraenorEnd",
-		[1129682] = "WarlordsOfDraenorOngoing",
-		[1129683] = "WarlordsOfDraenorStart",
-		[1467048] = "WorldQuestEnd",
-		[1467049] = "WorldQuestOngoing",
-		[1467050] = "WorldQuestStart",
-		[1129684] = "WrathOfTheLichKingEnd",
-		[1129685] = "WrathOfTheLichKingOngoing",
-		[1129686] = "WrathOfTheLichKingStart",
-	}
 	if (not ns.coexist.IsNotAlone()) and ns.profile[name].hideMinimapCalendar then
 		ns.hideFrames("GameTimeFrame",true);
+	end
+	if type(ns.profile[name].showEvents)=="boolean" then
+		if ns.profile[name].showEvents then
+			if ns.profile[name].singleLineEvents or ns.profile[name].shortEvents then
+				ns.profile[name].showEvents = 2;
+			else
+				ns.profile[name].showEvents = 1;
+			end
+		else
+			ns.profile[name].showEvents = 0;
+		end
+		ns.profile[name].singleLineEvents = nil;
+		ns.profile[name].shortEvents = nil;
 	end
 end
 
