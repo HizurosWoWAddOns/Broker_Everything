@@ -206,7 +206,7 @@ function createTooltip(tt,update)
 	end
 
 	-- PVP Talents
-	if ns.profile[name].showPvPTalents then
+	if ns.profile[name].showPvPTalents and false then
 		tt:AddSeparator(4,0,0,0,0);
 		tt:SetCell(tt:AddLine(),2,C("ltblue",PVP_TALENTS),nil,"LEFT",0);
 		tt:AddSeparator();
@@ -347,28 +347,24 @@ function module.onevent(self,event,arg1,...)
 		local icon = I(name)
 		local spec = GetSpecialization()
 		local _ = nil
-		local dataobj = self.obj or ns.LDB:GetDataObjectByName(module.ldbName)
-		local unspent = {GetNumUnspentTalents()>0 or GetNumUnspentPvpTalents()>0,GetNumUnspentTalents(),GetNumUnspentPvpTalents()};
+		local dataobj = self.obj or ns.LDB:GetDataObjectByName(module.ldbName);
+		local unspentPvE,unspentPvP = (GetNumUnspentTalents()),(GetNumUnspentPvpTalents());
 
 		if spec ~= nil then
-			 _, specName, _, icon.iconfile, _, _ = GetSpecializationInfo(spec)
+			 _, specName, _, icon.iconfile, _, _ = GetSpecializationInfo(spec);
 		end
 
-		dataobj.iconCoords = icon.coords
-		dataobj.icon = icon.iconfile
-
-		if unspent[1] then
-			local lst = {};
-			if unspent[2]>0 then
-				tinsert(lst,unspent[2].." "..L["PvE"]);
-			end
-			if unspent[3]>0 then
-				tinsert(lst,unspent[3].." "..L["PvP"]);
-			end
-			dataobj.text = C("ltred",L["Unspent talents"]..": ".. table.concat(lst,", "));
-		else
-			dataobj.text = specName
+		local lst = {};
+		if unspentPvE>0 then
+			tinsert(lst,unspentPvE.." "..L["PvE"]);
 		end
+		if unspentPvP>0 and UnitLevel("player") == MAX_PLAYER_LEVEL_TABLE[LE_EXPANSION_LEVEL_CURRENT] then
+			tinsert(lst,unspentPvP.." "..L["PvP"]);
+		end
+
+		dataobj.iconCoords = icon.coords;
+		dataobj.icon = icon.iconfile;
+		dataobj.text = #lst>0 and C("ltred",L["Unspent talents"]..": ".. table.concat(lst,", ")) or specName;
 	end
 end
 
