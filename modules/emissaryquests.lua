@@ -10,8 +10,10 @@ local name = "Emissary Quests";
 local ttName, ttColumns, tt, module = name.."TT", 6
 local factions,totalQuests,locked = {},{},false;
 local continents = {
-	1007, -- legion
-	1184, -- legion / argus
+	--1007, -- legion
+	--1184, -- argus
+	619, -- legion (new uiMapID)
+	905, -- argus (new uiMapID)
 };
 local icon2factionID = {
 	[1708507] = 2045,
