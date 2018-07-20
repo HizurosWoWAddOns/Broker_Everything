@@ -1370,7 +1370,8 @@ end
 -- EasyMenu wrapper --
 -- ---------------- --
 do
-	ns.EasyMenu = CreateFrame("Frame", addon.."_Lib_UIDropDownMenu", UIParent, "Lib_UIDropDownMenuTemplate");
+	local LDDM = LibStub("LibDropDownMenu");
+	ns.EasyMenu = LDDM.Create_DropDownMenu(addon.."_LibDropDownMenu",UIParent);
 	ns.EasyMenu.menu, ns.EasyMenu.controlGroups,ns.EasyMenu.IsPrevSeparator = {},{},false;
 	local grpOrder,pat = {"broker","tooltip","misc","ClickOpts"},"%06d%s";
 
@@ -1447,7 +1448,8 @@ do
 	end
 
 	local function LibCloseDropDownMenus()
-		Lib_CloseDropDownMenus();
+		LDDM.CloseDropDownMenus();
+		CloseMenus();
 	end
 
 	function ns.EasyMenu:AddEntry(D,P)
@@ -1687,9 +1689,9 @@ do
 
 	function ns.EasyMenu:Refresh(level)
 		if level then
-			Lib_UIDropDownMenu_Refresh(self,nil,level);
+			LDDM.UIDropDownMenu_Refresh(self,nil,level);
 		end
-		Lib_UIDropDownMenu_RefreshAll(self);
+		LDDM.UIDropDownMenu_RefreshAll(self);
 	end
 
 	function ns.EasyMenu:InitializeMenu()
@@ -1712,7 +1714,7 @@ do
 		self:AddEntry({separator=true}, pList);
 		self:AddEntry({label=L["Close menu"], func=LibCloseDropDownMenus});
 
-		Lib_EasyMenu(self.menu, self,anchor, x, y, "MENU");
+		LDDM.EasyMenu(self.menu, self,anchor, x, y, "MENU");
 	end
 end
 

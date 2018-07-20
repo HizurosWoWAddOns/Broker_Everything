@@ -33,9 +33,9 @@ externals:
 		url: https://repos.curseforge.com/wow/libtime-1-0
 		tag: latest
 
-#	libs/!NoTaint_UIDropDownMenu:
-#		url: svn://svn.wowinterface.com/NoTaint_UIDropDownMenu_Update-1134/trunk
-#		tag: latest
+	libs/LibDropDownMenu:
+		url: https://repos.curseforge.com/wow/libdropdownmenu
+		tag: latest
 
 	libs/LibRealmInfo:
 		url: git://github.com/Phanx/LibRealmInfo.git
