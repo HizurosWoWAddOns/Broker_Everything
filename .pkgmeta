@@ -82,6 +82,5 @@ ignore:
 	- libs/LibColors-1.0/LibColors-1.0.toc
 	- libs/LibTime-1.0/LibTime-1.0.toc
 	- libs/LibSharedMedia-3.0/lib.xml
-#	- libs/!NoTaint_UIDropDownMenu/LibStub
 
 license-output: LICENSE.txt

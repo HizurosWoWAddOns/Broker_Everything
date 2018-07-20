@@ -1574,11 +1574,12 @@ do
 		return false;
 	end
 
-	function ns.EasyMenu:AddConfig(modName,hideFirstLabel,noTitle)
-		local noFirstSep,options = true,ns.getModOptionTable(modName);
-		local showLabel=true;
-		if hideFirstLabel then
-			showLabel = false;
+	function ns.EasyMenu:AddConfig(modName,noTitle)
+		local noFirstSep,options,separator = true,ns.getModOptionTable(modName);
+		if noTitle==nil then
+			noTitle = false;
+		elseif noTitle==true then
+			separator=true
 		end
 		if options then
 			for _,optGrp in pairsByOptionGroup(options)do
@@ -1587,10 +1588,10 @@ do
 					if separator then
 						self:AddEntry({ separator=true });
 					else
-						if showLabel then
+						if not noTitle then
 							self:AddEntry({ label = L[modName], title = true });
 							self:AddEntry({ separator=true });
-							showLabel=false;
+							noTitle=false;
 						end
 						separator=true
 					end
