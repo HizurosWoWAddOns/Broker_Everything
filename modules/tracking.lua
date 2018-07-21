@@ -89,7 +89,7 @@ function module.onevent(self,event,msg)
 			ns.hideFrames("MiniMapTracking",ns.profile[name].hideMinimapButton);
 			ns.hideFrames("MiniMapTrackingButton",ns.profile[name].hideMinimapButton);
 		end
-	elseif event=="MINIMAP_UPDATE_TRACKING" and _G[addon.."_Lib_UIDropDownMenu"]:IsShown() then
+	elseif event=="MINIMAP_UPDATE_TRACKING" and _G.LibDropDownMenu_List1:IsShown() then
 		ns.EasyMenu:Refresh();
 	end
 
