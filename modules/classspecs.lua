@@ -108,7 +108,7 @@ function createTooltip(tt,update)
 	end
 	tt:AddSeparator(1,1,1,1,.6);
 	local l=tt:AddLine();
-	tt:SetCell(l,1,C("dkyellow",LOOT_SPECIALIZATION_DEFAULT:gsub(" %( %%s %)",":")),nil,"RIGHT",3);
+	tt:SetCell(l,1,C("dkyellow",strtrim(LOOT_SPECIALIZATION_DEFAULT:gsub("%([ ]?%%s[ ]?%)",""))..":"),nil,"RIGHT",3);
 	tt:SetCell(l,4,lootSpecID==0 and C("green",ACTIVE_PETS) or C( "gray", L["Set"]));
 	if lootSpecID~=0 then
 		tt:SetCellScript(l,4,"OnMouseUp",setLootSpec, 0);
@@ -193,65 +193,87 @@ function createTooltip(tt,update)
 			end
 			if ns.profile[name].showTalentsShort then
 				if selected then
-					tt:SetCell(l,2,str:format(selected[Icon],C("ltyellow",selected[Name])),nil,nil,2);
+					tt:SetCell(l,2,str:format(selected[Icon],C("ltyellow",selected[Name])),nil,nil,0);
 					tt:SetLineScript(l,"OnEnter",infoTooltipShow, {type="talent",args={selected[Id],false,talentGroup}});
 					tt:SetLineScript(l,"OnLeave",infoTooltipHide);
 				elseif isUnlocked then
-					tt:SetCell(l,2,C("orange","Unlocked, not selected"),nil,nil,2);
+					tt:SetCell(l,2,C("orange",L["Unlocked, not selected"]),nil,nil,0);
 				else
-					tt:SetCell(l,2,C("gray","Locked, level too low"),nil,nil,2);
+					tt:SetCell(l,2,C("gray",L["Locked, level too low"]),nil,nil,0);
 				end
 			end
 		end
 	end
 
 	-- PVP Talents
-	if ns.profile[name].showPvPTalents and false then
-		tt:AddSeparator(4,0,0,0,0);
-		tt:SetCell(tt:AddLine(),2,C("ltblue",PVP_TALENTS),nil,"LEFT",0);
-		tt:AddSeparator();
-		local Id, Name, Icon, Selected, Available, spellId, Unlocked = 1,2,3,4,5,6,7;
-
-		if UnitLevel("player") == MAX_PLAYER_LEVEL_TABLE[LE_EXPANSION_LEVEL_CURRENT] then
-			for row=1, MAX_PVP_TALENT_TIERS do
-				local selected,isUnlocked = false,false;
-				local l=tt:AddLine(C("ltyellow",row));
-				for col=1, MAX_PVP_TALENT_COLUMNS do
-					local tmp={GetPvpTalentInfo(row,col,talentGroup)};
-					if ns.profile[name].showPvPTalentsShort then
-						if tmp[Selected]==true then
-							selected = tmp;
-							break;
-						elseif tmp[Unlocked] then
-							isUnlocked = true;
-						end
+	if ns.profile[name].showPvPTalents then
+		if ns.build>80000000 then
+			tt:AddSeparator(4,0,0,0,0);
+			local l=tt:AddLine(C("ltblue",LEVEL_ABBR));
+			tt:SetCell(l,2,C("ltblue",PVP_TALENTS),nil,"LEFT",0);
+			tt:AddSeparator();
+			for slotIndex=1, 4 do
+				local slotMinLevel = C_SpecializationInfo.GetPvpTalentSlotUnlockLevel(slotIndex);
+				local slotInfo = C_SpecializationInfo.GetPvpTalentSlotInfo(slotIndex);
+				local l = tt:AddLine(C("ltyellow",slotMinLevel));
+				if slotInfo.enabled then
+					if slotInfo.selectedTalentID then
+						local _, talentName, texture = GetPvpTalentInfoByID(slotInfo.selectedTalentID);
+						tt:SetCell(l,2,str:format(texture,C("ltyellow",talentName)),nil,nil,0);
 					else
-						local c,color = col+1,(tmp[Selected] and "ltyellow") or (tmp[Unlocked] and "gray") or "dkred";
-						tt:SetCell(l,c,str:format(tmp[Icon],C(color,tmp[Name])),nil,"LEFT");
-						tt:SetCellScript(l,c,"OnEnter",infoTooltipShow,{type="pvptalent",args={tmp[Id],false,talentGroup}});
-						tt:SetCellScript(l,c,"OnLeave",infoTooltipHide);
-						if not tmp[Selected] and tmp[Unlocked] then
-							tt.lines[l].cells[c].pvpTalentId = tmp[Id];
-							tt:SetCellScript(l,c,"OnMouseUp",changeTalent, {type="pvp", id=tmp[Id]});
-						end
+						tt:SetCell(l,2,C("orange",L["Unlocked, not selected"]),nil,nil,0);
 					end
-				end
-				if ns.profile[name].showPvPTalentsShort then
-					if selected then
-						tt:SetCell(l,2,str:format(selected[Icon],C("ltyellow",selected[Name])),nil,nil,2);
-						tt:SetLineScript(l,"OnEnter",infoTooltipShow, {type="pvptalent",args={selected[Id],false,talentGroup}});
-						tt:SetLineScript(l,"OnLeave",infoTooltipHide);
-					else
-						if isUnlocked then
-							tt:SetCell(l,2,C("orange","Unlocked, not selected"),nil,nil,2);
-						else
-							tt:SetCell(l,2,C("gray","Locked, level too low"),nil,nil,2);
-						end
-					end
+				else
+					tt:SetCell(l,2,C("gray",L["Locked, level too low"]),nil,nil,0);
 				end
 			end
 		else
-			tt:SetCell(tt:AddLine(),2,C("gray",L["PvP talents will be available on max level"]),nil,nil,0);
+			tt:AddSeparator(4,0,0,0,0);
+			tt:SetCell(tt:AddLine(),2,C("ltblue",PVP_TALENTS),nil,"LEFT",0);
+			tt:AddSeparator();
+			local Id, Name, Icon, Selected, Available, spellId, Unlocked = 1,2,3,4,5,6,7;
+
+			if UnitLevel("player") == MAX_PLAYER_LEVEL_TABLE[LE_EXPANSION_LEVEL_CURRENT] then
+				for row=1, MAX_PVP_TALENT_TIERS do
+					local selected,isUnlocked = false,false;
+					local l=tt:AddLine(C("ltyellow",row));
+					for col=1, MAX_PVP_TALENT_COLUMNS do
+						local tmp={GetPvpTalentInfo(row,col,talentGroup)}; -- TODO: BfA - removed function
+						if ns.profile[name].showPvPTalentsShort then
+							if tmp[Selected]==true then
+								selected = tmp;
+								break;
+							elseif tmp[Unlocked] then
+								isUnlocked = true;
+							end
+						else
+							local c,color = col+1,(tmp[Selected] and "ltyellow") or (tmp[Unlocked] and "gray") or "dkred";
+							tt:SetCell(l,c,str:format(tmp[Icon],C(color,tmp[Name])),nil,"LEFT");
+							tt:SetCellScript(l,c,"OnEnter",infoTooltipShow,{type="pvptalent",args={tmp[Id],false,talentGroup}});
+							tt:SetCellScript(l,c,"OnLeave",infoTooltipHide);
+							if not tmp[Selected] and tmp[Unlocked] then
+								tt.lines[l].cells[c].pvpTalentId = tmp[Id];
+								tt:SetCellScript(l,c,"OnMouseUp",changeTalent, {type="pvp", id=tmp[Id]});
+							end
+						end
+					end
+					if ns.profile[name].showPvPTalentsShort then
+						if selected then
+							tt:SetCell(l,2,str:format(selected[Icon],C("ltyellow",selected[Name])),nil,nil,2);
+							tt:SetLineScript(l,"OnEnter",infoTooltipShow, {type="pvptalent",args={selected[Id],false,talentGroup}});
+							tt:SetLineScript(l,"OnLeave",infoTooltipHide);
+						else
+							if isUnlocked then
+								tt:SetCell(l,2,C("orange","Unlocked, not selected"),nil,nil,2);
+							else
+								tt:SetCell(l,2,C("gray","Locked, level too low"),nil,nil,2);
+							end
+						end
+					end
+				end
+			else
+				tt:SetCell(tt:AddLine(),2,C("gray",L["PvP talents will be available on max level"]),nil,nil,0);
+			end
 		end
 	end
 
@@ -284,8 +306,7 @@ module = {
 		showTalents = true,
 		showTalentsShort = false,
 		showPvPTalents = true,
-		showPvPTalentsShort = false,
-		showPvPHonor = true,
+		--showPvPHonor = true,
 		showPvPHonorOnBroker = true
 	},
 	clickOptionsRename = {
@@ -321,8 +342,7 @@ function module.options()
 			showTalents={ type="toggle", order=1, name=L["Show talents"], desc=L["Show talents in tooltip"]},
 			showTalentsShort={ type="toggle", order=2, name=L["Show short talent list"], desc=L["Show short list of PvE talents in tooltip"]},
 			showPvPTalents={ type="toggle", order=3, name=L["Show PvP talents"], desc=L["Show PvP talents in tooltip"]},
-			showPvPTalentsShort={ type="toggle", order=4, name=L["Show short PvP talent list"], desc=L["Show short list of PvP talents in tooltip"]},
-			showPvPHonor={ type="toggle", order=5, name=L["Show PvP honor"], desc=L["Show PvP honor in tooltip"]},
+			--showPvPHonor={ type="toggle", order=5, name=L["Show PvP honor"], desc=L["Show PvP honor in tooltip"]},
 		},
 		misc = nil,
 	}
@@ -340,15 +360,26 @@ function module.createTalentMenu(self)
 end
 
 function module.onevent(self,event,arg1,...)
-	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
-		ns.ClickOpts.update(name);
+	if event=="BE_UPDATE_CFG" then
+		if arg1 and arg1:find("^ClickOpt") then
+			ns.ClickOpts.update(name);
+		end
 	else
 		local specName = L["No Spec!"]
 		local icon = I(name)
 		local spec = GetSpecialization()
 		local _ = nil
 		local dataobj = self.obj or ns.LDB:GetDataObjectByName(module.ldbName);
-		local unspentPvE,unspentPvP = (GetNumUnspentTalents()),(GetNumUnspentPvpTalents());
+		local unspentPvE,unspentPvP,lvl = (GetNumUnspentTalents()),0,UnitLevel("player");
+		for slotIndex=1, 4 do -- not nice but necessary... GetNumUnspentPvpTalents() does not check player level
+			local slotMinLevel = C_SpecializationInfo.GetPvpTalentSlotUnlockLevel(slotIndex);
+			if slotMinLevel and slotMinLevel<=lvl then
+				local slotInfo = C_SpecializationInfo.GetPvpTalentSlotInfo(slotIndex);
+				if slotInfo.enabled and slotInfo.selectedTalentID==nil then
+					unspentPvP = unspentPvP+1;
+				end
+			end
+		end
 
 		if spec ~= nil then
 			 _, specName, _, icon.iconfile, _, _ = GetSpecializationInfo(spec);
@@ -358,7 +389,7 @@ function module.onevent(self,event,arg1,...)
 		if unspentPvE>0 then
 			tinsert(lst,unspentPvE.." "..L["PvE"]);
 		end
-		if unspentPvP>0 and UnitLevel("player") == MAX_PLAYER_LEVEL_TABLE[LE_EXPANSION_LEVEL_CURRENT] then
+		if unspentPvP>0 then
 			tinsert(lst,unspentPvP.." "..L["PvP"]);
 		end
 
