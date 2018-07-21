@@ -13,7 +13,7 @@ local login_money = nil;
 local next_try = false;
 local current_money = 0
 local faction = UnitFactionGroup("Player")
-
+local profit_ttLines, profit_date = { {L["Session"]}, {HONOR_TODAY,"yd"}, {HONOR_YESTERDAY,"yd",true}, {L["This week"],"cw"}, {HONOR_LASTWEEK,"cw",true} },{};
 
 -- register icon names and default files --
 -------------------------------------------
@@ -22,18 +22,74 @@ I[name] = {iconfile="Interface\\Minimap\\TRACKING\\Auctioneer",coords={0.05,0.95
 
 -- some local functions --
 --------------------------
-local function getProfit()
-	local direction,profit = 0,0;
-	if login_money==nil then
-		profit = false;
-	elseif current_money>login_money then
+local function getProfit(_type,last)
+	local profit = 0;
+	if _type then
+		local tbl = _type=="cw" and "weekly" or "daily";
+		if last then
+			local entry = _type.."_last";
+			if ns.data[name].profit[tbl][profit_date[entry]] then
+				profit = ns.data[name].profit[tbl][profit_date[entry]][2]-ns.data[name].profit[tbl][profit_date[entry]][1];
+			end
+		else
+			local entry = _type.."_current";
+			profit = current_money-ns.data[name].profit[tbl][profit_date[entry]][1];
+		end
+	else -- session
+		if login_money==nil then
+			return 0,0
+		end
 		profit = current_money-login_money;
-		direction = 1;
-	elseif current_money<login_money then
-		profit = login_money-current_money;
-		direction = -1;
 	end
-	return profit, direction;
+	if profit<0 then
+		return 0-profit,-1;
+	end
+	return profit, profit>0 and 1 or 0;
+end
+
+local function updateProfit()
+	local t,d = time(),86400;
+	profit_date.yd_current = tonumber(date("%j"))
+	profit_date.yd_last = tonumber(date("%j",t-d))
+	profit_date.cw_current = tonumber(date("%V"))
+	for i=1 ,7 do
+		local cw = tonumber(date("%V",t-(d*i)))
+		if cw ~= profit_date.cw_current then -- [lower than] does not work well on year change
+			profit_date.cw_last = cw;
+			break;
+		end
+	end
+
+	-- remove older values
+	for k,v in pairs(ns.data[name].profit.daily)do
+		if k~=profit_date.yd_current and k~=profit_date.yd_last then
+			ns.data[name].profit.daily[k]=nil;
+		end
+	end
+
+	for k,v in pairs(ns.data[name].profit.weekly)do
+		if k~=profit_date.cw_current and k~=profit_date.cw_last then
+			ns.data[name].profit.weekly[k]=nil;
+		end
+	end
+
+	if ns.data[name].profit.daily[profit_date.yd_current]==nil then
+		ns.data[name].profit.daily[profit_date.yd_current] = {current_money};
+		if ns.data[name].profit.daily[profit_date.yd_last] then
+			ns.data[name].profit.daily[profit_date.yd_last][2] = current_money;
+		end
+	end
+
+	if ns.data[name].profit.weekly[profit_date.cw_current]==nil then
+		ns.data[name].profit.weekly[profit_date.cw_current] = {current_money};
+		if ns.data[name].profit.weekly[profit_date.cw_last] then
+			ns.data[name].profit.weekly[profit_date.cw_last][2] = current_money;
+		end
+	end
+
+	local t = date("*t");
+	local timeout = 86401-(time()-time({year=t.year, month=t.month, day=t.day, hour=0}));
+	C_Timer.After(timeout,updateProfit);
 end
 
 local function deleteCharacterGoldData(self,name_realm,button)
@@ -109,7 +165,6 @@ function createTooltip(tt,update)
 			tt:AddLine(L["Total Gold"], ns.GetCoinColorOrTextureString(name,totalGold.Alliance+totalGold.Horde+totalGold.Neutral,{inTooltip=true}))
 		end
 	end
-	tt:AddSeparator(3,0,0,0,0)
 
 	local profit, direction = getProfit();
 	if profit then
@@ -149,6 +204,7 @@ module = {
 		showCharGold = true,
 		showSessionProfit = true,
 		splitSummaryByFaction = true,
+		showProfit = true,
 	},
 	clickOptionsRename = {
 		["1_open_tokenframe"] = "currency",
@@ -179,6 +235,7 @@ function module.options()
 		},
 		tooltip = {
 			splitSummaryByFaction={ type="toggle", order=1, name=L["Split summary by faction"], desc=L["Separate summary by faction (Alliance/Horde)"] },
+			showProfit = { type="toggle", order=1, name=L["Show profit"], desc=L["Display a little list of profit/loss stats of your current toon. (Session, today, yesterday, current week and last week)"]},
 			showAllFactions=2,
 			showRealmNames=3,
 			showCharsFrom=4,
@@ -212,6 +269,21 @@ function module.onevent(self,event,arg1)
 		ns.toon.gold = current_money;
 		if event=="PLAYER_LOGIN" then
 			login_money = current_money;
+
+			if ns.data[name]==nil then
+				ns.data[name] = {profit={daily={},weekly={}}};
+			elseif ns.data[name].profit==nil then
+				ns.data[name].profit={daily={},weekly={}};
+			else
+				if ns.data[name].profit.daily==nil then
+					ns.data[name].profit.daily = {};
+				end
+				if ns.data[name].profit.weekly==nil then
+					ns.data[name].profit.weekly = {};
+				end
+			end
+
+			updateProfit();
 		end
 		updateBroker();
 	end
