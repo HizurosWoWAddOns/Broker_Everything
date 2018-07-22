@@ -46,9 +46,9 @@ local function createTooltip(tt,update)
 	if ns.profile[name].showDate then
 		tt:AddLine(C("ltyellow",L["Date"]),		C("white",date(ns.profile[name].dateFormat)));
 	end
-	tt:AddLine(C("ltyellow",L["Local time"]),	C("white",ns.LT.GetTimeString("LocalTime",h24,dSec)));
-	tt:AddLine(C("ltyellow",L["Realm time"]),	C("white",ns.LT.GetTimeString("GameTime",h24,dSec)));
-	tt:AddLine(C("ltyellow",L["UTC time"]),		C("white",ns.LT.GetTimeString("UTCTime",h24,dSec)));
+	tt:AddLine(C("ltyellow",L.TimeLocal),	C("white",ns.LT.GetTimeString("LocalTime",h24,dSec)));
+	tt:AddLine(C("ltyellow",L.TimeRealm),	C("white",ns.LT.GetTimeString("GameTime",h24,dSec)));
+	tt:AddLine(C("ltyellow",L.TimeUTC),		C("white",ns.LT.GetTimeString("UTCTime",h24,dSec)));
 
 	--tt:AddSeparator(3,0,0,0,0);
 	--tt:AddLine(C("ltblue",L["Additional time zones"]));
@@ -75,7 +75,19 @@ local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local h24 = ns.profile[name].format24;
 	local dSec = ns.profile[name].showSeconds;
-	obj.text = ns.profile[name].timeLocal and ns.LT.GetTimeString("LocalTime",h24,dSec) or ns.LT.GetTimeString("GameTime",h24,dSec)
+	local label = {"",""};
+	local t={};
+	if ns.profile[name].timeLabel then
+		label[1] = L.TimeLabelLocal.." ";
+		label[2] = L.TimeLabelRealm.." ";
+	end
+	if ns.profile[name].timeLocal then
+		tinsert(t,label[1]..ns.LT.GetTimeString("LocalTime",h24,dSec));
+	end
+	if ns.profile[name].timeRealm then
+		tinsert(t,label[2]..ns.LT.GetTimeString("GameTime",h24,dSec));
+	end
+	obj.text = table.concat(t,", ");
 end
 
 local function dateFormatValues()
@@ -108,7 +120,9 @@ module = {
 	config_defaults = {
 		enabled = false,
 		format24 = true,
+		timeLabel = false,
 		timeLocal = true,
+		timeRealm = false,
 		showSeconds = false,
 		showDate = true,
 		dateFormat = "%Y-%m-%d"
@@ -139,7 +153,17 @@ ns.ClickOpts.addDefaults(module,{
 });
 
 function module.switchTime()
-	ns.profile[name].timeLocal = not ns.profile[name].timeLocal;
+	if ns.profile[name].timeLocal and ns.profile[name].timeRealm then
+		-- from both to local
+		ns.profile[name].timeRealm = false;
+	elseif ns.profile[name].timeLocal then
+		-- from local to realm
+		ns.profile[name].timeLocal = false;
+		ns.profile[name].timeRealm = true;
+	else
+		-- from realm to both
+		ns.profile[name].timeLocal = true;
+	end
 end
 
 function module.switchHoursMode()
@@ -150,7 +174,9 @@ end
 function module.options()
 	return {
 		broker = {
-			timeLocal={ type="toggle", order=1, name=L["Local or realm time"], desc=L["Switch between local and realm time in broker button"] },
+			timeLabel = { type="toggle", order=1, name=L.TimePrependLabel, desc=L.TimePrependLabelDesc},
+			timeLocal = { type="toggle", order=2, name=L.TimeLocal, desc=L.TimeLocalDesc },
+			timeRealm = { type="toggle", order=3, name=L.TimeRealm, desc=L.TimeRealmDesc }
 		},
 		tooltip = {
 			showSeconds={ type="toggle", order=1, name=L["Show seconds"], desc=L["Display the time with seconds in broker button and tooltip"] },
