@@ -18,7 +18,7 @@ local pStanding, pStandingText, pStandingMin, pStandingMax, pStandingValue = 1,2
 local mFullName, mName, mRealm, mRank, mRankIndex, mLevel, mClassLocale, mZone, mNote, mOfficerNote, mOnline, mIsAway, mClassFile, mAchievementPoints, mAchievementRank, mIsMobile, mCanSoR, mStanding, mGUID, mStandingText, mRaceId = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21;
 local tsName, tsIcon, tsValue, tsID = 1,2,3,4;
 local app_index, app_name, app_realm, app_level, app_class, app_bQuest, app_bDungeon, app_bRaid, app_bPvP, app_bRP, app_bWeekdays, app_bWeekends, app_bTank, app_bHealer, app_bDamage, app_comment, app_timeSince, app_timeLeft = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18; -- applicants table entry indexes
-local raceCache,raceById = {},{};
+local raceCache,raceById,flags = {},{},{};
 local MOBILE_BUSY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-BusyMobile:14:14:0:0:16:16:0:16:0:16|t";
 local MOBILE_AWAY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-AwayMobile:14:14:0:0:16:16:0:16:0:16|t";
 local last,membersUpdateTicker = {};
@@ -336,12 +336,12 @@ local function tooltipAddLine(v,flags)
 
 	local l=tt:AddLine(unpack(line));
 
-	if ts1 and tradeskills[v[mFullName]] and tradeskills[v[mFullName]][1] then
-		tt:SetCellScript(l, 7, "OnMouseUp", GetMemberRecipes,{name=v[mFullName],id=tradeskills[v[mFullName]][1][4]});
+	if tradeskills[v[mFullName]] and tradeskills[v[mFullName]][1] then
+		tt:SetCellScript(l, #line-1, "OnMouseUp", GetMemberRecipes,{name=v[mFullName],id=tradeskills[v[mFullName]][1][4]});
 	end
 
-	if ts2 and tradeskills[v[mFullName]] and tradeskills[v[mFullName]][2] then
-		tt:SetCellScript(l, 8, "OnMouseUp", GetMemberRecipes,{name=v[mFullName],id=tradeskills[v[mFullName]][2][4]});
+	if tradeskills[v[mFullName]] and tradeskills[v[mFullName]][2] then
+		tt:SetCellScript(l, #line, "OnMouseUp", GetMemberRecipes,{name=v[mFullName],id=tradeskills[v[mFullName]][2][4]});
 	end
 
 	if v[mFullName]==ns.player.name_realm_short then
@@ -418,15 +418,6 @@ local function createTooltip(tt,update)
 		tt:AddSeparator(4,0,0,0,0);
 	end
 
-	local flags = {
-		showRace=ns.profile[name].showRace,
-		showZone=ns.profile[name].showZone,
-		showNotes=ns.profile[name].showNotes,
-		showONotes=(ns.profile[name].showONotes and CanViewOfficerNote()),
-		showRank=ns.profile[name].showRank,
-		showRankID=ns.profile[name].showRankID,
-		showProfessions=ns.profile[name].showProfessions
-	};
 	local titles = {
 		C("ltyellow",LEVEL), -- [1]
 		C("ltyellow",CHARACTER), -- [2]
@@ -448,7 +439,7 @@ local function createTooltip(tt,update)
 	end
 	local l=tt:AddLine(unpack(titles));
 	if flags.showProfessions then
-		tt:SetCell(l, 7,C("ltyellow",TRADE_SKILLS), nil,nil,2); -- [8,9]
+		tt:SetCell(l,#titles+1,C("ltyellow",TRADE_SKILLS), nil,nil,2); -- [8,9]
 	end
 
 	tt:AddSeparator();
@@ -735,24 +726,31 @@ function module.onenter(self)
 			"LEFT" -- name
 		};
 
+		wipe(flags);
 		if ns.profile[name].showRace then
 			tinsert(ttAlignings,"LEFT"); -- race
+			flags.showRace=true;
 		end
 		if ns.profile[name].showZone then
 			tinsert(ttAlignings,"CENTER"); -- zone
+			flags.showZone=true;
 		end
 		if ns.profile[name].showNotes then
 			tinsert(ttAlignings,"LEFT"); -- notes
+			flags.showNotes=true;
 		end
 		if ns.profile[name].showONotes and CanViewOfficerNote() then -- extend if
 			tinsert(ttAlignings,"LEFT"); -- onotes
+			flags.showONotes=true;
 		end
 		if ns.profile[name].showRank then
 			tinsert(ttAlignings,"LEFT"); -- rank
+			flags.showRank=true;
 		end
 		if ns.profile[name].showProfessions then
 			tinsert(ttAlignings,"LEFT"); -- professions 1
 			tinsert(ttAlignings,"LEFT"); -- professions 2
+			flags.showProfessions=true;
 		end
 
 		ttColumns = #ttAlignings;
