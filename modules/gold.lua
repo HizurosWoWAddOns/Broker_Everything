@@ -166,12 +166,20 @@ function createTooltip(tt,update)
 		end
 	end
 
-	local profit, direction = getProfit();
-	if profit then
-		local sign = (direction==1 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (direction==-1 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
-		tt:AddLine(profit<0 and C("ltred",L["Session loss"]) or C("ltgreen",L["Session profit"]), sign .. ns.GetCoinColorOrTextureString(name,profit,{inTooltip=true}));
-	else
-		tt:AddLine(C("ltgreen",L["Session profit"]),C("orange","Error"));
+	if ns.profile[name].showProfit then
+		tt:AddSeparator(4,0,0,0,0);
+		tt:AddLine(C("ltyellow","Profit / Loss"),C("orange","(Experimental)"));
+		tt:AddSeparator();
+		for i,v in ipairs(profit_ttLines)do
+			local profit, direction = getProfit(v[2],v[3]);
+			local color,icon = "gray","";
+			if direction==1 then
+				color,icon = "ltgreen","|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t";
+			elseif direction==-1 then
+				color,icon = "ltred","|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t";
+			end
+			tt:AddLine(C(color,v[1]), icon .. ns.GetCoinColorOrTextureString(name,profit,{inTooltip=true}));
+		end
 	end
 
 	if ns.profile.GeneralOptions.showHints then
@@ -235,7 +243,7 @@ function module.options()
 		},
 		tooltip = {
 			splitSummaryByFaction={ type="toggle", order=1, name=L["Split summary by faction"], desc=L["Separate summary by faction (Alliance/Horde)"] },
-			showProfit = { type="toggle", order=1, name=L["Show profit"], desc=L["Display a little list of profit/loss stats of your current toon. (Session, today, yesterday, current week and last week)"]},
+			showProfit = { type="toggle", order=1, name=L["Show profit"], desc=L["Display a little list of profit/loss stats of your current toon. (Session, today, yesterday, this week and last week)"]},
 			showAllFactions=2,
 			showRealmNames=3,
 			showCharsFrom=4,
