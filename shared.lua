@@ -109,11 +109,11 @@ function ns.showThisChar(modName,realm,faction)
 	if not ns.profile[modName].showAllFactions and ns.player.faction~=faction then
 		return false;
 	end
-	if ns.profile[modName].showCharsFrom==1 and realm~=ns.realm then -- same realm
+	if ns.profile[modName].showCharsFrom=="1" and realm~=ns.realm then -- same realm
 		return false;
-	elseif ns.profile[modName].showCharsFrom==2 and not ns.realms[realm] then -- connected realms
+	elseif ns.profile[modName].showCharsFrom=="2" and not ns.realms[realm] then -- connected realms
 		return false;
-	elseif ns.profile[modName].showCharsFrom==3 then -- battlegroup
+	elseif ns.profile[modName].showCharsFrom=="3" then -- battlegroup
 		local _,_,_,_,_,battlegroup = ns.LRI:GetRealmInfo(realm);
 		if not ns.player.battlegroup then
 			_,_,_,_,_,ns.player.battlegroup = ns.LRI:GetRealmInfoByGUID(UnitGUID("player"));
