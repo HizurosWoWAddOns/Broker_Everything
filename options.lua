@@ -13,6 +13,7 @@ local dbDefaults,db = {
 			iconset = "NONE",
 			iconcolor = {1,1,1,1},
 			goldColor = false,
+			goldCoins = true,
 			usePrefix = false,
 			maxTooltipHeight = 60,
 			scm = false,
@@ -31,7 +32,7 @@ ns.showCharsFrom_Values = {
 	["2"] = L["Connected realms"],
 	["3"] = L["Same battlegroup"],
 	["4"] = L["All realms"]
-}
+};
 
 local nsProfileMT = {
 	__newindex = function(t,k,v)
@@ -204,6 +205,7 @@ local options = {
 					name = C("ff00aaff",MONEY),
 					args = {
 						goldColor          = {type="toggle",order=1,name=L["GoldColor"],desc=L["GoldColorDesc"]},
+						goldCoins          = {type="toggle",order=1,name=L["GoldCoins"],desc=L["GoldCoinsDesc"]},
 						separateThousands  = {type="toggle",order=2,name=L["DigitGroup"],desc=L["DigitGroupDesc"]},
 						goldHideLowerZeros = {type="toggle",order=3,name=L["HideZeros"],desc=L["HideZerosDesc"]},
 						goldHide           = {type="select",order=4,name=L["HideMoney"],desc=L["HideMoneyDesc"],

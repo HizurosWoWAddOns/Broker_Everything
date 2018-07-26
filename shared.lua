@@ -1264,6 +1264,8 @@ end
 -- ----------------------------------------------------- --
 function ns.GetCoinColorOrTextureString(modName,amount,opts)
 	local zz,tex="%02d","|TInterface\\MoneyFrame\\UI-%sIcon:14:14:2:0|t";
+	local goldColored = ns.profile.GeneralOptions.goldColor;
+	local goldCoins = ns.profile.GeneralOptions.goldCoins;
 	if(type(amount)~="number")then amount=0; end
 
 	if(not opts)then opts={}; end
@@ -1293,28 +1295,28 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 	local gold, silver, copper, t, i = floor(amount/10000), mod(floor(amount/100),100), mod(floor(amount),100), {}, 1
 
 	if amount==0 or not (opts.hideCopper or (copper==0 and opts.hideLowerZeros))then
-		if (ns.profile.GeneralOptions.goldColor==true) then
-			tinsert(t,ns.LC.color("copper",(silver>0 or gold>0) and zz:format(copper) or copper));
-		else
-			tinsert(t,copper .. tex:format("Copper"));
-		end
+		tinsert(t,
+			(goldColored and ns.LC.color("copper",(silver>0 or gold>0) and zz:format(copper) or copper) copper)
+			..
+			(goldCoins and tex:format("Copper") or "")
+		);
 	end
 
 	if amount>0 and not (opts.hideSilver or (copper==0 and silver==0 and opts.hideLowerZeros))then
-		if (ns.profile.GeneralOptions.goldColor==true) then
-			tinsert(t,1,ns.LC.color("silver",gold>0 and zz:format(silver) or silver));
-		else
-			tinsert(t,1,silver .. tex:format("Silver"));
-		end
+		tinsert(t,
+			(goldColored and ns.LC.color("copper",gold>0 and zz:format(silver) or silver) or silver)
+			..
+			(goldCoins and tex:format("Copper") or "")
+		);
 	end
 
-	if(gold>0)then
+	if gold>0 then
 		gold = ns.FormatLargeNumber(modName,gold,opts.inTooltip);
-		if (ns.profile.GeneralOptions.goldColor==true) then
-			tinsert(t,1,ns.LC.color("gold",gold));
-		else
-			tinsert(t,1,gold .. tex:format("Gold"));
-		end
+		tinsert(t,
+			(goldColored and ns.LC.color("gold",gold) or gold)
+			..
+			(goldCoins and tex:format("Gold") or "")
+		);
 	end
 
 	local str = table.concat(t,opts.sep);
