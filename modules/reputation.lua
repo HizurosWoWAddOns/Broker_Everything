@@ -288,7 +288,7 @@ local function ttAddLine(tt,mode,data,count,childLevel)
 
 	local darker = 0.72;
 	if(ns.profile[name].bgBars=="single")then
-		local color = FACTION_BAR_COLORS[data[standingID]];
+		local color = FACTION_BAR_COLORS[ (bars[count].friend and 5) or data[standingID] ];
 		bars[count].BarSingle:SetVertexColor(color.r*darker,color.g*darker,color.b*darker,1);
 		bars[count].BarSingle:Show();
 	end
