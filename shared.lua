@@ -1296,7 +1296,7 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 
 	if amount==0 or not (opts.hideCopper or (copper==0 and opts.hideLowerZeros))then
 		tinsert(t,
-			(goldColored and ns.LC.color("copper",(silver>0 or gold>0) and zz:format(copper) or copper) copper)
+			(goldColored and ns.LC.color("copper",(silver>0 or gold>0) and zz:format(copper) or copper) or copper)
 			..
 			(goldCoins and tex:format("Copper") or "")
 		);
