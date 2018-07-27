@@ -14,7 +14,9 @@ local raceIndex,raceCurrencyId,raceKeystone2Fragments,raceName,raceTexture,raceK
 local raceFragmentsCollected,raceNumFragmentsRequired,raceFragmentsMax,raceArtifactName,raceArtifactIcon,raceKeystoneSlots = 7,8,9,10,11,12;
 local raceKeystoneIcon,raceKeystoneCount,raceKeystoneFragmentsValue,raceArtifactSolvable,raceFragmentsIcon = 13,14,15,16,17;
 local keystoneItem2race,races,racesOrder = {};
-local solvables,limitWarning,iconID2Race = {},{};
+local solvables,limitWarning = {},{};
+local iconFormat1 = "|T%s:14:14:0:0:64:64:4:56:4:56|t";
+local iconFormat2 = "|T%s:14:14:0:0:128:128:3:70:8:75|t";
 
 
 -- register icon names and default files --
@@ -44,15 +46,14 @@ end
 
 local function updateRaceArtifact(t,...)
 	local ArtifactName,_,_,ArtifactIcon,_,KeystoneSlots = ...;
-	local icon = "|T%s:14:14:0:0:64:64:4:56:4:56|t";
 
 	if t[raceArtifactName]==nil and ArtifactName~=nil then
 		t[raceArtifactName],t[raceArtifactIcon],t[raceKeystoneSlots] = ArtifactName,ArtifactIcon,KeystoneSlots;
-		t[raceArtifactIcon] = icon:format(t[raceArtifactIcon]);
+		t[raceArtifactIcon] = iconFormat1:format(t[raceArtifactIcon]);
 
 		if(type(t[raceKeystoneItemID])=="number" and t[raceKeystoneItemID]>0) then
 			keystoneItem2race[t[raceKeystoneItemID]] = k;
-			t[raceKeystoneIcon] = icon:format(GetItemIcon(t[raceKeystoneItemID]) or ns.icon_fallback);
+			t[raceKeystoneIcon] = iconFormat1:format(GetItemIcon(t[raceKeystoneItemID]) or ns.icon_fallback);
 			t[raceKeystoneCount] = GetItemCount(t[raceKeystoneItemID],true,true);
 		end
 
@@ -87,32 +88,28 @@ local function updateRaces(firstUpdate)
 	wipe(solvables);
 	if firstUpdate then
 		local num = GetNumArchaeologyRaces();
-		local icon = "|T%s:14:14:0:0:64:64:4:56:4:56|t";
-		local icon2="|T%s:14:14:0:0:128:128:3:70:8:75|t";
 		local unknownHeader = true;
 		for i=1, num do
 			local info,iconFile,_ = {GetArchaeologyRaceInfo(i)};
-			local k = iconID2Race[info[2]] or "UNKNOWN";
-			local t = races[k];
+			local t = races[info[2]];
 			if t==nil then
 				if unknownHeader then
 					tinsert(racesOrder,UNKNOWN);
 					races[UNKNOWN] = {nil, true};
 					unknownHeader = false;
 				end
-				tinsert(racesOrder,k);
-				races[k] = {nil, 0, 0};
-				t=races[k];
+				tinsert(racesOrder,info[2]);
+				races[info[2]] = {nil, 0, 0};
+				t=races[info[2]];
 			end
 			t[raceIndex],t[raceKeystoneCount],t[raceKeystoneFragmentsValue],t[raceArtifactSolvable] = i,0,0,false;
 			t[raceName],t[raceTexture],t[raceKeystoneItemID],t[raceFragmentsCollected],t[raceNumFragmentsRequired],t[raceFragmentsMax] = unpack(info);
-			t[raceTexture] = icon2:format(t[raceTexture]);
-
+			t[raceTexture] = iconFormat2:format(t[raceTexture]);
 
 			if t[raceCurrencyId]~=0 then
 				_,_,iconFile = GetCurrencyInfo(t[raceCurrencyId]);
 			end
-			t[raceFragmentsIcon] = icon:format(iconFile or ns.icon_fallback);
+			t[raceFragmentsIcon] = iconFormat1:format(iconFile or ns.icon_fallback);
 
 			updateRaceArtifact(t,GetActiveArtifactByRace(i));
 		end
@@ -179,34 +176,44 @@ local function createTooltip(tt)
 		tt:AddSeparator();
 	end
 
-	for i, k in ipairs(racesOrder)do
-		local v = races[k];
-		if v[raceCurrencyId]==true then
+	for i=1, #racesOrder do
+		local raceTextureID = racesOrder[i];
+		if not races[raceTextureID] then
 			if ns.profile[name].continentOrder then
+				local mapID,mapName = tonumber(raceTextureID),raceTextureID;
+				if mapID then
+					local mapInfo = C_Map.GetMapInfo(mapID);
+					if mapInfo then
+						mapName = mapInfo.name;
+					end
+				end
 				tt:AddSeparator(4,0,0,0,0);
-				tt:AddLine(C("ltblue",RACES.." ("..L[k]..")"),C("ltblue",L["Keystones"]),C("ltblue",ARCHAEOLOGY_RUNE_STONES),C("ltblue",L["Artifacts"]));
+				tt:AddLine(C("ltblue",RACES.." ("..mapName..")"),C("ltblue",L["Keystones"]),C("ltblue",ARCHAEOLOGY_RUNE_STONES),C("ltblue",L["Artifacts"]));
 				tt:AddSeparator();
 			end
-		elseif v[raceName] and v[raceArtifactName] then
-			local l=tt:AddLine(
-				v[raceTexture].." "..C(v[raceArtifactSolvable]==true and "green" or "ltyellow",v[raceName]),
-				v[raceKeystoneIcon]~=nil and v[raceKeystoneCount].." "..v[raceKeystoneIcon] or "",
-				C(limitColors(v[raceFragmentsMax]-v[raceFragmentsCollected],"white"),v[raceFragmentsCollected].." / "..v[raceFragmentsMax]).." "..v[raceFragmentsIcon],
-				C(v[raceArtifactSolvable]==true and "green" or "white",v[raceNumFragmentsRequired].." "..v[raceArtifactIcon])
-			);
-			if(v[raceKeystoneItemID]~=0)then
-				tt:SetLineScript(l,"OnEnter", ItemTooltipShow,v[raceKeystoneItemID]);
-				tt:SetLineScript(l,"OnLeave", ItemTooltipHide);
+		else
+			local raceData = races[raceTextureID];
+			if raceData[raceName] and raceData[raceArtifactName] then
+				local l=tt:AddLine(
+					raceData[raceTexture].." "..C(raceData[raceArtifactSolvable]==true and "green" or "ltyellow",raceData[raceName]),
+					raceData[raceKeystoneIcon]~=nil and raceData[raceKeystoneCount].." "..raceData[raceKeystoneIcon] or "",
+					C(limitColors(raceData[raceFragmentsMax]-raceData[raceFragmentsCollected],"white"),raceData[raceFragmentsCollected].." / "..raceData[raceFragmentsMax]).." "..raceData[raceFragmentsIcon],
+					C(raceData[raceArtifactSolvable]==true and "green" or "white",raceData[raceNumFragmentsRequired].." "..raceData[raceArtifactIcon])
+				);
+				if(raceData[raceKeystoneItemID]~=0)then
+					tt:SetLineScript(l,"OnEnter", ItemTooltipShow,raceData[raceKeystoneItemID]);
+					tt:SetLineScript(l,"OnLeave", ItemTooltipHide);
+				end
+				tt:SetLineScript(l,"OnMouseUp", toggleArchaeologyFrame, raceData[raceIndex]);
+			elseif raceData[raceName] then
+				local l=tt:AddLine(
+					raceData[raceTexture].." "..C("gray",raceData[raceName]),
+					" ",
+					C("gray",raceData[raceFragmentsCollected].." / "..raceData[raceFragmentsMax]),
+					" ",
+					" "
+				);
 			end
-			tt:SetLineScript(l,"OnMouseUp", toggleArchaeologyFrame, v[raceIndex]);
-		elseif v[raceName] then
-			local l=tt:AddLine(
-				v[raceTexture].." "..C("gray",v[raceName]),
-				" ",
-				C("gray",v[raceFragmentsCollected].." / "..v[raceFragmentsMax]),
-				" ",
-				" "
-			);
 		end
 	end
 
@@ -224,9 +231,9 @@ end
 module = {
 	events = {
 		"PLAYER_LOGIN",
-		--"KNOWN_CURRENCY_TYPES_UPDATE", -- alerted in 8.0
 		"ARTIFACT_UPDATE",
-		--"ARTIFACT_COMPLETE", -- alerted in 8.0
+		"RESEARCH_ARTIFACT_UPDATE",
+		"RESEARCH_ARTIFACT_COMPLETE",
 		"CURRENCY_DISPLAY_UPDATE",
 		"CHAT_MSG_SKILL"
 	},
@@ -261,76 +268,58 @@ end
 
 function module.init()
 	racesOrder = {
-		"Azeroth", -- continent header
-		"Dwarf","Troll","Fossil","NightElf","Tolvir",
-		"Outland", -- continent header
-		"Draenei","Orc",
-		"Northend", -- continent header
-		"Vrykul","Nerubian"
+		"947", -- continent header / mapID / Azeroth
+		461831,461841,461833,461837,461839,
+		"101", -- continent header / mapID / Outland
+		461829,462321,
+		"113", -- continent header / mapID / Northend
+		461843,461835,
+		"424", -- continent header / mapID / Pandaria
+		633002,633000,839111,
+		"572", -- continent header / mapID / Draenor
+		1030617,1030618,1030616,
+		"619", -- continent header / mapID / Legion
+		1445575,1445577,1445573,
+		"876", -- continent header / mapID / KulTiras
+		2060049,
+		"875", -- continent header / mapID / Zandalar
+		2060051
 	};
 
-	races = { -- <raceIndex>, <currencyId>, <raceKeystone2FragmentsCount>
-		Azeroth		= {nil, true},
-		Dwarf		= {nil, 384, 20},
-		Troll		= {nil, 385, 20},
-		Fossil		= {nil, 393, 20},
-		NightElf	= {nil, 394, 20},
-		Tolvir		= {nil, 401, 20},
-		Outland		= {nil, true},
-		Draenei		= {nil, 398, 20},
-		Orc			= {nil, 397, 20},
-		Northend	= {nil, true},
-		Vrykul		= {nil, 399, 20},
-		Nerubian	= {nil, 400, 20},
-	};
+	races = { -- [<raceTextureID>] = { <raceIndex>, <currencyId>, <raceKeystone2FragmentsCount> }
+		--Azeroth
+		[461831] = {nil, 384, 20}, -- Dwarf
+		[461841] = {nil, 385, 20}, -- Troll
+		[461833] = {nil, 393, 20}, -- Fossil
+		[461837] = {nil, 394, 20}, -- NightElf
+		[461839] = {nil, 401, 20}, -- Tolvir
 
-	if ns.build>50000000 then -- MoP
-		races.Pandaria	= {nil, true};
-		races.Pandaren	= {nil, 676, 20};
-		races.Mogu		= {nil, 677, 20};
-		races.Mantid	= {nil, 754, 20};
-		tinsert(racesOrder,"Pandaria"); -- continent header
-		tinsert(racesOrder,"Pandaren");
-		tinsert(racesOrder,"Mogu");
-		tinsert(racesOrder,"Mantid");
-	end
+		--Outland
+		[461829] = {nil, 398, 20}, -- Draenei
+		[462321] = {nil, 397, 20}, -- Orc
 
-	if ns.build>60000000 then -- WoD
-		races.Draenor		= {nil, true};
-		races.DraenorOrc	= {nil, 821, 20};
-		races.Ogre			= {nil, 828, 20};
-		races.Arakkoa		= {nil, 829, 20};
-		tinsert(racesOrder,"Draenor"); -- continent header
-		tinsert(racesOrder,"DraenorOrc");
-		tinsert(racesOrder,"Ogre");
-		tinsert(racesOrder,"Arakkoa");
-	end
+		--Northend
+		[461843] = {nil, 399, 20}, -- Vrykul
+		[461835] = {nil, 400, 20}, -- Nerubian
 
-	if ns.build>70000000 then -- Legion
-		races.Legion				= {nil, true};
-		races.HighborneNightElves	= {nil, 1172, 12};
-		races.HighmountainTauren	= {nil, 1173, 12};
-		races.Demons				= {nil, 1174, 12};
-		tinsert(racesOrder,"Legion"); -- continent header
-		tinsert(racesOrder,"HighborneNightElves");
-		tinsert(racesOrder,"HighmountainTauren");
-		tinsert(racesOrder,"Demons");
-	end
+		--Pandaria
+		[633002] = {nil, 676, 20}, -- Pandaren
+		[633000] = {nil, 677, 20}, -- Mogu
+		[839111] = {nil, 754, 20}, -- Mantid
 
-	if ns.build>80000000 then -- ?
-	end
+		--Draenor
+		[1030617] = {nil, 821, 20}, -- DraenorOrc
+		[1030618] = {nil, 828, 20}, -- Ogre
+		[1030616] = {nil, 829, 20}, -- Arakkoa
 
-	iconID2Race = { -- 7.3 -- required since blizzard replaced iconFile with iconFileID
-		[461829]="Draenei",		[461831]="Dwarf",
-		[461833]="Fossil",		[462319]="Misc",
-		[461835]="Nerubian",	[461837]="NightElf",
-		[462321]="Orc",			[461839]="Tolvir",
-		[461841]="Troll",		[461843]="Vrykul",
-		[1030616]="Arakkoa",	[1445573]="Demons",
-		[1030617]="DraenorOrc",	[1445575]="HighborneNightElves",
-		[839111]="Mantid",		[1445577]="HighmountainTauren",
-		[633000]="Mogu",		[1030618]="Ogre",
-		[633002]="Pandaren",
+		--Legion
+		[1445575] = {nil, 1172, 12}, -- HighborneNightElves
+		[1445577] = {nil, 1173, 12}, -- HighmountainTauren
+		[1445573] = {nil, 1174, 12}, -- Demons
+
+		-- BfA
+		[2060049] = {nil,1535,12}, -- Drust
+		[2060051] = {nil,1534,12}, -- Zandalari
 	};
 end
 
