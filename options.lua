@@ -12,7 +12,7 @@ local dbDefaults,db = {
 			showHints = true,
 			iconset = "NONE",
 			iconcolor = {1,1,1,1},
-			goldColor = false,
+			goldColor = "white",
 			goldCoins = true,
 			usePrefix = false,
 			maxTooltipHeight = 60,
@@ -20,7 +20,6 @@ local dbDefaults,db = {
 			ttModifierKey1 = "NONE",
 			ttModifierKey2 = "NONE",
 			goldHide = "0",
-			goldHideLowerZeros = false,
 			separateThousands = true,
 			showAddOnLoaded = true
 		}
@@ -204,15 +203,15 @@ local options = {
 					type = "group", order = 2, inline = true,
 					name = C("ff00aaff",MONEY),
 					args = {
-						goldColor          = {type="toggle",order=1,name=L["GoldColor"],desc=L["GoldColorDesc"]},
-						goldCoins          = {type="toggle",order=1,name=L["GoldCoins"],desc=L["GoldCoinsDesc"]},
-						separateThousands  = {type="toggle",order=2,name=L["DigitGroup"],desc=L["DigitGroupDesc"]},
-						goldHideLowerZeros = {type="toggle",order=3,name=L["HideZeros"],desc=L["HideZerosDesc"]},
+						goldColor          = {type="select",order=1,name=L["GoldColor"],desc=L["GoldColorDesc"],values={_none=ADDON_DISABLED,color=L["GoldColorCoin"],white=L["GoldColorWhite"]} },
+						goldCoins          = {type="toggle",order=2,name=L["GoldCoins"],desc=L["GoldCoinsDesc"]},
+						separateThousands  = {type="toggle",order=3,name=L["DigitGroup"],desc=L["DigitGroupDesc"]},
 						goldHide           = {type="select",order=4,name=L["HideMoney"],desc=L["HideMoneyDesc"],
 							values={
 								["0"]=NONE,
-								["1"]=L["Copper"],
-								["2"]=L["Copper & silver"]
+								["1"]=L["HideMoneyCopper"],
+								["2"]=L["HideMoneySilver"],
+								["3"]=L["HideMoneyZeros"]
 							}
 						}
 					}
@@ -625,6 +624,10 @@ function ns.RegisterOptions()
 			end
 		end
 		ns.data.AceDBfix=AceDBfixCurrent;
+	end
+
+	if type(ns.profile.GeneralOptions.goldColor)~="string" then
+		ns.profile.GeneralOptions.goldColor = ns.profile.GeneralOptions.goldColor and "color" or "white";
 	end
 
 	buildCharDataOptions();

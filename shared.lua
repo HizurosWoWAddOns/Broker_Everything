@@ -1264,68 +1264,48 @@ end
 -- ----------------------------------------------------- --
 function ns.GetCoinColorOrTextureString(modName,amount,opts)
 	local zz,tex="%02d","|TInterface\\MoneyFrame\\UI-%sIcon:14:14:2:0|t";
-	local goldColored = ns.profile.GeneralOptions.goldColor;
-	local goldCoins = ns.profile.GeneralOptions.goldCoins;
-	if(type(amount)~="number")then amount=0; end
-
-	if(not opts)then opts={}; end
-	if(not opts.sep)then
-		opts.sep=" ";
+	amount = tonumber(amount) or 0;
+	opts = opts or {};
+	opts.sep = opts.sep or " ";
+	opts.hideMoney = opts.hideMoney or tonumber(ns.profile.GeneralOptions.goldHide);
+	opts.color = (opts.color or ns.profile.GeneralOptions.goldColor):lower();
+	if not opts.coins then
+		opts.coins = ns.profile.GeneralOptions.goldCoins;
 	end
 
-	if(not opts.hideLowerZeros)then
-		opts.hideLowerZeros=false;
-		if (ns.profile.GeneralOptions.goldHideLowerZeros==true)then
-			opts.hideLowerZeros=true;
-		end
-	end
-
-	if not (opts.hideMoney) then
-		opts.hideMoney = tonumber(ns.profile.GeneralOptions.goldHide);
-	end
-
-	if(opts.hideMoney==2)then
-		amount = floor(amount/10000)*10000;
-		opts.hideLowerZeros=true;
-	elseif(opts.hideMoney==1)then
+	if opts.hideMoney==1 then
 		amount = floor(amount/100)*100;
-		opts.hideLowerZeros=true;
+		opts.hideCopper = true;
+	elseif opts.hideMoney==2 then
+		amount = floor(amount/10000)*10000;
+		opts.hideSilver = true;
+		opts.hideCopper = true;
 	end
 
-	local gold, silver, copper, t, i = floor(amount/10000), mod(floor(amount/100),100), mod(floor(amount),100), {}, 1
+	local colors = (opts.color=="white" and {"white","white","white"}) or (opts.color=="color" and {"copper","silver","gold"}) or false;
+	local gold, silver, copper, t = floor(amount/10000), mod(floor(amount/100),100), mod(floor(amount),100), {};
 
-	if amount==0 or not (opts.hideCopper or (copper==0 and opts.hideLowerZeros))then
-		tinsert(t,
-			(goldColored and ns.LC.color("copper",(silver>0 or gold>0) and zz:format(copper) or copper) or copper)
-			..
-			(goldCoins and tex:format("Copper") or "")
-		);
-	end
-
-	if amount>0 and not (opts.hideSilver or (copper==0 and silver==0 and opts.hideLowerZeros))then
-		tinsert(t,
-			(goldColored and ns.LC.color("copper",gold>0 and zz:format(silver) or silver) or silver)
-			..
-			(goldCoins and tex:format("Copper") or "")
-		);
+	if opts.hideMoney==3 then
+		opts.hideSilver = (silver==0);
+		opts.hideCopper = (copper==0);
 	end
 
 	if gold>0 then
-		gold = ns.FormatLargeNumber(modName,gold,opts.inTooltip);
-		tinsert(t,
-			(goldColored and ns.LC.color("gold",gold) or gold)
-			..
-			(goldCoins and tex:format("Gold") or "")
-		);
+		local str = ns.FormatLargeNumber(modName,gold,opts.inTooltip);
+		tinsert(t, (colors and ns.LC.color(colors[3],str) or str) .. (opts.coins and tex:format("Gold") or "") );
 	end
 
-	local str = table.concat(t,opts.sep);
-
-	if not ns.profile.GeneralOptions.goldColor and type(opts.color)=="string" then
-		str = ns.LC.color(opts.color,str);
+	if (gold==0 and silver>0) or (silver>0 and (not opts.hideSilver)) then
+		local str = gold>0 and zz:format(silver) or silver;
+		tinsert(t, (colors and ns.LC.color(colors[2],str) or str) .. (opts.coins and tex:format("Silver") or "") );
 	end
 
-	return str;
+	if amount<100 or (not opts.hideCopper) then
+		local str = (silver>0 or gold>0) and zz:format(copper) or copper;
+		tinsert(t, (colors and ns.LC.color(colors[1],str) or str) .. (opts.coins and tex:format("Copper") or "") );
+	end
+
+	return table.concat(t,opts.sep);
 end
 
 
