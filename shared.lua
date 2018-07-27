@@ -1847,10 +1847,7 @@ do
 			end
 			local key = ns.profile[modName][cfgKey];
 			if key and key~="__NONE" then
-				local fSrc,func,prx = act[iSrc],"%s";
-				if act[iPrefix]~=false then
-					prx = L["ClickOptOpen"];
-				end
+				local fSrc,func = act[iSrc];
 				if fSrc=="direct" then
 					func = act[iFnc];
 				elseif fSrc=="module" then
@@ -1864,7 +1861,7 @@ do
 				end
 				if func and type(func)=="function" then
 					mod.onclick[key] = actName;
-					tinsert(mod.clickHints,ns.LC.color("copper",values[key]).." || "..ns.LC.color("green",prx:format(L[act[iLabel]])));
+					tinsert(mod.clickHints,ns.LC.color("copper",values[key]).." || "..ns.LC.color("green",L[act[iLabel]]));
 					hasOptions = true;
 				end
 			end
