@@ -56,11 +56,15 @@ local function tooltipOnEnter(self,data)
 			local v = trainer_faction[i];
 			if faction~=v[1] then
 				local fname,_,fstanding,fmin,fmax,fval = GetFactionInfoByID(v[1]);
-				if fname and fmin~=fmax then
+				if fname then
 					if faction then
 						GameTooltip:AddLine(" ");
 					end
-					GameTooltip:AddDoubleLine(C("gray",fname),C("gray",ttFactionLine:format(_G["FACTION_STANDING_LABEL"..fstanding],((fval-fmin)/(fmax-fmin))*100 ) ) );
+					local standing = _G["FACTION_STANDING_LABEL"..fstanding];
+					if fstanding<8 then
+						standing = ttFactionLine:format(standing,((fval-fmin)/(fmax-fmin))*100);
+					end
+					GameTooltip:AddDoubleLine(C("gray",fname), C("gray",standing) );
 					faction = v[1];
 				end
 			end
@@ -298,6 +302,7 @@ function module.init()
 		{33388, 20,  60},
 	};
 	licences = { -- <spellid>, <minLevel>, <mapIds>
+		-- bfa pathfinder
 		{"a11446", 100, {}},
 		{"a10018", 90, { --[[ draenor map ids? ]] }},
 		{115913,   85, {[862]=1,[858]=1,[929]=1,[928]=1,[857]=1,[809]=1,[905]=1,[903]=1,[806]=1,[873]=1,[808]=1,[951]=1,[810]=1,[811]=1,[807]=1}},
@@ -313,18 +318,18 @@ function module.init()
 	end
 	trainer_faction = UnitFactionGroup("player")=="Alliance" and {
 		-- { <factionID>, <npcID>, <zoneID>, <x>, <y> }
-		{  72, 43693, 301, 77.6, 67.2},
-		{  72, 43769, 301, 70.6, 73.0},
-		{  72, 35100, 465, 54.2, 62.6},
-		{1050, 35133, 486, 58.8, 68.2},
-		{1090, 31238, 504, 70.8, 45.6},
-		{1269, 60166, 811, 84.2, 61.6},
+		{  72, 43693, 84, 77.6, 67.2},
+		{  72, 43769, 84, 70.6, 73.0},
+		{ 946, 35100, 100, 54.2, 62.6},
+		{1050, 35133, 114, 58.8, 68.2},
+		{1090, 31238, 125, 70.8, 45.6},
+		{1269, 60166, 390, 84.2, 61.6},
 	} or {
-		{  76, 44919, 321, 49.0, 59.6},
-		{  76, 35093, 465, 54.2, 41.6},
-		{1085, 35135, 486, 42.0, 55.2},
-		{1090, 31238, 504, 70.8, 45.6},
-		{1269, 60167, 811, 62.8, 23.2},
+		{  76, 44919, 85, 49.0, 59.6},
+		{  76, 35093, 100, 54.2, 41.6},
+		{1085, 35135, 114, 42.0, 55.2},
+		{1090, 31238, 125, 70.8, 45.6},
+		{1269, 60167, 390, 62.8, 23.2},
 	};
 	bonus_spells = { -- <spellid>, <chkActive[bool]>, <type>, <typeValue>, <customText>, <speed increase>, <special>
 		-- race spells
