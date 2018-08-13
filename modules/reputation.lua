@@ -103,10 +103,28 @@ function updateBroker()
 		elseif standingId==8 then
 			barValue,barMax = barValue+999,barMax+999;
 		end
-		barMax,barValue2,barMin = barMax-barMin,barValue-barMin,0;
+
+		local IsParagon,hasRewardPending = false,false;
+		if C_Reputation.IsFactionParagon(factionID) then
+			local rewardCurrentValue, rewardThreshold, rewardQuestID, _hasRewardPending = C_Reputation.GetFactionParagonInfo(factionID);
+			if rewardCurrentValue~=nil then
+				if rewardCurrentValue > rewardThreshold then
+					rewardCurrentValue = rewardCurrentValue - rewardThreshold;
+				end
+				barMax = rewardThreshold;
+				barValue2 = mod(rewardCurrentValue, rewardThreshold);
+				--data[rewardPercent] = (barValue2/barMax)*100;
+				hasRewardPending = _hasRewardPending;
+				IsParagon=true;
+			end
+		else
+			barMax,barValue2,barMin = barMax-barMin,barValue-barMin,0;
+		end
+
 		if ns.profile[name].watchedNameOnBroker then
 			tinsert(tmp,Name);
 		end
+
 		if ns.profile[name].watchedCountOnBroker then
 			if ns.profile[name].watchedCountPercentOnBroker then
 				tinsert(tmp,("%1.1f%%"):format(barValue2/barMax*100));
@@ -114,6 +132,7 @@ function updateBroker()
 				tinsert(tmp,ns.FormatLargeNumber(name,barValue2).."/"..ns.FormatLargeNumber(name,barMax));
 			end
 		end
+
 		if ns.profile[name].watchedNeedOnBroker then
 			if ns.profile[name].watchedNeedPercentOnBroker then
 				tinsert(tmp,("%1.1f%% "..L["need"]):format(100-(barValue2/barMax*100)));
@@ -121,15 +140,22 @@ function updateBroker()
 				tinsert(tmp,ns.FormatLargeNumber(name,barMax-barValue2).." "..L["need"]);
 			end
 		end
+
 		if ns.profile[name].watchedStandingOnBroker then
 			tinsert(tmp,standingText);
 		end
+
 		if ns.profile[name].watchedSessionBroker and not (friendID and not nextFriendThreshold) then
 			local val = GetSession(factionID,barValue);
 			if val~="" then
 				tinsert(tmp,val);
 			end
 		end
+
+		if IsParagon then
+			tinsert(tmp,hasRewardPending and "|TInterface/GossipFrame/ActiveQuestIcon:14:14:0:0|t" or "|TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t");
+		end
+
 		if #tmp>0 then
 			txt = table.concat(tmp,", ");
 		end
