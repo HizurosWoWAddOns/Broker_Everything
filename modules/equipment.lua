@@ -245,7 +245,7 @@ local function createTooltip(tt)
 			if inventory[i] and inventory[i].rarity then
 				none=false;
 				local tSetItem,setName,enchanted,greenline,upgrades,gems = "","","","","","";
-				if ns.profile[name].showNotEnchanted and enchantSlots[i] and (tonumber(inventory[i].linkData[1]) or 0)==0 then
+				if ns.profile[name].showNotEnchanted and inventory[i].id~=158075 --[[ hearth of azeroth can't be enchanted ]] and enchantSlots[i] and (tonumber(inventory[i].linkData[1]) or 0)==0 then
 					enchanted=C("red"," #");
 					miss=true;
 				end
