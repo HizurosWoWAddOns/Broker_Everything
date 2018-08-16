@@ -89,8 +89,10 @@ do
 		if ids then
 			for i=1, #ids do
 				local _,name,apiName = ns.LRI:GetRealmInfoByID(ids[i]);
-				ns.realms[name] = apiName;
-				ns.realms[apiName] = name;
+				if name and apiName then
+					ns.realms[name] = apiName;
+					ns.realms[apiName] = name;
+				end
 			end
 		else
 			ns.realms[ns.realm] = ns.realm_short;
