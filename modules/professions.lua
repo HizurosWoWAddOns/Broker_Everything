@@ -10,7 +10,7 @@ local C,L,I = ns.LC.color,ns.L,ns.I;
 local name = "Professions"; -- TRADE_SKILLS
 local ttName,ttName2,ttColumns,tt,tt2,module = name.."TT",name.."TT2",2;
 local professions,db,locked = {};
-local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset = 1,2,3,4,5,6,7,8,9,10; -- GetProfessionInfo
+local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset, fullNameLocale = 1,2,3,4,5,6,7,8,9,10,11; -- GetProfessionInfo
 local nameEnglish,spellId,skillId,disabled = 11, 12, 13, 14; -- custom after GetProfessionInfo
 local spellName,spellLocaleName,spellIcon,spellId = 1,2,3,4;
 local legion_faction_recipes,cdSpells = {},{};
@@ -60,16 +60,24 @@ I[name] = {iconfile="Interface\\Icons\\INV_Misc_Book_09.png",coords={0.05,0.95,0
 -- some local functions --
 --------------------------
 local function updateBroker()
-	local inTitle,db,v = {},ns.profile[name].inTitle;
+	local inTitle = {};
 
 	for i=1, 4 do
-		v = db[i];
+		local v = ns.profile[name].inTitle[i];
 		if v and professions[v] and professions[v][icon] and professions[v][skill] and professions[v][maxSkill] then
-			local modifier = "";
-			if professions[v][rankModifier] and professions[v][rankModifier]>0 then
-				modifier = C("green","+"..professions[v][rankModifier]);
+			local Skill,modifier,color = v[skill],"","gray2";
+			if true then
+				if professions[v][skill]~=professions[v][maxSkill] then
+					color = "ffff"..string.format("%02x",255*(professions[v][skill]/professions[v][maxSkill])).."00";
+				end
+				if professions[v][rankModifier] and professions[v][rankModifier]>0 then
+					Skill = C("green",Skill+professions[v][rankModifier]);
+					-- modifier = C("green","+"..professions[v][rankModifier]);
+				end
+				table.insert(inTitle, ("%s/%s|T%s:0|t"):format(C(color,professions[v][skill])..modifier,C(color,professions[v][maxSkill]),professions[v][icon]));
+			else
+				table.insert(inTitle, ("%s/%s|T%s:0|t"):format(professions[v][skill]..modifier,professions[v][maxSkill],professions[v][icon]));
 			end
-			table.insert(inTitle, ("%s/%s|T%s:0|t"):format(professions[v][skill]..modifier,professions[v][maxSkill],professions[v][icon]));
 		end
 	end
 
@@ -125,20 +133,37 @@ local function createTooltip(tt)
 	if #professions>0 then
 		local ts = {};
 		for i,v in ipairs(professions) do
-			if (v[maxSkill]==v[skill]) then
-				local c1,c2,s,m,modifier="ltyellow","gray2",v[skill] or 0,v[maxSkill] or 0,"";
-				if (m==0) then
-					c1,c2,s,m = "gray","gray","-","-";
+			local color1,color2 = "ltyellow","white";
+			local skill, maxSkill,nameStr,modifier = v[skill] or 0,v[maxSkill] or 0,v[fullNameLocale] or v[nameLocale] or "?","";
+			if maxSkill==0 then
+				color1,color2 = "gray","gray";
+			else
+				local skillPercent = skill/maxSkill;
+				if skillPercent==1 then
+					color2 = "gray2","gray2";
+				else
+					color2 = "ffff"..string.format("%02x",255*skillPercent).."00";
 				end
 				if v[rankModifier] and v[rankModifier]>0 then
 					modifier = C("green","+"..v[rankModifier]);
 				end
-				tt:AddLine((iconnameLocale):format(v[icon],C(c1,v[nameLocale])),C(c2,s)..modifier..C(c2,"/"..m));
-			else
-				tt:AddLine((iconnameLocale):format(v[icon] or ns.icon_fallback,C("ltyellow",v[nameLocale] or "?")),("%d/%d"):format(v[skill] or 0,v[maxSkill] or 0));
+				if v[fullNameLocale] and v[nameLocale] and v[fullNameLocale]~=v[nameLocale] then
+					nameStr = "";
+					local str = {strsplit(";",(v[fullNameLocale]:gsub(v[nameLocale],";%1;")))};
+					for i=1, #str do
+						if str[i]==v[nameLocale] then
+							nameStr = nameStr..C(color1,v[nameLocale]);
+						elseif str[i]~="" then
+							nameStr = nameStr..C("gray2",str[i]);
+						end
+					end
+				else
+					nameStr = C(color1,nameStr);
+				end
 			end
-			if v[7] and v[nameEnglish] then
-				ts[v[7]] = v[nameEnglish];
+			tt:AddLine((iconnameLocale):format(v[icon] or ns.icon_fallback,nameStr),C(color2,skill)..modifier..C(color2,"/"..maxSkill));
+			if v[7] and v.nameEnglish then
+				ts[v[7]] = v.nameEnglish;
 			end
 		end
 
@@ -318,7 +343,7 @@ function module.ProfessionMenu()
 	ns.EasyMenu:AddEntry({ label = L["Open"], title = true });
 	ns.EasyMenu:AddEntry({ separator = true });
 	for i,v in ipairs(professions) do
-		if (v[spellId]) and (not v[disabled]) then
+		if (v.spellId) and (not v[disabled]) then
 			ns.EasyMenu:AddEntry({
 				label = v[nameLocale],
 				icon = v[icon],
@@ -553,8 +578,7 @@ function module.onevent(self,event,arg1)
 			ns.toon[name].learnedRecipes = {};
 		end
 
-		local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset = 1,2,3,4,5,6,7,8,9,10; -- GetProfessionInfo
-		local nameEnglish,spellId,skillId = 11, 12, 13; -- custom after GetProfessionInfo
+		local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset,fullNameLocale = 1,2,3,4,5,6,7,8,9,10,11; -- GetProfessionInfo
 
 		if (not profs.generated) then
 			profs.build();
@@ -565,19 +589,22 @@ function module.onevent(self,event,arg1)
 			wipe(professions);
 			local short, d, tsIds, add, _ = {},{},{},true,nil;
 
-			for n=1, 7 do
+			for n=1, #t do
 				add = true;
 				d = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil};
 
-				if (t[n]~=nil) then
+				if t[n] then
 					d = {GetProfessionInfo(t[n])};
-					d[skillId] = t[n];
+				end
 
-					d[spellId] = profs.id2Name[L[d[nameLocale]]] or nil;
-					d[nameEnglish] = L[d[nameLocale]];
+				if (t[n]~=nil) then
+					--d = {GetProfessionInfo(t[n])};
+					d.skillId = t[n];
+					d.spellId = profs.id2Name[L[d[nameLocale]]] or nil;
+					d.nameEnglish = L[d[nameLocale]];
 
-					if (n<=2) then -- ?
-						short[n] = {d[nameEnglish],d[nameLocale],d[icon],d[skill],d[maxSkill],d[skillId],d[spellId]};
+					if (n<=2) then
+						short[n] = {d.nameEnglish,d[nameLocale],d[icon],d[skill],d[maxSkill],d.skillId,d.spellId};
 					end
 					if (n==4) then -- hide fishing in profession menu to prevent error message
 						d[disabled]=true;
@@ -586,24 +613,10 @@ function module.onevent(self,event,arg1)
 				elseif (n<=2) then
 					d[nameLocale] = (n==1) and PROFESSIONS_FIRST_PROFESSION or PROFESSIONS_SECOND_PROFESSION;
 					d[icon] = ns.icon_fallback;
-					d[spellId] = false;
-				elseif (n>=3 and n<=6) then
-					d[spellId] = (n==3 and 78670) or (n==4 and 131474) or (n==5 and 2550) or (n==6 and 3273);
-					d[nameEnglish],d[nameLocale],d[icon] = unpack(profs.data[d[spellId]] or {});
-				elseif (ns.player.class=="DEATHKNIGHT") then
-					d[spellId] = 53428;
-					if (IsSpellKnown(d[spellId])) then
-						d[skill],d[maxSkill] = 1,1;
-					end
-					d[nameEnglish],d[nameLocale],d[icon] = unpack(profs.data[d[spellId]] or {});
-				elseif (ns.player.class=="ROGUE") then
-					d[spellId] = 1804;
-					if (IsSpellKnown(d[spellId])) then
-						d[skill] = UnitLevel("player") * 5;
-						d[maxSkill] = d[skill];
-					end
-					d[nameEnglish],d[nameLocale],d[icon] = unpack(profs.data[d[spellId]] or {});
-					d[disabled] = true;
+					d.spellId = false;
+				elseif (n>=3 and n<=5) then
+					d.spellId = (n==3 and 78670) or (n==4 and 131474) or (n==5 and 2550);-- or (n==6 and 3273) first aid removed in bfa;
+					d.nameEnglish,d[nameLocale],d[icon] = unpack(profs.data[d.spellId] or {});
 				else
 					add=false;
 				end
@@ -611,6 +624,23 @@ function module.onevent(self,event,arg1)
 					professions[n] = d;
 				end
 			end
+
+			if (ns.player.class=="DEATHKNIGHT") then
+				d.spellId = 53428;
+				if (IsSpellKnown(d.spellId)) then
+					d[skill],d[maxSkill] = 1,1;
+				end
+				d.nameEnglish,d[nameLocale],d[icon] = unpack(profs.data[d.spellId] or {});
+			elseif (ns.player.class=="ROGUE") then
+				d.spellId = 1804;
+				if (IsSpellKnown(d.spellId)) then
+					d[skill] = UnitLevel("player") * 5;
+					d[maxSkill] = d[skill];
+				end
+				d.nameEnglish,d[nameLocale],d[icon] = unpack(profs.data[d.spellId] or {});
+				d[disabled] = true;
+			end
+
 			db.profession1 = short[1] or false;
 			db.profession2 = short[2] or false;
 			db.hasCooldowns = false;
