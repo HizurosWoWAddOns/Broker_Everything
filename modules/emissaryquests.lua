@@ -7,19 +7,22 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Emissary Quests";
-local ttName, ttColumns, tt, module = name.."TT", 6
+local ttName, ttColumns, tt, module = name.."TT", 8
 local factions,totalQuests,locked = {},{},false;
-local continents = {
-	--1007, -- legion
-	--1184, -- argus
-	619, -- legion (new uiMapID)
-	905, -- argus (new uiMapID)
-};
-local icon2factionID = {
-	[1708507] = 2045,
-	[1708506] = 2165,
-	[1708505] = 2170,
-};
+local Alliance = UnitFactionGroup("player")=="Alliance";
+local spacer,ending = 604800,{};
+local expansions = {
+	{ name="legion", index=6, zone=619, numBounties=3, minLevel=110},
+	{ name="bfa", index=7, zone=Alliance and 876 or 875, numBounties=3, minLevel=120},
+}
+local questID2factionID = {
+	-- legion
+	[42170]=1883, [42233]=1828, [42234]=1948, [42420]=1900, [42421]=1859,
+	[42422]=1894, [43179]=1090, [48639]=2165, [48641]=2045, [48642]=2170,
+	-- bfa
+	[50600]=2161, [50601]=2162, [50599]=2160, [50605]=2159, [50603]=2158,
+	[50598]=2103, [50602]=2156, [50606]=2157, [50604]=2163, [50562]=2164,
+}
 local factionName = setmetatable({},{__index=function(t,k)
 	local v = GetFactionInfoByID(k);
 	if v then
@@ -45,6 +48,10 @@ local function sortFactions(a,b)
 	return a.eventEnding<b.eventEnding;
 end
 
+local function sortInvertFactions(a,b)
+	return not sortFactions(a,b);
+end
+
 local function updateBroker()
 	local lst,obj = {},ns.LDB:GetDataObjectByName(module.ldbName);
 	if UnitLevel("player")<110 then
@@ -53,25 +60,27 @@ local function updateBroker()
 	end
 
 	local Time = time();
-	table.sort(factions,sortFactions);
-	for _,v in pairs(factions)do
-		if v.eventEnding-Time>=0 then
-			local toon = ns.toon[name].factions[v.factionID] or {};
-			if toon.lastEnding==nil then
-				toon.lastEnding = 0;
-			end
-			if v.eventEnding>toon.lastEnding then
-				toon.lastEnding = v.eventEnding;
-				toon.numCompleted = 0;
-			end
-			if toon.numCompleted>v.numTotal then
-				toon.numCompleted=v.numTotal;
-			end
-			local text = toon.numCompleted.."/"..v.numTotal;
-			if toon.numCompleted<v.numTotal then
-				tinsert(lst,text.." |T"..v.icon..":14:14:0:0:64:64:4:56:4:56|t");
-			else
-				tinsert(lst,C("gray",text).." |T"..v.icon..":14:14:0:0:64:64:4:56:4:56|t");
+	for e=1, #expansions do
+		table.sort(factions[e],sortFactions);
+		for _,v in ipairs(factions[e]) do
+			if ns.profile[name][expansions[e].name.."QuestsBroker"] and v.eventEnding-Time>=0 then
+				local toon = ns.toon[name].factions[v.factionID] or {};
+				if toon.lastEnding==nil then
+					toon.lastEnding = 0;
+				end
+				if v.eventEnding>toon.lastEnding then
+					toon.lastEnding = v.eventEnding;
+					toon.numCompleted = 0;
+				end
+				if toon.numCompleted>v.numTotal then
+					toon.numCompleted=v.numTotal;
+				end
+				local text = toon.numCompleted.."/"..v.numTotal;
+				if toon.numCompleted<v.numTotal then
+					tinsert(lst,text.." |T"..v.icon..":14:14:0:0:64:64:4:56:4:56|t");
+				else
+					tinsert(lst,C("gray",text).." |T"..v.icon..":14:14:0:0:64:64:4:56:4:56|t");
+				end
 			end
 		end
 	end
@@ -109,24 +118,23 @@ end
 
 local function updateData()
 	if locked then return end locked = true;
-	local Time = ceil(time()/60)*60;
-	local endings = {};
-	for c=1, #continents do
-		local bounties,location,locked = GetQuestBountyInfoForMapID(continents[c]); -- empty table on chars lower than 110
+
+	local Time = time();
+	local ending,endings,day = {Time+GetQuestResetTime()+1},{},86400;
+	ending[2] = ending[1]+day;
+	ending[3] = ending[2]+day;
+	ending[4] = ending[3]+day;
+
+	local Time = floor(Time/60)*60;
+	for e=1, #expansions do
+		endings[e] = {};
+		local bounties,location,locked = GetQuestBountyInfoForMapID(expansions[e].zone); -- empty table on chars lower than 110
 		for i=1, #bounties do
-			local TimeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(bounties[i].questID);
-			bounties[i].eventEnding = 0;
-			if TimeLeft then
-				local timeLeftSeconds = TimeLeft*60;
-				bounties[i].eventEnding = Time+timeLeftSeconds-1;
-				local hours = floor(TimeLeft/60);
-				endings[hours] = bounties[i].questID;
-				bounties[i].eventEndingHours = hours;
-			end
-			bounties[i].continent = continents[c];
-			if bounties[i].factionID==0 then
-				bounties[i].factionID = icon2factionID[bounties[i].icon];
-			end
+			local TimeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(bounties[i].questID) or 0;
+			bounties[i].expansion = e;
+			bounties[i].continent = expansions[e].zone;
+			bounties[i].eventEnding = TimeLeft>0 and Time+(TimeLeft*60) or 0;
+			bounties[i].factionID = questID2factionID[bounties[i].questID];
 			if bounties[i].factionID then
 				ns.data[name].factions[bounties[i].factionID] = bounties[i];
 				if ns.toon[name].factions[bounties[i].factionID]==nil then
@@ -144,117 +152,161 @@ local function updateData()
 	end
 
 	wipe(factions);
-	for i,v in pairs(ns.data[name].factions)do
-		if not v.eventEndingHours then
-			v.eventEndingHours = floor((v.eventEnding-Time)/3600);
+	local exps = {};
+	for i=1, #expansions do
+		exps[expansions[i].name] = i;
+		exps[expansions[i].zone] = i;
+	end
+	table.sort(ns.data[name].factions,sortFactions);
+
+	for id, data in pairs(ns.data[name].factions)do
+		if Time < data.eventEnding then
+			if data.extension then
+				data.expansion = exps[data.extension];
+				data.extension = nil;
+			elseif type(data.expansion)~="number" then
+				datq.expansion = exps[data.continent];
+			end
+			if not factions[data.expansion] then
+				factions[data.expansion] = {};
+			end
+			tinsert(factions[data.expansion],data);
 		end
-		if endings[v.eventEndingHours] and endings[v.eventEndingHours]~=v.questID then
-			v.eventEnding=0;
-		end
-		tinsert(factions,v);
 	end
 
+	for e=1, #expansions do
+		if #factions[e] < expansions[e].numBounties then
+			for i=#factions[e]+1, expansions[e].numBounties do
+				tinsert(factions[e],{
+					icon = ns.icon_fallback,
+					name = UNKNOWN, --.." "..L["EmissaryQuestsMissing"],
+					eventEnding = ending[i],
+					expansion = e,
+					numTotal = 0
+				});
+			end
+		end
+	end
+	XXX = factions
 	updateBroker();
 	C_Timer.After(1,unlock);
 end
 
 local function createTooltip(tt)
-	local Time = time();
-	table.sort(factions,sortFactions);
+	local minLevel,Time,level = 999,time(),UnitLevel("player");
+
+	for e=1, #expansions do
+		if ns.profile[name][expansions[e].name.."Quests"] and expansions[e].minLevel<minLevel then
+			minLevel = expansions[e].minLevel;
+		end
+	end
 
 	if tt.lines~=nil then tt:Clear(); end
-	local l=tt:AddLine();
-	tt:SetCell(l,1,C("dkyellow",BOUNTY_BOARD_LOCKED_TITLE),tt:GetHeaderFont(),"LEFT",0);
+	tt:SetCell(tt:AddLine(),1,C("dkyellow",BOUNTY_BOARD_LOCKED_TITLE),tt:GetHeaderFont(),"LEFT",0);
 
 	tt:AddSeparator(4,0,0,0,0);
-	local l=tt:AddLine(C("ltblue",FACTION));
+	local missing,l=false,tt:AddLine(C("ltblue",FACTION));
 	tt:SetCell(l,2,C("ltblue",TIME_REMAINING:gsub(":",""):gsub("：",""):trim()),nil,"RIGHT",0);
 	tt:AddSeparator();
-	for _,v in pairs(factions)do
-		if v.eventEnding-Time>=0 then
-			local color1,color2 = "ltyellow","white";
-			if ns.toon[name].factions[v.factionID] and ns.toon[name].factions[v.factionID].numCompleted==v.numTotal then
-				color1,color2 = "gray","gray";
-			end
-			local l=tt:AddLine("|T"..v.icon..":14:14:0:0:64:64:4:56:4:56|t "..C(color1,factionName[v.factionID]));
-			tt:SetCell(l,2,C(color2,SecondsToTime(v.eventEnding-Time)),nil,"RIGHT",0);
-		end
-	end
-	if UnitLevel("player")<110 then
-		local l=tt:AddLine();
-		tt:SetCell(l,1,C("gray",L["World quests status update|nneeds level 110 or higher"]),nil,"CENTER",0);
-	end
-
-	tt:AddSeparator(12,0,0,0,0);
-	local c,l=2,tt:AddLine(C("ltblue",L["Characters"]));
-	for i,v in pairs(factions)do
-		if v.eventEnding-Time>=0 then
-			tt:SetCell(l,c,"|T"..v.icon..":24:24:0:0:64:64:4:56:4:56|t",nil,"CENTER");
-			c=c+1;
-		end
-	end
-	if c<4 then
-		for I=1, 3 do
-			tt:SetCell(l,c,"|T"..ns.icon_fallback..":24:24:0:0:64:64:4:56:4:56|t",nil,"CENTER");
-			c=c+1;
-			if c==4 then
-				break;
-			end
-		end
-	end
-
-	tt:AddSeparator();
-
-	local chars = 0;
-	for i=1, #Broker_Everything_CharacterDB.order do
-		local name_realm = Broker_Everything_CharacterDB.order[i];
-		local v,cell = Broker_Everything_CharacterDB[name_realm],2;
-		local c,realm,_ = strsplit("-",name_realm,2);
-		if realm and v.level>=110 and v[name] and ns.showThisChar(name,realm,v.faction) then
-			local faction = v.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-			if type(realm)=="string" and realm:len()>0 then
-				local _,_realm = ns.LRI:GetRealmInfo(realm);
-				if _realm then realm = _realm; end
-			end
-			local c,l=2,tt:AddLine(C(v.class,ns.scm(c)) .. ns.showRealmName(name,realm) .. faction);
-			for _,data in pairs(factions)do
-				if data.eventEnding-Time>=0 then
-					local toon = v[name].factions[data.factionID] or {};
-					if toon.lastEnding==nil then
-						toon.lastEnding = 0;
+	if level>=minLevel then
+		local expansion=0;
+		for e=1, #expansions do
+			table.sort(factions[e],sortFactions);
+			for i=1, #factions[e] do
+				local v = factions[e][i];
+				if ns.profile[name][expansions[v.expansion].name.."Quests"] and v.eventEnding-Time>=0 then
+					if expansion~=expansions[v.expansion].index then
+						expansion=expansions[v.expansion].index;
+						tt:SetCell(tt:AddLine(),1,C("ltgreen",_G["EXPANSION_NAME"..expansions[v.expansion].index]),nil,"LEFT",0);
 					end
-					if data.eventEnding>toon.lastEnding then
-						toon.lastEnding = data.eventEnding;
-						toon.numCompleted = 0;
+					local color1,color2 = "ltyellow","white";
+					if ns.toon[name].factions[v.factionID] and ns.toon[name].factions[v.factionID].numCompleted==v.numTotal then
+						color1,color2 = "gray","gray";
 					end
-					if toon.numCompleted>data.numTotal then
-						toon.numCompleted=data.numTotal;
-					end
-					local color,text = "gray",toon.numCompleted.."/"..data.numTotal;
-					if toon.numCompleted<data.numTotal then
-						color = "white";
-					end
-					tt:SetCell(l,c,C(color,text),nil,"CENTER");
-					c=c+1;
-				end
-			end
-			if c<4 then
-				for I=1, 3 do
-					tt:SetCell(l,c,C("gray","?/?"),nil,"CENTER");
-					c=c+1;
-					if c==4 then
-						break;
+					local l=tt:AddLine("  |T"..v.icon..":14:14:0:0:64:64:4:56:4:56|t "..C(color1,v.factionID and factionName[v.factionID] or v.name or UNKNOWN));
+					tt:SetCell(l,2,C(color2,SecondsToTime(v.eventEnding-Time)),nil,"RIGHT",0);
+					if not v.factionID then
+						missing=true;
 					end
 				end
 			end
-			if name_realm==ns.player.name_realm then
-				tt:SetLineColor(l, 1, 1, 1, .4);
-			end
-			chars = chars+1;
 		end
 	end
-	if chars==0 then
-		tt:SetCell(tt:AddLine(), 1, C("gray",L["No chars found for this realm or realm group to display"]), nil, "CENTER", 0);
+	if missing then
+		tt:AddSeparator(4,0,0,0,0);
+		tt:SetCell(tt:AddLine(),1,C("gray",L["World quests status update requires min. level:"]),nil,"LEFT",0);
+		for e=1, #expansions do
+			if level<expansions[e].minLevel then
+				tt:SetCell(tt:AddLine(),1,C("gray",_G["EXPANSION_NAME"..expansions[e].index].." = "..LEVEL.." "..expansions[e].minLevel),nil,"LEFT",0);
+			end
+		end
+	end
+
+	if ns.profile[name].showCharacters then
+		tt:AddSeparator(12,0,0,0,0);
+		local c,l=ttColumns,tt:AddLine(C("ltblue",L["Characters"]));
+		for e=#expansions, 1, -1 do
+			table.sort(factions[e],sortInvertFactions);
+			for i=1, #factions[e] do
+				local v = factions[e][i];
+				if ns.profile[name][expansions[v.expansion].name.."Quests"] and v.eventEnding-Time>=0 then
+					tt:SetCell(l,c,"|T"..v.icon..":24:24:0:0:64:64:4:56:4:56|t",nil,"CENTER");
+					c=c-1;
+				end
+			end
+		end
+
+		tt:AddSeparator();
+		local chars = 0;
+		for i=1, #Broker_Everything_CharacterDB.order do
+			local name_realm = Broker_Everything_CharacterDB.order[i];
+			local v,cell = Broker_Everything_CharacterDB[name_realm],2;
+			local c,realm,_ = strsplit("-",name_realm,2);
+			if realm and v.level>=minLevel and v[name] and ns.showThisChar(name,realm,v.faction) then
+				local faction = v.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+				if type(realm)=="string" and realm:len()>0 then
+					local _,_realm = ns.LRI:GetRealmInfo(realm);
+					if _realm then realm = _realm; end
+				end
+				local c,l=ttColumns,tt:AddLine(C(v.class,ns.scm(c)) .. ns.showRealmName(name,realm) .. faction);
+				for e=#expansions, 1, -1 do
+					for i=1, #factions[e] do
+						local data = factions[e][i];
+						if ns.profile[name][expansions[e].name.."Quests"] and data.eventEnding-Time>=0 then
+							if v.level>=expansions[e].minLevel then
+								local color,text = "gray","?/?";
+								if data.factionID and v[name].factions[data.factionID] then
+									local toon = v[name].factions[data.factionID];
+									if toon.lastEnding==nil then
+										toon.lastEnding = 0;
+									end
+									if data.eventEnding>toon.lastEnding then
+										toon.lastEnding = data.eventEnding;
+										toon.numCompleted = 0;
+									end
+									if toon.numCompleted>data.numTotal then
+										toon.numCompleted=data.numTotal;
+									end
+									text = toon.numCompleted.."/"..data.numTotal;
+									if toon.numCompleted<data.numTotal then
+										color = "white";
+									end
+								end
+								tt:SetCell(l,c,C(color,text),nil,"CENTER");
+							end
+							c=c-1;
+						end
+					end
+				end
+				if name_realm==ns.player.name_realm then
+					tt:SetLineColor(l, 1, 1, 1, .4);
+				end
+				chars = chars+1;
+			end
+		end
+		if chars==0 then
+			tt:SetCell(tt:AddLine(), 1, C("gray",L["No chars found for this realm or realm group to display"]), nil, "CENTER", 0);
+		end
 	end
 
 	if ns.profile.GeneralOptions.showHints then
@@ -277,7 +329,12 @@ module = {
 		shortTitle = false,
 		showAllFactions=true,
 		showRealmNames=true,
-		showCharsFrom="2"
+		showCharsFrom="2",
+		legionQuestsBroker = false,
+		legionQuests = true,
+		bfaQuestsBroker = true,
+		bfaQuests = true,
+		showCharacters = true
 	},
 	clickOptionsRename = {
 		["menu"] = "9_open_menu"
@@ -292,12 +349,17 @@ ns.ClickOpts.addDefaults(module,"menu","_RIGHT");
 function module.options()
 	return {
 		broker = {
-			shortTitle={ type="toggle", order=1, name="Show shorter title", desc=L["Display '%s' instead of '%s' on chars under level 110 on broker button"]:format(L["Emissary Quests-ShortCut"],L["Emissary Quests"]) }
+			shortTitle={ type="toggle", order=1, name=L["Show shorter title"], desc=L["Display '%s' instead of '%s' on chars under level 110 on broker button"]:format(L["Emissary Quests-ShortCut"],L["Emissary Quests"]) },
+			legionQuestsBroker = { type="toggle", order=2, name=L["Legion quests"], desc=L["Display Legion quests on broker button"] },
+			bfaQuestsBroker = { type="toggle", order=3, name=L["BfA quests"], desc=L["Display BfA quests on broker button"] },
 		},
 		tooltip = {
-			showAllFactions=1,
-			showRealmNames=2,
-			showCharsFrom=3,
+			legionQuests = { type="toggle", order=1, name=L["Legion quests"], desc=L["Display Legion quests in tooltip"] },
+			bfaQuests = { type="toggle", order=2, name=L["BfA quests"], desc=L["Display BfA quests in tooltip"] },
+			showCharacters = { type="toggle", order=3, name=L["Show characters"], desc=L["Display a list of your other characters and there emissary quest progress in tooltip"] },
+			showAllFactions=4,
+			showRealmNames=5,
+			showCharsFrom=6,
 		},
 		misc = nil,
 	}
