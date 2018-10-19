@@ -245,7 +245,6 @@ module = {
 	},
 	config_defaults = {
 		enabled = false,
-		goldColor = false,
 		inBroker = "percent",
 		colorSet = "set1",
 		autorepair = false,

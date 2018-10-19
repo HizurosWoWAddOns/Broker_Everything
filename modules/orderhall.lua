@@ -4,6 +4,19 @@
 local addon, ns = ...
 if ns.build<70000000 then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
+
+
+-- module own local variables and local cached functions --
+-----------------------------------------------------------
+local name = "Order hall" -- L["Order hall"]
+local ldbName,ttName,ttColumns,tt,module = name, name.."TT",3;
+local now = 0;
+local TalentUnavailableReasons = {
+	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_ANOTHER_IS_RESEARCHING] = ORDER_HALL_TALENT_UNAVAILABLE_ANOTHER_IS_RESEARCHING,
+	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_NOT_ENOUGH_RESOURCES] = ORDER_HALL_TALENT_UNAVAILABLE_NOT_ENOUGH_RESOURCES,
+	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_NOT_ENOUGH_GOLD] = ORDER_HALL_TALENT_UNAVAILABLE_NOT_ENOUGH_GOLD,
+	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_TIER_UNAVAILABLE] = ORDER_HALL_TALENT_UNAVAILABLE_TIER_UNAVAILABLE,
+};
 local ClassTalents = {
 	-- legion
 	[LE_GARRISON_TYPE_7_0] = {
@@ -18,19 +31,6 @@ local ClassTalents = {
 			[421] = {reagentItem=140158}, -- demon hunter
 		}
 	}
-};
-
-
--- module own local variables and local cached functions --
------------------------------------------------------------
-local name = "Order hall" -- L["Order hall"]
-local ldbName,ttName,ttColumns,tt,module = name, name.."TT",3;
-local now = 0;
-local TalentUnavailableReasons = {
-	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_ANOTHER_IS_RESEARCHING] = ORDER_HALL_TALENT_UNAVAILABLE_ANOTHER_IS_RESEARCHING,
-	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_NOT_ENOUGH_RESOURCES] = ORDER_HALL_TALENT_UNAVAILABLE_NOT_ENOUGH_RESOURCES,
-	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_NOT_ENOUGH_GOLD] = ORDER_HALL_TALENT_UNAVAILABLE_NOT_ENOUGH_GOLD,
-	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_TIER_UNAVAILABLE] = ORDER_HALL_TALENT_UNAVAILABLE_TIER_UNAVAILABLE,
 };
 
 

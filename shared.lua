@@ -20,9 +20,11 @@ ns.LRI = LibStub("LibRealmInfo");
 ns.LC.colorset({
 	["ltyellow"]	= "fff569",
 	["dkyellow"]	= "ffcc00",
+	["dkyellow2"]	= "bbbb00",
 
 	["ltorange"]	= "ff9d6a",
 	["dkorange"]	= "905d0a",
+	["dkorange2"]	= "c06d0a",
 
 	--["dkred"]		= "c41f3b",
 	["ltred"]		= "ff8080",
@@ -553,6 +555,16 @@ function ns.pairsByKeys(t, f)
 		end
 	end
 	return iter
+end
+
+-- ------------------------------------------------------------ --
+-- Function to check/create a table structure by given path
+-- ------------------------------------------------------------ --
+
+function ns.tablePath(tbl,a,...)
+	if not a then return end
+	if tbl[a]==nil then tbl[a]={}; end
+	if (...) then ns.tablePath(tbl[a],...); end
 end
 
 
@@ -1399,12 +1411,22 @@ do
 		end
 	};
 
-	local function sortAceOptions(a,b)
-		local ao,bo = a.order or 100, b.order or 100;
-		if a.order~=b.order then
-			return a.order < b.order;
+	local function pairsByAceOptions(t)
+		local a,f = {},"%06d;%s";
+		for k,v in pairs(t) do
+			tinsert(a,f:format(v.order or 100,k));
 		end
-		return a.name < b.order;
+		table.sort(a);
+		local i = 0;
+		local function iter()
+			i=i+1;
+			if a[i]==nil then
+				return nil;
+			end
+			local _,k = strsplit(";",a[i],2);
+			return k, t[k];
+		end
+		return iter;
 	end
 
 	local function pairsByOptionGroup(t)
@@ -1591,9 +1613,7 @@ do
 					end
 
 					-- sort group table
-					table.sort(optGrp.args,sortAceOptions);
-					for key, value in pairs(optGrp.args)do
-
+					for key, value in pairsByAceOptions(optGrp.args)do
 						local hide = (value.hidden==true) or (value.disabled==true) or false;
 						if not hide and type(value.hidden)=="function" then
 							hide = value.hidden();

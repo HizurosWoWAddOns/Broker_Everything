@@ -435,7 +435,6 @@ module = {
 		watchedNameOnBroker = true,
 		watchedStandingOnBroker = true,
 		watchedSessionBroker = true,
-		--watchedFormatOnBroker = "Percent",
 
 		watchedCountOnBroker       = true,
 		watchedCountPercentOnBroker= true,
@@ -465,12 +464,10 @@ function module.options()
 			watchedNameOnBroker         = { type="toggle", order=1, name=L["Name of watched faction"], desc=L["Display name of watched faction on broker button"] },
 			watchedStandingOnBroker     = { type="toggle", order=2, name=L["Standing of watched faction"], desc=L["Display standing of watched faction on broker button"] },
 			watchedSessionBroker        = { type="toggle", order=3, name=L["Earn/loss of watched faction"], desc=L["Display earn/loss reputation of watched faction on broker button"] },
-			--watchedFormatOnBroker={ type="select", order=4, name=L["Format of watched faction"], desc=L["Choose display format of watched faction"], values=formats },
 			watchedCountOnBroker        = { type="toggle", order=4, name=L["Count of watched faction"],          desc=L["Display current/max reputation of watched faction on broker button"] },
 			watchedCountPercentOnBroker = { type="toggle", order=5, name=L["Percent count of watched faction"],  desc=L["Display percent value of watched faction reputation on broker button"] },
 			watchedNeedOnBroker         = { type="toggle", order=6, name=L["Need of watched faction"],           desc=L["Display count of needed reputation to next standing of watched faction on broker button"] },
 			watchedNeedPercentOnBroker  = { type="toggle", order=7, name=L["Need (percent) of watched faction"], desc=L["Display percent value of need reputation of watched faction on broker button"] },
-			--favsOnly={ type="toggle", order=5, name=L["Favorites only"], desc=L["Show favorites only in tooltip"] }
 		},
 		tooltip = {
 			standingText={ type="toggle", order=1, name=L["Standing text"], desc=L["Show standing text in tooltip"]},
@@ -504,7 +501,6 @@ function module.options()
 		watchedNameOnBroker        = "UPDATE_FACTION",
 		watchedStandingOnBroker    = "UPDATE_FACTION",
 		watchedSessionBroker       = "UPDATE_FACTION",
-		--watchedFormatOnBroker      = "UPDATE_FACTION",
 		watchedCountOnBroker       = "UPDATE_FACTION",
 		watchedCountPercentOnBroker= "UPDATE_FACTION",
 		watchedNeedOnBroker        = "UPDATE_FACTION",
@@ -529,6 +525,9 @@ function module.onevent(self,event,arg1,...)
 		ns.ClickOpts.update(name);
 	end
 	if event=="PLAYER_LOGIN" then
+--@do-not-package@
+		ns.profileSilenceFIXME = true;
+--@end-do-not-package@
 		if ns.profile[name].watchedFormatOnBroker~=nil then
 			local mode = ns.profile[name].watchedFormatOnBroker;
 			ns.profile[name].watchedCountOnBroker       = false
@@ -578,7 +577,7 @@ end
 
 function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "LEFT", "RIGHT", "CENTER", "RIGHT", "RIGHT", "RIGHT"},{false},{self},{OnHide=tooltipOnHide});
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "RIGHT", "RIGHT", "RIGHT", "RIGHT", "RIGHT"},{false},{self},{OnHide=tooltipOnHide});
 	createTooltip(tt);
 end
 

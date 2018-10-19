@@ -331,7 +331,7 @@ end
 function module.onevent(self,event,msg)
 	if event=="BE_UPDATE_CFG" and msg and msg:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
-	elseif not (event=="UNIT_INVENTORY_CHANGED" and msg~="player") then
+	elseif ns.eventPlayerEnteredWorld and not (event=="UNIT_INVENTORY_CHANGED" and msg~="player") then
 		if (MAX_PLAYER_LEVEL==UnitLevel("player")) then
 			data = {cur=1,max=1,rest=0,need=0,percentCur=1,percentRest=1,percentStr="100%",restStr="n/a",bonus={},bonusSum=0};
 		else

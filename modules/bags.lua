@@ -196,7 +196,6 @@ module = {
 		critLowFree = 5,
 		warnLowFree = 15,
 		showQuality = true,
-		goldColor = false,
 		qualityMode = "1",
 
 		autoCrapSelling = false,

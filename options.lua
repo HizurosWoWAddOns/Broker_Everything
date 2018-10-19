@@ -39,6 +39,8 @@ local nsProfileMT = {
 		if s and db and db.profile[s] then
 			db.profile[s][k] = v;
 --@do-not-package@
+		elseif ns.profileSilenceFIXME then
+			ns.profileSilenceFIXME=false;
 		else
 			ns.debug("<FIXME:nsProfileMT:MissingSection>",tostring(k));
 --@end-do-not-package@
@@ -51,11 +53,15 @@ local nsProfileMT = {
 			if v~=nil then
 				return v;
 --@do-not-package@
+			elseif ns.profileSilenceFIXME then
+				ns.profileSilenceFIXME=false;
 			else
 				ns.debug("<FIXME:nsProfileMT:NilValue>",tostring(s),tostring(k));
 --@end-do-not-package@
 			end
 --@do-not-package@
+		elseif ns.profileSilenceFIXME then
+			ns.profileSilenceFIXME=false;
 		else
 			ns.debug("<FIXME:nsProfileMT:MissingSectionOrDB>",tostring(k));
 --@end-do-not-package@
@@ -63,6 +69,9 @@ local nsProfileMT = {
 	end
 };
 
+--@do-not-package@
+ns.profileSilenceFIXME = false;
+--@end-do-not-package@
 ns.profile = {GeneralOptions=setmetatable({section="GeneralOptions"},nsProfileMT)};
 
 -- some values tables and functions
@@ -626,10 +635,6 @@ function ns.RegisterOptions()
 		ns.data.AceDBfix=AceDBfixCurrent;
 	end
 
-	if type(ns.profile.GeneralOptions.goldColor)~="string" then
-		ns.profile.GeneralOptions.goldColor = ns.profile.GeneralOptions.goldColor and "color" or "white";
-	end
-
 	buildCharDataOptions();
 
 	db = LibStub("AceDB-3.0"):New("Broker_Everything_AceDB",dbDefaults,true);
@@ -639,6 +644,11 @@ function ns.RegisterOptions()
 
 	LibStub("AceConfig-3.0"):RegisterOptionsTable(addonLabel, options);
 	LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonLabel);
+
+	local goldColor = ns.profile.GeneralOptions.goldColor;
+	if type(goldColor)~="string" then
+		ns.profile.GeneralOptions.goldColor = goldColor and "color" or "white";
+	end
 end
 
 function ns.ToggleBlizzOptionPanel()
