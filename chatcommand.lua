@@ -102,34 +102,35 @@ function ns.AddChatCommand(key,data)
 	end
 end
 
-SlashCmdList["BROKER_EVERYTHING"] = function(cmd)
-	local cmd, arg = strsplit(" ", cmd, 2)
-	cmd = cmd:lower()
+function ns.RegisterSlashCommand()
+	SlashCmdList["BROKER_EVERYTHING"] = function(cmd)
+		local cmd, arg = strsplit(" ", cmd, 2)
+		cmd = cmd:lower()
 
-	if cmd=="" then
-		ns.print(spacer, L["CmdUsage"])
-		for name,obj in ns.pairsByKeys(commands) do
-			if type(obj)=="string" and commands[obj] and commands[obj].desc then
-				obj = commands[obj];
+		if cmd=="" then
+			ns.print(spacer, L["CmdUsage"])
+			for name,obj in ns.pairsByKeys(commands) do
+				if type(obj)=="string" and commands[obj] and commands[obj].desc then
+					obj = commands[obj];
+				end
+				if obj.desc then
+					ns.print(spacer, ("%s - %s"):format(C("yellow",name),obj.desc))
+				end
 			end
-			if obj.desc then
-				ns.print(spacer, ("%s - %s"):format(C("yellow",name),obj.desc))
-			end
+			return
 		end
-		return
+
+		if commands[cmd]~=nil and type(commands[cmd])=="string" then
+			cmd = commands[cmd];
+		end
+
+		if commands[cmd]~=nil and type(commands[cmd].func)=="function" then
+			commands[cmd].func(arg);
+			return;
+		end
 	end
 
-	if commands[cmd]~=nil and type(commands[cmd])=="string" then
-		cmd = commands[cmd];
-	end
 
-	if commands[cmd]~=nil and type(commands[cmd].func)=="function" then
-		commands[cmd].func(arg);
-		return;
-	end
+	SLASH_BROKER_EVERYTHING1 = "/broker_everything"
+	SLASH_BROKER_EVERYTHING2 = "/be"
 end
-
-
-SLASH_BROKER_EVERYTHING1 = "/broker_everything"
-SLASH_BROKER_EVERYTHING2 = "/be"
-

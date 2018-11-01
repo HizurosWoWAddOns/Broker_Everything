@@ -73,6 +73,9 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 		-- modules
 		ns.moduleInit();
 
+		-- slash command
+		ns.RegisterSlashCommand();
+
 		if ns.profile.GeneralOptions.showAddOnLoaded then
 			ns.print(L["AddOnLoaded"]);
 		end
