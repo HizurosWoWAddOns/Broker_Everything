@@ -9,8 +9,8 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Currency"; -- CURRENCY
 local ttName,ttColumns,tt,tt2,module = name.."TT",5;
-local cName, cIcon, cCount, cEarnedThisWeek, cWeeklyMax, cTotalMax, cIsUnused, cID = 1,2,3,4,5,6,7,8,9,10,11,12;
-local currencyList,currencyList2,currencyCache,currencySession,currencyName2Id = {},{},{},{},{};
+local cName, cIcon, cCount, cEarnedThisWeek, cWeeklyMax, cTotalMax, cIsUnused, cRarity, cID = 1,2,3,4,5,6,7,8,9,10,11,12,13;
+local currencies,currencySession,faction = {},{},UnitFactionGroup("player");
 local BrokerPlacesMax,createTooltip = 4;
 
 
@@ -23,10 +23,6 @@ I[name..'_Alliance'] = {iconfile="Interface\\PVPFrame\\PVP-Currency-Alliance", c
 
 -- some local functions --
 --------------------------
-local function GetSign(d)
-	return (d==1 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (d==-1 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
-end
-
 local function CapColor(colors,str,nonZero,count,mCount,count2,mCount2)
 	local col,c = nonZero and colors[1] or "gray",0;
 	if nonZero then
@@ -57,95 +53,66 @@ local function CapColor(colors,str,nonZero,count,mCount,count2,mCount2)
 	return C(col,str);
 end
 
-local function GetCurrency(index)
-	local t,isHeader,isExpanded,_={};
-	t[cName], isHeader, isExpanded, t[cIsUnused], _, t[cCount], t[cIcon], t[cTotalMax], t[cWeeklyMax], t[cEarnedThisWeek] = GetCurrencyListInfo(index);
-	if not isHeader then
-		t[cID] = tonumber(GetCurrencyListLink(index):match("currency:(%d+)"));
-		_,_,_,_,t[cWeeklyMax] = GetCurrencyInfo(t[cID]); -- missing weekly max as numeric value from GetCurrencyListInfo...
-		currencyName2Id[t[cName]] = t[cID];
-		if currencySession[t[cID]]==nil then
-			currencySession[t[cID]] = t[cCount];
+local function initCurrencies()
+	wipe(currencies);
+	local collapsed,num={},GetCurrencyListSize();
+	for index=num, 1, -1 do
+		local Name, isHeader, isExpanded = GetCurrencyListInfo(index);
+		if isHeader and not isExpanded then
+			tinsert(collapsed,index);
+			ExpandCurrencyList(index,1);
 		end
 	end
-	return t, isHeader, isExpanded;
+	local num = GetCurrencyListSize();
+	local Name,isHeader,count,link,id,_;
+	for index=1, num do
+		Name, isHeader, _, _, _, count = GetCurrencyListInfo(index);
+		id = tonumber(tostring(GetCurrencyListLink(index)):match("currency:(%d+)"));
+		tinsert(currencies,{name=Name,isHeader=isHeader,id=id});
+		if id and currencySession[id]==nil then
+			currencySession[id] = count;
+		end
+	end
+	for index=1, #collapsed do
+		ExpandCurrencyList(collapsed[index],0);
+	end
 end
 
-local function updateCurrency(mode)
-	local collapsed,_ = {};
-
-	wipe(currencyList);
-	local num = GetCurrencyListSize();
-	for i=1, num do
-		local t,isHeader,isExpanded = GetCurrency(i);
-		if isHeader and not isExpanded then
-			tinsert(collapsed,i);
-		end
-		if not isHeader then
-			currencyCache[t[cID]] = t;
-		end
-		currencyList[i] = t[cID] or t[cName];
+local function resetCurrency()
+	local _
+	for id in pairs(currencySession)do
+		_, currencySession[id] = GetCurrencyInfo(id);
 	end
+end
 
-	if mode=="full" then
-		wipe(currencyList2);
-		local tmp = {};
-		for i=#collapsed, 1, -1 do
-			ExpandCurrencyList(collapsed[i],1);
-		end
-		local num = GetCurrencyListSize();
-		for i=1, num do
-			local t,isHeader = GetCurrency(i);
-			if not isHeader then
-				tmp[t[cID]]=t;
-			end
-			currencyList2[i] = t[cID] or t[cName];
-		end
-		for i=1, #collapsed do
-			ExpandCurrencyList(collapsed[i],0);
-		end
-		currencyCache = tmp;
-	else
-		for id,v in pairs(currencyCache) do
-			if not currencyCache[id][cIsHeader] then
-				_, currencyCache[id][cCount], _, currencyCache[id][cEarnedThisWeek] = GetCurrencyInfo(id);
-			end
-		end
-	end
+local function GetCurrencyByID(id)
+	local t = {}; t[cID], t[cName], t[cCount], t[cIcon], t[cEarnedThisWeek], t[cWeeklyMax], t[cTotalMax], _, t[cRarity] = id, GetCurrencyInfo(id);
+	return t;
 end
 
 local function updateBroker()
-	local obj = ns.LDB:GetDataObjectByName(module.ldbName)
-	local elems = {};
-	local faction = UnitFactionGroup("player");
+	local elems,obj = {},ns.LDB:GetDataObjectByName(module.ldbName)
 	if faction~="Neutral" then
 		local i = I(name.."_"..faction);
 		obj.iconCoords = i.coords or {0,1,0,1};
 		obj.icon = i.iconfile;
 	end
 	for i, id in ipairs(ns.profile[name].currenciesInTitle) do
-		if id then
-			if type(id)=="string" then
-				local Name = id;
-				id = currencyName2Id[Name];
-				ns.profile[name].currenciesInTitle[i] = id;
+		if tonumber(id) then
+			local c = GetCurrencyByID(id);
+			local str = ns.FormatLargeNumber(name,c[cCount]);
+			if ns.profile[name].showCapBroker and c[cTotalMax]>0 then
+				str = str.."/"..ns.FormatLargeNumber(name,c[cTotalMax]);
 			end
-			local c = currencyCache[id];
-			if c and c[cIcon] then
-				local str = ns.FormatLargeNumber(name,c[cCount]);
-				if ns.profile[name].showCapBroker and c[cTotalMax]>0 then
-					str = str.."/"..ns.FormatLargeNumber(name,c[cTotalMax]);
+			if ns.profile[name].showCapColorBroker and (c[cTotalMax]>0 or c[cWeeklyMax]>0) then
+				local t = {{"green","yellow","orange","red"},str,c[cCount]>0,c[cCount],c[cTotalMax]};
+				if c[cWeeklyMax]>0 then
+					tinsert(t,c[cEarnedThisWeek]);
+					tinsert(t,c[cWeeklyMax]);
 				end
-				if ns.profile[name].showCapColorBroker and (c[cTotalMax]>0 or c[cWeeklyMax]>0) then
-					local t = {{"green","yellow","orange","red"},str,c[cCount]>0,c[cCount],c[cTotalMax]};
-					if c[cWeeklyMax]>0 then
-						tinsert(t,c[cEarnedThisWeek]);
-						tinsert(t,c[cWeeklyMax]);
-					end
-					str = CapColor(unpack(t));
-				end
-				tinsert(elems, str.."|T"..c[cIcon]..":0|t");
+				str = CapColor(unpack(t));
 			end
+			tinsert(elems, str.."|T"..c[cIcon]..":0|t");
 		end
 	end
 	if #elems==0 then
@@ -160,23 +127,20 @@ local function updateBroker()
 end
 
 local function setInTitle(titlePlace, currencyId)
-	if currencyId and currencyCache[currencyId] then
+	if currencyId and currencySession[currencyId] then
 		ns.profile[name].currenciesInTitle[titlePlace] = currencyId;
 	else
-		ns.profile[name].currenciesInTitle[titlePlace] = false;
+		ns.profile[name].currenciesInTitle[titlePlace] = nil;
 	end
 	updateBroker()
 end
 
-local function toggleCurrencyHeader(self,currency)
-	ExpandCurrencyList(currency[1],currency[2]);
+local function toggleCurrencyHeader(self,headerString)
+	ns.toon[name].headers[headerString] = ns.toon[name].headers[headerString]==nil and true or nil;
 	createTooltip(tt,true);
-	if TokenFrame:IsShown() and TokenFrame:IsVisible() then
-		TokenFrame_Update();
-	end
 end
 
-local function tooltip2Show(self,currencyIndex)
+local function tooltip2Show(self,id)
 	local pos = {};
 	if (not tt2) then
 		tt2=GameTooltip;
@@ -184,7 +148,7 @@ local function tooltip2Show(self,currencyIndex)
 	tt2:SetOwner(tt,"ANCHOR_NONE");
 	tt2:SetPoint(ns.GetTipAnchor(self,"horizontal",tt));
 	tt2:ClearLines();
-	tt2:SetCurrencyToken(currencyIndex); -- tokenId / the same index number if needed by GetCurrencyListInfo
+	tt2:SetCurrencyByID(id);
 	tt2:Show();
 end
 
@@ -205,40 +169,39 @@ function createTooltip(tt,update)
 		tt:AddSeparator()
 	end
 
-	for i,v in ipairs(currencyList) do
-		if type(v)=="string" and ns.profile[name].shortTT == false then
-			local isExpanded = type(currencyList[i+1])=="number";
-			tt:AddSeparator(4,0,0,0,0);
-			local color,str,c = "ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t "..v,3;
-			if not isExpanded then
-				color,str = "gray","|Tinterface\\buttons\\UI-PlusButton-Up:0|t "..v;
-			end
-			local l=tt:AddLine(C( isExpanded and "ltblue" or "gray",str));
-			if isExpanded then
+	local parentIsCollapsed,empty = false,true;
+	for i=1, #currencies do
+		if currencies[i].isHeader and ns.profile[name].shortTT==false then
+			parentIsCollapsed = ns.toon[name].headers[currencies[i].name]~=nil;
+			local l=tt:AddLine();
+			if not parentIsCollapsed then
+				tt:SetCell(l,1,C("ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t "..currencies[i].name),nil,nil,0);
 				tt:AddSeparator();
+			else
+				tt:SetCell(l,1,C("gray","|Tinterface\\buttons\\UI-PlusButton-Up:0|t "..currencies[i].name),nil,nil,0);
 			end
-			tt:SetLineScript(l,"OnMouseUp", toggleCurrencyHeader,{i,isExpanded and 0 or 1});
-		elseif currencyCache[v] then
-			local t,c = currencyCache[v],3;
-			local str = ns.FormatLargeNumber(name,t[cCount],true);
+			tt:SetLineScript(l,"OnMouseUp", toggleCurrencyHeader,currencies[i].name);
+		elseif not parentIsCollapsed then
+			local c,currency = 3,GetCurrencyByID(currencies[i].id);
+			local str = ns.FormatLargeNumber(name,currency[cCount],true);
 
 			-- cap
-			if ns.profile[name].showTotalCap and t[cTotalMax]>0 then
-				str = str .."/".. ns.FormatLargeNumber(name,t[cTotalMax],true);
+			if ns.profile[name].showTotalCap and currency[cTotalMax]>0 then
+				str = str .."/".. ns.FormatLargeNumber(name,currency[cTotalMax],true);
 
 				-- cap coloring
 				if ns.profile[name].showCapColor then
-					str = CapColor(t[cWeeklyMax]>0 and {"dkgreen","dkyellow","dkorange","dkred"} or {"green","yellow","orange","red"},str,t[cCount]>0,t[cCount],t[cTotalMax]);
+					str = CapColor(currency[cWeeklyMax]>0 and {"dkgreen","dkyellow","dkorange","dkred"} or {"green","yellow","orange","red"},str,currency[cCount]>0,currency[cCount],currency[cTotalMax]);
 				end
 			end
 
 			-- weekly cap
-			if ns.profile[name].showWeeklyCap and t[cWeeklyMax]>0 then
-				local wstr = "("..ns.FormatLargeNumber(name,t[cEarnedThisWeek],true).."/"..ns.FormatLargeNumber(name,t[cWeeklyMax],true)..")";
+			if ns.profile[name].showWeeklyCap and currency[cWeeklyMax]>0 then
+				local wstr = "("..ns.FormatLargeNumber(name,currency[cEarnedThisWeek],true).."/"..ns.FormatLargeNumber(name,currency[cWeeklyMax],true)..")";
 
 				-- cap coloring
 				if ns.profile[name].showCapColor then
-					wstr = CapColor({"green","yellow","orange","red"},wstr,t[cCount]>0,t[cEarnedThisWeek],t[cWeeklyMax]);
+					wstr = CapColor({"green","yellow","orange","red"},wstr,currency[cCount]>0,currency[cEarnedThisWeek],currency[cWeeklyMax]);
 				end
 
 				str = wstr.." "..str;
@@ -247,17 +210,17 @@ function createTooltip(tt,update)
 			-- show currency id
 			local id = "";
 			if ns.profile[name].showIDs then
-				id = C("gray"," ("..v..")");
+				id = C("gray"," ("..currencies[i].id..")");
 			end
 
 			local l = tt:AddLine(
-				"    "..C(t[cCount]==0 and "gray" or "ltyellow",t[cName])..id,
-				str.."  |T"..t[cIcon]..":14:14:0:0:64:64:4:56:4:56|t"
+				"    "..C(currency[cCount]==0 and "gray" or "ltyellow",currency[cName])..id,
+				str.."  |T"..currency[cIcon]..":14:14:0:0:64:64:4:56:4:56|t"
 			);
 
 			-- session earn/loss
 			if ns.profile[name].showSession then
-				local color,num = false,t[cCount]-currencySession[v];
+				local color,num = false,currency[cCount]-currencySession[currencies[i].id];
 				if num>0 then
 					color,num = "ltgreen","+"..num;
 				elseif num<0 then
@@ -267,12 +230,13 @@ function createTooltip(tt,update)
 					tt:SetCell(l,c,C(color,num));
 				end
 			end
-			tt:SetLineScript(l, "OnEnter", tooltip2Show, i);
+			tt:SetLineScript(l, "OnEnter", tooltip2Show, currencies[i].id);
 			tt:SetLineScript(l, "OnLeave", tooltip2Hide);
+			empty = false;
 		end
 	end
 
-	if #currencyList==0 then
+	if empty then
 		tt:AddSeparator(4,0,0,0,0);
 		tt:SetCell(tt:AddLine(),1,C("ltgray",L["No currencies found..."]),nil,nil,ttColumns);
 	end
@@ -282,9 +246,7 @@ function createTooltip(tt,update)
 		ns.ClickOpts.ttAddHints(tt,name);
 	end
 
-	if not update then
-		ns.roundupTooltip(tt);
-	end
+	ns.roundupTooltip(tt);
 end
 
 local function inBrokerValues(info)
@@ -305,7 +267,7 @@ module = {
 	config_defaults = {
 		enabled = false,
 		shortTT = false,
-		currenciesInTitle = {false,false,false,false},
+		currenciesInTitle = {},
 		favCurrencies = {},
 		favMode=false,
 		showTotalCap = true,
@@ -369,12 +331,8 @@ function module.OptionMenu(parent)
 		local pList,pList2,d;
 		local id = ns.profile[name].currenciesInTitle[place];
 
-		if type(id)=="string" then
-			id = currencyName2Id[id];
-		end
-
 		if id then
-			local d = currencyCache[id];
+			local d = GetCurrencyByID(id);
 			if d then
 				pList = ns.EasyMenu:AddEntry({
 					arrow = true,
@@ -392,20 +350,21 @@ function module.OptionMenu(parent)
 			});
 		end
 
-		for i,v in ipairs(currencyList2) do
-			if currencyCache[v] then
-				local n,d = currencyCache[v][cName],true;
-				if ns.profile[name].currenciesInTitle[place]~=v then
-					n,d = C("ltyellow",n),false;
+		for i=1, #currencies do
+			if currencies[i].id then
+				local d = GetCurrencyByID(currencies[i].id);
+				local nameStr,disabled = d[cName],true;
+				if ns.profile[name].currenciesInTitle[place]~=currencies[i].id then
+					nameStr,disabled = C("ltyellow",nameStr),false;
 				end
 				ns.EasyMenu:AddEntry({
-					label = n,
-					icon = currencyCache[v][cIcon],
-					disabled = d,
-					func = function() setInTitle(place,v); end
+					label = nameStr,
+					icon = d[cIcon],
+					disabled = disabled,
+					func = function() setInTitle(place,currencies[i].id); end
 				}, pList2);
 			else
-				pList2 = ns.EasyMenu:AddEntry({label=C("ltblue",v), arrow=true}, pList);
+				pList2 = ns.EasyMenu:AddEntry({label=C("ltblue",currencies[i].name), arrow=true}, pList);
 			end
 		end
 	end
@@ -421,19 +380,18 @@ function module.onevent(self,event,arg1)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
-		updateCurrency("full");
-		updateBroker();
-		hooksecurefunc("SetCurrencyUnused",updateCurrency);
-		hooksecurefunc("ExpandCurrencyList",updateCurrency);
-	elseif ns.eventPlayerEnteredWorld then
-		local id;
-		if event=="CHAT_MSG_CURRENCY" then -- detecting new currencies
-			id = tonumber(arg1:match("currency:(%d*)"));
-			if not currencyCache[id] then
-				id = "full"
-			end
+		if ns.toon[name]==nil or (ns.toon[name] and ns.toon[name].headers==nil) then
+			ns.toon[name] = {headers={[-1]=true}};
 		end
-		updateCurrency(id);
+		initCurrencies();
+		hooksecurefunc("SetCurrencyUnused",initCurrencies);
+	elseif event=="CHAT_MSG_CURRENCY" then -- detecting new currencies
+		local id = tonumber(arg1:match("currency:(%d*)"));
+		if id and not currencySession[id] then
+			initCurrencies();
+		end
+	end
+	if ns.eventPlayerEnteredWorld then
 		updateBroker();
 		if (tt) and (tt.key) and (tt.key==ttName) and (tt:IsShown()) then
 			createTooltip(tt,true);
