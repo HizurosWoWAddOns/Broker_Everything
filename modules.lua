@@ -39,6 +39,7 @@ function ns.toggleMinimapButton(modName,setValue)
 end
 
 local function moduleInit(name)
+	if not ns.modules[name] then return end
 	local mod = ns.modules[name];
 
 	-- register options
@@ -46,7 +47,7 @@ local function moduleInit(name)
 		ns.Options_AddModuleOptions(name);
 	end
 
-	if ns.profile[name].enabled==true or mod.isHiddenModule then
+	if (ns.profile[name] and ns.profile[name].enabled==true) or mod.isHiddenModule then
 		-- module init
 		if mod.init then
 			mod.init();

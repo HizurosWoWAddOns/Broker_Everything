@@ -10,14 +10,18 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Reputation"; -- REPUTATION
 local ttName, ttColumns, tt, module,createTooltip,updateBroker = name.."TT", 6;
 local Name,description,standingID,barMin,barMax,barValue,atWarWith,canToggleAtWar,isHeader,isCollapsed,hasRep,isWatched,isChild,factionID,hasBonusRepGain,canBeLFGBonus=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- index list for GetFactionInfo
-local factionStandingText,rewardPercent,rewardValue,rewardMax,hasRewardPending,rewardCount=17,18,19,20,21,22;
-local bars,wasShown = {},false;
-local allinone = 85000;
-local allinone_friend = 43000;
-local allinone_bodyguard = 31000;
-local session,initSessionTicker = {};
-local collapsed,round = {},-1;
+local barPercent,sessionValue,factionStandingText,friendID,isParagon,hideSession,rewardMin,rewardMax,rewardValue,rewardQuestID,rewardPercent,hasRewardPending,rewardsFinished=30,31,32,33,34,35,36,37,38,39,40,41,42,43;
+
+local tinsert,tconcat,ipairs,pairs,unpack=tinsert,table.concat,ipairs,pairs,unpack;
+local IsFactionParagon,GetFactionParagonInfo,CTimerAfter = C_Reputation.GetFactionParagonInfo,C_Reputation.IsFactionParagon,C_Timer.After
+local GetFriendshipReputation,GetFactionInfoByID,CTimerNewTicker = GetFriendshipReputation,GetFactionInfoByID,C_Timer.NewTicker;
+local ExpandFactionHeader,CollapseFactionHeader,GetWatchedFactionInfo = ExpandFactionHeader,CollapseFactionHeader,GetWatchedFactionInfo;
+local GetNumFactions,GetFactionInfo,GetFactionInfoByID = GetNumFactions,GetFactionInfo,GetFactionInfoByID;
+
+local bars,factions,session,spacer,initReputationListTicker = {},{},{},"    ";
+local allinone = {faction=85000,friend=43000,bodyguard=31000};
 local bodyguards,known_bodyguards = {193,207,216,218,219},{};
+local round,collapsedL1,collapsedL2 = false,{},{};
 local idStr = C("gray"," (%d)");
 local formats = {
 	["_NONE"]       = "None",
@@ -35,8 +39,69 @@ I[name] = {iconfile="Interface\\Icons\\Achievement_Reputation_01", coords={0.1,0
 
 -- some local functions --
 --------------------------
-local function initSessionCurrencies()
-	if round==-1 then
+
+local function _GetFactionInfoByID(faction_id)
+	local data = {GetFactionInfoByID(faction_id)};
+
+	if data[factionID]==nil then
+		data[factionID] = faction_id;
+	end
+
+	if data[factionID]>0 then
+		-- faction standing text
+		data[factionStandingText] = _G["FACTION_STANDING_LABEL"..data[standingID]];
+
+		-- IsFriend
+		local _friendID,friendRep,friendMaxRep,friendName,friendText,friendTexture,friendTextLevel,friendThreshold,nextFriendThreshold = GetFriendshipReputation(data[factionID]);
+		if _friendID~=nil then
+			data[friendID] = _friendID;
+			data[factionStandingText] = friendTextLevel;
+			if nextFriendThreshold then
+				data[barMin], data[barMax], data[barValue] = friendThreshold, nextFriendThreshold, friendRep;
+			else
+				data[barMin], data[barMax], data[barValue] = 0, 1, 1;
+				data[hideSession] = true
+			end
+		elseif data[standingID]==8 then
+			data[barMin], data[barMax], data[barValue] = 0, 999, 999;
+		end
+
+		data[barPercent] = (data[barValue]-data[barMin])/(data[barMax]-data[barMin]);
+
+		-- session difference
+		data[sessionValue] = 0;
+		if not data[hideSession] then
+			if data[factionID] and data[barValue] and session[data[factionID]]==nil then
+				session[data[factionID]] = data[barValue];
+			end
+			data[sessionValue] = data[barValue]-session[data[factionID]];
+		end
+
+		-- IsParagon
+		data[isParagon] = IsFactionParagon(data[factionID]);
+		if data[isParagon] then
+			local _value, _threshold, _rewardQuestID, _hasPending = C_Reputation.GetFactionParagonInfo(data[factionID]);
+			if _value~=nil then
+				data[rewardQuestID] = _rewardQuestID;
+				data[rewardsFinished] = 0;
+				if _value > _threshold then
+					data[rewardsFinished] = floor(_value/_threshold);
+					_value = _value - data[rewardsFinished]*_threshold;
+				end
+				data[rewardMin],data[rewardMax],data[rewardValue],data[hasRewardPending] = 0,_threshold,mod(_value, _threshold), _hasPending;
+				data[rewardPercent] = _value / _threshold;
+			end
+		end
+	end
+
+	return data;
+end
+
+local function initReputationList()
+	if round==false then
+		return false;
+	elseif round<0 then
+		local collapsed = round==-2 and collapsedL1 or collapsedL2;
 		for i=GetNumFactions(),1,-1 do
 			local _,_,_,_,_,_,_,_,_,isCollapsed=GetFactionInfo(i);
 			if isCollapsed then
@@ -44,120 +109,106 @@ local function initSessionCurrencies()
 				ExpandFactionHeader(i);
 			end
 		end
+		round=round+1;
 	elseif round==0 then
+		wipe(factions);
 		for i=1, GetNumFactions() do
-			local _, _, standingID, _, _, barValue, _, _, _, _, _, _, _, factionID = GetFactionInfo(i);
-			if factionID and barValue and session[factionID]==nil then
-				session[factionID] = barValue + (standingID==8 and 999 or 0);
+			local fName, desc, standingID, barMin, barMax, barValue, _, _, isHeader, isCollapsed, hasRep, _, isChild, factionID = GetFactionInfo(i);
+			if factionID==nil then
+				factionID = -1;
 			end
+			if factionID>0 then
+				if hasRep and session[factionID]==nil then
+					if standingID==8 then
+						local isFriend = GetFriendshipReputation(factionID)~=nil;
+						local isBodyguard = known_bodyguards[fName]~=nil;
+					else
+						session[factionID] = barValue + (standingID==8 and 42999 or 0);
+					end
+				end
+			end
+			tinsert(factions,{id=factionID,isHeader=isHeader,isChild=isChild});
 		end
+		round=round+1;
 	else
-		if not collapsed[round] then
-			initSessionTicker:Cancel();
-			return;
+		local collapsed = round==1 and collapsedL2 or collapsedL1;
+		if collapsed and #collapsed>0 then
+			CollapseFactionHeader(collapsed[1]);
+			tremove(collapsed,1);
+			if #collapsed==0 then
+				round=round+1;
+			end
+		elseif initReputationListTicker and initReputationListTicker~=true then
+			initReputationListTicker:Cancel();
+			collapsedL2,collapsedL1 = nil,nil;
+			round = false;
 		end
-		CollapseFactionHeader(collapsed[round]);
 	end
-	round=round+1;
 end
 
 local function resetSession()
 	local _;
-	for i,v in pairs(session) do
-		_,_,_,_,_,session[i] = GetFactionInfoByID(i);
+	for factionID in pairs(session) do
+		_,_,_,_,_,session[factionID] = GetFactionInfoByID(factionID);
 	end
 	updateBroker();
 end
 
-local function GetSession(factionID,current)
-	if not session[factionID] then
-		return "";
-	end
-	local col,str,diff = "gray",false,current-session[factionID];
-	if diff>0 then
-		col,str = "ltgreen","+"..diff;
-	elseif diff<0 then
-		col,str = "ltred",diff;
-	end
-	if str then
-		return C(col,str);
-	end
-	return "";
-end
-
 function updateBroker()
 	local txt = REPUTATION;
-	local Name, standingId, barMin, barMax, barValue, factionID = GetWatchedFactionInfo();
+	local _, _, _, _, _, _factionID = GetWatchedFactionInfo();
 
-	if Name then
-		local tmp,barValue2 = {};
-		local friendID,friendRep,_,_,_,_,friendStandingText,friendThreshold,nextFriendThreshold = GetFriendshipReputation(factionID);
-		local standingText = _G["FACTION_STANDING_LABEL"..standingId];
-		if friendID~=nil then
-			if nextFriendThreshold then
-				barMin, barMax, barValue = friendThreshold, nextFriendThreshold, friendRep;
-			else
-				barMin, barMax, barValue = 0, 1, 1;
-			end
-			standingText = friendStandingText;
-		elseif standingId==8 then
-			barValue,barMax = barValue+999,barMax+999;
-		end
+	if _factionID and _factionID>0 then
+		local data = _GetFactionInfoByID(_factionID);
 
-		local IsParagon,hasRewardPending = false,false;
-		if C_Reputation.IsFactionParagon(factionID) then
-			local rewardCurrentValue, rewardThreshold, rewardQuestID, _hasRewardPending = C_Reputation.GetFactionParagonInfo(factionID);
-			if rewardCurrentValue~=nil then
-				if rewardCurrentValue > rewardThreshold then
-					rewardCurrentValue = rewardCurrentValue - rewardThreshold;
-				end
-				barMax = rewardThreshold;
-				barValue2 = mod(rewardCurrentValue, rewardThreshold);
-				--data[rewardPercent] = (barValue2/barMax)*100;
-				hasRewardPending = _hasRewardPending;
-				IsParagon=true;
-			end
-		else
-			barMax,barValue2,barMin = barMax-barMin,barValue-barMin,0;
-		end
-
+		local tmp = {};
 		if ns.profile[name].watchedNameOnBroker then
 			tinsert(tmp,Name);
 		end
 
+		local _Min,_Max,_Value,_Percent
+		if data[isParagon] then
+			_Min,_Max,_Value,_Percent = data[rewardMin],data[rewardMax],data[rewardValue],data[rewardPercent]*100;
+		else
+			_Min,_Max,_Value,_Percent = 0,data[barMax]-data[barMin],data[barValue]-data[barMin],data[barPercent]*100;
+		end
+
 		if ns.profile[name].watchedCountOnBroker then
 			if ns.profile[name].watchedCountPercentOnBroker then
-				tinsert(tmp,("%1.1f%%"):format(barValue2/barMax*100));
+				tinsert(tmp,("%1.1f%%"):format(_Percent));
 			else
-				tinsert(tmp,ns.FormatLargeNumber(name,barValue2).."/"..ns.FormatLargeNumber(name,barMax));
+				tinsert(tmp,ns.FormatLargeNumber(name,_Value).."/"..ns.FormatLargeNumber(name,_Max));
 			end
 		end
 
 		if ns.profile[name].watchedNeedOnBroker then
 			if ns.profile[name].watchedNeedPercentOnBroker then
-				tinsert(tmp,("%1.1f%% "..L["need"]):format(100-(barValue2/barMax*100)));
+				tinsert(tmp,("%1.1f%% "..L["need"]):format(100-_Percent));
 			else
-				tinsert(tmp,ns.FormatLargeNumber(name,barMax-barValue2).." "..L["need"]);
+				tinsert(tmp,ns.FormatLargeNumber(name,_Max-_Value).." "..L["need"]);
 			end
 		end
 
 		if ns.profile[name].watchedStandingOnBroker then
-			tinsert(tmp,standingText);
+			tinsert(tmp,data[factionStandingText]);
 		end
 
-		if ns.profile[name].watchedSessionBroker and not (friendID and not nextFriendThreshold) then
-			local val = GetSession(factionID,barValue);
-			if val~="" then
-				tinsert(tmp,val);
+		if ns.profile[name].watchedSessionBroker and not data[friendID] and data[sessionValue]~=0 then
+			local col,str = "gray",false,data[sessionValue];
+			if data[sessionValue]>0 then
+				col,str = "ltgreen","+"..data[sessionValue];
+			elseif data[sessionValue]<0 then
+				col,str = "ltred",data[sessionValue];
 			end
+			insert(tmp,C(col,str));
 		end
 
-		if IsParagon then
-			tinsert(tmp,hasRewardPending and "|TInterface/GossipFrame/ActiveQuestIcon:14:14:0:0|t" or "|TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t");
+		if data[isParagon] then
+			tinsert(tmp,data[hasRewardPending] and "|TInterface/GossipFrame/ActiveQuestIcon:14:14:0:0|t" or "|TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t");
 		end
 
 		if #tmp>0 then
-			txt = table.concat(tmp,", ");
+			txt = tconcat(tmp,", ");
 		end
 	end
 
@@ -165,7 +216,7 @@ function updateBroker()
 end
 
 local function updateBars()
-	local bgWidth = false;
+	local bgWidth,bgBars = false,ns.profile[name].bgBars;
 	for i,v in ipairs(bars)do
 		if(v~=nil and v:IsShown() and v.percent)then
 			v.BarSingle:Hide();
@@ -177,25 +228,23 @@ local function updateBars()
 				bgWidth=v.Bg:GetWidth();
 			end
 
-			if(ns.profile[name].bgBars=="single")then
+			if(bgBars=="single")then
 				local width = bgWidth*v.percent;
 				v.BarSingle:SetWidth(width>1 and width or 1);
 				v.BarSingle:Show();
-			elseif(ns.profile[name].bgBars=="allinone")then
+			elseif(bgBars=="allinone")then
 				if(v.bodyguard)then
-					local totalPercent = (v.data[barValue] / allinone_bodyguard);
-					if v.data[barMax]==1 then totalPercent = 1; end
+					local totalPercent = v.data[barMax]==1 and 1 or (v.data[barValue] / allinone.bodyguard);
 					v.BarAIO_bodyguard:SetTexCoord(0, 916/1024 * totalPercent, 0, 1);
 					v.BarAIO_bodyguard:SetWidth((bgWidth * totalPercent)+0.1);
 					v.BarAIO_bodyguard:Show();
 				elseif(v.friend)then
-					local totalPercent = (v.data[barValue] / allinone_friend);
-					if v.data[barMax]==1 then totalPercent = 1; end
+					local totalPercent = v.data[barMax]==1 and 1 or (v.data[barValue] / allinone.friend);
 					v.BarAIO_friend:SetTexCoord(0, 870/1024 * totalPercent, 0, 1);
 					v.BarAIO_friend:SetWidth((bgWidth * totalPercent)+0.1);
 					v.BarAIO_friend:Show();
 				else
-					local totalPercent = ((v.data[barValue] + 42000) / allinone);
+					local totalPercent = v.data[standingID]==8 and 1 or ((v.data[barValue] + 42000) / allinone.faction);
 					v.BarAIO:SetTexCoord(0, 850/1024 * totalPercent, 0, 1);
 					v.BarAIO:SetWidth((bgWidth * totalPercent)+0.1);
 					v.BarAIO:Show();
@@ -205,128 +254,21 @@ local function updateBars()
 	end
 end
 
-local function tooltipOnHide()
+local function tooltipOnHide(self)
 	for i=1, #bars do
 		bars[i]:SetParent(nil);
 		bars[i]:ClearAllPoints();
 		bars[i]:Hide();
 	end
+	if self==tt then
+		tt:SetScript("OnHide",nil);
+	end
 end
 
-local function toggleHeader(self,data,button)
-	if (data[isCollapsed]) then
-		ExpandFactionHeader(data.index);
-	else
-		CollapseFactionHeader(data.index);
-	end
+local function toggleHeader(self,data)
+	ns.toon[name].headers[data[factionID]] = ns.toon[name].headers[data[factionID]]==nil and true or nil;
 	tooltipOnHide();
 	createTooltip(tt);
-end
-
-local function ttAddLine(tt,mode,data,count,childLevel)
-	local inset,line,_barMax,_barValue = 0, {}, data[barMax]-data[barMin], data[barValue]-data[barMin];
-	if(data[standingID]==8)then _barMax=999; end
-	local percent = _barValue/_barMax;
-
-	local color,icon,inset = "ltyellow","",1+childLevel;
-	if data[isHeader] then
-		inset=inset-1;
-		color,icon = "ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t ";
-		if data[isCollapsed] then
-			color,icon = "ltyellow","|Tinterface\\buttons\\UI-PlusButton-Up:0|t ";
-		end
-	end
-
-	local id = "";
-	if ns.profile[name].showID then
-		id = idStr:format(data[factionID]);
-	end
-
-	tinsert(line,
-		strrep("    ",inset)..icon..
-		C(color,ns.strCut(tostring(data[Name]),24))..id..
-		(data[atWarWith] and " |TInterface\\buttons\\UI-Checkbox-SwordCheck:12:12:0:-1:32:32:0:18:0:18|t" or "")
-	);
-
-	if(ns.profile[name].standingText)then
-		local id = "";
-		if ns.profile[name].showID then
-			id = idStr:format(data[standingID]);
-		end
-		tinsert(line,data[factionStandingText]..id);
-	end
-
-	if(mode=="Percent")then
-		tinsert(line,("%1.1f%%"):format(_barValue/_barMax*100));
-	elseif(mode=="PercentNeed")then
-		tinsert(line,("%1.1f%% "..L["need"]):format(100-(_barValue/_barMax*100)));
-	elseif(mode=="Number")then
-		tinsert(line,ns.FormatLargeNumber(name,_barValue,true).."/"..ns.FormatLargeNumber(name,_barMax,true));
-	elseif(mode=="NumberNeed")then
-		tinsert(line,ns.FormatLargeNumber(name,_barMax-_barValue,true).." "..L["need"]);
-	end
-
-	if not data[rewardPercent] and ns.profile[name].showSession and data[barValue] and session[data[factionID]] and (not data.hideSession) then
-		tinsert(line,GetSession(data[factionID],data[barValue]));
-	end
-
-	if data[rewardPercent] and ns.profile[name].rewardBeyondExalted~="_NONE" then
-		tinsert(line," ");
-		local field = "";
-		if ns.profile[name].rewardBeyondExalted=="percent" then
-			field = ("%1.1f%%"):format(data[rewardPercent]);
-		else
-			field = ("%d/%d"):format(data[rewardValue],data[rewardMax]);
-		end
-		if data[hasRewardPending] then
-			field = field.." |TInterface/GossipFrame/ActiveQuestIcon:14:14:0:0|t";
-		else
-			field = field.." |TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t";
-		end
-		tinsert(line,field);
-	end
-
-	for i=#line, ttColumns do
-		tinsert(line," ");
-	end
-
-	local l=tt:AddLine(unpack(line));
-
-	if data[isHeader] then
-		tt:SetLineScript(l,"OnMouseUp",toggleHeader,data);
-	end
-
-	if(ns.profile[name].bgBars=="single") or (ns.profile[name].bgBars=="allinone")then
-		if(not bars[count])then
-			bars[count] = CreateFrame("Frame","BERepurationBar"..count,nil,"BEReputationBarTemplate");
-		end
-		bars[count]:SetParent(tt.lines[l]);
-		bars[count]:SetPoint("TOPLEFT",tt.lines[l].cells[1],"TOPLEFT",0,1);
-		bars[count]:SetPoint("BOTTOMRIGHT",tt.lines[l].cells[#tt.lines[l].cells],"BOTTOMRIGHT",0,-1);
-		bars[count]:SetAlpha(0.6);
-		bars[count]:Show();
-		bars[count].data = data;
-		bars[count].standing = data[standingID];
-		bars[count].percent = (_barValue/_barMax);
-		bars[count].bodyguard = known_bodyguards[data[Name]] or false;
-		bars[count].friend = data[factionStandingText]~=_G["FACTION_STANDING_LABEL"..data[standingID]];
-	end
-
-	local darker = 0.72;
-	if(ns.profile[name].bgBars=="single")then
-		local color = FACTION_BAR_COLORS[ (bars[count].friend and 5) or data[standingID] ];
-		bars[count].BarSingle:SetVertexColor(color.r*darker,color.g*darker,color.b*darker,1);
-		bars[count].BarSingle:Show();
-	end
-end
-
-local function tooltipOnHide(self)
-	for i,v in ipairs(bars)do
-		v:SetParent(nil);
-		v:ClearAllPoints();
-		v:Hide();
-	end
-	self:SetScript("OnHide",nil);
 end
 
 function createTooltip(tt)
@@ -335,75 +277,145 @@ function createTooltip(tt)
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",REPUTATION));
 
-	local count,countHeader,childLevel,num,margoss,firstHeader = 0,0,0,GetNumFactions();
-
-	for i=1, num do
-		local data = {GetFactionInfo(i)};
-		data.index = i;
-		if i==1 and data[isHeader] then
-			firstHeader = data[isCollapsed];
+	local depth,count = 0,0;
+	local parentIsCollapsed1,parentIsCollapsed2,mode = false,false,ns.profile[name].numbers;
+	for i=1, #factions do
+		local show = true;
+		if (factions[i].isHeader and not factions[i].isChild) then
+			parentIsCollapsed1 = ns.toon[name].headers[factions[i].id]~=nil;
+			parentIsCollapsed2 = nil;
+		elseif (factions[i].isHeader and factions[i].isChild) and parentIsCollapsed1==false then
+			parentIsCollapsed2 = ns.toon[name].headers[factions[i].id]~=nil and true or nil;
+		elseif not parentIsCollapsed1 then
+			show = not parentIsCollapsed2;
+		else
+			show = not parentIsCollapsed1;
 		end
 
-		if data[Name] and data[barMax]>0 then
-			data[factionStandingText] = _G["FACTION_STANDING_LABEL"..data[standingID]];
+		if factions[i].isHeader then -- for current headers itself
+			depth = factions[i].isChild and 1 or 0;
+		end
 
-			if data[factionID] and data[barValue] and session[data[factionID]]==nil then
-				session[data[factionID]] = data[barValue];
-			end
-
-			local friendID,friendRep,friendMaxRep,friendName,friendText,friendTexture,friendTextLevel,friendThreshold,nextFriendThreshold = GetFriendshipReputation(data[factionID]);
-			if friendID~=nil then
-				data[factionStandingText] = friendTextLevel;
-				if ( nextFriendThreshold ) then
-					data[barMin], data[barMax], data[barValue] = friendThreshold, nextFriendThreshold, friendRep;
-				else
-					data[barMin], data[barMax], data[barValue] = 0, 1, 1;
-					data.hideSession = true
+		if show then
+			local data = _GetFactionInfoByID(factions[i].id);
+			if data[isHeader] and not data[hasRep] then
+				local color,icon = "ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t ";
+				if ns.toon[name].headers[data[factionID]] then
+					color,icon = "gray","|Tinterface\\buttons\\UI-PlusButton-Up:0|t ";
 				end
-			elseif data[standingID]==8 then
-				data[barValue] = data[barValue]+999;
-			end
-
-			if data[factionID] and C_Reputation.IsFactionParagon(data[factionID]) then
-				local rewardCurrentValue, rewardThreshold, rewardQuestID, _hasRewardPending = C_Reputation.GetFactionParagonInfo(data[factionID]);
-				if rewardCurrentValue~=nil then
-					if rewardCurrentValue > rewardThreshold then
-						rewardCurrentValue = rewardCurrentValue - rewardThreshold;
-					end
-					data[rewardMax] = rewardThreshold;
-					data[rewardValue] = mod(rewardCurrentValue, rewardThreshold);
-					data[rewardPercent] = (data[rewardValue]/data[rewardMax])*100;
-					data[hasRewardPending] = _hasRewardPending;
-				end
-			end
-
-			if data[isHeader] then
-				tt:AddSeparator(4,0,0,0,0);
-				childLevel = data[isChild] and 1 or 0;
-				if data[hasRep] then
-					count=count+1;
-					ttAddLine(tt,ns.profile[name].numbers,data,count,childLevel);
-				else
-					local color,icon,prefix = "ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t ",strrep("    ",childLevel);
-					if data[isCollapsed] then
-						color,icon = "gray","|Tinterface\\buttons\\UI-PlusButton-Up:0|t ";
-					end
-					local l=tt:AddLine(C(color,prefix..icon..data[Name]));
-					if data[isHeader] then
-						tt:SetLineScript(l,"OnMouseUp",toggleHeader,data);
-					end
-				end
-				if not data[isCollapsed] then
-					tt:AddSeparator();
+				local l=tt:AddLine(C(color,spacer:rep(depth)..icon..data[Name]));
+				if data[isHeader] then
+					tt:SetLineScript(l,"OnMouseUp",toggleHeader,data);
 				end
 			else
-				count=count+1;
-				ttAddLine(tt,ns.profile[name].numbers,data,count,childLevel);
+				count = count + 1;
+
+				local inset,line = 0,{};
+				local color,icon,inset = "ltyellow","",1+depth;
+				if data[isHeader] then
+					inset=inset-1;
+					color,icon = "ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t ";
+					if data[isCollapsed] then
+						color,icon = "ltyellow","|Tinterface\\buttons\\UI-PlusButton-Up:0|t ";
+					end
+				end
+
+				local _Min,_Max,_Value,_Percent = 0,data[barMax]-data[barMin],data[barValue]-data[barMin];
+
+				local id = ns.profile[name].showID and idStr:format(data[factionID]) or "";
+				local l=tt:AddLine();
+
+				tt:SetCell(l,1,
+					spacer:rep(inset)
+					..icon
+					..C(color,ns.strCut(tostring(data[Name]),24))
+					..id
+					..(data[atWarWith] and " |TInterface\\buttons\\UI-Checkbox-SwordCheck:12:12:0:-1:32:32:0:18:0:18|t" or "")
+				);
+
+				if(ns.profile[name].standingText)then
+					local id = "";
+					if ns.profile[name].showID then
+						id = idStr:format(data[standingID]);
+					end
+					tt:SetCell(l,2,data[factionStandingText]..id);
+				end
+
+				if(mode=="Percent")then
+					tt:SetCell(l,3,("%1.1f%%"):format(data[barPercent]*100));
+				elseif(mode=="PercentNeed")then
+					tt:SetCell(l,3,("%1.1f%% "..L["need"]):format(100-data[barPercent]*100));
+				elseif(mode=="Number")then
+					tt:SetCell(l,3,ns.FormatLargeNumber(name,_Value,true).."/"..ns.FormatLargeNumber(name,_Max,true));
+				elseif(mode=="NumberNeed")then
+					tt:SetCell(l,3,ns.FormatLargeNumber(name,_Max-_Value,true).." "..L["need"]);
+				end
+
+				if not data[isParagon] and ns.profile[name].showSession and data[sessionValue]~=0 then
+					local col,str = "gray",false,data[sessionValue];
+					if data[sessionValue]>0 then
+						col,str = "ltgreen","+"..data[sessionValue];
+					elseif data[sessionValue]<0 then
+						col,str = "ltred",data[sessionValue];
+					end
+					tt:SetCell(l,4,C(col,str));
+				end
+
+				if data[isParagon] and ns.profile[name].rewardBeyondExalted~="_NONE" then
+					local field = "";
+					if ns.profile[name].rewardBeyondExalted=="percent" then
+						field = ("%1.1f%%"):format(data[rewardPercent]*100);
+					else
+						field = ("%d/%d"):format(data[rewardValue],data[rewardMax]);
+					end
+					if data[hasRewardPending] then
+						field = field.." |TInterface/GossipFrame/ActiveQuestIcon:14:14:0:0|t";
+					else
+						field = field.." |TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t";
+					end
+					tt:SetCell(l,5,field);
+					--if ns.profile[name].rewardsFinished then
+					--	tt:SetCell(l,6, data[rewardsFinished].." completed");
+					--end
+				end
+
+				--tt:SetLineScript(l,"OnEnter",factionTooltipOnEnter,data);
+				--tt:SetLineScript(l,"OnLeave",factionTooltipOnLeave);
+
+				if data[isHeader] then
+					tt:SetLineScript(l,"OnMouseUp",toggleHeader,data);
+				end
+
+				if(ns.profile[name].bgBars=="single") or (ns.profile[name].bgBars=="allinone")then
+					if(not bars[count])then
+						bars[count] = CreateFrame("Frame","BERepurationBar"..count,nil,"BEReputationBarTemplate");
+					end
+					bars[count]:SetParent(tt.lines[l]);
+					bars[count]:SetPoint("TOPLEFT",tt.lines[l],"TOPLEFT",0,1);
+					bars[count]:SetPoint("BOTTOMRIGHT",tt.lines[l],"BOTTOMRIGHT",0,-1);
+					bars[count]:SetAlpha(0.6);
+					bars[count]:Show();
+					bars[count].data = data;
+					bars[count].standing = data[standingID];
+					bars[count].percent = (_Value/_Max);
+					bars[count].bodyguard = known_bodyguards[data[Name]] or false;
+					bars[count].friend = data[friendID]~=nil;
+				end
+
+				local darker = 0.72;
+				if(ns.profile[name].bgBars=="single")then
+					local color = FACTION_BAR_COLORS[ (bars[count].friend and 5) or data[standingID] ];
+					bars[count].BarSingle:SetVertexColor(color.r*darker,color.g*darker,color.b*darker,1);
+					bars[count].BarSingle:Show();
+				end
+
 			end
 		end
 
+		if factions[i][2] then
+			depth = depth+1; -- for following factions
+		end
 	end
-	wasShown=true;
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0)
@@ -414,7 +426,7 @@ function createTooltip(tt)
 	if #bars>0 then
 		tt:SetScript("OnHide", tooltipOnHide);
 	end
-	C_Timer.After(0.1,updateBars);
+	CTimerAfter(0.075,updateBars);
 end
 
 
@@ -525,50 +537,29 @@ function module.onevent(self,event,arg1,...)
 		ns.ClickOpts.update(name);
 	end
 	if event=="PLAYER_LOGIN" then
---@do-not-package@
-		ns.profileSilenceFIXME = true;
---@end-do-not-package@
-		if ns.profile[name].watchedFormatOnBroker~=nil then
-			local mode = ns.profile[name].watchedFormatOnBroker;
-			ns.profile[name].watchedCountOnBroker       = false
-			ns.profile[name].watchedCountPercentOnBroker= false
-			ns.profile[name].watchedNeedOnBroker        = false
-			ns.profile[name].watchedNeedPercentOnBroker = false
-			if(mode=="Percent")then
-				ns.profile[name].watchedCountOnBroker       = true;
-				ns.profile[name].watchedCountPercentOnBroker= true;
-				--tinsert(tmp,("%1.1f%%"):format(barValue2/barMax*100));
-			elseif(mode=="PercentNeed")then
-				ns.profile[name].watchedNeedOnBroker        = true;
-				ns.profile[name].watchedNeedPercentOnBroker = true;
-				--tinsert(tmp,("%1.1f%% "..L["need"]):format(100-(barValue2/barMax*100)));
-			elseif(mode=="Number")then
-				ns.profile[name].watchedCountOnBroker       = true;
-				--tinsert(tmp,ns.FormatLargeNumber(name,barValue2).."/"..ns.FormatLargeNumber(name,barMax));
-			elseif(mode=="NumberNeed")then
-				ns.profile[name].watchedNeedOnBroker        = true;
-				--tinsert(tmp,ns.FormatLargeNumber(name,barMax-barValue2).." "..L["need"]);
-			end
-			ns.profile[name].watchedFormatOnBroker=nil;
+		if ns.toon[name]==nil or (ns.toon[name] and ns.toon[name].headers==nil) then
+			ns.toon[name] = {headers={[-1]=true}};
 		end
 	end
-	if not self.loadedBodyguards then
-		local glvl = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0);
-		if UnitLevel("player")>=90 and glvl then
-			for i=1,#bodyguards do
-				local data = C_Garrison.GetFollowerInfo(bodyguards[i]);
-				if(data and data.name)then
-					known_bodyguards[data.name]=true;
+	if ns.eventPlayerEnteredWorld then
+		if not self.loadedBodyguards then
+			local glvl = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0);
+			if UnitLevel("player")>=90 and glvl then
+				for i=1,#bodyguards do
+					local data = C_Garrison.GetFollowerInfo(bodyguards[i]);
+					if(data and data.name)then
+						known_bodyguards[data.name]=true;
+					end
 				end
+				self.loadedBodyguards=true;
 			end
-			self.loadedBodyguards=true;
 		end
+		if self.loadedBodyguards and round==false then
+			round = -2;
+			initReputationListTicker = C_Timer.NewTicker(.3,initReputationList,8);
+		end
+		updateBroker();
 	end
-	if not self.loadedSession then
-		initSessionTicker = C_Timer.NewTicker(.3,initSessionCurrencies);
-		self.loadedSession=true;
-	end
-	updateBroker();
 end
 
 -- function module.optionspanel(panel) end
