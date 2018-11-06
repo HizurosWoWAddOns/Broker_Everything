@@ -136,21 +136,22 @@ local function createTooltip(tt)
 		end
 		if (count>0) then
 			local showDiff = { -- show difficulty
-				{ns.profile[name].showDungeons,    false},										--"Dungeons", -- [1]
-				{ns.profile[name].showSzenarios,   false},										--"Szenarios", -- [2]
-				{ns.profile[name].showRaidsLFR,    false},										--"Raids (LFR)", -- [3]
-				{ns.profile[name].showRaids,       ns.profile[name].showExpiredRaids},			--"Raids", -- [4]
-				{ns.profile[name].showEvents,      false},										--"Events" -- [5]
+				ns.profile[name].showDungeons,	--"Dungeons", -- [1]
+				ns.profile[name].showSzenarios,	--"Szenarios", -- [2]
+				ns.profile[name].showRaidsLFR,	--"Raids (LFR)", -- [3]
+				ns.profile[name].showRaids,		--"Raids", -- [4]
+				ns.profile[name].showEvents,	--"Events" -- [5]
 			};
 			for diff, data in ns.pairsByKeys(lst) do
-				if diff~=0 and showDiff[diff][1] and (diffCounter[diff][2]>0 or (diffCounter[diff][1]>0 and showDiff[diff][2])) then
+				if diff~=0 and showDiff[diff] and (diffCounter[diff][2]>0 or diffCounter[diff][1]>0) then
 					local header,doExtend = (diffName[diff]) and diffName[diff] or "Unknown type",false;
 					tt:AddLine(C("gray",header));
 					for i,v in ipairs(data) do
-						local duration,color = false,"ltgray";
+						local duration,color,show = false,"ltgray",ns.profile[name].showExpiredEntries;
 						if v[instanceReset]>0 then
 							duration = ns.DurationOrExpireDate(v[instanceReset])
 							color = "ltyellow";
+							show = true;
 						elseif v[encounterProgress]>0 and v[numEncounters]>0 and v[encounterProgress]<v[numEncounters] then
 							if v[extended] then
 								doExtend = false;
@@ -164,24 +165,27 @@ local function createTooltip(tt)
 								end
 							end
 							duration = C("ltgray",duration);
+							show = true;
 						else
 							doExtend = false;
 							duration = C("gray",RAID_INSTANCE_EXPIRES_EXPIRED);
 						end
-						local l=tt:AddLine(
-							C(color,"    "..v[instanceName]),
-							v[difficultyName].. (not diffName[diff] and " ("..v[instanceDifficulty]..")" or ""),
-							("%s/%s"):format(
-								(v[encounterProgress]>0) and v[encounterProgress] or "?",
-								(v[numEncounters]>0) and v[numEncounters] or "?"
-							),
-							duration or ""
-						);
-						if doExtend then
-							tt:SetCellScript(l,4,"OnMouseUp", extendInstance, {index=v.index,doExtend=doExtend});
+						if show then
+							local l=tt:AddLine(
+								C(color,"    "..v[instanceName]),
+								v[difficultyName].. (not diffName[diff] and " ("..v[instanceDifficulty]..")" or ""),
+								("%s/%s"):format(
+									(v[encounterProgress]>0) and v[encounterProgress] or "?",
+									(v[numEncounters]>0) and v[numEncounters] or "?"
+								),
+								duration or ""
+							);
+							if doExtend then
+								tt:SetCellScript(l,4,"OnMouseUp", extendInstance, {index=v.index,doExtend=doExtend});
+							end
+							tt:SetLineScript(l,"OnEnter", EncounterTT_Show, v.index);
+							tt:SetLineScript(l,"OnLeave", EncounterTT_Hide);
 						end
-						tt:SetLineScript(l,"OnEnter", EncounterTT_Show, v.index);
-						tt:SetLineScript(l,"OnLeave", EncounterTT_Hide);
 					end
 					allNothing = false;
 					iniNothing = false;
@@ -226,7 +230,7 @@ module = {
 		showEvents = true,
 
 		-- show expired types
-		showExpiredRaids = true
+		showExpiredEntries = true,
 	},
 	clickOptionsRename = {
 		["menu"] = "5_open_menu"
@@ -251,7 +255,7 @@ function module.options()
 			showRaids={ type="toggle", order=5, name=L["Show raids"],                 desc=L["Display list of raid IDs in tooltip"] },
 			showEvents={ type="toggle", order=6, name=L["Show events"],                desc=L["Display list of event IDs in tooltip"] },
 			separator={type="separator", order=7,},
-			showExpiredRaids={ type="toggle", order=9, name=L["Show expired raids"],         desc=L["Display expired raids in tooltip"] },
+			showExpiredEntries={ type="toggle", order=9, name=L["Show expired entries"],         desc=L["Display expired entries in tooltip"] },
 		},
 		misc = nil,
 	}
@@ -265,6 +269,10 @@ function module.onevent(self,event,...)
 		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		RequestRaidInfo(); -- trigger UPDATE_INSTANCE_INFO
+		if ns.profile[name].showExpiredRaids ~= nil then
+			ns.profile[name].showExpiredEntries = ns.profile[name].showExpiredRaids;
+			ns.profile[name].showExpiredRaids = nil;
+		end
 	elseif event=="BOSS_KILL" then -- triggered 3 times per bosskill.
 		local encounterID, name = ...;
 		BossKillQueryUpdate=true;
