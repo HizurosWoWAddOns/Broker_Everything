@@ -41,49 +41,59 @@ local function clearStoredMailsData()
 	module.onevent({},"BE_DUMMY_EVENT");
 end
 
-local function UpdateStatus(event)
-	local mailNew, _time = HasNewMail(), time();
-	local sender,subject,money,daysLeft,itemCount,wasReturned,isGM,dt,ht,_;
-	local num,total = GetInboxNumItems(); num=num or 0; total=total or 0;
-	local returns,mailState,next1,next2,next3,tmp = (99*86400),0,nil,nil,nil,nil;
+local function sortStoredMails(a,b)
+	return (a.returns or 0)<(b.returns or 0);
+end
 
+local function UpdateStatus(event)
 	if ns.toon.mail==nil then
 		ns.toon.mail = { new={}, stored={} };
 	end
-	if ns.toon.mail.count then
-		ns.toon.mail = { new={}, stored={} };
+	if ns.toon.mail.stored2==nil then
+		ns.toon.mail.stored2={};
 	end
+
+	local mailNew, _time = HasNewMail(), time();
+	local sender,daysLeft,dt,ht,_;
+	local returns,mailState,next1,next2,next3,tmp = (99*86400),0;
 	local charDB_mail = ns.toon.mail;
 
 	if (_G.MailFrame:IsShown()) or (event=="MAIL_CLOSED") then
-		charDB_mail.stored={};
-		for i=1, num do
-			_, _, sender, subject, money, _, daysLeft, itemCount, _, wasReturned, _, _, isGM = GetInboxHeaderInfo(i)
-			itemCount = itemCount or 0; -- pre WoD compatibility
-			dt,ht = floor(daysLeft)*86400, (1-(daysLeft-floor(daysLeft)))*86400;
-			tinsert(charDB_mail.stored,{
-				sender  = sender,
-				subject = subject,
-				money   = money>0,
-				items   = itemCount>0,
-				gm      = (isGM),
-				last    = _time,
-				returns = floor(dt-ht)
-			});
+		charDB_mail.num, charDB_mail.total = GetInboxNumItems();
+		charDB_mail.num, charDB_mail.total = charDB_mail.num or 0, charDB_mail.total or 0;
+		wipe(charDB_mail.stored);
+		for i=1, charDB_mail.num do
+			_, _, sender_realm, _, _, _, daysLeft = GetInboxHeaderInfo(i);
+			local returns = _time + floor(daysLeft * 86400);
+			if not sender_realm:find("%-") then
+				sender_realm = sender_realm.."-"..ns.realm_short;
+			end
+			tinsert(charDB_mail.stored,sender_realm..";"..returns);
 		end
-		charDB_mail.more = total>num;
-		charDB_mail.new = {};
+		wipe(charDB_mail.new);
 	else
 		local names = {};
-		if #charDB_mail.stored>0 then
-			 for i=1, #charDB_mail.stored do
-				local n = strsplit("-",charDB_mail.stored[i].sender or UNKNOWN,2);
-				names[n]=true;
-			 end
+		for i=1, #charDB_mail.stored do
+			if type(charDB_mail.stored[i])=="table" then -- deprecated
+				charDB_mail.stored[i] = charDB_mail.stored[i].sender.."-"..(charDB_mail.stored[i].realm or ns.realm_short)..";"..(charDB_mail.stored[i].last+charDB_mail.stored[i].returns);
+			end
+			local sender = strsplit(";",charDB_mail.stored[i]);
+			names[sender]=true;
 		end
-		for i,v in ipairs({GetLatestThreeSenders()}) do
-			if not names[v] then
-				tinsert(charDB_mail.new,v);
+		for i=1, #charDB_mail.new do
+			local sender = strsplit(";",charDB_mail.new[i]);
+			names[sender]=true;
+		end
+
+		local latest = {GetLatestThreeSenders()};
+		if #latest>0 then
+			for i=1, #latest do
+				if not tostring(latest[i]):find("-") then
+					latest[i] = latest[i].."-"..ns.realm_short;
+				end
+				if not names[latest[i]] then
+					tinsert(charDB_mail.new,latest[i]);
+				end
 			end
 		end
 	end
@@ -114,6 +124,61 @@ local function UpdateStatus(event)
 	obj.iconCoords,obj.icon,obj.text = icon.coords or {0,1,0,1},icon.iconfile,text;
 end
 
+local function AddStoredMailsLine(tt,player)
+	local hasData = false;
+	local _time = time();
+	local v,n = Broker_Everything_CharacterDB[player],{strsplit("-",player,2)}
+	if v.mail and ns.showThisChar(name,n[2],v.faction) then
+		local counter,key,oldest={stored=0,new=0,returned=0},{"stored","new"};
+
+		for k=1, #key do
+			if #v.mail[key[k]]>0 then
+				for i=1, #v.mail[key[k]] do
+					if type(v.mail[key[k]][i])=="table" then -- deprecated
+						v.mail[key[k]][i] = v.mail[key[k]][i].sender.."-"..v.mail[key[k]][i].realm..";"..v.mail[key[k]][i].last+v.mail[key[k]][i].returns;
+					end
+					local sender,returns = strsplit(";",v.mail[key[k]][i]);
+					returns = tonumber(returns);
+					if returns<_time then
+						counter.returned = counter.returned+1;
+					else
+						counter[key[k]] = counter[key[k]]+1;
+						if (not oldest) or (oldest and returns<oldest) then
+							oldest = returns;
+						end
+					end
+				end
+			end
+		end
+
+		if counter.new>0 or counter.stored>0 then
+			local str="";
+			if counter.stored==0 and counter.new>0 then
+				str = C("green",L["New mails"]..": "..counter.new);
+			elseif counter.stored>0 or counter.new>0 then
+				str = L["Mails"]..": "..counter.stored;
+				if counter.new>0 then
+					str = str.." "..C("green","("..NEW..": "..counter.new..")");
+				end
+			end
+			local l=tt:AddLine(
+				(v.faction=="Neutral" and storedMailLineNeutral or storedMailLineFaction):format(C(v.class,ns.scm(n[1])),ns.showRealmName(name,n[2]),v.faction),
+				str
+			);
+			if player==ns.player.name_realm then
+				tt:SetLineColor(l, .5, .5, .5);
+			end
+			hasData = true;
+		end
+
+		if oldest then
+			local returnsIn = oldest-_time;
+			tt:AddLine("  "..C("ltgray",L["Oldest:"]), C((returnsIn<86400 and "red") or (returnsIn<(3*86400) and "orange") or (returnsIn<(7*86400) and "yellow") or "ltgray",SecondsToTime(returnsIn)));
+		end
+	end
+	return hasData;
+end
+
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
@@ -124,65 +189,41 @@ local function createTooltip(tt)
 	local l,c
 	if tt.lines~=nil then tt:Clear(); end
 
-	tt:AddHeader(C("dkyellow",BUTTON_LAG_MAIL))
-	tt:AddSeparator()
-	tt:AddLine(C("ltblue",L["Last 3 new mails"]),#newMails.." "..L["mails"])
+	local l = tt:AddLine();
+	tt:SetCell(l,1,C("dkyellow",BUTTON_LAG_MAIL),tt:GetHeaderFont(),"LEFT");
+	tt:AddSeparator(3,0,0,0,0);
 	if #newMails>0 then
+		tt:SetCell(l,2,C("green",L["You have new mails"]),nil,"RIGHT");
+		tt:AddLine(C("ltblue",L["Lastest senders:"]));
+		tt:AddSeparator()
 		for i,v in ipairs(newMails) do
-			tt:AddLine("   "..ns.scm(v))
+			tt:AddLine("   "..ns.scm(v));
 		end
+	else
+		tt:SetCell(l,2,C("gray",L["No new mails"]),nil,"RIGHT");
 	end
 
 	if (ns.profile[name].showDaysLeft) then
 
-		tt:AddSeparator(3,0,0,0,0)
-		tt:AddHeader(C("dkyellow",L["Left in mailbox"]))
-		tt:AddSeparator()
+		tt:AddSeparator(3,0,0,0,0);
+		tt:SetCell(tt:AddLine(),1,C("dkyellow",L["Left in mailbox"]),nil,"LEFT",0);
+		tt:AddSeparator();
 
-		local noData,t = true;
+		local hasData,t = false;
+
+		if AddStoredMailsLine(tt,ns.player.name_realm) then
+			hasData=true;
+		end
+
 		for i=1, #Broker_Everything_CharacterDB.order do
 			if Broker_Everything_CharacterDB.order[i]~=ns.player.name_realm then
-				local v = Broker_Everything_CharacterDB[Broker_Everything_CharacterDB.order[i]];
-				local n = {strsplit("-",Broker_Everything_CharacterDB.order[i],2)}
-				if v.mail and ns.showThisChar(name,n[2],v.faction) then
-					if #v.mail.new>0 or #v.mail.stored>0 then
-						local count,countnew,str = #v.mail.stored,#v.mail.new,"";
-						if count==0 and countnew>0 then
-							str = C("green",L["New mails"]..": "..countnew);
-						elseif count>0 or countnew>0 then
-							str = L["Mails"]..": "..(count+countnew);
-							if countnew>0 then
-								str = str.." "..C("green","("..NEW..": "..countnew..")");
-							end
-						end
-
-						tt:AddLine(
-							(v.faction=="Neutral" and storedMailLineNeutral or storedMailLineFaction):format(C(v.class,ns.scm(n[1])),ns.showRealmName(name,n[2]),v.faction),
-							str
-						);
-						noData = false;
-					end
-					if #v.mail.stored>0 then
-						for I,V in ipairs(v.mail.stored) do
-							t = V.returns~=nil and V.returns-(time()-V.last) or 30*86400
-							tt:AddLine(
-								"   "..
-								ns.scm(V.sender)
-								.." "..
-								(V.money and " |TInterface\\Minimap\\TRACKING\\Auctioneer:12:12:0:-1:64:64:4:56:4:56|t" or "")
-								..
-								(V.items and " |TInterface\\icons\\INV_Crate_02:12:12:0:-1:64:64:4:56:4:56|t" or "")
-								..
-								(V.gm and " |TInterface\\chatframe\\UI-ChatIcon-Blizz:12:20:0:0:32:16:4:28:0:16|t" or ""),
-								C((t<86400 and "red") or (t<(3*86400) and "orange") or (t<(7*86400) and "yellow") or "green",SecondsToTime(t))
-							)
-						end
-					end
+				if AddStoredMailsLine(tt,Broker_Everything_CharacterDB.order[i]) then
+					hasData = true;
 				end
 			end
 		end
 
-		if noData then
+		if not hasData then
 			tt:AddLine(C("gray",L["No data"]));
 		end
 	end
@@ -192,6 +233,24 @@ local function createTooltip(tt)
 		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
+end
+
+local function SendMailHook(targetName)
+	if debugstack():find("\?") then return end -- ignore double executed function
+
+	local t = time()+30*86400;
+	local _,r = strsplit("-",targetName,2);
+	if type(r)=="string" and r:len()>0 then
+		targetName = targetName.."-"..ns.realms[targetName];
+	elseif not r then
+		targetName = targetName.."-"..ns.realm;
+	end
+	if Broker_Everything_CharacterDB[targetName] then
+		if Broker_Everything_CharacterDB[targetName].mail==nil then
+			Broker_Everything_CharacterDB[targetName].mail = { new={}, stored={} };
+		end
+		tinsert(Broker_Everything_CharacterDB[targetName].mail.new,ns.player.name..";"..t);
+	end
 end
 
 
@@ -263,19 +322,7 @@ function module.onevent(self,event,msg)
 			ns.hideFrames("MiniMapMailFrame",ns.profile[name].hideMinimapMail);
 		end
 	elseif event=="PLAYER_LOGIN" then
-		hooksecurefunc("SendMail",function(targetName)
-			local n,r,_ = strsplit("-",targetName,2);
-			if type(r)=="string" and r:len()>0 then
-				r = ns.realms[r];
-			end
-			targetName = n.."-"..(r or ns.realm);
-			if Broker_Everything_CharacterDB[targetName] then
-				if Broker_Everything_CharacterDB[targetName].mail==nil then
-					Broker_Everything_CharacterDB[targetName].mail = { new={}, stored={} };
-				end
-				tinsert(Broker_Everything_CharacterDB[targetName].mail.new,ns.player.name);
-			end
-		end);
+		hooksecurefunc("SendMail",SendMailHook);
 	end
 	if ns.eventPlayerEnteredWorld then
 		if (HasNewMail()) and (ns.profile[name].playsound) and (not alertLocked) then
