@@ -139,12 +139,14 @@ local function AddStoredMailsLine(tt,player)
 					end
 					local sender,returns = strsplit(";",v.mail[key[k]][i]);
 					returns = tonumber(returns);
-					if returns<_time then
-						counter.returned = counter.returned+1;
-					else
-						counter[key[k]] = counter[key[k]]+1;
-						if (not oldest) or (oldest and returns<oldest) then
-							oldest = returns;
+					if returns then
+						if returns<_time then
+							counter.returned = counter.returned+1;
+						else
+							counter[key[k]] = counter[key[k]]+1;
+							if (not oldest) or (oldest and returns<oldest) then
+								oldest = returns;
+							end
 						end
 					end
 				end
