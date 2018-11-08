@@ -1,19 +1,8 @@
 local addon, ns = ...;
 local L = ns.L;
+local pairs,type=pairs,type;
 
 ns.modules = {};
-
-setmetatable(ns.modules,{
-	__newindex = function(t,name,data)
-		rawset(t,name,data);
-		if data.isHiddenModule==true then return end
-		-- first step... register defaults
-		if data.config_defaults and data.config_defaults.minimap==nil then
-			data.config_defaults.minimap = {hide=false};
-		end
-		ns.Options_AddModuleDefaults(name);
-	end
-});
 
 function ns.toggleMinimapButton(modName,setValue)
 	local mod = ns.modules[modName];
@@ -40,14 +29,9 @@ end
 
 local function moduleInit(name)
 	if not ns.modules[name] then return end
-	local mod = ns.modules[name];
 
-	-- register options
-	if not mod.isHiddenModule then
-		ns.Options_AddModuleOptions(name);
-	end
-
-	if (ns.profile[name] and ns.profile[name].enabled==true) or mod.isHiddenModule then
+	if (ns.profile[name] and ns.profile[name].enabled==true) or ns.modules[name].isHiddenModule then
+		local mod = ns.modules[name];
 		-- module init
 		if mod.init then
 			mod.init();
@@ -151,8 +135,14 @@ end
 
 function ns.moduleInit(name) -- in core.lua on event ADDON_LOADED or option panel
 	if (name) then
-		moduleInit(name);
+		ns.Options_RegisterModule(name);
+		ns.Options_RegisterDefaults();
+		moduleInit(name,true);
 	else
+		for name, data in pairs(ns.modules) do
+			ns.Options_RegisterModule(name);
+		end
+		ns.Options_RegisterDefaults();
 		for name, data in pairs(ns.modules) do
 			moduleInit(name);
 		end

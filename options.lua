@@ -2,6 +2,8 @@
 local addon, ns = ...
 local addonLabel = addon;
 local C, L, I = ns.LC.color, ns.L, ns.I;
+local setmetatable,type,rawget,rawset,tostring=setmetatable,type,rawget,rawset,tostring;
+local ipairs,pairs,wipe,strsplit,tremove=ipairs,pairs,wipe,strsplit,tremove;
 local migrateAll = true;
 
 local dbDefaults,db = {
@@ -42,7 +44,7 @@ local nsProfileMT = {
 		elseif ns.profileSilenceFIXME then
 			ns.profileSilenceFIXME=false;
 		else
-			ns.debug("<FIXME:nsProfileMT:MissingSection>",tostring(k));
+			ns.debug("<FIXME:nsProfileMT:MissingSection>",tostring(s),tostring(k));
 --@end-do-not-package@
 		end
 	end,
@@ -63,7 +65,8 @@ local nsProfileMT = {
 		elseif ns.profileSilenceFIXME then
 			ns.profileSilenceFIXME=false;
 		else
-			ns.debug("<FIXME:nsProfileMT:MissingSectionOrDB>",tostring(k));
+			ns.debug("<FIXME:nsProfileMT:MissingSectionOrDB>",tostring(s),tostring(k));
+			--ns.debug(debugstack());
 --@end-do-not-package@
 		end
 	end
@@ -126,7 +129,7 @@ local function opt(info,value,...)
 	if value~=nil then
 		if isModEnable then
 --@do-not-package@
-			ns.debug(key,type(db.profile),type(db.profile[key]));
+			ns.debug("<ToggleModuleEnableState>",key,type(db.profile),type(db.profile[key]));
 --@end-do-not-package@
 			db.profile[key].enabled = value;
 			if value then
@@ -145,7 +148,7 @@ local function opt(info,value,...)
 						mod:OnEvent("BE_UPDATE_CFG",key);
 --@do-not-package@
 					else
-						ns.debug("<FIXME:opt:MissingEventFunction>",modName);
+						ns.debug("<FIXME:opt:MissingEventFunction>",section,modName);
 --@end-do-not-package@
 					end
 				end
@@ -379,33 +382,6 @@ local function optionWalker(modName,group,lst)
 	end
 end
 
-function ns.Options_AddModuleDefaults(modName)
-	local mod = ns.modules[modName];
-	if mod then
-		ns.profile[modName] = setmetatable({section=modName},nsProfileMT);
---@do-not-package@
-		if not mod.config_defaults then
-			ns.debug("<FIXME:MissingModConfigDefault>",modName);
-		elseif mod.config_defaults.enabled==nil then
-			ns.debug("<FIXME:MissingModEnableState>",modName);
-		end
---@end-do-not-package@
-		-- normal defaults
-		dbDefaults.profile[modName] = mod.config_defaults or {enabled=false};
-
-		-- add shared option defaults
-		if mod.options then
-			for _,group in pairs(mod.options())do
-				for key,value in pairs(group)do
-					if sharedDefaults[key]~=nil and dbDefaults.profile[modName][key]==nil then
-						dbDefaults.profile[modName][key] = sharedDefaults[key];
-					end
-				end
-			end
-		end
-	end
-end
-
 local function ModName(info)
 	local key=info[#info];
 	if not ns.profile[key].enabled then
@@ -422,62 +398,88 @@ local function ModDesc(info)
 	return L["ModDesc-"..key];
 end
 
-function ns.Options_AddModuleOptions(modName)
-	-- add toggle to ModToggleTab
-	options.args.modEnable.args[modName] = {type="toggle",name=L[modName],desc=L["ModDesc-"..modName]};
+function ns.Options_RegisterDefaults() -- re-registration for dbDefaults after 'db = LibStub("AceDB-3.0"):New("Broker_Everything_AceDB",dbDefaults,true);'
+	db:RegisterDefaults(dbDefaults);
+end
 
-	-- add own tree entry per module
-	if ns.modules[modName].options then
-		options.args.modOptions.args[modName] = {
-			type = "group",
-			name = ModName, desc = ModDesc,
-			icon = Icon, iconCoords = IconCoords, -- currently ace ignore IconCoords
-			args = {
-			}
-		}
-		local modOptions = ns.modules[modName].options();
+function ns.Options_RegisterModule(modName)
+	local mod = ns.modules[modName];
 
-		if dbDefaults.profile[modName]==nil then
-			dbDefaults.profile[modName]={}; -- should never be nil... :D
+	-- defaults
+	ns.profile[modName] = setmetatable({section=modName},nsProfileMT);
 --@do-not-package@
-			ns.debug("<FIXME:AddModuleOptions:NilDefaultTable>",modName);
+	if not mod.config_defaults then
+		ns.debug("<FIXME:MissingModConfigDefault>",modName);
+	elseif mod.config_defaults.enabled==nil then
+		ns.debug("<FIXME:MissingModEnableState>",modName);
+	end
 --@end-do-not-package@
+
+	-- normal defaults
+	dbDefaults.profile[modName] = mod.config_defaults or {enabled=false};
+
+	if not mod.isHiddenModule then
+		if dbDefaults.profile[modName].minimap==nil then
+			dbDefaults.profile[modName].minimap = {hide=false};
 		end
 
-		ns.ClickOpts.createOptions(modName,modOptions);
+		-- add toggle to ModToggleTab
+		options.args.modEnable.args[modName] = {type="toggle",name=L[modName],desc=L["ModDesc-"..modName]};
 
-		local hasBrokerOpts = false;
-		for k in pairs(modOptions)do
-			if k:find("^broker") then
-				hasBrokerOpts = true;
-				break;
+		-- add shared option defaults
+		if mod.options then
+			for _,group in pairs(mod.options())do
+				for key,value in pairs(group)do
+					if sharedDefaults[key]~=nil and dbDefaults.profile[modName][key]==nil then
+						dbDefaults.profile[modName][key] = sharedDefaults[key];
+					end
+				end
 			end
-		end
-		if not hasBrokerOpts then
-			modOptions.broker = {};
-		end
-		for k, v in pairs(modOptions)do
-			local name, order = v.name, v.order;
-			v.name,v.order = nil,nil;
-			if k:find("^broker") then
-				name = name or L["Broker"];
-				order = order or 1;
-			elseif k:find("^tooltip") then
-				name = name or L["Tooltip"];
-				order = order or 2;
-			elseif k:find("^misc") then
-				name = name or L["Misc"];
-				order = order or 98;
-			elseif k:find("^ClickOpts") then
-				name = name or L["ClickOptions"];
-				order = 99;
-			end
-			optionWalker(modName,k,v);
-			options.args.modOptions.args[modName].args[k] = {
-				type="group", name=C("ff00aaff",name), order=order, inline=true, args=v
+
+			-- add own tree entry per module
+			options.args.modOptions.args[modName] = {
+				type = "group",
+				name = ModName, desc = ModDesc,
+				icon = Icon, iconCoords = IconCoords, -- currently ace ignore IconCoords
+				args = {
+				}
 			}
-		end
+			local modOptions = ns.modules[modName].options();
 
+			ns.ClickOpts.createOptions(modName,modOptions);
+
+			local hasBrokerOpts = false;
+			for k in pairs(modOptions)do
+				if k:find("^broker") then
+					hasBrokerOpts = true;
+					break;
+				end
+			end
+			if not hasBrokerOpts then
+				modOptions.broker = {};
+			end
+			for k, v in pairs(modOptions)do
+				local name, order = v.name, v.order;
+				v.name,v.order = nil,nil;
+				if k:find("^broker") then
+					name = name or L["Broker"];
+					order = order or 1;
+				elseif k:find("^tooltip") then
+					name = name or L["Tooltip"];
+					order = order or 2;
+				elseif k:find("^misc") then
+					name = name or L["Misc"];
+					order = order or 98;
+				elseif k:find("^ClickOpts") then
+					name = name or L["ClickOptions"];
+					order = 99;
+				end
+				optionWalker(modName,k,v);
+				options.args.modOptions.args[modName].args[k] = {
+					type="group", name=C("ff00aaff",name), order=order, inline=true, args=v
+				}
+			end
+		end
 	end
 end
 

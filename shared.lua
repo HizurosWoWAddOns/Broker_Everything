@@ -4,7 +4,23 @@
 -- ====================================== --
 local addon, ns = ...;
 local L,_ = ns.L;
-ns.build = tonumber(gsub(({GetBuildInfo()})[1],"[|.]","")..({GetBuildInfo()})[2]);
+local UnitName,UnitSex,UnitClass,UnitFactionGroup=UnitName,UnitSex,UnitClass,UnitFactionGroup;
+local UnitRace,GetRealmName,GetLocale,UnitGUID=UnitRace,GetRealmName,GetLocale,UnitGUID;
+local InCombatLockdown,GetCVar,SetCVar,CreateFrame=InCombatLockdown,GetCVar,SetCVar,CreateFrame;
+local GetScreenHeight,GetMouseFocus,GetAddOnInfo=GetScreenHeight,GetMouseFocus,GetAddOnInfo;
+local GetAddOnEnableState,GetSpellInfo,IsAltKeyDown=GetAddOnEnableState,GetSpellInfo,IsAltKeyDown;
+local IsShiftKeyDown,IsControlKeyDown,GetItemInfo=IsShiftKeyDown,IsControlKeyDown,GetItemInfo;
+local GetContainerItemCooldown,GetContainerItemLink=GetContainerItemCooldown,GetContainerItemLink;
+local GetInventoryItemDurability,GetInventoryItemBroken=GetInventoryItemDurability,GetInventoryItemBroken;
+local GetInventoryItemLink,GetInventoryItemID,GetContainerNumSlots=GetInventoryItemLink,GetInventoryItemID,GetContainerNumSlots;
+local GetContainerItemID,GetContainerItemInfo,SecondsToTime=GetContainerItemID,GetContainerItemInfo,SecondsToTime;
+local GetContainerItemDurability,IsEquippableItem,CopyTable=GetContainerItemDurability,IsEquippableItem,CopyTable;
+local setmetatable,tonumber,rawget,rawset,tinsert=setmetatable,tonumber,rawget,rawset,tinsert;
+local tremove,tostring,type,print,unpack,assert=tremove,tostring,type,print,unpack,assert;
+local securecall,ipairs,pairs,tconcat,tsort=securecall,ipairs,pairs,table.concat,table.sort;
+local time,wipe,mod,hooksecurefunc,strsplit=time,wipe,mod,hooksecurefunc,strsplit;
+
+ns.build = tonumber(({GetBuildInfo()})[1]:gsub("[|.]","")..({GetBuildInfo()})[2]);
 ns.icon_fallback = 134400; -- interface\\icons\\INV_MISC_QUESTIONMARK;
 
 ns.LDB = LibStub("LibDataBroker-1.1");
@@ -394,6 +410,15 @@ function ns.AddSpannedLine(tt,content,cells,align,font)
 	return l;
 end
 
+function ns.getBorderPositions(f)
+	local us = UIParent:GetEffectiveScale();
+	local uw,uh = UIParent:GetWidth(), UIParent:GetHeight();
+	local fx,fy = f:GetCenter();
+	local fw,fh = f:GetWidth()/2, f:GetHeight()/2;
+	-- LEFT, RIGHT, TOP, BOTTOM
+	return fx-fw, uw-(fx+fw), uh-(fy+fh),fy-fh;
+end
+
 
   --------------------------------------------------------------------------
 --- coexistence with other addons                                          ---
@@ -437,7 +462,7 @@ do
 			tinsert(msgs, ns.LC.color("ltblue",found[i]).."\n"..ns.LC.color("ltgray"," >> ")..L[list[found[i]]]);
 		end
 		return ns.LC.color("orange",L["CoExistDisabled"]).."\n"
-			.. table.concat(msgs,"\n");
+			.. tconcat(msgs,"\n");
 	end
 end
 
@@ -542,9 +567,9 @@ end
 function ns.pairsByKeys(t, f)
 	local a = {}
 	for n in pairs(t) do
-		table.insert(a, n)
+		tinsert(a, n)
 	end
-	table.sort(a, f)
+	tsort(a, f)
 	local i = 0      -- iterator variable
 	local function iter()   -- iterator function
 		i = i + 1
@@ -604,48 +629,39 @@ end
 function ns.strWrap(text, limit, insetCount, insetChr, insetLastChr)
 	if not text then return ""; end
 	if text:match("\n") or text:match("%|n") then
-		local txt = gsub(text,"%|n","\n");
+		local txt = text:gsub("%|n","\n");
 		local strings,tmp = {strsplit("\n",txt)},{};
 		for i=1, #strings do
 			tinsert(tmp,ns.strWrap(strings[i], limit, insetCount, insetChr, insetLastChr));
 		end
-		return table.concat(tmp,"\n");
+		return tconcat(tmp,"\n");
 	end
-	if strlen(text)<=limit then return text; end
+	if text:len()<=limit then return text; end
 	local i,result,inset = 1,{},"";
 	if type(insetCount)=="number" then
-		inset = strrep(insetChr or " ",insetCount - (strlen(insetLastChr or ""))).. (insetLastChr or "");
+		inset = (insetChr or " "):rep(insetCount-(insetLastChr or ""):len())..(insetLastChr or "");
 	end
-	for str in string.gmatch(text, "([^ \n]+)") do
-		local tmp = (result[i] and result[i].." " or "")..strtrim(str);
-		if strlen(tmp)<=limit then
+	for str in text:gmatch("([^ \n]+)") do
+		local tmp = (result[i] and result[i].." " or "")..str:trim();
+		if tmp:len()<=limit then
 			result[i]=tmp;
 		else
 			i=i+1;
 			result[i]=str;
 		end
 	end
-	return table.concat(result,"|n"..inset)
-end
-
-function ns.getBorderPositions(f)
-	local us = UIParent:GetEffectiveScale();
-	local uw,uh = UIParent:GetWidth(), UIParent:GetHeight();
-	local fx,fy = f:GetCenter();
-	local fw,fh = f:GetWidth()/2, f:GetHeight()/2;
-	-- LEFT, RIGHT, TOP, BOTTOM
-	return fx-fw, uw-(fx+fw), uh-(fy+fh),fy-fh;
+	return tconcat(result,"|n"..inset)
 end
 
 function ns.strCut(str,limit)
-	if strlen(str)>limit-3 then str = strsub(str,1,limit-3).."..." end
+	if str:len()>limit-3 then str = strsub(str,1,limit-3).."..." end
 	return str
 end
 
 function ns.strFill(str,pat,count,append)
-	local l = (count or 1) - strlen(str);
+	local l = (count or 1) - str:len();
 	if l<=0 then return str; end
-	local p = strrep(pat or " ", l);
+	local p = (pat or " "):rep(l);
 	if append then return str..p; end
 	return p..str;
 end
@@ -726,8 +742,8 @@ do
 	local update,d,ticker,_ = false,{ids={}, seen={}, bags={},inv={},item={}, callbacks={any={},bags={},inv={},item={}}, preScanCallbacks={}, linkData={}, tooltipData={}, NeedTooltip={}};
 	local locked,tickerDelay,defaultDelay,f = false,0.18,1,CreateFrame("Frame");
 	local GetItemInfoFailed,IsEnabled = false,false;
-	local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d*)");
-	local _UPGRADES = gsub(ITEM_UPGRADE_TOOLTIP_FORMAT,": %%d/%%d","");
+	local _ITEM_LEVEL = ITEM_LEVEL:gsub("%%d","(%%d*)");
+	local _UPGRADES = ITEM_UPGRADE_TOOLTIP_FORMAT:gsub(": %%d/%%d","");
 	local INVTYPES = { -- since 7.1 - GetItemInfo response incorrect itemType for armor and weapons
 		INVTYPE_THROWN = WEAPON,INVTYPE_HOLDABLE = WEAPON,INVTYPE_RANGED = WEAPON,INVTYPE_RANGEDRIGHT = WEAPON,INVTYPE_WEAPON = WEAPON,
 		INVTYPE_WEAPONMAINHAND = WEAPON,INVTYPE_WEAPONMAINHAND_PET = WEAPON,INVTYPE_WEAPONOFFHAND = WEAPON,INVTYPE_2HWEAPON = WEAPON,
@@ -1206,8 +1222,8 @@ do
 		data.lines={};
 		for _,v in ipairs(regions) do
 			if (v~=nil) and (v:GetObjectType()=="FontString")then
-				local str = strtrim(v:GetText() or "");
-				if strlen(str)>0 then
+				local str = (v:GetText() or ""):trim();
+				if str:len()>0 then
 					tinsert(data.lines,str);
 				end
 			end
@@ -1319,19 +1335,19 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 		tinsert(t, (colors and ns.LC.color(colors[1],str) or str) .. (opts.coins and tex:format("Copper") or "") );
 	end
 
-	return table.concat(t,opts.sep);
+	return tconcat(t,opts.sep);
 end
 
 
 -- ----------------------------------------------------- --
 -- screen capture mode - string replacement function     --
 -- ----------------------------------------------------- --
-function ns.scm(str,all)
+function ns.scm(str,all,str2)
 	if str==nil then return "" end
-	str = tostring(str);
+	str2,str = (str2 or "*"),tostring(str);
 	local length = str:len();
 	if length>0 and ns.profile.GeneralOptions.scm==true then
-		str = all and strrep("*",length) or strsub(str,1,1)..strrep("*",length-1);
+		str = all and str2:rep(length) or strsub(str,1,1)..str2:rep(length-1);
 	end
 	return str;
 end
@@ -1416,7 +1432,7 @@ do
 		for k,v in pairs(t) do
 			tinsert(a,f:format(v.order or 100,k));
 		end
-		table.sort(a);
+		tsort(a);
 		local i = 0;
 		local function iter()
 			i=i+1;
@@ -1438,9 +1454,9 @@ do
 					break;
 				end
 			end
-			table.insert(a, n);
+			tinsert(a, n);
 		end
-		table.sort(a);
+		tsort(a);
 		local i,_ = 0;
 		local function iter()
 			i = i + 1
@@ -1637,7 +1653,7 @@ do
 									end
 								end
 								self:AddEntry({
-									label = gsub(value.name,"|n"," "),
+									label = value.name:gsub("|n"," "),
 									checked = function()
 										if key=="minimap" then
 											return not ns.profile[modName][key].hide;
@@ -1938,7 +1954,7 @@ do
 		end
 		for i,v in ipairs(_lines) do
 			if (v) then
-				v = table.concat(v," - ");
+				v = tconcat(v," - ");
 				if (type(tt.SetCell)=="function") then
 					local line = tt:AddLine();
 					tt:SetCell(line,1,v,nil,"LEFT",ttColumns or 0);
@@ -2056,7 +2072,7 @@ function ns.textBar(num,values,colors,Char)
 	tinsert(chars,{cur_rest>=num and 0 or num-cur_rest,colors[iMax]});
 	for i,v in ipairs(chars)do
 		if v[1]>0 then
-			bar = bar..ns.LC.color(v[2] or "white",strrep(Char,v[1]));
+			bar = bar..ns.LC.color(v[2] or "white",Char:rep(v[1]));
 		end
 	end
 	return bar;

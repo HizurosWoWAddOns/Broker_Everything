@@ -8,6 +8,8 @@ Broker_Everything_AceDB = {}; -- new config data table controlled by AceDB
 -- some usefull namespace to locals
 local addon, ns = ...;
 local C, L = ns.LC.color, ns.L;
+local wipe,ipairs,pairs,type=wipe,ipairs,pairs,type;
+local UnitLevel,UnitFactionGroup=UnitLevel,UnitFactionGroup;
 
 
 -- core event frame --

@@ -45,11 +45,6 @@ local colorSets = setmetatable({values={}},{
 	end
 })
 
-colorSets.set1 = {[20]="red",[40]="orange",[99]="yellow",[100]="green"};
-colorSets.set2 = {[15]="red",[40]="orange",[70]="yellow",[100]="white"};
-colorSets.set3 = {[20]="red",[40]="orange",[60]="yellow",[99]="green",[100]="ltblue"};
-colorSets.set4 = {[15]="red",[40]="orange",[60]="yellow",[80]="green",[100]="white"};
-
 
 -- register icon names and default files --
 -------------------------------------------
@@ -333,6 +328,11 @@ end
 function module.init()
 	ns.items.Enable();
 
+	colorSets.set1 = {[20]="red",[40]="orange",[99]="yellow",[100]="green"};
+	colorSets.set2 = {[15]="red",[40]="orange",[70]="yellow",[100]="white"};
+	colorSets.set3 = {[20]="red",[40]="orange",[60]="yellow",[99]="green",[100]="ltblue"};
+	colorSets.set4 = {[15]="red",[40]="orange",[60]="yellow",[80]="green",[100]="white"};
+
 	if not hiddenTooltip then
 		hiddenTooltip = CreateFrame("GameTooltip", "BE_Durability_ScanTip", nil, "GameTooltipTemplate")
 		hiddenTooltip:SetOwner(UIParent, "ANCHOR_NONE")
@@ -377,60 +377,61 @@ function module.onevent(self,event,arg1)
 		end
 		return;
 	end
-
-	-- RepairAll - ButtonHooks - custom events
-	if (event=="BE_EVENT_REPAIRALL_GUILD") then
-		lastRepairs_add(merchant.costs,true);
-		if (ns.profile[name].chatRepairInfo) then
-			ns.print(L["RepairAll"],L["by guild fund"]..":",ns.GetCoinColorOrTextureString(name,merchant.costs,{color="white"}));
-		end
-		merchant.costs=0;
-	elseif (event=="BE_EVENT_REPAIRALL_PLAYER") then
-		lastRepairs_add(merchant.costs);
-		if (ns.profile[name].chatRepairInfo) then
-			ns.print(L["RepairAll"],L["by player money"]..":",ns.GetCoinColorOrTextureString(name,merchant.costs,{color="white"}));
-		end
-		merchant.costs=0;
-	end
-
-	if (merchant.repair) then
-		if (InRepairMode()) and (merchant.costs>0) and (event=="PLAYER_MONEY") then
-			local costs = GetRepairAllCost();
-			merchant.diff = merchant.costs-costs;
-			if (merchant.diff>0) then
-				merchant.costs = costs;
-				merchant.single = merchant.single + merchant.diff; -- single item repair mode, step 1
+	if ns.eventPlayerEnteredWorld then
+		-- RepairAll - ButtonHooks - custom events
+		if (event=="BE_EVENT_REPAIRALL_GUILD") then
+			lastRepairs_add(merchant.costs,true);
+			if (ns.profile[name].chatRepairInfo) then
+				ns.print(L["RepairAll"],L["by guild fund"]..":",ns.GetCoinColorOrTextureString(name,merchant.costs,{color="white"}));
 			end
+			merchant.costs=0;
+		elseif (event=="BE_EVENT_REPAIRALL_PLAYER") then
+			lastRepairs_add(merchant.costs);
+			if (ns.profile[name].chatRepairInfo) then
+				ns.print(L["RepairAll"],L["by player money"]..":",ns.GetCoinColorOrTextureString(name,merchant.costs,{color="white"}));
+			end
+			merchant.costs=0;
 		end
 
-		if (event=="MERCHANT_CLOSED") then
-			if (merchant.single>0) then -- single item repair mode, step 2
-				lastRepairs_add(merchant.single, nil, false);
-				if (ns.profile[name].chatRepairInfo) then
-					ns.print(L["SingleRepairSummary"]..":",ns.GetCoinColorOrTextureString(name,merchant.single,{color="white"}));
+		if (merchant.repair) then
+			if (InRepairMode()) and (merchant.costs>0) and (event=="PLAYER_MONEY") then
+				local costs = GetRepairAllCost();
+				merchant.diff = merchant.costs-costs;
+				if (merchant.diff>0) then
+					merchant.costs = costs;
+					merchant.single = merchant.single + merchant.diff; -- single item repair mode, step 1
 				end
 			end
-			merchant = {repair=false,costs=0,diff=0,single=0};
+
+			if (event=="MERCHANT_CLOSED") then
+				if (merchant.single>0) then -- single item repair mode, step 2
+					lastRepairs_add(merchant.single, nil, false);
+					if (ns.profile[name].chatRepairInfo) then
+						ns.print(L["SingleRepairSummary"]..":",ns.GetCoinColorOrTextureString(name,merchant.single,{color="white"}));
+					end
+				end
+				merchant = {repair=false,costs=0,diff=0,single=0};
+			end
 		end
-	end
 
-	local dataobj = self.obj or ns.LDB:GetDataObjectByName(module.ldbName)
-	local repairCosts, equipCost, bagCost, dA, dL, dLSlot, d = scanAll();
+		local dataobj = self.obj or ns.LDB:GetDataObjectByName(module.ldbName)
+		local repairCosts, equipCost, bagCost, dA, dL, dLSlot, d = scanAll();
 
-	if (ns.profile[name].inBroker=="costs") then
-		dataobj.text = ns.GetCoinColorOrTextureString(name,repairCosts)
-	else
-		d = floor((ns.profile[name].lowestItem) and dL or dA);
-		if (ns.profile[name].inBroker=="percent") then
-			dataobj.text = C(colorSets(d)or "blue",d.."%");
-		elseif (ns.profile[name].inBroker=="percent/costs") then
-			dataobj.text = C(colorSets(d)or "blue",d.."%")..", "..ns.GetCoinColorOrTextureString(name,repairCosts);
-		elseif (ns.profile[name].inBroker=="costs/percent") then
-			dataobj.text = ns.GetCoinColorOrTextureString(name,repairCosts)..", "..C(colorSets(d) or "blue",d.."%");
+		if (ns.profile[name].inBroker=="costs") then
+			dataobj.text = ns.GetCoinColorOrTextureString(name,repairCosts)
+		else
+			d = floor((ns.profile[name].lowestItem) and dL or dA);
+			if (ns.profile[name].inBroker=="percent") then
+				dataobj.text = C(colorSets(d)or "blue",d.."%");
+			elseif (ns.profile[name].inBroker=="percent/costs") then
+				dataobj.text = C(colorSets(d)or "blue",d.."%")..", "..ns.GetCoinColorOrTextureString(name,repairCosts);
+			elseif (ns.profile[name].inBroker=="costs/percent") then
+				dataobj.text = ns.GetCoinColorOrTextureString(name,repairCosts)..", "..C(colorSets(d) or "blue",d.."%");
+			end
 		end
-	end
 
-	date_format = ns.profile[name].dateFormat;
+		date_format = ns.profile[name].dateFormat;
+	end
 end
 
 -- function module.onclick(self,button) end
