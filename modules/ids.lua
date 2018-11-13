@@ -144,8 +144,7 @@ local function createTooltip(tt)
 			};
 			for diff, data in ns.pairsByKeys(lst) do
 				if diff~=0 and showDiff[diff] and (diffCounter[diff][2]>0 or diffCounter[diff][1]>0) then
-					local header,doExtend = (diffName[diff]) and diffName[diff] or "Unknown type",false;
-					tt:AddLine(C("gray",header));
+					local header,headerShown,doExtend = (diffName[diff]) and diffName[diff] or "Unknown type",false,false;
 					for i,v in ipairs(data) do
 						local duration,color,show = false,"ltgray",ns.profile[name].showExpiredEntries;
 						if v[instanceReset]>0 then
@@ -171,6 +170,10 @@ local function createTooltip(tt)
 							duration = C("gray",RAID_INSTANCE_EXPIRES_EXPIRED);
 						end
 						if show then
+							if not headerShown then
+								tt:AddLine(C("gray",header));
+								headerShown=true;
+							end
 							local l=tt:AddLine(
 								C(color,"    "..v[instanceName]),
 								v[difficultyName].. (not diffName[diff] and " ("..v[instanceDifficulty]..")" or ""),
