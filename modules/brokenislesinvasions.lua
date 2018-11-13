@@ -16,8 +16,9 @@ if GetCurrentRegionName()=="EU" then
 	oldStart = 1517682600;
 end
 local uiMapIDs = {
-	630, 634, 641, 650
+	619,
 };
+
 
 -- register icon names and default files --
 -------------------------------------------
@@ -32,23 +33,15 @@ local function updateInvasionState()
 	nextInvasionStart = interval-lastInvasionStart;
 
 	if lastInvasionStart <= length and (not WorldMapFrame:IsShown()) and (not currentInvasion) then
-		if SetMapByID then
-			SetMapByID(1007);
-			local numPOIs = GetNumMapLandmarks();
-			for i=1, numPOIs do
-				local landmarkType, name, description, textureIndex, x, y, mapLinkID, inBattleMap, graveyardID, areaID, poiID, isObjectIcon, atlasIcon, displayAsBanner, mapFloor, textureKitPrefix = C_WorldMap.GetMapLandmarkInfo(i);
-				if atlasIcon=="legioninvasion-map-icon-portal" then
-					currentInvasion = poiID
-					break;
-				end
-			end
-		elseif C_Map.RequestPreloadMap then
-			for i=1, #uiMapIDs do
-				local invasionID = C_InvasionInfo.GetInvasionForUiMapID(uiMapIDs[i]);
-				if invasionID then
-					local invasionInfo = C_InvasionInfo.GetInvasionInfo(invasionID);
-					if invasionInfo then
-						break;
+		for i=1, #uiMapIDs do
+			C_Map.RequestPreloadMap(uiMapIDs[i]);
+			local areaPOIs = C_AreaPoiInfo.GetAreaPOIForMap(uiMapIDs[i]);
+			if areaPOIs and #areaPOIs>0 then
+				for i=1, #areaPOIs do
+					local areaPoiID = areaPOIs[i];
+					local poiInfo = C_AreaPoiInfo.GetAreaPOIInfo(uiMapIDs[i], areaPoiID);
+					if poiInfo and poiInfo.atlasName=="legioninvasion-map-icon-portal" then
+						currentInvasion = poiInfo.description;
 					end
 				end
 			end
@@ -74,20 +67,8 @@ local function createTooltip(tt)
 	local l = tt:AddHeader(C("dkyellow",L[name]));
 
 	if lastInvasionStart <= length and currentInvasion then
-		local map = false;
-		if SetMapByID then
-			local poiInfo = C_WorldMap.GetAreaPOIInfo(1007,currentInvasion,0);
-			if poiInfo then
-				map = poiInfo.description;
-			end
-		elseif C_Map.RequestPreloadMap then
-			local mapInfo = C_Map.GetMapInfo(currentInvasion);
-			if mapInfo then
-				map = mapInfo.name;
-			end
-		end
 		tt:AddSeparator(4,0,0,0,0);
-		tt:SetCell(tt:AddLine(),1,C(map and "red" or "gray",map or "Zone?"),nil,"CENTER",0);
+		tt:SetCell(tt:AddLine(),1,C("orange",currentInvasion),nil,"CENTER",0);
 		tt:SetCell(tt:AddLine(),1,C("ltgreen",BRAWL_TOOLTIP_ENDS:format(SecondsToTime(length-lastInvasionStart))),nil,"CENTER",0);
 	end
 
@@ -100,10 +81,10 @@ local function createTooltip(tt)
 		tt:AddLine(C("ltyellow",date("%Y-%m-%d",n)),C("ltgreen",date("%H:%M",n)));
 	end
 
-	if ns.profile.GeneralOptions.showHints then
+	--if ns.profile.GeneralOptions.showHints then
 		--tt:AddSeparator(4,0,0,0,0)
 		--ns.ClickOpts.ttAddHints(tt,name);
-	end
+	--end
 	ns.roundupTooltip(tt);
 end
 
