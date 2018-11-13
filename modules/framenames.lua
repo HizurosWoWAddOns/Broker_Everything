@@ -97,10 +97,6 @@ function module.onupdate()
 				F = f.key;
 			end
 
-			if F == nil and type(f.GetDebugName) then
-				F = f:GetDebugName();
-			end
-
 			if F == nil then
 				F = "<anonym>";
 				for i,v in pairs(f:GetParent() or {})do

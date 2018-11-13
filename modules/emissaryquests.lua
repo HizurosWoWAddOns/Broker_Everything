@@ -187,7 +187,6 @@ local function updateData()
 			end
 		end
 	end
-	XXX = factions
 	updateBroker();
 	C_Timer.After(1,unlock);
 end

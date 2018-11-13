@@ -144,8 +144,8 @@ local function opt(info,value,...)
 			db.profile[section][key]=value;
 			if section=="GeneralOptions" then
 				for modName,mod in pairs(ns.modules)do
-					if mod.OnEvent then
-						mod:OnEvent("BE_UPDATE_CFG",key);
+					if mod.onevent then
+						mod.onevent(mod.eventFrame,"BE_UPDATE_CFG",key);
 --@do-not-package@
 					else
 						ns.debug("<FIXME:opt:MissingEventFunction>",section,modName);
@@ -153,8 +153,8 @@ local function opt(info,value,...)
 					end
 				end
 			else
-				if ns.modules[section].OnEvent then
-					ns.modules[section]:OnEvent("BE_UPDATE_CFG",key);
+				if ns.modules[section].onevent then
+					ns.modules[section].onevent(ns.modules[section].eventFrame,"BE_UPDATE_CFG",key);
 --@do-not-package@
 				else
 					ns.debug("<FIXME:opt:MissingEventFunction>",section);

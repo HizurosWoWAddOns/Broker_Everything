@@ -564,22 +564,30 @@ end
 -- Function to Sort a table by the keys               --
 -- Sort function fom http://www.lua.org/pil/19.3.html --
 -- -------------------------------------------------- --
-function ns.pairsByKeys(t, f)
-	local a = {}
-	for n in pairs(t) do
-		tinsert(a, n)
+do
+	local function invert(a,b)
+		return a>b;
 	end
-	tsort(a, f)
-	local i = 0      -- iterator variable
-	local function iter()   -- iterator function
-		i = i + 1
-		if a[i] == nil then
-			return nil
-		else
-			return a[i], t[a[i]]
+	function ns.pairsByKeys(t, f)
+		local a = {}
+		for n in pairs(t) do
+			tinsert(a, n)
 		end
+		if f==true then
+			f = invert;
+		end
+		tsort(a, f)
+		local i = 0      -- iterator variable
+		local function iter()   -- iterator function
+			i = i + 1
+			if a[i] == nil then
+				return nil
+			else
+				return a[i], t[a[i]]
+			end
+		end
+		return iter
 	end
-	return iter
 end
 
 -- ------------------------------------------------------------ --

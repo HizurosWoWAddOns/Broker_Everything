@@ -100,9 +100,9 @@ local function moduleInit(name)
 				mod.onevent(mod.eventFrame,"BE_UPDATE_CFG");
 				mod.onevent(mod.eventFrame,"BE_UPDATE_CFG","ClickOpt");
 				for _, e in pairs(mod.events) do
-					if e=="ADDON_LOADED" or (e=="ADDON_LOADED" and ns.eventPlayerEnteredWorld) then
+					if e=="ADDON_LOADED" then
 						mod.onevent(mod.eventFrame,e,addon);
-					elseif e=="PLAYER_LOGIN" or (e=="PLAYER_LOGIN" and ns.eventPlayerEnteredWorld) then
+					elseif (e=="PLAYER_LOGIN" and ns.eventPlayerEnteredWorld) then
 						mod.onevent(mod.eventFrame,e);
 					end
 					mod.eventFrame:RegisterEvent(e);

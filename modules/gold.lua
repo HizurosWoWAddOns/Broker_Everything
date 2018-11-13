@@ -3,6 +3,7 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
+local time,date,tinsert,tconcat=time,date,tinsert,table.concat;
 
 
 -- module own local variables and local cached functions --
@@ -13,7 +14,17 @@ local login_money = nil;
 local next_try = false;
 local current_money = 0
 local faction = UnitFactionGroup("Player")
-local profit_ttLines, profit_date = { {L["Session"]}, {HONOR_TODAY,"yd"}, {HONOR_YESTERDAY,"yd",true}, {L["This week"],"cw"}, {HONOR_LASTWEEK,"cw",true} },{};
+local player = ns.player.name_realm;
+local profit,ttLines = {},{
+	{"showProfitSession",L["Session"]},
+	{"showProfitDaily",HONOR_TODAY,"daily"},
+	{"showProfitDaily",HONOR_YESTERDAY,"daily",true},
+	{"showProfitWeekly",ARENA_THIS_WEEK,"weekly"},
+	{"showProfitWeekly",HONOR_LASTWEEK,"weekly",true},
+	{"showProfitMonthly",L["This month"],"monthly"},
+	{"showProfitMonthly",L["Last month"],"monthly",true},
+};
+
 
 -- register icon names and default files --
 -------------------------------------------
@@ -22,74 +33,59 @@ I[name] = {iconfile="Interface\\Minimap\\TRACKING\\Auctioneer",coords={0.05,0.95
 
 -- some local functions --
 --------------------------
-local function getProfit(_type,last)
-	local profit = 0;
-	if _type then
-		local tbl = _type=="cw" and "weekly" or "daily";
-		if last then
-			local entry = _type.."_last";
-			if ns.data[name].profit[tbl][profit_date[entry]] then
-				profit = ns.data[name].profit[tbl][profit_date[entry]][2]-ns.data[name].profit[tbl][profit_date[entry]][1];
-			end
-		else
-			local entry = _type.."_current";
-			profit = current_money-ns.data[name].profit[tbl][profit_date[entry]][1];
+local function getProfit(Type,last)
+	local value = 0;
+	if Type then
+		local p,d=ns.data[name].Profit[Type][player],profit[Type];
+		if not last then
+			value = current_money-p[d[1]];
+		elseif p[d[2]]~=false then
+			value = tonumber(p[d[2]]);
 		end
-	else -- session
-		if login_money==nil then
-			return 0,0
-		end
-		profit = current_money-login_money;
+	elseif login_money~=nil then -- session
+		value = current_money-login_money;
 	end
-	if profit<0 then
-		return 0-profit,-1;
+	if value<0 then
+		return 0-value,-1;
 	end
-	return profit, profit>0 and 1 or 0;
+	return value, value>0 and 1 or 0;
 end
 
-local function updateProfit()
-	local t,d = time(),86400;
-	profit_date.yd_current = tonumber(date("%j"))
-	profit_date.yd_last = tonumber(date("%j",t-d))
-	profit_date.cw_current = tonumber(date("%V"))
-	for i=1 ,7 do
-		local cw = tonumber(date("%V",t-(d*i)))
-		if cw ~= profit_date.cw_current then -- [lower than] does not work well on year change
-			profit_date.cw_last = cw;
-			break;
+local updateProfit;
+function updateProfit()
+	local w = date("%w"); w=w==0 and 7 or w;
+	local day,T,t = 86400,date("*t"),time();
+	local today = time({year=T.year,month=T.month,day=T.day,hour=23,min=59,sec=59});
+	local week = time({year=T.year,month=T.month,day=T.day+(7-w)+1,hour=0,min=0,sec=0})-1;
+
+	profit.daily = { today, today-day };
+	profit.weekly = { week, week-(day*7) };
+	profit.monthly = {
+		time({year=T.year,month=T.month+1,day=1,hour=0,min=0,sec=0})-1,
+		time({year=T.year,month=T.month,day=1,hour=0,min=0,sec=0})-1
+	};
+
+	for k,v in pairs(profit) do
+		ns.tablePath(ns.data[name],"Profit",k,player);
+		local p = ns.data[name].Profit[k][player];
+		if  p[v[1]]==nil then
+			p[v[1]] = current_money;
+		end
+		if  p[v[2]]==nil then
+			p[v[2]] = false;
+		elseif type(p[v[2]])=="number" then
+			p[v[2]] = tostring(current_money-p[v[2]]);
+		end
+		local c = 0;
+		for x,y in ns.pairsByKeys(p,true) do
+			c=c+1;
+			if c>5 then
+				p[x] = nil; -- remove older entries
+			end
 		end
 	end
 
-	-- remove older values
-	for k,v in pairs(ns.data[name].profit.daily)do
-		if k~=profit_date.yd_current and k~=profit_date.yd_last then
-			ns.data[name].profit.daily[k]=nil;
-		end
-	end
-
-	for k,v in pairs(ns.data[name].profit.weekly)do
-		if k~=profit_date.cw_current and k~=profit_date.cw_last then
-			ns.data[name].profit.weekly[k]=nil;
-		end
-	end
-
-	if ns.data[name].profit.daily[profit_date.yd_current]==nil then
-		ns.data[name].profit.daily[profit_date.yd_current] = {current_money};
-		if ns.data[name].profit.daily[profit_date.yd_last] then
-			ns.data[name].profit.daily[profit_date.yd_last][2] = current_money;
-		end
-	end
-
-	if ns.data[name].profit.weekly[profit_date.cw_current]==nil then
-		ns.data[name].profit.weekly[profit_date.cw_current] = {current_money};
-		if ns.data[name].profit.weekly[profit_date.cw_last] then
-			ns.data[name].profit.weekly[profit_date.cw_last][2] = current_money;
-		end
-	end
-
-	local t = date("*t");
-	local timeout = 86401-(time()-time({year=t.year, month=t.month, day=t.day, hour=0}));
-	C_Timer.After(timeout,updateProfit);
+	C_Timer.After(today-time()+1,updateProfit); -- next update
 end
 
 local function deleteCharacterGoldData(self,name_realm,button)
@@ -166,19 +162,22 @@ function createTooltip(tt,update)
 		end
 	end
 
-	if ns.profile[name].showProfit then
+	if ns.profile[name].showProfitSession or ns.profile[name].showProfitDaily or ns.profile[name].showProfitWeekly or ns.profile[name].showProfitMonthly then
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltyellow","Profit / Loss"),C("orange","(Experimental)"));
 		tt:AddSeparator();
-		for i,v in ipairs(profit_ttLines)do
-			local profit, direction = getProfit(v[2],v[3]);
-			local color,icon = "gray","";
-			if direction==1 then
-				color,icon = "ltgreen","|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t";
-			elseif direction==-1 then
-				color,icon = "ltred","|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t";
+		for i=1, #ttLines do
+			local v = ttLines[i];
+			if ns.profile[name][v[1]] then
+				local profit, direction = getProfit(v[3],v[4]);
+				local color,icon = "gray","";
+				if direction==1 then
+					color,icon = "ltgreen","|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t";
+				elseif direction==-1 then
+					color,icon = "ltred","|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t";
+				end
+				tt:AddLine(C(color,v[2]), icon .. ns.GetCoinColorOrTextureString(name,profit,{inTooltip=true}));
 			end
-			tt:AddLine(C(color,v[1]), icon .. ns.GetCoinColorOrTextureString(name,profit,{inTooltip=true}));
 		end
 	end
 
@@ -205,14 +204,16 @@ module = {
 	},
 	config_defaults = {
 		enabled = true,
-		goldColor = nil,
 		showAllFactions=true,
 		showRealmNames=true,
 		showCharsFrom="2",
 		showCharGold = true,
 		showSessionProfit = true,
 		splitSummaryByFaction = true,
-		showProfit = true,
+		showProfitSession = true,
+		showProfitDaily = true,
+		showProfitWeekly = true,
+		showProfitMonthly = true,
 	},
 	clickOptionsRename = {
 		["1_open_tokenframe"] = "currency",
@@ -243,7 +244,10 @@ function module.options()
 		},
 		tooltip = {
 			splitSummaryByFaction={ type="toggle", order=1, name=L["Split summary by faction"], desc=L["Separate summary by faction (Alliance/Horde)"] },
-			showProfit = { type="toggle", order=1, name=L["Show profit"], desc=L["Display a little list of profit/loss stats of your current toon. (Session, today, yesterday, this week and last week)"]},
+			showProfitSession = { type="toggle", order=1, name=L["Show session profit"], desc=L["Display profit/loss of the current session in tooltip"]},
+			showProfitDaily   = { type="toggle", order=2, name=L["Show daily profit"],   desc=L["Display today and yesterday profit in tooltip"] },
+			showProfitWeekly  = { type="toggle", order=2, name=L["Show weekly profit"],  desc=L["Display this week and last week profit in tooltip"] },
+			showProfitMonthly = { type="toggle", order=2, name=L["Show monthly profit"], desc=L["Display this month and last month profit in tooltip"] },
 			showAllFactions=2,
 			showRealmNames=3,
 			showCharsFrom=4,
@@ -276,21 +280,16 @@ function module.onevent(self,event,arg1)
 		current_money = GetMoney();
 		ns.toon.gold = current_money;
 		if event=="PLAYER_LOGIN" then
-			login_money = current_money;
-
-			if ns.data[name]==nil then
-				ns.data[name] = {profit={daily={},weekly={}}};
-			elseif ns.data[name].profit==nil then
-				ns.data[name].profit={daily={},weekly={}};
-			else
-				if ns.data[name].profit.daily==nil then
-					ns.data[name].profit.daily = {};
-				end
-				if ns.data[name].profit.weekly==nil then
-					ns.data[name].profit.weekly = {};
-				end
+			if ns.data[name].profit~=nil then
+				ns.data[name].profit=nil;
 			end
-
+--@do-not-package@
+	        ns.profileSilenceFIXME=true;
+--@end-do-not-package@
+			if ns.profile[name].showProfit~=nil then
+				ns.profile[name].showProfit=nil;
+			end
+			login_money = current_money;
 			updateProfit();
 		end
 		updateBroker();
