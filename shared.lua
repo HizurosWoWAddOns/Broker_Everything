@@ -2068,20 +2068,18 @@ end
 -- num, {<max>,<cur>[,<rest>]},{<max>,<cur>[,<rest>]}
 function ns.textBar(num,values,colors,Char)
 	local iMax,iMin,iRest = 1,2,3;
-	local bar,chars,Char = "",{},Char or "=";
-	values[iRest] = values[iRest] or 0;
+	values[iRest] = (values[iRest] and values[iRest]>0) and values[iRest] or 0;
 	if values[iMax]==1 then
 		values[iMax],values[iMin],values[iRest] = values[iMax]*100,values[iMin]*100,values[iRest]*100;
 	end
-	local ppc = values[iMax]/num; -- percent per character
-	tinsert(chars,{ns.round(values[iMin]/ppc),colors[iMin]});
-	tinsert(chars,{values[iMin]<100 and ns.round(values[iRest]/ppc) or 0,colors[iRest]});
-	local cur_rest = chars[1][1]+chars[2][1];
-	tinsert(chars,{cur_rest>=num and 0 or num-cur_rest,colors[iMax]});
-	for i,v in ipairs(chars)do
-		if v[1]>0 then
-			bar = bar..ns.LC.color(v[2] or "white",Char:rep(v[1]));
-		end
+	local Char,resting,ppc,earned,tonextlvl = Char or "=",0;
+	ppc = values[iMax]/num; -- percent per character
+	earned = ns.round(values[iMin]/ppc); -- number of characters of earned experience
+	if values[iMin]<100 then
+		resting = ns.round(values[iRest]/ppc); -- number of characters of resting bonus
 	end
-	return bar;
+	tonextlvl = num-(earned+resting); -- number of characters of open experience to the next level
+	return ns.LC.color(colors[iMin]  or "white",Char:rep(earned))
+		.. (resting>0 and ns.LC.color(colors[iRest] or "white",Char:rep(resting)) or "")
+		.. (tonextlvl>0 and ns.LC.color(colors[iMax] or "white",Char:rep(tonextlvl)) or "");
 end
