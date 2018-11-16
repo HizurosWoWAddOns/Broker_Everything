@@ -25,6 +25,13 @@ local function updateTrainerName(data)
 	end
 end
 
+local function updateBroker()
+	local currentSpeed = GetUnitSpeed( UnitInVehicle("player") and "vehicle" or "player" );
+	local str = ("%."..ns.profile[name].precision.."f"):format(currentSpeed / 7 * 100 ) .. "%";
+	local l = 4 + (ns.profile[name].precision>0 and ns.profile[name].precision+1 or 0) - str:len();
+	ns.LDB:GetDataObjectByName(module.ldbName).text = strrep(" ",l)..str;
+end
+
 local function tooltipOnEnter(self,data)
 	GameTooltip:SetOwner(tt,"ANCHOR_NONE");
 	GameTooltip:SetPoint("TOP",tt,"BOTTOM");
@@ -278,7 +285,6 @@ end
 ---------------------------------------
 module = {
 	events = {"PLAYER_LOGIN"},
-	onupdate_interval = 0.16,
 	config_defaults = {
 		enabled = false,
 		precision = 0,
@@ -365,14 +371,8 @@ function module.onevent(self,event,msg)
 				["callback"] = updateTrainerName
 			});
 		end
+		C_Timer.NewTicker(1/20,updateBroker);
 	end
-end
-
-function module.onupdate()
-	local currentSpeed = GetUnitSpeed( UnitInVehicle("player") and "vehicle" or "player" );
-	local str = ("%."..ns.profile[name].precision.."f"):format(currentSpeed / 7 * 100 ) .. "%";
-	local l = 4 + (ns.profile[name].precision>0 and ns.profile[name].precision+1 or 0) - str:len();
-	ns.LDB:GetDataObjectByName(module.ldbName).text = strrep(" ",l)..str;
 end
 
 -- function module.optionspanel(panel) end
