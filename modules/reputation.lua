@@ -193,18 +193,16 @@ function updateBroker()
 			tinsert(tmp,data[factionStandingText]);
 		end
 
-		if ns.profile[name].watchedSessionBroker and not data[friendID] and data[sessionValue]~=0 then
-			local col,str = "gray",false,data[sessionValue];
+		if ns.profile[name].watchedSessionBroker and not data[friendID] and tonumber(data[sessionValue]) and data[sessionValue]~=0 then
 			if data[sessionValue]>0 then
-				col,str = "ltgreen","+"..data[sessionValue];
+				insert(tmp,C("ltgreen","+"..data[sessionValue]));
 			elseif data[sessionValue]<0 then
-				col,str = "ltred",data[sessionValue];
+				insert(tmp,C("ltred","-"..data[sessionValue]));
 			end
-			insert(tmp,C(col,str));
 		end
 
-		if data[isParagon] then
-			tinsert(tmp,data[hasRewardPending] and "|TInterface/GossipFrame/ActiveQuestIcon:14:14:0:0|t" or "|TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t");
+		if data[isParagon] and data[hasRewardPending] then
+			tinsert(tmp,"|TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t|TInterface/GossipFrame/ActiveQuestIcon:14:14:0:0|t");
 		end
 
 		if #tmp>0 then
