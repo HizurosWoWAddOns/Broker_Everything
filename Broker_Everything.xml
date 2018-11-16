@@ -30,6 +30,7 @@
 	<Script file="modules/classspecs.lua"/>
 	<Script file="modules/clock.lua"/>
 	<Script file="modules/currency.lua"/>
+	<Script file="modules/difficulty.lua"/>
 	<Script file="modules/durability.lua"/>
 	<Script file="modules/emissaryquests.lua"/>
 	<Script file="modules/equipment.lua"/>
