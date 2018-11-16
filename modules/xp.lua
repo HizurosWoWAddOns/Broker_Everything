@@ -55,7 +55,9 @@ local function updateBroker()
 	elseif ns.profile[name].display == "4" then
 		dataobj.text = data.percentStr.." ("..data.restStr..")";
 	elseif ns.profile[name].display == "5" then
-		dataobj.text = ns.textBar(ns.profile[name].textBarCharCount,{1,data.percentCur or 1,data.percentRest-data.percentCur},{"gray2","violet","ltblue"},ns.profile[name].textBarCharacter);
+		data.percentRest = tonumber(data.percentRest) or 0;
+		data.percentCur = tonumber(data.percentCur) or 0;
+		dataobj.text = ns.textBar(ns.profile[name].textBarCharCount,{1,data.percentCur or 1,ns.round(data.percentRest-data.percentCur)},{"gray2","violet","ltblue"},ns.profile[name].textBarCharacter);
 	end
 end
 
