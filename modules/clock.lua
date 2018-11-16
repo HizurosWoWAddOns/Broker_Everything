@@ -139,6 +139,7 @@ module = {
 		["time"] = {"Switch (local or realm time)","module","switchTime"}, -- L["Switch (local or realm time)"]
 		["calendar"] = {"Calendar","call","ToggleCalendar"}, -- L["Calendar"]
 		["hoursmode"] = {"Switch (12 or 24 hours)","module","switchHoursMode"}, -- L["Switch (12 or 24 hours)"]
+		["stopwatch"] = {STOPWATCH_TITLE,"call","Stopwatch_Toggle"},
 		["menu"] = "OptionMenu"
 		-- open blizzards stopwatch?
 	}
