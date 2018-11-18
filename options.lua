@@ -192,7 +192,7 @@ local options = {
 			name = "",
 			args = {
 				spacer = { type="description", order=1, name=" ", width="half"},
-				reload = { type="execute", order=2, name=RELOADUI, func=ReloadUI },
+				reload = { type="execute", order=2, name=RELOADUI, func=C_UI.Reload },
 				info = { type="description", order=3, name=C("orange",L["OptReloadUIRequired"]), fontSize="medium", width="double", hidden=noReload},
 			},
 			hidden = true
@@ -540,7 +540,7 @@ function options.args.chars.func(info,button,a,b) -- function for buttons 'Up', 
 		buildCharDataOptions();
 	elseif key=="delete" then -- delete all
 		Broker_Everything_CharacterDB = {};
-		ReloadUI();
+		C_UI.Reload();
 	end
 end
 

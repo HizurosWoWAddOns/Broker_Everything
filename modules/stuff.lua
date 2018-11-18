@@ -15,7 +15,7 @@ local nextAction = nil;
 local clickActions = {
 	{"Do you really want to logout from this character?",function() securecall('Logout'); end}, -- L["Do you really want to logout from this character?"]
 	{"Do you really want to left the game?",function() securecall('Quit'); end}, -- L["Do you really want to left the game?"]
-	{"Do you really want to reload the UI?",function() securecall('ReloadUI'); end}, -- L["Do you really want to reload the UI?"]
+	{"Do you really want to reload the UI?",function() C_UI.Reload(); end}, -- L["Do you really want to reload the UI?"]
 	{"Do you really want to switch display mode?",function() SetCVar('gxWindow', 1 - GetCVar('gxWindow')); securecall('RestartGx'); end}, -- L["Do you really want to switch display mode?"]
 }
 local timeout=5;
@@ -34,7 +34,7 @@ StaticPopupDialogs["BE_CONFIRM_RELOADUI"] = {
 	button1 = ACCEPT,
 	button2 = CANCEL,
 	OnAccept = function()
-		ReloadUI()
+		C_UI.Reload()
 	end,
 	timeout = 20,
 	whileDead = true,
@@ -88,7 +88,7 @@ local function createTooltip(tt)
 	tt:SetLineScript(line, "OnMouseUp", toggleWindowMode);
 
 	line, column = tt:AddLine(RELOADUI)
-	tt:SetLineScript(line, "OnMouseUp", reloadUI); -- Use static Popup to avoid taint.
+	tt:SetLineScript(line, "OnMouseUp", C_UI.Reload); -- Use static Popup to avoid taint.
 
 	--line, column = tt:AddLine(LOGOUT)
 	--tt:SetLineScript(line, "OnMouseUp", Logout);
@@ -170,7 +170,7 @@ function module.onclick(self,button)
 		-- _(2); -- quit
 		ns.print(L["Sorry, this option is no longer available. The use of \"%s\" function are blocked by blizzard."]:format("Quit"));
 	elseif (button=="LeftButton") and (shift) then
-		ReloadUI();
+		C_UI.Reload();
 	elseif (button=="RightButton") and (shift) then
 		-- _(4); -- display mode
 	end
