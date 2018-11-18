@@ -101,7 +101,7 @@ local function updateBroker()
 	if ns.profile[name].showCharGold then
 		tinsert(broker,ns.GetCoinColorOrTextureString(name,current_money));
 	end
-	if ns.profile[name].showSessionProfit and login_money then
+	if ns.profile[name].showProfitSessionBroker and login_money then
 		local profit, direction = getProfit();
 		local sign = (direction==1 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (direction==-1 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
 		tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,profit));
@@ -208,7 +208,7 @@ module = {
 		showRealmNames=true,
 		showCharsFrom="2",
 		showCharGold = true,
-		showSessionProfit = true,
+		showProfitSessionBroker = true,
 		splitSummaryByFaction = true,
 		showProfitSession = true,
 		showProfitDaily = true,
@@ -240,7 +240,7 @@ function module.options()
 	return {
 		broker = {
 			showCharGold={ type="toggle", order=1, name=L["Show character gold"],     desc=L["Show character gold on broker button"] },
-			showSessionProfit={ type="toggle", order=2, name=L["Show session profit"],     desc=L["Show session profit on broker button"] },
+			showProfitSessionBroker={ type="toggle", order=2, name=L["Show session profit"],     desc=L["Show session profit on broker button"] },
 		},
 		tooltip = {
 			splitSummaryByFaction={ type="toggle", order=1, name=L["Split summary by faction"], desc=L["Separate summary by faction (Alliance/Horde)"] },
@@ -288,6 +288,10 @@ function module.onevent(self,event,arg1)
 --@end-do-not-package@
 			if ns.profile[name].showProfit~=nil then
 				ns.profile[name].showProfit=nil;
+			end
+			if ns.profile[name].showSessionProfit~=nil then
+				ns.profile[name].showProfitSessionBroker=ns.profile[name].showSessionProfit
+				ns.profile[name].showSessionProfit=nil
 			end
 			login_money = current_money;
 			updateProfit();
