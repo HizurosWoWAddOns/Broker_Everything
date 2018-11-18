@@ -8,21 +8,15 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Game Menu"; -- MAINMENU_BUTTON L["ModDesc-Game Menu"]
-local ttName,tt2Name,tt,tt2,module = name.."TT",name.."TT2"
+local ttName,tt,module = name.."TT"
 local last_click = 0
 local iconCoords = "16:16:0:-1:64:64:4:56:4:56" --"16:16:0:-1:64:64:3:58:3:58"
 local link = "|T%s:%s|t %s"
 local link_disabled = "|T%s:%s:66:66:66|t "..C("gray", "%s")
 local gmticket = {}
 local customTitle = MAINMENU_BUTTON
-local timeout,timeout_counter,ClassIconCoords=5,0;
+local ClassIconCoords=5,0;
 local IsBlizzCon = IsBlizzCon or function() return false; end -- Legion Fix
-local clickActions,nextAction = {
-	{"Do you really want to logout from this character?",function() securecall('Logout'); end}, -- L["Do you really want to logout from this character?"]
-	{"Do you really want to left the game?",function() securecall('Quit'); end}, -- L["Do you really want to left the game?"]
-	{"Do you really want to reload the UI?",function() C_UI.Reload(); end}, -- L["Do you really want to reload the UI?"]
-	{"Do you really want to switch display mode?",function() SetCVar('gxWindow', 1 - GetCVar('gxWindow')); securecall('RestartGx'); end}, -- L["Do you really want to switch display mode?"]
-}
 local menu = {};
 
 
@@ -41,29 +35,6 @@ local function updateGMTicket()
 	else
 		gmticket.hasTicket = false
 		module.onevent("BE_DUMMY_EVENT")
-	end
-end
-
-local function pushedTooltip(parent,id,msg)
-	if (tt) and (tt.key) and (tt.key==ttName) then ns.hideTooltip(tt); end
-	tt2 = ns.acquireTooltip({tt2Name, 1, "LEFT"},{true},{parent});
-	ns.roundupTooltip(tt2);
-
-	if tt2.lines~=nil then tt2:Clear(); end
-	tt2:AddLine(C("orange",L[msg]));
-	tt2:AddSeparator();
-	tt2:AddLine(C("yellow",L["Then push again..."]).." "..timeout_counter);
-
-	if (id==nextAction) then
-		timeout_counter = timeout_counter - 1;
-		C_Timer.After(1,function()
-			if (timeout_counter==0) or (nextAction==nil) then
-				ns.hideTooltip(tt2);
-				tt2=nil;
-			elseif (id==nextAction) then
-				pushedTooltip(parent,id,msg);
-			end
-		end);
 	end
 end
 
@@ -279,10 +250,7 @@ function module.init()
 	I["gm_Macros"]            = {iconfile="interface\\macroframe\\macroframe-icon"}																				--IconName::gm_Macros--
 	I["gm_MacOpts"]           = {iconfile="Interface\\ICONS\\inv_gizmo_02"}																						--IconName::gm_MacOpts--
 	I["gm_Addons"]            = {iconfile="Interface\\ICONS\\inv_misc_enggizmos_30"}																			--IconName::gm_Addons--
-	I["gm_Fullscreen"]        = {iconfile="Interface\\Addons\\"..addon.."\\media\\stuff", coordsStr="16:16:0:-1:16:16:0:16:0:16"}								--IconName::gm_Fullscreen--
 	I["gm_ReloadUi"]          = {iconfile="Interface\\ICONS\\achievement_guildperk_quick and dead"}																--IconName::gm_ReloadUi--
-	I["gm_Logout"]            = {iconfile="Interface\\icons\\racechange"}																						--IconName::gm_Logout--
-	I["gm_ExitGame"]          = {iconfile="Interface\\ICONS\\inv_misc_enggizmos_27"}																			--IconName::gm_ExitGame--
 	I["gm_gmticket"]          = {iconfile="Interface\\CHATFRAME\\UI-CHATICON-BLIZZ", coordsStr="0:2"}															--IconName::gm_gmticket--
 	I["gm_gmticket_edit"]     = {iconfile="Interface\\ICONS\\inv_misc_note_05"}																					--IconName::gm_gmticket_edit--
 	I["gm_gmticket_cancel"]   = {iconfile="Interface\\buttons\\ui-grouploot-pass-up",coordsStr="16:16:0:-1:32:32:2:32:2:32"}									--IconName::gm_gmticket_cancel--
@@ -347,10 +315,7 @@ function module.init()
 			end
 		end},
 		{sep=true, taint=true}, -- section 3
-		{name=VIDEO_OPTIONS_WINDOWED.."/"..VIDEO_OPTIONS_FULLSCREEN, 				iconName="Fullscreen",			macro="/script SetCVar('gxWindow', 1 - GetCVar('gxWindow')) RestartGx()",	taint=true,	--[[, view=IsMacClient()~=true]]},
 		{name=RELOADUI,			iconName="ReloadUi",			macro="/reload",																taint=true},
-		--{name=LOGOUT,					iconName="Logout",				macro="/logout",																taint=true},
-		--{name=EXIT_GAME,				iconName="ExitGame",			macro="/quit",																	taint=true}
 	}
 end
 
@@ -385,32 +350,8 @@ function module.onclick(self, button)
 
 	local shift = IsShiftKeyDown()
 
-	local _= function(id)
-		local a = clickActions[id] or {"Error",function() end};
-		if (id~=nextAction) then
-			nextAction=id;
-			timeout_counter=timeout;
-			pushedTooltip(self,id,a[1]);
-			C_Timer.After(timeout, function()
-				if (id==nextAction) then
-					nextAction=nil;
-				end
-			end);
-		elseif (id==nextAction) then
-			a[2]();
-		end
-	end
-
-	if (button=="LeftButton") and (not shift) then
-		--_(1); -- logout
-		ns.print(L["Sorry, this option is no longer available. The use of \"%s\" function are blocked by blizzard."]:format("Logout"));
-	elseif (button=="RightButton") and (not shift) then
-		--_(2); -- quit
-		ns.print(L["Sorry, this option is no longer available. The use of \"%s\" function are blocked by blizzard."]:format("Quit"));
-	elseif (button=="LeftButton") and (shift) then
+	if (button=="LeftButton") and (shift) then
 		C_UI.Reload();
-	elseif (button=="RightButton") and (shift) then
-		-- _(4); -- display mode
 	end
 end
 
