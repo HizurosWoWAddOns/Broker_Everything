@@ -125,6 +125,13 @@ do
 	});
 end
 
+function ns.realmCheckOrAppend(str)
+	if type(str)=="string" and not str:find("-") then
+		return str.."-"..ns.realm_short;
+	end
+	return str;
+end
+
 function ns.showThisChar(modName,realm,faction)
 	if not ns.profile[modName].showAllFactions and ns.player.faction~=faction then
 		return false;

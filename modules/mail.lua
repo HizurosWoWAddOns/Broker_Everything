@@ -81,16 +81,17 @@ local function UpdateStatus(event)
 			names[sender]=true;
 		end
 		for i=1, #charDB_mail.new do
-			local sender = strsplit(";",charDB_mail.new[i]);
-			names[sender]=true;
+			if type(charDB_mail.new[i])=="string" then
+				local sender = strsplit(";",charDB_mail.new[i]);
+				names[sender]=true;
+			else
+				charDB_mail.new[i] = nil;
+			end
 		end
-
 		local latest = {GetLatestThreeSenders()};
-		if #latest>0 then
-			for i=1, #latest do
-				if not tostring(latest[i]):find("-") then
-					latest[i] = latest[i].."-"..ns.realm_short;
-				end
+		for i=1, #latest do
+			if type(latest[i])=="string" then
+				latest[i] = ns.realmCheckOrAppend(latest[i]);
 				if not names[latest[i]] then
 					tinsert(charDB_mail.new,latest[i]);
 				end
