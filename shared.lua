@@ -248,11 +248,6 @@ function ns.GetTipAnchor(frame, direction, parentTT)
 	end
 end
 
-function ns.tooltipScaling(tooltip)
-	if ns.profile.GeneralOptions.tooltipScale == true then
-		tooltip:SetScale(tonumber(GetCVar("uiScale")))
-	end
-end
 
 ----------------------------------
 -- ttMode [ 1: close on leave broker button (bool/nil) | 2: dont use hiddenMouseOver (bool/nil) ],
@@ -307,9 +302,6 @@ function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
 
 	tooltip.parent,tooltip.mode,tooltip.scripts = ttParent,ttMode,ttScripts;
 	tooltip.mode[1] = tooltip.mode[1]==true or (modifier~="NONE" and ns.tooltipChkOnShowModifier(modifier,false))
-	if ns.profile.GeneralOptions.tooltipScale==true then
-		tooltip:SetScale(tonumber(GetCVar("uiScale")));
-	end
 	if hiddenMouseOver==nil then
 		hiddenMouseOver = CreateFrame("Frame",addon.."TooltipHideShowFix2",UIParent);
 		hiddenMouseOver:SetFrameStrata("BACKGROUND");

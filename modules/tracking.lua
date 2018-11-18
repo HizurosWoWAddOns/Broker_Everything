@@ -104,7 +104,6 @@ function module.ontooltip(tooltip)
 	if (ns.tooltipChkOnShowModifier(false)) then tt:Hide(); return; end
 
 	local numActive, trackActive = updateTracking()
-	ns.tooltipScaling(tt)
 	tt:AddLine(TRACKING)
 	tt:AddLine(" ")
 

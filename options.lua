@@ -10,7 +10,6 @@ local dbDefaults,db = {
 	profile = {
 		GeneralOptions = {
 			suffixColour = true,
-			tooltipScale = false,
 			showHints = true,
 			iconset = "NONE",
 			iconcolor = {1,1,1,1},
