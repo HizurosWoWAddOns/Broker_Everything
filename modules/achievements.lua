@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Achievements";
+local name = "Achievements"; -- ACHIEVEMENTS L["ModDesc-Achievements"]
 local ttName, ttColumns, tt, module = name.."TT", 3;
 local bars,count,session = {},0,{};
 
@@ -241,8 +241,8 @@ ns.ClickOpts.addDefaults(module,"menu","_RIGHT");
 function module.options()
 	return {
 		broker = {
-			showPoints      = {type="toggle", order=1, name=L["AchieveBrokerPoints"],     desc=L["AchieveBrokerPointsDesc"]},
-			showPointsSess  = {type="toggle", order=2, name=L["AchieveBrokerPointsSess"], desc=L["AchieveBrokerPointsSessDesc"]},
+			showPoints      = {type="toggle", order=1, name=L["OptAchievBrokerPoints"],     desc=L["OptAchievBrokerPointsDesc"]},
+			showPointsSess  = {type="toggle", order=2, name=L["OptAchievBrokerPointsSess"], desc=L["OptAchievBrokerPointsSessDesc"]},
 		},
 		tooltip = {
 			showLatest       = {type="toggle", order=1, name=L["OptAchievLast"],       desc=L["OptAchievLastDesc"]},
@@ -250,7 +250,7 @@ function module.options()
 			showWatchlist    = {type="toggle", order=3, name=L["Watch list"],          desc=L["OptAchievWatchDesc"]},
 			showProgressBars = {type="toggle", order=4, name=L["OptAchievBars"],       desc=L["OptAchievBarsDesc"]},
 			showCompleted    = {type="toggle", order=5, name=L["OptAchievCompleted"],  desc=L["OptAchievCompletedDesc"]},
-			criteriaPerLine  = {type="toggle", order=6, name=L["OptAchievCriteriaPL"], desc=L["OptAchievCriteriaPL"]},
+			criteriaPerLine  = {type="toggle", order=6, name=L["OptAchievCriteriaPL"], desc=L["OptAchievCriteriaPLDesc"]},
 		}
 	}
 end

@@ -193,18 +193,18 @@ local options = {
 			name = "",
 			args = {
 				spacer = { type="description", order=1, name=" ", width="half"},
-				reload = { type="execute", order=2, name=L["ReloadUI"], func=ReloadUI },
-				info = { type="description", order=3, name=C("orange",L["ReloadUIRequired"]), fontSize="medium", width="double", hidden=noReload},
+				reload = { type="execute", order=2, name=RELOADUI, func=ReloadUI },
+				info = { type="description", order=3, name=C("orange",L["OptReloadUIRequired"]), fontSize="medium", width="double", hidden=noReload},
 			},
 			hidden = true
 		},
 		GeneralOptions = {
 			type = "group", order = 1,
-			name = L["General"],
+			name = GENERAL,
 			args = {
 				misc = {
 					type = "group", order = 1, inline = true,
-					name = C("ff00aaff",L["Misc"]),
+					name = C("ff00aaff",AUCTION_SUBCATEGORY_OTHER),
 					args = {
 						showAddOnLoaded = { type="toggle",order=1,name=L["AddOnLoaded"],desc=L["AddOnLoadedDesc"] },
 						suffixColour    = { type="toggle",order=2,name=L["SuffixColor"],desc=L["SuffixColorDesc"] },
@@ -232,8 +232,8 @@ local options = {
 					type = "group", order = 3, inline = true,
 					name = C("ff00aaff",L["Tooltip"]),
 					args = {
-						scm              = {type="toggle",order=1,name=L["SCM"],desc=L["SCMDesc"]},
-						showHints        = {type="toggle",order=2,name=L["TTHints"],desc=L["TTHintsDesc"]},
+						scm              = {type="toggle",order=1,name=L["OptSCM"],desc=L["OptSCMDesc"]},
+						showHints        = {type="toggle",order=2,name=L["OptTTHints"],desc=L["OptTTHintsDesc"]},
 						maxTooltipHeight = {type="range", order=3,name=L["TTMaxHeight"],desc=L["TTMaxHeightDesc"],min=10, max=90},
 						ttModifierKey1   = {type="select",order=4,name=L["TTShowMod"],desc=L["TTShowModDesc"],values=ttModifierValues,width="double"},
 						ttModifierKey2   = {type="select",order=5,name=L["TTMouse"],desc=L["TTMouseDesc"],values=ttModifierValues,width="double"},
@@ -276,24 +276,24 @@ local options = {
 		},
 		chars = {
 			type = "group", order = 4, --fontSize="normal",
-			name = L["CharData"],
-			desc = L["CharDataDesc"],
+			name = L["OptCharData"],
+			desc = L["OptCharDataDesc"],
 			childGroups="tab",
 			args = {
-				infoheader = { type = "description",   order=1, name=C("dkyellow",L["CharDataHeader"]), fontSize="medium" },
+				infoheader = { type = "description",   order=1, name=C("dkyellow",L["OptCharInfoHeader"]), fontSize="medium" },
 				info1_2 = {
 					type = "description", order= 2,
-					name =  C("ltgreen",L["CharData1"]) .. "\n" .. L["CharData1Desc"].. "\n\n" ..
-							C("ltgreen",L["CharData2"]) .. "\n" .. L["CharData2Desc"] .."\n "
+					name =  C("ltgreen",L["OptCharInfo1"]) .. "\n" .. L["OptCharInfo1Desc"].. "\n\n" ..
+							C("ltgreen",L["OptCharInfo2"]) .. "\n" .. L["OptCharInfo2Desc"] .."\n "
 				},
-				info3 = { type="description", order=6, name=C("ltgreen",L["CharData3"]), width="normal"},
+				info3 = { type="description", order=6, name=C("ltgreen",L["OptCharInfo3"]), width="normal"},
 				delete = {
 					type = "execute", order=7, width="double",
-					name = L["CharDataDelAll"], desc = L["CharDataDelAllDesc"]
+					name = L["OptCharDelAll"], desc = L["OptCharDelAllDesc"]
 				},
 				list = {
 					type = "group", order=8,
-					name = L["CharDataList"],
+					name = L["OptCharList"],
 					childGroups="tab",
 					args = {
 					}
@@ -377,7 +377,7 @@ local function optionWalker(modName,group,lst)
 	if group=="broker" then
 		lst.minimap = {
 			type = "toggle", order = 0,
-			name = L["Minimap"], desc=L["MinimapDesc"]
+			name = L["OptMinimap"], desc=L["OptMinimapDesc"]
 		}
 	end
 end
@@ -468,7 +468,7 @@ function ns.Options_RegisterModule(modName)
 					name = name or L["Tooltip"];
 					order = order or 2;
 				elseif k:find("^misc") then
-					name = name or L["Misc"];
+					name = name or AUCTION_SUBCATEGORY_OTHER;
 					order = order or 98;
 				elseif k:find("^ClickOpts") then
 					name = name or L["ClickOptions"];

@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Friends"; -- L["Friends"]
+local name = "Friends"; -- FRIENDS L["ModDesc-Friends"]
 local ttName,ttName2,ttColumns,tt,tt2,module = name.."TT",name.."TT2",8;
 local unknownGameError = false;
 local DSw, DSh =  0,  0;
@@ -371,7 +371,7 @@ local function createTooltip(tt)
 	end
 
 	if ns.profile[name].showFriends then
-		tt:SetCell(tt:AddLine(),1,C("ltgray",L["Friends"]),nil,"LEFT",0);
+		tt:SetCell(tt:AddLine(),1,C("ltgray",FRIENDS),nil,"LEFT",0);
 		if friendsOnline==0 then
 			tt:SetCell(tt:AddLine(),1,"    "..C("gray",L["Currently no friends online..."]),nil,"LEFT",0);
 		else
@@ -471,7 +471,7 @@ local function createTooltip(tt)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(3,0,0,0,0);
-		tt:SetCell(tt:AddLine(),1,C("ltblue",L["MouseBtn"]).." || "..C("green",L["Whisper"]) .." - ".. C("ltblue",L["ModKeyA"].."+"..L["MouseBtn"]).." || "..C("green",L["Group invite"]),nil,nil,columns);
+		tt:SetCell(tt:AddLine(),1,C("ltblue",L["MouseBtn"]).." || "..C("green",WHISPER) .." - ".. C("ltblue",L["ModKeyA"].."+"..L["MouseBtn"]).." || "..C("green",TRAVEL_PASS_INVITE),nil,nil,columns);
 		ns.ClickOpts.ttAddHints(tt,name,nil,2);
 	end
 
@@ -533,7 +533,7 @@ module = {
 		["menu"] = "2_open_menu"
 	},
 	clickOptions = {
-		["friends"] = {"Friends roster","call",{"ToggleFriendsFrame",1}}, -- L["Friends roster"]
+		["friends"] = {SOCIAL_BUTTON,"call",{"ToggleFriendsFrame",1}},
 		["menu"] = "OptionMenu"
 	}
 }

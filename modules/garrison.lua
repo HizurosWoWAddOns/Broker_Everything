@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Garrison" -- GARRISON_LOCATION_TOOLTIP
+local name = "Garrison" -- GARRISON_LOCATION_TOOLTIP L["ModDesc-Garrison"]
 local ttName,ttColumns,tt,module= name.."TT",7;
 local buildings,nBuildings,construct,nConstruct,blueprints3,achievements3 = {},0,{},0,{},{}
 local longer,ticker = false,false;
@@ -84,7 +84,7 @@ local function createTooltip(tt)
 	if (garrLevel>0) then
 		if (ns.profile[name].showChars and false) then
 			tt:AddSeparator(4,0,0,0,0);
-			local l=tt:AddLine( C("ltblue", L["Characters"]) ); -- 1
+			local l=tt:AddLine( C("ltblue",CHARACTER) ); -- 1
 
 			-- Garrison /n level, buildings
 			-- Jobs /n available, worker
@@ -93,11 +93,11 @@ local function createTooltip(tt)
 
 			if(IsShiftKeyDown())then
 				tt:SetCell(l, 2, C("ltblue",GARRISON_LOCATION_TOOLTIP..		"|n"..C("green",LEVEL)..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2
-				tt:SetCell(l, 3, C("ltblue",L["Shipments"]..	"|n"..C("green",L["finished"])..	" / "..C("yellow",L["in progress"])), nil, "RIGHT", 3); -- 3,4,5
+				tt:SetCell(l, 3, C("ltblue",L["Shipments"]..	"|n"..C("green",L["finished"])..	" / "..C("yellow",L["In progress"])), nil, "RIGHT", 3); -- 3,4,5
 				tt:SetCell(l, 6, C("ltblue",L["Jobs"]..			"|n"..C("green",L["available"])..	" / "..C("yellow",L["worker"])), nil, "RIGHT", 2); -- 6,7
 			else
 				tt:SetCell(l, 2, C("ltblue",GARRISON_LOCATION_TOOLTIP..		"|n"..C("green",LEVEL)..		" / "..C("yellow",L["buildings"])), nil, "RIGHT", 1); --2
-				tt:SetCell(l, 3, C("ltblue",L["Shipments"]..	"|n"..C("green",L["finished"])..	" / "..C("yellow",L["in progress"])), nil, "RIGHT", 3); -- 3,4,5
+				tt:SetCell(l, 3, C("ltblue",L["Shipments"]..	"|n"..C("green",L["finished"])..	" / "..C("yellow",L["In progress"])), nil, "RIGHT", 3); -- 3,4,5
 				tt:SetCell(l, 6, C("ltblue",L["Jobs"]..			"|n"..C("green",L["available"])..	" / "..C("yellow",L["worker"])), nil, "RIGHT", 2); -- 6,7
 			end
 			tt:AddSeparator();

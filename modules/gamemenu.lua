@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Game Menu"; -- MAINMENU_BUTTON
+local name = "Game Menu"; -- MAINMENU_BUTTON L["ModDesc-Game Menu"]
 local ttName,tt2Name,tt,tt2,module = name.."TT",name.."TT2"
 local last_click = 0
 local iconCoords = "16:16:0:-1:64:64:4:56:4:56" --"16:16:0:-1:64:64:3:58:3:58"
@@ -161,8 +161,8 @@ local function createTooltip(tt)
 		tt:AddSeparator()
 		line,column = tt:AddLine()
 		local edit,cancel = I("gm_gmticket_edit"),I("gm_gmticket_cancel")
-		tt:SetCell(line,1,link:format(edit.iconfile,(edit.coordsStr or iconCoords),L["Edit ticket"]))
-		tt:SetCell(line,2,link:format(cancel.iconfile,(cancel.coordsStr or iconCoords),L["Cancel ticket"]))
+		tt:SetCell(line,1,link:format(edit.iconfile,(edit.coordsStr or iconCoords),HELP_TICKET_EDIT))
+		tt:SetCell(line,2,link:format(cancel.iconfile,(cancel.coordsStr or iconCoords),HELP_TICKET_ABANDON))
 		tt:SetCellScript(line,1,"OnMouseUp", showGMTicket);
 		tt:SetCellScript(line,2,"OnMouseUp", deleteGMTicket);
 		if (ticketStatus == LE_TICKET_STATUS_NMI) then -- ticketStatus = 3
@@ -196,7 +196,7 @@ local function createTooltip(tt)
 			.."|n"..
 			C("copper", L["MouseBtnR"]).." || "..C("green", EXIT_GAME)
 			.."|n"..
-			C("copper", L["ModKeyS"].."+"..L["MouseBtnL"]).." || "..C("green", L["Reload UI"])
+			C("copper", L["ModKeyS"].."+"..L["MouseBtnL"]).." || "..C("green", RELOADUI)
 		, nil, nil, 2);
 	end
 	ns.roundupTooltip(tt);
@@ -348,7 +348,7 @@ function module.init()
 		end},
 		{sep=true, taint=true}, -- section 3
 		{name=VIDEO_OPTIONS_WINDOWED.."/"..VIDEO_OPTIONS_FULLSCREEN, 				iconName="Fullscreen",			macro="/script SetCVar('gxWindow', 1 - GetCVar('gxWindow')) RestartGx()",	taint=true,	--[[, view=IsMacClient()~=true]]},
-		{name=L["Reload UI"],			iconName="ReloadUi",			macro="/reload",																taint=true},
+		{name=RELOADUI,			iconName="ReloadUi",			macro="/reload",																taint=true},
 		--{name=LOGOUT,					iconName="Logout",				macro="/logout",																taint=true},
 		--{name=EXIT_GAME,				iconName="ExitGame",			macro="/quit",																	taint=true}
 	}

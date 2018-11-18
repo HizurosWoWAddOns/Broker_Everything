@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Missions" -- GARRISON_MISSIONS
+local name = "Missions" -- GARRISON_MISSIONS L["ModDesc-Missions"]
 local ttName, ttColumns,ttColumns_default, tt, module = name.."TT",6,6
 local missions,started = {},{};
 local qualities = {"white","ff1eaa00","ff0070dd","ffa335ee","red"};
@@ -43,10 +43,10 @@ local function createTooltip(tt)
 		if ns.profile[name].showMissionItemLevel then     _ttColumns=_ttColumns+1; end
 		if ns.profile[name].showMissionFollowerSlots then _ttColumns=_ttColumns+1; end
 
-		local l=tt:AddLine( C("ltblue", L["Characters"]) ); -- 1
+		local l=tt:AddLine( C("ltblue",CHARACTER) ); -- 1
 		if(IsShiftKeyDown())then
 			tt:SetCell(l,2,C("ltblue",GARRISON_FOLLOWERS)..pipe..C("ltblue",GARRISON_SHIPYARD_FOLLOWERS)..( ns.build>70000000 and pipe..C("ltblue",FOLLOWERLIST_LABEL_CHAMPIONS) or "" ).."|n"..
-				L["Completed"].." - "..C("green",L["next"]).." / ".. C("yellow",L["all"]),nil, "RIGHT", _ttColumns);
+				L["Completed"].." - "..C("green",L["next"]).." / ".. C("yellow",SPELL_TARGET_TYPE12_DESC),nil, "RIGHT", _ttColumns);
 		else
 			tt:SetCell(l,2,C("ltblue",GARRISON_FOLLOWERS)..pipe..C("ltblue",GARRISON_SHIPYARD_FOLLOWERS)..( ns.build>70000000 and pipe..C("ltblue",FOLLOWERLIST_LABEL_CHAMPIONS) or "" ).."|n"..
 				C("green",L["Completed"]).." / ".. C("yellow",L["In progress"]),nil, "RIGHT", _ttColumns);

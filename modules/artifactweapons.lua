@@ -8,7 +8,7 @@ if ns.build<70000000 then return end
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Artifact weapon" -- L["Artifact weapon"]
+local name = "Artifact weapon" -- L["Artifact weapon"] L["ModDesc-Artifact weapon"]
 local ttName,ttNameAlt,ttColumns,tt,ttAlt,module,createTooltip = name.."TT",name.."TT2", 3;
 local ap_items_found,spec2weapon,knowledgeLevel,obtained,updateBroker, _ = {},{},0,0;
 local _ITEM_LEVEL = gsub(ITEM_LEVEL,"%%d","(%%d*)");
@@ -654,7 +654,7 @@ function module.options()
 					["2"]    = L["Need to next point"],
 				},
 			},
-			showPower     = { type="toggle", order=4, name=L["OptArtUnusedDesc"],  desc=L["OptArtUnusedDesc"]},
+			showPower     = { type="toggle", order=4, name=L["OptArtUnused"],  desc=L["OptArtUnusedDesc"]},
 			showKnowledge = { type="toggle", order=5, name=L["OptArtKnowledge"],   desc=L["OptArtKnowledgeDesc"]},
 			showWarning   = { type="toggle", order=6, name=L["OptartNotEquipped"], desc=L["OptArtNotEquippedDesc"]},
 		},

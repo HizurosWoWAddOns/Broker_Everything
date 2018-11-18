@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Difficulty" -- L["Difficulty"]
+local name = "Difficulty" -- L["Difficulty"] L["ModDesc-Difficulty"]
 L["ModDesc-"..name] = L["Display current group and instance modes"];
 
 local ttName, ttColumns, tt, module,createTooltip = name.."TT", 4
@@ -17,19 +17,16 @@ local modes = {
 	{name=GROUP, short="G", color="quality2"},		-- 2
 	{name=RAID,  short="R", color="quality4"},		-- 3
 }
-L["DifficultyNormalShort"] = "N";
-L["DifficultyHeroicShort"] = "H";
-L["DifficultyMythicShort"] = "M";
 local diff = {
 	dungeons = {
-		{id=1,long=PLAYER_DIFFICULTY1,short=L["PLAYER_DIFFICULTY1_SHORT"],color="quality2"},
-		{id=2,long=PLAYER_DIFFICULTY2,short=L["PLAYER_DIFFICULTY2_SHORT"],color="quality3"},
-		{id=23,long=PLAYER_DIFFICULTY6,short=L["PLAYER_DIFFICULTY6_SHORT"],color="quality4"}
+		{id=1,long=PLAYER_DIFFICULTY1,short=L["DifficultyNormalShort"],color="quality2"},
+		{id=2,long=PLAYER_DIFFICULTY2,short=L["DifficultyHeroicShort"],color="quality3"},
+		{id=23,long=PLAYER_DIFFICULTY6,short=L["DifficultyMythicShort"],color="quality4"}
 	},
 	raids = {
-		{id=14,long=PLAYER_DIFFICULTY1,short=L["PLAYER_DIFFICULTY1_SHORT"],color="quality2"}, -- 9 / 14
-		{id=15,long=PLAYER_DIFFICULTY2,short=L["PLAYER_DIFFICULTY2_SHORT"],color="quality3"},
-		{id=16,long=PLAYER_DIFFICULTY6,short=L["PLAYER_DIFFICULTY6_SHORT"],color="quality4"},
+		{id=14,long=PLAYER_DIFFICULTY1,short=L["DifficultyNormalShort"],color="quality2"}, -- 9 / 14
+		{id=15,long=PLAYER_DIFFICULTY2,short=L["DifficultyHeroicShort"],color="quality3"},
+		{id=16,long=PLAYER_DIFFICULTY6,short=L["DifficultyMythicShort"],color="quality4"},
 	},
 	classic = {
 		{id=3,altId=5,long=RAID_DIFFICULTY1,short="10",color="quality2"}, -- 3 / 5
@@ -163,7 +160,7 @@ function createTooltip(tt)
 	end
 
 	--- legacy raid size
-	l = tt:AddLine(C("ltyellow",L["Legacy size"]..":"));
+	l = tt:AddLine(C("ltyellow",UNIT_FRAME_DROPDOWN_SUBSECTION_TITLE_LEGACY_RAID..":"));
 	local I=0;
 	for i,v in ipairs(diff.classic) do
 		local color = enabled and "ltgray" or "dkgray";

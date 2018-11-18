@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Calendar" -- L["Calendar"]
+local name = "Calendar" -- L["Calendar"] L["ModDesc-Calendar"]
 local ttName,ttColumns,tt,module = name.."TT",4;
 local zf="%02d";
 local state2string = {

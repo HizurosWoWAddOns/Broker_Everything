@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Volume" -- VOLUME
+local name = "Volume" -- VOLUME L["ModDesc-Volume"]
 local ttName,ttColumns,tt,module,createTooltip = name.."TT",2;
 local updateBrokerButton,getSoundHardware,setSoundHardware
 local icon = "Interface\\AddOns\\"..addon.."\\media\\volume_"

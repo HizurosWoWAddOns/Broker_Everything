@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "XP" -- XP
+local name = "XP" -- XP L["ModDesc-XP"]
 local ttName, ttName2, ttColumns, tt, tt2, module, createTooltip,init  = name.."TT", name.."TT2", 3;
 local data = {};
 local sessionStartLevel = UnitLevel("player");
@@ -78,7 +78,7 @@ local function createTooltip2(parentLine,data)
 			tt2:AddLine(
 				C("ltyellow",slotName),
 				v.maxLevel or "",
-				(v.percent==nil and C("ltgray",L["Not equipped"])) or (v.outOfLevel==true and C("red",L["Out of level"])) or v.percent.."%"
+				(v.percent==nil and C("ltgray",L["Not equipped"])) or (v.outOfLevel==true and C("red",L["Level too high"])) or v.percent.."%"
 			);
 		end
 	end
@@ -101,7 +101,7 @@ function createTooltip(tt)
 	if (UnitLevel("player")<MAX_PLAYER_LEVEL) then
 		tt:AddSeparator();
 		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE),"",C("white",("(%s/%s)"):format(ns.FormatLargeNumber(name,data.cur,true),ns.FormatLargeNumber(name,data.max,true))));
-		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE.." ("..L["Percent"]..")"), "",data.percentStr);
+		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE.." ("..STATUS_TEXT_PERCENT..")"), "",data.percentStr);
 		tt:AddLine(C("ltyellow",GARRISON_FOLLOWER_XP_STRING),"",C("white",ns.FormatLargeNumber(name,data.need,true)));
 		if (data.restStr) then
 			tt:AddLine(C("ltyellow",L["Rest"]),"",C("cyan",data.restStr));
@@ -124,7 +124,7 @@ function createTooltip(tt)
 				tt:AddLine(
 					C("ltyellow", slotName),
 					v.maxLevel or "",
-					(v.percent==nil and C("ltgray",L["not equipped"])) or (v.outOfLevel==true and C("red",L["Out of Level"])) or v.percent.."%"
+					(v.percent==nil and C("ltgray",L["Not equipped"])) or (v.outOfLevel==true and C("red",L["Level too high"])) or v.percent.."%"
 				);
 			end
 		end
@@ -135,7 +135,7 @@ function createTooltip(tt)
 	if ns.profile[name].showMyOtherChars then
 		tt:AddSeparator(4,0,0,0,0);
 		local l = tt:AddLine();
-		local showFactions = (ns.profile[name].showAllFactions and L["All factions"]) or ns.player.factionL;
+		local showFactions = (ns.profile[name].showAllFactions and L["AllFactions"]) or ns.player.factionL;
 		tt:SetCell(l,1,C("ltblue",L["Your other chars (%s)"]:format(ns.showCharsFrom_Values[ns.profile[name].showCharsFrom].."/"..showFactions)),nil,nil,3);
 		tt:AddSeparator();
 		local count = 0;
@@ -238,11 +238,11 @@ end
 
 function module.options()
 	local textBarValues,displayValues = {},{
-		["1"]="Percent \"77%\"",
-		["2"]="Absolute value \"1234/4567\"",
-		["3"]="Til next level \"1242\"",
-		["4"]="Percent + Resting \"77% (>94%)\"",
-		["5"]="Little text bar"
+		["1"]=STATUS_TEXT_PERCENT.." \"77%\"",
+		["2"]=L["Absolute value"].." \"1234/4567\"",
+		["3"]=L["Til next level"].." \"1242\"",
+		["4"]=STATUS_TEXT_PERCENT.." + Resting \"77% (>94%)\"",
+		["5"]=L["TextBar"]
 	};
 	-- add values to config.textBarCharacter
 	for _,v in ipairs(textbarSigns)do
@@ -255,10 +255,10 @@ function module.options()
 		},
 		broker2 = {
 			order=2,
-			name = L["Text bar"],
-			textBarInfo      = { type="description", order=1, name=L["Text bar is a simple row of colored characters act like status, reputation or xp bar but without textures."],   fontSize="medium" },
-			textBarCharacter={ type="select", order=2, name=L["Text bar character"], desc=L["Choose character for little text bar"], values=textBarValues },
-			textBarCharCount={ type="range", order=3, name=L["Text bar num characters"], desc=L["..."], min=5, max=200, step=1 }
+			name = L["TextBar"],
+			textBarInfo      = { type="description", order=1, name=L["TextBarDesc"],   fontSize="medium" },
+			textBarCharacter = { type="select",      order=2, name=L["TextBarChar"], desc=L["TextBarCharDesc"], values=textBarValues },
+			textBarCharCount = { type="range",       order=3, name=L["TextBarNum"], desc=L["TextBarNumDesc"], min=5, max=200, step=1 }
 		},
 		tooltip = {
 			order=3,

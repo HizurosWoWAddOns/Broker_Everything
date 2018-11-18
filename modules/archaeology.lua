@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Archaeology"; -- PROFESSIONS_ARCHAEOLOGY
+local name = "Archaeology"; -- PROFESSIONS_ARCHAEOLOGY L["ModDesc-Archaeology"]
 local ttName, ttColumns, tt, skill, module = name.."TT", 5
 local tradeskill, maxFragments, maxFragments250 = {},200,{[109585]=1,[108439]=1,[109584]=1};
 local raceIndex,raceCurrencyId,raceKeystone2Fragments,raceName,raceTexture,raceKeystoneItemID = 1,2,3,4,5,6;
@@ -247,7 +247,7 @@ module = {
 		["menu"] = "2_open_menu"
 	},
 	clickOptions = {
-		["archaeology"] = {"Archaeology","module","ToggleArchaeologyFrame"}, -- L["Archaeology"]
+		["archaeology"] = {PROFESSIONS_ARCHAEOLOGY,"module","ToggleArchaeologyFrame"},
 		["menu"] = "OptionMenu"
 
 	}

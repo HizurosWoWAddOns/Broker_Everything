@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Clock"; -- TIMEMANAGER_TITLE
+local name = "Clock"; -- TIMEMANAGER_TITLE L["ModDesc-Clock"]
 local ttName,ttColumns, tt, module = name.."TT", 2;
 local countries,month_short = {},{};
 local played,initialized,clock_diff = false,false;
@@ -46,9 +46,9 @@ local function createTooltip(tt,update)
 	if ns.profile[name].showDate then
 		tt:AddLine(C("ltyellow",L["Date"]),		C("white",date(ns.profile[name].dateFormat)));
 	end
-	tt:AddLine(C("ltyellow",L.TimeLocal),	C("white",ns.LT.GetTimeString("LocalTime",h24,dSec)));
-	tt:AddLine(C("ltyellow",L.TimeRealm),	C("white",ns.LT.GetTimeString("GameTime",h24,dSec)));
-	tt:AddLine(C("ltyellow",L.TimeUTC),		C("white",ns.LT.GetTimeString("UTCTime",h24,dSec)));
+	tt:AddLine(C("ltyellow",L["TimeLocal"]),	C("white",ns.LT.GetTimeString("LocalTime",h24,dSec)));
+	tt:AddLine(C("ltyellow",L["TimeRealm"]),	C("white",ns.LT.GetTimeString("GameTime",h24,dSec)));
+	tt:AddLine(C("ltyellow",L["TimeUTC"]),		C("white",ns.LT.GetTimeString("UTCTime",h24,dSec)));
 
 	--tt:AddSeparator(3,0,0,0,0);
 	--tt:AddLine(C("ltblue",L["Additional time zones"]));
@@ -78,8 +78,8 @@ local function updateBroker()
 	local label = {"",""};
 	local t={};
 	if ns.profile[name].timeLabel then
-		label[1] = L.TimeLabelLocal.." ";
-		label[2] = L.TimeLabelRealm.." ";
+		label[1] = L["TimeLabelLocal"].." ";
+		label[2] = L["TimeLabelRealm"].." ";
 	end
 	if ns.profile[name].timeLocal then
 		tinsert(t,label[1]..ns.LT.GetTimeString("LocalTime",h24,dSec));
@@ -135,7 +135,7 @@ module = {
 		["menu"] = "5_open_menu"
 	},
 	clickOptions = {
-		["timemanager"] = {"Time manager","call","ToggleTimeManager"}, -- L["Open time manager"]
+		["timemanager"] = {TIME_MANAGER,"call","ToggleTimeManager"},
 		["time"] = {"Switch (local or realm time)","module","switchTime"}, -- L["Switch (local or realm time)"]
 		["calendar"] = {"Calendar","call","ToggleCalendar"}, -- L["Calendar"]
 		["hoursmode"] = {"Switch (12 or 24 hours)","module","switchHoursMode"}, -- L["Switch (12 or 24 hours)"]
@@ -175,9 +175,9 @@ end
 function module.options()
 	return {
 		broker = {
-			timeLabel = { type="toggle", order=1, name=L.TimePrependLabel, desc=L.TimePrependLabelDesc},
-			timeLocal = { type="toggle", order=2, name=L.TimeLocal, desc=L.TimeLocalDesc },
-			timeRealm = { type="toggle", order=3, name=L.TimeRealm, desc=L.TimeRealmDesc }
+			timeLabel = { type="toggle", order=1, name=L["TimePrefix"], desc=L["TimePrefixDesc"]},
+			timeLocal = { type="toggle", order=2, name=L["TimeLocal"], desc=L["TimeLocalDesc"] },
+			timeRealm = { type="toggle", order=3, name=L["TimeRealm"], desc=L["TimeRealmDesc"] }
 		},
 		tooltip = {
 			showSeconds={ type="toggle", order=1, name=L["Show seconds"], desc=L["Display the time with seconds in broker button and tooltip"] },

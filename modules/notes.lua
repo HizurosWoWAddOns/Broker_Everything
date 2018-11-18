@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Notes" -- L["Notes"]
+local name = "Notes" -- L["Notes"] L["ModDesc-Notes"]
 local ttName,ttColumns,tt,module = name.."TT",2;
 local delIndex,editor,createTooltip,note_edit
 local titleLimit,textLimit = 32,10000;

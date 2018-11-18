@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "GuildLog" -- L["GuildLog"]
+local name = "GuildLog" -- L["GuildLog"] L["ModDesc-GuildLog"]
 local ttName,ttColumns,tt,module = name.."TT",4
 local type2locale = {
 	["invite"]	= C("cyan",CALENDAR_STATUS_INVITED),

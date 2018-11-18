@@ -117,7 +117,8 @@ function ns.RegisterSlashCommand()
 					ns.print(spacer, ("%s - %s"):format(C("yellow",name),obj.desc))
 				end
 			end
-			return
+			ns.print(C("orange",L["CmdInfoOptional"]));
+			return;
 		end
 
 		if commands[cmd]~=nil and type(commands[cmd])=="string" then
@@ -126,7 +127,7 @@ function ns.RegisterSlashCommand()
 
 		if commands[cmd]~=nil and type(commands[cmd].func)=="function" then
 			commands[cmd].func(arg);
-			return;
+			ns.print(C("orange",L["CmdInfoOptional"]));
 		end
 	end
 

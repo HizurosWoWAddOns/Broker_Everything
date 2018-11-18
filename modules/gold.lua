@@ -8,7 +8,7 @@ local time,date,tinsert,tconcat=time,date,tinsert,table.concat;
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Gold"; -- BONUS_ROLL_REWARD_MONEY
+local name = "Gold"; -- BONUS_ROLL_REWARD_MONEY L["ModDesc-Gold"]
 local ttName, tt, createTooltip, module = name.."TT";
 local login_money = nil;
 local next_try = false;
@@ -125,7 +125,7 @@ function createTooltip(tt,update)
 	tt:AddSeparator(4,0,0,0,0);
 
 	if(sAR or sAF)then
-		tt:AddLine(C("ltgreen", (sAR and sAF and "("..L["all realms and factions"]..")") or (sAR and "("..L["all realms"]..")") or (sAF and "("..L["all factions"]..")") or "" ));
+		tt:AddLine(C("ltgreen","("..(sAR and L["All realms"] or "")..((sAR and sAF) and "/" or "")..(sAF and L["AllFactions"] or "")..")"));
 		tt:AddSeparator(4,0,0,0,0);
 	end
 
@@ -164,7 +164,7 @@ function createTooltip(tt,update)
 
 	if ns.profile[name].showProfitSession or ns.profile[name].showProfitDaily or ns.profile[name].showProfitWeekly or ns.profile[name].showProfitMonthly then
 		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(C("ltyellow","Profit / Loss"),C("orange","(Experimental)"));
+		tt:AddLine(C("ltyellow","Profit / Loss"),C("orange","("..L["Experimental"]..")"));
 		tt:AddSeparator();
 		for i=1, #ttLines do
 			local v = ttLines[i];

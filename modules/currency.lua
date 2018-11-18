@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Currency"; -- CURRENCY
+local name = "Currency"; -- CURRENCY L["ModDesc-Currency"]
 local ttName,ttColumns,tt,tt2,module = name.."TT",5;
 local cName, cIcon, cCount, cEarnedThisWeek, cWeeklyMax, cTotalMax, cIsUnused, cRarity, cID = 1,2,3,4,5,6,7,8,9,10,11,12,13;
 local currencies,currencySession,faction = {},{},UnitFactionGroup("player");
@@ -300,11 +300,13 @@ function module.options()
 			showCapBroker={ type="toggle", order=1, name=L["Show total/weekly cap"], desc=L["Display currency total cap in tooltip."] },
 			showCapColorBroker={ type="toggle", order=2, name=L["Coloring total/weekly cap"], desc=L["Display total/weekly caps in different colors"] },
 			spacer={ type="range", order=3, name=L["Space between currencies"], desc=L["Add more space between displayed currencies on broker button"], min=0, max=10, step=1 },
-			--header={ type="header", order=4, name=L["CurrencyHeadInBroker"] },
-			--inBroker1 = {type="select", order=5, name=L["CurrencyInBroker1"], desc=L["CurrencyInBroker1Desc"], values=inBrokerValues },
-			--inBroker2 = {type="select", order=6, name=L["CurrencyInBroker2"], desc=L["CurrencyInBroker2Desc"], values=inBrokerValues },
-			--inBroker3 = {type="select", order=7, name=L["CurrencyInBroker3"], desc=L["CurrencyInBroker3Desc"], values=inBrokerValues },
-			--inBroker4 = {type="select", order=8, name=L["CurrencyInBroker4"], desc=L["CurrencyInBroker4Desc"], values=inBrokerValues },
+--@do-not-package@
+			--header={ type="header", order=4, name=L[ "CurrencyHeadInBroker"] },
+			--inBroker1 = {type="select", order=5, name=L[ "CurrencyInBroker1"], desc=L[ "CurrencyInBroker1Desc"], values=inBrokerValues },
+			--inBroker2 = {type="select", order=6, name=L[ "CurrencyInBroker2"], desc=L[ "CurrencyInBroker2Desc"], values=inBrokerValues },
+			--inBroker3 = {type="select", order=7, name=L[ "CurrencyInBroker3"], desc=L[ "CurrencyInBroker3Desc"], values=inBrokerValues },
+			--inBroker4 = {type="select", order=8, name=L[ "CurrencyInBroker4"], desc=L[ "CurrencyInBroker4Desc"], values=inBrokerValues },
+--@end-do-not-package@
 		},
 		tooltip = {
 			showTotalCap={ type="toggle", order=1, name=L["Show total cap"], desc=L["Display currency total cap in tooltip."] },

@@ -87,7 +87,7 @@ local function createTooltip(tt)
 	line, column = tt:AddLine(L["Windowed / Fullscreen"])
 	tt:SetLineScript(line, "OnMouseUp", toggleWindowMode);
 
-	line, column = tt:AddLine(L["Reload UI"])
+	line, column = tt:AddLine(RELOADUI)
 	tt:SetLineScript(line, "OnMouseUp", reloadUI); -- Use static Popup to avoid taint.
 
 	--line, column = tt:AddLine(LOGOUT)
@@ -108,7 +108,7 @@ local function createTooltip(tt)
 			--.."|n"..
 			--C("copper",L["ModKeyS"].."+"..L["MouseBtnL"]).." || "..C("green",L["Switch window/fullscreen mode"])
 			--.."|n"..
-			C("copper",L["ModKeyS"].."+"..L["MouseBtnL"]).." || "..C("green",L["Reload UI"])
+			C("copper",L["ModKeyS"].."+"..L["MouseBtnL"]).." || "..C("green",RELOADUI)
 		)
 	end
 	ns.roundupTooltip(tt);

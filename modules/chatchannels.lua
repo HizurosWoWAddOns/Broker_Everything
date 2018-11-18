@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "ChatChannels";
+local name = "ChatChannels"; -- CHAT_CHANNELS L["ModDesc-ChatChannels"]
 local ttName,ttColumns,tt,module,ticker = name.."TT",2
 local iName, iHeader, iCollapsed, iChannelNumber, iCount, iActive, iCategory, iVoiceEnabled, iVoiceActive = 1,2,3,4,5,6,7,8,9; -- GetChannelDisplayInfo indexes
 local iLastUpdate, iNoUpdate = 10,11; -- custom indexes
@@ -172,7 +172,7 @@ module = {
 		["menu"] = "2_open_menu"
 	},
 	clickOptions = {
-		["chats"] = {"Chat channels window","call",{"ToggleFriendsFrame",3}}, -- L["Chat channels window"]
+		["chats"] = {CHAT_CHANNELS,"call",{"ToggleFriendsFrame",3}},
 		["menu"] = "OptionMenu"
 	}
 }

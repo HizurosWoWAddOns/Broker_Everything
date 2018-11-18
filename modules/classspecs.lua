@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "ClassSpecs"
+local name = "ClassSpecs" -- L["ClassSpecs"] L["ModDesc-ClassSpecs"]
 local ttName, ttColumns, tt, module, createTooltip = name.."TT", 4;
 
 
@@ -182,7 +182,7 @@ function createTooltip(tt,update)
 						type=level>=tierLevels[row] and "talent" or "spell",
 						spellId=tmp[spellId],
 						args={tmp[Id],false,talentGroup},
-						extraLine=level<tierLevels[row] and C("red","Locked, level too low") or nil
+						extraLine=level<tierLevels[row] and C("red",L["TalentLocked"]) or nil
 					};
 					tt:SetCellScript(l,c,"OnEnter",infoTooltipShow, info);
 					tt:SetCellScript(l,c,"OnLeave",infoTooltipHide);
@@ -197,9 +197,9 @@ function createTooltip(tt,update)
 					tt:SetLineScript(l,"OnEnter",infoTooltipShow, {type="talent",args={selected[Id],false,talentGroup}});
 					tt:SetLineScript(l,"OnLeave",infoTooltipHide);
 				elseif isUnlocked then
-					tt:SetCell(l,2,C("orange",L["Unlocked, not selected"]),nil,nil,0);
+					tt:SetCell(l,2,C("orange",L["TalentUnlocked"]),nil,nil,0);
 				else
-					tt:SetCell(l,2,C("gray",L["Locked, level too low"]),nil,nil,0);
+					tt:SetCell(l,2,C("gray",L["TalentLocked"]),nil,nil,0);
 				end
 			end
 		end
@@ -221,10 +221,10 @@ function createTooltip(tt,update)
 						local _, talentName, texture = GetPvpTalentInfoByID(slotInfo.selectedTalentID);
 						tt:SetCell(l,2,str:format(texture,C("ltyellow",talentName)),nil,nil,0);
 					else
-						tt:SetCell(l,2,C("orange",L["Unlocked, not selected"]),nil,nil,0);
+						tt:SetCell(l,2,C("orange",L["TalentUnlocked"]),nil,nil,0);
 					end
 				else
-					tt:SetCell(l,2,C("gray",L["Locked, level too low"]),nil,nil,0);
+					tt:SetCell(l,2,C("gray",L["TalentLocked"]),nil,nil,0);
 				end
 			end
 		else
@@ -264,9 +264,9 @@ function createTooltip(tt,update)
 							tt:SetLineScript(l,"OnLeave",infoTooltipHide);
 						else
 							if isUnlocked then
-								tt:SetCell(l,2,C("orange","Unlocked, not selected"),nil,nil,2);
+								tt:SetCell(l,2,C("orange",L["TalentUnlocked"]),nil,nil,2);
 							else
-								tt:SetCell(l,2,C("gray","Locked, level too low"),nil,nil,2);
+								tt:SetCell(l,2,C("gray",L["TalentLocked"]),nil,nil,2);
 							end
 						end
 					end
@@ -318,8 +318,8 @@ module = {
 	},
 	clickOptions = {
 		["pvespec"] = {"Specialization","call",{"ToggleTalentFrame",SPECIALIZATION_TAB}}, -- L["Specialization"]
-		["pvetalents"] = {"Talents","call",{"ToggleTalentFrame",TALENTS_TAB}}, -- L["Talents"]
-		["pvptalents"] = {"PvP talents","call",{"ToggleTalentFrame",PVP_TALENTS_TAB}}, -- L["PvP talents"]
+		["pvetalents"] = {TALENTS,"call",{"ToggleTalentFrame",TALENTS_TAB}},
+		["pvptalents"] = {PVP_TALENTS,"call",{"ToggleTalentFrame",PVP_TALENTS_TAB}},
 		["petspec"] = {"Pet specialization","call",{"ToggleTalentFrame",ns.player.class:upper()=="HUNTER" and PET_SPECIALIZATION_TAB or SPECIALIZATION_TAB}}, -- L["Pet specialization"]
 		["menu"] = "OptionMenu"
 	}
@@ -341,7 +341,7 @@ function module.options()
 		tooltip = {
 			showTalents={ type="toggle", order=1, name=L["Show talents"], desc=L["Show talents in tooltip"]},
 			showTalentsShort={ type="toggle", order=2, name=L["Show short talent list"], desc=L["Show short list of PvE talents in tooltip"]},
-			showPvPTalents={ type="toggle", order=3, name=L["Show PvP talents"], desc=L["Show PvP talents in tooltip"]},
+			showPvPTalents={ type="toggle", order=3, name=PVP_LABEL_PVP_TALENTS, desc=L["Show PvP talents in tooltip"]},
 			--showPvPHonor={ type="toggle", order=5, name=L["Show PvP honor"], desc=L["Show PvP honor in tooltip"]},
 		},
 		misc = nil,

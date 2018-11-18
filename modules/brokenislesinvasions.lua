@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Broken Isles Invasions";
+local name = "Broken Isles Invasions"; -- L["ModDesc-Broken Isles Invasions"]
 local ttName, ttColumns, tt, module = name.."TT", 3;
 
 local nextInvasionStart,lastInvasionStart,currentInvasion,timeStamp

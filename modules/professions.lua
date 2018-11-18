@@ -7,7 +7,7 @@ local C,L,I = ns.LC.color,ns.L,ns.I;
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Professions"; -- TRADE_SKILLS
+local name = "Professions"; -- TRADE_SKILLS L["ModDesc-Professions"]
 local ttName,ttName2,ttColumns,tt,tt2,module = name.."TT",name.."TT2",2;
 local professions,db,locked = {};
 local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset, fullNameLocale = 1,2,3,4,5,6,7,8,9,10,11; -- GetProfessionInfo
@@ -128,7 +128,7 @@ local function createTooltip(tt)
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",TRADE_SKILLS));
 
-	tt:AddLine(C("ltblue","Name"),C("ltblue","Skill"),C("ltblue","Abilities"));
+	tt:AddLine(C("ltblue",NAME),C("ltblue",SKILL),C("ltblue",ABILITIES));
 	tt:AddSeparator();
 	if #professions>0 then
 		local ts = {};

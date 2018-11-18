@@ -379,6 +379,13 @@ function ns.RegisterMouseWheel(self,func)
 end
 
 -- L["ModKey" .. ns.tooltipModifiers.<key>.l]
+--@do-not-package@
+--[[
+L["ModKeyS"] L["ModKeyLS"] L["ModKeyRS"]
+L["ModKeyA"] L["ModKeyRA"] L["ModKeyLA"]
+L["ModKeyC"] L["ModKeyLC"] L["ModKeyRC"]
+--]]
+--@end-do-not-package@
 ns.tooltipModifiers = {
 	SHIFT      = {l="S",  f="Shift"},
 	LEFTSHIFT  = {l="LS", f="LeftShift"},
@@ -436,6 +443,7 @@ do
 		["MinimapButtonFrame"]	= "CoExistUnsave",
 		["SexyMap"]				= "CoExistSimilar",
 		["SquareMap"]			= "CoExistUnsave",
+		-- L["CoExistUnsave"] L["CoExistSimilar"] L["CoExistOwn"]
 	};
 	ns.coexist = {};
 	function ns.coexist.IsNotAlone(info)
@@ -605,7 +613,8 @@ end
 -- FormatLargeNumber function advanced  --
 -- ------------------------------------ --
 do
-	local floatformat,sizes = "%0.1f",{ -- L["SizeSuffix-10E"..sizes[i]]
+	-- L["SizeSuffix-10E18"] L["SizeSuffix-10E15"] L["SizeSuffix-10E12"] L["SizeSuffix-10E9"] L["SizeSuffix-10E6"] L["SizeSuffix-10E3"]
+	local floatformat,sizes = "%0.1f",{
 		18,15,12,9,6,3 -- Qi Qa T B M K (Qi Qa Tr Bi Mi Th?)
 	};
 	function ns.FormatLargeNumber(modName,value,tooltip)
@@ -1791,10 +1800,10 @@ do
 		ns.EasyMenu:ShowMenu(self);
 	end
 	local sharedClickOptions = {
-		OptionMenu  = {"ClickOptMenu","shared","OptionMenu"},
+		OptionMenu  = {"ClickOptMenu","shared","OptionMenu"}, -- L["ClickOptMenu"]
 		OptionMenuCustom = {"ClickOptMenu","module","OptionMenu"},
-		OptionPanel = {"ClickOptPanel","namespace","ToggleBlizzOptionPanel"},
-		CharacterInfo = {"ClickOptCharInfo","call",{"ToggleCharacter","PaperDollFrame"}},
+		OptionPanel = {"ClickOptPanel","namespace","ToggleBlizzOptionPanel"}, -- L["ClickOptPanel"]
+		CharacterInfo = {CHARACTER_INFO,"call",{"ToggleCharacter","PaperDollFrame"}},
 		GarrisonReport = {GARRISON_LANDING_PAGE_TITLE,"call","GarrisonLandingPage_Toggle"}, --"ClickOptGarrReport"
 		Guild = {GUILD,"call","ToggleGuildFrame"}, -- "ClickOptGuild"
 		Currency = {CURRENCY,"call",{"ToggleCharacter","TokenFrame"}}, -- "ClickOptCurrency"

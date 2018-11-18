@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Order hall" -- L["Order hall"]
+local name = "Order hall" -- L["Order hall"] L["ModDesc-Order hall"]
 local ldbName,ttName,ttColumns,tt,module = name, name.."TT",3;
 local now = 0;
 local TalentUnavailableReasons = {
@@ -255,7 +255,7 @@ local function createTooltip(tt)
 				end
 			end
 			if #looseShipments>0 then
-				tt:AddLine(C("gray","Misc"));
+				tt:AddLine(C("gray",AUCTION_SUBCATEGORY_OTHER));
 				for i = 1, #looseShipments do
 					addShipment(tt,C_Garrison.GetLandingPageShipmentInfoByContainerID(looseShipments[i]));
 				end

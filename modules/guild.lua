@@ -7,7 +7,7 @@ local C,L,I=ns.LC.color,ns.L,ns.I;
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Guild"; -- GUILD
+local name = "Guild"; -- GUILD L["ModDesc-Guild"]
 local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module = name.."TT", name.."TT2",10,2;
 local off,on = strtrim(ERR_FRIEND_OFFLINE_S:gsub("%%s","(.*)")),strtrim(ERR_FRIEND_ONLINE_SS:gsub("[\124:%[%]]","#"):gsub("%%s","(.*)"));
 local tradeskillsLockUpdate,tradeskillsLastUpdate,tradeskillsUpdateTimeout = false,0,20;
@@ -471,12 +471,12 @@ local function createTooltip(tt,update)
 
 		if (ttColumns>4) then
 			local l = tt:AddLine();
-			tt:SetCell(l,1,C("ltblue",L["MouseBtn"]).." || "..C("green",L["Whisper"]) .." - ".. C("ltblue",L["ModKeyA"].."+"..L["MouseBtn"]).." || "..C("green",L["Group invite"]),nil,"LEFT",ttColumns);
+			tt:SetCell(l,1,C("ltblue",L["MouseBtn"]).." || "..C("green",WHISPER) .." - ".. C("ltblue",L["ModKeyA"].."+"..L["MouseBtn"]).." || "..C("green",TRAVEL_PASS_INVITE),nil,"LEFT",ttColumns);
 		else
 			local l = tt:AddLine();
-			tt:SetCell(l,1,C("ltblue",L["MouseBtn"]).." || "..C("green",L["Whisper"]),nil,"LEFT",ttColumns);
+			tt:SetCell(l,1,C("ltblue",L["MouseBtn"]).." || "..C("green",WHISPER),nil,"LEFT",ttColumns);
 			local l = tt:AddLine();
-			tt:SetCell(l,1,C("ltblue",L["ModKeyA"].."+"..L["MouseBtn"]).." || "..C("green",L["Group invite"]),nil,"LEFT",ttColumns);
+			tt:SetCell(l,1,C("ltblue",L["ModKeyA"].."+"..L["MouseBtn"]).." || "..C("green",TRAVEL_PASS_INVITE),nil,"LEFT",ttColumns);
 		end
 
 		if (module.clickHints) then

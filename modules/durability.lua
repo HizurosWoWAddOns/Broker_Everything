@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I;
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name,_ = "Durability"; -- DURABILITY
+local name,_ = "Durability"; -- DURABILITY L["ModDesc-Durability"]
 local ttName,tt,module = name.."TT";
 local hiddenTooltip
 local last_repairs = {};
@@ -371,7 +371,7 @@ function module.onevent(self,event,arg1)
 			merchant.costs=costs;
 			if (ns.profile[name].autorepair) then
 				if (AutoRepairAll(costs)==false) and (ns.profile[name].chatRepairInfo) then
-					ns.print(L["AutoRepair"], L["Automatic repair failed. Not enough money..."]);
+					ns.print(L["AutoRepair"], L["Automatically repair failed. Not enough money..."]);
 				end
 			end
 		end

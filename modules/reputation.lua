@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Reputation"; -- REPUTATION
+local name = "Reputation"; -- REPUTATION L["ModDesc-Reputation"]
 local ttName, ttColumns, tt, module,createTooltip,updateBroker = name.."TT", 6;
 local Name,description,standingID,barMin,barMax,barValue,atWarWith,canToggleAtWar,isHeader,isCollapsed,hasRep,isWatched,isChild,factionID,hasBonusRepGain,canBeLFGBonus=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- index list for GetFactionInfo
 local barPercent,sessionValue,factionStandingText,friendID,isParagon,hideSession,rewardMin,rewardMax,rewardValue,rewardQuestID,rewardPercent,hasRewardPending,rewardsFinished=30,31,32,33,34,35,36,37,38,39,40,41,42,43;
@@ -458,7 +458,7 @@ module = {
 		["menu"] = "2_open_menu"
 	},
 	clickOptions = {
-		["reputation"] = {"Reputation","call",{"ToggleCharacter","ReputationFrame"}}, -- L["Reputation"]
+		["reputation"] = {REPUTATION,"call",{"ToggleCharacter","ReputationFrame"}},
 		["menu"] = "OptionMenuCustom"
 	}
 }
@@ -498,7 +498,7 @@ function module.options()
 				desc = L["Display reputation collecting for rewards beyond exalted"],
 				values = {
 					["_NONE"] = "None",
-					["percent"] = L["Percent"],
+					["percent"] = STATUS_TEXT_PERCENT,
 					["value_max"] = L["Value/Cap"]
 				}
 			}

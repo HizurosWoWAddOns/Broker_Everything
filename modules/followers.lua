@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local nameF,nameS = "Followers","Ships"; -- GARRISON_FOLLOWERS, GARRISON_SHIPYARD_FOLLOWERS
+local nameF,nameS = "Followers","Ships"; -- GARRISON_FOLLOWERS, GARRISON_SHIPYARD_FOLLOWERS L["ModDesc-Followers"] L["ModDesc-Ships"]
 local ttNameF, ttColumnsF, ttF, moduleF = nameF.."TT", 7;
 local ttNameS, ttColumnsS, ttS, moduleS = nameS.."TT" ,7;
 local followers,ships,champions,troops = {num=0},{num=0},{num=0},{num=0};
@@ -224,9 +224,9 @@ local function createTooltip(tt, name)
 
 	if (ns.profile[name].showChars) then
 		tt:AddSeparator(4,0,0,0,0)
-		local l=tt:AddLine( C("ltblue", L["Characters"]) ); -- 1
+		local l=tt:AddLine( C("ltblue",CHARACTER) ); -- 1
 		if(IsShiftKeyDown())then
-			tt:SetCell(l, 2, C("ltblue",L["Back from missions"]).."|n"..L["next"].." / "..L["all"], nil, "RIGHT", 3);
+			tt:SetCell(l, 2, C("ltblue",L["Back from missions"]).."|n"..L["next"].." / "..SPELL_TARGET_TYPE12_DESC, nil, "RIGHT", 3);
 		else
 			tt:SetCell(l, 2, C("ltblue",GARRISON_FOLLOWER_ON_MISSION) .."|n".. C("green",L["Completed"]) .." / ".. C("yellow",GARRISON_SHIPYARD_MSSION_INPROGRESS_TOOLTIP), nil, "RIGHT", 3);
 		end

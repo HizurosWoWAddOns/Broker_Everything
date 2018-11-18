@@ -31,20 +31,22 @@ ns.L = setmetatable({}, {
 
 
 -- localization by Blizzard - step 1
-L["Achievements"] = ACHIEVEMENTS;
+L["Achievements"] = ACHIEVEMENTS
 L["Archaeology"] = PROFESSIONS_ARCHAEOLOGY
+L["ChatChannels"] = CHAT_CHANNELS
 L["Clock"] = TIMEMANAGER_TITLE
 L["Currency"] = CURRENCY
 L["Dungeon"] = LFG_TYPE_DUNGEON
 L["Dungeons"] = DUNGEONS
 L["Durability"] = DURABILITY
+L["Emissary Quests"] = BOUNTY_BOARD_LOCKED_TITLE
 L["Equipment"] = BAG_FILTER_EQUIPMENT
 L["Exalted"] = FACTION_STANDING_LABEL8
 L["Followers"] = GARRISON_FOLLOWERS
 L["Friendly"] = FACTION_STANDING_LABEL5
+L["Friends"] = FRIENDS
 L["Game Menu"] = MAINMENU_BUTTON
 L["Garrison"] = GARRISON_LOCATION_TOOLTIP
-L["General"] = GENERAL
 L["Gold"] = BONUS_ROLL_REWARD_MONEY
 L["Guild"] = GUILD
 L["Hated"] = FACTION_STANDING_LABEL1
@@ -62,14 +64,13 @@ L["Raids"] = RAIDS
 L["Reputation"] = REPUTATION
 L["Revered"] = FACTION_STANDING_LABEL7
 L["Ships"] = GARRISON_SHIPYARD_FOLLOWERS
+L["Speed"] = SPEED
 L["System"] = CHAT_MSG_SYSTEM
 L["Tracking"] = TRACKING
 L["Unfriendly"] = FACTION_STANDING_LABEL3
 L["Volume"] = VOLUME
 L["Wardrobe"] = WARDROBE
 L["XP"] = XP
-L["Disabled"] = ADDON_DISABLED
-L["Misc"] = AUCTION_SUBCATEGORY_OTHER or CALENDAR_TYPE_OTHER
 
 
 -- localization by Blizzard - step 2

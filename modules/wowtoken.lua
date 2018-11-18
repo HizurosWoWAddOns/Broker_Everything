@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "WoWToken";
+local name = "WoWToken"; -- L["ModDesc-WoWToken"]
 local ttName,ttColumns,tt,icon,module,_ = name.."TT",1;
 local price = {last=0,money=0,diff=0};
 

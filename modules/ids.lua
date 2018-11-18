@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "IDs"; -- L["IDs"]
+local name = "IDs"; -- L["IDs"] L["ModDesc-IDs"]
 local ttName,ttColumns,tt,module,activeEncounter = name.."TT", 4;
 local diffName = {
 	LFG_TYPE_DUNGEON, -- dungeons [1]
@@ -109,7 +109,7 @@ local function createTooltip(tt)
 
 	local instanceName, instanceID, instanceReset, instanceDifficulty, locked, extended, instanceIDMostSig, isRaid, maxPlayers, difficultyName, numEncounters, encounterProgress=1,2,3,4,5,6,7,8,9,10,11,12;
 	tt:AddSeparator(3,0,0,0,0);
-	tt:AddLine(C("ltblue",L["Instances"]), C("ltblue",TYPE),C("ltblue",L["Bosses"]),C("ltblue",L[title]));
+	tt:AddLine(C("ltblue",L["Instances"]), C("ltblue",TYPE),C("ltblue",RAID_BOSSES),C("ltblue",L[title]));
 	tt:AddSeparator();
 	local empty,num = true,GetNumSavedInstances();
 	local diffCounter = {};

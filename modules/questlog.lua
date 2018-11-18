@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Quest Log" -- QUESTLOG_BUTTON
+local name = "Quest Log" -- QUESTLOG_BUTTON L["ModDesc-Quest Log"]
 local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module,createTooltip = name.."TT",name.."TT2",9,2;
 local quests,numQuestStatus,sum,url,tt2created,requested
 local urls = {

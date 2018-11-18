@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Wardrobe"; -- WARDROBE
+local name = "Wardrobe"; -- WARDROBE L["ModDesc-Wardrobe"]
 local ldbName, ttName, ttColumns, tt, module = name, name.."TT", 4
 local illusions,weapons = {0,0},{};
 local ctForm = C("green","%d")..C("gray","/")..C("dkyellow","%d");
@@ -15,15 +15,17 @@ local pForm = C("","")
 local session = {};
 local brokerValues = {
 	["_none"] = NONE.."/"..HIDE,
-	p = L["<Percent>"].." "..L["+<Collected in this session>"],
+	p = "<"..STATUS_TEXT_PERCENT..">".." "..L["+<Collected in this session>"],
 	ct = L["<Collected>/<Total>"].." "..L["+<Collected in this session>"],
 	s = L["+<Collected in this session>"]
 }
 
+--@do-not-package@
 L["WardrobeBrokerSets"] = rawget(L,"WardrobeBrokerSets") or "S: ";
 L["WardrobeBrokerArmor"] = rawget(L,"WardrobeBrokerArmor") or "A: ";
 L["WardrobeBrokerWeapons"] = rawget(L,"WardrobeBrokerWeapons") or "W: ";
 L["WardrobeBrokerIllusions"] = rawget(L,"WardrobeBrokerIllusions") or "I: ";
+--@end-do-not-package@
 
 -- register icon names and default files --
 -------------------------------------------
@@ -43,7 +45,7 @@ local function addToBroker(tb,color,o,collected,total,sess)
 		res = strtrim(sess);
 	end
 	if res~="" then
-		table.insert(tb,C(color,L["WardrobeBroker"..o]..res));
+		table.insert(tb,C(color,L["WardrobeBroker"..o].." "..res));
 	end
 end
 
@@ -239,9 +241,9 @@ ns.ClickOpts.addDefaults(module,{
 function module.options()
 	return {
 		broker = {
-			brokerSets      = { type="select", order=10, width="double", name=L["Sets"], desc=L["WardrobeSetsDesc"], values=brokerValues },
-			brokerArmor     = { type="select", order=11, width="double", name=L["Armor"], desc=L["WardrobeArmorDesc"], values=brokerValues },
-			brokerWeapons   = { type="select", order=12, width="double", name=L["Weapons"], desc=L["WardrobeWeaponsDesc"], values=brokerValues },
+			brokerSets      = { type="select", order=10, width="double", name=WARDROBE_SETS, desc=L["WardrobeSetsDesc"], values=brokerValues },
+			brokerArmor     = { type="select", order=11, width="double", name=AUCTION_CATEGORY_ARMOR, desc=L["WardrobeArmorDesc"], values=brokerValues },
+			brokerWeapons   = { type="select", order=12, width="double", name=AUCTION_CATEGORY_WEAPONS, desc=L["WardrobeWeaponsDesc"], values=brokerValues },
 			brokerIllusions = { type="select", order=13, width="double", name=L["Illusions"], desc=L["WardrobeIllusionsDesc"], values=brokerValues },
 		}
 	}

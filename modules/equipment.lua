@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Equipment"; -- BAG_FILTER_EQUIPMENT
+local name = "Equipment"; -- BAG_FILTER_EQUIPMENT L["ModDesc-Equipment"]
 local ttName, ttColumns, tt, module, equipPending = name.."TT", 3;
 local objLink,objColor,objType,objId,objData,objName,objInfo,objTooltip=1,2,3,4,6,5,7,8;
 local itemEnchant,itemGem1,itemGem2,itemGem3,itemGem4=1,2,3,4,5;
@@ -346,7 +346,7 @@ module = {
 	},
 	clickOptions = {
 		["charinfo"] = "CharacterInfo",
-		["sets"] = {"Equipment manager","module","equipMan"}, -- L["Equipment manager"]
+		["sets"] = {EQUIPMENT_MANAGER,"module","equipMan"},
 		["menu"] = "OptionMenu"
 	}
 }

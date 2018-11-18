@@ -7,8 +7,8 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name1 = "Raids" -- RAIDS
-local name2 = "Dungeons" -- DUNGEONS
+local name1 = "Raids" -- RAIDS L["ModDesc-Raids"]
+local name2 = "Dungeons" -- DUNGEONS L["ModDesc-Dungeons"]
 local ttName1, ttName2, ttColumns, tt1, tt2, createTooltip, module1, module2 = name1.."TT", name2.."TT", 5
 local fState,symbol,renameIt = C("ltgray"," (%d/%d)"),"|Tinterface\\buttons\\UI-%sButton-Up:0|t ",{};
 local instanceName, instanceID, instanceReset, instanceDifficulty, locked, extended, instanceIDMostSig, isRaid, maxPlayers, difficultyName, numEncounters, encounterProgress=1,2,3,4,5,6,7,8,9,10,11,12; -- GetSavedInstanceInfo

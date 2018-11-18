@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Surprise" -- L["Surprise"]
+local name = "Surprise" -- L["Surprise"] L["ModDesc-Surprise"]
 local ttName,ttColumns,tt,module = name.."TT",3,nil
 local ITEM_DURATION,ITEM_COOLDOWN,ITEM_LOOTABLE=1,2,3
 local founds,counter,items = {},{sum=0,lootable=0,progress=0};

@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Mail" -- BUTTON_LAG_MAIL
+local name = "Mail" -- BUTTON_LAG_MAIL L["ModDesc-Mail"]
 local ttName, tooltip, tt, module = name.."TT"
 local alertLocked,onUpdateLocked,hookOn = false,false,false;
 local storedMailLineFaction = "%s%s |TInterface\\PVPFrame\\PVP-Currency-%s:16:16:0:-1:16:16:0:16:0:16|t";

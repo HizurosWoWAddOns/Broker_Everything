@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Framenames" -- L["Framenames"]
+local name = "Framenames" -- L["Framenames"] L["ModDesc-Framenames"]
 local ttName,ldbObject,module = name.."TT"
 local lastFrame,lastMod,lastCombatState,ticker = false,false,false;
 
@@ -43,7 +43,7 @@ function module.options()
 		broker = {
 			sep = {type="separator", order=1 },
 			ownership={ type="select", order=2, name=L["Show ownership"], desc=L["Display ownership on broker button"], values=values},
-			creatureid={ type="select", order=3, name=L["Show ownership"], desc=L["Display creature id on broker button"], values=values},
+			creatureid={ type="select", order=3, name=L["Show creature id"], desc=L["Display creature id on broker button"], values=values},
 		}
 	}
 end

@@ -6,7 +6,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Emissary Quests";
+local name = "Emissary Quests"; -- BOUNTY_BOARD_LOCKED_TITLE L["ModDesc-Emissary Quests"]
 local ttName, ttColumns, tt, module = name.."TT", 8
 local factions,totalQuests,locked = {},{},false;
 local Alliance = UnitFactionGroup("player")=="Alliance";
@@ -243,7 +243,7 @@ local function createTooltip(tt)
 
 	if ns.profile[name].showCharacters then
 		tt:AddSeparator(12,0,0,0,0);
-		local c,l=ttColumns,tt:AddLine(C("ltblue",L["Characters"]));
+		local c,l=ttColumns,tt:AddLine(C("ltblue",CHARACTER));
 		for e=#expansions, 1, -1 do
 			table.sort(factions[e],sortInvertFactions);
 			for i=1, #factions[e] do
@@ -348,13 +348,13 @@ ns.ClickOpts.addDefaults(module,"menu","_RIGHT");
 function module.options()
 	return {
 		broker = {
-			shortTitle={ type="toggle", order=1, name=L["Show shorter title"], desc=L["Display '%s' instead of '%s' on chars under level 110 on broker button"]:format(L["Emissary Quests-ShortCut"],L["Emissary Quests"]) },
-			legionQuestsBroker = { type="toggle", order=2, name=L["Legion quests"], desc=L["Display Legion quests on broker button"] },
-			bfaQuestsBroker = { type="toggle", order=3, name=L["BfA quests"], desc=L["Display BfA quests on broker button"] },
+			shortTitle={ type="toggle", order=1, name=L["Show shorter title"], desc=L["Display '%s' instead of '%s' on chars under level 110 on broker button"]:format(L["Emissary Quests-ShortCut"],BOUNTY_BOARD_LOCKED_TITLE) },
+			legionQuestsBroker = { type="toggle", order=2, name=BOUNTY_BOARD_LOCKED_TITLE.." ("..EXPANSION_NAME6..")", desc=L["Display the progress of your emissary quests on broker button"], width="full" },
+			bfaQuestsBroker = { type="toggle", order=3, name=BOUNTY_BOARD_LOCKED_TITLE.." ("..EXPANSION_NAME6..")", desc=L["Display the progress of your emissary quests on broker button"], width="full" },
 		},
 		tooltip = {
-			legionQuests = { type="toggle", order=1, name=L["Legion quests"], desc=L["Display Legion quests in tooltip"] },
-			bfaQuests = { type="toggle", order=2, name=L["BfA quests"], desc=L["Display BfA quests in tooltip"] },
+			legionQuests = { type="toggle", order=1, name=BOUNTY_BOARD_LOCKED_TITLE.." ("..EXPANSION_NAME6..")", desc=L["Display the progress of your emissary quests in tooltip"], width="full" },
+			bfaQuests = { type="toggle", order=2, name=BOUNTY_BOARD_LOCKED_TITLE.." ("..EXPANSION_NAME7..")", desc=L["Display the progress of your emissary quests in tooltip"], width="full" },
 			showCharacters = { type="toggle", order=3, name=L["Show characters"], desc=L["Display a list of your other characters and there emissary quest progress in tooltip"] },
 			showAllFactions=4,
 			showRealmNames=5,

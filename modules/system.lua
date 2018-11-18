@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name_sys,name_fps,name_traf,name_lat,name_mem = "System","FPS","Traffic","Latency","Memory";
--- L["Traffic"] L["Latency"] L["Memory"]
+-- L["Traffic"] L["Latency"] L["Memory"] L["ModDesc-System"] L["ModDesc-FPS"] L["ModDesc-Traffic"] L["ModDesc-Latency"] L["ModDesc-Memory"]
 local ttNameSys, ttColumnsSys, ttSys  = name_sys .."TT",2;
 local ttNameFPS, ttColumnsFPS, ttFPS  = name_fps .."TT",2;
 local ttNameTraf,ttColumnsTraf,ttTraf = name_traf.."TT",2;
@@ -356,7 +356,7 @@ local function createTooltip(tt, name, ttName, update)
 			tt:AddLine(C("ltyellow",L["Build version"]..":"),build);
 			tt:AddLine(C("ltyellow",L["Build date"]..":"),buildDate);
 			tt:AddLine(C("ltyellow",L["Interface version"]..":"),interfaceVersion);
-			tt:AddLine(C("ltyellow",L["Locale string"]..":"),ns.locale);
+			tt:AddLine(C("ltyellow",L["Locale code"]..":"),ns.locale);
 			allHidden=false;
 		end
 		if allHidden then

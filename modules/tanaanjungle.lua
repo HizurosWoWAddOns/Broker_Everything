@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Tanaan Jungle Dailies"; -- L["Tanaan Jungle Dailies"]
+local name = "Tanaan Jungle Dailies"; -- L["Tanaan Jungle Dailies"] L["ModDesc-Tanaan Jungle Dailies"]
 local ttName, ttName2, ttColumns, ttColumns2, tt, tt2, module = name.."TT",name.."TT2", 2, 2;
 local try,dailiesReset,weekliesReset,namesCount,namesNeed,completed,numCompleted,names,questlog,numQuestlog = 6,0,0,0,0,{},{},{},{},{};
 local dubs,updateLock,updateTimeout = {},true,10;
@@ -191,7 +191,7 @@ local function createTooltip(tt)
 
 	if ns.profile[name].showChars then
 		tt:AddSeparator(4,0,0,0,0);
-		local l=tt:AddLine( C("ltblue", L["Characters"]) ); -- 1
+		local l=tt:AddLine( C("ltblue",CHARACTER) ); -- 1
 		tt:AddSeparator();
 		for i=1, #Broker_Everything_CharacterDB.order do
 			local name_realm = Broker_Everything_CharacterDB.order[i];

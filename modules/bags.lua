@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Bags" -- L["Bags"]
+local name = "Bags" -- L["Bags"] L["ModDesc-Bags"]
 local ttName,ttColumns,tt,module = name.."TT",3;
 local IsMerchantOpen,G = false,{};
 local crap = {limit=3,sum=0,items={}};
@@ -240,7 +240,7 @@ function module.options()
 			shortNumbers=1,
 			header={ type="header", order=2, name=L["Crap selling options"] },
 			autoCrapSelling={ type="toggle", order=3, name=L["Enable auto crap selling"], desc=L["Enable automatically crap selling on opening a mergant frame"] },
-			autoCrapSellingInfo={ type="toggle", order=4, name=L["Earned money summary in chat"], desc=L["Post earned money in chat frame"] },
+			autoCrapSellingInfo={ type="toggle", order=4, name=L["Summary of earned gold in chat"], desc=L["Post summary of earned gold in chat window"] },
 		},
 	},
 	{

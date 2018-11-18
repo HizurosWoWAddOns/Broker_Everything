@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Speed"; -- SPEED
+local name = "Speed"; -- SPEED L["ModDesc-Speed"]
 local ttName, ttColumns, tt, module = name.."TT", 2
 local riding_skills,licences,bonus_spells,replace_unknown,trainer_faction,deprecated_licences = {},{},{},{},{},{};
 

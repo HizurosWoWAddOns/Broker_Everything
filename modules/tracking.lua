@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name,tt,module = "Tracking" -- TRACKING
+local name,tt,module = "Tracking" -- TRACKING L["ModDesc-Tracking"]
 
 
 -- register icon names and default files --

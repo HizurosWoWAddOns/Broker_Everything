@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Nameplates" -- L["Nameplates"]
+local name = "Nameplates" -- L["Nameplates"] L["ModDesc-Nameplates"]
 local ttName,ttColumns,tt,createTooltip,module = name.."TT",5
 local nameplateStatus = {};
 
@@ -209,7 +209,7 @@ function module.init()
 
 		{separator=4},
 
-		{{txt=L["Misc"],colors="ltblue"},separator=1},
+		{{txt=AUCTION_SUBCATEGORY_OTHER,colors="ltblue"},separator=1},
 		{{txt=L["Show quest unit circles"],type="single", cvar="ShowQuestUnitCircles", colors=colors1,rows=ttColumns}}
 	};
 end
