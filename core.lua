@@ -76,7 +76,9 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 		ns.moduleInit();
 
 		-- slash command
-		ns.RegisterSlashCommand();
+		if ns.profile.GeneralOptions.chatCommands then
+			ns.RegisterSlashCommand();
+		end
 
 		if ns.profile.GeneralOptions.showAddOnLoaded then
 			ns.print(L["AddOnLoaded"]);

@@ -22,7 +22,8 @@ local dbDefaults,db = {
 			ttModifierKey2 = "NONE",
 			goldHide = "0",
 			separateThousands = true,
-			showAddOnLoaded = true
+			showAddOnLoaded = true,
+			chatCommands = true, -- will be flagged 'false' in next version
 		}
 	}
 };
@@ -207,12 +208,13 @@ local options = {
 					args = {
 						showAddOnLoaded = { type="toggle",order=1,name=L["AddOnLoaded"],desc=L["AddOnLoadedDesc"] },
 						suffixColour    = { type="toggle",order=2,name=L["SuffixColor"],desc=L["SuffixColorDesc"] },
-						usePrefix       = { type="toggle",order=3,name=L["Prefix"],desc=L["PrefixDesc"] }
+						usePrefix       = { type="toggle",order=3,name=L["Prefix"],desc=L["PrefixDesc"] },
+						chatCommands    = { type="toggle",order=4,name=L["ChatCommands"],desc=L["ChatCommandsDesc"] },
 					}
 				},
 				gold = {
 					type = "group", order = 2, inline = true,
-					name = C("ff00aaff",MONEY),
+					name = C("ff00aaff",GOLD),
 					args = {
 						goldColor          = {type="select",order=1,name=L["GoldColor"],desc=L["GoldColorDesc"],values={_none=ADDON_DISABLED,color=L["GoldColorCoin"],white=L["GoldColorWhite"]} },
 						goldCoins          = {type="toggle",order=2,name=L["GoldCoins"],desc=L["GoldCoinsDesc"]},
