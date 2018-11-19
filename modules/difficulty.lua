@@ -254,6 +254,7 @@ ns.ClickOpts.addDefaults(module,{
 	rollneed = "_RIGHT",
 	rollgreed = "_LEFT",
 	instanceReset = "__NONE",
+	resetinstances = "__NONE",
 });
 
 function module.roll(self,button,...)

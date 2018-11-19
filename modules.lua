@@ -57,7 +57,10 @@ local function moduleInit(name)
 				mod.ontooltipshow = mod.ontooltip;
 			end
 
-			local icon = ns.I(name .. (mod.icon_suffix or ""));
+			if not mod.iconName then
+				mod.iconName = name;
+			end
+			local icon = ns.I(mod.iconName .. (mod.icon_suffix or ""));
 			local iColor = ns.profile.GeneralOptions.iconcolor;
 			mod.ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
 			mod.obj = ns.LDB:NewDataObject(mod.ldbName, {

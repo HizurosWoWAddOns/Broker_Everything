@@ -149,7 +149,8 @@ ns.ClickOpts.addDefaults(module,{
 	calendar = "SHIFTRIGHT",
 	hoursmode = "SHIFTLEFT",
 	time = "_RIGHT",
-	menu = "__NONE"
+	menu = "__NONE",
+	stopwatch = "__NONE",
 });
 
 function module.switchTime()

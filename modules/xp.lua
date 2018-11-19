@@ -83,7 +83,7 @@ local function createTooltip2(parentLine,data)
 		end
 	end
 	tt2:AddSeparator();
-	tt2:AddLine(C("ltblue",L["Summary"]),"",C(data.bonusSum>0 and "green" or "gray",data.bonusSum.."%"));
+	tt2:AddLine(C("ltblue",ACHIEVEMENT_SUMMARY_CATEGORY),"",C(data.bonusSum>0 and "green" or "gray",data.bonusSum.."%"));
 
 	ns.roundupTooltip(tt2);
 end

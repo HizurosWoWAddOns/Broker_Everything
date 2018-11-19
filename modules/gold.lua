@@ -289,6 +289,9 @@ function module.onevent(self,event,arg1)
 			if ns.profile[name].showProfit~=nil then
 				ns.profile[name].showProfit=nil;
 			end
+--@do-not-package@
+	        ns.profileSilenceFIXME=true;
+--@end-do-not-package@
 			if ns.profile[name].showSessionProfit~=nil then
 				ns.profile[name].showProfitSessionBroker=ns.profile[name].showSessionProfit
 				ns.profile[name].showSessionProfit=nil

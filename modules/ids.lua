@@ -272,6 +272,9 @@ function module.onevent(self,event,...)
 		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		RequestRaidInfo(); -- trigger UPDATE_INSTANCE_INFO
+--@do-not-package@
+        ns.profileSilenceFIXME=true;
+--@end-do-not-package@
 		if ns.profile[name].showExpiredRaids ~= nil then
 			ns.profile[name].showExpiredEntries = ns.profile[name].showExpiredRaids;
 			ns.profile[name].showExpiredRaids = nil;

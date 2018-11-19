@@ -195,9 +195,9 @@ function updateBroker()
 
 		if ns.profile[name].watchedSessionBroker and not data[friendID] and tonumber(data[sessionValue]) and data[sessionValue]~=0 then
 			if data[sessionValue]>0 then
-				insert(tmp,C("ltgreen","+"..data[sessionValue]));
+				tinsert(tmp,C("ltgreen","+"..data[sessionValue]));
 			elseif data[sessionValue]<0 then
-				insert(tmp,C("ltred","-"..data[sessionValue]));
+				tinsert(tmp,C("ltred","-"..data[sessionValue]));
 			end
 		end
 

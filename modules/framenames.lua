@@ -29,7 +29,7 @@ end
 ------------------------------------
 module = {
 	events = {},
-	onupdate_interval = 0.12,
+	onupdate_interval = 0.2,
 	config_defaults = {
 		enabled = false,
 		ownership = "shift",

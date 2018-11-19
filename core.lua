@@ -87,9 +87,6 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 		ns.eventAddOnLoaded = true;
 
 		self:UnregisterEvent(event);
-	elseif event == "ADDON_LOADED" and addonName == "Blizzard_ItemUpgradeUI" then
-		ItemUpgradeFrameUpgradeButton:HookScript("OnClick",ns.items.UpdateNow);
-		hooksecurefunc(_G,"ItemUpgradeFrame_UpgradeClick",ns.items.UpdateNow);
 	elseif event == "DISPLAY_SIZE_CHANGED" then
 		ns.ui = {size={UIParent:GetSize()},center={UIParent:GetCenter()}};
 	elseif event=="PLAYER_LOGIN" then

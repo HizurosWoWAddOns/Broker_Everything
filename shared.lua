@@ -535,7 +535,7 @@ do
 		for i,v in pairs(ns.modules) do
 			local obj = ns.LDB:GetDataObjectByName(i)
 			if obj~=nil then
-				local d = ns.I(i .. (v.icon_suffix or ""))
+				local d = ns.I(v.iconName .. (v.icon_suffix or ""))
 				obj.iconCoords = d.coords or {0,1,0,1}
 				obj.icon = d.iconfile
 			end
@@ -756,7 +756,7 @@ end
 do
 	--- local elements
 	local update,d,ticker,_ = false,{ids={}, seen={}, bags={},inv={},item={}, callbacks={any={},bags={},inv={},item={}}, preScanCallbacks={}, linkData={}, tooltipData={}, NeedTooltip={}};
-	local locked,tickerDelay,defaultDelay,f = false,0.18,1,CreateFrame("Frame");
+	local locked,tickerDelay,defaultDelay,f = false,0.5,1,CreateFrame("Frame");
 	local GetItemInfoFailed,IsEnabled = false,false;
 	local _ITEM_LEVEL = ITEM_LEVEL:gsub("%%d","(%%d*)");
 	local _UPGRADES = ITEM_UPGRADE_TOOLTIP_FORMAT:gsub(": %%d/%%d","");
@@ -766,12 +766,12 @@ do
 		INVTYPE_BODY = ARMOR,INVTYPE_CHEST = ARMOR,INVTYPE_CLOAK = ARMOR,INVTYPE_FEET = ARMOR,INVTYPE_FINGER = ARMOR,INVTYPE_HAND = ARMOR,
 		INVTYPE_HEAD = ARMOR,INVTYPE_LEGS = ARMOR,INVTYPE_NECK = ARMOR,INVTYPE_QUIVER = ARMOR,INVTYPE_ROBE = ARMOR,INVTYPE_SHIELD = ARMOR,
 		INVTYPE_SHOULDER = ARMOR,INVTYPE_TABARD = ARMOR,INVTYPE_TRINKET = ARMOR,INVTYPE_WAIST = ARMOR,INVTYPE_WRIST = ARMOR
-	}
+	};
 
 	-- EMPTY_SOCKET_PRISMATIC and EMPTY_SOCKET_NO_COLOR are identical in some languages... Need only one of it.
-	local EMPTY_SOCKETS = {"RED","YELLOW","META","HYDRAULIC","BLUE","PRISMATIC","COGWHEEL","NO_COLOR"};
-	if EMPTY_SOCKET_PRISMATIC==EMPTY_SOCKET_NO_COLOR then
-		tremove(EMPTY_SOCKETS,8);
+	local EMPTY_SOCKETS = {"RED","YELLOW","META","HYDRAULIC","BLUE","PRISMATIC","COGWHEEL"};
+	if EMPTY_SOCKET_PRISMATIC~=EMPTY_SOCKET_NO_COLOR then
+		tinsert(EMPTY_SOCKETS,"NO_COLOR");
 	end
 
 	local function GetObjectLinkData(obj)
@@ -793,12 +793,15 @@ do
 		obj.linkData = d.linkData[obj.link];
 	end
 
-	local function GetObjectTooltipData(obj,instantMode)
+	local function GetObjectTooltipData(obj,instantMode,force)
 		if instantMode==true then
-			if not d.tooltipData[obj.link] then
-				local data = ns.ScanTT.query({type="link",link=obj.link,obj=obj},true);
-				if #data.lines>0 then
-					d.tooltipData[obj.link] = CopyTable(data.lines);
+			if not d.tooltipData[obj.link] or force then
+				local data = ns.ScanTT.query({type=obj.type,link=obj.link,bag=obj.bag,slot=obj.slot,obj=obj},true);
+				if obj.itemType==ARMOR or obj.itemType==WEAPON then
+					obj.repairCost = tonumber(data.repairCost) or 0;
+				end
+				if not d.tooltipData[obj.link] and #data.lines>0 then
+					d.tooltipData[obj.link] = data.lines;
 				end
 			end
 		else
@@ -807,14 +810,16 @@ do
 				scanner = obj;
 				obj = obj.obj;
 			end
-			if not d.tooltipData[obj.link] then
+			if not d.tooltipData[obj.link] or force then
 				if not scanner then
-					ns.ScanTT.query({type="link",link=obj.link,obj=obj,callback=GetObjectTooltipData});
+					ns.ScanTT.query({type=obj.type,link=obj.link,bag=obj.bag,slot=obj.slot,obj=obj,callback=GetObjectTooltipData});
 					return;
 				end
-				if scanner.lines and #scanner.lines>0 then
-					d.tooltipData[obj.link] = CopyTable(scanner.lines);
-					-- change flag?
+				if obj.itemType==ARMOR or obj.itemType==WEAPON then
+					obj.repairCost = tonumber(scanner.repairCost) or 0;
+				end
+				if not not d.tooltipData[obj.link] and scanner.lines and #scanner.lines>0 then
+					d.tooltipData[obj.link] = scanner.lines;
 				end
 			end
 		end
@@ -858,6 +863,7 @@ do
 		local items,seen,bags,inv,callbacks_item = {},{},{},{},{};
 		local inv_changed,bags_changed=false,false;
 		local _GetItemInfoFailed=GetItemInfoFailed;
+
 		-- get all itemIds from all items in the bags
 		for bag=0, NUM_BAG_SLOTS do
 			for slot=1, GetContainerNumSlots(bag) do
@@ -874,7 +880,7 @@ do
 					if obj.name then
 						GetObjectLinkData(obj);
 						if IsEquippableItem(obj.link) or d.NeedTooltip[id] or (ns.artifactpower_items and ns.artifactpower_items[id]) then -- 7.2 GetItemInfo invalid itemType Bug. @Blizzard: Ha Ha. Dirty trick. Try again :P
-							GetObjectTooltipData(obj);
+							GetObjectTooltipData(obj,false,obj.itemType==ARMOR or obj.itemType==WEAPON);
 						end
 						tinsert(items[id],obj);
 						seen[id]=true; bags[bag..":"..slot]=id;
@@ -914,7 +920,7 @@ do
 				obj.isBroken = GetInventoryItemBroken("player",slotIndex);
 				obj.durability, obj.durability_max = GetInventoryItemDurability(slotIndex);
 				GetObjectLinkData(obj);
-				GetObjectTooltipData(obj);
+				GetObjectTooltipData(obj,true,true);
 				tinsert(items[id],obj);
 				seen[id]=true;
 				inv[slotIndex]=obj;
@@ -948,11 +954,17 @@ do
 		d.bags = bags;
 		d.inv = inv;
 
+		-- execute preScan callbacks
+		if (bags_changed or inv_changed) and d.preScanCallbacks~=nil then
+			for module,func in pairs(d.preScanCallbacks) do
+				if(type(func)=="function")then
+					func("preScan");
+				end
+			end
+		end
+
 		-- execute callback functions for item id's
 		for module,func in pairs(callbacks_item) do
-			if d.preScanCallbacks[module] then
-				d.preScanCallbacks[module]("preScan");
-			end
 			if(type(func)=="function")then
 				func("update.item");
 			end
@@ -983,7 +995,7 @@ do
 					d.preScanCallbacks[module]("preScan");
 				end
 				if(type(func)=="function")then
-					func("update.any");
+					func("update.any",items);
 				end
 			end
 		end
@@ -1000,6 +1012,9 @@ do
 	end
 
 	--- event and update frame
+	local function unlock()
+		locked = false;
+	end
 	local function updater()
 		if update==false or locked then return end
 		locked = true;
@@ -1009,11 +1024,20 @@ do
 			update = false;
 			ticker:Cancel();
 			ticker = nil;
-		end;
-		locked = false;
+			C_Timer.After(2,unlock);
+			return;
+		end
+		unlock();
 	end
-	local function OnEvent(self,event)
-		if event=="PLAYER_LOGIN" then
+	local function OnEvent(self,event,...)
+		if event=="ADDON_LOADED" and (...)=="Blizzard_ItemUpgradeUI" then
+			ItemUpgradeFrameUpgradeButton:HookScript("OnClick",ns.items.UpdateNow);
+			hooksecurefunc(_G,"ItemUpgradeFrame_UpgradeClick",ns.items.UpdateNow);
+--@do-not-package@
+		--elseif event=="ADDON_LOADED" and (...)=="Blizzard_AzeriteUI" then
+		--	hooksecurefunc(_G.AzeriteEmpoweredItemUI,"",ns.items.UpdateNow);
+--@end-do-not-package@
+		elseif event=="PLAYER_LOGIN" then
 			ticker = C_Timer.NewTicker(tickerDelay,updater);
 		elseif ns.eventPlayerEnteredWorld then
 			update = defaultDelay;
@@ -1023,23 +1047,47 @@ do
 		end
 	end
 	local function init()
-		if not IsEnabled then
-			IsEnabled = true;
-			f:SetScript("OnEvent",OnEvent);
-			f:RegisterEvent("GET_ITEM_INFO_RECEIVED");
-			f:RegisterEvent("ITEM_UPGRADE_MASTER_UPDATE");
-			f:RegisterEvent("BAG_UPDATE_DELAYED");
-			f:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
-			if not ns.eventPlayerEnteredWorld then
-				f:RegisterEvent("PLAYER_LOGIN");
-			else
-				OnEvent(f,"PLAYER_LOGIN");
-			end
+		if IsEnabled then return end
+
+		IsEnabled = true;
+		f:SetScript("OnEvent",OnEvent);
+		f:RegisterEvent("GET_ITEM_INFO_RECEIVED");
+		f:RegisterEvent("ITEM_UPGRADE_MASTER_UPDATE");
+		f:RegisterEvent("BAG_UPDATE_DELAYED");
+		f:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
+		f:RegisterEvent("AZERITE_EMPOWERED_ITEM_SELECTION_UPDATED"); -- i hope a hook is not necessary ^_^
+		if ns.eventPlayerEnteredWorld then
+			OnEvent(f,"PLAYER_LOGIN");
+		else
+			f:RegisterEvent("PLAYER_LOGIN");
+		end
+		local needAL = false;
+		if IsAddOnLoaded("Blizzard_ItemUpgradeUI") then
+			OnEvent(f,"ADDON_LOADED","Blizzard_ItemUpgradeUI");
+		else
+			needAL = true;
+		end
+--@do-not-package@
+		--if IsAddOnLoaded("Blizzard_AzeriteUI") then
+		--	OnEvent(f,"ADDON_LOADED","Blizzard_AzeriteUI");
+		--else
+		--	needAL = true;
+		--end
+--@end-do-not-package@
+		if needAL then
+			f:RegisterEvent("ADDON_LOADED");
 		end
 	end
 
 	--- namespace functions
 	ns.items = {};
+	function ns.items.Enable()
+		init();
+	end
+	function ns.items.UpdateNow()
+		if not IsEnabled and ns.eventPlayerEnteredWorld then return end
+		OnEvent(f,"DUMMY");
+	end
 	function ns.items.RegisterCallback(modName,func,mode,id)
 		mode = tostring(mode):lower();
 		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
@@ -1069,9 +1117,6 @@ do
 		d.preScanCallbacks[modName]=func;
 		init();
 	end
-	function ns.items.Enable()
-		init();
-	end
 	function ns.items.RegisterNeedTooltip(id)
 		if type(id)=="table" then
 			for i=1, #id do
@@ -1090,10 +1135,6 @@ do
 	end
 	function ns.items.GetItemlist()
 		return d.ids;
-	end
-	function ns.items.UpdateNow()
-		if not IsEnabled and ns.eventPlayerEnteredWorld then return end
-		update = 1;
 	end
 	function ns.items.GetBagItems()
 		local result = {};
@@ -1163,7 +1204,7 @@ do
 	ns.ScanTT = {};
 	local queries = {};
 	local ticker = nil;
-	local duration = 0.05;
+	local duration = 0.1;
 	local try = 0;
 
 	local function collect(tt,Data)
@@ -1194,12 +1235,13 @@ do
 			data.try=data.try+1;
 		end
 		if data._type=="bag" then
-			if data.id then
-				data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = GetItemInfo(data.id);
+			if data.link or data.id then
+				data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = GetItemInfo(data.link or data.id);
 			end
 			data.startTime, data.duration, data.isEnabled = GetContainerItemCooldown(data.bag,data.slot);
 			data.hasCooldown, data.repairCost = tt:SetBagItem(data.bag,data.slot);
-			data.str = "bag"..data.bag..", slot"..data.slot;
+		elseif data._type=="inventory" then
+			_,data.hasCooldown, data.repairCost = tt:SetInventoryItem("player", data.slot); -- repair costs
 		elseif data._type=="unit" then
 			-- https://wow.gamepedia.com/API_UnitGUID
 			data._type = "link";
@@ -1211,16 +1253,12 @@ do
 			elseif data.unit=="Vignette" then
 				-- unit:Vignette-0-<server>-<instance>-<zone>-0-<spawn>
 			end
-		elseif data._type=="inventory" then
-			data._type="link";
-			_,data.hasCooldown, data.repairCost = tt:SetInventoryItem("player", data.slot); -- repair costs
-			data.link=data.link or "item:"..data.id;
 		elseif data._type=="item" then
 			data._type="link";
 			data.link=data.link or "item:"..data.id;
 		elseif data._type=="quest" then
 			data._type="link";
-			data.link=data.link or "quest:"..data.id..":"..data.level;
+			data.link=data.link or "quest:"..data.id..":"..(data.level or 0);
 		end
 
 		if data._type=="link" and data.link then
@@ -1939,9 +1977,9 @@ do
 				local optKey = ns.ClickOpts.prefix..cfgKey;
 				-- ace option table entry
 --@do-not-package@
-				if clickOpts[iLabel]==nil then
-					--ns.debug("<FIXME:ClickOptsName-Nil>",modName,optKey);
-				end
+				--if clickOpts[iLabel]==nil then
+				--	ns.debug("<FIXME:ClickOptsName-Nil>",modName,optKey);
+				--end
 --@end-do-not-package@
 				modOptions.ClickOpts[optKey] = {
 					type	= "select",

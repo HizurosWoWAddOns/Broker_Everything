@@ -371,7 +371,7 @@ function module.onevent(self,event,msg)
 				["callback"] = updateTrainerName
 			});
 		end
-		C_Timer.NewTicker(1/20,updateBroker);
+		C_Timer.NewTicker(0.2,updateBroker);
 	end
 end
 
