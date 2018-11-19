@@ -33,7 +33,7 @@ module = {
 	config_defaults = {
 		enabled = false,
 		ownership = "shift",
-		creatureid = "shift"
+		unitid = "shift"
 	},
 }
 
@@ -43,7 +43,7 @@ function module.options()
 		broker = {
 			sep = {type="separator", order=1 },
 			ownership={ type="select", order=2, name=L["Show ownership"], desc=L["Display ownership on broker button"], values=values},
-			creatureid={ type="select", order=3, name=L["Show creature id"], desc=L["Display creature id on broker button"], values=values},
+			unitid={ type="select", order=3, name=L["Show unit id"], desc=L["Display unit id on broker button"], values=values},
 		}
 	}
 end
@@ -86,7 +86,7 @@ function module.onupdate()
 					O = false;
 					P,_,_,_,_,id = strsplit("-",guid);
 					F = uName or "?";
-					if ((ns.profile[name].creatureid=="shift" and mod) or ns.profile[name].creatureid=="always") and P=="Creature" and id~=nil then
+					if ((ns.profile[name].unitid=="shift" and mod) or ns.profile[name].unitid=="always") and id~=nil then
 						P = P.. ", id:"..id;
 					end
 				end
@@ -128,7 +128,16 @@ function module.onupdate()
 	end
 end
 
--- function module.init() end
+function module.init()
+--@do-not-package@
+	ns.profileSilenceFIXME=true;
+--@end-do-not-package@
+	if ns.profile[name].creatureid~=nil then
+		ns.profile[name].unitid = ns.profile[name].creatureid;
+		ns.profile[name].creatureid = nil;
+	end
+end
+
 -- function module.optionspanel(panel) end
 -- function module.onmousewheel(self,direction) end
 
