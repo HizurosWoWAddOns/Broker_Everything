@@ -576,7 +576,7 @@ function createTooltip(tt)
 				end
 				if count>0 then
 					tt:AddSeparator();
-					tt:AddLine(C("ltblue",L["Summary"]..":"),nil,ns.FormatLargeNumber(name,sum,true));
+					tt:AddLine(C("ltblue",ACHIEVEMENT_SUMMARY_CATEGORY..":"),nil,ns.FormatLargeNumber(name,sum,true));
 				else
 					local l = tt:AddLine();
 					tt:SetCell(l,1,C("ltgray",L["Currently no artifact power items found"]), nil, nil, ttColumns);
@@ -649,7 +649,7 @@ function module.options()
 			showPoints = { type="toggle", order=2, name=L["OptArtPoints"], desc=L["OptArtPointsDesc"]},
 			showXP     = { type="select", order=3, name=L["OptArtPower"],  desc=L["OptArtPowerDesc"],
 				values	= {
-					["0"]    = L["Hide"],
+					["0"]    = HIDE,
 					["1"]    = L["Current / max xp"],
 					["2"]    = L["Need to next point"],
 				},

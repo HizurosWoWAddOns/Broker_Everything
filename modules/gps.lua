@@ -168,30 +168,27 @@ local function zone(byName)
 	return zone
 end
 
-local function zoneColor()
-	local p, _, f = GetZonePVPInfo()
-	local color = "white"
+local function GetZoneInfo()
+	local zoneColor,zoneLabel,zoneType, _, f = "white","",GetZonePVPInfo()
 
-	if p == "combat" or p == "arena" or p == "hostile" then
-		color = "red"
-	elseif p == "contested" or p == nil then
-		color = "dkyellow"
-		p = "contested"
-	elseif p == "friendly" then
-		color = "ltgreen"
-	elseif p == "sanctuary" then
-		color = "ltblue"
+	if zoneType == "combat" or pzoneType == "arena" or zoneType == "hostile" then
+		zoneColor,zoneLabel = "red",HOSTILE;
+	elseif zoneType == "contested" or zoneType == nil then
+		zoneColor,zoneLabel,zoneType = "dkyellow",L["Contested"],"contested"
+	elseif zoneType == "friendly" then
+		zoneColor,zoneLabel = "ltgreen",FRIENDLY;
+	elseif zoneType == "sanctuary" then
+		zoneColor,zoneLabel = "ltblue",L["Sanctuary"];
 	end
-	return p, color
+	return zoneColor,zoneLabel,zoneType;
 end
 
 -- shared tooltip for modules Location, GPS and ZoneText
 local function createTooltip(tt,ttName,modName)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
-	local pvp, color = zoneColor()
+	local zoneColor,zoneLabel,zoneType = GetZoneInfo()
 	local line, column
-	pvp = gsub(pvp,"^%l", string.upper)
 
 	if buttonFrame then buttonFrame:ClearAllPoints() buttonFrame:Hide() end
 
@@ -204,7 +201,7 @@ local function createTooltip(tt,ttName,modName)
 	local lst = {
 		{C("ltyellow",ZONE .. ":"),GetRealZoneText()},
 		{C("ltyellow",L["Subzone"] .. ":"),GetSubZoneText()},
-		{C("ltyellow",L["Zone status"] .. ":"),C(color,L[pvp])},
+		{C("ltyellow",L["Zone status"] .. ":"),C(zoneColor,zoneLabel)},
 		{C("ltyellow",L["Coordinates"] .. ":"),position(modName) or C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos)}
 	}
 
@@ -390,23 +387,23 @@ end
 
 local function updater()
 	if not (ns.profile[name1].enabled or ns.profile[name2].enabled or ns.profile[name3].enabled) then return end
-	local pvp, color = zoneColor()
+	local zoneColor,zoneLabel,zoneType = GetZoneInfo();
 
 	if ns.profile[name1].enabled and module1.obj then
 		local gpsLoc = posUpdater(name1)
 		gpsLoc.zone = zone(name1);
-		module1.obj.text = C(color,gpsLoc.zone.." (")..C(gpsLoc.posColor or color,gpsLoc.pos)..C(color,")");
+		module1.obj.text = C(zoneColor,gpsLoc.zone.." (")..C(gpsLoc.poszoneColor or zoneColor,gpsLoc.pos)..C(zoneColor,")");
 	end
 
 	if ns.profile[name2].enabled and module2.obj then
 		local gpsLoc = posUpdater(name2)
-		module2.obj.text = C(gpsLoc.posColor or color,gpsLoc.pos);
+		module2.obj.text = C(gpsLoc.poszoneColor or zoneColor,gpsLoc.pos);
 	end
 
 	if ns.profile[name3].enabled and module3.obj then
 		local gpsLoc = posUpdater(name3)
 		gpsLoc.zone = zone(name3)
-		module3.obj.text = C(color,gpsLoc.zone);
+		module3.obj.text = C(zoneColor,gpsLoc.zone);
 	end
 end
 

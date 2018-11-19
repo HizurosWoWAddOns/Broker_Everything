@@ -13,7 +13,7 @@ L["ModDesc-"..name] = L["Display current group and instance modes"];
 local ttName, ttColumns, tt, module,createTooltip = name.."TT", 4
 local mode = 0;
 local modes = {
-	{name=L["Solo"],  short="S", color="ltgray"},	-- 1
+	{name=SOLO,  short="S", color="ltgray"},	-- 1
 	{name=GROUP, short="G", color="quality2"},		-- 2
 	{name=RAID,  short="R", color="quality4"},		-- 3
 }

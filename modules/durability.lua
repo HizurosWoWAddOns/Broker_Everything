@@ -202,7 +202,7 @@ local function createTooltip(tt)
 	end
 
 	tt:AddLine(L["Lowest item"]..slotName,	C(colorSets(durabilityL) or "blue", durabilityL.."%"));
-	tt:AddLine(L["Average"],				C(colorSets(durabilityA) or "blue", durabilityA.."%"));
+	tt:AddLine(GMSURVEYRATING3,				C(colorSets(durabilityA) or "blue", durabilityA.."%"));
 
 	for i,v in ipairs(lst) do
 		if (v.sep~=nil) then

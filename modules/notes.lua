@@ -118,7 +118,7 @@ end
 local function note_show(self,index)
 	GameTooltip:SetOwner(tt,"ANCHOR_NONE");
 	GameTooltip:SetPoint(ns.GetTipAnchor(tt,"horizontal"));
-	GameTooltip:SetText(strlen(ns.data[name][index][1])>0 and ns.data[name][index][1] or L["Note"]);
+	GameTooltip:SetText(strlen(ns.data[name][index][1])>0 and ns.data[name][index][1] or COMMUNITIES_ROSTER_COLUMN_TITLE_NOTE);
 	local text = ns.data[name][index][2];
 	if not text:match("\n") then
 		text = ns.strWrap(text,64);

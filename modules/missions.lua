@@ -46,10 +46,10 @@ local function createTooltip(tt)
 		local l=tt:AddLine( C("ltblue",CHARACTER) ); -- 1
 		if(IsShiftKeyDown())then
 			tt:SetCell(l,2,C("ltblue",GARRISON_FOLLOWERS)..pipe..C("ltblue",GARRISON_SHIPYARD_FOLLOWERS)..( ns.build>70000000 and pipe..C("ltblue",FOLLOWERLIST_LABEL_CHAMPIONS) or "" ).."|n"..
-				L["Completed"].." - "..C("green",L["next"]).." / ".. C("yellow",SPELL_TARGET_TYPE12_DESC),nil, "RIGHT", _ttColumns);
+				GOAL_COMPLETED.." - "..C("green",L["next"]).." / ".. C("yellow",SPELL_TARGET_TYPE12_DESC),nil, "RIGHT", _ttColumns);
 		else
 			tt:SetCell(l,2,C("ltblue",GARRISON_FOLLOWERS)..pipe..C("ltblue",GARRISON_SHIPYARD_FOLLOWERS)..( ns.build>70000000 and pipe..C("ltblue",FOLLOWERLIST_LABEL_CHAMPIONS) or "" ).."|n"..
-				C("green",L["Completed"]).." / ".. C("yellow",L["In progress"]),nil, "RIGHT", _ttColumns);
+				C("green",GOAL_COMPLETED).." / ".. C("yellow",L["In progress"]),nil, "RIGHT", _ttColumns);
 		end
 		tt:AddSeparator();
 		local t=time();

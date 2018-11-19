@@ -138,7 +138,7 @@ local function listQuests(TT,questlog,completed,numCompleted)
 			if qType==i then
 				local color,state = false,false;
 				if completed[id]~=nil and completed[id]>dailiesReset then
-					color,state = "green",L["Completed"];
+					color,state = "green",GOAL_COMPLETED;
 				elseif questlog[id]==true then
 					color,state = "yellow",L["In Questlog"];
 					if (i>=2 and i<=4) then

@@ -72,11 +72,27 @@ L["Volume"] = VOLUME
 L["Wardrobe"] = WARDROBE
 L["XP"] = XP
 
+--@do-not-package@
+-- found in globalstrings by script
+--L["Active"] = CONTRIBUTION_ACTIVE; -- Active
+--L["Average"] = GMSURVEYRATING3; -- Average
+--L["Completed"] = GOAL_COMPLETED; -- Completed
+--L["Hide"] = HIDE; -- Hide
+--L["Name"] = COMMUNITIES_SETTINGS_NAME_LABEL; -- Name
+--L["Note"] = COMMUNITIES_ROSTER_COLUMN_TITLE_NOTE; -- Note
+--L["PvE"] = TRANSMOG_SET_PVE; -- PvE
+--L["PvP"] = TRANSMOG_SET_PVP; -- PvP
+--L["Solo"] = SOLO; -- Solo
+--L["Rested"] = TUTORIAL_TITLE26; -- Rested
+--L["Sets"] = WARDROBE_SETS; -- Sets
+--L["Roles"] = COMMUNITY_MEMBER_LIST_DROP_DOWN_ROLES; -- Roles
+--@end-do-not-package@
 
 -- localization by Blizzard - step 2
 L["FPS"] = FRAMERATE_LABEL:gsub(":",""):gsub("：",""):trim();
 L["Home"], L["World"] = MAINMENUBAR_LATENCY_LABEL:match("%((.*)%).*%((.*)%)");
 L["Officer notes"] = OFFICER_NOTE_COLON:gsub(":",""):gsub("：",""):trim();
+L["Realm"] = FRIENDS_LIST_REALM:gsub(":",""):gsub("：",""):trim(); -- "Realm: "
 
 -- localization by Blizzard - step 3 (by events)
 local byItemId = {

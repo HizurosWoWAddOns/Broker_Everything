@@ -317,7 +317,7 @@ module = {
 		["menu"] = "6_open_menu"
 	},
 	clickOptions = {
-		["pvespec"] = {"Specialization","call",{"ToggleTalentFrame",SPECIALIZATION_TAB}}, -- L["Specialization"]
+		["pvespec"] = {SPECIALIZATION,"call",{"ToggleTalentFrame",SPECIALIZATION_TAB}},
 		["pvetalents"] = {TALENTS,"call",{"ToggleTalentFrame",TALENTS_TAB}},
 		["pvptalents"] = {PVP_TALENTS,"call",{"ToggleTalentFrame",PVP_TALENTS_TAB}},
 		["petspec"] = {"Pet specialization","call",{"ToggleTalentFrame",ns.player.class:upper()=="HUNTER" and PET_SPECIALIZATION_TAB or SPECIALIZATION_TAB}}, -- L["Pet specialization"]
@@ -387,10 +387,10 @@ function module.onevent(self,event,arg1,...)
 
 		local lst = {};
 		if unspentPvE>0 then
-			tinsert(lst,unspentPvE.." "..L["PvE"]);
+			tinsert(lst,unspentPvE.." "..TRANSMOG_SET_PVE);
 		end
 		if unspentPvP>0 then
-			tinsert(lst,unspentPvP.." "..L["PvP"]);
+			tinsert(lst,unspentPvP.." "..TRANSMOG_SET_PVP);
 		end
 
 		dataobj.iconCoords = icon.coords;

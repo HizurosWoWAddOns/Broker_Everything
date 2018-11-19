@@ -165,7 +165,7 @@ function createTooltip(tt,update)
 	tt:AddHeader(C("dkyellow",CURRENCY))
 	if ns.profile[name].shortTT == true then
 		tt:AddSeparator(4,0,0,0,0);
-		local c,l = 3,tt:AddLine(C("ltblue",L["Name"]));
+		local c,l = 3,tt:AddLine(C("ltblue",COMMUNITIES_SETTINGS_NAME_LABEL));
 		tt:AddSeparator()
 	end
 

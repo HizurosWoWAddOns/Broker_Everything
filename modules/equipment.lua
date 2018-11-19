@@ -199,7 +199,7 @@ local function createTooltip(tt)
 	if (ns.profile[name].showSets) then
 		-- equipment sets
 		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(C("ltblue",L["Sets"]));
+		tt:AddLine(C("ltblue",WARDROBE_SETS));
 		tt:AddSeparator();
 		if (CanUseEquipmentSets) and (not CanUseEquipmentSets()) then  -- prevent error if function removed
 			ns.AddSpannedLine(tt,L["Equipment manager is not enabled"]);

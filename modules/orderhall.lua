@@ -134,7 +134,7 @@ local function addShipment(tt,...)
 					tinsert(line,SecondsToTime((creationTime+(duration+(nextShipments*duration)))-now));
 				end
 			else
-				tinsert(line,"("..L["Completed"]..")");
+				tinsert(line,"("..GOAL_COMPLETED..")");
 				delim = " ";
 			end
 			tt:SetCell(tt:AddLine(),1,table.concat(line,delim),nil,"CENTER",0);

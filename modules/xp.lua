@@ -104,7 +104,7 @@ function createTooltip(tt)
 		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE.." ("..STATUS_TEXT_PERCENT..")"), "",data.percentStr);
 		tt:AddLine(C("ltyellow",GARRISON_FOLLOWER_XP_STRING),"",C("white",ns.FormatLargeNumber(name,data.need,true)));
 		if (data.restStr) then
-			tt:AddLine(C("ltyellow",L["Rest"]),"",C("cyan",data.restStr));
+			tt:AddLine(C("ltyellow",TUTORIAL_TITLE26),"",C("cyan",data.restStr));
 		end
 	end
 
@@ -129,7 +129,7 @@ function createTooltip(tt)
 			end
 		end
 		tt:AddSeparator();
-		tt:AddLine(C("ltblue",L["Summary"]),"",C(data.bonusSum>0 and "green" or "gray",data.bonusSum.."%"));
+		tt:AddLine(C("ltblue",ACHIEVEMENT_SUMMARY_CATEGORY),"",C(data.bonusSum>0 and "green" or "gray",data.bonusSum.."%"));
 	end
 
 	if ns.profile[name].showMyOtherChars then

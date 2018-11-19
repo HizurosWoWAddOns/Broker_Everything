@@ -393,7 +393,7 @@ local function createTooltip(tt,update)
 		local line,column = tt:AddLine(
 			C("orange",LEVEL),
 			C("orange",L["Applicant"]),
-			C("orange",L["Roles"]),
+			C("orange",COMMUNITY_MEMBER_LIST_DROP_DOWN_ROLES),
 			C("orange",RAID_INSTANCE_EXPIRES_EXPIRED),
 			C("orange",COMMENT)
 		);

@@ -228,10 +228,10 @@ local function createTooltip(tt, name)
 		if(IsShiftKeyDown())then
 			tt:SetCell(l, 2, C("ltblue",L["Back from missions"]).."|n"..L["next"].." / "..SPELL_TARGET_TYPE12_DESC, nil, "RIGHT", 3);
 		else
-			tt:SetCell(l, 2, C("ltblue",GARRISON_FOLLOWER_ON_MISSION) .."|n".. C("green",L["Completed"]) .." / ".. C("yellow",GARRISON_SHIPYARD_MSSION_INPROGRESS_TOOLTIP), nil, "RIGHT", 3);
+			tt:SetCell(l, 2, C("ltblue",GARRISON_FOLLOWER_ON_MISSION) .."|n".. C("green",GOAL_COMPLETED) .." / ".. C("yellow",GARRISON_SHIPYARD_MSSION_INPROGRESS_TOOLTIP), nil, "RIGHT", 3);
 		end
 		tt:SetCell(l, 5, C("ltblue",L["Without missions"])     .."|n".. C("green",L["Chilling"]) .." / ".. C("yellow",GARRISON_FOLLOWER_WORKING), nil, "RIGHT", 2);
-		tt:SetCell(l, 7, C("ltblue",GARRISON_FOLLOWERS) .. "|n" .. C("cyan",COLLECTED) .." / ".. C("green",L["Active"]) .." / ".. C("yellow",GARRISON_FOLLOWER_INACTIVE));
+		tt:SetCell(l, 7, C("ltblue",GARRISON_FOLLOWERS) .. "|n" .. C("cyan",COLLECTED) .." / ".. C("green",CONTRIBUTION_ACTIVE) .." / ".. C("yellow",GARRISON_FOLLOWER_INACTIVE));
 
 		tt:AddSeparator();
 		local t=time();

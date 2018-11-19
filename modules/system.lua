@@ -352,7 +352,7 @@ local function createTooltip(tt, name, ttName, update)
 			tt:AddSeparator(4,0,0,0,0);
 			tt:SetCell(tt:AddLine(),1,C("ltblue",L["Client info"]),nil,nil,0);
 			tt:AddSeparator();
-			tt:AddLine(C("ltyellow",L["Version"]..":"),version);
+			tt:AddLine(C("ltyellow",GAME_VERSION_LABEL..":"),version);
 			tt:AddLine(C("ltyellow",L["Build version"]..":"),build);
 			tt:AddLine(C("ltyellow",L["Build date"]..":"),buildDate);
 			tt:AddLine(C("ltyellow",L["Interface version"]..":"),interfaceVersion);

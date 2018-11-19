@@ -150,7 +150,7 @@ local function createTooltip2(self,data)
 	-- notes
 	if ns.profile[name].showNotesTT2 and data.note:len()>0 then
 		tt2:AddSeparator(4,0,0,0,0);
-		tt2:SetCell(tt2:AddLine(),1,C(color1,L["Note"]),nil,nil,0);
+		tt2:SetCell(tt2:AddLine(),1,C(color1,COMMUNITIES_ROSTER_COLUMN_TITLE_NOTE),nil,nil,0);
 		tt2:AddSeparator();
 		tt2:SetCell(tt2:AddLine(),1,ns.scm(data.note,true),nil,"LEFT",0);
 	end

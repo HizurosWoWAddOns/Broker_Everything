@@ -258,7 +258,7 @@ function createTooltip(tt, update, from)
 		if ns.profile[name].showQuestIds then
 			tt:SetCell(l,c,C("ltYellow",L["QuestId"])); c=c+1;
 		end
-		tt:SetCell(l,c,C("ltYellow",L["Options"]),nil,nil,2); -- share, track / untrack
+		tt:SetCell(l,c,C("ltYellow",OPTIONS),nil,nil,2); -- share, track / untrack
 		tt:AddSeparator()
 
 		if ns.profile[name].separateBy=="status" then
