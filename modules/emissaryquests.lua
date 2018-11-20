@@ -165,7 +165,7 @@ local function updateData()
 				data.expansion = exps[data.extension];
 				data.extension = nil;
 			elseif type(data.expansion)~="number" then
-				datq.expansion = exps[data.continent];
+				data.expansion = exps[data.continent];
 			end
 			if not factions[data.expansion] then
 				factions[data.expansion] = {};
