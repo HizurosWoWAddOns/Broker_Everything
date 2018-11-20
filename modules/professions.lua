@@ -65,14 +65,13 @@ local function updateBroker()
 	for i=1, 4 do
 		local v = ns.profile[name].inTitle[i];
 		if v and professions[v] and professions[v][icon] and professions[v][skill] and professions[v][maxSkill] then
-			local Skill,modifier,color = v[skill],"","gray2";
+			local Skill,modifier,color = professions[v][skill],"","gray2";
 			if true then
 				if professions[v][skill]~=professions[v][maxSkill] then
 					color = "ffff"..string.format("%02x",255*(professions[v][skill]/professions[v][maxSkill])).."00";
 				end
 				if professions[v][rankModifier] and professions[v][rankModifier]>0 then
-					Skill = C("green",Skill+professions[v][rankModifier]);
-					-- modifier = C("green","+"..professions[v][rankModifier]);
+					modifier = C("green","+"..professions[v][rankModifier]);
 				end
 				table.insert(inTitle, ("%s/%s|T%s:0|t"):format(C(color,professions[v][skill])..modifier,C(color,professions[v][maxSkill]),professions[v][icon]));
 			else
