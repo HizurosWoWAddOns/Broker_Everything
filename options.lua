@@ -404,7 +404,7 @@ function ns.Options_RegisterDefaults() -- re-registration for dbDefaults after '
 end
 
 function ns.Options_RegisterModule(modName)
-	local mod = ns.modules[modName];
+	local mod,modOptions = ns.modules[modName],{};
 
 	-- defaults
 	ns.profile[modName] = setmetatable({section=modName},nsProfileMT);
@@ -428,58 +428,61 @@ function ns.Options_RegisterModule(modName)
 		options.args.modEnable.args[modName] = {type="toggle",name=L[modName],desc=L["ModDesc-"..modName]};
 
 		-- add shared option defaults
-		if mod.options then
-			for _,group in pairs(mod.options())do
+		if type(mod.options)=="function" then
+			modOptions = mod.options();
+			for _,group in pairs(modOptions)do
 				for key,value in pairs(group)do
 					if sharedDefaults[key]~=nil and dbDefaults.profile[modName][key]==nil then
 						dbDefaults.profile[modName][key] = sharedDefaults[key];
 					end
 				end
 			end
+		end
 
-			-- add own tree entry per module
-			options.args.modOptions.args[modName] = {
-				type = "group",
-				name = ModName, desc = ModDesc,
-				icon = Icon, iconCoords = IconCoords, -- currently ace ignore IconCoords
-				args = {
-				}
+		-- add own tree entry per module
+		options.args.modOptions.args[modName] = {
+			type = "group",
+			name = ModName, desc = ModDesc,
+			icon = Icon, iconCoords = IconCoords, -- currently ace ignore IconCoords
+			args = {
 			}
-			local modOptions = ns.modules[modName].options();
+		}
 
+		if mod.clickOptions then
+			ns.debug(modName,select('#',mod.clickOptions));
 			ns.ClickOpts.createOptions(modName,modOptions);
+		end
 
-			local hasBrokerOpts = false;
-			for k in pairs(modOptions)do
-				if k:find("^broker") then
-					hasBrokerOpts = true;
-					break;
-				end
+		local hasBrokerOpts = false;
+		for k in pairs(modOptions)do
+			if k:find("^broker") then
+				hasBrokerOpts = true;
+				break;
 			end
-			if not hasBrokerOpts then
-				modOptions.broker = {};
+		end
+		if not hasBrokerOpts then
+			modOptions.broker = {};
+		end
+		for k, v in pairs(modOptions)do
+			local name, order = v.name, v.order;
+			v.name,v.order = nil,nil;
+			if k:find("^broker") then
+				name = name or L["Broker"];
+				order = order or 1;
+			elseif k:find("^tooltip") then
+				name = name or L["Tooltip"];
+				order = order or 2;
+			elseif k:find("^misc") then
+				name = name or AUCTION_SUBCATEGORY_OTHER;
+				order = order or 98;
+			elseif k:find("^ClickOpts") then
+				name = name or L["ClickOptions"];
+				order = 99;
 			end
-			for k, v in pairs(modOptions)do
-				local name, order = v.name, v.order;
-				v.name,v.order = nil,nil;
-				if k:find("^broker") then
-					name = name or L["Broker"];
-					order = order or 1;
-				elseif k:find("^tooltip") then
-					name = name or L["Tooltip"];
-					order = order or 2;
-				elseif k:find("^misc") then
-					name = name or AUCTION_SUBCATEGORY_OTHER;
-					order = order or 98;
-				elseif k:find("^ClickOpts") then
-					name = name or L["ClickOptions"];
-					order = 99;
-				end
-				optionWalker(modName,k,v);
-				options.args.modOptions.args[modName].args[k] = {
-					type="group", name=C("ff00aaff",name), order=order, inline=true, args=v
-				}
-			end
+			optionWalker(modName,k,v);
+			options.args.modOptions.args[modName].args[k] = {
+				type="group", name=C("ff00aaff",name), order=order, inline=true, args=v
+			}
 		end
 	end
 end
