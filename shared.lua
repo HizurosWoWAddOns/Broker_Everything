@@ -1966,8 +1966,10 @@ do
 		if not (mod and type(mod.clickOptions)=="table") then return end
 
 		-- generate option panel entries
-		modOptions.ClickOpts = {};
 		for cfgKey,clickOpts in ns.pairsByKeys(mod.clickOptions) do
+			if modOptions.ClickOpts==nil then
+				modOptions.ClickOpts = {};
+			end
 			if type(clickOpts)=="string" and sharedClickOptions[clickOpts] then
 				-- copy shared entry
 				mod.clickOptions[cfgKey] = sharedClickOptions[clickOpts];
