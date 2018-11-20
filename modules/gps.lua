@@ -121,15 +121,11 @@ end
 local function position(name)
 	local p, f, pf = ns.profile[name].precision or 0, ns.profile[name].coordsFormat or "%s, %s";
 	local x, y = 0,0;
-	if GetPlayerMapPosition then
-		x,y = GetPlayerMapPosition("player"); -- TODO: BfA - removed function
-	elseif C_Map and C_Map.GetPlayerMapPosition then
-		local mapID = C_Map.GetBestMapForUnit("player");
-		if mapID then
-			local obj = C_Map.GetPlayerMapPosition(C_Map.GetBestMapForUnit("player"),"player");
-			if obj and obj.GetXY then
-				x,y = obj:GetXY();
-			end
+	local mapID = C_Map.GetBestMapForUnit("player");
+	if mapID then
+		local obj = C_Map.GetPlayerMapPosition(C_Map.GetBestMapForUnit("player"),"player");
+		if obj and obj.GetXY then
+			x,y = obj:GetXY();
 		end
 	end
 	if not x or (x==0 and y==0) then
