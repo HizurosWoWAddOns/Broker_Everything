@@ -350,7 +350,7 @@ function module.options()
 		broker = {
 			shortTitle={ type="toggle", order=1, name=L["Show shorter title"], desc=L["Display '%s' instead of '%s' on chars under level 110 on broker button"]:format(L["Emissary Quests-ShortCut"],BOUNTY_BOARD_LOCKED_TITLE) },
 			legionQuestsBroker = { type="toggle", order=2, name=BOUNTY_BOARD_LOCKED_TITLE.." ("..EXPANSION_NAME6..")", desc=L["Display the progress of your emissary quests on broker button"], width="full" },
-			bfaQuestsBroker = { type="toggle", order=3, name=BOUNTY_BOARD_LOCKED_TITLE.." ("..EXPANSION_NAME6..")", desc=L["Display the progress of your emissary quests on broker button"], width="full" },
+			bfaQuestsBroker = { type="toggle", order=3, name=BOUNTY_BOARD_LOCKED_TITLE.." ("..EXPANSION_NAME7..")", desc=L["Display the progress of your emissary quests on broker button"], width="full" },
 		},
 		tooltip = {
 			legionQuests = { type="toggle", order=1, name=BOUNTY_BOARD_LOCKED_TITLE.." ("..EXPANSION_NAME6..")", desc=L["Display the progress of your emissary quests in tooltip"], width="full" },
