@@ -104,17 +104,21 @@ ns.realms = {};
 do
 	local function Init()
 		local _,_,_,_,_,_,_,_,ids = ns.LRI:GetRealmInfoByGUID(UnitGUID("player"));
-		if ids then
+		if type(ids)=="table" then
 			for i=1, #ids do
 				local _,name,apiName = ns.LRI:GetRealmInfoByID(ids[i]);
-				if name and apiName then
+				if type(name)=="string" and type(apiName)=="string" then
 					ns.realms[name] = apiName;
-					ns.realms[apiName] = name;
+					if apiName~=name then
+						ns.realms[apiName] = name;
+					end
 				end
 			end
 		else
 			ns.realms[ns.realm] = ns.realm_short;
-			ns.realms[ns.realm_short] = ns.realm;
+			if ns.realm~=ns.realm_short then
+				ns.realms[ns.realm_short] = ns.realm;
+			end
 		end
 	end
 	setmetatable(ns.realms,{
