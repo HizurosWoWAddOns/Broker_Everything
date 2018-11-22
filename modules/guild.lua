@@ -249,8 +249,8 @@ local function createTooltip2(self,info)
 		if _realm then realm = _realm; end
 	end
 	tt2:AddLine(C("ltblue",L["Realm"]),C("dkyellow",ns.scm(realm)));
-	if ns.profile[name].showRaceInTT2 and v[mRaceId] and racebyId[v[mRaceId]] then
-		tt2:AddLine(C("ltblue",RACE),racebyId[v[mRaceId]]);
+	if ns.profile[name].showRaceInTT2 and v[mRaceId] and raceById[v[mRaceId]] then
+		tt2:AddLine(C("ltblue",RACE),raceById[v[mRaceId]]);
 	end
 	if ns.profile[name].showZoneInTT2 then
 		tt2:AddLine(C("ltblue",ZONE),v[mZone]);
