@@ -136,6 +136,9 @@ local function AddStoredMailsLine(tt,player)
 			if #v.mail[key[k]]>0 then
 				for i=1, #v.mail[key[k]] do
 					if type(v.mail[key[k]][i])=="table" then -- deprecated
+						if v.mail[key[k]][i].realm==nil then
+							v.mail[key[k]][i].realm = ns.realm_short;
+						end
 						v.mail[key[k]][i] = v.mail[key[k]][i].sender.."-"..v.mail[key[k]][i].realm..";"..v.mail[key[k]][i].last+v.mail[key[k]][i].returns;
 					end
 					local sender,returns = strsplit(";",v.mail[key[k]][i]);
