@@ -473,28 +473,6 @@ do
 	end
 end
 
-  ---------------------------------------
---- icon colouring function             ---
-  ---------------------------------------
-do
-	local function updateColor(n)
-		local obj = objs[n] or ns.LDB:GetDataObjectByName(n)
-		objs[n] = obj
-		if obj==nil then return false end
-		obj.iconR,obj.iconG,obj.iconB,obj.iconA = unpack(ns.profile.GeneralOptions.iconcolor or ns.LC.color("white","colortable"))
-		return true
-	end
-	function ns.updateIconColor(name)
-		if name==true then
-			for i,v in pairs(ns.modules) do
-				updateColor(i);
-			end
-		elseif ns.modules[name]~=nil then
-			updateColor(name)
-		end
-	end
-end
-
 
   ---------------------------------------
 --- suffix colour function              ---
@@ -512,8 +490,6 @@ end
 --- use of external iconset                ---
   ------------------------------------------
 do
-	local iconset = nil
-	local objs = {}
 	ns.I = setmetatable({},{
 		__index = function(t,k)
 			local v = {iconfile=ns.icon_fallback,coords={0.05,0.95,0.05,0.95}}
@@ -521,6 +497,7 @@ do
 			return v
 		end,
 		__call = function(t,a)
+			local iconset
 			if a==true then
 				if ns.profile.GeneralOptions.iconset~="NONE" then
 					iconset = ns.LSM:Fetch((addon.."_Iconsets"):lower(),ns.profile.GeneralOptions.iconset) or iconset
@@ -531,30 +508,28 @@ do
 			return (type(iconset)=="table" and iconset[a]) or t[a]
 		end
 	})
-	function ns.updateIcons()
-		for i,v in pairs(ns.modules) do
-			local obj = ns.LDB:GetDataObjectByName(i)
-			if obj~=nil then
-				local d = ns.I(v.iconName .. (v.icon_suffix or ""))
-				obj.iconCoords = d.coords or {0,1,0,1}
-				obj.icon = d.iconfile
+	function ns.updateIcons(name,part)
+		if name==true then
+			local result = true;
+			for modName,mod in pairs(ns.modules) do
+				if mod.isEnabled and ns.updateIcons(modName,part)==false then
+					result = false;
+				end
 			end
+			return result;
+		elseif type(name)=="string" and ns.modules[name] and ns.modules[name].isEnabled and ns.modules[name].obj then
+			local mod = ns.modules[name];
+			if part=="color" or part==nil then
+				mod.obj.iconR,mod.obj.iconG,mod.obj.iconB,mod.obj.iconA = unpack(ns.profile.GeneralOptions.iconcolor or ns.LC.color("white","colortable"));
+			end
+			if part=="icon" or part==nil then
+				local icon = ns.I(mod.iconName .. (mod.icon_suffix or ""));
+				mod.obj.iconCoords = icon.coords or {0,1,0,1};
+				mod.obj.icon = icon.iconfile;
+			end
+			return true;
 		end
-	end
-	local function updateIconColor(name)
-		local obj = ns.LDB:GetDataObjectByName(name);
-		if (obj==nil) then return false end
-		obj.iconR,obj.iconG,obj.iconB,obj.iconA = unpack(ns.profile.GeneralOptions.iconcolor or ns.LC.color("white","colortable"))
-		return true
-	end
-	function ns.updateIconColor(name)
-		local result = true;
-		if (name==true) then
-			for i,v in pairs(ns.modules) do if (updateIconColor(i)==false) then result=false; end end
-		elseif (ns.modules[name]~=nil) then
-			result = updateIconColor(name);
-		end
-		return result;
+		return false;
 	end
 end
 

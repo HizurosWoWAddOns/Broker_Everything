@@ -32,6 +32,9 @@ local function moduleInit(name)
 
 	if (ns.profile[name] and ns.profile[name].enabled==true) or ns.modules[name].isHiddenModule then
 		local mod = ns.modules[name];
+
+		mod.isEnabled = true;
+
 		-- module init
 		if mod.init then
 			mod.init();
@@ -84,7 +87,7 @@ local function moduleInit(name)
 				parent        = addon
 			});
 
-			ns.updateIconColor(name);
+			ns.updateIcons(name);
 
 			-- register minimap button on demand
 			ns.toggleMinimapButton(name);

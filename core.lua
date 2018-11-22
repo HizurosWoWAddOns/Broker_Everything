@@ -92,7 +92,7 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 	elseif event=="PLAYER_LOGIN" then
 		-- iconset
 		ns.I(true);
-		ns.updateIcons();
+		ns.updateIcons(true);
 
 		ns.eventPlayerEnteredWorld=true;
 	elseif event=="PLAYER_LEVEL_UP" then

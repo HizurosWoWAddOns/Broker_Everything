@@ -144,13 +144,18 @@ local function opt(info,value,...)
 			db.profile[section][key]=value;
 			if section=="GeneralOptions" then
 				for modName,mod in pairs(ns.modules)do
-					if mod.onevent then
+					if mod.isEnabled and mod.onevent then
 						mod.onevent(mod.eventFrame,"BE_UPDATE_CFG",key);
 --@do-not-package@
-					else
-						ns.debug("<FIXME:opt:MissingEventFunction>",section,modName);
+					--elseif mod.active and not mod.onevent then
+						--ns.debug("<FIXME:opt:MissingEventFunction>",section,modName);
 --@end-do-not-package@
 					end
+				end
+				if key=="iconcolor" then
+					ns.updateIcons(true,"color");
+				elseif key=="iconset" then
+					ns.updateIcons(true,"icon");
 				end
 			else
 				if ns.modules[section].onevent then
@@ -214,7 +219,7 @@ local options = {
 				},
 				gold = {
 					type = "group", order = 2, inline = true,
-					name = C("ff00aaff",GOLD),
+					name = C("ff00aaff",BONUS_ROLL_REWARD_MONEY),
 					args = {
 						goldColor          = {type="select",order=1,name=L["GoldColor"],desc=L["GoldColorDesc"],values={_none=ADDON_DISABLED,color=L["GoldColorCoin"],white=L["GoldColorWhite"]} },
 						goldCoins          = {type="toggle",order=2,name=L["GoldCoins"],desc=L["GoldCoinsDesc"]},
