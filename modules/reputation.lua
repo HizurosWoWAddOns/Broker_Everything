@@ -169,7 +169,7 @@ function updateBroker()
 
 		local tmp = {};
 		if ns.profile[name].watchedNameOnBroker then
-			tinsert(tmp,Name);
+			tinsert(tmp,data[Name]);
 		end
 
 		local _Min,_Max,_Value,_Percent
