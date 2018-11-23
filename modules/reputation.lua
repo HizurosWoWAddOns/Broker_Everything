@@ -101,7 +101,13 @@ local function initReputationList()
 	if round==false then
 		return false;
 	elseif round<0 then
-		local collapsed = round==-2 and collapsedL1 or collapsedL2;
+		if round==-2 then
+			collapsedL1 = collapsedL1 or {};
+			collapsed = collapsedL1;
+		else
+			collapsedL2 = collapsedL2 or {};
+			collapsed = collapsedL2;
+		end
 		for i=GetNumFactions(),1,-1 do
 			local _,_,_,_,_,_,_,_,_,isCollapsed=GetFactionInfo(i);
 			if isCollapsed then
