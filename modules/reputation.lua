@@ -120,20 +120,7 @@ local function initReputationList()
 		wipe(factions);
 		for i=1, GetNumFactions() do
 			local fName, desc, standingID, barMin, barMax, barValue, _, _, isHeader, isCollapsed, hasRep, _, isChild, factionID = GetFactionInfo(i);
-			if factionID==nil then
-				factionID = -1;
-			end
-			if factionID>0 then
-				if hasRep and session[factionID]==nil then
-					if standingID==8 then
-						local isFriend = GetFriendshipReputation(factionID)~=nil;
-						local isBodyguard = known_bodyguards[fName]~=nil;
-					else
-						session[factionID] = barValue + (standingID==8 and 42999 or 0);
-					end
-				end
-			end
-			tinsert(factions,{id=factionID,isHeader=isHeader,isChild=isChild});
+			tinsert(factions,{id=factionID or -1,isHeader=isHeader,isChild=isChild});
 		end
 		round=round+1;
 	else
@@ -158,6 +145,20 @@ local function resetSession()
 		_,_,_,_,_,session[factionID] = GetFactionInfoByID(factionID);
 	end
 	updateBroker();
+end
+
+function updateBodyguards()
+	-- collect names of bodyguards
+	local glvl = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0);
+	if UnitLevel("player")>=90 and glvl then
+		for i=1,#bodyguards do
+			local data = C_Garrison.GetFollowerInfo(bodyguards[i]);
+			if(data and data.name)then
+				known_bodyguards[data.name]=true;
+			end
+		end
+		return true;
+	end
 end
 
 function updateBroker()
@@ -547,18 +548,9 @@ function module.onevent(self,event,arg1,...)
 	end
 	if ns.eventPlayerEnteredWorld then
 		if not self.loadedBodyguards then
-			local glvl = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0);
-			if UnitLevel("player")>=90 and glvl then
-				for i=1,#bodyguards do
-					local data = C_Garrison.GetFollowerInfo(bodyguards[i]);
-					if(data and data.name)then
-						known_bodyguards[data.name]=true;
-					end
-				end
-				self.loadedBodyguards=true;
-			end
+			self.loadedBodyguards = updateBodyguards();
 		end
-		if self.loadedBodyguards and round==false then
+		if round==false then
 			round = -2;
 			initReputationListTicker = C_Timer.NewTicker(.3,initReputationList,8);
 		end
