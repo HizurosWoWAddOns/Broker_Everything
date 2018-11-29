@@ -160,17 +160,19 @@ local function updateData()
 	table.sort(ns.data[name].factions,sortFactions);
 
 	for id, data in pairs(ns.data[name].factions)do
-		if Time < data.eventEnding then
+		if (data.extension or data.expansion) and Time < data.eventEnding then
 			if data.extension then
 				data.expansion = exps[data.extension];
 				data.extension = nil;
 			elseif type(data.expansion)~="number" then
 				data.expansion = exps[data.continent];
 			end
-			if not factions[data.expansion] then
-				factions[data.expansion] = {};
+			if data.expansion then
+				if not factions[data.expansion] then
+					factions[data.expansion] = {};
+				end
+				tinsert(factions[data.expansion],data);
 			end
-			tinsert(factions[data.expansion],data);
 		end
 	end
 
