@@ -632,18 +632,21 @@ function ns.strWrap(text, limit, insetCount, insetChr, insetLastChr)
 		return tconcat(tmp,"\n");
 	end
 	if text:len()<=limit then return text; end
-	local i,result,inset = 1,{},"";
+	local tmp,result,inset = "",{},"";
 	if type(insetCount)=="number" then
 		inset = (insetChr or " "):rep(insetCount-(insetLastChr or ""):len())..(insetLastChr or "");
 	end
 	for str in text:gmatch("([^ \n]+)") do
-		local tmp = (result[i] and result[i].." " or "")..str:trim();
-		if tmp:len()<=limit then
-			result[i]=tmp;
+		local tmp2 = (tmp.." "..str):trim();
+		if tmp2:len()>=limit then
+			tinsert(result,tmp);
+			tmp = str:trim();
 		else
-			i=i+1;
-			result[i]=str;
+			tmp = tmp2;
 		end
+	end
+	if tmp~="" then
+		tinsert(result,tmp);
 	end
 	return tconcat(result,"|n"..inset)
 end
