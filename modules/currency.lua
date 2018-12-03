@@ -181,7 +181,7 @@ function createTooltip(tt,update)
 				tt:SetCell(l,1,C("gray","|Tinterface\\buttons\\UI-PlusButton-Up:0|t "..currencies[i].name),nil,nil,0);
 			end
 			tt:SetLineScript(l,"OnMouseUp", toggleCurrencyHeader,currencies[i].name);
-		elseif not parentIsCollapsed then
+		elseif not parentIsCollapsed and tonumber(currencies[i].id) then
 			local c,currency = 3,GetCurrencyByID(currencies[i].id);
 			local str = ns.FormatLargeNumber(name,currency[cCount],true);
 
@@ -333,7 +333,7 @@ function module.OptionMenu(parent)
 		local pList,pList2,d;
 		local id = ns.profile[name].currenciesInTitle[place];
 
-		if id then
+		if tonumber(id) then
 			local d = GetCurrencyByID(id);
 			if d then
 				pList = ns.EasyMenu:AddEntry({
@@ -353,7 +353,7 @@ function module.OptionMenu(parent)
 		end
 
 		for i=1, #currencies do
-			if currencies[i].id then
+			if tonumber(currencies[i].id) then
 				local d = GetCurrencyByID(currencies[i].id);
 				local nameStr,disabled = d[cName],true;
 				if ns.profile[name].currenciesInTitle[place]~=currencies[i].id then
