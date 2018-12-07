@@ -247,7 +247,7 @@ local function SendMailHook(targetName)
 	local t = time()+30*86400;
 	local _,r = strsplit("-",targetName,2);
 	if type(r)=="string" and r:len()>0 then
-		targetName = targetName.."-"..ns.realms[targetName];
+		targetName = targetName.."-"..ns.realms[r];
 	elseif not r then
 		targetName = targetName.."-"..ns.realm;
 	end
