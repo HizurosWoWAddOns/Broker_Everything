@@ -280,7 +280,7 @@ function module.onevent(self,event,arg1)
 		current_money = GetMoney();
 		ns.toon.gold = current_money;
 		if event=="PLAYER_LOGIN" then
-			if ns.data[name].profit~=nil then
+			if ns.data[name] and ns.data[name].profit~=nil then
 				ns.data[name].profit=nil;
 			end
 --@do-not-package@
