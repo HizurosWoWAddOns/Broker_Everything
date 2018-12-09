@@ -177,7 +177,7 @@ local function updateData()
 	end
 
 	for e=1, #expansions do
-		if #factions[e] < expansions[e].numBounties then
+		if factions[e] and expansions[e] and expansions[e].numBounties and #factions[e] < expansions[e].numBounties then
 			for i=#factions[e]+1, expansions[e].numBounties do
 				tinsert(factions[e],{
 					icon = ns.icon_fallback,
