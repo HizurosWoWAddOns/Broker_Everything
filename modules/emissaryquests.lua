@@ -12,7 +12,7 @@ local factions,totalQuests,locked = {},{},false;
 local Alliance = UnitFactionGroup("player")=="Alliance";
 local spacer,ending = 604800,{};
 local expansions = {
-	{ name="legion", index=6, zone=619, numBounties=3, minLevel=110},
+	{ name="legion", index=6, zone=630, numBounties=3, minLevel=110},
 	{ name="bfa", index=7, zone=Alliance and 876 or 875, numBounties=3, minLevel=120},
 }
 local questID2factionID = {
