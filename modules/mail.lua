@@ -64,11 +64,13 @@ local function UpdateStatus(event)
 		wipe(charDB_mail.stored);
 		for i=1, charDB_mail.num do
 			_, _, sender_realm, _, _, _, daysLeft = GetInboxHeaderInfo(i);
-			local returns = _time + floor(daysLeft * 86400);
-			if not sender_realm:find("%-") then
-				sender_realm = sender_realm.."-"..ns.realm_short;
+			if sender_realm then
+				local returns = _time + floor(daysLeft * 86400);
+				if not sender_realm:find("%-") then
+					sender_realm = sender_realm.."-"..ns.realm_short;
+				end
+				tinsert(charDB_mail.stored,sender_realm..";"..returns);
 			end
-			tinsert(charDB_mail.stored,sender_realm..";"..returns);
 		end
 		wipe(charDB_mail.new);
 	else
