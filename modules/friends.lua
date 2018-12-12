@@ -80,7 +80,7 @@ local function updateBroker()
 			bnfriends = bnfriends.."/"..numBNFriends;
 		end
 		dataobj.text = friends .." ".. C(BNConnected() and "ltblue" or "red",bnfriends);
-	else
+	elseif tonumber(numOnlineBNFriends) and tonumber(friendsOnline) then
 		local txt = numOnlineBNFriends + friendsOnline;
 		if ns.profile[name].showTotalCount then
 			txt = txt .."/".. (numBNFriends + numFriends);
