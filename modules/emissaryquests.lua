@@ -61,30 +61,34 @@ local function updateBroker()
 
 	local Time = time();
 	for e=1, #expansions do
-		table.sort(factions[e],sortFactions);
-		for _,v in ipairs(factions[e]) do
-			if ns.profile[name][expansions[e].name.."QuestsBroker"] and v.eventEnding-Time>=0 then
-				local toon = ns.toon[name].factions[v.factionID] or {};
-				if toon.lastEnding==nil then
-					toon.lastEnding = 0;
-				end
-				if v.eventEnding>toon.lastEnding then
-					toon.lastEnding = v.eventEnding;
-					toon.numCompleted = 0;
-				end
-				if toon.numCompleted>v.numTotal then
-					toon.numCompleted=v.numTotal;
-				end
-				local text = toon.numCompleted.."/"..v.numTotal;
-				if toon.numCompleted<v.numTotal then
-					tinsert(lst,text.." |T"..v.icon..":14:14:0:0:64:64:4:56:4:56|t");
-				else
-					tinsert(lst,C("gray",text).." |T"..v.icon..":14:14:0:0:64:64:4:56:4:56|t");
+		if factions[e] then
+			table.sort(factions[e],sortFactions);
+			for _,v in ipairs(factions[e]) do
+				if ns.profile[name][expansions[e].name.."QuestsBroker"] and v.eventEnding-Time>=0 then
+					local toon = ns.toon[name].factions[v.factionID] or {};
+					if toon.lastEnding==nil then
+						toon.lastEnding = 0;
+					end
+					if v.eventEnding>toon.lastEnding then
+						toon.lastEnding = v.eventEnding;
+						toon.numCompleted = 0;
+					end
+					if toon.numCompleted>v.numTotal then
+						toon.numCompleted=v.numTotal;
+					end
+					local text = toon.numCompleted.."/"..v.numTotal;
+					if toon.numCompleted<v.numTotal then
+						tinsert(lst,text.." |T"..v.icon..":14:14:0:0:64:64:4:56:4:56|t");
+					else
+						tinsert(lst,C("gray",text).." |T"..v.icon..":14:14:0:0:64:64:4:56:4:56|t");
+					end
 				end
 			end
 		end
 	end
-	obj.text = table.concat(lst," ");
+	if #lst>0 then
+		obj.text = table.concat(lst," ");
+	end
 end
 
 local function CalculateBountySubObjectives(data,toon)
