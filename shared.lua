@@ -81,12 +81,15 @@ ns.locale = GetLocale();
 ns.ui = {size={UIParent:GetSize()},center={UIParent:GetCenter()}};
 
 do
-	local pattern = "^"..(GetRealmName():gsub("(.)","%1*")).."$";
+	local pattern = "^"..(ns.realm:gsub("(.)","[%1]*")).."$";
 	for i,v in ipairs(GetAutoCompleteRealms()) do
 		if v:match(pattern) then
 			ns.realm_short = v;
 			break;
 		end
+	end
+	if not ns.realm_short then
+		ns.realm_short = ns.realm:gsub(" ",""):gsub("%-","");
 	end
 end
 
