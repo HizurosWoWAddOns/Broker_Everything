@@ -76,10 +76,19 @@ ns.LC.colorset({
 --- misc shared data                    ---
   ---------------------------------------
 ns.realm = GetRealmName();
-ns.realm_short = ns.realm:gsub(" ",""):gsub("%-","");
 ns.media = "Interface\\AddOns\\"..addon.."\\media\\";
 ns.locale = GetLocale();
 ns.ui = {size={UIParent:GetSize()},center={UIParent:GetCenter()}};
+
+do
+	local pattern = "^"..(GetRealmName():gsub("(.)","%1*")).."$";
+	for i,v in ipairs(GetAutoCompleteRealms()) do
+		if v:match(pattern) then
+			ns.realm_short = v;
+			break;
+		end
+	end
+end
 
 
   ---------------------------------------
