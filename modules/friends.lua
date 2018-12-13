@@ -70,7 +70,7 @@ local function updateBroker()
 		numBNFriends, numOnlineBNFriends = BNGetNumFriends();
 	end
 	local numFriends, friendsOnline = GetNumFriends();
-	local broadcastText = select(4,BNGetInfo());
+	if not (tonumber(numOnlineBNFriends) and tonumber(friendsOnline)) then return end
 
 	if ns.profile[name].splitFriendsBroker then
 		local friends = friendsOnline;
@@ -80,7 +80,7 @@ local function updateBroker()
 			bnfriends = bnfriends.."/"..numBNFriends;
 		end
 		dataobj.text = friends .." ".. C(BNConnected() and "ltblue" or "red",bnfriends);
-	elseif tonumber(numOnlineBNFriends) and tonumber(friendsOnline) then
+	else
 		local txt = numOnlineBNFriends + friendsOnline;
 		if ns.profile[name].showTotalCount then
 			txt = txt .."/".. (numBNFriends + numFriends);
@@ -88,6 +88,7 @@ local function updateBroker()
 		dataobj.text = txt .. (BNConnected()==false and "("..C("red","BNet Off")..")" or "");
 	end
 
+	local broadcastText = select(4,BNGetInfo());
 	if (broadcastText) and (strlen(broadcastText)>0) then
 		dataobj.text=dataobj.text.." |Tinterface\\chatframe\\ui-chatinput-focusicon:0|t";
 	end
@@ -624,7 +625,7 @@ function module.onevent(self,event,arg1)
 		if type(ns.profile[name].showBattleTags)=="boolean" then
 			ns.profile[name].showBattleTags = ns.profile[name].showBattleTags and "3" or "0";
 		end
-	else
+	elseif ns.eventPlayerEnteredWorld then
 		updateBroker();
 		if (tt) and (tt.key) and (tt.key==ttName) and (tt:IsShown()) then
 			createTooltip(tt);
