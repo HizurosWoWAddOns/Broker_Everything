@@ -64,6 +64,48 @@ local function changeTalent(_, talent)
 	f(talent.id);
 end
 
+local function updateBroker()
+	local obj = ns.LDB:GetDataObjectByName(module.ldbName) or {};
+	local specName,text,_ = L["No Spec!"],"";
+	local icon = I(name);
+	local spec = GetSpecialization();
+
+	if spec ~= nil then
+		local current = icon.iconfile;
+		 _, specName, _, icon.iconfile, _, _ = GetSpecializationInfo(spec);
+		 if current ~= icon.iconfile then
+			obj.iconCoords, obj.icon = icon.coords, icon.iconfile;
+		 end
+	end
+
+	txt = specName;
+
+	local unspentPvE,unspentPvP,lvl = (GetNumUnspentTalents()),0,UnitLevel("player");
+	for slotIndex=1, 4 do -- not nice but necessary... GetNumUnspentPvpTalents() does not check player level
+		local slotMinLevel = C_SpecializationInfo.GetPvpTalentSlotUnlockLevel(slotIndex);
+		if slotMinLevel and slotMinLevel<=lvl then
+			local slotInfo = C_SpecializationInfo.GetPvpTalentSlotInfo(slotIndex);
+			if slotInfo.enabled and slotInfo.selectedTalentID==nil then
+				unspentPvP = unspentPvP+1;
+			end
+		end
+	end
+
+	local lst = {};
+	if unspentPvE>0 then
+		tinsert(lst,unspentPvE.." "..TRANSMOG_SET_PVE);
+	end
+	if unspentPvP>0 then
+		tinsert(lst,unspentPvP.." "..TRANSMOG_SET_PVP);
+	end
+
+	if #lst>0 then
+		txt = C("ltred",L["Unspent talents"]..": ".. table.concat(lst,", "));
+	end
+
+	obj.text = txt;
+end
+
 function createTooltip(tt,update)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
@@ -233,9 +275,7 @@ function createTooltip(tt,update)
 		tt:SetCell(tt:AddLine(),1,C("ltblue",L["MouseBtn"]).." || "..C("green",L["Activate specialization"]),nil,"LEFT",ttColumns);
 		ns.ClickOpts.ttAddHints(tt,name);
 	end
-	if not update then
-		ns.roundupTooltip(tt);
-	end
+	ns.roundupTooltip(tt);
 end
 
 
@@ -245,20 +285,14 @@ module = {
 	events = {
 		"PLAYER_LOGIN",
 		"ACTIVE_TALENT_GROUP_CHANGED",
-		"PLAYER_LOGIN",
-		"SKILL_LINES_CHANGED",
-		"CHARACTER_POINTS_CHANGED",
 		"PLAYER_TALENT_UPDATE",
 		"PLAYER_SPECIALIZATION_CHANGED",
-		"CHAT_MSG_SYSTEM" -- for loot spec changes -.-
 	},
 	config_defaults = {
 		enabled = false,
 		showTalents = true,
 		showTalentsShort = false,
 		showPvPTalents = true,
-		--showPvPHonor = true,
-		showPvPHonorOnBroker = true
 	},
 	clickOptionsRename = {
 		["pvespec"] = "1_open_specialization",
@@ -287,13 +321,11 @@ ns.ClickOpts.addDefaults(module,{
 function module.options()
 	return {
 		broker = {
-			showPvPHonorOnBroker={ type="toggle", order=1, name=L["Show PvP honor"], desc=L["Show PvP honor on broker button"]}
 		},
 		tooltip = {
 			showTalents={ type="toggle", order=1, name=L["Show talents"], desc=L["Show talents in tooltip"]},
 			showTalentsShort={ type="toggle", order=2, name=L["Show short talent list"], desc=L["Show short list of PvE talents in tooltip"]},
 			showPvPTalents={ type="toggle", order=3, name=PVP_LABEL_PVP_TALENTS, desc=L["Show PvP talents in tooltip"]},
-			--showPvPHonor={ type="toggle", order=5, name=L["Show PvP honor"], desc=L["Show PvP honor in tooltip"]},
 		},
 		misc = nil,
 	}
@@ -316,37 +348,7 @@ function module.onevent(self,event,arg1,...)
 			ns.ClickOpts.update(name);
 		end
 	else
-		local specName = L["No Spec!"]
-		local icon = I(name)
-		local spec = GetSpecialization()
-		local _ = nil
-		local dataobj = self.obj or ns.LDB:GetDataObjectByName(module.ldbName);
-		local unspentPvE,unspentPvP,lvl = (GetNumUnspentTalents()),0,UnitLevel("player");
-		for slotIndex=1, 4 do -- not nice but necessary... GetNumUnspentPvpTalents() does not check player level
-			local slotMinLevel = C_SpecializationInfo.GetPvpTalentSlotUnlockLevel(slotIndex);
-			if slotMinLevel and slotMinLevel<=lvl then
-				local slotInfo = C_SpecializationInfo.GetPvpTalentSlotInfo(slotIndex);
-				if slotInfo.enabled and slotInfo.selectedTalentID==nil then
-					unspentPvP = unspentPvP+1;
-				end
-			end
-		end
-
-		if spec ~= nil then
-			 _, specName, _, icon.iconfile, _, _ = GetSpecializationInfo(spec);
-		end
-
-		local lst = {};
-		if unspentPvE>0 then
-			tinsert(lst,unspentPvE.." "..TRANSMOG_SET_PVE);
-		end
-		if unspentPvP>0 then
-			tinsert(lst,unspentPvP.." "..TRANSMOG_SET_PVP);
-		end
-
-		dataobj.iconCoords = icon.coords;
-		dataobj.icon = icon.iconfile;
-		dataobj.text = #lst>0 and C("ltred",L["Unspent talents"]..": ".. table.concat(lst,", ")) or specName;
+		updateBroker();
 	end
 end
 
