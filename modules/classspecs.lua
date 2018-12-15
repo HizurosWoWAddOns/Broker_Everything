@@ -159,21 +159,21 @@ function createTooltip(tt,update)
 		local l=tt:AddLine(C("ltblue",LEVEL_ABBR));
 		tt:SetCell(l,2,C("ltblue",TALENTS),nil,nil,2);
 		tt:AddSeparator();
-		local Id, Name, Icon, Selected, Available, spellId, Unlocked,x,y,Known = 1,2,3,4,5,6,7,8,9,10;
+		local Id, Name, Icon, Selected, Available, spellId = 1,2,3,4,5,6;
 		local tierLevels = CLASS_TALENT_LEVELS[ns.player.class] or CLASS_TALENT_LEVELS.DEFAULT
 		local level = UnitLevel("player");
 		for row=1, MAX_TALENT_TIERS do
-			local selected, isUnlocked,x = false,false;
+			local selected, isUnlocked = false,false;
 			local l=tt:AddLine(C("ltyellow",tierLevels[row]));
 			for col=1, NUM_TALENT_COLUMNS do
 				local tmp = {GetTalentInfo(row,col,talentGroup)};
-				x=tmp;
 				if ns.profile[name].showTalentsShort then
+					if tmp[Available] then
+						isUnlocked = true;
+					end
 					if tmp[Selected]==true then
 						selected = tmp;
 						break;
-					elseif tmp[Unlocked] then
-						isUnlocked = tmp;
 					end
 				else
 					local c,color = col+1,(tmp[Selected] and "ltyellow") or (level>=tierLevels[row] and "gray") or "dkred";
@@ -207,72 +207,23 @@ function createTooltip(tt,update)
 
 	-- PVP Talents
 	if ns.profile[name].showPvPTalents then
-		if ns.build>80000000 then
-			tt:AddSeparator(4,0,0,0,0);
-			local l=tt:AddLine(C("ltblue",LEVEL_ABBR));
-			tt:SetCell(l,2,C("ltblue",PVP_TALENTS),nil,"LEFT",0);
-			tt:AddSeparator();
-			for slotIndex=1, 4 do
-				local slotMinLevel = C_SpecializationInfo.GetPvpTalentSlotUnlockLevel(slotIndex);
-				local slotInfo = C_SpecializationInfo.GetPvpTalentSlotInfo(slotIndex);
-				local l = tt:AddLine(C("ltyellow",slotMinLevel));
-				if slotInfo.enabled then
-					if slotInfo.selectedTalentID then
-						local _, talentName, texture = GetPvpTalentInfoByID(slotInfo.selectedTalentID);
-						tt:SetCell(l,2,str:format(texture,C("ltyellow",talentName)),nil,nil,0);
-					else
-						tt:SetCell(l,2,C("orange",L["TalentUnlocked"]),nil,nil,0);
-					end
+		tt:AddSeparator(4,0,0,0,0);
+		local l=tt:AddLine(C("ltblue",LEVEL_ABBR));
+		tt:SetCell(l,2,C("ltblue",PVP_TALENTS),nil,"LEFT",0);
+		tt:AddSeparator();
+		for slotIndex=1, 4 do
+			local slotMinLevel = C_SpecializationInfo.GetPvpTalentSlotUnlockLevel(slotIndex);
+			local slotInfo = C_SpecializationInfo.GetPvpTalentSlotInfo(slotIndex);
+			local l = tt:AddLine(C("ltyellow",slotMinLevel));
+			if slotInfo.enabled then
+				if slotInfo.selectedTalentID then
+					local _, talentName, texture = GetPvpTalentInfoByID(slotInfo.selectedTalentID);
+					tt:SetCell(l,2,str:format(texture,C("ltyellow",talentName)),nil,nil,0);
 				else
-					tt:SetCell(l,2,C("gray",L["TalentLocked"]),nil,nil,0);
-				end
-			end
-		else
-			tt:AddSeparator(4,0,0,0,0);
-			tt:SetCell(tt:AddLine(),2,C("ltblue",PVP_TALENTS),nil,"LEFT",0);
-			tt:AddSeparator();
-			local Id, Name, Icon, Selected, Available, spellId, Unlocked = 1,2,3,4,5,6,7;
-
-			if UnitLevel("player") == MAX_PLAYER_LEVEL_TABLE[LE_EXPANSION_LEVEL_CURRENT] then
-				for row=1, MAX_PVP_TALENT_TIERS do
-					local selected,isUnlocked = false,false;
-					local l=tt:AddLine(C("ltyellow",row));
-					for col=1, MAX_PVP_TALENT_COLUMNS do
-						local tmp={GetPvpTalentInfo(row,col,talentGroup)}; -- TODO: BfA - removed function
-						if ns.profile[name].showPvPTalentsShort then
-							if tmp[Selected]==true then
-								selected = tmp;
-								break;
-							elseif tmp[Unlocked] then
-								isUnlocked = true;
-							end
-						else
-							local c,color = col+1,(tmp[Selected] and "ltyellow") or (tmp[Unlocked] and "gray") or "dkred";
-							tt:SetCell(l,c,str:format(tmp[Icon],C(color,tmp[Name])),nil,"LEFT");
-							tt:SetCellScript(l,c,"OnEnter",infoTooltipShow,{type="pvptalent",args={tmp[Id],false,talentGroup}});
-							tt:SetCellScript(l,c,"OnLeave",infoTooltipHide);
-							if not tmp[Selected] and tmp[Unlocked] then
-								tt.lines[l].cells[c].pvpTalentId = tmp[Id];
-								tt:SetCellScript(l,c,"OnMouseUp",changeTalent, {type="pvp", id=tmp[Id]});
-							end
-						end
-					end
-					if ns.profile[name].showPvPTalentsShort then
-						if selected then
-							tt:SetCell(l,2,str:format(selected[Icon],C("ltyellow",selected[Name])),nil,nil,2);
-							tt:SetLineScript(l,"OnEnter",infoTooltipShow, {type="pvptalent",args={selected[Id],false,talentGroup}});
-							tt:SetLineScript(l,"OnLeave",infoTooltipHide);
-						else
-							if isUnlocked then
-								tt:SetCell(l,2,C("orange",L["TalentUnlocked"]),nil,nil,2);
-							else
-								tt:SetCell(l,2,C("gray",L["TalentLocked"]),nil,nil,2);
-							end
-						end
-					end
+					tt:SetCell(l,2,C("orange",L["TalentUnlocked"]),nil,nil,0);
 				end
 			else
-				tt:SetCell(tt:AddLine(),2,C("gray",L["PvP talents will be available on max level"]),nil,nil,0);
+				tt:SetCell(l,2,C("gray",L["TalentLocked"]),nil,nil,0);
 			end
 		end
 	end
