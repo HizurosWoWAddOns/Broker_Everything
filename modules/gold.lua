@@ -66,7 +66,7 @@ function updateProfit()
 	};
 
 	for k,v in pairs(profit) do
-		ns.tablePath(ns.data[name],"Profit",k,player);
+		ns.tablePath(ns.data,name,"Profit",k,player);
 		local p = ns.data[name].Profit[k][player];
 		if  p[v[1]]==nil then
 			p[v[1]] = current_money;
