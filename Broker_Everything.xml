@@ -24,7 +24,6 @@
 	<Script file="modules/archaeology.lua"/>
 	<Script file="modules/artifactweapons.lua"/>
 	<Script file="modules/bags.lua"/>
-	<Script file="modules/brokenislesinvasions.lua"/>
 	<Script file="modules/calendar.lua"/>
 	<Script file="modules/chatchannels.lua"/>
 	<Script file="modules/classspecs.lua"/>
@@ -45,6 +44,7 @@
 	<Script file="modules/guild.lua"/>
 	<Script file="modules/ids.lua"/>
 	<Script file="modules/instances.lua"/>
+	<Script file="modules/invasions.lua"/>
 	<Script file="modules/mail.lua"/>
 	<Script file="modules/missions.lua"/>
 	<Script file="modules/nameplates.lua"/>

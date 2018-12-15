@@ -20,9 +20,10 @@ local tremove,tostring,type,print,unpack,assert=tremove,tostring,type,print,unpa
 local securecall,ipairs,pairs,tconcat,tsort=securecall,ipairs,pairs,table.concat,table.sort;
 local time,wipe,mod,hooksecurefunc,strsplit=time,wipe,mod,hooksecurefunc,strsplit;
 
-ns.build = tonumber(({GetBuildInfo()})[1]:gsub("[|.]","")..({GetBuildInfo()})[2]);
-ns.icon_fallback = 134400; -- interface\\icons\\INV_MISC_QUESTIONMARK;
 
+  -------------
+--- Libraries ---
+  -------------
 ns.LDB = LibStub("LibDataBroker-1.1");
 ns.LQT = LibStub("LibQTip-1.0");
 ns.LDBI = LibStub("LibDBIcon-1.0");
@@ -30,7 +31,6 @@ ns.LSM = LibStub("LibSharedMedia-3.0");
 ns.LT = LibStub("LibTime-1.0");
 ns.LC = LibStub("LibColors-1.0");
 ns.LRI = LibStub("LibRealmInfo");
-
 
 -- broker_everything colors
 ns.LC.colorset({
@@ -75,11 +75,11 @@ ns.LC.colorset({
   ---------------------------------------
 --- misc shared data                    ---
   ---------------------------------------
-ns.realm = GetRealmName();
+ns.icon_fallback = 134400; -- interface\\icons\\INV_MISC_QUESTIONMARK;
 ns.media = "Interface\\AddOns\\"..addon.."\\media\\";
 ns.locale = GetLocale();
 ns.ui = {size={UIParent:GetSize()},center={UIParent:GetCenter()}};
-
+ns.realm = GetRealmName();
 do
 	local pattern = "^"..(ns.realm:gsub("(.)","[%1]*")).."$";
 	for i,v in ipairs(GetAutoCompleteRealms()) do
@@ -91,6 +91,10 @@ do
 	if not ns.realm_short then
 		ns.realm_short = ns.realm:gsub(" ",""):gsub("%-","");
 	end
+end
+do
+	local version,build = GetBuildInfo();
+	ns.build = tonumber(version:gsub("[|.]","")..build);
 end
 
 

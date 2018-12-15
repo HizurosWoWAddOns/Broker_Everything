@@ -660,6 +660,10 @@ function ns.RegisterOptions()
 	if type(goldColor)~="string" then
 		ns.profile.GeneralOptions.goldColor = goldColor and "color" or "white";
 	end
+	if db.profile["Broken Isles Invasions"]~=nil then
+		db.profile["Invasions"] = db.profile["Broken Isles Invasions"];
+		db.profile["Broken Isles Invasions"]=nil;
+	end
 end
 
 function ns.ToggleBlizzOptionPanel()
