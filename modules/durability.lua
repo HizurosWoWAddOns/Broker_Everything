@@ -11,7 +11,7 @@ local name,_ = "Durability"; -- DURABILITY L["ModDesc-Durability"]
 local ttName,tt,module = name.."TT";
 local hiddenTooltip
 local last_repairs = {};
-local merchant = {repair=false,costs=0,diff=0,single=0};
+local merchant,currentDurability = {repair=false,costs=0,diff=0,single=0};
 local discount = {[5]=0.95,[6]=0.9,[7]=0.85,[8]=0.8};
 local slotNames = {
 	HEADSLOT,NECKSLOT,SHOULDERSLOT,SHIRTSLOT,CHESTSLOT,WAISTSLOT,LEGSSLOT,FEETSLOT,
@@ -53,49 +53,58 @@ I[name] = {iconfile="Interface\\Minimap\\TRACKING\\Repair",coords={0.05,0.95,0.0
 
 -- some local functions --
 --------------------------
-local function scanAll()
-	local equipped,bags,cost,per,current,maximum,total,_ = 0,0,0,1;
-	local _curr,_max,_per,_perSlot,_AvPercent = 0,0,1,nil,1;
+local function updateBroker()
+	local obj = ns.LDB:GetDataObjectByName(module.ldbName) or {};
+	local repairCosts, equipCost, bagCost, dA, dL, dLSlot, d = unpack(currentDurability);
 
-	for slot=1, 18 do
-		if (GetInventoryItemID("player", slot)) then
-			current,maximum = GetInventoryItemDurability(slot); -- durability values
-			if (current) and (maximum>0) and (current<maximum) then
-				_,_,cost = hiddenTooltip:SetInventoryItem("player", slot); -- repair costs
-				equipped = equipped + tonumber(cost or 0);
-				_curr,_max = _curr+current,_max+maximum;
-				per = current/maximum;
-				if (per<_per) then
-					_per,_perSlot = per,slot;
-				end
-			end
-		end
-	end
-
-	if (_max>0) then
-		_AvPercent = _curr/_max;
-	end
-
-	for bag=0, NUM_BAG_SLOTS do
-		for slot=1, GetContainerNumSlots(bag) do
-			if (GetContainerItemID(bag,slot)) then
-				current,maximum = GetContainerItemDurability(bag,slot);
-				if (current) and (maximum>0) and (current<maximum) then
-					_, cost = hiddenTooltip:SetBagItem(bag,slot);
-					bags = bags+tonumber(cost or 0);
-				end
-			end
-		end
-	end
-
-	if (merchant.repair) then
-		total = GetRepairAllCost();
-		equipped = equipped + (total-(equipped+bags))
+	if (ns.profile[name].inBroker=="costs") then
+		dataobj.text = ns.GetCoinColorOrTextureString(name,repairCosts)
 	else
-		total = (equipped + bags);
+		d = floor((ns.profile[name].lowestItem) and dL or dA);
+		if (ns.profile[name].inBroker=="percent") then
+			obj.text = C(colorSets(d)or "blue",d.."%");
+		elseif (ns.profile[name].inBroker=="percent/costs") then
+			obj.text = C(colorSets(d)or "blue",d.."%")..", "..ns.GetCoinColorOrTextureString(name,repairCosts);
+		elseif (ns.profile[name].inBroker=="costs/percent") then
+			obj.text = ns.GetCoinColorOrTextureString(name,repairCosts)..", "..C(colorSets(d) or "blue",d.."%");
+		end
+	end
+end
+
+local function nsItemsCallback(updateMode)
+	local repairCostInv,repairCostBags,all_current,all_maximum,lowest = 0,0,0,0,{1,false};
+	local itemList = ns.items.GetItemlist();
+
+	for itemID, items in pairs(itemList) do
+		for i=1, #items do
+			if (items[i].itemType==ARMOR or items[i].itemType==WEAPON) and items[i].durability and items[i].durability_max>0 and items[i].durability<items[i].durability_max then
+				if items[i].type=="inventory" then
+					repairCostInv = repairCostInv + (tonumber(items[i].repairCost) or 0);
+					all_current,all_maximum = all_current+items[i].durability,all_maximum+items[i].durability_max;
+					local percent = items[i].durability/items[i].durability_max;
+					if percent<lowest[1] then
+						lowest = {percent,items[i].slot};
+					end
+				else
+					repairCostBags = repairCostBags + (tonumber(items[i].repairCost) or 0);
+				end
+			end
+		end
 	end
 
-	return total,equipped,bags,_AvPercent*100,_per*100,_perSlot;
+	local avPercent = 1;
+	if all_maximum>0 then
+		avPercent = all_current/all_maximum;
+	end
+
+	local total = repairCostInv+repairCostBags;
+	if merchant.repair then
+		total = GetRepairAllCost();
+		-- can be different??
+	end
+
+	currentDurability = {total, repairCostInv, repairCostBags, avPercent*100, lowest[1]*100, lowest[2]};
+	updateBroker();
 end
 
 local function lastRepairs_add(cost,fund,repairType)
@@ -141,7 +150,7 @@ local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	if tt.lines~=nil then tt:Clear(); end
-	local repairCost, equipCost, bagCost, durabilityA, durabilityL, durabilityLslot = scanAll();
+	local repairCost, equipCost, bagCost, durabilityA, durabilityL, durabilityLslot = unpack(currentDurability);
 	local repairCostN = repairCost;
 	local reputation = UnitReaction("npc", "player");
 	if (discount[reputation]) then
@@ -326,8 +335,6 @@ function module.OptionMenu(self,button,modName)
 end
 
 function module.init()
-	ns.items.Enable();
-
 	colorSets.set1 = {[20]="red",[40]="orange",[99]="yellow",[100]="green"};
 	colorSets.set2 = {[15]="red",[40]="orange",[70]="yellow",[100]="white"};
 	colorSets.set3 = {[20]="red",[40]="orange",[60]="yellow",[99]="green",[100]="ltblue"};
@@ -358,12 +365,17 @@ function module.init()
 	MerchantGuildBankRepairButton:HookScript("OnClick",function(self,button)
 		module.onevent({},"BE_EVENT_REPAIRALL_GUILD");
 	end);
+
+	ns.items.RegisterCallback(name,nsItemsCallback,"any");
 end
 
 function module.onevent(self,event,arg1)
-	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
-		ns.ClickOpts.update(name);
-		return;
+	if event=="BE_UPDATE_CFG" then
+		if arg1 and arg1:find("^ClickOpt") then
+			ns.ClickOpts.update(name);
+			return;
+		end
+		date_format = ns.profile[name].dateFormat;
 	elseif event=="MERCHANT_SHOW" then
 		local costs, canRepair = GetRepairAllCost();
 		if (costs>0) and (canRepair) then
@@ -375,9 +387,7 @@ function module.onevent(self,event,arg1)
 				end
 			end
 		end
-		return;
-	end
-	if ns.eventPlayerEnteredWorld then
+	elseif ns.eventPlayerEnteredWorld then
 		-- RepairAll - ButtonHooks - custom events
 		if (event=="BE_EVENT_REPAIRALL_GUILD") then
 			lastRepairs_add(merchant.costs,true);
