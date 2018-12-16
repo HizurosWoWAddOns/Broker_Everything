@@ -423,24 +423,6 @@ function module.onevent(self,event,arg1)
 				merchant = {repair=false,costs=0,diff=0,single=0};
 			end
 		end
-
-		local dataobj = self.obj or ns.LDB:GetDataObjectByName(module.ldbName)
-		local repairCosts, equipCost, bagCost, dA, dL, dLSlot, d = scanAll();
-
-		if (ns.profile[name].inBroker=="costs") then
-			dataobj.text = ns.GetCoinColorOrTextureString(name,repairCosts)
-		else
-			d = floor((ns.profile[name].lowestItem) and dL or dA);
-			if (ns.profile[name].inBroker=="percent") then
-				dataobj.text = C(colorSets(d)or "blue",d.."%");
-			elseif (ns.profile[name].inBroker=="percent/costs") then
-				dataobj.text = C(colorSets(d)or "blue",d.."%")..", "..ns.GetCoinColorOrTextureString(name,repairCosts);
-			elseif (ns.profile[name].inBroker=="costs/percent") then
-				dataobj.text = ns.GetCoinColorOrTextureString(name,repairCosts)..", "..C(colorSets(d) or "blue",d.."%");
-			end
-		end
-
-		date_format = ns.profile[name].dateFormat;
 	end
 end
 
