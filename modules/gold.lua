@@ -298,6 +298,7 @@ function module.onevent(self,event,arg1)
 			end
 			login_money = current_money;
 			updateProfit();
+			updateBroker();
 		elseif ns.eventPlayerEnteredWorld then
 			updateBroker();
 		end
