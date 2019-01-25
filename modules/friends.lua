@@ -190,14 +190,14 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 				BNInviteFriend(data.toonID);
 			end
 		else
-			local name = data.account; -- account name
+			local func,name = "BNet",data.account; -- account name
 			if button=="RightButton" then
-				name = data.name; -- toon name
+				func,name = "",data.name; -- toon name
 				if ns.realm~=data.realm then
 					name = name .."-".. ns.stripRealm(data.realm);
 				end
 			end
-			securecall("ChatFrame_SendSmartTell",name);
+			securecall("ChatFrame_Send"..func.."Tell",name);
 		end
 	end
 end
