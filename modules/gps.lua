@@ -30,8 +30,8 @@ local zoneDisplayValues = {
 	["4"] = ("%s (%s)"):format(ZONE,L["Subzone"]),
 	["5"] = ("%s (%s)"):format(L["Subzone"],ZONE),
 }
-local foundItems, foundToys, teleports, portals, spells = {},{},{},{},{};
-local _classSpecialSpellIds,_teleportIds,_portalIds,_itemIds,_itemReplacementIds,_itemMustBeEquipped,_itemFactions = {},{},{},{},{},{},{};
+local foundItems, foundToys, teleports, portals, spells, hearthstoneLocation = {},{},{},{},{};
+local _classSpecialSpellIds,_teleportIds,_portalIds,_itemIds,_toys,_hearthstones,_itemMustBeEquipped,_itemFactions = {},{},{},{},{},{},{},{};
 local sharedclickOptionsRename = {
 	["1_open_world_map"] = "worldmap",
 	["2_open_transport_menu"] = "transport",
@@ -88,34 +88,41 @@ local function updateSpells()
 	for i=1, #_classSpecialSpellIds do setSpell(spells,_classSpecialSpellIds[i]) end
 end
 
-local function addItem(id,loc)
-	local toyName,toyIcon,_;
-	if PlayerHasToy(id) then
-		_, toyName, toyIcon = C_ToyBox.GetToyInfo(id);
+local function itemIsHearthstone(id)
+	if _hearthstones[id] then
+		return true, hearthstoneLocation;
 	end
-	if toyName and toyIcon then
-		if C_ToyBox.IsToyUsable(id) then
-			table.insert(foundToys,{id=id,icon=toyIcon,name=toyName,name2=loc~=nil and toyName..loc or nil});
-		end
-	elseif items[id] and items[id][1] then
-		local v=items[id][1];
-		if type(v)=="table" and v.name then
-			table.insert(foundItems,{id=id,icon=v.icon,name=v.name,name2=v.name,mustBeEquipped=_itemMustBeEquipped[id]==1,equipped=v.type=="inventory"});
-		end
-	end
+	return false,"";
 end
 
 local function updateItems()
-	wipe(foundItems); wipe(foundToys);
+	-- update hearthstone location string
+	hearthstoneLocation = " "..C("ltblue","("..GetBindLocation()..")");
+
+	-- update foundItems table
+	wipe(foundItems);
 	items = ns.items.GetItemlist();
 	for i=1, #_itemIds do
-		addItem(_itemIds[i]);
+		local id = _itemIds[i];
+		if items[id] and items[id][1] then
+			local v=items[id][1];
+			if type(v)=="table" and v.name then
+				local isHS, hsLoc = itemIsHearthstone(id);
+				tinsert(foundItems,{id=id,icon=v.icon,name=v.name,name2=isHS and v.name..hsLoc or v.name,mustBeEquipped=_itemMustBeEquipped[id]==1,equipped=v.type=="inventory"});
+			end
+		end
 	end
-	local loc = " "..C("ltblue","("..GetBindLocation()..")");
-	for i=1, #_itemReplacementIds do
-		addItem(_itemReplacementIds[i],loc);
+
+	-- update foundToys table;
+	wipe(foundToys);
+	for i=1, #_toys do
+		local id = _toys[i];
+		local _, toyName, toyIcon = C_ToyBox.GetToyInfo(id); -- function does not anytime return correct data; more stable results after open toybox... not nice.
+		if toyName and PlayerHasToy(_toys[i]) and C_ToyBox.IsToyUsable(id) then
+			local isHS, hsLoc = itemIsHearthstone(id);
+			tinsert(foundToys,{id=id,icon=toyIcon,name=toyName,name2=isHS and toyName..hsLoc or toyName});
+		end
 	end
-	items = nil;
 end
 
 local function position(name)
@@ -407,8 +414,12 @@ local function init()
 	_classSpecialSpellIds = {50977,18960,556,126892,147420,193753};
 	_teleportIds = {3561,3562,3563,3565,3566,3567,32271,32272,33690,35715,49358,49359,53140,88342,88344,120145,132621,132627,176248,176242,193759,224869,281403,281404};
 	_portalIds = {10059,11416,11417,11418,11419,11420,32266,32267,33691,35717,49360,49361,53142,88345,88346,120146,132620,132626,176246,176244,224871,281400,281402};
-	_itemIds = {18984,18986,21711,22589,22630,22631,22632,24335,29796,30542,30544,32757,33637,33774,34420,35230,36747,37863,38685,40585,40586,43824,44934,44935,45688,45689,45690,45691,45705,46874,48933,48954,48955,48956,48957,51557,51558,51559,51560,52251,52576,58487,58964,60273,60374,60407,60498,61379,63206,63207,63352,63353,63378,63379,64457,65274,65360,66061,68808,68809,82470,87215,87548,91850,91860,91861,91862,91863,91864,91865,91866,92056,92057,92058,92430,92431,92432,95050,95051,95567,95568,103678,104110,104113,107441,110560,112059,116413,117389,118662,118663,118907,118908,119183,128353,128502,128503,129276,132119,132120,132122,132517,133755,134058,136849,138448,139541,139590,139599,140192,140319,140493,141013,141014,141015,141016,141017,141605,142298};
-	_itemReplacementIds = {64488,28585,6948,44315,44314,37118,142542,142298};
+	_itemIds = {21711,22589,22630,22631,22632,24335,29796,30542,32757,33637,33774,34420,35230,36747,37863,38685,40585,40586,44934,44935,45688,45689,45690,45691,45705,46874,48954,48955,48956,48957,51557,51558,51559,51560,52251,52576,58487,58964,60273,60374,60407,60498,61379,63206,63207,63352,63353,63378,63379,64457,65274,65360,66061,68808,68809,82470,87548,91850,91860,91861,91862,91863,91864,91865,91866,92056,92057,92058,92430,92431,92432,95050,95051,103678,104110,104113,107441,110560,116413,117389,118662,118663,118907,118908,119183,128353,128502,128503,129276,132119,132120,132122,132517,133755,134058,138448,139541,139590,139599,140192,140319,140493,141013,141014,141015,141016,141017,141605,142298};
+
+	_toyIds = {18984,18986,30542,30544,43824,48933,64488,87215,95567,95568,95589,95590,112059,136849,140324,162973,151016,163045};
+	_hearthstones = {[6948]=1,[28585]=1,[37118]=1,[44314]=1,[44315]=1,[64488]=1,[142298]=1,[142542]=1,[163045]=1};
+
+	--_itemReplacementIds = {64488,28585,6948,44315,44314,37118,142542,142298};
 	_itemMustBeEquipped = {[32757]=1,[40585]=1,[142298]=1};
 
 	C_Timer.After(5,function()
