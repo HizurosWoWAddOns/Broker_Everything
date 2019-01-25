@@ -206,7 +206,7 @@ function module.onevent(self,event,...)
 		channels[index][iCount] = count or 0;
 		channels[index][iLastUpdate] = time(); -- ?
 		updateBroker();
-	elseif event=="PLAYER_ENTERING_WORLD" or event=="CHANNEL_UI_UPDATE" then
+	elseif ns.eventPlayerEnteredWorld and (event=="PLAYER_ENTERING_WORLD" or event=="CHANNEL_UI_UPDATE") then
 		if not updateChannelListLock then -- catch multible triggered events
 			C_Timer.After(.15, updateChannelList);
 		end
