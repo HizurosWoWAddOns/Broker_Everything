@@ -597,8 +597,8 @@ end
 -- ------------------------------------------------------------ --
 
 function ns.tablePath(tbl,a,...)
-	if not a then return end
-	if tbl[a]==nil then tbl[a]={}; end
+	if type(a)~="string" then return end
+	if type(tbl[a])~="table" then tbl[a]={}; end
 	if (...) then ns.tablePath(tbl[a],...); end
 end
 
