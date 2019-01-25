@@ -12,8 +12,8 @@ local ttName, ttColumns, tt, module = name.."TT", 3;
 
 local eu,timeStamp = GetCurrentRegionName()=="EU";
 local regions = {
-	{ exp=6, map=619, first=eu and 1517682600 or 1517644800, int=66600, len=21600, atlas="legioninvasion-map-icon-portal", maps={630,641,650,634,680} },
-	{ exp=7, map={876,875}, first=eu and 1544716800 or 1544785200, int=68400, len=25200, atlas={"HordeWarfrontMapBanner","AllianceWarfrontMapBanner"}, maps={895,896,942,862,863,864} },
+	{ exp=6, map=619,       start=eu and 1517682600 or 1517644800, int=66600, len=21600, atlas="legioninvasion-map-icon-portal",                       maps={630,641,650,634,680},     achievement=11544 },
+	{ exp=7, map={876,875}, start=eu and 1544716800 or 1544785200, int=68400, len=25200, atlas={"HordeWarfrontMapBanner","AllianceWarfrontMapBanner"}, maps={895,896,942,862,863,864}, achievement=13283, poi={5964,5973,5896,5970,5969,5966} },
 };
 
 
@@ -25,10 +25,13 @@ I[name] = {iconfile="interface\\icons\\Garrison_Building_SparringArena", coords=
 -- some local functions --
 --------------------------
 local function updateInvasionState()
-	if WorldMapFrame:IsShown() then return end
+	--if WorldMapFrame:IsShown() then return end
 	timeStamp = time();
 	for i=1, #regions do
-		regions[i].last = mod(timeStamp-regions[i].first,regions[i].int); -- seconds since start of last invasion
+		if ns.data[name] and ns.data[name]["exp"..regions[i].exp.."start"] then
+			regions[i].start = ns.data[name]["exp"..regions[i].exp.."start"];
+		end
+		regions[i].last = mod(timeStamp-regions[i].start,regions[i].int); -- seconds since start of last invasion
 		regions[i].lastX = timeStamp-regions[i].last;
 		regions[i].next = regions[i].int-regions[i].last;
 		regions[i].mapNames = {};
@@ -36,6 +39,26 @@ local function updateInvasionState()
 			local m = C_Map.GetMapInfo(regions[i].maps[I]);
 			if m then
 				tinsert(regions[i].mapNames,"("..m.name..")");
+			end
+		end
+		if not eu and regions[i].poi then
+			local seconds;
+			for p=1, #regions[i].poi do
+				local sec = C_AreaPoiInfo.GetAreaPOISecondsLeft(regions[i].poi[p]);
+				if sec and sec>0 and sec<=regions[i].len  then
+					seconds = sec;
+					break;
+				end
+			end
+			if seconds then
+				local start = timeStamp - seconds;
+				if start ~= regions[i].start then
+					if ns.data[name]==nil then
+						ns.data[name] = {};
+					end
+					ns.data[name]["exp"..regions[i].exp.."start"] = start;
+
+				end
 			end
 		end
 		if regions[i].last <= regions[i].len and (not regions[i].desc) then
