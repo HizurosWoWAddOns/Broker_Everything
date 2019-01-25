@@ -36,6 +36,7 @@ I[name] = {iconfile="Interface\\Minimap\\TRACKING\\Auctioneer",coords={0.05,0.95
 local function getProfit(Type,last)
 	local value = 0;
 	if Type then
+		ns.tablePath(ns.data,name,"Profit",Type,player);
 		local p,d=ns.data[name].Profit[Type][player],profit[Type];
 		if not last then
 			value = current_money-p[d[1]];
@@ -297,8 +298,10 @@ function module.onevent(self,event,arg1)
 				ns.profile[name].showSessionProfit=nil
 			end
 			login_money = current_money;
-			updateProfit();
-			updateBroker();
+			C_Timer.After(0.5,function()
+				updateProfit();
+				updateBroker();
+			end);
 		elseif ns.eventPlayerEnteredWorld then
 			updateBroker();
 		end
