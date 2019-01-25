@@ -4,17 +4,21 @@
 local addon, ns = ...;
 local C,L,I = ns.LC.color,ns.L,ns.I;
 
+--#- missing event to update list of professions... [?]
+--#- update cooldown list
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Professions"; -- TRADE_SKILLS L["ModDesc-Professions"]
-local ttName,ttName2,ttColumns,tt,tt2,module = name.."TT",name.."TT2",2;
+local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module = name.."TT",name.."TT2",2,3;
 local professions,db,locked = {};
+local Faction = UnitFactionGroup("player")=="Alliance" and 1 or 2;
 local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset, fullNameLocale = 1,2,3,4,5,6,7,8,9,10,11; -- GetProfessionInfo
 local nameEnglish,spellId,skillId,disabled = 11, 12, 13, 14; -- custom after GetProfessionInfo
 local spellName,spellLocaleName,spellIcon,spellId = 1,2,3,4;
-local legion_faction_recipes,cdSpells = {},{};
+local legion_faction_recipes,bfa_faction_recipes,cdSpells = {},{},{};
 local profs = {data={},id2Name={},test={}, generated=false};
+local ts = {};
 local cd_groups = { -- %s cooldown group
 	"Transmutation",	-- L["Transmutation cooldown group"]
 	"Jewels",			-- L["Jewels cooldown group"]
@@ -119,6 +123,76 @@ local function OnLearnRecipe(itemId,i)
 	end
 end
 
+local function CreateTooltip2(self, content)
+	local content,expansion,tsId,recipes,factions = unpack(content);
+	tt2 = ns.acquireTooltip({ttName2, ttColumns2, "LEFT","RIGHT","CENTER"},{true,true},{self, "horizontal", tt});
+
+	if content=="skilled" then
+		--
+	elseif content=="faction-recipes" then
+		tt2:AddLine(C("ltblue",L["Recipes from faction vendors"].." ("..ts[tsId]..")"),C("ltblue",REPUTATION),C("ltblue",L["Buyable"]));
+		tt2:AddSeparator();
+
+		local factionID,factionName,factionId,standingID,_ = 0;
+		for _, recipeData in ipairs(recipes) do
+			local factionId, standingId, itemId, recipeId, recipeStars = unpack(recipeData);
+			if ts[tsId] then
+				local Name = GetSpellInfo(recipeId);
+				if Name then
+					-- faction header
+					if factionID~=recipeData[1] then
+						factionName,_,standingID = GetFactionInfoByID(factionId);
+						tt2:AddLine(C("ltgray",factionName),C("ltgray",_G["FACTION_STANDING_LABEL"..standingID]));
+						factionID = factionId;
+					end
+					-- recipe
+					local color,faction,buyable = "red",_G["FACTION_STANDING_LABEL"..standingId],NO;
+					if ns.toon[name].learnedRecipes[recipeId]==true then
+						color,buyable = "ltgreen",ALREADY_LEARNED;
+					elseif standingID>=standingId then
+						color,buyable = "green",YES;
+					end
+					local stars = "";
+					if recipeStars then
+						stars = " "..("|Tinterface\\common\\reputationstar:12:12:0:0:32:32:2:14:2:14|t"):rep(recipeStars);
+					end
+					tt2:AddLine("    "..C("ltyellow",Name)..stars,C(color,faction),C(color,buyable));
+				end
+			end
+		end
+	end
+
+	ns.roundupTooltip(tt2, nil, "horizontal", tt);
+end
+
+local function AddFactionRecipeLines(tt,expansion,recipesByProfession)
+	local legende,faction,trade_skill,factionName,factionId,standingID,_ = false,0,0;
+	tt:AddLine(C("gray",_G["EXPANSION_NAME"..expansion]));
+	local tskills = {};
+	local factions = {};
+	for tsId, recipes in pairs(recipesByProfession)do
+		if ts[tsId] then
+			local count = {0,0,0}; -- <learned>,<buyable>,<total>
+			for _,recipe in ipairs(recipes) do
+				if not factions[recipe[1]] then
+					factions[recipe[1]] = {};
+					factions[recipe[1]].name,_,factions[recipe[1]].standing = GetFactionInfoByID(recipe[1]);
+				end
+				if ns.toon[name].learnedRecipes[recipe[4]] then
+					count[1] = count[1]+1; -- learned
+				end
+				if recipe[2]==factions[recipe[1]].standing then
+					count[2] = count[2]+1; -- buyable
+				end
+				count[3] = count[3]+1; -- total
+			end
+			local l=tt:AddLine("    "..C(count[1]==count[3] and "gray2" or "ltyellow",L[ts[tsId]]));
+			tt:SetCell(l,2,("%d/%d"):format(count[1],count[3]));
+			tt:SetLineScript(l,"OnEnter",CreateTooltip2,{"faction-recipes",expansion,tsId,recipes,factions});
+		end
+	end
+end
+
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	local iconnameLocale = "|T%s:12:12:0:0:64:64:2:62:4:62|t %s";
@@ -126,11 +200,11 @@ local function createTooltip(tt)
 
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",TRADE_SKILLS));
+	local legende = false;
 
 	tt:AddLine(C("ltblue",NAME),C("ltblue",SKILL),C("ltblue",ABILITIES));
 	tt:AddSeparator();
 	if #professions>0 then
-		local ts = {};
 		for i,v in ipairs(professions) do
 			local color1,color2 = "ltyellow","white";
 			local skill, maxSkill,nameStr,modifier = v[skill] or 0,v[maxSkill] or 0,v[fullNameLocale] or v[nameLocale] or "?","";
@@ -166,40 +240,19 @@ local function createTooltip(tt)
 			end
 		end
 
-		if ns.profile[name].showLegionFactionRespices and UnitLevel("player")>=110 then
+		-- link to second tooltip
+		local showLegion = ns.profile[name].showLegionFactionRecipes and ns.toon.level>=110;
+		local showBfA = ns.profile[name].showBfAFactionRecipes and ns.toon.level>=120;
+		if showLegion or showBfA then
 			tt:AddSeparator(4,0,0,0,0);
-			tt:AddLine(C("ltblue",L["Legion recipes from faction vendors"]));
+			tt:AddLine(C("ltblue",L["Recipes from faction vendors by expansion"]));
 			tt:AddSeparator();
-			local legende = false;
-
-			local faction,trade_skill,factionName,standingID,_ = 0,0;
-			for _, recipeData in ipairs(legion_faction_recipes) do
-				if ts[recipeData[1]] then
-					local Name = GetSpellInfo(recipeData[5]);
-					if Name and ns.toon[name].learnedRecipes[recipeData[5]]~=true then
-						legende=true
-						-- trade skill header
-						if trade_skill~=recipeData[1] then
-							tt:AddLine(C("gray",L[ts[recipeData[1]]]));
-							trade_skill=recipeData[1];
-							faction=0;
-						end
-						-- faction header
-						if faction~=recipeData[2] then
-							factionName,_,standingID = GetFactionInfoByID(recipeData[2]);
-							tt:AddLine("   "..C("ltgray",factionName),C("ltgray",_G["FACTION_STANDING_LABEL"..standingID]));
-							faction = recipeData[2];
-						end
-						-- recipe
-						tt:AddLine("      "..C("ltyellow",Name),C(standingID>=recipeData[3] and "green" or "red",_G["FACTION_STANDING_LABEL"..recipeData[3]]));
-					end
-				end
+			-- AddFactionRecipeLines(tt, <ExpansionIndex>, <List of recipes of the expansion>)
+			if showLegion then
+				AddFactionRecipeLines(tt,6,legion_faction_recipes);
 			end
-			if legende then
-				tt:AddSeparator(1,1,1,1,.7);
-				tt:AddLine(C("ltgray",L["Legende"])..": "..C("red",L["Standing to low"])..", "..C("green",L["Buyable"]));
-			else
-				tt:SetCell(tt:AddLine(),1,C("gray","You have already learned all buyable legion recipes"),nil,nil,0);
+			if showBfA then
+				AddFactionRecipeLines(tt,7,bfa_faction_recipes);
 			end
 		end
 	else
@@ -262,7 +315,7 @@ local function createTooltip(tt)
 					tt:AddLine(iconnameLocale:format(item_icon(v.data.name,v.data.icon),C("ltyellow",v.data.name)),"~ "..ns.DurationOrExpireDate(v.data.timeLeft,v.data.lastUpdate));
 				end
 			end
-		end -- / #lst>0
+		end
 	end -- / .showCooldowns
 
 	if (ns.profile.GeneralOptions.showHints) then
@@ -275,14 +328,60 @@ local function createTooltip(tt)
 	ns.roundupTooltip(tt);
 end
 
-local function updateTradeSkill(self)
-	local tradeSkillID = C_TradeSkillUI.GetTradeSkillLine();
-	for i=1, #legion_faction_recipes do
-		local info,v = {},legion_faction_recipes[i];
-		if v[1]==tradeSkillID then
-			C_TradeSkillUI.GetRecipeInfo(v[5],info);
-			if info and info.learned then
-				ns.toon[name].learnedRecipes[v[5]] = true;
+local cdX = {};
+local function updateTradeSkill(_,recipes)
+
+	if _==true and type(recipes)=="table" then
+		--local info = {};
+		-- recipes buyable from faction vendors
+		local fvr = {};
+		for _,v in ipairs(recipes) do
+			fvr[v[4]] = true;
+		end
+		if XYDB.cooldowns == nil then
+			XYDB.cooldowns = {};
+		end
+		-- spell cooldowns
+		local recipeIDs = C_TradeSkillUI.GetAllRecipeIDs();
+		local recipeInfo = {};
+		for idx = 1, #recipeIDs do
+			local recipeID = recipeIDs[idx];
+			C_TradeSkillUI.GetRecipeInfo(recipeID, recipeInfo);
+			if fvr[recipeID] and recipeInfo and recipeInfo.learned then
+				ns.toon[name].learnedRecipes[recipeID] = true;
+			end
+			local cooldown, isDayCooldown, charges, maxCharges = C_TradeSkillUI.GetRecipeCooldown(recipeID);
+			XYDB.cooldowns[recipeID] = {cooldown, isDayCooldown, charges, maxCharges};
+		end
+
+	else
+		C_Timer.After(.314159,function()
+			local _,_,_,_,_,tsId = C_TradeSkillUI.GetTradeSkillLine();
+			if legion_faction_recipes[tsId] then
+				updateTradeSkill(true,legion_faction_recipes[tsId]);
+			end
+			if bfa_faction_recipes[tsId] then
+				updateTradeSkill(true,bfa_faction_recipes[tsId]);
+			end
+		end);
+	end
+end
+
+local function checkCooldownSpells(_skillLine,_nameLoc,_icon,_skill,_maxSkill,_skillId,_spellId)
+	if cdSpells[_skillLine] then
+		local cooldown,idOrGroup,timeLeft,lastUpdate,_name
+		local spellId, cdGroup, cdType = 1,2,3;
+		for _,cd in pairs(cdSpells[_skillLine]) do
+			cooldown = GetSpellCooldown(cd[spellId]);
+			if cooldown and cooldown>0 then
+				idOrGroup = (cd[cdGroup]>0) and "cd.group."..cd[cdGroup] or cd[spellId];
+				_name = (cd[cdGroup]>0) and cd_groups[cdGroup].." cooldown group" or select(1,GetSpellInfo(cd[spellId]));
+				timeLeft,lastUpdate = cdResetTypes[cd[cdType]](cd[spellId]);
+
+				if (db.cooldowns[idOrGroup] and (timeLeft~=false) and floor(db.cooldowns[idOrGroup].timeLeft)~=floor(timeLeft)) or (not db.cooldowns[idOrGroup]) then
+					db.cooldowns[idOrGroup] = {name=_name,icon=_icon,timeLeft=timeLeft,lastUpdate=lastUpdate};
+					db.hasCooldowns = true;
+				end
 			end
 		end
 	end
@@ -295,26 +394,23 @@ module = {
 	events = {
 		"ADDON_LOADED",
 		"PLAYER_LOGIN",
-		--"TRADE_SKILL_UPDATE", -- alerted in 8.0
-		"TRADE_SKILL_NAME_UPDATE",
 
-		"CHAT_MSG_TRADESKILLS",
+		--"TRADE_SKILL_NAME_UPDATE",
+		--"CHAT_MSG_TRADESKILLS",
+		"NEW_RECIPE_LEARNED",
 
 		-- archaeology
 		"ARTIFACT_UPDATE",
-		--"ARTIFACT_HISTORY_READY", -- alerted in 8.0
-		--"ARTIFACT_COMPLETE", -- alerted in 8.0
-		--"ARTIFACT_DIG_SITE_UPDATED", -- alerted in 8.0
 		"CURRENCY_DISPLAY_UPDATE",
 		"SKILL_LINES_CHANGED",
 		"BAG_UPDATE_DELAYED",
-		"GET_ITEM_INFO_RECEIVED",
 	},
 	config_defaults = {
 		enabled = true,
 		showCooldowns = true,
 		showDigSiteStatus = true,
-		showLegionFactionRespices = true,
+		showLegionFactionRecipes = true,
+		showBfAFactionRecipes = true,
 		inTitle = {},
 		showAllFactions=true,
 		showRealmNames=true,
@@ -399,154 +495,135 @@ function module.options()
 	return {
 		broker = nil,
 		tooltip = {
-			showCooldowns={ type="toggle", order=1, name=L["Show cooldowns"], desc=L["Show/Hide profession cooldowns from all characters."] },
-			showLegionFactionRespices={ type="toggle", order=2, name=L["Show legion recipes"], desc=L["Display a list of legion respices with neccessary faction repution"] },
-			showAllFactions=3,
-			showRealmNames=4,
-			showCharsFrom=5,
+			showLegionFactionRecipes={ type="toggle", order=1, name=L["EmissaryVendorRecipes"].." ("..EXPANSION_NAME6..")", desc=L["EmissaryVendorRecipesDesc"], width="full" },
+			showBfAFactionRecipes={ type="toggle", order=2, name=L["EmissaryVendorRecipes"].." ("..EXPANSION_NAME7..")", desc=L["EmissaryVendorRecipesDesc"], width="full" },
+			showCooldowns={ type="toggle", order=3, name=L["Show cooldowns"], desc=L["Show/Hide profession cooldowns from all characters."] },
+			showAllFactions=4,
+			showRealmNames=5,
+			showCharsFrom=6,
 		},
 		misc = nil,
 	}
 end
 
 function module.init()
-	legion_faction_recipes = { -- { <tradeSkillId>, <faction>, <standing>, <itemId>, <recipeId> }
+	-- [<tradeSkillId>] = { {<factionId>, <standingId>, <itemId>, <spellId>[, <recipeStars>]}, ... }
+	legion_faction_recipes = {
 		-- Alchemy
-		{171,1859,7,142120,229218},
+		[171] = {{1859,7,142120,229218}},
 		-- Blacksmithing
-		{164,1828,8,123948,182982},{164,1828,8,123953,182987},{164,1828,8,123955,182989},{164,1828,6,136697,209497},{164,1948,6,136698,209498},{164,1948,8,123951,182985},{164,1948,8,123954,182988},
+		[164] = {{1828,8,123948,182982},{1828,8,123953,182987},{1828,8,123955,182989},{1828,6,136697,209497},{1948,6,136698,209498},{1948,8,123951,182985},{1948,8,123954,182988}},
 		-- Enchanting
-		{333,1859,8,128600,191013},{333,1859,8,128602,191015},{333,1859,8,128603,191016},{333,1859,8,128609,191022},{333,1883,8,128593,191006},{333,1883,6,128599,191012},{333,1883,8,128601,191014},{333,1883,8,128608,191021},
+		[333] = {{1859,8,128600,191013},{1859,8,128602,191015},{1859,8,128603,191016},{1859,8,128609,191022},{1883,8,128593,191006},{1883,6,128599,191012},{1883,8,128601,191014},{1883,8,128608,191021}},
 		-- Engineering
-		{202,1894,6,137713,199007},{202,1894,6,137714,199008},{202,1894,8,137715,199009},{202,1894,8,137716,199010},
+		[202] = {{1894,6,137713,199007},{1894,6,137714,199008},{1894,8,137715,199009},{1894,8,137716,199010}},
 		-- Inscription
-		{773,1894,7,137773,192897},{773,1894,7,137777,192901},{773,1894,7,137781,192905},{773,1894,7,142107,229183},{773,1900,7,137774,192898},{773,1900,7,137779,192903},{773,1900,7,137780,192904},
+		[773] = {{1894,7,137773,192897},{1894,7,137777,192901},{1894,7,137781,192905},{1894,7,142107,229183},{1900,7,137774,192898},{1900,7,137779,192903},{1900,7,137780,192904}},
 		-- Jewelcrafting
-		{755,1828,6,137839,195924},{755,1828,8,137844,195929},{755,1828,8,137846,195931},{755,1828,8,137855,195940},{755,1859,8,137850,195935},{755,1894,8,137849,195934},
+		[755] = {{1828,6,137839,195924},{1828,8,137844,195929},{1828,8,137846,195931},{1828,8,137855,195940},{1859,8,137850,195935},{1894,8,137849,195934}},
 		-- Leatherworking
-		{165,1828,7,142408,230954},{165,1828,8,142409,230955},{165,1883,6,137883,194718},{165,1883,8,137895,194730},{165,1883,8,137896,194731},{165,1883,8,137898,194733},{165,1948,6,137910,194753},{165,1948,6,137915,194758},{165,1948,8,137927,194770},{165,1948,8,137928,194771},
+		[165] = {{1828,7,142408,230954},{1828,8,142409,230955},{1883,6,137883,194718},{1883,8,137895,194730},{1883,8,137896,194731},{1883,8,137898,194733},{1948,6,137910,194753},{1948,6,137915,194758},{1948,8,137927,194770},{1948,8,137928,194771}},
 		-- Tailoring
-		{197,1859,8,137973,185954},{197,1859,8,137976,185957},{197,1859,8,137979,185960},{197,1900,8,137977,185958},{197,1900,8,137978,185959},{197,1900,8,137980,185961},{197,1900,6,138015,208353},
+		[197] = {{1859,8,137973,185954},{1859,8,137976,185957},{1859,8,137979,185960},{1900,8,137977,185958},{1900,8,137978,185959},{1900,8,137980,185961},{1900,6,138015,208353}},
 		-- Cooking
-		{185,1894,7,142331,230046},
-		-- First Aid
-		{129,1894,6,142333,230047},
+		[185] = {{1894,7,142331,230046}},
 	};
+	-- since BfA some recipes are available for alliance or horde only.
+	if ns.player.faction=="Alliance" then
+		bfa_faction_recipes = {
+			-- Alchemy
+			[171] = {{2159,7,162138,252378,3},{2159,7,162132,252350,3},{2159,7,163320,279170,3},{2159,7,162128,252336,3},{2159,7,162139,252381,3},{2162,7,162133,252353,3},{2162,7,162255,252384,3},{2162,7,163318,279167,3},{2162,7,162129,252340,3},{2161,7,162135,252359,3},{2161,7,163314,279161,3},{2161,7,162131,252346,3},{2161,7,162256,252390,3},{2160,7,162134,252356,3},{2160,7,163316,279164,3},{2160,7,162254,252387,3},{2160,7,162130,252343,3},{2163,7,162137,252370,3},{2163,7,162136,252363,3}},
+			-- Blacksmithing
+			[164] = {{2159,7,162275,253158,3},{2159,7,162670,278133,3},{2159,7,162261,253118,3},{2159,7,162276,253161,3}},
+			-- Enchanting
+			[333] = {{2159,7,162302,255098,3},{2159,7,162306,265112,3},{2162,7,162303,255099,3},{2162,7,162313,268909,3},{2162,7,162312,268915,3},{2161,7,162305,255101,3},{2161,7,162318,255143,3},{2161,7,162320,268879,3},{2160,7,162304,255100,3},{2160,7,162316,255112,3},{2160,7,162317,268903,3},{2163,7,162301,255097,3},{2163,7,162298,255094,3}},
+			-- Engineering
+			[202] = {{2159,6,162323,272057,2},{2159,7,162344,264967,3},{2159,7,162346,255459,3},{2159,7,162345,253152,3},{2159,7,162324,272058,3},{2162,6,162325,272060,2},{2162,7,162341,256084,3},{2162,7,162337,255409,3},{2162,7,162342,256156,3},{2162,7,162326,272061,3},{2161,6,162329,272066,2},{2161,7,162322,265102,3},{2161,7,162330,272067,3},{2160,6,162327,272063,2},{2160,7,162328,272064,3}},
+			-- Inscription
+			[773] = {{2162,6,162363,256282,2},{2161,6,162361,256279,2},{2160,6,162359,256276,2},{2163,6,162373,256298,2},{2163,6,162371,256295,2},{2163,7,162377,256246,3},{2163,7,162376,256237,3},{2163,7,162023,276059,0},{2163,7,162352,256249,3},{2163,7,162358,256234,3}},
+			-- Jewelcrafting
+			[755] = {{2159,7,162378,256515,3},{2162,7,162379,256517,3},{2162,7,162382,256257,3},{2162,7,162385,256260,3},{2161,7,162381,256521,3},{2160,7,162380,256519,3}},
+			-- Leatherworking
+			[165] = {{2161,7,162412,256789,3},{2160,7,162414,256784,3},{2160,7,162413,256781,3}},
+			-- Tailoring
+			[197] = {{2161,7,162427,257116,3},{2161,7,162421,257127,3},{2163,6,163026,257129,2}},
+			-- Cooking
+			[185] = {{2163,6,162288,259422,2},{2163,7,162292,259432,3},{2163,7,162293,259435,3},{2163,7,162287,259420,3},{2163,7,162289,259423,3},{2163,8,166806,290472,2},{2163,8,166263,287110,2},{2163,8,166367,288029,3},{2163,8,166368,288033,3}},
+		};
+	elseif ns.player.faction=="Horde" then
+		bfa_faction_recipes = {
+			-- Alchemy
+			[171] = {{2157,7,162701,252378,3},{2157,7,162695,252350,3},{2157,7,163320,279170,3},{2157,7,162691,252336,3},{2157,7,162702,252381,3},{2103,7,162696,252353,3},{2103,7,162704,252384,3},{2103,7,163317,279167,3},{2103,7,162692,252340,3},{2158,7,162698,252359,3},{2158,7,163313,279161,3},{2158,7,162694,252346,3},{2158,7,162705,252390,3},{2156,7,162697,252356,3},{2156,7,163315,279164,3},{2156,7,162703,252387,3},{2156,7,162693,252343,3},{2163,7,162137,252370,3},{2163,7,162136,252363,3}},
+			-- Blacksmithing
+			[164] = {{2157,7,162707,253158,3},{2157,7,162774,278133,3},{2157,7,162706,253118,3},{2157,7,162708,253161,3}},
+			-- Enchanting
+			[333] = {{2157,7,162716,255098,3},{2157,7,162720,265112,3},{2103,7,162717,255099,3},{2103,7,162722,268909,3},{2103,7,162721,268915,3},{2158,7,162719,255101,3},{2158,7,162725,255143,3},{2158,7,162726,268879,3},{2156,7,162718,255100,3},{2156,7,162723,255112,3},{2156,7,162724,268903,3},{2163,7,162301,255097,3},{2163,7,162298,255094,3}},
+			-- Engineering
+			[202] = {{2157,6,162728,272057,2},{2157,7,162744,264967,3},{2157,7,162746,255459,3},{2157,7,162745,253152,3},{2157,7,162729,272058,3},{2103,6,162730,272060,2},{2103,7,162742,256084,3},{2103,7,162741,255409,3},{2103,7,162743,256156,3},{2103,7,162731,272061,3},{2158,6,162734,272066,2},{2158,7,162727,265102,3},{2158,7,162735,272067,3},{2156,6,162732,272063,2},{2156,7,162733,272064,3}},
+			-- Inscription
+			[773] = {{2103,6,162753,256285,2},{2158,6,162755,256291,2},{2156,6,162754,256288,2},{2163,6,162373,256298,2},{2163,6,162371,256295,2},{2163,7,162377,256246,3},{2163,7,162376,256237,3},{2163,7,162023,276059,0},{2163,7,162352,256249,3},{2163,7,162358,256234,3}},
+			-- Jewelcrafting
+			[755] = {{2157,7,162760,256515,3},{2103,7,162761,256517,3},{2103,7,162764,256257,3},{2103,7,162765,256260,3},{2158,7,162763,256521,3},{2156,7,162762,256519,3}},
+			-- Leatherworking
+			[165] = {{2158,7,162766,256789,3},{2156,7,162768,256784,3},{2156,7,162767,256781,3}},
+			-- Tailoring
+			[197] = {{2158,7,162772,257116,3},{2158,7,162769,257127,3},{2163,6,163026,257129,2}},
+			-- Cooking
+			[185] = {{2163,6,162288,259422,2},{2163,7,162292,259432,3},{2163,7,162293,259435,3},{2163,7,162287,259420,3},{2163,7,162289,259423,3},{2163,8,166806,290472,2},{2163,8,166263,287110,2},{2163,8,166367,288029,3},{2163,8,166368,288033,3}},
+		};
+	end
 	cdSpells = {
-		["Alchemy"] = {
-			[11479]		= {group=1,	type=2}, -- Iron to Gold
-			[11480]		= {group=1,	type=2}, -- Mithril to Truesilver
-			[17559]		= {group=1,	type=2}, -- Air to Fire
-			[17560]		= {group=1,	type=2}, -- Fire to Earth
-			[17561]		= {group=1,	type=2}, -- Earth to Water
-			[17562]		= {group=1,	type=2}, -- Water to Air
-			[17563]		= {group=1,	type=2}, -- Undeath to Earth
-			[17564]		= {group=1,	type=2}, -- Water to Undeath
-			[17565]		= {group=1,	type=2}, -- Life to Earth
-			[17566]		= {group=1,	type=2}, -- Earth to Life
-			[28566]		= {group=1,	type=2}, -- Primal Air to Fire
-			[28567]		= {group=1,	type=2}, -- Primal Earth to Water
-			[28568]		= {group=1,	type=2}, -- Primal Fire to Earth
-			[28569]		= {group=1,	type=2}, -- Primal Water to Air
-			[28580]		= {group=1,	type=2}, -- Primal Shadow to Water
-			[28581]		= {group=1,	type=2}, -- Primal Water to Shadow
-			[28582]		= {group=1,	type=2}, -- Primal Mana to Fire
-			[28583]		= {group=1,	type=2}, -- Primal Fire to Mana
-			[28584]		= {group=1,	type=2}, -- Primal Life to Earth
-			[28585]		= {group=1,	type=2}, -- Primal Earth to Life
-			[52776]		= {group=1,	type=2}, -- Eternal Air to Water
-			[52780]		= {group=1,	type=2}, -- Eternal Shadow to Life
-			[53771]		= {group=1,	type=2}, -- Eternal Life to Shadow
-			[53773]		= {group=1,	type=2}, -- Eternal Life to Fire
-			[53774]		= {group=1,	type=2}, -- Eternal Fire to Water
-			[53775]		= {group=1,	type=2}, -- Eternal Fire to Life
-			[53777]		= {group=1,	type=2}, -- Eternal Air to Earth
-			[53779]		= {group=1,	type=2}, -- Eternal Shadow to Earth
-			[53781]		= {group=1,	type=2}, -- Eternal Earth to Air
-			[53782]		= {group=1,	type=2}, -- Eternal Earth to Shadow
-			[53783]		= {group=1,	type=2}, -- Eternal Water to Air
-			[53784]		= {group=1,	type=2}, -- Eternal Water to Fire
-			[54020]		= {group=1,	type=2}, -- Eternal Might
-			[60893]		= {group=0,	type=1}, -- Alchemy Research // 3 days QuestResetTime?
-			[66658]		= {group=1,	type=2}, -- Ametrine
-			[66659]		= {group=1,	type=2}, -- Cardinal Ruby
-			[66660]		= {group=1,	type=2}, -- King's Amber
-			[66662]		= {group=1,	type=2}, -- Dreadstone
-			[66663]		= {group=1,	type=2}, -- Majestic Zircon
-			[66664]		= {group=1,	type=2}, -- Eye of Zul
-			[78866]		= {group=1,	type=2}, -- Living Elements
-			[80243]		= {group=0,	type=2}, -- Truegold
-			[80244]		= {group=1,	type=2}, -- Pyrium Bar
-			[114780]	= {group=1,	type=2}, -- Transmute: Living Steel
-			[114783]	= {group=0,	type=2}, -- Transmute: Trillium Ingot
-			[156587]	= {group=0,	type=2}, -- Alchemical Catalyst					[wod beta]
-			[168042]	= {group=0,	type=2}, -- Alchemical Catalyst					[wod beta, maybe a replacement on max skill level]
-			[175880]	= {group=0,	type=2}, -- Secrets of Draenor Alchemy			[wod beta, research]
+		-- [<skillLine|tradeSkillId>] = { {<spellID|recipeID>,<Cd Group>,<Cd type>}, ... }
+		[171] = { -- Alchemy
+			-- classic
+			{11479,1,2},{11480,1,2},{17559,1,2},{17560,1,2},{17561,1,2},{17562,1,2},{17563,1,2},{17564,1,2},{17565,1,2},{17566,1,2},
+			-- bc
+			{28566,1,2},{28567,1,2},{28568,1,2},{28569,1,2},{28580,1,2},{28581,1,2},{28582,1,2},{28583,1,2},{28584,1,2},{28585,1,2},
+			-- wotlk
+			{52776,1,2},{52780,1,2},{53771,1,2},{53773,1,2},{53774,1,2},{53775,1,2},{53777,1,2},{53779,1,2},{53781,1,2},{53782,1,2},{53783,1,2},{53784,1,2},{54020,1,2},
+			-- cata
+			{60893,0,1}, -- Alchemy Research // 3 days QuestResetTime?
+			{66658,1,2},{66659,1,2},{66660,1,2},{66662,1,2},{66663,1,2},{66664,1,2},{78866,1,2},{80243,0,2},{80244,1,2},
+			-- wod
+			{114780,1,2},{114783,0,2},{156587,0,2},{168042,0,2},{175880,0,2},
+			-- legion
+			-- bfa
 		},
-		["Enchanting"] = {
-			[116499]	= {group=0,	type=2}, -- Sha Crystal
-			[169092]	= {group=0,	type=2}, -- Temporal Crystal					[wod beta]
-			[177043]	= {group=0,	type=2}, -- Secrets of Draenor Enchanting		[wod beta, Research]
-			[178241]	= {group=0,	type=2}, -- Temporal Crystal					[wod beta, maybe a replacement on max skill level]
+		[333] = { -- Enchanting
+			-- cata
+			{116499,0,2},
+			-- wod
+			{169092,0,2},{177043,0,2},{178241,0,2},
 		},
-		["Jewelcrafting"] = {
-			[47280]		= {group=0,	type=2}, -- Brilliant Glass
-			[62242]		= {group=0,	type=2}, -- Icy Prism
-			[73478]		= {group=0,	type=4}, -- Fire Prism
-			[131593]	= {group=2,	type=2}, -- River's Heart
-			[131695]	= {group=2,	type=2}, -- Sun's Radiance
-			[131690]	= {group=2,	type=2}, -- Vermilion Onyx
-			[131686]	= {group=2,	type=2}, -- Primordial Ruby
-			[131691]	= {group=2,	type=2}, -- Imperial Amethyst
-			[131688]	= {group=2,	type=2}, -- Wild Jade
-			[140050]	= {group=0,	type=2}, -- Serpent's Heart
-			[170700]	= {group=0,	type=2}, -- Taladite Crytal						[wod beta]
-			[170832]	= {group=0,	type=2}, -- Taladite Crytal						[wod beta, maybe a replacement on max skill level]
-			[176087]	= {group=0, type=2}, -- Secrets of Draenor Jewelcrafting	[wod beta, research]
+		[755] = { -- Jewelcrafting
+			{47280,0,2},{62242,0,2},{73478,0,2},{131593,2,2},{131695,2,2},{131690,2,2},{131686,2,2},{131691,2,2},{131688,2,2},{140050,0,2},
+			-- wod
+			{170700,0,2},{170832,0,2},{176087,0,2},
 		},
-		["Tailoring"] = {
-			[75141]		= {group=0,	type=1}, -- Dream of Skywall
-			[75142]		= {group=0,	type=1}, -- Dream of Deepholm
-			[75144]		= {group=0,	type=1}, -- Dream of Hyjal
-			[75145]		= {group=0,	type=1}, -- Dream of Ragnaros
-			[75146]		= {group=0,	type=1}, -- Dream of Azshara	//	6days, 20min-40min?
-
-			[125557]	= {group=0,	type=2}, -- Imperial Silk
-			[143011]	= {group=0,	type=2}, -- Celestial Cloth
-			[168835]	= {group=0,	type=2}, -- Hexweave Cloth						[wod beta]
-			[169669]	= {group=0,	type=2}, -- Hexweave Cloth						[wod beta, maybe a replacement on max skill level]
-			[176058]	= {group=0, type=2}, -- Secrets of Draenor Tailoring		[wod beta, research]
+		[197] = { -- Tailoring
+			{75141,0,1},{75142,0,1},{75144,0,1},{75145,0,1},{75146,0,1},{125557,0,2},{143011,0,2},
+			-- wod
+			{168835,0,2},{169669,0,2},{176058,0,2},
 		},
-		["Inscription"] = {
-			[61288]		= {group=0,	type=2}, -- Minor Glyph Research
-			[61177]		= {group=0,	type=2}, -- Major Glyph Research
-			[89244]		= {group=0,	type=2}, -- Forged Documents - Alliance
-			[86654]		= {group=0,	type=2}, -- Forged Documents - Horde
-			[112996]	= {group=0,	type=2}, -- Scroll of Wisdom
-			[169081]	= {group=0,	type=2}, -- War Paints							[wod beta]
-			[177045]	= {group=0,	type=2}, -- Secrets of Draenor Inscription		[wod beta, research]
-			[178240]	= {group=0,	type=2}, -- War Paints							[wod beta, maybe a replacement on max skill level]
+		[773] = { -- Inscription
+			{61288,0,2},{61177,0,2},{89244,0,2},{86654,0,2},{112996,0,2},
+			-- wod
+			{169081,0,2},{177045,0,2},{178240,0,2},
 		},
-		["Blacksmithing"] = {
-			[138646]	= {group=0,	type=2}, -- Lightning Steel Ingot
-			[143255]	= {group=0,	type=2}, -- Balanced Trillium Ingot
-			[171690]	= {group=0,	type=2}, -- Truesteel Ingot						[wod beta]
-			[171718]	= {group=0,	type=2}, -- Truesteel Ingot						[wod beta, maybe a replacement on max skill level]
-			[176090]	= {group=0,	type=2}, -- Secrets of Draenor Blacksmithing	[wod beta, research]
+		[164] = { -- Blacksmithing
+			{138646,0,2},{143255,0,2},
+			-- wod
+			{171690,0,2},{171718,0,2},{176090,0,2},
 		},
-		["Leatherworking"] = {
-			[140040]	= {group=3,	type=2}, -- Magnificence of Leather
-			[140041]	= {group=3,	type=2}, -- Magnificence of Scales
-			[142976]	= {group=0,	type=2}, -- Hardened Magnificent Hide
-			[171391]	= {group=0,	type=2}, -- Burnished Leather					[wod beta]
-			[171713]	= {group=0,	type=2}, -- Burnished Leather					[wod beta, maybe a replacement on max skill level]
-			[176089]	= {group=0,	type=2}, -- Secrets of Draenor Leatherworking	[wod beta, research]
+		[165] = { -- Leatherworking
+			{140040,3,2},{140041,3,2},{142976,0,2},
+			-- wod
+			{171391,0,2},{171713,0,2},{176089,0,2},
 		},
-		["Engineering"] = {
-			[139176]	= {group=0,	type=2}, -- Jard's Peculiar Energy Source
-			[169080]	= {group=0,	type=2}, -- Gearspring Parts					[wod beta]
-			[177054]	= {group=0,	type=2}, -- Secrets of Draenor Engineering		[wod beta, research]
-			[178242]	= {group=0,	type=2}, -- Gearspring Parts					[wod beta, maybe a replacement on max skill level]
+		[202] = { -- Engineering
+			{139176,0,2},
+			-- wod
+			{169080,0,2},{177054,0,2},{178242,0,2},
 		}
 	};
 	if(ns.toon.professions==nil)then
@@ -562,13 +639,23 @@ function module.init()
 	profs.build();
 end
 
-function module.onevent(self,event,arg1)
+function module.onevent(self,event,arg1,...)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 		return;
+	elseif event=="ADDON_LOADED" and arg1==addon then
+--@do-not-package@
+		ns.profileSilenceFIXME=true;
+--@end-do-not-package@
+		if ns.profile[name].showFactionRecipes~=nil then
+			ns.profile[name].showLegionFactionRecipes = ns.profile[name].showFactionRecipes;
+			ns.profile[name].showFactionRecipes = nil;
+		end
 	elseif event=="ADDON_LOADED" and arg1=="Blizzard_TradeSkillUI" then
 		hooksecurefunc(TradeSkillFrame,"RefreshTitle",updateTradeSkill);
 		self:UnregisterEvent(event);
+	elseif event=="NEW_RECIPE_LEARNED" and type(arg1)=="number" then
+		ns.toon[name].learnedRecipes[arg1] = true;
 	elseif event=="PLAYER_LOGIN" or ns.eventPlayerEnteredWorld then
 		if ns.toon[name]==nil then
 			ns.toon[name]={};
@@ -576,8 +663,6 @@ function module.onevent(self,event,arg1)
 		if ns.toon[name].learnedRecipes==nil then
 			ns.toon[name].learnedRecipes = {};
 		end
-
-		local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset,fullNameLocale = 1,2,3,4,5,6,7,8,9,10,11; -- GetProfessionInfo
 
 		if (not profs.generated) then
 			profs.build();
@@ -603,7 +688,7 @@ function module.onevent(self,event,arg1)
 					d.nameEnglish = L[d[nameLocale]];
 
 					if (n<=2) then
-						short[n] = {d.nameEnglish,d[nameLocale],d[icon],d[skill],d[maxSkill],d.skillId,d.spellId};
+						short[n] = {d[skillLine],d[nameLocale],d[icon],d[skill],d[maxSkill],d.skillId,d.spellId};
 					end
 					if (n==4) then -- hide fishing in profession menu to prevent error message
 						d[disabled]=true;
@@ -654,24 +739,12 @@ function module.onevent(self,event,arg1)
 				end
 			end
 
-			local check = function(_nameEng,_nameLoc,_icon,_skill,_maxSkill,_skillId,_spellId)
-				local idOrGroup,timeLeft,lastUpdate,_name
-				for id,cd in pairs(cdSpells[_nameEng]) do
-					if (GetSpellCooldown(id)>0) then
-						idOrGroup = (cd.group>0) and "cd.group."..cd.group or id;
-						_name = (cd.group>0) and cd_groups[cd.group].." cooldown group" or select(1,GetSpellInfo(id));
-						timeLeft,lastUpdate = cdResetTypes[cd.type](id);
-
-						if (db.cooldowns[idOrGroup] and (timeLeft~=false) and floor(db.cooldowns[idOrGroup].timeLeft)~=floor(timeLeft)) or (not db.cooldowns[idOrGroup]) then
-							db.cooldowns[idOrGroup] = {name=_name,icon=_icon,timeLeft=timeLeft,lastUpdate=lastUpdate};
-							db.hasCooldowns = true;
-						end
-					end
-				end
+			if (short[1]) and (short[1][1]) and (type(cdSpells[short[1][1]])=="table") then
+				checkCooldownSpells(unpack(short[1]));
 			end
-
-			if (short[1]) and (short[1][1]) and (type(cdSpells[short[1][1]])=="table") then check(unpack(short[1])); end
-			if (short[2]) and (short[2][1]) and (type(cdSpells[short[2][1]])=="table") then check(unpack(short[2])); end
+			if (short[2]) and (short[2][1]) and (type(cdSpells[short[2][1]])=="table") then
+				checkCooldownSpells(unpack(short[2]));
+			end
 
 			for i=1, #legion_faction_recipes do
 				local v = legion_faction_recipes[i];
@@ -690,7 +763,7 @@ end
 
 function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT"},{true},{self});
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT"},{false},{self});
 	createTooltip(tt);
 end
 
