@@ -23,7 +23,7 @@ local dbDefaults,db = {
 			goldHide = "0",
 			separateThousands = true,
 			showAddOnLoaded = true,
-			chatCommands = true, -- will be flagged 'false' in next version
+			chatCommands = true
 		}
 	}
 };
@@ -454,7 +454,6 @@ function ns.Options_RegisterModule(modName)
 		}
 
 		if mod.clickOptions then
-			ns.debug(modName,select('#',mod.clickOptions));
 			ns.ClickOpts.createOptions(modName,modOptions);
 		end
 
