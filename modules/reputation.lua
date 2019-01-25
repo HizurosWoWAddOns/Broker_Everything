@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Reputation"; -- REPUTATION L["ModDesc-Reputation"]
 local ttName, ttColumns, tt, module,createTooltip,updateBroker = name.."TT", 6;
 local Name,description,standingID,barMin,barMax,barValue,atWarWith,canToggleAtWar,isHeader,isCollapsed,hasRep,isWatched,isChild,factionID,hasBonusRepGain,canBeLFGBonus=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- index list for GetFactionInfo
-local barPercent,sessionValue,factionStandingText,friendID,isParagon,hideSession,rewardMin,rewardMax,rewardValue,rewardQuestID,rewardPercent,hasRewardPending,rewardsFinished=30,31,32,33,34,35,36,37,38,39,40,41,42,43;
+local barPercent,sessionValue,factionStandingText,friendID,isParagon,hideSession,rewardMin,rewardMax,rewardValue,rewardQuestID,rewardPercent,hasRewardPending,rewardsFinished,rewardSessionValue=30,31,32,33,34,35,36,37,38,39,40,41,42,43,44;
 
 local tinsert,tconcat,ipairs,pairs,unpack=tinsert,table.concat,ipairs,pairs,unpack;
 local IsFactionParagon,GetFactionParagonInfo,CTimerAfter = C_Reputation.GetFactionParagonInfo,C_Reputation.IsFactionParagon,C_Timer.After
@@ -40,7 +40,7 @@ I[name] = {iconfile="Interface\\Icons\\Achievement_Reputation_01", coords={0.1,0
 -- some local functions --
 --------------------------
 
-local function _GetFactionInfoByID(faction_id)
+local function _GetFactionInfoByID(faction_id,paragonOnly)
 	local data = {GetFactionInfoByID(faction_id)};
 
 	if data[factionID]==nil then
@@ -48,38 +48,40 @@ local function _GetFactionInfoByID(faction_id)
 	end
 
 	if data[factionID]>0 then
-		-- faction standing text
-		data[factionStandingText] = _G["FACTION_STANDING_LABEL"..data[standingID]];
+		if not paragonOnly then
+			-- faction standing text
+			data[factionStandingText] = _G["FACTION_STANDING_LABEL"..data[standingID]];
 
-		-- IsFriend
-		local _friendID,friendRep,friendMaxRep,friendName,friendText,friendTexture,friendTextLevel,friendThreshold,nextFriendThreshold = GetFriendshipReputation(data[factionID]);
-		if _friendID~=nil then
-			data[friendID] = _friendID;
-			data[factionStandingText] = friendTextLevel;
-			if nextFriendThreshold then
-				data[barMin], data[barMax], data[barValue] = friendThreshold, nextFriendThreshold, friendRep;
-			else
-				data[barMin], data[barMax], data[barValue] = 0, 1, 1;
-				data[hideSession] = true
+			-- IsFriend
+			local _friendID,friendRep,friendMaxRep,friendName,friendText,friendTexture,friendTextLevel,friendThreshold,nextFriendThreshold = GetFriendshipReputation(data[factionID]);
+			if _friendID~=nil then
+				data[friendID] = _friendID;
+				data[factionStandingText] = friendTextLevel;
+				if nextFriendThreshold then
+					data[barMin], data[barMax], data[barValue] = friendThreshold, nextFriendThreshold, friendRep;
+				else
+					data[barMin], data[barMax], data[barValue] = 0, 1, 1;
+					data[hideSession] = true
+				end
+			elseif data[standingID]==8 then
+				data[barMin], data[barMax], data[barValue] = 0, 999, 999;
 			end
-		elseif data[standingID]==8 then
-			data[barMin], data[barMax], data[barValue] = 0, 999, 999;
-		end
 
-		data[barPercent] = (data[barValue]-data[barMin])/(data[barMax]-data[barMin]);
+			data[barPercent] = (data[barValue]-data[barMin])/(data[barMax]-data[barMin]);
 
-		-- session difference
-		data[sessionValue] = 0;
-		if not data[hideSession] then
-			if data[factionID] and data[barValue] and session[data[factionID]]==nil then
-				session[data[factionID]] = data[barValue];
+			-- session difference
+			data[sessionValue] = 0;
+			if not data[hideSession] then
+				if data[factionID] and data[barValue] and session[data[factionID]]==nil then
+					session[data[factionID]] = data[barValue];
+				end
+				data[sessionValue] = data[barValue]-session[data[factionID]];
 			end
-			data[sessionValue] = data[barValue]-session[data[factionID]];
 		end
 
 		-- IsParagon
 		data[isParagon] = IsFactionParagon(data[factionID]);
-		if data[isParagon] then
+		if data[factionID] and data[isParagon] then
 			local _value, _threshold, _rewardQuestID, _hasPending = C_Reputation.GetFactionParagonInfo(data[factionID]);
 			if _value~=nil then
 				data[rewardQuestID] = _rewardQuestID;
@@ -90,6 +92,12 @@ local function _GetFactionInfoByID(faction_id)
 				end
 				data[rewardMin],data[rewardMax],data[rewardValue],data[hasRewardPending] = 0,_threshold,mod(_value, _threshold), _hasPending;
 				data[rewardPercent] = _value / _threshold;
+
+				-- paragon session difference
+				if session[data[factionID].."_paragon"] == nil then
+					session[data[factionID].."_paragon"] = _value;
+				end
+				data[rewardSessionValue] = _value - session[data[factionID].."_paragon"];
 			end
 		end
 	end
@@ -200,20 +208,28 @@ function updateBroker()
 			tinsert(tmp,data[factionStandingText]);
 		end
 
-		if ns.profile[name].watchedSessionBroker and not data[friendID] and tonumber(data[sessionValue]) and data[sessionValue]~=0 then
-			if data[sessionValue]>0 then
-				tinsert(tmp,C("ltgreen","+"..data[sessionValue]));
-			elseif data[sessionValue]<0 then
-				tinsert(tmp,C("ltred","-"..data[sessionValue]));
+		if ns.profile[name].watchedSessionBroker and not data[friendID] then
+			if tonumber(data[sessionValue]) and data[sessionValue]~=0 then
+				if data[sessionValue]>0 then
+					tinsert(tmp,C("ltgreen","+"..data[sessionValue]));
+				elseif data[sessionValue]<0 then
+					tinsert(tmp,C("ltred","-"..data[sessionValue]));
+				end
+			elseif tonumber(data[rewardSessionValue]) and data[rewardSessionValue]~=0 then
+				tinsert(tmp,C("ltgreen","+"..data[rewardSessionValue]));
 			end
-		end
-
-		if data[isParagon] and data[hasRewardPending] then
-			tinsert(tmp,"|TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t|TInterface/GossipFrame/ActiveQuestIcon:14:14:0:0|t");
 		end
 
 		if #tmp>0 then
 			txt = tconcat(tmp,", ");
+		end
+	end
+
+	for i=1, #factions do
+		local data = _GetFactionInfoByID(factions[i].id,true);
+		if data[isParagon] and data[hasRewardPending] then
+			txt = txt .. "|TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t|TInterface/GossipFrame/ActiveQuestIcon:14:14:0:0|t";
+			break;
 		end
 	end
 
@@ -371,7 +387,7 @@ function createTooltip(tt)
 					if ns.profile[name].rewardBeyondExalted=="percent" then
 						field = ("%1.1f%%"):format(data[rewardPercent]*100);
 					else
-						field = ("%d/%d"):format(data[rewardValue],data[rewardMax]);
+						field = ("%s/%s"):format(ns.FormatLargeNumber(name,data[rewardValue],true),ns.FormatLargeNumber(name,data[rewardMax],true));
 					end
 					if data[hasRewardPending] then
 						field = field.." |TInterface/GossipFrame/ActiveQuestIcon:14:14:0:0|t";
