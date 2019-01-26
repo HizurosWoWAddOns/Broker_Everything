@@ -338,9 +338,6 @@ local function updateTradeSkill(_,recipes)
 		for _,v in ipairs(recipes) do
 			fvr[v[4]] = true;
 		end
-		if XYDB.cooldowns == nil then
-			XYDB.cooldowns = {};
-		end
 		-- spell cooldowns
 		local recipeIDs = C_TradeSkillUI.GetAllRecipeIDs();
 		local recipeInfo = {};
@@ -351,7 +348,6 @@ local function updateTradeSkill(_,recipes)
 				ns.toon[name].learnedRecipes[recipeID] = true;
 			end
 			local cooldown, isDayCooldown, charges, maxCharges = C_TradeSkillUI.GetRecipeCooldown(recipeID);
-			XYDB.cooldowns[recipeID] = {cooldown, isDayCooldown, charges, maxCharges};
 		end
 
 	else
