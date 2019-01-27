@@ -30,8 +30,8 @@ local zoneDisplayValues = {
 	["4"] = ("%s (%s)"):format(ZONE,L["Subzone"]),
 	["5"] = ("%s (%s)"):format(L["Subzone"],ZONE),
 }
-local foundItems, foundToys, teleports, portals, spells, hearthstoneLocation = {},{},{},{},{};
-local _classSpecialSpellIds,_teleportIds,_portalIds,_itemIds,_toys,_hearthstones,_itemMustBeEquipped,_itemFactions = {},{},{},{},{},{},{},{};
+local foundItems, foundToys, foundToysNum, teleports, portals, spells, hearthstoneLocation = {},{},0,{},{},{};
+local _classSpecialSpellIds,_teleportIds,_portalIds,_itemIds,_toyIds,_hearthstones,_itemMustBeEquipped,_itemFactions,_namelessToys = {},{},{},{},{},{},{},{},{};
 local sharedclickOptionsRename = {
 	["1_open_world_map"] = "worldmap",
 	["2_open_transport_menu"] = "transport",
@@ -95,6 +95,30 @@ local function itemIsHearthstone(id)
 	return false,"";
 end
 
+local function addToy(id)
+	if not foundToys[id] then
+		local toyName, _, _, _, _, _, _, _, _, toyIcon = GetItemInfo(id);
+		local hasToy = PlayerHasToy(id);
+		local canUse =  C_ToyBox.IsToyUsable(id);
+		if toyName and hasToy and canUse then
+			local isHS, hsLoc = itemIsHearthstone(id);
+			foundToys[id] = {
+				id=id,
+				icon=toyIcon,
+				name=toyName,
+				name2=isHS and toyName..hsLoc or toyName
+			};
+			foundToysNum = foundToysNum + 1;
+			if _namelessToys[id] then
+				_namelessToys[id] = nil;
+			end
+		elseif not toyName then
+			return false;
+		end
+	end
+	return true;
+end
+
 local function updateItems()
 	-- update hearthstone location string
 	hearthstoneLocation = " "..C("ltblue","("..GetBindLocation()..")");
@@ -114,13 +138,9 @@ local function updateItems()
 	end
 
 	-- update foundToys table;
-	wipe(foundToys);
-	for i=1, #_toys do
-		local id = _toys[i];
-		local _, toyName, toyIcon = C_ToyBox.GetToyInfo(id); -- function does not anytime return correct data; more stable results after open toybox... not nice.
-		if toyName and PlayerHasToy(_toys[i]) and C_ToyBox.IsToyUsable(id) then
-			local isHS, hsLoc = itemIsHearthstone(id);
-			tinsert(foundToys,{id=id,icon=toyIcon,name=toyName,name2=isHS and toyName..hsLoc or toyName});
+	for i=1, #_toyIds do
+		if addToy(_toyIds[i]) then
+			_namelessToys[_toyIds[i]] = true;
 		end
 	end
 end
@@ -348,7 +368,7 @@ function transportMenu(self,button,name)
 		end
 	end
 
-	if #foundToys>0 then
+	if foundToysNum>0 then
 		-- toy title
 		if not ns.profile[name].shortMenu then
 			tt4:AddSeparator(4,0,0,0,0);
@@ -356,8 +376,8 @@ function transportMenu(self,button,name)
 			tt4:AddSeparator();
 		end
 		-- toys
-		for i,v in ns.pairsByKeys(foundToys) do
-			l,c = tpmAddObject(tt4,self,l,c,v,t,name);
+		for id,toy in pairs(foundToys) do
+			l,c = tpmAddObject(tt4,self,l,c,toy,t,name);
 			counter = counter + 1;
 		end
 	end
@@ -417,7 +437,7 @@ local function init()
 	_itemIds = {21711,22589,22630,22631,22632,24335,29796,30542,32757,33637,33774,34420,35230,36747,37863,38685,40585,40586,44934,44935,45688,45689,45690,45691,45705,46874,48954,48955,48956,48957,51557,51558,51559,51560,52251,52576,58487,58964,60273,60374,60407,60498,61379,63206,63207,63352,63353,63378,63379,64457,65274,65360,66061,68808,68809,82470,87548,91850,91860,91861,91862,91863,91864,91865,91866,92056,92057,92058,92430,92431,92432,95050,95051,103678,104110,104113,107441,110560,116413,117389,118662,118663,118907,118908,119183,128353,128502,128503,129276,132119,132120,132122,132517,133755,134058,138448,139541,139590,139599,140192,140319,140493,141013,141014,141015,141016,141017,141605,142298};
 
 	_toyIds = {18984,18986,30542,30544,43824,48933,64488,87215,95567,95568,95589,95590,112059,136849,140324,162973,151016,163045};
-	_hearthstones = {[6948]=1,[28585]=1,[37118]=1,[44314]=1,[44315]=1,[64488]=1,[142298]=1,[142542]=1,[163045]=1};
+	_hearthstones = {[6948]=1,[28585]=1,[37118]=1,[44314]=1,[44315]=1,[64488]=1,[142298]=1,[142542]=1,[162973]=1,[163045]=1};
 
 	--_itemReplacementIds = {64488,28585,6948,44315,44314,37118,142542,142298};
 	_itemMustBeEquipped = {[32757]=1,[40585]=1,[142298]=1};
@@ -433,7 +453,9 @@ end
 -- module functions and variables --
 ------------------------------------
 module1 = { -- GPS
-	events = {},
+	events = {
+		"GET_ITEM_INFO_RECEIVED"
+	},
 	config_defaults = {
 		enabled = true,
 		bothZones = "2",
@@ -445,7 +467,9 @@ module1 = { -- GPS
 }
 
 module2 = { -- Location
-	events = {},
+	events = {
+		"GET_ITEM_INFO_RECEIVED"
+	},
 	config_defaults = {
 		enabled = false,
 		precision = 0,
@@ -456,7 +480,9 @@ module2 = { -- Location
 }
 
 module3 = { -- ZoneText
-	events = {},
+	events = {
+		"GET_ITEM_INFO_RECEIVED"
+	},
 	config_defaults = {
 		enabled = false,
 		bothZones = "2",
@@ -512,22 +538,28 @@ function module3.init()
 	if init then init() init=nil end
 end
 
-function module1.onevent(self,event,msg)
+local eventActive = false;
+local function onevent(name,self,event,...)
 	if event=="BE_UPDATE_CFG" then
-		ns.ClickOpts.update(name1);
+		ns.ClickOpts.update(name);
+		if not eventActive then
+			eventActive = name;
+		end
+	elseif event=="GET_ITEM_INFO_RECEIVED" and eventActive==name and _namelessToys[msg] then
+		addToy(msg,true);
 	end
 end
 
-function module2.onevent(self,event,msg)
-	if event=="BE_UPDATE_CFG" then
-		ns.ClickOpts.update(name2);
-	end
+function module1.onevent(...)
+	onevent(name1,...);
 end
 
-function module3.onevent(self,event,msg)
-	if event=="BE_UPDATE_CFG" then
-		ns.ClickOpts.update(name3);
-	end
+function module2.onevent(...)
+	onevent(name2,...);
+end
+
+function module3.onevent(...)
+	onevent(name3,...);
 end
 
 -- function module1.onmousewheel(self,direction) end
