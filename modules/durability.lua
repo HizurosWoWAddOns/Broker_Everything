@@ -11,7 +11,7 @@ local name,_ = "Durability"; -- DURABILITY L["ModDesc-Durability"]
 local ttName,tt,module = name.."TT";
 local hiddenTooltip
 local last_repairs = {};
-local merchant,currentDurability = {repair=false,costs=0,diff=0,single=0};
+local merchant,currentDurability = {repair=false,costs=0,diff=0,single=0},{0, 0, 0, 100, 100, false};
 local discount = {[5]=0.95,[6]=0.9,[7]=0.85,[8]=0.8};
 local slotNames = {
 	HEADSLOT,NECKSLOT,SHOULDERSLOT,SHIRTSLOT,CHESTSLOT,WAISTSLOT,LEGSSLOT,FEETSLOT,
