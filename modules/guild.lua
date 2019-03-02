@@ -277,7 +277,7 @@ local function createTooltip2(self,info)
 		end
 	end
 	tt2:AddSeparator(1,0,0,0,0);
-	ns.roundupTooltip(tt2, nil, "horizontal", tt);
+	ns.roundupTooltip(tt2);
 end
 
 local function tooltipAddLine(v,flags)

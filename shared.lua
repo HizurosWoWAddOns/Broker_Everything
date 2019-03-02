@@ -361,9 +361,11 @@ function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
 	return tooltip;
 end
 
-function ns.roundupTooltip(tooltip)
+function ns.roundupTooltip(tooltip,ignoreMaxTooltipHeight)
 	if not tooltip then return end
-	tooltip:UpdateScrolling(GetScreenHeight() * (ns.profile.GeneralOptions.maxTooltipHeight/100));
+	if not ignoreMaxTooltipHeight then
+		tooltip:UpdateScrolling(GetScreenHeight() * (ns.profile.GeneralOptions.maxTooltipHeight/100));
+	end
 	tooltip:SetClampedToScreen(true);
 	tooltip:Show();
 end

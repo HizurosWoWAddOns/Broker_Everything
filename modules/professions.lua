@@ -162,7 +162,7 @@ local function CreateTooltip2(self, content)
 		end
 	end
 
-	ns.roundupTooltip(tt2, nil, "horizontal", tt);
+	ns.roundupTooltip(tt2, true);
 end
 
 local function AddFactionRecipeLines(tt,expansion,recipesByProfession)
