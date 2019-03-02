@@ -4,7 +4,6 @@ local addonLabel = addon;
 local C, L, I = ns.LC.color, ns.L, ns.I;
 local setmetatable,type,rawget,rawset,tostring=setmetatable,type,rawget,rawset,tostring;
 local ipairs,pairs,wipe,strsplit,tremove=ipairs,pairs,wipe,strsplit,tremove;
-local migrateAll = true;
 
 local dbDefaults,db = {
 	profile = {
@@ -556,71 +555,6 @@ end
 function ns.RegisterOptions()
 	if Broker_Everything_AceDB==nil then
 		Broker_Everything_AceDB = {};
-	end
-
-	-- db migration to ace
-	if Broker_Everything_AceDB.profileKeys==nil and Broker_Everything_ProfileDB.use_profile~=nil then
-		-- migrate profile keys to ace
-		Broker_Everything_AceDB.profileKeys = {};
-		for char_realm, profileName in pairs(Broker_Everything_ProfileDB.use_profile)do
-			if profileName==DEFAULT then
-				profileName="Default";
-			end
-			local charName,realmName = strsplit("-",char_realm,2); -- aceDB has whitespaces around the dash between char and realm names. split and rejoin
-			if realmName then
-				Broker_Everything_AceDB.profileKeys[charName.." - "..realmName] = profileName;
-			end
-		end
-	end
-
-	if Broker_Everything_AceDB.profiles==nil then
-		-- migrate profiles to ace
-		local ClickOptPrefixOld = "clickOptions::";
-		Broker_Everything_AceDB.profiles = {};
-		if Broker_Everything_ProfileDB.profiles then
-			for profileName,profileData in pairs(Broker_Everything_ProfileDB.profiles)do
-				if type(profileData)=="table" then -- ignore invalid profiles
-					local data = CopyTable(profileData); -- clone data for secure fallback option to old version
-
-					if DEFAULT~="Default" and profileName==DEFAULT and Broker_Everything_ProfileDB.Default==nil then
-						profileName="Default";
-					end
-
-					for modName,modData in pairs(data) do
-						if modName and type(modData)=="table" then
-							-- migrate showAllRealms
-							if modData.showAllRealms==true then
-								modData.showCharsFrom = "4";
-								modData.showAllRealms = nil;
-							end
-							-- migrate clickOptions Prefix
-							for k,v in pairs(modData)do
-								if k:find(ClickOptPrefixOld) then
-									local K = k:gsub(ClickOptPrefixOld,ns.ClickOpts.prefix);
-									modData[K] = modData[k];
-									modData[k] = nil;
-								end
-							end
-						end
-					end
-
-					-- migrate some option entries from shared_module
-					local modName="GPS / Location / ZoneText";
-					if data[modName] then
-						for key,value in pairs(data[modName])do
-							if data.GPS==nil then data.GPS={} end
-							if data.Location==nil then data.Location={} end
-							if data.ZoneText==nil then data.ZoneText={} end
-							data.GPS[key]=value;
-							data.Location[key]=value;
-							data.ZoneText[key]=value;
-						end
-						data[modName]=nil;
-					end
-					Broker_Everything_AceDB.profiles[profileName]=data;
-				end
-			end
-		end
 	end
 
 	local AceDBfixCurrent = 1;

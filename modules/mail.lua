@@ -76,9 +76,6 @@ local function UpdateStatus(event)
 	else
 		local names = {};
 		for i=1, #charDB_mail.stored do
-			if type(charDB_mail.stored[i])=="table" then -- deprecated
-				charDB_mail.stored[i] = charDB_mail.stored[i].sender.."-"..(charDB_mail.stored[i].realm or ns.realm_short)..";"..(charDB_mail.stored[i].last+charDB_mail.stored[i].returns);
-			end
 			local sender = strsplit(";",charDB_mail.stored[i]);
 			names[sender]=true;
 		end
@@ -137,12 +134,6 @@ local function AddStoredMailsLine(tt,player)
 		for k=1, #key do
 			if #v.mail[key[k]]>0 then
 				for i=1, #v.mail[key[k]] do
-					if type(v.mail[key[k]][i])=="table" then -- deprecated
-						if v.mail[key[k]][i].realm==nil then
-							v.mail[key[k]][i].realm = ns.realm_short;
-						end
-						v.mail[key[k]][i] = v.mail[key[k]][i].sender.."-"..v.mail[key[k]][i].realm..";"..v.mail[key[k]][i].last+v.mail[key[k]][i].returns;
-					end
 					local sender,returns = strsplit(";",v.mail[key[k]][i]);
 					returns = tonumber(returns);
 					if returns then

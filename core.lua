@@ -1,6 +1,5 @@
 
 -- saved variables
-Broker_Everything_ProfileDB = {}; -- config data [DEPRECATED]
 Broker_Everything_CharacterDB = {}; -- per character data
 Broker_Everything_DataDB = {}; -- global data
 Broker_Everything_AceDB = {}; -- new config data table controlled by AceDB
@@ -17,17 +16,19 @@ local UnitLevel,UnitFactionGroup=UnitLevel,UnitFactionGroup;
 local Broker_Everything = CreateFrame("Frame");
 
 function ns.resetAllSavedVariables()
-	local sv={"Broker_EverythingGlobalDB","Broker_EverythingDB","Broker_Everything_ProfileDB","Broker_Everything_DataDB","be_durability_db"};
-	for i,v in ipairs(sv) do
-		if (type(_G[v])=="table") then
-			wipe(_G[v]);
-		end
-	end
+	wipe(Broker_Everything_DataDB);
+	wipe(Broker_Everything_CharacterDB);
+	wipe(Broker_Everything_AceDB);
+	C_UI.Reload();
+end
+
+function ns.resetCollectedData()
+	wipe(Broker_Everything_DataDB);
+	wipe(Broker_Everything_CharacterDB);
+	C_UI.Reload();
 end
 
 function ns.resetConfigs()
-	wipe(Broker_Everything_ProfileDB);
-	wipe(Broker_Everything_DataDB);
 	wipe(Broker_Everything_AceDB);
 	C_UI.Reload();
 end
@@ -36,10 +37,9 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 	if event == "ADDON_LOADED" and ... == addon then
 		-- character cache
 		local baseData={"name","class","faction","race"};
-		if(Broker_Everything_CharacterDB==nil)then
+		if Broker_Everything_CharacterDB==nil then
 			Broker_Everything_CharacterDB={order={}};
-		end
-		if(Broker_Everything_CharacterDB.order==nil)then
+		elseif Broker_Everything_CharacterDB.order==nil then
 			Broker_Everything_CharacterDB.order={};
 		end
 		local names = {};
