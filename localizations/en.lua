@@ -70,6 +70,7 @@ L["Tracking"] = TRACKING
 L["Unfriendly"] = FACTION_STANDING_LABEL3
 L["Volume"] = VOLUME
 L["Wardrobe"] = WARDROBE
+L["WorkOrders"] = CAPACITANCE_WORK_ORDERS
 L["XP"] = XP
 
 --@do-not-package@

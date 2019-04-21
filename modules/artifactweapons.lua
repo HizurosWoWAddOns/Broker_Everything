@@ -64,26 +64,30 @@ end
 
 function updateItemState()
 	wipe(ap_items_found);
-	local lst = ns.items.GetItemlist();
-	local isFishing = false;
-	for id,v in pairs(lst) do
+	for id,items in pairs(ns.items.item) do
 		if ns.artifactpower_items[id]~=nil then
 			-- group items with same item id by knowledge levels
 			local klvls = {};
-			for _,item in ipairs(v)do
-				local knowledge = item.linkData[#item.linkData-3];
-				if knowledge then
-					if klvls[knowledge]==nil then klvls[knowledge]={}; end
-					tinsert(klvls[knowledge],item);
+			for i=1, #items do
+				local tbl,index = "inv",items[i];
+				if index>1000 then
+					tbl = "bags";
+				end
+				if ns.items[tbl][index].quality~=0 then
+					local item,_ = CopyTable(ns.items[tbl][index]);
+					ns.ScanTT.query(item,true);
+					item.name, _, _, _, _, _, _, _, _, item.icon = GetItemInfo(item.link);
+					local knowledge = item.linkData[#item.linkData-3];
+					if knowledge then
+						if klvls[knowledge]==nil then klvls[knowledge]={}; end
+						tinsert(klvls[knowledge],item);
+					end
 				end
 			end
 			for klvl,items in pairs(klvls)do
 				local knowledgeLevel = klvl-1;
+				local isFishing = false;
 				local artefact_power = nil;
-				-- missing item tooltip?
-				if not items[1].tooltip then
-					ns.items.GetItemTooltip(items[1]);
-				end
 				-- read artefact power from single item tooltip with same item id and knowledge level
 				if items[1].tooltip then
 					for i=2, #items[1].tooltip do
@@ -102,11 +106,11 @@ function updateItemState()
 				tinsert(ap_items_found,{
 					id=id,
 					count=#items,
-					name=items[1].name,
 					link=items[1].link,
+					name=items[1].name,
 					icon=items[1].icon,
 					artifact_power=artefact_power or -1,
-					quality=items[1].rarity,
+					quality=items[1].quality,
 					isFishing = isFishing
 				});
 			end
@@ -155,7 +159,7 @@ local function updateCharacterDB(equipped)
 			end
 		end
 
-		local weapon = ns.items.GetInventoryItemBySlotIndex(16);
+		local weapon = ns.items.inventory[16];
 
 		ns.toon[name][itemID] = {
 			name=itemName,
@@ -487,7 +491,7 @@ function createTooltip(tt)
 			end
 
 			-- display average item level
-			local weapon = ns.items.GetInventoryItemBySlotIndex(16);
+			local weapon = ns.items.inventory[16];
 			if weapon then
 				tt:AddLine(C("ltgreen",STAT_AVERAGE_ITEM_LEVEL),"",C("ltyellow",weapon.level));
 			end
@@ -604,7 +608,6 @@ module = {
 	events = {
 		"PLAYER_LOGIN",
 		"ARTIFACT_XP_UPDATE",
-		--"ARTIFACT_MAX_RANKS_UPDATE",-- alerted in 8.0
 		"ARTIFACT_UPDATE",
 		"UNIT_INVENTORY_CHANGED",
 		"CURRENCY_DISPLAY_UPDATE"
@@ -818,7 +821,6 @@ function module.onevent(self,event,arg1,...)
 			ns.toon[name].obtained[0]=nil;
 		end
 		ns.items.RegisterCallback(name,updateItemState,"any");
-		C_Timer.After(1,ns.items.UpdateNow);
 		C_Timer.After(2,function()
 			module:onevent("BE_DUMMY_EVENT");
 		end);

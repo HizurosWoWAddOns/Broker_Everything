@@ -15,6 +15,7 @@ local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSub
 local slots = {"HEAD","NECK","SHOULDER","SHIRT","CHEST","WAIST","LEGS","FEET","WRIST","HANDS","FINGER0","FINGER1","TRINKET0","TRINKET1","BACK","MAINHAND","SECONDARYHAND","RANGED"};
 local inventory,enchantSlots = {iLevelMin=0,iLevelMax=0},{}; -- (enchantSlots) -1 = [iLevel<600], 0 = both, 1 = [iLevel=>600]
 local warlords_crafted,tSetItems = {},{};
+local extendedItemInfos = {};
 local ignoreWeapon = {
 	["0"] = L["Do not ignore"],
 	["1"] = L["Ignore all"],
@@ -87,17 +88,23 @@ local function updateBroker()
 	obj.text = #text>0 and table.concat(text,", ") or BAG_FILTER_EQUIPMENT;
 end
 
+local function UpdateInvSlotTooltip(data)
+	extendedItemInfos[data.slot] = data;
+end
+
 local function UpdateInventory()
-	local lst,data,lvl = {iLevelMin=0,iLevelMax=0},ns.items.GetInventoryItems();
-	for _, d in pairs(data) do
-		if d and tonumber(d.slotIndex) and d.slotIndex~=4 and d.slotIndex~=19 then
-			lvl = tonumber(d.level) or 0;
-			lst[d.slotIndex] = d;
-			if lst.iLevelMin==0 or lvl<lst.iLevelMin then
-				lst.iLevelMin=lvl;
+	local lst,lvl={iLevelMin=0,iLevelMax=0};
+	for _, d in pairs(ns.items.inventory)do
+		if d and d.slot~=4 and d.slot~=19 then
+			local obj,_ = CopyTable(d);
+			_, _, _, obj.level = GetItemInfo(d.link);
+			ns.ScanTT.query({type="inventory",slot=d.slot,link=d.link,callback=UpdateInvSlotTooltip});
+			lst[d.slot] = d;
+			if lst.iLevelMin==0 or obj.level<lst.iLevelMin then
+				lst.iLevelMin=obj.level;
 			end
-			if lvl>lst.iLevelMax then
-				lst.iLevelMax=lvl;
+			if obj.level>lst.iLevelMax then
+				lst.iLevelMax=obj.level;
 			end
 		end
 	end
@@ -151,12 +158,12 @@ end
 local function equipOnClick(self,equipSetID)
 	if (IsShiftKeyDown()) then
 		if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
-		local main = ns.items.GetInventoryItemBySlotIndex(16);
-		if (ns.profile[name].ignoreMainHand=="2" and main and main.rarity==6) or ns.profile[name].ignoreMainHand=="1" then
+		local main = ns.items.inventory[16];
+		if (ns.profile[name].ignoreMainHand=="2" and main and main.quality==6) or ns.profile[name].ignoreMainHand=="1" then
 			C_EquipmentSet.IgnoreSlotForSave(16);
 		end
-		local off = ns.items.GetInventoryItemBySlotIndex(17);
-		if (ns.profile[name].ignoreOffHand=="2" and off and off.rarity==6) or ns.profile[name].ignoreOffHand=="1" then
+		local off = ns.items.inventory[17];
+		if (ns.profile[name].ignoreOffHand=="2" and off and off.quality==6) or ns.profile[name].ignoreOffHand=="1" then
 			C_EquipmentSet.IgnoreSlotForSave(17);
 		end
 		local setName = C_EquipmentSet.GetEquipmentSetInfo(equipSetID);
@@ -242,40 +249,61 @@ local function createTooltip(tt)
 		tt:AddSeparator();
 		local none,miss=true,false;
 		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do
-			if inventory[i] and inventory[i].rarity then
+			if ns.items.inventory[i] and extendedItemInfos[ns.items.inventory[i].slot] then
 				none=false;
+
+				local obj = ns.items.inventory[i];
+				local itemName, _, itemQuality, itemLevel, _, itemType, subType, _, itemEquipLoc, itemIcon, itemPrice = GetItemInfo(obj.link);
+				local itemInfo = extendedItemInfos[obj.slot];
 				local tSetItem,setName,enchanted,greenline,upgrades,gems = "","","","","","";
-				if ns.profile[name].showNotEnchanted and inventory[i].id~=158075 --[[ hearth of azeroth can't be enchanted ]] and enchantSlots[i] and (tonumber(inventory[i].linkData[1]) or 0)==0 then
+
+				if ns.profile[name].showNotEnchanted and obj.id~=158075 --[[ hearth of azeroth can't be enchanted ]] and enchantSlots[i] and (tonumber(itemInfo.linkData[1]) or 0)==0 then
 					enchanted=C("red"," #");
 					miss=true;
 				end
-				if ns.profile[name].showEmptyGems and inventory[i].empty_gem then
+
+				if ns.profile[name].showEmptyGems and itemInfo.empty_gem then
 					gems=C("yellow"," #");
 					miss=true;
 				end
-				if(ns.profile[name].showTSet and tSetItems[inventory[i].id])then
-					tSetItem=C("yellow"," T"..tSetItems[inventory[i].id]);
+
+				if ns.profile[name].showSetName and itemInfo.setname then
+					setName=" "..C("dkgreen",more.setname);
 				end
-				if(ns.profile[name].showSetName and inventory[i].setname)then
-					setName=" "..C("dkgreen",inventory[i].setname);
+
+				if(ns.profile[name].showGreenText and itemInfo.lines and type(itemInfo.lines[2])=="string" and itemInfo.lines[2]:find("\124"))then
+					greenline = " "..itemInfo.lines[2];
 				end
-				if(ns.profile[name].showGreenText and inventory[i].tooltip and type(inventory[i].tooltip[2])=="string" and inventory[i].tooltip[2]:find("\124"))then
-					greenline = " "..inventory[i].tooltip[2];
-				end
-				if(ns.profile[name].showUpgrades and inventory[i].upgrades)then
-					local col,cur,max = "ltblue",strsplit("/",inventory[i].upgrades);
+
+				if ns.profile[name].showUpgrades and itemInfo.upgrades then
+					local col,cur,max = "ltblue",strsplit("/",itemInfo.upgrades);
 					if ns.profile[name].fullyUpgraded and cur==max then
 						col="blue";
 					end
-					upgrades = " "..C(col,inventory[i].upgrades);
+					upgrades = " "..C(col,itemInfo.upgrades);
 				end
+
+				if itemInfo.level and itemInfo.level~=itemLevel then
+					itemLevel = itemInfo.level;
+				end
+
+				if ns.profile[name].showTSet and tSetItems[obj.id] then
+					tSetItem=C("yellow"," T"..tSetItems[obj.id]);
+				end
+
 				local l = tt:AddLine(
 					C("ltyellow",_G[slots[i].."SLOT"]),
-					C("quality"..inventory[i].rarity,inventory[i].name) .. greenline .. tSetItem .. setName .. upgrades .. enchanted .. gems,
-					C(GetILevelColor(inventory[i].level),inventory[i].level)
+					C("quality"..itemQuality,itemName) .. greenline .. tSetItem .. setName .. upgrades .. enchanted .. gems,
+					C(GetILevelColor(itemLevel),itemLevel)
 				);
-				tt:SetLineScript(l,"OnEnter",InventoryTooltipShow, inventory[i].link);
+
+				tt:SetLineScript(l,"OnEnter",InventoryTooltipShow, obj.link);
 				tt:SetLineScript(l,"OnLeave",InventoryTooltipHide);
+			elseif ns.items.inventory[i] then
+				tt:AddLine(
+					C("ltyellow",_G[slots[i].."SLOT"]),
+					C("gray",L["Pending item info request..."])
+				);
 			elseif ns.profile[name].showEmptySlots then
 				tt:AddLine(
 					C("ltyellow",_G[slots[i].."SLOT"]),

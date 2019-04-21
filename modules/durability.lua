@@ -9,7 +9,6 @@ local C, L, I = ns.LC.color, ns.L, ns.I;
 -----------------------------------------------------------
 local name,_ = "Durability"; -- DURABILITY L["ModDesc-Durability"]
 local ttName,tt,module = name.."TT";
-local hiddenTooltip
 local last_repairs = {};
 local merchant,currentDurability = {repair=false,costs=0,diff=0,single=0},{0, 0, 0, 100, 100, false};
 local discount = {[5]=0.95,[6]=0.9,[7]=0.85,[8]=0.8};
@@ -71,39 +70,46 @@ local function updateBroker()
 	end
 end
 
-local function nsItemsCallback(updateMode)
-	local repairCostInv,repairCostBags,all_current,all_maximum,lowest = 0,0,0,0,{1,false};
-	local itemList = ns.items.GetItemlist();
+local function nsItems2Callback()
+	local repairCost,durabilitySum,lowest,tbl,obj,slot,bag = {bags=0,inv=0},{current=0,max=0,count=0},{1,false};
 
-	for itemID, items in pairs(itemList) do
-		for i=1, #items do
-			if (items[i].itemType==ARMOR or items[i].itemType==WEAPON) and items[i].durability and items[i].durability_max>0 and items[i].durability<items[i].durability_max then
-				if items[i].type=="inventory" then
-					repairCostInv = repairCostInv + (tonumber(items[i].repairCost) or 0);
-					all_current,all_maximum = all_current+items[i].durability,all_maximum+items[i].durability_max;
-					local percent = items[i].durability/items[i].durability_max;
-					if percent<lowest[1] then
-						lowest = {percent,items[i].slot};
-					end
-				else
-					repairCostBags = repairCostBags + (tonumber(items[i].repairCost) or 0);
+	for _, index in pairs(ns.items.equipment)do
+		if index>1000 then
+			tbl,obj,bag = "bags",ns.items.bags[index],floor(index/1000);
+			slot,bag = index-bag*1000,bag-1;
+		else
+			tbl,obj,slot,bag = "inv",ns.items.inventory[index],index;
+		end
+		if obj then
+			durabilitySum.count = durabilitySum.count+1;
+			durabilitySum.current = durabilitySum.current + obj.durability;
+			durabilitySum.max = durabilitySum.max + obj.durabilityMax;
+
+			local percentage = obj.durability/obj.durabilityMax;
+			if obj.durabilityMax>0 and percentage<1 then
+				if tbl=="inv" and percentage<lowest[1] then
+					lowest = {percentage,obj.slot};
 				end
+				local data = {type=tbl=="bags" and "bag" or "inventory",slot=slot,bag=bag};
+				ns.ScanTT.query(data,true);
+				repairCost[tbl] = repairCost[tbl] + (tonumber(data.repairCost) or 0);
 			end
+		else
+			ns.debug("<errorObjNil>",index,ns.items.bags[index],ns.items.inventory[index]);
 		end
 	end
 
-	local avPercent = 1;
-	if all_maximum>0 then
-		avPercent = all_current/all_maximum;
+	local avPercentage = 1;
+	if durabilitySum.max>0 then
+		avPercentage = durabilitySum.current/durabilitySum.max;
 	end
 
-	local total = repairCostInv+repairCostBags;
+	local total = repairCost.bags+repairCost.inv;
 	if merchant.repair then
 		total = GetRepairAllCost();
-		-- can be different??
 	end
 
-	currentDurability = {total, repairCostInv, repairCostBags, avPercent*100, lowest[1]*100, lowest[2]};
+	currentDurability = {total, repairCost.inv, repairCost.bags, avPercentage*100, lowest[1]*100, lowest[2]};
 	updateBroker();
 end
 
@@ -340,14 +346,6 @@ function module.init()
 	colorSets.set3 = {[20]="red",[40]="orange",[60]="yellow",[99]="green",[100]="ltblue"};
 	colorSets.set4 = {[15]="red",[40]="orange",[60]="yellow",[80]="green",[100]="white"};
 
-	if not hiddenTooltip then
-		hiddenTooltip = CreateFrame("GameTooltip", "BE_Durability_ScanTip", nil, "GameTooltipTemplate")
-		hiddenTooltip:SetOwner(UIParent, "ANCHOR_NONE")
-		for _,v in ipairs({"OnLoad","OnHide","OnTooltipAddMoney","OnTooltipSetDefaultAnchor","OnTooltipCleared"})do
-			hiddenTooltip:SetScript(v,nil);
-		end
-	end
-
 	date_format = ns.profile[name].dateFormat;
 
 	if (ns.toon[name]==nil) then
@@ -366,7 +364,7 @@ function module.init()
 		module.onevent({},"BE_EVENT_REPAIRALL_GUILD");
 	end);
 
-	ns.items.RegisterCallback(name,nsItemsCallback,"any");
+	ns.items.RegisterCallback(name,nsItems2Callback,"equipment");
 end
 
 function module.onevent(self,event,arg1)

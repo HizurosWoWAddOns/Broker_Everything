@@ -63,13 +63,15 @@ end
 
 function crap:search()
 	for bag=0, NUM_BAG_SLOTS do
-		for slot=1, GetContainerNumSlots(bag) do
-			local link = GetContainerItemLink(bag,slot);
-			if link then
-				local _,count = GetContainerItemInfo(bag, slot);
-				local _,_,quality,_,_,_,_,_,_,_,price = GetItemInfo(link);
-				if quality==0 and price>0 then
-					tinsert(self.items,{bag,slot,price*count});
+		if GetContainerNumSlots(bag) ~= GetContainerNumFreeSlots(bag) then
+			for slot=1, GetContainerNumSlots(bag) do
+				local link = GetContainerItemLink(bag,slot);
+				if link then
+					local _,count = GetContainerItemInfo(bag, slot);
+					local _,_,quality,_,_,_,_,_,_,_,price = GetItemInfo(link);
+					if quality==0 and price>0 then
+						tinsert(self.items,{bag,slot,price*count});
+					end
 				end
 			end
 		end
@@ -102,16 +104,21 @@ local function BagsFreeUsed()
 end
 
 local function itemQuality()
-	local price, sum, _ = {[0]=0,0,0,0,0,0,0,0,[99]=0},{[0]=0,0,0,0,0,0,0,0,[99]=0};
-	for _, entries in pairs(ns.items.GetItemlist()) do
-		for _,entry in ipairs(entries) do
-			if entry.bag then
-				entry.rarity = (sum[entry.rarity]~=nil) and entry.rarity or 99;
-				sum[entry.rarity] = sum[entry.rarity] + entry.count;
-				if entry.price then
-					price[entry.rarity] = price[entry.rarity] + (entry.price*entry.count);
-				end
+	local price, sum, _ = {[99]=0},{[99]=0};
+	for i in pairs(ITEM_QUALITY_COLORS) do
+		price[i],sum[i]=0,0;
+	end
+	for index,entry in pairs(ns.items.bags)do
+		local _,itemCount,_,itemQuality = GetContainerItemInfo(entry.bag,entry.slot);
+		local itemName, _, _, _, _, _, _, _, _, _, itemPrice = GetItemInfo(entry.link);
+		if itemName then
+			itemQuality = itemQuality or 99; -- unknown quality [nil]
+			sum[itemQuality] = sum[itemQuality] + itemCount;
+			if itemPrice then
+				price[itemQuality] = price[itemQuality] + (itemPrice*itemCount);
 			end
+		else
+			ns.debug("<bagsItemQuality>","GetItemInfo missing data",entry.id);
 		end
 	end
 	return price, sum;

@@ -29,32 +29,24 @@ local function updateBroker()
 	end
 end
 
-local function resetFunc() -- clear founds table
+local function ScanTT_Callback(data)
+	local status = data.lootable and "lootable" or "progress";
+	counter.sum=counter.sum+1;
+	counter[status] = counter[status]+1;
+	tinsert(founds,data);
+	updateBroker();
+end
+
+local function bagCheck()
 	wipe(founds);
 	counter = {sum=0,lootable=0,progress=0};
-	updateBroker();
-end
-
-local function callbackFunc(data)
-	local status;
-	tinsert(founds,data);
-	counter.sum = counter.sum+1;
-	status = data[1]==ITEM_LOOTABLE and "lootable" or "progress";
-	counter[status] = counter[status]+1;
-	updateBroker();
-end
-
-local function updateFunc() -- update broker
-	local item;
-	for id,v in pairs(items)do
-		item = ns.items.exist(id);
-		if(item)then
-			for I,V in ipairs(item)do
-				if(V.type=="bag")then
-					local t = CopyTable(V);
-					t.callback = callbackFunc;
-					ns.ScanTT.query(t);
-				end
+	for id in pairs(items)do
+		if ns.items.item[id] then
+			for i,index in pairs(ns.items.item[id]) do
+				local t = CopyTable(ns.items.bags[index]);
+				t.type = "bag";
+				t.callback = ScanTT_Callback;
+				ns.ScanTT.query(t);
 			end
 		end
 	end
@@ -122,11 +114,7 @@ function module.init()
 		[137608] = {ITEM_LOOTABLE}, -- Growling Sac
 		[153191] = {ITEM_LOOTABLE} -- Cracked Fel-Spotted Egg
 	}
-
-	ns.items.RegisterPreScanCallback(name,resetFunc);
-	for i,v in pairs(items)do
-		ns.items.RegisterCallback(name,updateFunc,"item",i);
-	end
+	ns.items.RegisterCallback(name,bagCheck,"bags");
 end
 
 function module.onevent(self,event,...)

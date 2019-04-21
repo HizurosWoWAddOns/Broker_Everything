@@ -125,15 +125,20 @@ local function updateItems()
 
 	-- update foundItems table
 	wipe(foundItems);
-	items = ns.items.GetItemlist();
 	for i=1, #_itemIds do
 		local id = _itemIds[i];
-		if items[id] and items[id][1] then
-			local v=items[id][1];
-			if type(v)=="table" and v.name then
-				local isHS, hsLoc = itemIsHearthstone(id);
-				tinsert(foundItems,{id=id,icon=v.icon,name=v.name,name2=isHS and v.name..hsLoc or v.name,mustBeEquipped=_itemMustBeEquipped[id]==1,equipped=v.type=="inventory"});
+		if ns.items.item[id] and ns.items.item[id][1] then
+			local index = ns.items.item[id][1];
+			local item = ns.items[index<1000 and "inv" or "bags"][index];
+			local isHS,hsLoc = itemIsHearthstone(id);
+			local obj = {id=id};
+			obj.name, _, _, _, _, _, _, _, _, obj.icon = GetItemInfo(item.link);
+			obj.name2 = isHS and obj.name..hsLoc or obj.name;
+			if _itemMustBeEquipped[id] then
+				obj.mustBeEquipped = true;
+				obj.equipped = item.type=="inventory";
 			end
+			tinsert(foundItems,obj);
 		end
 	end
 
@@ -441,7 +446,10 @@ local function init()
 		65360,66061,68808,68809,82470,87548,91850,91860,91861,91862,91863,91864,91865,91866,92056,92057,92058,
 		92430,92431,92432,92510,95050,95051,103678,104110,104113,107441,110560,116413,117389,118662,118663,
 		118907,118908,119183,128353,128502,128503,129276,132119,132120,132122,132517,133755,134058,138448,
-		139541,139590,139599,140192,140319,140493,141013,141014,141015,141016,141017,141605,142298,159224
+		139541,139590,139599,140192,140319,140493,141013,141014,141015,141016,141017,141605,142298,142469,
+		159224,
+		-- hearth stones
+		6948,28585,37118,44314,44315,64488,142298,142542,162973,163045,165669,165670,
 	};
 
 	_toyIds = {18984,18986,30542,30544,43824,48933,64488,87215,95567,95568,95589,95590,112059,136849,140324,162973,151016,163045};

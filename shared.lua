@@ -192,26 +192,28 @@ end
   ---------------------------------------
 --- nice little print function          ---
   ---------------------------------------
-ns.debugMode = ("@project-version@"=="@".."project-version".."@"); -- the first part will be replaced by packager.
-function ns.print(...)
-	local a,colors,t,c,v = {...},{"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"},{},1;
-	tinsert(a,1,"|cff0099ff"..((a[1]==true and L[addon.."_Shortcut"]) or (a[1]=="||" and "||") or addon).."|r"..(a[1]~="||" and ":" or ""));
-	if type(a[2])=="boolean" or a[2]=="||" then
-		tremove(a,2);
-	end
-	for i=1, #a do
-		v = tostring(a[i]);
-		if not v:match("||c") then
-			v,c = "|cff"..colors[c]..v.."|r", c<#colors and c+1 or 1;
+do
+	local addon_short = L[addon.."_Shortcut"];
+	local colors = {"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"};
+	local function colorize(...)
+		local t,c,a1 = {tostringall(...)},1,...;
+		if type(a1)=="boolean" then tremove(t,1); end
+		if a1~=false then
+			tinsert(t,1,"|cff0099ff"..((a1==true and addon_short) or (a1=="||" and "||") or addon).."|r"..(a1~="||" and ":" or ""));
+			c=2;
 		end
-		tinsert(t,v);
+		for i=c, #t do
+			if not t[i]:find("\124c") then
+				t[i],c = "|cff"..colors[c]..t[i].."|r", c<#colors and c+1 or 1;
+			end
+		end
+		return unpack(t);
 	end
-	print(unpack(t));
-end
-
-function ns.debug(...)
-	if ns.debugMode then
-		ns.print("<debug>",...);
+	function ns.print(...)
+		print(colorize(...));
+	end
+	function ns.debug(...)
+		ConsolePrint(date("|cff999999%X|r"),colorize(...));
 	end
 end
 
@@ -754,405 +756,268 @@ end
 -- event driven with delayed execution                            --
 -- -------------------------------------------------------------- --
 do
-	--- local elements
-	local update,d,ticker,_ = false,{ids={}, seen={}, bags={},inv={},item={}, callbacks={any={},bags={},inv={},item={}}, preScanCallbacks={}, linkData={}, tooltipData={}, NeedTooltip={}};
-	local locked,tickerDelay,defaultDelay,f = false,0.5,1,CreateFrame("Frame");
-	local GetItemInfoFailed,IsEnabled = false,false;
-	local _ITEM_LEVEL = ITEM_LEVEL:gsub("%%d","(%%d*)");
-	local _UPGRADES = ITEM_UPGRADE_TOOLTIP_FORMAT:gsub(": %%d/%%d","");
-	local INVTYPES = { -- since 7.1 - GetItemInfo response incorrect itemType for armor and weapons
-		INVTYPE_THROWN = WEAPON,INVTYPE_HOLDABLE = WEAPON,INVTYPE_RANGED = WEAPON,INVTYPE_RANGEDRIGHT = WEAPON,INVTYPE_WEAPON = WEAPON,
-		INVTYPE_WEAPONMAINHAND = WEAPON,INVTYPE_WEAPONMAINHAND_PET = WEAPON,INVTYPE_WEAPONOFFHAND = WEAPON,INVTYPE_2HWEAPON = WEAPON,
-		INVTYPE_BODY = ARMOR,INVTYPE_CHEST = ARMOR,INVTYPE_CLOAK = ARMOR,INVTYPE_FEET = ARMOR,INVTYPE_FINGER = ARMOR,INVTYPE_HAND = ARMOR,
-		INVTYPE_HEAD = ARMOR,INVTYPE_LEGS = ARMOR,INVTYPE_NECK = ARMOR,INVTYPE_QUIVER = ARMOR,INVTYPE_ROBE = ARMOR,INVTYPE_SHIELD = ARMOR,
-		INVTYPE_SHOULDER = ARMOR,INVTYPE_TABARD = ARMOR,INVTYPE_TRINKET = ARMOR,INVTYPE_WAIST = ARMOR,INVTYPE_WRIST = ARMOR
-	};
+	-- note: this new version is a downgrade to reduce memory usage. it is only for detect changes.
+	ns.items = {bags={},inventory={},item={},equipment={}};
+	local slotNames = {"Head","Neck","Shoulder","Shirt","Chest","Waist","Legs","Feet","Wrist","Hands","Finger0","Finger1","Trinket0","Trinket1","Back","MainHand","SecondaryHand","Range","Tabard"};
+	local doUpdate,f = {bags=false,inv=false,idCallback={},ticker=false,tickerLength=0.5,defaultDelay=2.5,delay=false,locked=false},CreateFrame("Frame");
+	local callbacks,hasChanged,IsEnabled = {bags={},inv={},any={},item={},equipment={},prepare={},bagsNum=0,invNum=0,anyNum=0,itemNum=0,equipmentNum=0,prepareNum=0};
 
-	-- EMPTY_SOCKET_PRISMATIC and EMPTY_SOCKET_NO_COLOR are identical in some languages... Need only one of it.
-	local EMPTY_SOCKETS = {"RED","YELLOW","META","HYDRAULIC","BLUE","PRISMATIC","COGWHEEL"};
-	if EMPTY_SOCKET_PRISMATIC~=EMPTY_SOCKET_NO_COLOR then
-		tinsert(EMPTY_SOCKETS,"NO_COLOR");
+	local function doCallbacks(tbl,...)
+		for modName,fnc in pairs(tbl)do
+			fnc(...);
+		end
 	end
 
-	local function GetObjectLinkData(obj)
-		if not d.linkData[obj.link] then
-			local _,_,_,data = obj.link:match("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
-			d.linkData[obj.link] = {strsplit(":",data or "")};
-			--local dataKeys = {"enchantId", "gems", "gems", "gems", "gems" , "suffix", "unique", "linkLvl", "reforging","spelleffect"};
-			for i=1, #d.linkData[obj.link] do
-				d.linkData[obj.link][i] = tonumber(d.linkData[obj.link][i]) or 0;
-				--if dataKeys[i] then
-				--	if dataKeys[i]=="gems" then
-				--		tinsert(obj[dataKeys[i]],d.linkData[obj.link][i]);
-				--	else
-				--		obj[dataKeys[i]] = d.linkData[obj.link][i];
-				--	end
-				--end
-			end
+	local function addItem(tbl,prev,info)
+		local loc,index,n = "inv",info.slot,GetItemInfo(info.link);
+		if info.bag then
+			loc,index = "bags",((info.bag+1)*1000)+info.slot;
 		end
-		obj.linkData = d.linkData[obj.link];
-	end
 
-	local function GetObjectTooltipData(obj,instantMode,force)
-		if instantMode==true then
-			if not d.tooltipData[obj.link] or force then
-				local data = ns.ScanTT.query({type=obj.type,link=obj.link,bag=obj.bag,slot=obj.slot,obj=obj},true);
-				if obj.itemType==ARMOR or obj.itemType==WEAPON then
-					obj.repairCost = tonumber(data.repairCost) or 0;
+		info.type = loc;
+		info.diffCheckStr = info.id..";"..info.link..";"..info.durability..";"..info.durabilityMax
+
+		tbl[index] = info;
+
+		local ttData = {type=loc,slot=info.slot,bag=info.bag};
+		ns.ScanTT.query(ttData,true);
+		if ttData.repairCost and ttData.repairCost>0 then
+			tbl[index].repairCost = ttData.repairCost;
+		end
+
+		if ttData.level then
+			info.level = ttData.level;
+		end
+
+		if ns.items.item[info.id]==nil then
+			ns.items.item[info.id]={};
+		end
+		tinsert(ns.items.item[info.id],index);
+
+		if (info.durabilityMax>0) or (loc=="inv" and info.slot~=4 and info.slot~=19) then
+			tinsert(ns.items.equipment,index);
+		end
+
+		if prev[index]==nil or (prev[index] and prev[index].diffCheckStr~=tbl[index].diffCheckStr) then
+			hasChanged[loc] = true;
+			if callbacks.item[info.id] and #callbacks.item[info.id]>0 then
+				if hasChanged.item[info.id]==nil then
+					hasChanged.item[info.id]={};
 				end
-				if not d.tooltipData[obj.link] and #data.lines>0 then
-					d.tooltipData[obj.link] = data.lines;
-				end
-			end
-		else
-			local scanner;
-			if obj.obj then
-				scanner = obj;
-				obj = obj.obj;
-			end
-			if not d.tooltipData[obj.link] or force then
-				if not scanner then
-					ns.ScanTT.query({type=obj.type,link=obj.link,bag=obj.bag,slot=obj.slot,obj=obj,callback=GetObjectTooltipData});
-					return;
-				end
-				if obj.itemType==ARMOR or obj.itemType==WEAPON then
-					obj.repairCost = tonumber(scanner.repairCost) or 0;
-				end
-				if not not d.tooltipData[obj.link] and scanner.lines and #scanner.lines>0 then
-					d.tooltipData[obj.link] = scanner.lines;
-				end
+				tinsert(hasChanged.item[info.id],index);
 			end
 		end
 
-		obj.tooltip = d.tooltipData[obj.link] or {};
-		if obj.itemType==ARMOR or obj.itemType==WEAPON then
-			for i=2, _G.min(#obj.tooltip,20) do
-				local lvl = tonumber(obj.tooltip[i]:match(_ITEM_LEVEL));
-				if lvl then
-					obj.level=lvl;
-				elseif obj.tooltip[i]:find(_UPGRADES) then
-					_,obj.upgrades = strsplit(" ",obj.tooltip[i]);
-				elseif i>4 and obj.setname==nil and obj.tooltip[i]:find("%(%d*/%d*%)$") then
-					obj.setname = strsplit("(",obj.tooltip[i]);
-				else
-					local socketCount,inLines = 0,{};
-					-- detect sockets in tooltip
-					for n=1, #EMPTY_SOCKETS do
-						if obj.tooltip[i]==_G["EMPTY_SOCKET_"..EMPTY_SOCKETS[n]] then
-							socketCount=socketCount+1;
-							tinsert(inLines,i);
-						end
-					end
-					-- check sockets
-					if socketCount>0 then
-						for i=2, 5 do
-							obj.gems[i-1]=obj.linkData[i];
-							if obj.linkData[i]==0 then
-								obj.empty_gem=true;
-							end
-						end
-					end
-				end
-			end
+		if prev[index] then
+			prev[index] = nil;
 		end
+		return index;
 	end
 
 	local function scanner()
-		if not IsEnabled then return end
+		hasChanged = {bags=false,inv=false,item={}};
 
-		local items,seen,bags,inv,callbacks_item = {},{},{},{},{};
-		local inv_changed,bags_changed=false,false;
-		local _GetItemInfoFailed=GetItemInfoFailed;
-
-		-- get all itemIds from all items in the bags
-		for bag=0, NUM_BAG_SLOTS do
-			for slot=1, GetContainerNumSlots(bag) do
-				local id = GetContainerItemID(bag,slot);
-				if (id) then
-					if(items[id]==nil)then items[id]={}; end
-					local obj = {type="bag", bag=bag, slot=slot, id=id, gems={},empty_gem=false};
-					obj.icon, obj.count, obj.locked, _, obj.readable, obj.lootable, obj.link = GetContainerItemInfo(bag, slot);
-					obj.name, _, obj.rarity, obj.level, _, obj.itemType, obj.subType, obj.stackCount, obj.itemEquipLoc, _, obj.price = GetItemInfo(obj.link);
-					if INVTYPES[obj.itemEquipLoc]~=obj.itemType then
-						obj.itemType=INVTYPES[obj.itemEquipLoc]; -- since 7.1 - GetItemInfo response incorrect itemType for armor and weapons
-					end
-					obj.durability,obj.durability_max = GetContainerItemDurability(bag, slot);
-					if obj.name then
-						GetObjectLinkData(obj);
-						if IsEquippableItem(obj.link) or d.NeedTooltip[id] or (ns.artifactpower_items and ns.artifactpower_items[id]) then -- 7.2 GetItemInfo invalid itemType Bug. @Blizzard: Ha Ha. Dirty trick. Try again :P
-							GetObjectTooltipData(obj,false,obj.itemType==ARMOR or obj.itemType==WEAPON);
-						end
-						tinsert(items[id],obj);
-						seen[id]=true; bags[bag..":"..slot]=id;
-						if d.bags[bag..":"..slot]~=id and d.callbacks.item[id] then
-							for i,v in pairs(d.callbacks.item[id]) do
-								if(type(v)=="function")then
-									callbacks_item[i] = v;
-								end
-							end
-						end
-					else
-						if GetItemInfoFailed~=false then
-							GetItemInfoFailed = GetItemInfoFailed + 1;
-						else
-							GetItemInfoFailed = 0;
-						end
-					end
-				end
-				if d.bags[bag..":"..slot]~=id then
-					bags_changed = true;
+		-- cleanup item table
+		for index in pairs(ns.items.equipment)do
+			if (doUpdate.bags and index>1000) or (doUpdate.inv and index<1000) then
+				ns.items.equipment[index] = nil;
+			end
+		end
+		local tmp = {};
+		for id,entries in pairs(ns.items.item)do
+			for i=1, #entries do
+				tmp[id] = tmp[id] or {};
+				if not ( (doUpdate.bags and entries[i]>1000) or (doUpdate.inv and entries[i]<1000) ) then
+					tinsert(tmp[id],entries[i]);
 				end
 			end
 		end
+		ns.items.item = tmp;
 
-		-- get all itemIds from equipped items
-		local slotNames,_ = {"Head","Neck","Shoulder","Shirt","Chest","Waist","Legs","Feet","Wrist","Hands","Finger0","Finger1","Trinket0","Trinket1","Back","MainHand","SecondaryHand","Range","Tabard"};
-		for slotIndex=1, 19 do
-			local id, unknown1 = GetInventoryItemID("player",slotIndex);
-			if type(id)=="number" then
-				if(items[id]==nil)then items[id]={}; end
-				local obj,lvl = {type="inventory",slotName=slotNames[slotIndex],slotIndex=slotIndex,slot=slotIndex,durability={},id=id,unknown1=unknown1,gems={},empty_gem=false};
-				obj.link = GetInventoryItemLink("player",slotIndex);
-				obj.name, _, obj.rarity, obj.level, _, obj.itemType, obj.subType, obj.stackCount, obj.itemEquipLoc, obj.icon, obj.price = GetItemInfo(obj.link);
-				if INVTYPES[obj.itemEquipLoc]~=obj.itemType then
-					obj.itemType=INVTYPES[obj.itemEquipLoc]; -- since 7.1 - GetItemInfo response incorrect itemType for armor and weapons
-				end
-				obj.isBroken = GetInventoryItemBroken("player",slotIndex);
-				obj.durability, obj.durability_max = GetInventoryItemDurability(slotIndex);
-				GetObjectLinkData(obj);
-				GetObjectTooltipData(obj,true,true);
-				tinsert(items[id],obj);
-				seen[id]=true;
-				inv[slotIndex]=obj;
-				if d.callbacks.item[id] and d.inv[slotIndex].link~=obj.link then
-					for i,v in pairs(d.callbacks.item[id]) do
-						if(type(v)=="function")then
-							callbacks_item[i] = v;
-						end
-					end
-				end
-				if (not d.inv[slotIndex])~=(not inv[slotIndex]) or (d.inv[slotIndex] and d.inv[slotIndex].link~=obj.link) then
-					inv_changed = true;
-				end
-			end
-		end
-		d.ids = items;
-
-		-- for any items seen on previous update but not now...
-		for id,_ in pairs(d.seen)do
-			if not seen[id] then
-				if(d.callbacks.item[id])then
-					for i,v in pairs(d.callbacks.item[id]) do
-						if(type(v)=="function")then
-							callbacks_item[i] = v;
+		-- scan bags
+		if doUpdate.bags then
+			local prev,_ = ns.items.bags;
+			ns.items.bags = {};
+			for bag=0, NUM_BAG_SLOTS do
+				if GetContainerNumSlots(bag) ~= GetContainerNumFreeSlots(bag) then -- do not scan empty bag :-)
+					for slot=1, GetContainerNumSlots(bag) do
+						local _, count, _, quality, readable, lootable, link, _, _, id = GetContainerItemInfo(bag,slot);
+						id = tonumber(id);
+						if id then
+							local d,dM = GetContainerItemDurability(bag,slot);
+							local info = {bag=bag,slot=slot,id=id,link=link,count=count,quality=quality,readable=readable,lootable=lootable,durability=d or 0,durabilityMax=dM or 0};
+							addItem(ns.items.bags,prev,info);
 						end
 					end
 				end
 			end
+			for index,obj in pairs(prev)do
+				if ns.items.bags[index]==nil then -- item disappeared or moved
+					hasChanged.bags = true;
+					break;
+				end
+			end
+			prev = nil;
 		end
-		d.seen = seen;
-		d.bags = bags;
-		d.inv = inv;
 
-		-- execute preScan callbacks
-		if (bags_changed or inv_changed) and d.preScanCallbacks~=nil then
-			for module,func in pairs(d.preScanCallbacks) do
-				if(type(func)=="function")then
-					func("preScan");
+		-- scan inventory
+		if doUpdate.inv then
+			local prev = ns.items.inventory;
+			ns.items.inventory = {};
+			for index=1, 19 do
+				local id = GetInventoryItemID("player",index);
+				id = tonumber(id);
+				if id then
+					local d,dM = GetInventoryItemDurability(index);
+					local link = GetInventoryItemLink("player",index);
+					local quality = GetInventoryItemQuality("player",index);
+					local info = {slot=index,id=id,link=link,quality=quality,durability=d or 0,durabilityMax=dM or 0};
+					addItem(ns.items.inventory,prev,info);
+				end
+			end
+			for index,obj in pairs(prev)do
+				if ns.items.inventory[index]==nil then -- item disappeared or moved
+					hasChanged.inv = true;
+					break;
+				end
+			end
+			prev = nil;
+		end
+
+		-- execute callback functions
+		if doUpdate.inv or doUpdate.bags then
+			-- 'prepare' callbacks
+			if callbacks.prepareNum>0 then
+				doCallbacks(callbacks.prepare,"prepare");
+			end
+
+			-- 'any' callbacks
+			if callbacks.anyNum>0 then
+				doCallbacks(callbacks.any,"any");
+			end
+
+			-- 'equipment' callbacks
+			if callbacks.equipmentNum>0 then
+				doCallbacks(callbacks.equipment,"equipment");
+			end
+
+			-- callbacks.item
+			if callbacks.itemNum>0 then
+				for id,locations in pairs(hasChanged.item)do
+					if callbacks.item[id] and #callbacks.item[id] then
+						doCallbacks(callbacks.item,"item",id,location);
+					end
 				end
 			end
 		end
 
-		-- execute callback functions for item id's
-		for module,func in pairs(callbacks_item) do
-			if(type(func)=="function")then
-				func("update.item");
-			end
+		-- 'bags' callbacks
+		if doUpdate.bags and callbacks.bagsNum>0 then
+			doCallbacks(callbacks.bags,"bags");
 		end
 
-		-- execute callback.bags
-		if bags_changed and d.callbacks.bags~=nil then
-			for module,func in pairs(d.callbacks.bags)do
-				if type(func)=="function" then
-					func("update.bags");
-				end
-			end
+		-- 'inv' callbacks
+		if doUpdate.inv and callbacks.invNum>0 then
+			doCallbacks(callbacks.inv,"inv");
 		end
 
-		-- execute callback.inv
-		if inv_changed and d.callbacks.inv~=nil then
-			for module,func in pairs(d.callbacks.inv)do
-				if type(func)=="function" then
-					func("update.inv");
-				end
-			end
-		end
-
-		-- execute callback.any functions for any update
-		if(d.callbacks.any~=nil)then
-			for module,func in pairs(d.callbacks.any)do
-				if d.preScanCallbacks[module] then
-					d.preScanCallbacks[module]("preScan");
-				end
-				if(type(func)=="function")then
-					func("update.any",items);
-				end
-			end
-		end
-
-		if GetItemInfoFailed~=false then
-			if GetItemInfoFailed>4 then
-				GetItemInfoFailed=false;
-			elseif ns.eventPlayerEnteredWorld then
-				update = 0.5;
-			end
-		elseif GetItemInfoFailed==_GetItemInfoFailed then
-			GetItemInfoFailed = false;
-		end
+		doUpdate.bags = false;
+		doUpdate.inv = false;
 	end
 
-	--- event and update frame
-	local function unlock()
-		locked = false;
+	function doUpdate.unlock()
+		doUpdate.locked = false;
 	end
-	local function updater()
-		if update==false or locked then return end
-		locked = true;
-		update = update - tickerDelay;
-		if update<=0 then
-			scanner();
-			update = false;
-			ticker:Cancel();
-			ticker = nil;
-			C_Timer.After(2,unlock);
+
+	function doUpdate.execute()
+		if not doUpdate.delay or doUpdate.locked then
 			return;
 		end
-		unlock();
-	end
-	local function OnEvent(self,event,...)
-		if event=="ADDON_LOADED" and (...)=="Blizzard_ItemUpgradeUI" then
-			ItemUpgradeFrameUpgradeButton:HookScript("OnClick",ns.items.UpdateNow);
-			hooksecurefunc(_G,"ItemUpgradeFrame_UpgradeClick",ns.items.UpdateNow);
---@do-not-package@
-		--elseif event=="ADDON_LOADED" and (...)=="Blizzard_AzeriteUI" then
-		--	hooksecurefunc(_G.AzeriteEmpoweredItemUI,"",ns.items.UpdateNow);
---@end-do-not-package@
-		elseif event=="PLAYER_LOGIN" then
-			ticker = C_Timer.NewTicker(tickerDelay,updater);
-		elseif ns.eventPlayerEnteredWorld then
-			update = defaultDelay;
-			if not ticker then
-				ticker = C_Timer.NewTicker(tickerDelay,updater);
-			end
+		doUpdate.delay = doUpdate.delay - doUpdate.tickerLength;
+		if doUpdate.delay<=0 then
+			doUpdate.locked = true;
+			doUpdate.delay = false;
+			doUpdate.ticker:Cancel();
+			doUpdate.ticker = false;
+			scanner();
+			C_Timer.After(2,doUpdate.unlock);
 		end
 	end
+
+	function doUpdate.init(event)
+		if not IsEnabled or (not doUpdate.bags and not doUpdate.inv) then return end
+		doUpdate.delay = (tostring(event)=="PLAYER_LOGIN" and .5) or doUpdate.defaultDelay;
+		if not doUpdate.ticker then
+			doUpdate.ticker = C_Timer.NewTicker(doUpdate.tickerLength,doUpdate.execute);
+		end
+	end
+
+	local function OnEvent(self,event,...)
+		if event=="ADDON_LOADED" then
+			if (...)=="Blizzard_ItemUpgradeUI" then
+				ItemUpgradeFrameUpgradeButton:HookScript("OnClick",doUpdate.init);
+				hooksecurefunc(_G,"ItemUpgradeFrame_UpgradeClick",doUpdate.init);
+			end
+		elseif event=="PLAYER_LOGIN" or ns.eventPlayerEnteredWorld then
+			if event=="PLAYER_LOGIN" or event=="UPDATE_INVENTORY_DURABILITY" then
+				doUpdate.inv = true;
+				doUpdate.bags = true;
+			elseif event=="PLAYER_EQUIPMENT_CHANGED" or event=="AZERITE_EMPOWERED_ITEM_SELECTION_UPDATED" or event=="ITEM_UPGRADE_MASTER_UPDATE" then
+				doUpdate.inv = true;
+			elseif event=="BAG_UPDATE_DELAYED" then
+				doUpdate.bags = true;
+			end
+			doUpdate.init(event);
+		end
+	end
+
 	local function init()
 		if IsEnabled then return end
-
 		IsEnabled = true;
+
 		f:SetScript("OnEvent",OnEvent);
-		f:RegisterEvent("GET_ITEM_INFO_RECEIVED");
 		f:RegisterEvent("ITEM_UPGRADE_MASTER_UPDATE");
 		f:RegisterEvent("BAG_UPDATE_DELAYED");
 		f:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
-		f:RegisterEvent("AZERITE_EMPOWERED_ITEM_SELECTION_UPDATED"); -- i hope a hook is not necessary ^_^
+		f:RegisterEvent("UPDATE_INVENTORY_DURABILITY");
+		f:RegisterEvent("AZERITE_EMPOWERED_ITEM_SELECTION_UPDATED");
 		if ns.eventPlayerEnteredWorld then
 			OnEvent(f,"PLAYER_LOGIN");
 		else
 			f:RegisterEvent("PLAYER_LOGIN");
 		end
-		local needAL = false;
 		if IsAddOnLoaded("Blizzard_ItemUpgradeUI") then
 			OnEvent(f,"ADDON_LOADED","Blizzard_ItemUpgradeUI");
 		else
-			needAL = true;
-		end
---@do-not-package@
-		--if IsAddOnLoaded("Blizzard_AzeriteUI") then
-		--	OnEvent(f,"ADDON_LOADED","Blizzard_AzeriteUI");
-		--else
-		--	needAL = true;
-		--end
---@end-do-not-package@
-		if needAL then
 			f:RegisterEvent("ADDON_LOADED");
 		end
 	end
 
-	--- namespace functions
-	ns.items = {};
-	function ns.items.Enable()
-		init();
+	function ns.items.UpdateLock()
+		doUpdate.locked = true;
 	end
-	function ns.items.UpdateNow()
-		if not IsEnabled and ns.eventPlayerEnteredWorld then return end
-		OnEvent(f,"DUMMY");
+
+	function ns.items.UpdateForce()
+		doUpdate.locked = false;
+		doUpdate.init();
 	end
+
 	function ns.items.RegisterCallback(modName,func,mode,id)
 		mode = tostring(mode):lower();
 		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
 		assert(type(func)=="function","argument #2 (function) must be a function, got "..type(func));
-		assert(mode=="any" or mode=="inv" or mode=="bags" or mode=="item", "argument #3 must be 'any','inv', 'bags' or 'item'.");
-		if (d.callbacks[mode]==nil) then
-			d.callbacks[mode] = {};
-		end
+		assert(type(callbacks[mode])=="table", "argument #3 must be 'any', 'inv', 'bags', 'item', 'equipment' or 'prepare'.");
 		if mode=="item" then
 			assert(type(id)=="number","argument #4 must be number, got "..type(id));
-			if (d.callbacks[mode][id]==nil) then
-				d.callbacks[mode][id] = {};
+			if callbacks.item[id]==nil then
+				callbacks.item[id] = {};
 			end
-			d.callbacks[mode][id][modName] = func;
+			callbacks.item[id][modName] = func;
 		else
-			d.callbacks[mode][modName] = func;
+			callbacks[mode][modName] = func;
 		end
-		d.callbacks.active = true;
+		callbacks[mode.."Num"] = callbacks[mode.."Num"] + 1;
 		init();
-	end
-	function ns.items.RegisterPreScanCallback(modName,func)
-		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
-		assert(type(func)=="function","argument #3 (function) must be a function, got "..type(func));
-		if(d.preScanCallbacks==nil)then
-			d.preScanCallbacks={};
-		end
-		d.preScanCallbacks[modName]=func;
-		init();
-	end
-	function ns.items.RegisterNeedTooltip(id)
-		if type(id)=="table" then
-			for i=1, #id do
-				ns.items.RegisterNeedTooltip(id[i]);
-			end
-		else
-			local id = tonumber(id);
-			if id then
-				d.NeedTooltip[id]=true;
-			end
-		end
-		init();
-	end
-	function ns.items.exist(itemId)
-		return d.ids[itemId] or false;
-	end
-	function ns.items.GetItemlist()
-		return d.ids;
-	end
-	function ns.items.GetBagItems()
-		local result = {};
-		for _,id in pairs(d.prev_bags)do
-			result[id]=d.ids[id];
-		end
-		return result;
-	end
-	function ns.items.GetInventoryItems()
-		return d.inv;
-	end
-	function ns.items.GetInventoryItemBySlotIndex(index)
-		return d.inv[index] or false;
-	end
-	function ns.items.GetItemTooltip(obj)
-		if obj then
-			GetObjectTooltipData(obj,true);
-		end
 	end
 end
 
@@ -1189,6 +1054,13 @@ end
 do
 	local QueueModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip",UIParent,"GameTooltipTemplate");
 	local InstantModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip2",UIParent,"GameTooltipTemplate");
+	local _ITEM_LEVEL = ITEM_LEVEL:gsub("%%d","(%%d*)");
+	local _UPGRADES = ITEM_UPGRADE_TOOLTIP_FORMAT:gsub(": %%d/%%d","");
+	-- EMPTY_SOCKET_PRISMATIC and EMPTY_SOCKET_NO_COLOR are identical in some languages... Need only one of it.
+	local EMPTY_SOCKETS = {"RED","YELLOW","META","HYDRAULIC","BLUE","PRISMATIC","COGWHEEL"};
+	if EMPTY_SOCKET_PRISMATIC~=EMPTY_SOCKET_NO_COLOR then
+		tinsert(EMPTY_SOCKETS,"NO_COLOR");
+	end
 	QueueModeScanTT:SetScale(0.0001);
 	InstantModeScanTT:SetScale(0.0001);
 	QueueModeScanTT:SetAlpha(0);
@@ -1204,8 +1076,17 @@ do
 	ns.ScanTT = {};
 	local queries = {};
 	local ticker = nil;
-	local duration = 0.1;
+	local duration = 0.05;
 	local try = 0;
+
+	local function GetLinkData(link)
+		local _,_,_,link = link:match("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
+		link = {strsplit(":",link or "")};
+		for i=1, #link do
+			link[i] = tonumber(link[i]) or 0;
+		end
+		return link;
+	end
 
 	local function collect(tt,Data)
 		local data,_;
@@ -1234,13 +1115,19 @@ do
 		else
 			data.try=data.try+1;
 		end
-		if data._type=="bag" then
-			if data.link or data.id then
-				data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = GetItemInfo(data.link or data.id);
+		if data._type=="bag" or data._type=="bags" then
+			if data.link==nil then
+				data.link = GetContainerItemLink(data.bag,data.slot);
 			end
+			data.linkData = GetLinkData(data.link);
+			data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = GetItemInfo(data.link);
 			data.startTime, data.duration, data.isEnabled = GetContainerItemCooldown(data.bag,data.slot);
 			data.hasCooldown, data.repairCost = tt:SetBagItem(data.bag,data.slot);
-		elseif data._type=="inventory" then
+		elseif data._type=="inventory" or data._type=="inv" then
+			if data.link==nil then
+				data.link = GetInventoryItemLink("player",data.slot);
+			end
+			data.linkData = GetLinkData(data.link);
 			_,data.hasCooldown, data.repairCost = tt:SetInventoryItem("player", data.slot); -- repair costs
 		elseif data._type=="unit" then
 			-- https://wow.gamepedia.com/API_UnitGUID
@@ -1279,6 +1166,38 @@ do
 				local str = (v:GetText() or ""):trim();
 				if str:len()>0 then
 					tinsert(data.lines,str);
+				end
+			end
+		end
+
+		if data._type=="inventory" or data._type=="inv" or data._type=="bag" or data._type=="bags" then
+			for i=2, min(#data.lines,20) do
+				local lvl = tonumber(data.lines[i]:match(_ITEM_LEVEL));
+				if lvl then
+					data.level=lvl;
+				elseif data.lines[i]:find(_UPGRADES) then
+					_,data.upgrades = strsplit(" ",data.lines[i]);
+				elseif i>4 and data.setname==nil and data.lines[i]:find("%(%d*/%d*%)$") then
+					data.setname = strsplit("(",data.lines[i]);
+				else
+					local socketCount,inLines = 0,{};
+					-- detect sockets in tooltip
+					for n=1, #EMPTY_SOCKETS do
+						if data.lines[i]==_G["EMPTY_SOCKET_"..EMPTY_SOCKETS[n]] then
+							socketCount=socketCount+1;
+							tinsert(inLines,i);
+						end
+					end
+					-- check sockets
+					if socketCount>0 then
+						data.gems = {};
+						for i=2, 5 do
+							data.gems[i-1]=data.linkData[i];
+							if data.linkData[i]==0 then
+								data.empty_gem=true;
+							end
+						end
+					end
 				end
 			end
 		end
