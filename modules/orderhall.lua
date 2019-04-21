@@ -214,24 +214,6 @@ local function createTooltip(tt)
 			end
 		end
 
-		-- instantWQ info
-		local InstantWQ = GetClassTalentTreeInfoByType(LE_GARRISON_TYPE_7_0,"InstantWQ");
-		if InstantWQ and InstantWQ.selected and InstantWQ.researched then
-			tt:AddSeparator(4,0,0,0,0);
-			tt:AddLine(C("ltblue",InstantWQ.name));
-			tt:AddSeparator();
-			local start, duration, enable = GetSpellCooldown(InstantWQ.perkSpellID);
-			if start==0 then
-				tt:SetCell(tt:AddLine(C("ltyellow",TALENT)),2,C("green",L["ReadyToUse"]),nil,"RIGHT",0);
-			else
-				local seconds = duration-(GetTime()-start);
-				tt:SetCell(tt:AddLine(C("ltyellow",L["Cooldown"])),2,SecondsToTime(seconds),nil,"RIGHT",0);
-			end
-			local itemName = GetItemInfo(InstantWQ.reagentItem);
-			local inBag = ns.items.exist(InstantWQ.reagentItem);
-			tt:SetCell(tt:AddLine(C("ltyellow",SPELL_REAGENTS:gsub("\124n","")..(itemName or "?"))),2,inBag and C("green","Is in your bag") or C("red","Is not in your bag"),nil,"RIGHT",0);
-		end
-
 		-- create shipment list
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",L["Shipments"]));
