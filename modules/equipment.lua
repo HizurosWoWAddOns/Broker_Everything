@@ -140,12 +140,12 @@ local function GetILevelColor(il)
 	return "white";
 end
 
-local function InventoryTooltipShow(self,link)
+local function InventoryTooltipShow(self,slot)
 	GameTooltip:SetOwner(self,"ANCHOR_NONE");
 	GameTooltip:SetPoint(ns.GetTipAnchor(self,"horizontal",tt));
 
 	GameTooltip:ClearLines();
-	GameTooltip:SetHyperlink(link);
+	GameTooltip:SetInventoryItem("player", slot);
 
 	GameTooltip:SetFrameLevel(self:GetFrameLevel()+1);
 	GameTooltip:Show();
@@ -297,7 +297,7 @@ local function createTooltip(tt)
 					C(GetILevelColor(itemLevel),itemLevel)
 				);
 
-				tt:SetLineScript(l,"OnEnter",InventoryTooltipShow, obj.link);
+				tt:SetLineScript(l,"OnEnter",InventoryTooltipShow, obj.slot);
 				tt:SetLineScript(l,"OnLeave",InventoryTooltipHide);
 			elseif ns.items.inventory[i] then
 				tt:AddLine(
