@@ -281,22 +281,6 @@ function module.onevent(self,event,arg1)
 		current_money = GetMoney();
 		ns.toon.gold = current_money;
 		if event=="PLAYER_LOGIN" then
-			if ns.data[name] and ns.data[name].profit~=nil then
-				ns.data[name].profit=nil;
-			end
---@do-not-package@
-	        ns.profileSilenceFIXME=true;
---@end-do-not-package@
-			if ns.profile[name].showProfit~=nil then
-				ns.profile[name].showProfit=nil;
-			end
---@do-not-package@
-	        ns.profileSilenceFIXME=true;
---@end-do-not-package@
-			if ns.profile[name].showSessionProfit~=nil then
-				ns.profile[name].showProfitSessionBroker=ns.profile[name].showSessionProfit
-				ns.profile[name].showSessionProfit=nil
-			end
 			login_money = current_money;
 			C_Timer.After(0.5,function()
 				updateProfit();
