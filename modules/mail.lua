@@ -24,18 +24,12 @@ I[name..'_stored'] = {iconfile="interface\\icons\\inv_letter_03",coords={0.05,0.
 
 -- some local functions --
 --------------------------
-local function clearStoredMailsData()
+local function clearAllStoredMails()
 	for i=1, #Broker_Everything_CharacterDB.order do
-		if Broker_Everything_CharacterDB.order[i]~=ns.player.name_realm then
-			local v = Broker_Everything_CharacterDB[Broker_Everything_CharacterDB.order[i]];
-			if v.mail then
-				if v.mail.count~=nil then
-					v.mail = { new={}, stored={} };
-				else
-					v.mail.new = {};
-					v.mail.stored = {};
-				end
-			end
+		local toonName = Broker_Everything_CharacterDB.order[i];
+		if toonName and toonName~=ns.player.name_realm then
+			ns.tablePath(Broker_Everything_CharacterDB,toonName,"mail");
+			Broker_Everything_CharacterDB[toonName].mail = {new={},stored={}};
 		end
 	end
 	module.onevent({},"BE_DUMMY_EVENT");
@@ -100,15 +94,11 @@ local function UpdateStatus(event)
 
 	local mailStored = false;
 	for i=1, #Broker_Everything_CharacterDB.order do
-		if Broker_Everything_CharacterDB.order[i]~=ns.player.name_realm then
-			local v = Broker_Everything_CharacterDB[Broker_Everything_CharacterDB.order[i]];
-			if v.mail then
-				if v.mail.count~=nil then
-					v.mail = { new={}, stored={} };
-				end
-				if #v.mail.new>0 or #v.mail.stored>0 then
-					mailStored = true;
-				end
+		local toonName = Broker_Everything_CharacterDB.order[i];
+		if toonName and toonName~=ns.player.name_realm then
+			local mail = Broker_Everything_CharacterDB[toonName].mail;
+			if #mail.new>0 or #mail.stored>0 then
+				mailStored = true;
 			end
 		end
 	end
@@ -322,6 +312,16 @@ function module.onevent(self,event,msg)
 		end
 	elseif event=="PLAYER_LOGIN" then
 		hooksecurefunc("SendMail",SendMailHook);
+		for i=1, #Broker_Everything_CharacterDB.order do
+			local toonName = Broker_Everything_CharacterDB.order[i];
+			if toonName then
+				ns.tablePath(Broker_Everything_CharacterDB,toonName,"mail","new");
+				ns.tablePath(Broker_Everything_CharacterDB,toonName,"mail","store");
+				if Broker_Everything_CharacterDB[toonName].mail.count~=nil then -- deprecated counter
+					Broker_Everything_CharacterDB[toonName].mail.count=nil;
+				end
+			end
+		end
 	end
 	if ns.eventPlayerEnteredWorld then
 		if (HasNewMail()) and (ns.profile[name].playsound) and (not alertLocked) then
