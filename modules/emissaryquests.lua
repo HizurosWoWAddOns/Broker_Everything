@@ -121,8 +121,6 @@ local function unlock()
 end
 
 local function updateData()
-	if locked then return end locked = true;
-
 	local Time = time();
 	local ending,endings,day = {Time+GetQuestResetTime()+1},{},86400;
 	ending[2] = ending[1]+day;
@@ -134,6 +132,7 @@ local function updateData()
 		endings[e] = {};
 		local bounties,location,locked = GetQuestBountyInfoForMapID(expansions[e].zone); -- empty table on chars lower than 110
 		for i=1, #bounties do
+			C_TaskQuest.RequestPreloadRewardData(bounties[i].questID);
 			local TimeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(bounties[i].questID) or 0;
 			bounties[i].expansion = e;
 			bounties[i].continent = expansions[e].zone;
@@ -194,7 +193,7 @@ local function updateData()
 		end
 	end
 	updateBroker();
-	C_Timer.After(1,unlock);
+	C_Timer.After(0.314159,unlock);
 end
 
 local function createTooltip(tt)
@@ -375,7 +374,7 @@ end
 function module.onevent(self,event,arg1,...)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
-	elseif ns.eventPlayerEnteredWorld then
+	elseif event=="PLAYER_LOGIN" then
 		if ns.data[name]==nil then
 			ns.data[name]={factions={}};
 		elseif ns.data[name].factions==nil then
@@ -386,7 +385,11 @@ function module.onevent(self,event,arg1,...)
 		elseif ns.toon[name].factions==nil then
 			ns.toon[name].factions = {};
 		end
-		updateData();
+	elseif ns.eventPlayerEnteredWorld then
+		if not locked then
+			locked = true;
+			C_Timer.After(0.314159,updateData);
+		end
 	end
 end
 
