@@ -4,23 +4,30 @@ local addon, ns = ...
 -- Localization metatable function                                   --
 -- Instructions for Non-Ace3 method taken from Phanx at WowInterface --
 -- http://www.wowinterface.com/portal.php?&id=224&pageid=250         --
--- ================================================================= --
--- Extended version by Hizuro to use some localization strings       --
--- from Blizzard                                                     --
 -- ----------------------------------------------------------------- --
 
 local L = {};
+--[[
+ns.L = setmetatable(L,{
+	__index = function(t,k)
+		local k=tostring(k);
+		rawset(t,k,k);
+		return k;
+	end
+});
+--]]
 
+local debugMode = "@project-version@"=="@".."project-version".."@";
 ns.L = setmetatable({}, {
 	__newindex = function(t,k,v)
-		L[k] = v;
+		L[tostring(k)]=tostring(v);
 	end,
 	__index = function(t, k)
 		local k=tostring(k);
 --@do-not-package@
-		if ns.debugMode then
+		if debugMode then
 			if k=="nil" then
-				ns.debug("<FIXME:Localization:NilKey>",debugstack());
+				ns.debug("localization","<FIXME:NilKey>",debugstack());
 			end
 			return L[k] or "<"..k..">";
 		end
