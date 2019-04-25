@@ -118,7 +118,7 @@ local function itemQuality()
 				price[itemQuality] = price[itemQuality] + (itemPrice*itemCount);
 			end
 		else
-			ns.debug("<bagsItemQuality>","GetItemInfo missing data",entry.id);
+			ns.debug(name,"<bagsItemQuality>","GetItemInfo missing data",entry.id);
 		end
 	end
 	return price, sum;

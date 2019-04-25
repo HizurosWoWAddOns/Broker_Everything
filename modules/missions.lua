@@ -238,7 +238,7 @@ local function update()
 			charDB.missions[Type]={}; -- wipe
 
 			missions[Type] = {inprogress={},available={},completed={}};
-			missions[Type].available  = C_Garrison.GetAvailableMissions(followerType) or {};
+			missions[Type].available = C_Garrison.GetAvailableMissions(followerType) or {};
 			missions[Type].inprogress,missions[Type].completed = {},{};
 
 			for i,v in ipairs(tmp) do

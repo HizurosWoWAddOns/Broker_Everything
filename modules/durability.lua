@@ -95,7 +95,7 @@ local function nsItems2Callback()
 				repairCost[tbl] = repairCost[tbl] + (tonumber(data.repairCost) or 0);
 			end
 		else
-			ns.debug("<errorObjNil>",index,ns.items.bags[index],ns.items.inventory[index]);
+			ns.debug(name,"<errorObjNil>",index,ns.items.bags[index],ns.items.inventory[index]);
 		end
 	end
 

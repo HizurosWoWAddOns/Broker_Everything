@@ -17,6 +17,7 @@ local updateinterval,module1,module2,module3 = 0.12;
 local ttName1, ttName2, ttName3, ttName4 = name1.."TT", name2.."TT", name3.."TT", "TransportMenuTT";
 local ttColumns,ttColumns4,onleave = 3,5;
 local tt1, tt2, tt3, tt4, items;
+local zoneRed, zoneOrange, zoneYellow, zoneGreen,zoneBlue = C("red","%s"),C("orange","%s"),C("dkyellow","%s"),C("ltgreen","%s"),C("ltblue","%s");
 local tt5positions = {
 	["LEFT"]   = {edgeSelf = "RIGHT",  edgeParent = "LEFT",   x = -2, y =  0},
 	["RIGHT"]  = {edgeSelf = "LEFT",   edgeParent = "RIGHT",  x =  2, y =  0},
@@ -200,13 +201,13 @@ local function GetZoneInfo()
 	local zoneColor,zoneLabel,zoneType, _, f = "white","",GetZonePVPInfo()
 
 	if zoneType == "combat" or pzoneType == "arena" or zoneType == "hostile" then
-		zoneColor,zoneLabel = "red",HOSTILE;
+		zoneColor,zoneLabel = zoneRed,HOSTILE;
 	elseif zoneType == "contested" or zoneType == nil then
-		zoneColor,zoneLabel,zoneType = "dkyellow",L["Contested"],"contested"
+		zoneColor,zoneLabel,zoneType = zoneYellow,L["Contested"],"contested"
 	elseif zoneType == "friendly" then
-		zoneColor,zoneLabel = "ltgreen",FRIENDLY;
+		zoneColor,zoneLabel = zoneGreen,FRIENDLY;
 	elseif zoneType == "sanctuary" then
-		zoneColor,zoneLabel = "ltblue",L["Sanctuary"];
+		zoneColor,zoneLabel = zoneBlue,L["Sanctuary"];
 	end
 	return zoneColor,zoneLabel,zoneType;
 end
@@ -229,7 +230,7 @@ local function createTooltip(tt,ttName,modName)
 	local lst = {
 		{C("ltyellow",ZONE .. ":"),GetRealZoneText()},
 		{C("ltyellow",L["Subzone"] .. ":"),GetSubZoneText()},
-		{C("ltyellow",L["Zone status"] .. ":"),C(zoneColor,zoneLabel)},
+		{C("ltyellow",L["Zone status"] .. ":"),zoneColor:format(zoneLabel)},
 		{C("ltyellow",L["Coordinates"] .. ":"),position(modName) or C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos)}
 	}
 
@@ -400,13 +401,13 @@ local function posUpdater(name)
 	local gpsLoc,pos = {},position(name)
 	if pos then
 		gpsLoc.pos = pos
-		gpsLoc.posColor = nil
+		gpsLoc.posColor = "%s"
 		gpsLoc.posInfo = nil
 	else
 		if gpsLoc.posLast==nil then
 			gpsLoc.posLast=time()
 		elseif time()-gpsLoc.posLast>5 then
-			gpsLoc.posColor = "orange"
+			gpsLoc.posColor = zoneOrange;
 			gpsLoc.posInfo = L["Coordinates indeterminable"]
 		end
 	end
@@ -420,18 +421,18 @@ local function updater()
 	if ns.profile[name1].enabled and module1.obj then
 		local gpsLoc = posUpdater(name1)
 		gpsLoc.zone = zone(name1);
-		module1.obj.text = C(zoneColor,gpsLoc.zone.." (")..C(gpsLoc.poszoneColor or zoneColor,gpsLoc.pos)..C(zoneColor,")");
+		module1.obj.text = zoneColor:format(gpsLoc.zone.." (")..(gpsLoc.poszoneColor and C(gpsLoc.poszoneColor,gpsLoc.pos) or zoneColor:format(gpsLoc.pos))..zoneColor:format(")");
 	end
 
 	if ns.profile[name2].enabled and module2.obj then
 		local gpsLoc = posUpdater(name2)
-		module2.obj.text = C(gpsLoc.poszoneColor or zoneColor,gpsLoc.pos);
+		module2.obj.text = gpsLoc.poszoneColor and C(gpsLoc.poszoneColor,gpsLoc.pos) or zoneColor:format(gpsLoc.pos);
 	end
 
 	if ns.profile[name3].enabled and module3.obj then
 		local gpsLoc = posUpdater(name3)
 		gpsLoc.zone = zone(name3)
-		module3.obj.text = C(zoneColor,gpsLoc.zone);
+		module3.obj.text = zoneColor:format(gpsLoc.zone);
 	end
 end
 

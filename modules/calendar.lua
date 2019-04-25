@@ -66,7 +66,7 @@ local function createTooltip(tt)
 	local _time = time();
 	local endsSoonNumeric = tonumber(date("%Y%m%d%H%M",_time - 10800)); -- 3hrs
 	local startsSoonNumeric = tonumber(date("%Y%m%d%H%M",_time + 43200)); -- 12hrs
-	ns.debug(dateNumeric,endsSoonNumeric,startsSoonNumeric);
+	ns.debug(name,dateNumeric,endsSoonNumeric,startsSoonNumeric);
 
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",L[name]),C("ltgreen",date("%Y-%m-%d")));

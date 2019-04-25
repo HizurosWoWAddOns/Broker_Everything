@@ -43,7 +43,7 @@ local nsProfileMT = {
 		elseif ns.profileSilenceFIXME then
 			ns.profileSilenceFIXME=false;
 		else
-			ns.debug("<FIXME:nsProfileMT:MissingSection>",tostring(s),tostring(k));
+			ns.debug("Options","<FIXME:nsProfileMT:MissingSection>",tostring(s),tostring(k));
 --@end-do-not-package@
 		end
 	end,
@@ -57,15 +57,14 @@ local nsProfileMT = {
 			elseif ns.profileSilenceFIXME then
 				ns.profileSilenceFIXME=false;
 			else
-				ns.debug("<FIXME:nsProfileMT:NilValue>",tostring(s),tostring(k));
+				ns.debug("Options","<FIXME:nsProfileMT:NilValue>",tostring(s),tostring(k));
 --@end-do-not-package@
 			end
 --@do-not-package@
 		elseif ns.profileSilenceFIXME then
 			ns.profileSilenceFIXME=false;
 		else
-			ns.debug("<FIXME:nsProfileMT:MissingSectionOrDB>",tostring(s),tostring(k));
-			--ns.debug(debugstack());
+			ns.debug("Options","<FIXME:nsProfileMT:MissingSectionOrDB>",tostring(s),tostring(k));
 --@end-do-not-package@
 		end
 	end
@@ -128,7 +127,7 @@ local function opt(info,value,...)
 	if value~=nil then
 		if isModEnable then
 --@do-not-package@
-			ns.debug("<ToggleModuleEnableState>",key,type(db.profile),type(db.profile[key]));
+			ns.debug("Options","<ToggleModuleEnableState>",key,type(db.profile),type(db.profile[key]));
 --@end-do-not-package@
 			db.profile[key].enabled = value;
 			if value then
@@ -147,7 +146,7 @@ local function opt(info,value,...)
 						mod.onevent(mod.eventFrame,"BE_UPDATE_CFG",key);
 --@do-not-package@
 					--elseif mod.active and not mod.onevent then
-						--ns.debug("<FIXME:opt:MissingEventFunction>",section,modName);
+						--ns.debug("Options","<FIXME:opt:MissingEventFunction>",section,modName);
 --@end-do-not-package@
 					end
 				end
@@ -161,7 +160,7 @@ local function opt(info,value,...)
 					ns.modules[section].onevent(ns.modules[section].eventFrame,"BE_UPDATE_CFG",key);
 --@do-not-package@
 				else
-					ns.debug("<FIXME:opt:MissingEventFunction>",section);
+					ns.debug("Options","<FIXME:opt:MissingEventFunction>",section);
 --@end-do-not-package@
 				end
 			end
@@ -177,7 +176,7 @@ local function opt(info,value,...)
 		end
 --@do-not-package@
 		if db.profile[section][key]==nil then
-			ns.debug("<FIXME:opt:NilOptions>",tostring(section),tostring(key),tostring(key):len());
+			ns.debug("Options","<FIXME:opt:NilOptions>",tostring(section),tostring(key),tostring(key):len());
 		end
 --@end-do-not-package@
 		return db.profile[section][key];
@@ -367,13 +366,13 @@ local function optionWalker(modName,group,lst)
 			end
 			if v.type=="slider" or v.type=="desc" then
 --@do-not-package@
-				ns.debug("<FIXME:optionWalker:BadType>",k,modName);
+				ns.debug("Options","<FIXME:optionWalker:BadType>",k,modName);
 --@end-do-not-package@
 				lst[k]=nil;
 			end
 			if (v.default or v.inMenuInvisible or v.text or v.isSubMenu or v.alpha or v.tooltip or v.label or v.format or v.rep or v.minText or v.maxText)~=nil then
 --@do-not-package@
-				ns.debug("<FIXME:optionWalker:BadKey>",k,modName);
+				ns.debug("Options","<FIXME:optionWalker:BadKey>",k,modName);
 --@end-do-not-package@
 				lst[k]=nil;
 			end
@@ -414,9 +413,9 @@ function ns.Options_RegisterModule(modName)
 	ns.profile[modName] = setmetatable({section=modName},nsProfileMT);
 --@do-not-package@
 	if not mod.config_defaults then
-		ns.debug("<FIXME:MissingModConfigDefault>",modName);
+		ns.debug("Options","<FIXME:MissingModConfigDefault>",modName);
 	elseif mod.config_defaults.enabled==nil then
-		ns.debug("<FIXME:MissingModEnableState>",modName);
+		ns.debug("Options","<FIXME:MissingModEnableState>",modName);
 	end
 --@end-do-not-package@
 

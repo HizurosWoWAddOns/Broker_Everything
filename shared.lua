@@ -212,8 +212,8 @@ do
 	function ns.print(...)
 		print(colorize(...));
 	end
-	function ns.debug(...)
-		ConsolePrint(date("|cff999999%X|r"),colorize(...));
+	function ns.debug(name,...)
+		ConsolePrint(date("|cff999999%X|r"),colorize("<debug::"..name..">",...));
 	end
 end
 
@@ -1897,11 +1897,6 @@ do
 			if clickOpts then
 				local optKey = ns.ClickOpts.prefix..cfgKey;
 				-- ace option table entry
---@do-not-package@
-				--if clickOpts[iLabel]==nil then
-				--	ns.debug("<FIXME:ClickOptsName-Nil>",modName,optKey);
-				--end
---@end-do-not-package@
 				modOptions.ClickOpts[optKey] = {
 					type	= "select",
 					name	= L[clickOpts[iLabel]],
