@@ -11,7 +11,7 @@ local name = "Wardrobe"; -- WARDROBE L["ModDesc-Wardrobe"]
 local ldbName, ttName, ttColumns, tt, module = name, name.."TT", 4
 local illusions,weapons = {0,0},{};
 local ctForm = C("green","%d")..C("gray","/")..C("dkyellow","%d");
-local pForm = C("","")
+local pForm = C("ltgrey","%.1f");
 local session = {};
 local brokerValues = {
 	["_none"] = NONE.."/"..HIDE,
@@ -134,7 +134,7 @@ local function updateData()
 end
 
 local function addLine(color,name,collected,total,session)
-	tt:AddLine( C(color,name), ctForm:format(collected,total), C("%.1f%%"):format(collected/total*100), session<collected and C("ltgreen","+"..(collected-session)) or "");
+	tt:AddLine( C(color,name), ctForm:format(collected,total), pForm:format(collected/total*100), session<collected and C("ltgreen","+"..(collected-session)) or "");
 end
 
 local function createTooltip(tt)
@@ -156,7 +156,6 @@ local function createTooltip(tt)
 		tinsert(lines,{"ltyellow",_G[TRANSMOG_SLOTS[i].slot],c,t,s});
 	end
 	tt:AddSeparator(4,0,0,0,0);
-	--tt:AddLine(C("ltblue",ARMOR),ctForm:format(collected,total),("%.1f%%"):format(collected/total*100));
 	addLine("ltblue",ARMOR,collected,total,sess);
 	tt:AddSeparator();
 	for i=1,#lines do
@@ -177,7 +176,7 @@ local function createTooltip(tt)
 		end
 	end
 	tt:AddSeparator(4,0,0,0,0);
-	tt:AddLine(C("ltblue",HEIRLOOMS_CATEGORY_WEAPON),ctForm:format(collected,total),("%.1f%%"):format(collected/total*100),sess<collected and C("ltgreen","+"..(collected-sess)) or "");
+	addLine("ltblue",HEIRLOOMS_CATEGORY_WEAPON,collected,total,sess);
 	tt:AddSeparator();
 	table.sort(lines,sortWeapons);
 	for _,v in pairs(lines)do
