@@ -71,7 +71,8 @@ local function createTooltip2(parentLine,data)
 	for slotId,slotName in ns.pairsByKeys(slots) do
 		local v=data.bonus[slotId] or {};
 		if(slotId==998)then
-			tt2:AddLine(C("ltyellow",slotName),v.maxLevel or "",(v.percent) and v.percent.."%" or C("ltgray",ERR_GUILD_PLAYER_NOT_IN_GUILD));
+			-- tt2:AddLine(C("ltyellow",slotName),v.maxLevel or "",(v.percent) and v.percent.."%" or C("ltgray",ERR_GUILD_PLAYER_NOT_IN_GUILD));
+			-- removed from blizzard
 		elseif(slotId==999)then
 			-- ignore refer-a-friend
 		else
@@ -119,7 +120,8 @@ function createTooltip(tt)
 					tt:AddLine(C("ltyellow", slotName),"", v.percent.."%"); -- show only if active
 				end
 			elseif(slotId==998)then
-				tt:AddLine(C("ltyellow", slotName),"", (v.percent==nil) and L["Not in a guild"] or v.percent.."%");
+				-- tt:AddLine(C("ltyellow", slotName),"", (v.percent==nil) and L["Not in a guild"] or v.percent.."%");
+				-- removed from blizzard
 			else
 				tt:AddLine(
 					C("ltyellow", slotName),
@@ -371,7 +373,7 @@ function module.onevent(self,event,msg)
 					local m = (IsInRaid() and "raid" or "party")..i;
 					if UnitIsVisible(m) and IsReferAFriendLinked(m) then
 						raf_boost = true;
-						data.bonus[999] = {percent=300};
+						data.bonus[999] = {percent=50};
 					end
 				end
 			end
