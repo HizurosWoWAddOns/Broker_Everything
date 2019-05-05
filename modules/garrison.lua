@@ -2,7 +2,7 @@
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
-if ns.build<60000000 then return end
+if ns.build<600 then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 

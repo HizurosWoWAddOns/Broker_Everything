@@ -94,7 +94,7 @@ do
 end
 do
 	local version,build = GetBuildInfo();
-	ns.build = tonumber(version:gsub("[|.]","")..build);
+	ns.build = tonumber(version:gsub("[|.]","").."."..build);
 end
 
 
@@ -227,7 +227,7 @@ do
 	local blacklist = {alwaysShowActionBars = true, bloatnameplates = true, bloatTest = true, bloatthreat = true, consolidateBuffs = true, fullSizeFocusFrame = true, maxAlgoplates = true, nameplateMotion = true, nameplateOverlapH = true, nameplateOverlapV = true, nameplateShowEnemies = true, nameplateShowEnemyGuardians = true, nameplateShowEnemyPets = true, nameplateShowEnemyTotems = true, nameplateShowFriendlyGuardians = true, nameplateShowFriendlyPets = true, nameplateShowFriendlyTotems = true, nameplateShowFriends = true, repositionfrequency = true, showArenaEnemyFrames = true, showArenaEnemyPets = true, showPartyPets = true, showTargetOfTarget = true, targetOfTargetMode = true, uiScale = true, useCompactPartyFrames = true, useUiScale = true}
 	function ns.SetCVar(...)
 		local cvar = ...
-		if ns.build>=54800000 and InCombatLockdown() and blacklist[cvar]==true then
+		if ns.build>548 and InCombatLockdown() and blacklist[cvar]==true then
 			local msg
 			-- usefull blacklisted cvars...
 			if cvar=="uiScale" or cvar=="useUiScale" then

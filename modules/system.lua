@@ -66,7 +66,7 @@ I[name_traf] = {iconfile="Interface\\Addons\\"..addon.."\\media\\memory"}; --Ico
 -- some local functions --
 --------------------------
 local function checkAddonManager()
-	if (ns.build>=60000000) then
+	if ns.build>600 then
 		-- BetterAddonList
 		addonpanels["Blizzard's Addons Panel"] = function(chk) if (chk) then return (_G.AddonList); end if (_G.AddonList:IsShown()) then _G.AddonList:Hide(); else _G.AddonList:Show(); end end;
 		addonpanels_select["Blizzard's Addons Panel"] = "Blizzard's Addons Panel";

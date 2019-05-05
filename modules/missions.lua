@@ -2,7 +2,7 @@
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
-if ns.build<60000000 then return end
+if ns.build<600 then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
@@ -35,7 +35,7 @@ local function createTooltip(tt)
 	local pipe = C("gray","   ||   ");
 	tt:AddHeader(C("dkyellow",GARRISON_MISSIONS))
 
-	if (ns.profile[name].showChars) then
+	if ns.profile[name].showChars then
 		tt:AddSeparator(4,0,0,0,0)
 		local _ttColumns = 1;
 		if ns.profile[name].showMissionLevel then         _ttColumns=_ttColumns+1; end
@@ -45,10 +45,10 @@ local function createTooltip(tt)
 
 		local l=tt:AddLine( C("ltblue",CHARACTER) ); -- 1
 		if(IsShiftKeyDown())then
-			tt:SetCell(l,2,C("ltblue",GARRISON_FOLLOWERS)..pipe..C("ltblue",GARRISON_SHIPYARD_FOLLOWERS)..( ns.build>70000000 and pipe..C("ltblue",FOLLOWERLIST_LABEL_CHAMPIONS) or "" ).."|n"..
+			tt:SetCell(l,2,C("ltblue",GARRISON_FOLLOWERS)..pipe..C("ltblue",GARRISON_SHIPYARD_FOLLOWERS)..( ns.build>700 and pipe..C("ltblue",FOLLOWERLIST_LABEL_CHAMPIONS) or "" ).."|n"..
 				GOAL_COMPLETED.." - "..C("green",L["next"]).." / ".. C("yellow",SPELL_TARGET_TYPE12_DESC),nil, "RIGHT", _ttColumns);
 		else
-			tt:SetCell(l,2,C("ltblue",GARRISON_FOLLOWERS)..pipe..C("ltblue",GARRISON_SHIPYARD_FOLLOWERS)..( ns.build>70000000 and pipe..C("ltblue",FOLLOWERLIST_LABEL_CHAMPIONS) or "" ).."|n"..
+			tt:SetCell(l,2,C("ltblue",GARRISON_FOLLOWERS)..pipe..C("ltblue",GARRISON_SHIPYARD_FOLLOWERS)..( ns.build>700 and pipe..C("ltblue",FOLLOWERLIST_LABEL_CHAMPIONS) or "" ).."|n"..
 				C("green",GOAL_COMPLETED).." / ".. C("yellow",L["In progress"]),nil, "RIGHT", _ttColumns);
 		end
 		tt:AddSeparator();
@@ -79,19 +79,19 @@ local function createTooltip(tt)
 				local fm_completed, fm_progress, fm_next, fm_all = get("followers");
 				local sm_completed, sm_progress, sm_next, sm_all = get("ships");
 				local cm_completed, cm_progress, cm_next, cm_all = 0,0,0,0;
-				if ns.build>70000000 then
+				if ns.build>700 then
 					  cm_completed, cm_progress, cm_next, cm_all = get("champions");
 				end
 
 				if IsShiftKeyDown() then
 					tt:SetCell(l,2,                    C("ltgray", GARRISON_FOLLOWERS)           .. " " ..C("green", fm_next==0 and "−" or SecondsToTime(fm_next-t) ).." / "..C("yellow",fm_all==0 and "−" or SecondsToTime(fm_all-t))..
 						"|n" ..                        C("ltgray", GARRISON_SHIPYARD_FOLLOWERS)  .. " " ..C("green", sm_next==0 and "−" or SecondsToTime(sm_next-t) ).." / "..C("yellow",sm_all==0 and "−" or SecondsToTime(sm_all-t))..
-						(ns.build>70000000 and "|n" .. C("ltgray", FOLLOWERLIST_LABEL_CHAMPIONS) .. " " ..C("green", cm_next==0 and "−" or SecondsToTime(cm_next-t) ).." / "..C("yellow",cm_all==0 and "−" or SecondsToTime(cm_all-t)) or ""),
+						(ns.build>700 and "|n" .. C("ltgray", FOLLOWERLIST_LABEL_CHAMPIONS) .. " " ..C("green", cm_next==0 and "−" or SecondsToTime(cm_next-t) ).." / "..C("yellow",cm_all==0 and "−" or SecondsToTime(cm_all-t)) or ""),
 						nil,"RIGHT",_ttColumns);
 				else
 					tt:SetCell(l,2,                   C("green",fm_completed==0 and "−" or fm_completed) .." / ".. C("yellow",fm_progress==0 and "−" or fm_progress)..
 						pipe ..                       C("green",sm_completed==0 and "−" or sm_completed) .." / ".. C("yellow",sm_progress==0 and "−" or sm_progress)..
-						(ns.build>70000000 and pipe.. C("green",cm_completed==0 and "−" or cm_completed) .." / ".. C("yellow",cm_progress==0 and "−" or cm_progress) or ""),
+						(ns.build>700 and pipe.. C("green",cm_completed==0 and "−" or cm_completed) .." / ".. C("yellow",cm_progress==0 and "−" or cm_progress) or ""),
 						nil,"RIGHT",_ttColumns);
 				end
 
