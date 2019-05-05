@@ -39,29 +39,35 @@ I[name] = {iconfile="Interface\\icons\\inv_misc_bag_08",coords={0.05,0.95,0.05,0
 
 -- some local functions --
 --------------------------
-function crap:info()
-	if ns.profile[name].autoCrapSellingInfo and self.sum>0 then
-		ns.print(L["Auto crap selling - Summary"]..":",ns.GetCoinColorOrTextureString(name,self.sum,{color="white"}));
+function crap.info()
+	if ns.profile[name].autoCrapSellingInfo and not crap.ERR_VENDOR_DOESNT_BUY and crap.sum>0 then
+		ns.print(L["Auto crap selling - Summary"]..":",ns.GetCoinColorOrTextureString(name,crap.sum,{color="white"}));
 	end
 end
 
-function crap:sell()
-	local num = #self.items;
-	for i=1, min(num,self.limit) do
+function crap.sell()
+	local num = #crap.items;
+	for i=1, min(num,crap.limit) do
+		if crap.ERR_VENDOR_DOESNT_BUY then
+			return;
+		end
 		local I=num-(i-1);
-		local bag,slot,price = unpack(self.items[I]);
-		self.sum = self.sum+price;
+		local bag,slot,price = unpack(crap.items[I]);
+		crap.sum = crap.sum+price;
 		UseContainerItem(bag, slot);
-		tremove(self.items,I);
+		tremove(crap.items,I);
 	end
-	if #self.items==0 then
-		C_Timer.After(0.15,function()self:info();end);
+	if crap.ERR_VENDOR_DOESNT_BUY then
 		return;
 	end
-	C_Timer.After(0.35,function()self:sell();end);
+	if #crap.items==0 then
+		C_Timer.After(0.314159,crap.info);
+		return;
+	end
+	C_Timer.After(0.314159,crap.sell);
 end
 
-function crap:search()
+function crap.search()
 	for bag=0, NUM_BAG_SLOTS do
 		if GetContainerNumSlots(bag) ~= GetContainerNumFreeSlots(bag) then
 			for slot=1, GetContainerNumSlots(bag) do
@@ -70,14 +76,14 @@ function crap:search()
 					local _,count = GetContainerItemInfo(bag, slot);
 					local _,_,quality,_,_,_,_,_,_,_,price = GetItemInfo(link);
 					if quality==0 and price>0 then
-						tinsert(self.items,{bag,slot,price*count});
+						tinsert(crap.items,{bag,slot,price*count});
 					end
 				end
 			end
 		end
 	end
-	if #self.items>0 then
-		self:sell();
+	if #crap.items>0 then
+		crap.sell();
 	end
 end
 
@@ -117,8 +123,6 @@ local function itemQuality()
 			if itemPrice then
 				price[itemQuality] = price[itemQuality] + (itemPrice*itemCount);
 			end
-		else
-			ns.debug(name,"<bagsItemQuality>","GetItemInfo missing data",entry.id);
 		end
 	end
 	return price, sum;
@@ -195,7 +199,8 @@ module = {
 		"BAG_UPDATE",
 		"UNIT_INVENTORY_CHANGED",
 		"MERCHANT_SHOW",
-		"MERCHANT_CLOSED"
+		"MERCHANT_CLOSED",
+		"UI_ERROR_MESSAGE"
 	},
 	config_defaults = {
 		enabled = true,
@@ -262,14 +267,23 @@ function module.init()
 	G.ITEM_QUALITY99_DESC = UNKNOWN;
 end
 
-function module.onevent(self,event,arg1)
+function module.onevent(self,event,...)
+	local arg1 = ...;
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 	elseif event=="MERCHANT_SHOW" and ns.profile[name].autoCrapSelling then
 		IsMerchantOpen = true;
-		C_Timer.After(0.5,function() crap:search() end);
+		C_Timer.After(0.314159,crap.search);
 	elseif event=="MERCHANT_CLOSED" then
 		IsMerchantOpen = false;
+		C_Timer.After(1.5,function()
+			crap.ERR_VENDOR_DOESNT_BUY = nil;
+		end);
+	elseif IsMerchantOpen and event=="UI_ERROR_MESSAGE" then
+		local messageType, message = ...; -- 41, ERR_VENDOR_DOESNT_BUY
+		if message==ERR_VENDOR_DOESNT_BUY then
+			crap.ERR_VENDOR_DOESNT_BUY = true;
+		end
 	elseif ns.eventPlayerEnteredWorld then
 		updateBroker();
 	end
