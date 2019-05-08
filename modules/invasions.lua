@@ -9,12 +9,19 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Invasions"; -- L["ModDesc-Invasions"]
 local ttName, ttColumns, tt, module = name.."TT", 3;
+local regionCode,regionIndex,region,timeStamp = {"NA","KO","EU","TW","CN"},{NA=1,KO=2,EU=3,TW=4,CN=5};
+local regionLabel = {L["North america / Brazil / Oceania"],L["Korea"],L["Europe / Russia"],L["Taiwan"],L["China"]};
+local events = {--- 1491375600000
+	{ enabled=true, icon=nil, label=SPLASH_LEGION_PREPATCH_FEATURE1_TITLE.." ("..EXPANSION_NAME6..")", startEU=1491375600, startNA=1491337800, interval=66600, length=21600, achievement=11544, zoneOrder={641,634,630,650,634,650,641,630,634,641,650,630} },
+	{ enabled=true, icon=nil, label=SPLASH_BATTLEFORAZEROTH_8_1_FEATURE2_TITLE.." ("..EXPANSION_NAME7..")", startEU=1544580000, startNA=1544612400, interval=68400, length=25200, achievement=13283, zoneOrder={942,864,896,862,895,863} },
+}
 
-local eu,timeStamp = GetCurrentRegionName()=="EU";
-local regions = {
-	{ exp=6, map=619,       start=eu and 1517682600 or 1517644800, int=66600, len=21600, atlas="legioninvasion-map-icon-portal",                       maps={630,641,650,634,680},     achievement=11544 },
-	{ exp=7, map={876,875}, start=eu and 1544716800 or 1544785200, int=68400, len=25200, atlas={"HordeWarfrontMapBanner","AllianceWarfrontMapBanner"}, maps={895,896,942,862,863,864}, achievement=13283, poi={5964,5973,5896,5970,5969,5966} },
-};
+do
+	region = ns.LRI:GetCurrentRegion();
+	if not region then
+		region = regionCode[GetCurrentRegion()];
+	end
+end
 
 
 -- register icon names and default files --
@@ -24,134 +31,109 @@ I[name] = {iconfile="interface\\icons\\Garrison_Building_SparringArena", coords=
 
 -- some local functions --
 --------------------------
-local function updateInvasionState()
-	--if WorldMapFrame:IsShown() then return end
-	timeStamp = time();
-	for i=1, #regions do
-		if ns.data[name] and ns.data[name]["exp"..regions[i].exp.."start"] then
-			regions[i].start = ns.data[name]["exp"..regions[i].exp.."start"];
-		end
-		regions[i].last = mod(timeStamp-regions[i].start,regions[i].int); -- seconds since start of last invasion
-		regions[i].lastX = timeStamp-regions[i].last;
-		regions[i].next = regions[i].int-regions[i].last;
-		regions[i].mapNames = {};
-		for I=1, #regions[i].maps do
-			local m = C_Map.GetMapInfo(regions[i].maps[I]);
-			if m then
-				tinsert(regions[i].mapNames,"("..m.name..")");
-			end
-		end
-		if not eu and regions[i].poi then
-			local seconds;
-			for p=1, #regions[i].poi do
-				local sec = C_AreaPoiInfo.GetAreaPOISecondsLeft(regions[i].poi[p]);
-				if sec and sec>0 and sec<=regions[i].len  then
-					seconds = sec;
-					break;
-				end
-			end
-			if seconds then
-				local start = timeStamp - seconds;
-				if start ~= regions[i].start then
-					if ns.data[name]==nil then
-						ns.data[name] = {};
-					end
-					ns.data[name]["exp"..regions[i].exp.."start"] = start;
-
-				end
-			end
-		end
-		if regions[i].last <= regions[i].len and (not regions[i].desc) then
-			local map,areaPOIs,atlas = regions[i].map,{};
-			if type(map)=="table" then
-				for m=1, #map do
-					C_Map.RequestPreloadMap(map[m]);
-					areaPOIs = C_AreaPoiInfo.GetAreaPOIForMap(map[m]) or {};
-					if #areaPOIs>0 then
-						map = map[m];
-						atlas = regions[i].atlas[m]
-						break;
-					end
-				end
+local function updateInvasionsList(noTimer)
+	local currentTime,nextUpdate,ev,timerRegion = time(),1800;
+	for i=1, #events do
+		ev = events[i];
+		if not ev.start then
+			timerRegion = ns.profile[name].timerRegion;
+			if timerRegion==0 then
+				timerRegion = (ev["start"..region] and region) or "NA";
 			else
-				C_Map.RequestPreloadMap(regions[i].map);
-				areaPOIs = C_AreaPoiInfo.GetAreaPOIForMap(regions[i].map) or {};
-				atlas = regions[i].atlas;
+				timerRegion = regionCode[timerRegion];
 			end
-			for aI=1, #areaPOIs do
-				local poiInfo = C_AreaPoiInfo.GetAreaPOIInfo(map, areaPOIs[aI]);
-				if poiInfo then
-					if atlas==poiInfo.atlasName then
-						regions[i].desc = poiInfo.description;
-						for I=1, #regions[i].mapNames do
-							local m = poiInfo.description:match(regions[i].mapNames[I]);
-							if m then
-								regions[i].mapName = m;
-								break;
-							end
-						end
-					end
+			ev.start = ev["start"..timerRegion];
+		end
+		ev.numStarts = floor( (currentTime-ev.start) / ev.interval );
+		ev.lastStart = ev.start + (ev.numStarts*ev.interval);
+		ev.lastStartEnds = ev.lastStart + ev.length;
+		ev.lastStartZone = (ev.numStarts % #ev.zoneOrder) + 1;
+		if not ev.zoneNames then
+			ev.zoneNames={};
+			for z=1, #ev.zoneOrder do
+				local mapInfo = C_Map.GetMapInfo(ev.zoneOrder[z]) or {};
+				if mapInfo and mapInfo.name then
+					ev.zoneNames[z] = mapInfo.name;
 				end
 			end
-		elseif regions[i].desc and regions[i].last > regions[i].len then
-			regions[i].desc = nil;
 		end
+		if ev.lastStartEnds >= currentTime then
+			nextUpdate = min(nextUpdate,ev.lastStartEnds-currentTime+1);
+		else
+			nextUpdate = min(nextUpdate,(ev.lastStart+ev.interval)-currentTime+1);
+		end
+	end
+	if noTimer~=true then
+		C_Timer.After(nextUpdate,updateInvasionsList);
 	end
 end
 
 local function updateBroker()
-	updateInvasionState();
-	local inv = {};
-	for i=1, #regions do
-		if ns.profile[name]["exp"..regions[i].exp.."bb"] then
-			if regions[i].last < regions[i].len then
-				tinsert(inv,C("green",regions[i].mapName or ACTIVE_PETS) .. " " .. SecondsToTime(regions[i].len-regions[i].last));
+	local t,nextUpdate,inv,ev,seconds=time(),300,{};
+	for i=1, #events do
+		ev = events[i];
+		if ns.profile[name]["event"..i.."bb"] then
+			if ev.lastStartEnds >= t then
+				seconds = ev.lastStartEnds-t;
+				tinsert(inv,C("green",ev.zoneNames[ev.lastStartZone]) .. " " .. SecondsToTime(seconds));
 			else
-				tinsert(inv,L["InvasionsNextIn"] .. " " ..  SecondsToTime(regions[i].next));
+				seconds = (ev.lastStart+ev.interval) - t;
+				tinsert(inv,L["InvasionsNextIn"] .. " " ..  SecondsToTime(seconds));
+			end
+			if seconds<=60 then
+				nextUpdate = 1;
+			elseif seconds<=600 then
+				nextUpdate = min(nextUpdate,60);
 			end
 		end
 	end
 	(ns.LDB:GetDataObjectByName(module.ldbName) or {}).text = table.concat(inv,", ");
+	C_Timer.After(nextUpdate,updateBroker);
+end
+
+local function AddLine(tt,currentTime,timeStart,eventLength,zoneStr,timeStrType,timeColor,zoneColor)
+	local timeStr
+	if IsShiftKeyDown() or timeStrType==2 then
+		timeStr = date("%Y-%m-%d %H:%M",timeStart).." - "..date("%H:%M",timeStart+eventLength);
+	elseif timeStrType==1 then
+		timeStr = BRAWL_TOOLTIP_ENDS:format(SecondsToTime(timeStart+eventLength-currentTime));
+	else
+		timeStr = L["InvasionsNextIn"] .. " " ..  SecondsToTime(timeStart-currentTime);
+	end
+	tt:AddLine(C(timeColor,timeStr),"   ",C(zoneColor,zoneStr));
 end
 
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	if tt.lines~=nil then tt:Clear(); end
 	local l = tt:AddHeader(C("dkyellow",L[name]));
-	tt:AddSeparator();
 	local empty = true;
 
-	for i=1, #regions do
-		if ns.profile[name]["exp"..regions[i].exp.."tt"] then
-			tt:AddLine(C("gray",_G["EXPANSION_NAME"..regions[i].exp]));
-			if regions[i].last <= regions[i].len and regions[i].desc then
-				tt:SetCell(tt:AddLine(),1,"   "..C("orange",regions[i].desc),nil,"LEFT",0);
-				tt:SetCell(tt:AddLine(),1,"   "..C("ltgreen",BRAWL_TOOLTIP_ENDS:format(SecondsToTime(regions[i].len-regions[i].last))),nil,"LEFT",0);
-			else
-				tt:SetCell(tt:AddLine(),1,C("ltgray","   "..L["InvasionsNextIn"] .. " " ..  SecondsToTime(regions[i].next)),nil,"LEFT",0);
+	local currentTime,ev = time();
+	for i=1, #events do
+		ev = events[i];
+		if ns.profile[name]["event"..i.."tt"] then
+			local numNext = ns.profile[name].numNext;
+			tt:AddSeparator(4,0,0,0,0);
+			tt:SetCell(tt:AddLine(),1,C("ltblue",ev.label),nil,"LEFT",0);
+			tt:AddSeparator();
+			local nx,timeStart,timeColor,zoneColor,zoneStr,timeStrType = 1,ev.lastStart,"dkgreen","ltgreen",ev.zoneNames[ev.lastStartZone],1;
+			if ev.lastStartEnds < currentTime then
+				nx,numNext,timeStart,timeColor,zoneColor,zoneStr,timeStrType = 2,numNext+1,timeStart+ev.interval,"dkyellow","ltyellow",ev.zoneNames[ev.lastStartZone+1],0;
+			end
+			AddLine(tt,currentTime,timeStart,ev.length,zoneStr,timeStrType,timeColor,zoneColor);
+			for n=nx, numNext --[[nx==2 and 4 or 3]] do
+				AddLine(tt,currentTime,ev.lastStart + (n*ev.interval),ev.length,ev.zoneNames[((ev.numStarts + n) % #ev.zoneNames)+1],2,"gray","ltgray");
 			end
 			empty = false;
 		end
 	end
 
-	tt:AddSeparator(4,0,0,0,0);
-	tt:AddLine(C("ltblue",L["InvasionsNext"]));
-	tt:AddSeparator();
-	for i=1, #regions do
-		if ns.profile[name]["exp"..regions[i].exp.."tt"] then
-			tt:AddLine(C("gray",_G["EXPANSION_NAME"..regions[i].exp]));
-			for I=1, 5 do
-				local n = (timeStamp-regions[i].last)+(regions[i].int*I);
-				tt:AddLine("   "..C("ltyellow",date("%Y-%m-%d",n)),C("ltgreen",date("%H:%M",n)));
-			end
-			empty = false;
-		end
+	if ns.profile.GeneralOptions.showHints then
+		tt:AddSeparator(4,0,0,0,0)
+		tt:SetCell(tt:AddLine(),1,C("ltblue",L["Hold shift"]).." || "..C("green",L["Date instead of duration time"]),nil,"LEFT",0);
+		ns.ClickOpts.ttAddHints(tt,name);
 	end
-
-	--if ns.profile.GeneralOptions.showHints then
-		--tt:AddSeparator(4,0,0,0,0)
-		--ns.ClickOpts.ttAddHints(tt,name);
-	--end
 
 	ns.roundupTooltip(tt);
 end
@@ -165,10 +147,10 @@ module = {
 	},
 	config_defaults = {
 		enabled = false,
-		exp6bb = true,
-		exp7bb = true,
-		exp6tt = true,
-		exp7tt = true,
+		event1bb = true, event1tt = true,
+		event2bb = true, event2tt = true,
+		timerRegion = 0, -- 0 = automatically
+		numNext = 3,
 	},
 	clickOptionsRename = {},
 	clickOptions = {
@@ -179,16 +161,22 @@ module = {
 ns.ClickOpts.addDefaults(module,"menu","_RIGHT");
 
 function module.options()
-	return {
-		broker = {
-			exp6bb = { type="toggle", order=1, name=_G["EXPANSION_NAME6"], desc=L["InvasionsBBDesc"] },
-			exp7bb = { type="toggle", order=2, name=_G["EXPANSION_NAME7"], desc=L["InvasionsBBDesc"] },
-		},
-		tooltip = {
-			exp6tt = { type="toggle", order=1, name=_G["EXPANSION_NAME6"], desc=L["InvasionsTTDesc"] },
-			exp7tt = { type="toggle", order=2, name=_G["EXPANSION_NAME7"], desc=L["InvasionsTTDesc"] },
+	local tbl = {
+		broker={},
+		tooltip={},
+		misc={
+			numNext = { type="range", order=1, name=L["InvasionsNumNext"], --[[desc=L["InvasionsNumNextDesc"],]] min=1, step=1, max=20, width="double" },
+			timerRegion = { type="select", order=2, name=L["InvasionsTimerRegion"], --[[desc=L["InvasionsTimerRegionDesc"],]] values={[0]=L["InvasionsTimerRegionAuto"]:format(regionLabel[regionIndex[region]])}, width="double" },
 		}
 	};
+	for i=1, #regionCode do
+		tbl.misc.timerRegion.values[i] = regionLabel[i];
+	end
+	for i=1, #events do
+		tbl.broker["event"..i.."bb"] = { type="toggle", order=i, name=events[i].label, desc=L["InvasionsBBDesc"] };
+		tbl.tooltip["event"..i.."tt"] = { type="toggle", order=i, name=events[i].label, desc=L["InvasionsTTDesc"] };
+	end
+	return tbl;
 end
 
 function module.OptionMenu(self,button,modName)
@@ -207,10 +195,22 @@ function module.onevent(self,event,...)
 		--if (...) and (...):find("^ClickOpt") then
 		--	ns.ClickOpts.update(name);
 		--end
-		updateBroker();
+		if ns.eventPlayerEnteredWorld then
+			for i=1, #events do
+				events[i].start=nil;
+			end
+			updateInvasionsList(true);
+			updateBroker();
+		end
 	elseif event=="PLAYER_LOGIN" then
-		C_Timer.NewTicker(30,updateBroker);
-		updateBroker();
+		if ns.profile[name].exp6tt then
+			for new,old in pairs({event1bb="exp6bb",event2bb="exp7bb",event1tt="exp6tt",event2tt="exp7tt"})do
+				ns.profile[name][new] = ns.profile[name][old];
+				ns.profile[name][old] = nil;
+			end
+		end
+		updateInvasionsList();
+		C_Timer.After(5,updateBroker);
 	end
 end
 
@@ -220,7 +220,7 @@ end
 
 function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "RIGHT", "RIGHT", "LEFT"},{false},{self},{OnHide=tooltipOnHide});
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "RIGHT", "RIGHT", "LEFT"},{true},{self});
 	createTooltip(tt);
 end
 
