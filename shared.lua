@@ -815,7 +815,7 @@ do
 	end
 
 	local function scanner()
-		hasChanged = {bags=false,inv=false,item={}};
+		hasChanged = {bags=false,inv=false,item={},failed=false};
 
 		-- cleanup item table
 		for index in pairs(ns.items.equipment)do
@@ -836,8 +836,7 @@ do
 
 		-- scan bags
 		if doUpdate.bags then
-			local prev,_ = ns.items.bags;
-			ns.items.bags = {};
+			local prev,tmp,_ = ns.items.bags,{};
 			for bag=0, NUM_BAG_SLOTS do
 				if GetContainerNumSlots(bag) ~= GetContainerNumFreeSlots(bag) then -- do not scan empty bag :-)
 					for slot=1, GetContainerNumSlots(bag) do
@@ -846,7 +845,7 @@ do
 						if id then
 							local d,dM = GetContainerItemDurability(bag,slot);
 							local info = {bag=bag,slot=slot,id=id,link=link,count=count,quality=quality,readable=readable,lootable=lootable,durability=d or 0,durabilityMax=dM or 0};
-							addItem(ns.items.bags,prev,info);
+							addItem(tmp,prev,info);
 						end
 					end
 				end
@@ -857,31 +856,47 @@ do
 					break;
 				end
 			end
+			ns.items.bags = tmp;
 			prev = nil;
 		end
 
 		-- scan inventory
 		if doUpdate.inv then
-			local prev = ns.items.inventory;
-			ns.items.inventory = {};
+			local prev,tmp = ns.items.inventory,{};
 			for index=1, 19 do
 				local id = GetInventoryItemID("player",index);
 				id = tonumber(id);
 				if id then
+					-- nice blizzard. Query heirloom item info's. very unstable...
 					local d,dM = GetInventoryItemDurability(index);
 					local link = GetInventoryItemLink("player",index);
 					local quality = GetInventoryItemQuality("player",index);
 					local info = {slot=index,id=id,link=link,quality=quality,durability=d or 0,durabilityMax=dM or 0};
-					addItem(ns.items.inventory,prev,info);
+					if not link:find("%[%]") then
+						addItem(tmp,prev,info);
+					else
+						hasChanged.failed = true;
+					end
 				end
 			end
-			for index,obj in pairs(prev)do
-				if ns.items.inventory[index]==nil then -- item disappeared or moved
-					hasChanged.inv = true;
-					break;
+			if hasChanged.failed==false then
+				for index,obj in pairs(prev)do
+					if ns.items.inventory[index]==nil then -- item disappeared or moved
+						hasChanged.inv = true;
+						break;
+					end
 				end
+				ns.items.inventory = tmp;
 			end
 			prev = nil;
+		end
+
+		if hasChanged.failed then
+			C_Timer.After(2.2,function()
+				doUpdate.locked = false;
+				scanner();
+			end);
+			return;
 		end
 
 		-- execute callback functions
@@ -917,7 +932,7 @@ do
 		end
 
 		-- 'inv' callbacks
-		if doUpdate.inv and callbacks.invNum>0 then
+		if doUpdate.inv and not invFailed and callbacks.invNum>0 then
 			doCallbacks(callbacks.inv,"inv");
 		end
 
