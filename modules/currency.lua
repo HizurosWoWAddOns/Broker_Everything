@@ -212,8 +212,8 @@ function createTooltip(tt,update)
 					elseif num<0 then
 						color = "ltred";
 					end
-					if color then
-						tt:SetCell(l,c,C(color,num));
+					if color and num then
+						tt:SetCell(l,3,C(color,num));
 					end
 				end
 				tt:SetLineScript(l, "OnEnter", tooltip2Show, Currencies[i]);
