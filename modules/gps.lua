@@ -134,12 +134,14 @@ local function updateItems()
 			local isHS,hsLoc = itemIsHearthstone(id);
 			local obj = {id=id};
 			obj.name, _, _, _, _, _, _, _, _, obj.icon = GetItemInfo(item.link);
-			obj.name2 = isHS and obj.name..hsLoc or obj.name;
-			if _itemMustBeEquipped[id] then
-				obj.mustBeEquipped = true;
-				obj.equipped = item.type=="inventory";
+			if obj.name then
+				obj.name2 = isHS and obj.name..hsLoc or obj.name;
+				if _itemMustBeEquipped[id] then
+					obj.mustBeEquipped = true;
+					obj.equipped = item.type=="inventory";
+				end
+				tinsert(foundItems,obj);
 			end
-			tinsert(foundItems,obj);
 		end
 	end
 
