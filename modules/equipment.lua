@@ -97,13 +97,13 @@ local function UpdateInventory()
 	for _, d in pairs(ns.items.inventory)do
 		if d and d.slot~=4 and d.slot~=19 then
 			local obj,_ = CopyTable(d);
-			_, _, _, obj.level = GetItemInfo(d.link);
-			ns.ScanTT.query({type="inventory",slot=d.slot,link=d.link,callback=UpdateInvSlotTooltip});
-			lst[d.slot] = d;
-			if lst.iLevelMin==0 or obj.level<lst.iLevelMin then
+			--_, _, _, obj.level = GetItemInfo(d.link);
+			ns.ScanTT.query(obj,true);
+			lst[d.slot] = obj;
+			if lst.iLevelMin==0 or (obj.level or 0)<lst.iLevelMin then
 				lst.iLevelMin=obj.level;
 			end
-			if obj.level>lst.iLevelMax then
+			if (obj.level or 0)>lst.iLevelMax then
 				lst.iLevelMax=obj.level;
 			end
 		end
@@ -249,13 +249,16 @@ local function createTooltip(tt)
 		tt:AddSeparator();
 		local none,miss=true,false;
 		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do
-			if ns.items.inventory[i] and extendedItemInfos[ns.items.inventory[i].slot] then
+			if ns.items.inventory[i] and inventory[ns.items.inventory[i].slot] then
 				none=false;
 
 				local obj = ns.items.inventory[i];
+				-- nice blizzard. Query heirloom item info's. very unstable/slow...
 				local itemName, _, itemQuality, itemLevel, _, itemType, subType, _, itemEquipLoc, itemIcon, itemPrice = GetItemInfo(obj.link);
-				local itemInfo = extendedItemInfos[obj.slot];
+				local itemInfo = inventory[obj.slot];
 				local tSetItem,setName,enchanted,greenline,upgrades,gems = "","","","","","";
+				itemQuality = itemQuality or itemInfo.quality or "black";
+				itemName = itemName or obj.link:match("%[(.*)%]");
 
 				if ns.profile[name].showNotEnchanted and obj.id~=158075 --[[ hearth of azeroth can't be enchanted ]] and enchantSlots[i] and (tonumber(itemInfo.linkData[1]) or 0)==0 then
 					enchanted=C("red"," #");
