@@ -93,8 +93,8 @@ function note_edit(self,index)
 	editor:Show();
 end
 
-local function note_del(self)
-	local index = self.note_index;
+local function note_del(self,index)
+	local index = index or self.note_index;
 	if not index then
 		return
 	end
