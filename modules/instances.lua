@@ -416,6 +416,7 @@ ns.modules[name1] = module1;
 ns.modules[name2] = module2;
 
 
+--@do-not-package@
 --[[
 	-- dungeons
 	{"IL",  938, 184, all=0},  -- End Time
@@ -843,5 +844,6 @@ ns.modules[name2] = module2;
 	d::262::深幽泥沼
 	d::271::安卡罕特：古王國
 --]]
+--@end-do-not-package@
 
 
