@@ -113,17 +113,29 @@ local function createTooltip(tt)
 	for i=1, #events do
 		ev = events[i];
 		if ns.profile[name]["event"..i.."tt"] then
-			local numNext = ns.profile[name].numNext;
+			local numNext,numZones = ns.profile[name].numNext+1,#ev.zoneNames;
 			tt:AddSeparator(4,0,0,0,0);
 			tt:SetCell(tt:AddLine(),1,C("ltblue",ev.label),nil,"LEFT",0);
 			tt:AddSeparator();
-			local nx,timeStart,timeColor,zoneColor,zoneStr,timeStrType = 1,ev.lastStart,"dkgreen","ltgreen",ev.zoneNames[ev.lastStartZone],1;
+			local nx,timeStart,timeColor,zoneColor,zoneStr,timeStrType = 2,ev.lastStart,"dkgreen","ltgreen",ev.zoneNames[ev.lastStartZone],1;
 			if ev.lastStartEnds < currentTime then
-				nx,numNext,timeStart,timeColor,zoneColor,zoneStr,timeStrType = 2,numNext+1,timeStart+ev.interval,"dkyellow","ltyellow",ev.zoneNames[ev.lastStartZone+1],0;
+				local zoneIndex = (ev.lastStartZone+1) % numZones;
+				if zoneIndex==0 then
+					zoneIndex = numZones;
+				elseif zoneIndex>numZones then
+					zoneIndex = 1;
+				end
+				nx,numNext,timeStart,timeColor,zoneColor,zoneStr,timeStrType = 3,numNext+1,timeStart+ev.interval,"dkyellow","ltyellow",ev.zoneNames[zoneIndex],0;
 			end
 			AddLine(tt,currentTime,timeStart,ev.length,zoneStr,timeStrType,timeColor,zoneColor);
-			for n=nx, numNext --[[nx==2 and 4 or 3]] do
-				AddLine(tt,currentTime,ev.lastStart + (n*ev.interval),ev.length,ev.zoneNames[((ev.numStarts + n) % #ev.zoneNames)+1],2,"gray","ltgray");
+			for n=nx, numNext do
+				local zoneIndex = (ev.numStarts+n) % numZones;
+				if zoneIndex==0 then
+					zoneIndex = numZones;
+				elseif zoneIndex>numZones then
+					zoneIndex = 1;
+				end
+				AddLine(tt,currentTime,ev.lastStart + (n*ev.interval),ev.length,ev.zoneNames[zoneIndex],2,"gray","ltgray");
 			end
 			empty = false;
 		end
@@ -210,7 +222,7 @@ function module.onevent(self,event,...)
 			end
 		end
 		updateInvasionsList();
-		C_Timer.After(5,updateBroker);
+		C_Timer.After(2,updateBroker);
 	end
 end
 
