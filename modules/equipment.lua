@@ -271,7 +271,7 @@ local function createTooltip(tt)
 				end
 
 				if ns.profile[name].showSetName and itemInfo.setname then
-					setName=" "..C("dkgreen",more.setname);
+					setName=" "..C("dkgreen",itemInfo.setname);
 				end
 
 				if(ns.profile[name].showGreenText and itemInfo.lines and type(itemInfo.lines[2])=="string" and itemInfo.lines[2]:find("\124"))then
