@@ -43,42 +43,42 @@ local function UpdateStatus(event)
 	if ns.toon.mail==nil then
 		ns.toon.mail = { new={}, stored={} };
 	end
-	if ns.toon.mail.stored2==nil then
-		ns.toon.mail.stored2={};
-	end
 
 	local mailNew, _time = HasNewMail(), time();
 	local sender,daysLeft,dt,ht,_;
 	local returns,mailState,next1,next2,next3,tmp = (99*86400),0;
-	local charDB_mail = ns.toon.mail;
 
 	if (_G.MailFrame:IsShown()) or (event=="MAIL_CLOSED") then
-		charDB_mail.num, charDB_mail.total = GetInboxNumItems();
-		charDB_mail.num, charDB_mail.total = charDB_mail.num or 0, charDB_mail.total or 0;
-		wipe(charDB_mail.stored);
-		for i=1, charDB_mail.num do
+		ns.toon.mail.num, ns.toon.mail.total = GetInboxNumItems();
+		ns.toon.mail.num, ns.toon.mail.total = ns.toon.mail.num or 0, ns.toon.mail.total or 0;
+		wipe(ns.toon.mail.stored);
+		for i=1, ns.toon.mail.num do
 			_, _, sender_realm, _, _, _, daysLeft = GetInboxHeaderInfo(i);
 			if sender_realm then
 				local returns = _time + floor(daysLeft * 86400);
 				if not sender_realm:find("%-") then
 					sender_realm = sender_realm.."-"..ns.realm_short;
 				end
-				tinsert(charDB_mail.stored,sender_realm..";"..returns);
+				tinsert(ns.toon.mail.stored,sender_realm..";"..returns);
 			end
 		end
-		wipe(charDB_mail.new);
+		wipe(ns.toon.mail.new);
 	else
 		local names = {};
-		for i=1, #charDB_mail.stored do
-			local sender = strsplit(";",charDB_mail.stored[i]);
-			names[sender]=true;
-		end
-		for i=1, #charDB_mail.new do
-			if type(charDB_mail.new[i])=="string" then
-				local sender = strsplit(";",charDB_mail.new[i]);
+		if ns.toon.mail.stored then
+			for i=1, #ns.toon.mail.stored do
+				local sender = strsplit(";",ns.toon.mail.stored[i]);
 				names[sender]=true;
-			else
-				charDB_mail.new[i] = nil;
+			end
+		end
+		if ns.toon.mail.new then
+			for i=1, #ns.toon.mail.new do
+				if type(ns.toon.mail.new[i])=="string" then
+					local sender = strsplit(";",ns.toon.mail.new[i]);
+					names[sender]=true;
+				else
+					ns.toon.mail.new[i] = nil;
+				end
 			end
 		end
 		local latest = {GetLatestThreeSenders()};
@@ -86,7 +86,7 @@ local function UpdateStatus(event)
 			if type(latest[i])=="string" then
 				latest[i] = ns.realmCheckOrAppend(latest[i]);
 				if not names[latest[i]] then
-					tinsert(charDB_mail.new,latest[i]);
+					tinsert(ns.toon.mail.new,latest[i]);
 				end
 			end
 		end
@@ -97,7 +97,7 @@ local function UpdateStatus(event)
 		local toonName = Broker_Everything_CharacterDB.order[i];
 		if toonName and toonName~=ns.player.name_realm then
 			local mail = Broker_Everything_CharacterDB[toonName].mail;
-			if #mail.new>0 or #mail.stored>0 then
+			if (mail.new and #mail.new>0) or (mail.stored and #mail.stored>0) then
 				mailStored = true;
 			end
 		end
@@ -105,7 +105,7 @@ local function UpdateStatus(event)
 
 	local icon,text,obj = I(name), L["No Mail"],ns.LDB:GetDataObjectByName(module.ldbName);
 
-	if #charDB_mail.new>0 then
+	if #ns.toon.mail.new>0 then
 		icon, text = I(name.."_new"), C("green",L["New mail"]);
 	elseif mailStored then
 		icon, text = I(name.."_stored"), C("yellow",L["Stored mails"]);
@@ -122,7 +122,7 @@ local function AddStoredMailsLine(tt,player)
 		local counter,key,oldest={stored=0,new=0,returned=0},{"stored","new"};
 
 		for k=1, #key do
-			if #v.mail[key[k]]>0 then
+			if v.mail[key[k]] and #v.mail[key[k]]>0 then
 				for i=1, #v.mail[key[k]] do
 					local sender,returns = strsplit(";",v.mail[key[k]][i]);
 					returns = tonumber(returns);
