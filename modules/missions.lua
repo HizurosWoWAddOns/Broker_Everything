@@ -9,10 +9,17 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Missions" -- GARRISON_MISSIONS L["ModDesc-Missions"]
-local ttName, ttColumns,ttColumns_default, tt, module = name.."TT",6,6
-local missions,started = {},{};
+local ttName, ttColumns,ttColumns_default,ttColumnsMin, tt, module = name.."TT",6,6,2
+local missions,started,counter = {},{},{};
 local qualities = {"white","ff1eaa00","ff0070dd","ffa335ee","red"};
 local garrLevel,syLevel,ohLevel = 0,0,0;
+local expansions = {
+	-- {<expansionIndex>,<LE_FOLLOWER_TYPE*>,<LE_GARRISON_TYPE_*>,<function:chkAvailable>}
+	{index=5, typeStr="followers",		label=GARRISON_FOLLOWERS,			ftype=LE_FOLLOWER_TYPE_GARRISON_6_0, gtype=LE_GARRISON_TYPE_6_0, levelFnc=C_Garrison.GetGarrisonInfo},
+	{index=5, typeStr="ships", 			label=GARRISON_SHIPYARD_FOLLOWERS,	ftype=LE_FOLLOWER_TYPE_SHIPYARD_6_2, gtype=LE_GARRISON_TYPE_6_0, levelFnc=function() return (C_Garrison.GetOwnedBuildingInfoAbbrev(98) or 204)-204; end},
+	{index=6, typeStr="champions",		label=FOLLOWERLIST_LABEL_CHAMPIONS,	ftype=LE_FOLLOWER_TYPE_GARRISON_7_0, gtype=LE_GARRISON_TYPE_7_0, levelFnc=C_Garrison.GetGarrisonInfo},
+	{index=7, typeStr="champions_bfa",	label=FOLLOWERLIST_LABEL_CHAMPIONS,	ftype=LE_FOLLOWER_TYPE_GARRISON_8_0, gtype=LE_GARRISON_TYPE_8_0, levelFnc=C_Garrison.GetGarrisonInfo},
+};
 
 
 -- register icon names and default files --
@@ -28,102 +35,66 @@ local function stripTime(str,tag)
 	local h, m, s = str:match("(%d+)");
 end
 
+local function Counter(missions)
+	local c,t = {inprogress=0, completed=0},time();
+	for i=1, #missions do
+		local k = missions[i]-t>0 and "inprogress" or "completed";
+		c[k] = c[k] + 1;
+	end
+	return c;
+end
+
+local function updateBroker()
+	(ns.LDB:GetDataObjectByName(module.ldbName) or {}).text = ("%s/%s/%s"):format(C("ltblue",counter.completed),C("yellow",counter.inprogress),C("green",counter.available));
+end
+
+local function updateMissions()
+	local t = time();
+	counter={completed=0,inprogress=0,available=0};
+	for e=1, #expansions do
+		local exp = expansions[e];
+		if exp.gtype and exp.ftype then
+			exp.level = exp.levelFnc(exp.gtype) or 0;
+			ns.tablePath(ns.toon,"missions",exp.typeStr);
+			ns.toon.missions = {};
+			missions[exp.typeStr] = {inprogress={},available={},completed={}};
+			local m=missions[exp.typeStr];
+			local tmp = C_Garrison.GetInProgressMissions(exp.ftype) or {};
+			for i=1, #tmp do
+				tinsert(m[tmp[i].missionEndTime-t>0 and "inprogress" or "completed"],tmp[i]);
+				tinsert(ns.toon.missions,tmp[i].missionEndTime);
+			end
+			m.available = C_Garrison.GetAvailableMissions(exp.ftype) or {};
+			for i=1, #m.available do
+				_,_,_,_,_,_,m.available[i].isExhausting = C_Garrison.GetMissionInfo(m.available[i].missionID);
+			end
+			counter.completed=counter.completed+#m.completed;
+			counter.inprogress=counter.inprogress+#m.inprogress;
+			counter.available=counter.available+#m.available;
+		end
+	end
+	updateBroker();
+end
+
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 	if tt.lines~=nil then tt:Clear(); end
-	local labels,colors,l,c = {"Missions completed","Missions in progress","Missions available"},{"ltblue","yellow","green"};
+
+	local act,l,c = {};
 	local pipe = C("gray","   ||   ");
 	tt:AddHeader(C("dkyellow",GARRISON_MISSIONS))
 
-	if ns.profile[name].showChars then
-		tt:AddSeparator(4,0,0,0,0)
-		local _ttColumns = 1;
-		if ns.profile[name].showMissionLevel then         _ttColumns=_ttColumns+1; end
-		if ns.profile[name].showMissionType then          _ttColumns=_ttColumns+1; end
-		if ns.profile[name].showMissionItemLevel then     _ttColumns=_ttColumns+1; end
-		if ns.profile[name].showMissionFollowerSlots then _ttColumns=_ttColumns+1; end
+	local show = {
+		{"completed", "Missions completed",  "ltblue",ns.profile[name].showReady},
+		{"inprogress","Missions in progress","yellow",ns.profile[name].showActive},
+		{"available", "Missions available",  "green", ns.profile[name].showAvailable},
+	};
 
-		local l=tt:AddLine( C("ltblue",CHARACTER) ); -- 1
-		if(IsShiftKeyDown())then
-			tt:SetCell(l,2,C("ltblue",GARRISON_FOLLOWERS)..pipe..C("ltblue",GARRISON_SHIPYARD_FOLLOWERS)..( ns.build>700 and pipe..C("ltblue",FOLLOWERLIST_LABEL_CHAMPIONS) or "" ).."|n"..
-				GOAL_COMPLETED.." - "..C("green",L["next"]).." / ".. C("yellow",SPELL_TARGET_TYPE12_DESC),nil, "RIGHT", _ttColumns);
-		else
-			tt:SetCell(l,2,C("ltblue",GARRISON_FOLLOWERS)..pipe..C("ltblue",GARRISON_SHIPYARD_FOLLOWERS)..( ns.build>700 and pipe..C("ltblue",FOLLOWERLIST_LABEL_CHAMPIONS) or "" ).."|n"..
-				C("green",GOAL_COMPLETED).." / ".. C("yellow",L["In progress"]),nil, "RIGHT", _ttColumns);
-		end
-		tt:AddSeparator();
-		local t=time();
-		for i=1, #Broker_Everything_CharacterDB.order do
-			local name_realm = Broker_Everything_CharacterDB.order[i];
-			local v,_ = Broker_Everything_CharacterDB[name_realm];
-			local charName,realm=strsplit("-",name_realm,2);
-			if v.missions and v.missions.followers and ns.showThisChar(name,realm,v.faction) then
-				local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-				local l=tt:AddLine(C(v.class,ns.scm(charName)) .. ns.showRealmName(name,realm) .. faction );
-				local get = function(Type)
-					local c,p,n,l=0,0,0,0; -- completed, progress, time next, time last
-					if type(v.missions[Type])=="table" then
-						for _,eT in ipairs(v.missions[Type])do
-							if(eT<=t)then
-								c=c+1;
-							else
-								p=p+1;
-								if n==0 or (n>0 and eT<n) then n=eT; end
-								if eT>l then l=eT; end
-							end
-						end
-					end
-					return c,p,n,l;
-				end;
-
-				local fm_completed, fm_progress, fm_next, fm_all = get("followers");
-				local sm_completed, sm_progress, sm_next, sm_all = get("ships");
-				local cm_completed, cm_progress, cm_next, cm_all = 0,0,0,0;
-				if ns.build>700 then
-					  cm_completed, cm_progress, cm_next, cm_all = get("champions");
-				end
-
-				if IsShiftKeyDown() then
-					tt:SetCell(l,2,                    C("ltgray", GARRISON_FOLLOWERS)           .. " " ..C("green", fm_next==0 and "−" or SecondsToTime(fm_next-t) ).." / "..C("yellow",fm_all==0 and "−" or SecondsToTime(fm_all-t))..
-						"|n" ..                        C("ltgray", GARRISON_SHIPYARD_FOLLOWERS)  .. " " ..C("green", sm_next==0 and "−" or SecondsToTime(sm_next-t) ).." / "..C("yellow",sm_all==0 and "−" or SecondsToTime(sm_all-t))..
-						(ns.build>700 and "|n" .. C("ltgray", FOLLOWERLIST_LABEL_CHAMPIONS) .. " " ..C("green", cm_next==0 and "−" or SecondsToTime(cm_next-t) ).." / "..C("yellow",cm_all==0 and "−" or SecondsToTime(cm_all-t)) or ""),
-						nil,"RIGHT",_ttColumns);
-				else
-					tt:SetCell(l,2,                   C("green",fm_completed==0 and "−" or fm_completed) .." / ".. C("yellow",fm_progress==0 and "−" or fm_progress)..
-						pipe ..                       C("green",sm_completed==0 and "−" or sm_completed) .." / ".. C("yellow",sm_progress==0 and "−" or sm_progress)..
-						(ns.build>700 and pipe.. C("green",cm_completed==0 and "−" or cm_completed) .." / ".. C("yellow",cm_progress==0 and "−" or cm_progress) or ""),
-						nil,"RIGHT",_ttColumns);
-				end
-
-				if(name_realm==ns.player.name_realm)then
-					tt:SetLineColor(l, 0.1, 0.3, 0.6);
-				end
-				if IsShiftKeyDown() then
-					tt:AddSeparator(1,.7,.7,.7,.8);
-				end
-			end
-		end
-	end
-
-	local show = {ns.profile[name].showReady,ns.profile[name].showActive,ns.profile[name].showAvailable};
-	local lst = {{"followers",GARRISON_FOLLOWERS}};
-	local title = true;
-	local subTitle = false;
-	if syLevel>0 then
-		tinsert(lst,{"ships",GARRISON_SHIPYARD_FOLLOWERS});
-		subTitle = true;
-	end
-	if ohLevel>0 then
-		tinsert(lst,1,{"champions",FOLLOWERLIST_LABEL_CHAMPIONS});
-		subTitle = true;
-	end
-
-	local act = {};
-	for mI,aType in ipairs({"completed","inprogress","available"}) do
-		if show[mI]==true then
+	for i=1, #show do
+		if show[i][4] then
 			tt:AddSeparator(4,0,0,0,0);
 			local duration_title = aType=="inprogress" and "Duration" or "Time";
-			local count,c,l=0,2,tt:AddLine(C(colors[mI],L[labels[mI]]));
+			local count,c,l=0,2,tt:AddLine(C(show[i][3],L[show[i][2]]));
 			if ns.profile[name].showMissionLevel then         tt:SetCell(l,c,C("ltblue",LEVEL),nil,"RIGHT");          c=c+1; end
 			if ns.profile[name].showMissionType then          tt:SetCell(l,c,C("ltblue",TYPE),nil,"LEFT");            c=c+1; end
 			if ns.profile[name].showMissionItemLevel then     tt:SetCell(l,c,C("ltblue",L["iLevel"]),nil,"CENTER");   c=c+1; end
@@ -131,12 +102,14 @@ local function createTooltip(tt)
 			tt:SetCell(l,c,C("ltblue",L[duration_title]),nil,"RIGHT");
 			tt:AddSeparator();
 
-			for _,fType in ipairs(lst)do -- follower types
-				local Type,Label = unpack(fType);
-				if missions[Type] and missions[Type][aType] and #missions[Type][aType]>0 then
-					act[aType]=true;
-					tt:AddLine(C("ltgray",Label));
-					for mi, md in ipairs(missions[Type][aType]) do
+			for e=1, #expansions do
+				local exp = expansions[e];
+				if missions and missions[exp.typeStr] and missions[exp.typeStr][show[i][1]] and #missions[exp.typeStr][show[i][1]]>0 then
+					local tbl = missions[exp.typeStr][show[i][1]];
+					-- expansion header
+					tt:SetCell(tt:AddLine(),1,C("ltgray",exp.label.." (".._G["EXPANSION_NAME"..exp.index]..")"),nil,"LEFT",0);
+					for i=1, #tbl do
+						local md=tbl[i];
 						local duration_str = md["duration"];
 						if (duration_title ~= "Time") then
 							duration_str = SecondsToTime(md["missionEndTime"]-time());
@@ -182,84 +155,52 @@ local function createTooltip(tt)
 								tt:AddSeparator()
 							end
 						end
-					end
-					count=count+1;
-				end
-			end
 
+					end -- for #tbl
+					count=count+1;
+				end -- if #tbl>0
+			end -- for #expansions
 			if count==0 then
 				tt:AddLine(C("gray",L["No missions found..."]));
 			end
+		end -- if show[2]
+	end -- for #show
+
+	if ns.profile[name].showChars then
+		tt:AddSeparator(4,0,0,0,0);
+		local n,t=1,time();
+		local l=tt:AddLine(C("ltblue",CHARACTER));
+		tt:SetCell(l,2,
+			(IsShiftKeyDown() and GOAL_COMPLETED.." - "..C("green",L["next"]).." / "..C("yellow",SPELL_TARGET_TYPE12_DESC) or C("green",GOAL_COMPLETED).." / "..C("yellow",L["In progress"])),
+			nil,"RIGHT",0);
+		tt:AddSeparator();
+		for i=1, #Broker_Everything_CharacterDB.order do
+			local toon_realm = Broker_Everything_CharacterDB.order[i];
+			local toon = Broker_Everything_CharacterDB[toon_realm];
+			if toon_realm~=ns.player.name_realm and toon.missions and #toon.missions>0 then
+				local toonName,toonRealm = strsplit("-",toon_realm,2);
+				local num = Counter(toon.missions);
+				local l = tt:AddLine(C(toon.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. (toon.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..toon.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "") );
+				tt:SetCell(l,2, C("green",num.completed).."/"..C("yellow",num.inprogress),nil,"RIGHT",0);
+				n=n+1;
+			end
+		end
+		if n==0 then
+			tt:SetCell(tt:AddLine(),1,C("ltgray",L["No missions found..."]),nil,nil,0);
 		end
 	end
 
-	if (ns.profile.GeneralOptions.showHints) then
+	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0)
 		if act.completed or act.inprogress then
-			if(ns.profile[name].showChars)then
-				ns.AddSpannedLine(tt,C("copper",L["Hold shift"]).." || "..C("green",L["Show time in characters list"]));
-			end
-			if(ns.profile[name].showReady or ns.profile[name].showActive)then
+			if ns.profile[name].showReady or ns.profile[name].showActive then
 				ns.AddSpannedLine(tt,C("copper",L["Hold shift"]).." || "..C("green",L["Show followers on missions"]));
 			end
 		end
 		ns.ClickOpts.ttAddHints(tt,name);
 	end
+
 	ns.roundupTooltip(tt);
-end
-
-local function update()
-	-- LE_FOLLOWER_TYPE_GARRISON_6_0 // LE_FOLLOWER_TYPE_SHIPYARD_6_2 // LE_FOLLOWER_TYPE_GARRISON_7_0
-	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
-	local completed, inprogress, available = 0,0,0;
-
-	for _,Type in ipairs({"followers","ships","champions"})do
-		local followerType,Table;
-
-		if Type=="followers" and LE_FOLLOWER_TYPE_GARRISON_6_0 then
-			garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0;
-			followerType = LE_FOLLOWER_TYPE_GARRISON_6_0;
-		elseif Type=="ships" and LE_FOLLOWER_TYPE_SHIPYARD_6_2 then
-			local lvl = C_Garrison.GetOwnedBuildingInfoAbbrev(98);
-			syLevel = lvl~=nil and (lvl - 204) or 0;
-			followerType = LE_FOLLOWER_TYPE_SHIPYARD_6_2;
-		elseif Type=="champions" and LE_FOLLOWER_TYPE_GARRISON_7_0 then
-			ohLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
-			followerType = LE_FOLLOWER_TYPE_GARRISON_7_0;
-		end
-
-		if followerType then
-			local _time,_ = time();
-			local tmp = C_Garrison.GetInProgressMissions(followerType) or {};
-			local charDB = ns.toon;
-			if charDB.missions==nil or (charDB.missions~=nil and #charDB.missions>0) then
-				charDB.missions = {};
-			end
-			charDB.missions[Type]={}; -- wipe
-
-			missions[Type] = {inprogress={},available={},completed={}};
-			missions[Type].available = C_Garrison.GetAvailableMissions(followerType) or {};
-			missions[Type].inprogress,missions[Type].completed = {},{};
-
-			for i,v in ipairs(tmp) do
-				if(v.missionEndTime-_time>0)then
-					tinsert(missions[Type].inprogress,v);
-				else
-					tinsert(missions[Type].completed,v);
-				end
-				tinsert(charDB.missions[Type],v.missionEndTime);
-			end
-
-			for i,v in ipairs(missions[Type].available) do
-				_,_,_,_,_,_,missions[Type].available[i].isExhausting = C_Garrison.GetMissionInfo(v.missionID);
-			end
-
-			completed=completed+#missions[Type].completed;
-			inprogress=inprogress+#missions[Type].inprogress;
-			available=available+#missions[Type].available;
-		end
-	end
-	obj.text = ("%s/%s/%s"):format(C("ltblue",completed),C("yellow",inprogress),C("green",available));
 end
 
 
@@ -330,8 +271,27 @@ end
 function module.onevent(self,event,arg1)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
-	else
-		update();
+	elseif event=="PLAYER_LOGIN" then
+		if ns.toon.missions==nil then
+			ns.toon.missions={};
+		end
+		for i=1, #Broker_Everything_CharacterDB.order do
+			local toon = Broker_Everything_CharacterDB.order[i];
+			local missions,tmp = Broker_Everything_CharacterDB[toon].missions or {},{};
+			if missions.followers or missions.ships or missions.champions or missions.champions_bfa then
+				local T = {"followers","ships","champions","champions_bfa"};
+				for t=1, 4 do
+					if missions[T[t]] then
+						for i=1, #missions[T[t]] do
+							tinsert(tmp,missions[T[t]][i]);
+						end
+					end
+				end
+				Broker_Everything_CharacterDB[toon].missions = #tmp>0 and tmp or nil;
+			end
+		end
+	elseif ns.eventPlayerEnteredWorld then
+		C_Timer.After(0.314159,updateMissions);
 	end
 end
 
@@ -341,11 +301,11 @@ end
 
 function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	ttColumns=ttColumns_default;
-	if not ns.profile[name].showMissionLevel then         ttColumns=ttColumns-1; end
-	if not ns.profile[name].showMissionType then          ttColumns=ttColumns-1; end
-	if not ns.profile[name].showMissionItemLevel then     ttColumns=ttColumns-1; end
-	if not ns.profile[name].showMissionFollowerSlots then ttColumns=ttColumns-1; end
+	ttColumns=ttColumnsMin;
+	if ns.profile[name].showMissionLevel then         ttColumns=ttColumns+1; end
+	if ns.profile[name].showMissionType then          ttColumns=ttColumns+1; end
+	if ns.profile[name].showMissionItemLevel then     ttColumns=ttColumns+1; end
+	if ns.profile[name].showMissionFollowerSlots then ttColumns=ttColumns+1; end
 	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "LEFT", "CENTER", "CENTER","RIGHT"},{true},{self});
 	createTooltip(tt);
 end

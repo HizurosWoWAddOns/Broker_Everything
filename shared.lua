@@ -759,7 +759,7 @@ do
 	-- note: this new version is a downgrade to reduce memory usage. it is only for detect changes.
 	ns.items = {bags={},inventory={},item={},equipment={}};
 	local slotNames = {"Head","Neck","Shoulder","Shirt","Chest","Waist","Legs","Feet","Wrist","Hands","Finger0","Finger1","Trinket0","Trinket1","Back","MainHand","SecondaryHand","Range","Tabard"};
-	local doUpdate,f = {bags=false,inv=false,idCallback={},ticker=false,tickerLength=0.5,defaultDelay=2.5,delay=false,locked=false},CreateFrame("Frame");
+	local doUpdate,f = {bags=false,inv=false,idCallback={},ticker=false,tickerLength=0.5,defaultDelay=2,delay=false,locked=false},CreateFrame("Frame");
 	local callbacks,hasChanged,IsEnabled = {bags={},inv={},any={},item={},equipment={},prepare={},bagsNum=0,invNum=0,anyNum=0,itemNum=0,equipmentNum=0,prepareNum=0};
 
 	local function doCallbacks(tbl,...)
@@ -955,7 +955,7 @@ do
 			doUpdate.ticker:Cancel();
 			doUpdate.ticker = false;
 			scanner();
-			C_Timer.After(2,doUpdate.unlock);
+			C_Timer.After(1,doUpdate.unlock);
 		end
 	end
 
