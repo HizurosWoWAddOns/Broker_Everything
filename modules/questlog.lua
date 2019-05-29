@@ -24,6 +24,20 @@ local urls = {
 	end
 	--
 }
+local hidePvPQuests = {
+	[54180] = true, -- weekly pvp
+	[44891] = true; -- PvP 2vs2
+	[44908] = true; -- PvP 3vs3
+	[44909] = true; -- PvP battlefield
+}
+local hideEmissaryQuests = {
+	-- legion
+	[42170]=true, [42233]=true, [42234]=true, [42420]=true, [42421]=true,
+	[42422]=true, [43179]=true, [48639]=true, [48641]=true, [48642]=true,
+	-- bfa
+	[50600]=true, [50601]=true, [50599]=true, [50605]=true, [50603]=true,
+	[50598]=true, [50602]=true, [50606]=true, [50604]=true, [50562]=true,
+}
 local Level, Title, Header, Color, Status, Type, ShortType, QuestId, Index, IsHidden, Text = 1,2,3,4,5,6,7,8,9,10,11,12;
 local frequencies = {
 	[LE_QUEST_FREQUENCY_DAILY] = {"*",DAILY},
@@ -40,7 +54,7 @@ local difficulties = {
 	[PLAYER_DIFFICULTY_TIMEWALKER] = {"TW"}
 }
 local _PLAYER_DIFFICULTY6="'"..PLAYER_DIFFICULTY6.."'";
-local questZones,hide = {},{};
+local questZones = {};
 
 StaticPopupDialogs["BE_URL_DIALOG"] = {
 	text = "URL",
@@ -153,7 +167,6 @@ end
 
 local function ttAddLine(obj)
 	assert(type(obj)=="table","object must be a table, got "..type(obj));
-	if hide[obj[QuestId]] then return end
 	local l,c = tt:AddLine();
 	local cell, color,GroupQuest = 1,"red",{};
 
@@ -232,13 +245,6 @@ function createTooltip(tt, update, from)
 	if tt.lines~=nil then tt:Clear(); end
 	tt:SetCell(select(1,tt:AddLine()),1,C("dkyellow",name),tt:GetHeaderFont(),"LEFT",ttColumns)
 	local GroupQuestCount=0;
-
-	wipe(hide);
-	if not ns.profile[name].showPvPWeeklys then
-		hide[44891] = true; -- PvP 2vs2
-		hide[44908] = true; -- PvP 3vs3
-		hide[44909] = true; -- PvP battlefield
-	end
 
 	if sum==0 then
 		tt:AddSeparator();
@@ -422,7 +428,7 @@ function module.onevent(self,event,msg)
 			local q = {GetQuestLogTitle(index)};
 			if q[isHeader]==true then
 				header = q[title];
-			elseif header then
+			elseif header and not (ns.profile[name].showPvPWeeklys and hidePvPQuests[q[questID]]) and not (ns.profile[name].showWorldQuests and hideEmissaryQuests[q[questID]]) then
 				local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(q[questID]);
 				local tagNameLong = tagName;
 				q.text,q.objectives = GetQuestLogQuestText(index);
@@ -469,11 +475,8 @@ function module.onevent(self,event,msg)
 				end
 				local mapId,mapName;
 				if not questZones[q[questID]] and not WorldMapFrame:IsShown() then
-					mapId = securecall(GetQuestUiMapID and "GetQuestUiMapID" or "GetQuestWorldMapAreaID",q[questID]); -- TODO: BfA - removed function
-					--mapName = GetMapNameByID(mapId); -- TODO: BfA - removed function
-					if GetMapNameByID then -- pre BfA
-						mapName = GetMapNameByID(mapId);
-					else
+					mapId = GetQuestUiMapID(q[questID]);
+					if mapId then
 						local mapInfo = C_Map.GetMapInfo(mapId);
 						if mapInfo then
 							mapName = mapInfo.name;
