@@ -178,9 +178,17 @@ function module.options()
 		tooltip={},
 		misc={
 			numNext = { type="range", order=1, name=L["InvasionsNumNext"], --[[desc=L["InvasionsNumNextDesc"],]] min=1, step=1, max=20, width="double" },
-			timerRegion = { type="select", order=2, name=L["InvasionsTimerRegion"], --[[desc=L["InvasionsTimerRegionDesc"],]] values={[0]=L["InvasionsTimerRegionAuto"]:format(regionLabel[regionIndex[region]])}, width="double" },
+			timerRegion = { type="select", order=2, name=L["InvasionsTimerRegion"], --[[desc=L["InvasionsTimerRegionDesc"],]] values={}, width="double" },
 		}
 	};
+	if region and regionIndex[region] and regionLabel[regionIndex[region]] then
+		tbl.misc.timerRegion.values[0] = L["InvasionsTimerRegionAuto"]:format(regionLabel[regionIndex[region]]);
+	else
+		tbl.misc.timerRegion.values[0] = L["InvasionsTimerRegionAuto"]:format(regionLabel[1]);
+		C_Timer.After(10,function()
+			error("(Broker_Everything) Region detection failed. Please report on curseforge [regionIndex="..GetCurrentRegion()..",regionCode="..tostring(region)..",LibRealmInfo="..tostring(ns.LRI:GetCurrentRegion()).."]");
+		end);
+	end
 	for i=1, #regionCode do
 		tbl.misc.timerRegion.values[i] = regionLabel[i];
 	end
@@ -215,6 +223,9 @@ function module.onevent(self,event,...)
 			updateBroker();
 		end
 	elseif event=="PLAYER_LOGIN" then
+--@do-not-package@
+		ns.profileSilenceFIXME=true;
+--@end-do-not-package@
 		if ns.profile[name].exp6tt then
 			for new,old in pairs({event1bb="exp6bb",event2bb="exp7bb",event1tt="exp6tt",event2tt="exp7tt"})do
 				ns.profile[name][new] = ns.profile[name][old];
