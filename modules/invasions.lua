@@ -9,17 +9,19 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Invasions"; -- L["ModDesc-Invasions"]
 local ttName, ttColumns, tt, module = name.."TT", 3;
-local regionCode,regionIndex,region,timeStamp = {"NA","KO","EU","TW","CN"},{NA=1,KO=2,EU=3,TW=4,CN=5};
-local regionLabel = {L["North america / Brazil / Oceania"],L["Korea"],L["Europe / Russia"],L["Taiwan"],L["China"]};
+local regionLabel,region,timeStamp = {L["North america / Brazil / Oceania"],L["Korea"],L["Europe / Russia"],L["Taiwan"],L["China"]};
 local events = {--- 1491375600000
-	{ enabled=true, icon=nil, label=SPLASH_LEGION_PREPATCH_FEATURE1_TITLE.." ("..EXPANSION_NAME6..")", startEU=1491375600, startNA=1491337800, interval=66600, length=21600, achievement=11544, zoneOrder={641,634,630,650,634,650,641,630,634,641,650,630} },
-	{ enabled=true, icon=nil, label=SPLASH_BATTLEFORAZEROTH_8_1_FEATURE2_TITLE.." ("..EXPANSION_NAME7..")", startEU=1544580000, startNA=1544612400, interval=68400, length=25200, achievement=13283, zoneOrder={942,864,896,862,895,863} },
+	{ enabled=true, icon=nil, label=SPLASH_LEGION_PREPATCH_FEATURE1_TITLE.." ("..EXPANSION_NAME6..")", start1=1491337800, start3=1491375600, interval=66600, length=21600, achievement=11544, zoneOrder={641,634,630,650,634,650,641,630,634,641,650,630} },
+	{ enabled=true, icon=nil, label=SPLASH_BATTLEFORAZEROTH_8_1_FEATURE2_TITLE.." ("..EXPANSION_NAME7..")", start1=1544612400, start3=1544580000, interval=68400, length=25200, achievement=13283, zoneOrder={942,864,896,862,895,863} },
 }
 
 do
 	region = ns.LRI:GetCurrentRegion();
+	if region then
+		region = ({NA=1,US=1,KO=2,EU=3,TW=4,CN=5})[region];
+	end
 	if not region then
-		region = regionCode[GetCurrentRegion()];
+		region = GetCurrentRegion() or 1;
 	end
 end
 
@@ -38,9 +40,7 @@ local function updateInvasionsList(noTimer)
 		if not ev.start then
 			timerRegion = ns.profile[name].timerRegion;
 			if timerRegion==0 then
-				timerRegion = (ev["start"..region] and region) or "NA";
-			else
-				timerRegion = regionCode[timerRegion];
+				timerRegion = (ev["start"..region] and region) or 1;
 			end
 			ev.start = ev["start"..timerRegion];
 		end
@@ -175,22 +175,21 @@ ns.ClickOpts.addDefaults(module,"menu","_RIGHT");
 function module.options()
 	local tbl = {
 		broker={},
-		tooltip={},
+		tooltip={
+			numNext = { type="range", order=-1, name=L["InvasionsNumNext"], --[[desc=L["InvasionsNumNextDesc"],]] min=1, step=1, max=20, width="full" },
+		},
 		misc={
-			numNext = { type="range", order=1, name=L["InvasionsNumNext"], --[[desc=L["InvasionsNumNextDesc"],]] min=1, step=1, max=20, width="double" },
-			timerRegion = { type="select", order=2, name=L["InvasionsTimerRegion"], --[[desc=L["InvasionsTimerRegionDesc"],]] values={}, width="double" },
+			timerRegion = { type="select", order=2, name=L["InvasionsTimerRegion"], --[[desc=L["InvasionsTimerRegionDesc"],]] values={}, width="full" },
 		}
 	};
-	if region and regionIndex[region] and regionLabel[regionIndex[region]] then
-		tbl.misc.timerRegion.values[0] = L["InvasionsTimerRegionAuto"]:format(regionLabel[regionIndex[region]]);
+	if region then
+		tbl.misc.timerRegion.values[0] = L["InvasionsTimerRegionAuto"]:format(L["RegionLabel"..region]);
 	else
-		tbl.misc.timerRegion.values[0] = L["InvasionsTimerRegionAuto"]:format(regionLabel[1]);
-		C_Timer.After(10,function()
-			error("(Broker_Everything) Region detection failed. Please report on curseforge [regionIndex="..GetCurrentRegion()..",regionCode="..tostring(region)..",LibRealmInfo="..tostring(ns.LRI:GetCurrentRegion()).."]");
-		end);
+		tbl.misc.timerRegion.values[0] = L["InvasionsTimerRegionAuto"]:format(L["RegionLabel1"]);
+		region = 1;
 	end
-	for i=1, #regionCode do
-		tbl.misc.timerRegion.values[i] = regionLabel[i];
+	for i=1, 5 do
+		tbl.misc.timerRegion.values[i] = L["RegionLabel"..i];
 	end
 	for i=1, #events do
 		tbl.broker["event"..i.."bb"] = { type="toggle", order=i, name=events[i].label, desc=L["InvasionsBBDesc"] };
