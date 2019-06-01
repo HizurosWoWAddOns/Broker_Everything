@@ -11,10 +11,10 @@ local name = "Currency"; -- CURRENCY L["ModDesc-Currency"]
 local ttName,ttColumns,tt,tt2,module = name.."TT",5;
 local currencies,currencySession,faction = {},{},UnitFactionGroup("player");
 local BrokerPlacesMax,createTooltip = 4;
-local Currencies = {};
+local Currencies,CurrenciesHorde = {},{};
 local headers = {
-	HIDDEN_CURRENCIES = "Hidden Currencies",
-	DUNGEON_AND_RAID = "Dungeon and Raid",
+	HIDDEN_CURRENCIES = "Hidden currencies", -- L["Hidden currencies"]
+	DUNGEON_AND_RAID = "Dungeon and Raid", -- L["Dungeons and Raids"]
 	PLAYER_V_PLAYER = PLAYER_V_PLAYER,
 	MISCELLANEOUS = MISCELLANEOUS,
 }
@@ -63,6 +63,9 @@ local function resetCurrencySession()
 	local _
 	for _,id in ipairs(Currencies)do
 		if tonumber(id) then
+			if faction=="Horde" and CurrenciesHorde[id] then
+				id = CurrenciesHorde[id];
+			end
 			_, currencySession[id] = GetCurrencyInfo(id);
 		end
 	end
@@ -77,6 +80,9 @@ local function updateBroker()
 	end
 	for i, id in ipairs(ns.profile[name].currenciesInTitle) do
 		if tonumber(id) then
+			if faction=="Horde" and CurrenciesHorde[id] then
+				id = CurrenciesHorde[id];
+			end
 			local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(id);
 			if isDiscovered then
 				local str = ns.FormatLargeNumber(name,count);
@@ -167,7 +173,11 @@ function createTooltip(tt,update)
 			end
 			tt:SetLineScript(l,"OnMouseUp", toggleCurrencyHeader,Currencies[i]);
 		elseif not parentIsCollapsed then
-			local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(Currencies[i]);
+			local currencyId = Currencies[i];
+			if faction=="Horde" and CurrenciesHorde[currencyId] then
+				currencyId = CurrenciesHorde[currencyId];
+			end
+			local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(currencyId);
 			if Name~="" and isDiscovered then
 				local str = ns.FormatLargeNumber(name,count,true);
 
@@ -196,7 +206,7 @@ function createTooltip(tt,update)
 				-- show currency id
 				local id = "";
 				if ns.profile[name].showIDs then
-					id = C("gray"," ("..Currencies[i]..")");
+					id = C("gray"," ("..currencyId..")");
 				end
 
 				local l = tt:AddLine(
@@ -205,8 +215,8 @@ function createTooltip(tt,update)
 				);
 
 				-- session earn/loss
-				if ns.profile[name].showSession and currencySession[Currencies[i]] then
-					local color,num = false,count-currencySession[Currencies[i]];
+				if ns.profile[name].showSession and currencySession[currencyId] then
+					local color,num = false,count-currencySession[currencyId];
 					if num>0 then
 						color,num = "ltgreen","+"..num;
 					elseif num<0 then
@@ -216,7 +226,7 @@ function createTooltip(tt,update)
 						tt:SetCell(l,3,C(color,num));
 					end
 				end
-				tt:SetLineScript(l, "OnEnter", tooltip2Show, Currencies[i]);
+				tt:SetLineScript(l, "OnEnter", tooltip2Show, currencyId);
 				tt:SetLineScript(l, "OnLeave", tooltip2Hide);
 				empty = false;
 			end
@@ -231,6 +241,7 @@ function createTooltip(tt,update)
 	ns.roundupTooltip(tt);
 end
 
+local aceValuesCurrencyOrder = {};
 local function AceOptOnBroker(info,value)
 	local place=tonumber((info[#info]:gsub("currenciesInTitle","")));
 	if value~=nil then
@@ -238,28 +249,36 @@ local function AceOptOnBroker(info,value)
 		id = tonumber(id);
 		if id then
 			ns.profile[name].currenciesInTitle[place] = id;
---@do-not-package@
-		else
-			ns.debug(name,info[#info],place,value,id);
---@end-do-not-package@
 		end
+		module.onevent(module.eventFrame,"BE_UPDATE_CFG",info[#info]);
 	end
-	return ("%05d"):format(ns.profile[name].currenciesInTitle[place]);
+	local id = ("%05d"):format(ns.profile[name].currenciesInTitle[place]);
+	return aceValuesCurrencyOrder[id]..":"..id;
 end
 
 local function AceOptOnBrokerValues(info)
 	local place=tonumber(info[#info]:match("(%d+)$"));
 	local id = ns.profile[name].currenciesInTitle[place];
 	local list,n = {},1;
-	-- [=[
-	for i=#Currencies, 1, -1 do
-		local Name,_,Icon = GetCurrencyInfo(Currencies[i]);
-		if Name~="" then
-			list[("%04d:%05d"):format(n,Currencies[i])] = "|T"..Icon..":0|t "..Name;
-			n=n+1;
+	wipe(aceValuesCurrencyOrder);
+	for i=1, #Currencies do
+		if tonumber(Currencies[i]) then
+			local currencyId = Currencies[i];
+			if faction=="Horde" and CurrenciesHorde[currencyId] then
+				currencyId = CurrenciesHorde[currencyId];
+			end
+			local Name, _, Icon, _, _, _, isDiscovered = GetCurrencyInfo(currencyId);
+			if Name~="" then
+				if not isDiscovered then
+					Name = C("orange",Name);
+				end
+				local order,id = ("%04d"):format(n),("%05d"):format(Currencies[i]);
+				list[order..":"..id] = "|T"..Icon..":0|t "..Name;
+				aceValuesCurrencyOrder[id] = order;
+				n=n+1;
+			end
 		end
 	end
-	--]=]
 	return list;
 end
 
@@ -406,7 +425,7 @@ function module.init()
 		headers[n] = _G[n];
 	end
 	Currencies = {
-		"EXPANSION_NAME7",1721,1717,1299,1716,1565,1560,1710,1580,1718,1587,1553,
+		"EXPANSION_NAME7",1721,1717 --[[1716]],1299,1560 --[[1587]],1710,1580,1718,1565,1553,
 		"DUNGEON_AND_RAID",1166,
 		"PLAYER_V_PLAYER",391,
 		"MISCELLANEOUS",402,81,515,1388,1401,1379,
@@ -418,6 +437,10 @@ function module.init()
 		"EXPANSION_NAME1",1704,
 		--"HIDDEN_CURRENCIES",1599,1325,1506,1171,1703,1579,1602,1559,1600,1324,1541,1349,1347,1350,1592,1593,1594,1595,1598,1191,1596,1705,1714,1540,1501,1597,1585,1586,
 	};
+	CurrenciesHorde = {
+		[1717]=1716,
+		[1560]=1587,
+	}
 end
 
 function module.onevent(self,event,arg1)

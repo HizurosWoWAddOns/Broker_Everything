@@ -4,9 +4,6 @@
 local addon, ns = ...;
 local C,L,I = ns.LC.color,ns.L,ns.I;
 
---#- missing event to update list of professions... [?]
---#- update cooldown list
-
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Professions"; -- TRADE_SKILLS L["ModDesc-Professions"]

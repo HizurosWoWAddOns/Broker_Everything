@@ -138,16 +138,12 @@ local function opt(info,value,...)
 			db.profile[section][key].hide = not value;
 			ns.toggleMinimapButton(section);
 		else
-			if ... then value={value,...}; end
+			if ... then value={value,...}; end -- color table
 			db.profile[section][key]=value;
 			if section=="GeneralOptions" then
 				for modName,mod in pairs(ns.modules)do
 					if mod.isEnabled and mod.onevent then
 						mod.onevent(mod.eventFrame,"BE_UPDATE_CFG",key);
---@do-not-package@
-					--elseif mod.active and not mod.onevent then
-						--ns.debug("Options","<FIXME:opt:MissingEventFunction>",section,modName);
---@end-do-not-package@
 					end
 				end
 				if key=="iconcolor" then
@@ -155,14 +151,12 @@ local function opt(info,value,...)
 				elseif key=="iconset" then
 					ns.updateIcons(true,"icon");
 				end
-			else
-				if ns.modules[section].onevent then
-					ns.modules[section].onevent(ns.modules[section].eventFrame,"BE_UPDATE_CFG",key);
+			elseif ns.modules[section].onevent then
+				ns.modules[section].onevent(ns.modules[section].eventFrame,"BE_UPDATE_CFG",key);
 --@do-not-package@
-				else
-					ns.debug("Options","<FIXME:opt:MissingEventFunction>",section);
+			else
+				ns.debug("Options","<FIXME:opt:MissingEventFunction>",section);
 --@end-do-not-package@
-				end
 			end
 		end
 	end
