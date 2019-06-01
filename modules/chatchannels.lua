@@ -11,7 +11,7 @@ local name = "ChatChannels"; -- CHAT_CHANNELS L["ModDesc-ChatChannels"]
 local ttName,ttColumns,tt,module,ticker = name.."TT",2
 local iName, iHeader, iCollapsed, iChannelNumber, iCount, iActive, iCategory, iVoiceEnabled, iVoiceActive = 1,2,3,4,5,6,7,8,9; -- GetChannelDisplayInfo indexes
 local iLastUpdate, iNoUpdate = 10,11; -- custom indexes
-local channels,ChanIndex,updateChannelListLock,updateCountTicker={},0,false;
+local channels,ChanIndex,updateChannelListLock,updateCountTicker={},0,"onlogin";
 local wd = ({
 	enUS="WorldDefense",
 	enBG="WorldDefense",
@@ -161,7 +161,6 @@ module = {
 		"PLAYER_ENTERING_WORLD",
 		"CHANNEL_UI_UPDATE",
 		"CHANNEL_COUNT_UPDATE",
-		"CHANNEL_ROSTER_UPDATE"
 	},
 	onupdate_interval = 30,
 	config_defaults = {
@@ -204,12 +203,15 @@ function module.onevent(self,event,...)
 			addChannel(channels,index);
 		end
 		channels[index][iCount] = count or 0;
-		channels[index][iLastUpdate] = time(); -- ?
+		channels[index][iLastUpdate] = time();
 		updateBroker();
-	elseif ns.eventPlayerEnteredWorld and (event=="PLAYER_ENTERING_WORLD" or event=="CHANNEL_UI_UPDATE") then
-		if not updateChannelListLock then -- catch multible triggered events
-			C_Timer.After(.15, updateChannelList);
-		end
+	elseif event=="PLAYER_ENTERING_WORLD" and updateChannelListLock=="onlogin" then
+		updateChannelListLock = true;
+		C_Timer.After(8, updateChannelList);
+	elseif not updateChannelListLock and (event=="CHANNEL_UI_UPDATE" or (self.channelsReady and event=="PLAYER_ENTERING_WORLD")) then
+		self.channelsReady = true;
+		updateChannelListLock = true;
+		C_Timer.After(.5, updateChannelList);
 	end
 end
 
