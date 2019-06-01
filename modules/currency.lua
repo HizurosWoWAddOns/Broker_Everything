@@ -116,7 +116,7 @@ local function setInTitle(titlePlace, currencyId)
 end
 
 local function toggleCurrencyHeader(self,headerString)
-	ns.toon[name].headers[headerString] = not ns.toon[name].headers[headerString];
+	ns.toon[name].headers[headerString] = ns.toon[name].headers[headerString]==nil or nil;
 	createTooltip(tt,true);
 end
 
@@ -425,7 +425,7 @@ function module.onevent(self,event,arg1)
 		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		if ns.toon[name]==nil or (ns.toon[name] and ns.toon[name].headers==nil) then
-			ns.toon[name] = {headers={[-1]=true}};
+			ns.toon[name] = {headers={}};
 		end
 		resetCurrencySession();
 	elseif event=="CHAT_MSG_CURRENCY" then -- detecting new currencies
