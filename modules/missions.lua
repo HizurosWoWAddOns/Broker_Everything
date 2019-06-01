@@ -50,13 +50,12 @@ end
 
 local function updateMissions()
 	local t = time();
+	ns.toon.missions = {}; -- wipe
 	counter={completed=0,inprogress=0,available=0};
 	for e=1, #expansions do
 		local exp = expansions[e];
 		if exp.gtype and exp.ftype then
 			exp.level = exp.levelFnc(exp.gtype) or 0;
-			ns.tablePath(ns.toon,"missions",exp.typeStr);
-			ns.toon.missions = {};
 			missions[exp.typeStr] = {inprogress={},available={},completed={}};
 			local m=missions[exp.typeStr];
 			local tmp = C_Garrison.GetInProgressMissions(exp.ftype) or {};
@@ -274,21 +273,6 @@ function module.onevent(self,event,arg1)
 	elseif event=="PLAYER_LOGIN" then
 		if ns.toon.missions==nil then
 			ns.toon.missions={};
-		end
-		for i=1, #Broker_Everything_CharacterDB.order do
-			local toon = Broker_Everything_CharacterDB.order[i];
-			local missions,tmp = Broker_Everything_CharacterDB[toon].missions or {},{};
-			if missions.followers or missions.ships or missions.champions or missions.champions_bfa then
-				local T = {"followers","ships","champions","champions_bfa"};
-				for t=1, 4 do
-					if missions[T[t]] then
-						for i=1, #missions[T[t]] do
-							tinsert(tmp,missions[T[t]][i]);
-						end
-					end
-				end
-				Broker_Everything_CharacterDB[toon].missions = #tmp>0 and tmp or nil;
-			end
 		end
 	elseif ns.eventPlayerEnteredWorld then
 		C_Timer.After(0.314159,updateMissions);
