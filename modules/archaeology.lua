@@ -14,6 +14,7 @@ local raceIndex,raceCurrencyId,raceKeystone2Fragments,raceName,raceTexture,raceK
 local raceFragmentsCollected,raceNumFragmentsRequired,raceFragmentsMax,raceArtifactName,raceArtifactIcon,raceKeystoneSlots = 7,8,9,10,11,12;
 local raceKeystoneIcon,raceKeystoneCount,raceKeystoneFragmentsValue,raceArtifactSolvable,raceFragmentsIcon = 13,14,15,16,17;
 local keystoneItem2race,races,racesOrder = {};
+local defaultKeystoneToFragment,keystoneFragmentsByRace = 12;
 local solvables,limitWarning = {},{};
 local iconFormat1 = "|T%s:14:14:0:0:64:64:4:56:4:56|t";
 local iconFormat2 = "|T%s:14:14:0:0:128:128:3:70:8:75|t";
@@ -58,7 +59,7 @@ local function updateRaceArtifact(t,...)
 		end
 
 		if(t[raceKeystoneSlots]>0)then
-			t[raceKeystoneFragmentsValue] = (t[raceKeystoneCount]<=t[raceKeystoneSlots] and t[raceKeystoneCount] or t[raceKeystoneSlots]) * t[raceKeystone2Fragments]; -- 20;
+			t[raceKeystoneFragmentsValue] = (t[raceKeystoneCount]<=t[raceKeystoneSlots] and t[raceKeystoneCount] or t[raceKeystoneSlots]) * (t[raceKeystone2Fragments] or defaultKeystoneToFragment);
 		end
 
 		if(t[raceFragmentsCollected]+t[raceKeystoneFragmentsValue]>=t[raceNumFragmentsRequired])then
@@ -74,7 +75,7 @@ local function updateRaceArtifact(t,...)
 		end
 
 		if(t[raceKeystoneSlots]>0)then
-			t[raceKeystoneFragmentsValue] = (t[raceKeystoneCount]<t[raceKeystoneSlots] and t[raceKeystoneCount] or t[raceKeystoneSlots]) * t[raceKeystone2Fragments]; -- 20;
+			t[raceKeystoneFragmentsValue] = (t[raceKeystoneCount]<t[raceKeystoneSlots] and t[raceKeystoneCount] or t[raceKeystoneSlots]) * (t[raceKeystone2Fragments] or defaultKeystoneToFragment);
 		end
 
 		if(t[raceFragmentsCollected]+t[raceKeystoneFragmentsValue]>=t[raceNumFragmentsRequired])then
@@ -285,22 +286,21 @@ function module.init()
 		"875", -- continent header / mapID / Zandalar
 		2060051
 	};
-
 	races = { -- [<raceTextureID>] = { <raceIndex>, <currencyId>, <raceKeystone2FragmentsCount> }
 		--Azeroth
-		[461831] = {nil, 384, 20}, -- Dwarf
-		[461841] = {nil, 385, 20}, -- Troll
-		[461833] = {nil, 393, 20}, -- Fossil
-		[461837] = {nil, 394, 20}, -- NightElf
-		[461839] = {nil, 401, 20}, -- Tolvir
+		[461831] = {nil, 384, nil}, -- Dwarf
+		[461841] = {nil, 385, nil}, -- Troll
+		[461833] = {nil, 393, nil}, -- Fossil
+		[461837] = {nil, 394, nil}, -- NightElf
+		[461839] = {nil, 401, nil}, -- Tolvir
 
 		--Outland
-		[461829] = {nil, 398, 20}, -- Draenei
-		[462321] = {nil, 397, 20}, -- Orc
+		[461829] = {nil, 398, nil}, -- Draenei
+		[462321] = {nil, 397, nil}, -- Orc
 
 		--Northend
-		[461843] = {nil, 399, 20}, -- Vrykul
-		[461835] = {nil, 400, 20}, -- Nerubian
+		[461843] = {nil, 399, nil}, -- Vrykul
+		[461835] = {nil, 400, nil}, -- Nerubian
 
 		--Pandaria
 		[633002] = {nil, 676, 20}, -- Pandaren
@@ -313,13 +313,13 @@ function module.init()
 		[1030616] = {nil, 829, 20}, -- Arakkoa
 
 		--Legion
-		[1445575] = {nil, 1172, 12}, -- HighborneNightElves
-		[1445577] = {nil, 1173, 12}, -- HighmountainTauren
-		[1445573] = {nil, 1174, 12}, -- Demons
+		[1445575] = {nil, 1172, nil}, -- HighborneNightElves
+		[1445577] = {nil, 1173, nil}, -- HighmountainTauren
+		[1445573] = {nil, 1174, nil}, -- Demons
 
 		-- BfA
-		[2060049] = {nil,1535,12}, -- Drust
-		[2060051] = {nil,1534,12}, -- Zandalari
+		[2060049] = {nil,1535, nil}, -- Drust
+		[2060051] = {nil,1534, nil}, -- Zandalari
 	};
 end
 
