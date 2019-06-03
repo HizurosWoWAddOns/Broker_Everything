@@ -69,7 +69,8 @@ local function updateBroker()
 	if BNConnected() then
 		numBNFriends, numOnlineBNFriends = BNGetNumFriends();
 	end
-	local numFriends, friendsOnline = GetNumFriends();
+	local numFriends = C_FriendList.GetNumFriends();
+	local friendsOnline = C_FriendList.GetNumOnlineFriends();
 	if not (tonumber(numOnlineBNFriends) and tonumber(friendsOnline)) then return end
 
 	if ns.profile[name].splitFriendsBroker then
@@ -206,7 +207,9 @@ local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
 	local columns,l,c=8;
-	local numFriends, friendsOnline = GetNumFriends();
+	local numFriends = C_FriendList.GetNumFriends();
+	local friendsOnline = C_FriendList.GetNumOnlineFriends();
+
 	local numBNFriends, numOnlineBNFriends = BNGetNumFriends();
 	if tt.lines~=nil then tt:Clear(); end
 	tt:SetCell(tt:AddLine(),1,C("dkyellow",L[name]),tt:GetHeaderFont(),"LEFT",0);
@@ -379,7 +382,7 @@ local function createTooltip(tt)
 			local charName,level,class,area,connected,status,note,cName,cRealm,cGame=1,2,3,4,5,6,7,18,19,20; -- GetFriendInfo
 			local l,c,s,n,_;
 			for i=1, numFriends do
-				local v = {GetFriendInfo(i)};
+				local v = {C_FriendList.GetFriendInfoByIndex(i)};
 				if v[charName]:find("-") then
 					v[cName], v[cRealm] = strsplit("-",v[charName],2);
 				else
