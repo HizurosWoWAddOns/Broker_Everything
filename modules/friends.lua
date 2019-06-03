@@ -129,7 +129,7 @@ local function createTooltip2(self,data)
 	);
 	if tt2.lines~=nil then tt2:Clear(); end
 	local l=tt2:AddHeader(C("dkyellow",NAME));
-	tt2:SetCell(l,2,C(data.class or color1,ns.scm(data.name)),nil,nil,0);
+	tt2:SetCell(l,2,C(data.className or color1,ns.scm(data.name)),nil,nil,0);
 	tt2:AddSeparator();
 	-- game
 	if ns.profile[name].showGameTT2 then
@@ -146,15 +146,15 @@ local function createTooltip2(self,data)
 		end
 	end
 	-- zone
-	if ns.profile[name].showZoneTT2 and data.zone then
-		tt2:SetCell(tt2:AddLine(C(color1,ZONE)),2,data.zone,nil,"RIGHT",0);
+	if ns.profile[name].showZoneTT2 and data.area then
+		tt2:SetCell(tt2:AddLine(C(color1,ZONE)),2,data.area,nil,"RIGHT",0);
 	end
 	-- notes
-	if ns.profile[name].showNotesTT2 and data.note:len()>0 then
+	if ns.profile[name].showNotesTT2 and data.notes:trim():len()>0 then
 		tt2:AddSeparator(4,0,0,0,0);
 		tt2:SetCell(tt2:AddLine(),1,C(color1,COMMUNITIES_ROSTER_COLUMN_TITLE_NOTE),nil,nil,0);
 		tt2:AddSeparator();
-		tt2:SetCell(tt2:AddLine(),1,ns.scm(data.note,true),nil,"LEFT",0);
+		tt2:SetCell(tt2:AddLine(),1,ns.scm(data.notes,true),nil,"LEFT",0);
 	end
 	-- broadcast
 	if ns.profile[name].showBroadcastTT2 and data.broadcast and data.broadcast:len()>0 then
@@ -180,9 +180,9 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 	if data.type=="realm" then
 		-- whisper toon to toon
 		if IsAltKeyDown() then
-			InviteUnit(data.name_realm);
+			InviteUnit(data.fullName);
 		else
-			ChatFrame_SendTell(data.name_realm);
+			ChatFrame_SendTell(data.fullName);
 		end
 	elseif data.type=="battlenet" then
 		-- battlenet whisper
@@ -353,14 +353,14 @@ local function createTooltip(tt)
 								type = "battlenet",
 								toonID = ti[16],
 								account = fi[2],
-								class = ti[8] or false,
+								className = ti[8] or false,
 								name = ti[2],
 								client = ti[3],
 								realm = ti[4],
 								factionT = ti[6]:upper(),
 								factionL = _G["FACTION_"..ti[6]:upper()],
-								zone = ti[3]~="App" and (ti[10] or ti[12]) or false,
-								note = (fi[13] or ""):trim(),
+								area = ti[3]~="App" and (ti[10] or ti[12]) or false,
+								notes = (fi[13] or ""):trim(),
 								broadcast = (fi[12] or ""):trim(),
 								broadcastTime = fi[15] or false,
 							};
@@ -382,30 +382,33 @@ local function createTooltip(tt)
 			local charName,level,class,area,connected,status,note,cName,cRealm,cGame=1,2,3,4,5,6,7,18,19,20; -- GetFriendInfo
 			local l,c,s,n,_;
 			for i=1, numFriends do
-				local v = {C_FriendList.GetFriendInfoByIndex(i)};
-				if v[charName]:find("-") then
-					v[cName], v[cRealm] = strsplit("-",v[charName],2);
+				local v = C_FriendList.GetFriendInfoByIndex(i);
+				v.fullName = v.name;
+				if v.name:find("-") then
+					v.name, v.realm = strsplit("-",v.fullName,2);
 				else
-					v[cName], v[cRealm] = v[charName],ns.realm;
+					v.realm = ns.realm;
+					v.fullName = v.fullName .."-".. ns.realm;
 				end
-				v[cGame] = BNET_CLIENT_WOW;
-				if visible[v[cName]..v[cRealm]..v[area]] then
+				v.client = BNET_CLIENT_WOW;
+				if visible[v.name..v.realm..v.area] then
 					-- filter duplicates...
-				elseif (v[charName]) and (v[connected]) then
-					visible[v[cName]..v[cRealm]..v[area]] = true;
+				elseif v.name and v.connected then
+					visible[v.name..v.realm..v.area] = true;
 
 					local l = tt:AddLine("","","","","","","","");
-					tt:SetCell(l,2,C("white",v[level]));
+					tt:SetCell(l,2,C("white",v.level));
 
-					local nameStr = _status((status=="AFK"),(status=="DND")) .. C(v[class]:upper(),ns.scm(v[cName]));
-					if tonumber(ns.profile[name].showRealm)>1 and cRealm~=ns.realm then
+					local nameStr = _status(v.afk,v.dnd) .. C(v.className:upper(),ns.scm(v.name));
+
+					local realm,_
+					if type(v.realm)=="string" and v.realm:len()>0 then
+						_,realm = ns.LRI:GetRealmInfo(v.realm);
+					end
+
+					if tonumber(ns.profile[name].showRealm)>1 and v.realm~=ns.realm then
 						if ns.profile[name].showRealm=="2" then
-							local realm,_ = v[cRealm];
-							if type(realm)=="string" and realm:len()>0 then
-								local _,_realm = ns.LRI:GetRealmInfo(realm);
-								if _realm then realm = _realm; end
-							end
-							nameStr = nameStr..C("dkyellow","-"..ns.scm(realm));
+							nameStr = nameStr..C("dkyellow","-"..ns.scm(realm or v.realm));
 						else
 							nameStr = nameStr..C("dkyellow","*");
 						end
@@ -415,25 +418,20 @@ local function createTooltip(tt)
 					end
 					tt:SetCell(l,3,nameStr);
 
-					-- game icon or text
+					-- client icon or text
 					if ns.profile[name].showGame~="0" then
-						tt:SetCell(l,4,C("white",BNet_GetClientTexture(v[cGame])));
+						tt:SetCell(l,4,C("white",BNet_GetClientTexture(v.client)));
 					end
 					-- zone
 					if ns.profile[name].showZone then
-						if v[area]:match("^"..GARRISON_LOCATION_TOOLTIP) and v[area]~=GARRISON_LOCATION_TOOLTIP then
-							v[area] = GARRISON_LOCATION_TOOLTIP;
+						if v.area:match("^"..GARRISON_LOCATION_TOOLTIP) and v.area~=GARRISON_LOCATION_TOOLTIP then
+							v.area = GARRISON_LOCATION_TOOLTIP;
 						end
-						tt:SetCell(l,5,C("white",v[area]));
+						tt:SetCell(l,5,C("white",v.area));
 					end
 					-- realm
 					if ns.profile[name].showRealm=="1" then
-						local realm = v[cRealm];
-						if type(realm)=="string" and realm:len()>0 then
-							local _,_realm = ns.LRI:GetRealmInfo(realm);
-							if _realm then realm = _realm; end
-						end
-						tt:SetCell(l,6,C("green",realm));
+						tt:SetCell(l,6,C("green",realm or v.realm));
 					end
 					-- faction
 					if ns.profile[name].showFaction=="2" then
@@ -446,24 +444,12 @@ local function createTooltip(tt)
 						tt:SetCell(l,8,C("white",ns.scm(v[note] or "")));
 					end
 
-					--local data = {type="realm",info=v};
-					local data = {
-						type = "realm",
-						name_realm = v[1],
-						class = v[3],
-						name = v[18],
-						client = BNET_CLIENT_WOW,
-						realm = v[19],
-						factionT = ns.player.faction:upper(),
-						factionL = ns.player.factionL,
-						zone = v[4],
-						note = (v[7] or ""):trim(),
-						-- broadcast = nil,
-						-- broadcastTime = nil,
-					};
+					v.type = "realm";
+					v.factionT = ns.player.faction:upper();
+					v.factionL = ns.player.factionL;
 
-					tt:SetLineScript(l, "OnMouseUp", tooltipLineScript_OnMouseUp, data);
-					tt:SetLineScript(l, "OnEnter", createTooltip2, data);
+					tt:SetLineScript(l, "OnMouseUp", tooltipLineScript_OnMouseUp, v);
+					tt:SetLineScript(l, "OnEnter", createTooltip2, v);
 				end
 			end
 		end
