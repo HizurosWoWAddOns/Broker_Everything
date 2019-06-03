@@ -167,7 +167,7 @@ local function createTooltip(tt)
 
 	if ns.profile[name].showChars then
 		tt:AddSeparator(4,0,0,0,0);
-		local n,t=1,time();
+		local n,t=0,time();
 		local l=tt:AddLine(C("ltblue",CHARACTER));
 		tt:SetCell(l,2,
 			(IsShiftKeyDown() and GOAL_COMPLETED.." - "..C("green",L["next"]).." / "..C("yellow",SPELL_TARGET_TYPE12_DESC) or C("green",GOAL_COMPLETED).." / "..C("yellow",L["In progress"])),
@@ -185,7 +185,7 @@ local function createTooltip(tt)
 			end
 		end
 		if n==0 then
-			tt:SetCell(tt:AddLine(),1,C("ltgray",L["No missions found..."]),nil,nil,0);
+			tt:SetCell(tt:AddLine(),1,C("gray",L["No missions found..."]),nil,nil,0);
 		end
 	end
 
