@@ -117,7 +117,7 @@ local function itemQuality()
 	for index,entry in pairs(ns.items.bags)do
 		local _,itemCount,_,itemQuality = GetContainerItemInfo(entry.bag,entry.slot);
 		local itemName, _, _, _, _, _, _, _, _, _, itemPrice = GetItemInfo(entry.link);
-		if itemName then
+		if itemName and itemCount then
 			itemQuality = itemQuality or 99; -- unknown quality [nil]
 			sum[itemQuality] = sum[itemQuality] + itemCount;
 			if itemPrice then
