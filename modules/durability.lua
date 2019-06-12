@@ -85,7 +85,7 @@ local function nsItems2Callback()
 			durabilitySum.current = durabilitySum.current + obj.durability;
 			durabilitySum.max = durabilitySum.max + obj.durabilityMax;
 
-			local percentage = obj.durabilityMax>0 and 0 or obj.durability/obj.durabilityMax;
+			local percentage = obj.durabilityMax==0 and 0 or obj.durability/obj.durabilityMax;
 			if obj.durabilityMax>0 and percentage<1 then
 				if tbl=="inv" and percentage<lowest[1] then
 					lowest = {percentage,obj.slot};
