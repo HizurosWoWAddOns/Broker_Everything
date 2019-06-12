@@ -159,7 +159,7 @@ function createTooltip(tt,update)
 	for i=1, #Currencies do
 		if not tonumber(Currencies[i]) then
 			if empty==true and not parentIsCollapsed then
-				tt:SetCell(tt:AddLine(),1,L["No currencies discovered..."],nil,nil,0);
+				tt:SetCell(tt:AddLine(),1,C("gray",L["No currencies discovered..."]),nil,nil,0);
 			end
 			empty = true;
 			parentIsCollapsed = ns.toon[name].headers[Currencies[i]]~=nil;
