@@ -51,7 +51,11 @@ local function UpdateStatus(event)
 	if (_G.MailFrame:IsShown()) or (event=="MAIL_CLOSED") then
 		ns.toon.mail.num, ns.toon.mail.total = GetInboxNumItems();
 		ns.toon.mail.num, ns.toon.mail.total = ns.toon.mail.num or 0, ns.toon.mail.total or 0;
-		wipe(ns.toon.mail.stored);
+		if ns.toon.mail.stored==nil then
+			ns.toon.mail.stored={};
+		else
+			wipe(ns.toon.mail.stored);
+		end
 		for i=1, ns.toon.mail.num do
 			_, _, sender_realm, _, _, _, daysLeft = GetInboxHeaderInfo(i);
 			if sender_realm then
