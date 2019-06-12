@@ -196,8 +196,6 @@ end
 module = {
 	events = {
 		"PLAYER_LOGIN",
-		"BAG_UPDATE",
-		"UNIT_INVENTORY_CHANGED",
 		"MERCHANT_SHOW",
 		"MERCHANT_CLOSED",
 		"UI_ERROR_MESSAGE"
@@ -265,6 +263,7 @@ end
 function module.init()
 	for i=0, 7 do G["ITEM_QUALITY"..i.."_DESC"] = _G["ITEM_QUALITY"..i.."_DESC"] end
 	G.ITEM_QUALITY99_DESC = UNKNOWN;
+	ns.items.RegisterCallback(name,updateBroker,"bags");
 end
 
 function module.onevent(self,event,...)
@@ -284,8 +283,6 @@ function module.onevent(self,event,...)
 		if message==ERR_VENDOR_DOESNT_BUY then
 			crap.ERR_VENDOR_DOESNT_BUY = true;
 		end
-	elseif ns.eventPlayerEnteredWorld then
-		updateBroker();
 	end
 end
 
