@@ -504,6 +504,7 @@ function module.init()
 		[138375]=19,[138376]=19,[138377]=19,[138378]=19,[138379]=19,[138380]=19,
 		-- Tier 20 (Legion 7.?)
 	}
+	ns.items.RegisterCallback(name,updateBroker,"inv");
 end
 
 function module.onevent(self,event,arg1,...)
@@ -514,12 +515,9 @@ function module.onevent(self,event,arg1,...)
 	elseif event=="PLAYER_LOGIN" then
 		ns.items.RegisterCallback(name,UpdateInventory,"inv");
 		hooksecurefunc("UpgradeItem",updateBroker);
-	elseif ns.eventPlayerEnteredWorld then
-		if (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and equipPending~=nil then
-			C_EquipmentSet.UseEquipmentSet(equipPending);
-			equipPending = nil
-			updateBroker();
-		end
+	elseif (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and equipPending~=nil then
+		C_EquipmentSet.UseEquipmentSet(equipPending);
+		equipPending = nil
 		updateBroker();
 	end
 end
