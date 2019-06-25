@@ -93,26 +93,55 @@ module = {
 -- function module.options() return {} end
 
 function module.init()
+	-- see https://wow.curseforge.com/projects/broker-everything/pages/modules/surprise
 	items = {
-		-- 1 items with duration time
-		[39878] = {ITEM_DURATION, "tooltip", 4}, -- Mysterious Egg (Geen <Oracles Quartermaster>, Sholaar Basin)
-		[44717] = {ITEM_DURATION, "tooltip", 4}, -- Disgusting Jar
-		[94295] = {ITEM_DURATION, "tooltip", 4}, -- Primal Egg
-		[118705] = {ITEM_DURATION, "tooltip", 4}, -- Warm Goren Egg
-		[127396] = {ITEM_DURATION, "tooltip", 4}, -- Strange Green Fruit
-		[137599] = {ITEM_DURATION, "tooltip", 5}, -- Pulsating Sac
-		[153190] = {ITEM_DURATION, "tooltip", 3}, -- Fel-Spotted Egg
-		-- 2 items with cooldown time
-		[19462] = {ITEM_COOLDOWN, "duration"}, -- Unhatched Jubling Egg
-		-- 3 lootable items
-		[19450] = {ITEM_LOOTABLE}, -- A Jubling's Tiny Home (prev.: Unhatched Jubling Egg)
-		[39883] = {ITEM_LOOTABLE}, -- Cracked Egg (prev.: Mysterious Egg)
-		[44718] = {ITEM_LOOTABLE}, -- Ripe Disgusting Jar (prev.: Disgusting Jar)
-		[94296] = {ITEM_LOOTABLE}, -- Cracked Primal Egg (prev.: Primal Egg)
-		[118706] = {ITEM_LOOTABLE}, -- Cracked Goren Egg
-		[127395] = {ITEM_LOOTABLE}, -- Ripened Strange Fruit
-		[137608] = {ITEM_LOOTABLE}, -- Growling Sac
-		[153191] = {ITEM_LOOTABLE} -- Cracked Fel-Spotted Egg
+		-- 1. Unhatched Jubling Egg >> A Jubling's Tiny Home
+		[19462] = {ITEM_COOLDOWN, "duration"},
+		[19450] = {ITEM_LOOTABLE},
+
+		-- 2. Mysterious Egg >> Cracked Egg
+		[39878] = {ITEM_DURATION, "tooltip", 4},
+		[39883] = {ITEM_LOOTABLE},
+
+		-- 3. Disgusting Jar >> Ripe Disgusting Jar
+		[44717] = {ITEM_DURATION, "tooltip", 4},
+		[44718] = {ITEM_LOOTABLE},
+
+		-- 4. Hyldnir Spoils (from daily quest)
+		[44751] = {ITEM_LOOTABLE},
+
+		-- 5. Primal Egg >> Cracked Primal Egg
+		[94295] = {ITEM_DURATION, "tooltip", 4},
+		[94296] = {ITEM_LOOTABLE},
+
+		-- 6. Warm Goren Egg >> Cracked Goren Egg
+		[118705] = {ITEM_DURATION, "tooltip", 4},
+		[118706] = {ITEM_LOOTABLE},
+
+		-- 7. Strange Green Fruit >> Ripened Strange Fruit
+		[127396] = {ITEM_DURATION, "tooltip", 4},
+		[127395] = {ITEM_LOOTABLE},
+
+		-- 8. Pulsating Sac >> Growling Sac
+		[137599] = {ITEM_DURATION, "tooltip", 5},
+		[137608] = {ITEM_LOOTABLE},
+
+		-- 9. Time-Lost Wallet (from quest)
+		[151482] = {ITEM_LOOTABLE},
+
+		-- 10. Fel-Spotted Egg >> Cracked Fel-Spotted Egg
+		[153190] = {ITEM_DURATION, "tooltip", 3},
+		[153191] = {ITEM_LOOTABLE},
+
+		-- 11. Viable Cobra Egg >> Cracking Cobra Egg
+		[160832] = {ITEM_DURATION, "tooltip", 3},
+		[160831] = {ITEM_LOOTABLE},
+
+		-- 12. Nightwreathed Egg >> Nightwreathed Watcher
+		[166525] = {ITEM_DURATION, "tooltip", 3},
+		[166528] = {ITEM_LOOTABLE},
+
+
 	}
 	ns.items.RegisterCallback(name,bagCheck,"bags");
 end
