@@ -86,7 +86,7 @@ local function addChannel(tbl,index)
 	tbl[index]=data;
 end
 
-function nextChannel()
+local function nextChannel()
 	repeat
 		ChanIndex=ChanIndex+1;
 	until (channels[ChanIndex] and not channels[ChanIndex][iHeader] and channels[ChanIndex][iActive]) or not channels[ChanIndex];

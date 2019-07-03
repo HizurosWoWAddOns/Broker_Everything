@@ -306,7 +306,7 @@ local function tpmAddObject(tt,p,l,c,v,t,name)
 	end
 end
 
-function transportMenu(self,button,name)
+local function transportMenu(self,button,name)
 	if InCombatLockdown() then return; end
 	if (tt1~=nil) then tt1=ns.hideTooltip(tt1); end
 	if (tt2~=nil) then tt2=ns.hideTooltip(tt2); end

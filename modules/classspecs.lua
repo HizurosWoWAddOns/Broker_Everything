@@ -66,7 +66,7 @@ end
 
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName) or {};
-	local specName,text,_ = L["No Spec!"],"";
+	local specName,txt,_ = L["No Spec!"],"";
 	local icon = I(name);
 	local spec = GetSpecialization();
 

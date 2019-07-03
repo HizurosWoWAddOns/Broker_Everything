@@ -49,7 +49,7 @@ local function updateBroker()
 end
 
 local function updateMissions()
-	local t = time();
+	local t,_ = time();
 	ns.toon.missions = {}; -- wipe
 	counter={completed=0,inprogress=0,available=0};
 	for e=1, #expansions do
