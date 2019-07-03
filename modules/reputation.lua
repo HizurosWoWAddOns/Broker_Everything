@@ -155,7 +155,7 @@ local function resetSession()
 	updateBroker();
 end
 
-function updateBodyguards()
+local function updateBodyguards()
 	-- collect names of bodyguards
 	local glvl = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0);
 	if UnitLevel("player")>=90 and glvl then
