@@ -759,7 +759,7 @@ do
 	-- note: this new version is a downgrade to reduce memory usage. it is only for detect changes.
 	ns.items = {bags={},inventory={},item={},equipment={}};
 	local slotNames = {"Head","Neck","Shoulder","Shirt","Chest","Waist","Legs","Feet","Wrist","Hands","Finger0","Finger1","Trinket0","Trinket1","Back","MainHand","SecondaryHand","Range","Tabard"};
-	local doUpdate,f = {bags=false,inv=false,idCallback={},ticker=false,tickerLength=0.5,defaultDelay=2,delay=false,locked=false},CreateFrame("Frame");
+	local doUpdate,f,prev = {bags=false,inv=false,idCallback={},ticker=false,tickerLength=0.5,defaultDelay=2,delay=false,locked=false},CreateFrame("Frame");
 	local callbacks,hasChanged,IsEnabled = {bags={},inv={},any={},item={},equipment={},prepare={},bagsNum=0,invNum=0,anyNum=0,itemNum=0,equipmentNum=0,prepareNum=0};
 
 	local function doCallbacks(tbl,...)
@@ -769,9 +769,17 @@ do
 	end
 
 	local function addItem(tbl,prev,info)
-		local loc,index,n = "inv",info.slot,GetItemInfo(info.link);
+		local n,loc,index = GetItemInfo(info.link);
 		if info.bag then
 			loc,index = "bags",((info.bag+1)*1000)+info.slot;
+			if prev[index]==nil then
+				hasChanged.bags = true;
+			end
+		else
+			loc,index = "inv",info.slot;
+			if prev[index]==nil then
+				hasChanged.inv = true;
+			end
 		end
 
 		info.type = loc;
@@ -836,7 +844,8 @@ do
 
 		-- scan bags
 		if doUpdate.bags then
-			local prev,tmp,_ = ns.items.bags,{};
+			prev = ns.items.bags;
+			local tmp,_ = {};
 			for bag=0, NUM_BAG_SLOTS do
 				if GetContainerNumSlots(bag) ~= GetContainerNumFreeSlots(bag) then -- do not scan empty bag :-)
 					for slot=1, GetContainerNumSlots(bag) do
@@ -862,17 +871,17 @@ do
 
 		-- scan inventory
 		if doUpdate.inv then
-			local prev,tmp = ns.items.inventory,{};
+			prev = ns.items.inventory;
+			local tmp = {};
 			for index=1, 19 do
 				local id = GetInventoryItemID("player",index);
 				id = tonumber(id);
 				if id then
-					-- nice blizzard. Query heirloom item info's. very unstable...
 					local d,dM = GetInventoryItemDurability(index);
 					local link = GetInventoryItemLink("player",index);
 					local quality = GetInventoryItemQuality("player",index);
 					local info = {slot=index,id=id,link=link,quality=quality,durability=d or 0,durabilityMax=dM or 0};
-					if not link:find("%[%]") then
+					if not link:find("%[%]") then -- not nice. Query heirloom item info's looks like unstable. too often return invalid item links
 						addItem(tmp,prev,info);
 					else
 						hasChanged.failed = true;
