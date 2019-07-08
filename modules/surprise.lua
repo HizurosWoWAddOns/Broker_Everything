@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Surprise" -- L["Surprise"] L["ModDesc-Surprise"]
 local ttName,ttColumns,tt,module = name.."TT",3,nil
 local ITEM_DURATION,ITEM_COOLDOWN,ITEM_LOOTABLE=1,2,3
-local founds,counter,items = {},{sum=0,lootable=0,progress=0};
+local founds,items = {};
 
 
 -- register icon names and default files --
@@ -22,25 +22,27 @@ I[name] = {iconfile="Interface\\Icons\\INV_misc_gift_01",coords={0.05,0.95,0.05,
 --------------------------
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
-	if counter.sum>0 then
-		obj.text = ((counter.lootable and C("green",counter.lootable)) or C("ltgray",0)) .. "/" .. counter.sum;
+	local sum,finished = #founds,0;
+	for i=1, sum do
+		if items[founds[i].id] and items[founds[i].id][1]==ITEM_LOOTABLE then
+			finished = finished+1;
+		end
+	end
+	if sum>0 then
+		obj.text = C(finished==0 and "gray" or "green",finished) .. "/" .. sum;
 	else
-		obj.text = C("ltgray",0).."/0";
+		obj.text = C("gray",0).."/0";
 	end
 end
 
 local function ScanTT_Callback(data)
-	local status = data.lootable and "lootable" or "progress";
-	counter.sum=counter.sum+1;
-	counter[status] = counter[status]+1;
 	tinsert(founds,data);
 	updateBroker();
 end
 
 local function bagCheck()
 	wipe(founds);
-	counter = {sum=0,lootable=0,progress=0};
-	for id in pairs(items)do
+	for id,v in pairs(items)do
 		if ns.items.item[id] then
 			for i,index in pairs(ns.items.item[id]) do
 				local t = CopyTable(ns.items.bags[index]);
@@ -69,12 +71,12 @@ local function createTooltip(tt)
 				(type(items[item.id][2])=="function" and items[item.id][2]())
 				or (items[item.id][2]=="tooltip" and item.lines[items[item.id][3]])
 				or (items[item.id][2]=="duration" and tonumber(item.duraction) and SecondsToTime(item.duraction))
-				or (items[item.id][1]==ITEM_LOOTABLE and L["(finished)"])
+				or (items[item.id][1]==ITEM_LOOTABLE and C("green",L["(finished)"]))
 				or "("..UNKNOWN..")"
 			);
 		end
 	else
-		tt:AddLine(L["No item found."])
+		tt:AddLine(L["No item found."]);
 	end
 
 	ns.roundupTooltip(tt);
