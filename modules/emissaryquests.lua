@@ -22,6 +22,8 @@ local questID2factionID = {
 	-- bfa
 	[50600]=2161, [50601]=2162, [50599]=2160, [50605]=2159, [50603]=2158,
 	[50598]=2103, [50602]=2156, [50606]=2157, [50604]=2163, [50562]=2164,
+	-- bfa 8.2
+	[56119]=2400, [56120]=2373
 }
 local factionName = setmetatable({},{__index=function(t,k)
 	local v = GetFactionInfoByID(k);
