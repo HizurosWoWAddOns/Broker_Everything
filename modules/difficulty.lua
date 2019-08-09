@@ -11,7 +11,7 @@ local name = "Difficulty" -- L["Difficulty"] L["ModDesc-Difficulty"]
 L["ModDesc-"..name] = L["Display current group and instance modes"];
 
 local ttName, ttColumns, tt, module,createTooltip = name.."TT", 4
-local mode = 0;
+local mode,roleCount = 0,", T: %d, H: %d, D: %d";
 local modes = {
 	{name=SOLO,  short="S", color="ltgray"},	-- 1
 	{name=GROUP, short="G", color="quality2"},		-- 2
@@ -318,7 +318,12 @@ function module.onevent(self,event,...)
 		local short = {}
 		local mode = (IsInRaid() and 3) or (IsInGroup() and 2) or 1
 		local m=modes[mode]
-		tinsert(short,C(m.color,m.short))
+		local roleCount = "";
+		if mode>1 then
+			local counts = GetGroupMemberCounts();
+			roleCount = roleCountPattern:format(counts.TANK,counts.HEALER,counts.DAMAGER);
+		end
+		tinsert(short,C(m.color,m.short)..roleCount);
 	end
 
 	if (update) and (tt) then

@@ -94,8 +94,6 @@ local function nsItems2Callback()
 				ns.ScanTT.query(data,true);
 				repairCost[tbl] = repairCost[tbl] + (tonumber(data.repairCost) or 0);
 			end
-		else
-			ns.debug(name,"<errorObjNil>",index,ns.items.bags[index],ns.items.inventory[index]);
 		end
 	end
 
