@@ -4,6 +4,9 @@
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
 
+--#- rest xp improvements...
+--#- heirloom updaten
+--#- finde einen besseren weg, die max. upgrade stufe von erbstücken zu ermitteln...
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
@@ -11,7 +14,7 @@ local name = "XP" -- XP L["ModDesc-XP"]
 local ttName, ttName2, ttColumns, tt, tt2, module, createTooltip,init  = name.."TT", name.."TT2", 3;
 local data = {};
 local sessionStartLevel = UnitLevel("player");
-local slots,items = {  [1]=HEADSLOT, [3]=SHOULDERSLOT, [5]=CHESTSLOT, [7]=LEGSSLOT, [15]=BACKSLOT, [11]=FINGER0SLOT, [12]=FINGER1SLOT, [998]=L["Guild perk"], [999]=L["Recruite a Friend"]};
+local slots,heirloomXP,xp2levelup = {[1]=HEADSLOT, [3]=SHOULDERSLOT, [5]=CHESTSLOT, [7]=LEGSSLOT, [15]=BACKSLOT, [11]=FINGER0SLOT, [12]=FINGER1SLOT};
 local textbarSigns = {"=","-","#","||","/","\\","+",">","•","⁄"};
 
 
@@ -22,16 +25,44 @@ I[name] = {iconfile="interface\\icons\\ability_dualwield",coords={0.05,0.95,0.05
 
 -- some local functions --
 --------------------------
+local function CalcRestedXP(data)
+	-- https://wow.gamepedia.com/Rest
+	local p5 = data.max*0.05;
+	local p5perHours = 32; -- 32 hours for 5 percent rested xp earning outside from inn and cities
+	if data.isRested then
+		p5perHours = 8; -- inn and cities
+	end
+	local restedXpPerSec = p5 / (p5perHours * 3600);
+	local offlineRested = math.floor((time()-data.offlineTime) * restedXpPerSec);
+	local maxRested = p5*30;
+	if offlineRested>=maxRested then
+		offlineRested = maxRested; -- rested xp limit
+	end
+	data.offlineRested = offlineRested;
+end
+
+local function GetExperience(level,currentXP,maxXP,exhaustion)
+	if level>=MAX_PLAYER_LEVEL then return 0,0,"n/a"; end
+	local xpOverLevelup,percentCurrentXP = (currentXP+exhaustion)-maxXP,currentXP/maxXP,0;
+	if xpOverLevelup>0 then
+		percentExhaustion = (xpOverLevelup/xp2levelup[level+1]) + 1;
+		if percentExhaustion>2 then
+			percentExhaustion=2;
+		end
+	else
+		percentExhaustion = (currentXP+exhaustion)/maxXP;
+	end
+	-- <needToLevelup>, <percentCurrentXP>, <percentExhaustion>, <percentCurrentXPStr>, <percentExhaustionStr>
+	return maxXP-currentXP, percentCurrentXP, percentExhaustion, ("%1.2f%%"):format(percentCurrentXP*100), (">%1.2f%%"):format(percentExhaustion*100);
+end
+
 local function deleteCharacterXP(self,name_realm)
 	Broker_Everything_CharacterDB[name_realm].xp = nil;
 	createTooltip(tt);
 end
 
 local function showThisChar(name_realm,data)
-	if data.xp==nil then
-		return false;
-	end
-	if ns.profile[name].showNonMaxLevelOnly and data.level==MAX_PLAYER_LEVEL then
+	if name_realm==ns.player.name_realm or data.xp==nil or (ns.profile[name].showNonMaxLevelOnly and data.level==MAX_PLAYER_LEVEL) then
 		return false;
 	end
 	local _,realm = strsplit("-",name_realm,2);
@@ -39,52 +70,82 @@ local function showThisChar(name_realm,data)
 end
 
 local function updateBroker()
-	local dataobj = module.obj or ns.LDB:GetDataObjectByName(module.ldbName);
+	local text,level = L[name],UnitLevel("player");
+	local needToLevelup, percentCurrentXP, percentExhaustion, percentCurrentXPStr, percentExhaustionStr = GetExperience(level,data.cur,data.max,data.rest);
 
 	-- broker button text
-	if (MAX_PLAYER_LEVEL~=sessionStartLevel) and (MAX_PLAYER_LEVEL==UnitLevel("player")) then
-		dataobj.text = C("ltblue",L["Max. Level reached"]);
+	if (MAX_PLAYER_LEVEL~=sessionStartLevel) and (MAX_PLAYER_LEVEL==level) then
+		text = C("ltblue",L["Max. Level reached"]);
+	elseif (MAX_PLAYER_LEVEL==level) then
+		-- nothing
 	elseif IsXPUserDisabled() then
-		dataobj.text = C("orange",L["XP gain disabled"])
+		text = C("orange",L["XP gain disabled"])
 	elseif ns.profile[name].display == "1" then
-		dataobj.text = data.percentStr;
+		text = percentCurrentXPStr;
 	elseif ns.profile[name].display == "2" then
-		dataobj.text = ns.FormatLargeNumber(name,data.cur).."/"..ns.FormatLargeNumber(name,data.max);
+		text = ns.FormatLargeNumber(name,data.cur).."/"..ns.FormatLargeNumber(name,data.max);
 	elseif ns.profile[name].display == "3" then
-		dataobj.text = ns.FormatLargeNumber(name,data.need);
+		text = ns.FormatLargeNumber(name,needToLevelup);
 	elseif ns.profile[name].display == "4" then
-		dataobj.text = data.percentStr.." ("..data.restStr..")";
+		text = percentCurrentXPStr.." ("..percentExhaustionStr..")";
 	elseif ns.profile[name].display == "5" then
-		data.percentRest = tonumber(data.percentRest) or 0;
-		data.percentCur = tonumber(data.percentCur) or 0;
-		dataobj.text = ns.textBar(ns.profile[name].textBarCharCount,{1,data.percentCur or 1,ns.round(data.percentRest-data.percentCur)},{"gray2","violet","ltblue"},ns.profile[name].textBarCharacter);
+		if percentExhaustion>1 then
+			percentExhaustion = 1;
+		end
+		text = ns.textBar(ns.profile[name].textBarCharCount,{1,percentCurrentXP or 1,ns.round(percentExhaustion-percentCurrentXP)},{"gray2","violet","ltblue"},ns.profile[name].textBarCharacter);
 	end
+	(module.obj or ns.LDB:GetDataObjectByName(module.ldbName) or {}).text = text;
 end
 
-local function createTooltip2(parentLine,data)
-	tt2 = ns.acquireTooltip({ttName2, 3, "LEFT", "RIGHT", "RIGHT"},{true},{parentLine,"horizontal",tt});
+local function createTooltip2(parentLine,name_realm)
+	local toon = Broker_Everything_CharacterDB[name_realm];
 
+	local lst,sum = {},0;
+	for slotId,slotName in ns.pairsByKeys(slots) do
+		local maxLevel,xpPercent,_ = 0,0;
+		if toon.xp.bonus[slotId] then
+			if tonumber(toon.xp.bonus[slotId]) then
+				local itemId=toon.xp.bonus[slotId];
+				_, _, _, _, _, _, _, _, _, maxLevel = C_Heirloom.GetHeirloomInfo(itemId);
+				if not maxLevel then
+					C_Timer.After(0.1,function()
+						createTooltip2(parentLine,name_realm); -- sometimes blizzard api return nil; retry it
+					end);
+				end
+				xpPercent = heirloomXP[itemId];
+			elseif type(toon.xp.bonus[slotId])=="table" then
+				-- deprecated type
+				maxLevel,xpPercent = toon.xp.bonus[slotId].maxLevel,toon.xp.bonus[slotId].percent;
+			end
+			sum = sum + xpPercent;
+		end
+		local row = {C("ltyellow",slotName)};
+		if maxLevel and maxLevel>0 then
+			tinsert(row,maxLevel);
+		end
+		tinsert(row,
+			(toon.xp.bonus[slotId]==nil and C("ltgray",L["Not equipped"]))
+				or (maxLevel and toon.level>maxLevel and C("red",L["Level too high"]))
+				or (xpPercent>0 and xpPercent.."%")
+				or ""
+		);
+		tinsert(lst,row);
+	end
+
+	tt2 = ns.acquireTooltip({ttName2.."_"..name_realm, 3, "LEFT", "RIGHT", "RIGHT"},{true},{parentLine,"horizontal",tt});
 	tt2:Clear();
-
 	tt2:AddLine(C("ltblue",L["XP bonus"]),C("ltblue",L["max Level"]),C("ltblue",L["XP bonus"]));
 	tt2:AddSeparator(1);
-	for slotId,slotName in ns.pairsByKeys(slots) do
-		local v=data.bonus[slotId] or {};
-		if(slotId==998)then
-			-- tt2:AddLine(C("ltyellow",slotName),v.maxLevel or "",(v.percent) and v.percent.."%" or C("ltgray",ERR_GUILD_PLAYER_NOT_IN_GUILD));
-			-- removed from blizzard
-		elseif(slotId==999)then
-			-- ignore refer-a-friend
+	for i,row in ipairs(lst) do
+		if #row==3 then
+			tt2:AddLine(unpack(row));
 		else
-			tt2:AddLine(
-				C("ltyellow",slotName),
-				v.maxLevel or "",
-				(v.percent==nil and C("ltgray",L["Not equipped"])) or (v.outOfLevel==true and C("red",L["Level too high"])) or v.percent.."%"
-			);
+			local l=tt2:AddLine(row[1]);
+			tt2:SetCell(l,2,row[2],nil,"RIGHT",0);
 		end
 	end
 	tt2:AddSeparator();
-	tt2:AddLine(C("ltblue",ACHIEVEMENT_SUMMARY_CATEGORY),"",C(data.bonusSum>0 and "green" or "gray",data.bonusSum.."%"));
+	tt2:AddLine(C("ltblue",ACHIEVEMENT_SUMMARY_CATEGORY),"",C(sum>0 and "green" or "gray",sum.."%"));
 
 	ns.roundupTooltip(tt2);
 end
@@ -99,39 +160,33 @@ function createTooltip(tt)
 		tt:AddHeader(C("dkyellow",XP));
 	end
 
-	if (UnitLevel("player")<MAX_PLAYER_LEVEL) then
-		tt:AddSeparator();
-		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE),"",C("white",("(%s/%s)"):format(ns.FormatLargeNumber(name,data.cur,true),ns.FormatLargeNumber(name,data.max,true))));
-		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE.." ("..STATUS_TEXT_PERCENT..")"), "",data.percentStr);
-		tt:AddLine(C("ltyellow",GARRISON_FOLLOWER_XP_STRING),"",C("white",ns.FormatLargeNumber(name,data.need,true)));
-		if (data.restStr) then
-			tt:AddLine(C("ltyellow",TUTORIAL_TITLE26),"",C("cyan",data.restStr));
-		end
-	end
+	local level = UnitLevel("player");
 
-	if (UnitLevel("player")<MAX_PLAYER_LEVEL) and (#data.bonus>0) then
+	if level<MAX_PLAYER_LEVEL then
+		tt:AddSeparator();
+		local needToLevelup, percentCurrentXP, percentExhaustion, percentCurrentXPStr, percentExhaustionStr = GetExperience(level,data.cur,data.max,data.rest);
+		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE),"",C("white",("%s/%s"):format(ns.FormatLargeNumber(name,data.cur,true),ns.FormatLargeNumber(name,data.max,true))));
+		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE.." ("..STATUS_TEXT_PERCENT..")"), "",percentCurrentXPStr);
+		tt:AddLine(C("ltyellow",GARRISON_FOLLOWER_XP_STRING),"",C("white",ns.FormatLargeNumber(name,data.max-data.cur,true)));
+		tt:AddLine(C("ltyellow",TUTORIAL_TITLE26),"",C("cyan",percentExhaustionStr));
+
 		tt:AddSeparator(5,0,0,0,0);
 		tt:AddLine(C("ltblue",L["XP bonus"]),C("ltblue",L["max Level"]),C("ltblue",L["XP bonus"]));
 		tt:AddSeparator();
+		local sum = 0;
 		for slotId,slotName in ns.pairsByKeys(slots) do
-			local v = data.bonus[slotId] or {};
-			if(slotId==999)then
-				if(v.percent)then
-					tt:AddLine(C("ltyellow", slotName),"", v.percent.."%"); -- show only if active
-				end
-			elseif(slotId==998)then
-				-- tt:AddLine(C("ltyellow", slotName),"", (v.percent==nil) and L["Not in a guild"] or v.percent.."%");
-				-- removed from blizzard
-			else
-				tt:AddLine(
-					C("ltyellow", slotName),
-					v.maxLevel or "",
-					(v.percent==nil and C("ltgray",L["Not equipped"])) or (v.outOfLevel==true and C("red",L["Level too high"])) or v.percent.."%"
-				);
+			local v,maxLevel,xpPercent = data.bonus[slotId],0,0;
+			if tonumber(v) then
+				_, _, _, _, _, _, _, _, _, maxLevel = C_Heirloom.GetHeirloomInfo(v);
+				xpPercent = heirloomXP[v];
+			elseif type(v)=="table" then
+				maxLevel,xpPercent = v.maxLevel,v.percent;
 			end
+			sum = sum + xpPercent;
+			tt:AddLine(C("ltyellow", slotName),maxLevel>0 and maxLevel or "",(maxLevel==0 and C("ltgray",L["Not equipped"])) or (level>maxLevel and C("red",L["Level too high"])) or (xpPercent>0 and xpPercent.."%") or "");
 		end
 		tt:AddSeparator();
-		tt:AddLine(C("ltblue",ACHIEVEMENT_SUMMARY_CATEGORY),"",C(data.bonusSum>0 and "green" or "gray",data.bonusSum.."%"));
+		tt:AddLine(C("ltblue",ACHIEVEMENT_SUMMARY_CATEGORY),"",C(sum>0 and "green" or "gray",sum.."%"));
 	end
 
 	if ns.profile[name].showMyOtherChars then
@@ -144,11 +199,16 @@ function createTooltip(tt)
 		for i=1, #Broker_Everything_CharacterDB.order do
 			local name_realm = Broker_Everything_CharacterDB.order[i];
 			local v = Broker_Everything_CharacterDB[name_realm];
-			if(v.xp and v.xp.bonus)then --- little cleanup outdated boolean usage
+			if v.xp and v.xp.bonus then --- little cleanup outdated boolean usage
 				for slotId, slot in pairs(v.xp.bonus)do
-					if( slot.percent==nil or slot.percent==false )then
+					if slotId>900 then
+						v.xp.bonus[slotId] = nil; -- remove deprecated entries
+					elseif type(slot)=="table" and (slot.percent==nil or slot.percent==false) then
 						v.xp.bonus[slotId]=nil;
 					end
+				end
+				if v.xp.bonusSum then
+					v.xp.bonusSum = nil;
 				end
 			end
 			if showThisChar(name_realm,v) then
@@ -161,19 +221,20 @@ function createTooltip(tt)
 				if v.faction and v.faction~="Neutral" then
 					factionSymbol = "|TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t";
 				end
+
+				local needToLevelup, percentCurrentXP, percentExhaustion, percentCurrentXPStr, percentExhaustionStr = GetExperience(v.level,v.xp.cur,v.xp.max,v.xp.rest);
+
 				local restState = "";
-				if v.xp.restStr then
-					restState = " "..C("cyan",v.xp.restStr);
+				if percentExhaustion>0 then
+					restState = " "..C("cyan",percentExhaustionStr.."~");
 				end
 				local l = tt:AddLine(
 					("(%d) %s %s"):format(v.level,C(v.class,ns.scm(Name))..ns.showRealmName(name,Realm), factionSymbol),
-					(v.xp.percentStr or 0)..restState,
-					("(%s/%s)"):format(ns.FormatLargeNumber(name,v.xp.cur,true),ns.FormatLargeNumber(name,v.xp.max,true))
+					(percentCurrentXPStr or 0)..restState,
+					("%s/%s"):format(ns.FormatLargeNumber(name,v.xp.cur,true),ns.FormatLargeNumber(name,v.xp.max,true))
 				);
 				tt:SetLineScript(l,"OnMouseUp",deleteCharacterXP, name_realm);
-				if (v.xp.bonus and #v.xp.bonus>0) then
-					tt:SetLineScript(l,"OnEnter",createTooltip2,v.xp);
-				end
+				tt:SetLineScript(l,"OnEnter",createTooltip2,name_realm);
 				count = count + 1;
 			end
 		end
@@ -199,6 +260,7 @@ end
 module = {
 	events = {
 		"PLAYER_LOGIN",
+		"PLAYER_LOGOUT",
 		"PLAYER_XP_UPDATE",
 		"DISABLE_XP_GAIN",
 		"ENABLE_XP_GAIN",
@@ -280,43 +342,51 @@ function module.options()
 end
 
 function module.init()
-	items = { -- Heirlooms with xp bonus {<percent>,<maxLevel>}
+	xp2levelup = {
+		400,900,1400,2100,2800,3800,5000,6400,8100,9240,10780,13230,16800,20380,24440,28080,31500,34800,38550,41260,44230,45730,46800,49540,51830,53480,55340,
+		56850,60030,62830,66170,68480,71060,73280,75640,78120,80000,82130,84020,86300,88840,91900,95110,98210,101460,104740,107890,111190,114520,117700,121040,
+		124400,127600,130960,134330,137540,140900,144270,147470,152580,157120,161890,166730,171470,176450,184520,192840,201220,210030,219090,228200,237770,247600,
+		257470,267840,278480,289150,300340,311810,323580,330950,338670,346490,354110,362100,370180,378050,386310,394650,406940,415510,424160,432590,441410,450330,
+		459330,468420,477610,486550,492540,497060,501580,506100,510620,515140,519660,524180,528690,533210,537730,831000,837930,844850,851780,858700,865630,872550,
+		879480,886400,893550
+	};
+	heirloomXP = {
 		-- Head
-		[61931] = {10,85}, [61935] = {10,85}, [61936] = {10,85}, [61937] = {10,85}, [61942] = {10,85}, [61958] = {10,85}, [69887] = {10,85},
+		[61931] = 10, [61935] = 10, [61936] = 10, [61937] = 10, [61942] = 10, [61958] = 10, [69887] = 10,
 		--- (new since wod 6.0)
-		[127012] = {10,100,1}, [122263] = {10,100,1}, [122245] = {10,100,1}, [122247] = {10,100,1}, [122246] = {10,100,1}, [122249] = {10,100,1}, [122248] = {10,100,1}, [122250] = {10,100,1},
+		[127012] = 10, [122263] = 10, [122245] = 10, [122247] = 10, [122246] = 10, [122249] = 10, [122248] = 10, [122250] = 10,
 
 		-- shoulder
-		[42949] = {10,80}, [42951] = {10,80}, [42952] = {10,80}, [42984] = {10,80}, [42985] = {10,80}, [44099] = {10,80}, [44100] = {10,80},
-		[44101] = {10,80}, [44102] = {10,80}, [44103] = {10,80}, [44105] = {10,80}, [44107] = {10,80}, [69890] = {10,80}, [93859] = {10,85},
-		[93861] = {10,85}, [93862] = {10,85}, [93864] = {10,85}, [93866] = {10,85}, [93876] = {10,85}, [93886] = {10,85}, [93887] = {10,85},
-		[93889] = {10,85}, [93890] = {10,85}, [93893] = {10,85}, [93894] = {10,85},
+		[42949] = 10, [42951] = 10, [42952] = 10, [42984] = 10, [42985] = 10, [44099] = 10, [44100] = 10,
+		[44101] = 10, [44102] = 10, [44103] = 10, [44105] = 10, [44107] = 10, [69890] = 10, [93859] = 10,
+		[93861] = 10, [93862] = 10, [93864] = 10, [93866] = 10, [93876] = 10, [93886] = 10, [93887] = 10,
+		[93889] = 10, [93890] = 10, [93893] = 10, [93894] = 10,
 		--- (new since wod 6.0)
-		[122355] = {10,100,1}, [122356] = {10,100,1}, [122357] = {10,100,1}, [122358] = {10,100,1}, [122359] = {10,100,1}, [122360] = {10,100,1}, [122372] = {10,100,1},
-		[122375] = {10,100,1}, [122376] = {10,100,1}, [122377] = {10,100,1}, [122378] = {10,100,1}, [122388] = {10,100,1}, [122373] = {10,100,1}, [122374] = {10,100,1},
+		[122355] = 10, [122356] = 10, [122357] = 10, [122358] = 10, [122359] = 10, [122360] = 10, [122372] = 10,
+		[122375] = 10, [122376] = 10, [122377] = 10, [122378] = 10, [122388] = 10, [122373] = 10, [122374] = 10,
 
 		-- chest
-		[48677] = {10,80}, [48683] = {10,80}, [48685] = {10,80}, [48687] = {10,80}, [48689] = {10,80}, [48691] = {10,80}, [69889] = {10,80},
-		[93860] = {10,85}, [93863] = {10,85}, [93865] = {10,85}, [93885] = {10,85}, [93888] = {10,85}, [93891] = {10,85}, [93892] = {10,85},
+		[48677] = 10, [48683] = 10, [48685] = 10, [48687] = 10, [48689] = 10, [48691] = 10, [69889] = 10,
+		[93860] = 10, [93863] = 10, [93865] = 10, [93885] = 10, [93888] = 10, [93891] = 10, [93892] = 10,
 		--- (new since wod 6.0)
-		[122384] = {10,100,1}, [122382] = {10,100,1}, [122383] = {10,100,1}, [122379] = {10,100,1}, [122380] = {10,100,1}, [122381] = {10,100,1}, [122387] = {10,100,1}, [127010] = {10,100,1},
+		[122384] = 10, [122382] = 10, [122383] = 10, [122379] = 10, [122380] = 10, [122381] = 10, [122387] = 10, [127010] = 10,
 
 		-- legs
-		[62029] = {10,85}, [62026] = {10,85}, [62027] = {10,85}, [62024] = {10,85}, [62025] = {10,85}, [62023] = {10,85}, [69888] = {10,85},
+		[62029] = 10, [62026] = 10, [62027] = 10, [62024] = 10, [62025] = 10, [62023] = 10, [69888] = 10,
 		--- (new since wod 6.0)
-		[122256] = {10,100,1}, [122254] = {10,100,1}, [122255] = {10,100,1}, [122252] = {10,100,1}, [122253] = {10,100,1}, [122251] = {10,100,1}, [122264] = {10,100,1}, [127011] = {10,100,1},
+		[122256] = 10, [122254] = 10, [122255] = 10, [122252] = 10, [122253] = 10, [122251] = 10, [122264] = 10, [127011] = 10,
 
 		-- backs
-		[62038] = {5,85}, [62039] = {5,85}, [62040] = {5,85}, [69892] = {5,85},
+		[62038] = 5, [62039] = 5, [62040] = 5, [69892] = 5,
 		--- (new since wod 6.0)
-		[122260] = {5,100,1}, [122261] = {5,100,1}, [122262] = {5,100,1}, [122266] = {5,100,1},
+		[122260] = 5, [122261] = 5, [122262] = 5, [122266] = 5,
 		--- {new since bfa 8.1}
-		[166770] = {5,100,1}, [166752] = {5,100,1},
+		[166770] = 5, [166752] = 5,
 
 		-- rings
-		[50255] = {5,80}, [122529] = {5,100},
+		[50255] = 5, [122529] = 5,
 		--- (new since wod 6.0)
-		[128169] = {5,100}, [128172] = {5,100}, [128173] = {5,100},
+		[128169] = 5, [128172] = 5, [128173] = 5,
 	};
 	if ns.toon.xp==nil then
 		ns.toon.xp={};
@@ -326,62 +396,35 @@ end
 function module.onevent(self,event,msg)
 	if event=="BE_UPDATE_CFG" and msg and msg:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
+	elseif event=="PLAYER_LOGOUT" then
+		ns.toon.xp.logoutTime = time();
+		ns.toon.xp.isResting = IsResting();
 	elseif ns.eventPlayerEnteredWorld and not (event=="UNIT_INVENTORY_CHANGED" and msg~="player") then
-		if (MAX_PLAYER_LEVEL==UnitLevel("player")) then
-			data = {cur=1,max=1,rest=0,need=0,percentCur=1,percentRest=1,percentStr="100%",restStr="n/a",bonus={},bonusSum=0};
+		local level = UnitLevel("player");
+		if MAX_PLAYER_LEVEL==level then
+			data = {
+				cur=1,
+				max=1,
+				rest=0,
+				logoutTime=0,
+				isResting=false,
+				bonus={}
+			};
 		else
 			data = {
 				cur = UnitXP("player"),
 				max = UnitXPMax("player"),
 				rest = GetXPExhaustion() or 0,
+				logoutTime=0,
+				isResting=false,
+				bonus = {}
 			}
-			data.need = data.max-data.cur;
-			data.percentCur = ns.round(data.cur/data.max,2);
-			local cur_rest = data.cur+data.rest;
-			data.percentRest = (cur_rest>data.max) and 1 or ns.round(cur_rest/data.max,2);
-			data.percentStr = math.floor(data.percentCur * 100).."%";
-			data.restStr   = data.percentRest==1 and ">100%+" or ">"..("%1.2f%%"):format(data.percentRest*100);
-
-			data.bonus     = {};
-			data.bonusSum  = 0;
 
 			--- Bonus by inventory items
 			for slotId,slotName in pairs(slots) do
 				local itemId = GetInventoryItemID("player",slotId);
-				if itemId and items[itemId] then
-					local _,_,_,_,_,_,_,_,_,_,_,_,_,_,upgrade = strsplit(":",GetInventoryItemLink("player",slotId));
-					local maxLevel = items[itemId][2]; upgrade=tonumber(upgrade);
-					if upgrade==0 then
-						maxLevel = 60;
-					elseif upgrade==582 then
-						maxLevel = 90;
-					elseif upgrade==583 then
-						maxLevel = 100;
-					elseif upgrade==3592 then
-						maxLevel = 110;
-					end
-					data.bonus[slotId] = {percent=items[itemId][1], outOfLevel=(UnitLevel("player")>maxLevel) and true or nil, maxLevel=maxLevel};
-				end
-			end
-
-
-			--- Bonus by Refer-A-Friend
-			local count = 1;
-			if IsInGroup() or IsInRaid() then
-				local raf_boost = false;
-				for i=1, GetNumGroupMembers() or 0 do
-					local m = (IsInRaid() and "raid" or "party")..i;
-					if UnitIsVisible(m) and IsReferAFriendLinked(m) then
-						raf_boost = true;
-						data.bonus[999] = {percent=50};
-					end
-				end
-			end
-
-			--- bonus summary
-			for i,v in pairs(data.bonus)do
-				if(v.percent and not v.outOfLevel)then
-					data.bonusSum = data.bonusSum + v.percent;
+				if itemId and C_Heirloom.IsItemHeirloom(itemId) and heirloomXP[itemId] then
+					data.bonus[slotId] = itemId;
 				end
 			end
 		end

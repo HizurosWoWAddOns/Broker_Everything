@@ -165,7 +165,6 @@ function createTooltip(tt,update)
 			parentIsCollapsed = ns.toon[name].headers[Currencies[i]]~=nil;
 			local l=tt:AddLine();
 			if not parentIsCollapsed then
-				ns.debug(name,i,Currencies[i],headers[Currencies[i]]);
 				tt:SetCell(l,1,C("ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t "..headers[Currencies[i]]),nil,nil,0);
 				tt:AddSeparator();
 			else
