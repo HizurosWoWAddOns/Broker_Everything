@@ -12,13 +12,13 @@ local ttName, ttColumns, tt, skill, module = name.."TT", 5
 local tradeskill, maxFragments, maxFragments250 = {},200,{[109585]=1,[108439]=1,[109584]=1};
 local raceIndex,raceCurrencyId,raceKeystone2Fragments,raceName,raceTexture,raceKeystoneItemID = 1,2,3,4,5,6;
 local raceFragmentsCollected,raceNumFragmentsRequired,raceFragmentsMax,raceArtifactName,raceArtifactIcon,raceKeystoneSlots = 7,8,9,10,11,12;
-local raceKeystoneIcon,raceKeystoneCount,raceKeystoneFragmentsValue,raceArtifactSolvable,raceFragmentsIcon = 13,14,15,16,17;
+local raceKeystoneIcon,raceKeystoneCount,raceKeystoneFragmentsValue,raceArtifactSolvable,raceFragmentsIcon,raceCurrencyName = 13,14,15,16,17,18;
 local keystoneItem2race,races,racesOrder = {};
-local defaultKeystoneToFragment,keystoneFragmentsByRace = 12;
-local solvables,limitWarning = {},{};
+local defaultKeystoneToFragment = 12;
+local solvables,limitWarning,currencyName2race,currencySeen = {},{},{};
 local iconFormat1 = "|T%s:14:14:0:0:64:64:4:56:4:56|t";
 local iconFormat2 = "|T%s:14:14:0:0:128:128:3:70:8:75|t";
-
+local CHAT_MSG_CURRENCY_PATTERN = "%[(.*)%]";
 
 -- register icon names and default files --
 -------------------------------------------
@@ -34,10 +34,10 @@ end
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local text = {};
-	if #limitWarning>0 then
-		table.sort(limitWarning,function(a,b) return a.free < b.free; end);
-		local _,v = pairs(limitWarning);
-		tinsert(text,C(limitColors(v.free,"white"),v.name .. (#limitWarning>1 and " "..L["and %d more"]:format(#limitWarning-1) or "")));
+	local numWarning = #limitWarning;
+	if currencySeen then
+		local str,color = currencySeen[raceName].." "..currencySeen[raceFragmentsCollected].."/"..currencySeen[raceFragmentsMax],limitColors(currencySeen[raceFragmentsMax]-currencySeen[raceFragmentsCollected],"white");
+		tinsert(text,color~="white" and C(color,str) or str);
 	end
 	if #solvables>0 then
 		tinsert(text,C("green",solvables[1] .. (#solvables>1 and " " ..L["and %d more"]:format(#solvables-1) or "")));
@@ -87,6 +87,7 @@ end
 
 local function updateRaces(firstUpdate)
 	wipe(solvables);
+	wipe(limitWarning);
 	if firstUpdate then
 		local num = GetNumArchaeologyRaces();
 		local unknownHeader = true;
@@ -108,11 +109,15 @@ local function updateRaces(firstUpdate)
 			t[raceTexture] = iconFormat2:format(t[raceTexture]);
 
 			if t[raceCurrencyId]~=0 then
-				_,_,iconFile = GetCurrencyInfo(t[raceCurrencyId]);
+				t[raceCurrencyName],_,iconFile = GetCurrencyInfo(t[raceCurrencyId]);
 			end
 			t[raceFragmentsIcon] = iconFormat1:format(iconFile or ns.icon_fallback);
 
 			updateRaceArtifact(t,GetActiveArtifactByRace(i));
+
+			if t[raceCurrencyName] then
+				currencyName2race[t[raceCurrencyName]] = info[2];
+			end
 		end
 	else
 		for k, t in pairs(races)do
@@ -236,7 +241,7 @@ module = {
 		"RESEARCH_ARTIFACT_UPDATE",
 		"RESEARCH_ARTIFACT_COMPLETE",
 		"CURRENCY_DISPLAY_UPDATE",
-		"CHAT_MSG_SKILL"
+		"CHAT_MSG_CURRENCY"
 	},
 	config_defaults = {
 		enabled = false,
@@ -339,6 +344,12 @@ function module.onevent(self,event,arg1,...)
 		end
 	end
 	if ns.eventPlayerEnteredWorld then
+		if event=="CHAT_MSG_CURRENCY" then
+			local currencyStr  = arg1:match(CHAT_MSG_CURRENCY_PATTERN);
+			if currencyName2race[currencyStr] and races[currencyName2race[currencyStr]] then
+				currencySeen = races[currencyName2race[currencyStr]];
+			end
+		end
 		updateRaces(true);
 	end
 end
