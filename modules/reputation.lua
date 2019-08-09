@@ -21,7 +21,7 @@ local GetNumFactions,GetFactionInfo,GetFactionInfoByID = GetNumFactions,GetFacti
 local bars,factions,session,spacer,initReputationListTicker = {},{},{},"    ";
 local allinone = {faction=85000,friend=43000,bodyguard=31000};
 local bodyguards,known_bodyguards = {193,207,216,218,219},{};
-local round,collapsedL1,collapsedL2 = false,{},{};
+local round,collapsedL1,collapsedL2,paragonQuestIDs = false,{},{},{};
 local idStr = C("gray"," (%d)");
 local formats = {
 	["_NONE"]       = "None",
@@ -84,8 +84,10 @@ local function _GetFactionInfoByID(faction_id,paragonOnly)
 		if data[factionID] and data[isParagon] then
 			local _value, _threshold, _rewardQuestID, _hasPending = C_Reputation.GetFactionParagonInfo(data[factionID]);
 			if _value~=nil then
+				C_Reputation.RequestFactionParagonPreloadRewardData(data[factionID]);
 				data[rewardQuestID] = _rewardQuestID;
 				data[rewardsFinished] = 0;
+				paragonQuestIDs[_rewardQuestID] = true;
 				if _value > _threshold then
 					data[rewardsFinished] = floor(_value/_threshold);
 					_value = _value - data[rewardsFinished]*_threshold;
@@ -109,6 +111,7 @@ local function initReputationList()
 	if round==false then
 		return false;
 	elseif round<0 then
+		local collapsed
 		if round==-2 then
 			collapsedL1 = collapsedL1 or {};
 			collapsed = collapsedL1;
@@ -456,7 +459,8 @@ end
 module = {
 	events = {
 		"PLAYER_LOGIN",
-		"UPDATE_FACTION"
+		"UPDATE_FACTION",
+		"QUEST_LOOT_RECEIVED",
 	},
 	config_defaults = {
 		enabled = false,
@@ -561,6 +565,8 @@ function module.onevent(self,event,arg1,...)
 		if ns.toon[name]==nil or (ns.toon[name] and ns.toon[name].headers==nil) then
 			ns.toon[name] = {headers={[-1]=true}};
 		end
+	elseif event=="QUEST_LOOT_RECEIVED" and not paragonQuestIDs[arg1] then
+		return; -- prevent update broker if quest loot not from paragon quest
 	end
 	if ns.eventPlayerEnteredWorld then
 		if not self.loadedBodyguards then
