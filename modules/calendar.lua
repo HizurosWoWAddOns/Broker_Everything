@@ -42,7 +42,7 @@ local function updateEventTime(eventTime)
 end
 
 local function sortByCommunity(a,b)
-	return a.clubId<b.clubId;
+	return a.clubID<b.clubID;
 end
 
 local function updateEvents()
