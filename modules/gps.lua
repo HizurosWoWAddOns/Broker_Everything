@@ -146,9 +146,11 @@ local function updateItems()
 	end
 
 	-- update foundToys table;
-	for i=1, #_toyIds do
-		if addToy(_toyIds[i]) then
-			_namelessToys[_toyIds[i]] = true;
+	if ns.client_version>=2 then
+		for i=1, #_toyIds do
+			if addToy(_toyIds[i]) then
+				_namelessToys[_toyIds[i]] = true;
+			end
 		end
 	end
 end
@@ -376,7 +378,7 @@ local function transportMenu(self,button,name)
 		end
 	end
 
-	if foundToysNum>0 then
+	if ns.client_version>=2 and foundToysNum>0 then
 		-- toy title
 		if not ns.profile[name].shortMenu then
 			tt4:AddSeparator(4,0,0,0,0);
@@ -576,7 +578,9 @@ end
 local eventActive = false;
 local function onevent(name,self,event,...)
 	if event=="BE_UPDATE_CFG" then
-		ns.ClickOpts.update(name);
+		if msg and msg:find("^ClickOpt") then
+			ns.ClickOpts.update(name);
+		end
 		if not eventActive then
 			eventActive = name;
 		end

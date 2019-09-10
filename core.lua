@@ -119,6 +119,8 @@ end)
 Broker_Everything:RegisterEvent("ADDON_LOADED");
 Broker_Everything:RegisterEvent("PLAYER_LOGIN");
 Broker_Everything:RegisterEvent("PLAYER_LEVEL_UP");
-Broker_Everything:RegisterEvent("NEUTRAL_FACTION_SELECT_RESULT");
 Broker_Everything:RegisterEvent("DISPLAY_SIZE_CHANGED");
 Broker_Everything:RegisterEvent("GET_ITEM_INFO_RECEIVED");
+if ns.client_version>=2 then
+	Broker_Everything:RegisterEvent("NEUTRAL_FACTION_SELECT_RESULT");
+end

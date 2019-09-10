@@ -3,6 +3,7 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
+if ns.client_version<2 then return end
 
 
 -- module own local variables and local cached functions --
@@ -419,7 +420,7 @@ function module.init()
 			break;
 		end
 	end
-	for i=1, EXPANSION_LEVEL do
+	for i=1, EXPANSION_LEVEL or 0 do
 		local n = "EXPANSION_NAME"..i;
 		headers[n] = _G[n];
 	end

@@ -777,7 +777,7 @@ end
 -- -------------------------------------------------------------- --
 do
 	-- note: this new version is a downgrade to reduce memory usage. it is only for detect changes.
-	ns.items = {bags={},inventory={},item={},equipment={}};
+	ns.items = {bags={},ammo={},soul={},inventory={},item={},equipment={}};
 	local slotNames = {"Head","Neck","Shoulder","Shirt","Chest","Waist","Legs","Feet","Wrist","Hands","Finger0","Finger1","Trinket0","Trinket1","Back","MainHand","SecondaryHand","Range","Tabard"};
 	local doUpdate,f,prev = {bags=false,inv=false,idCallback={},ticker=false,tickerLength=0.5,defaultDelay=2,delay=false,locked=false},CreateFrame("Frame");
 	local callbacks,hasChanged,IsEnabled = {bags={},inv={},any={},item={},equipment={},prepare={},bagsNum=0,invNum=0,anyNum=0,itemNum=0,equipmentNum=0,prepareNum=0};
@@ -864,29 +864,61 @@ do
 
 		-- scan bags
 		if doUpdate.bags then
-			prev = ns.items.bags;
-			local tmp,_ = {};
+			local prev_bags,prev_ammo,prev_soul = ns.items.bags,ns.items.ammo,ns.items.soul;
+			local tmp_bags,tmp_ammo,tmp_soul,_ = {},{},{};
 			for bag=0, NUM_BAG_SLOTS do
-				if GetContainerNumSlots(bag) ~= GetContainerNumFreeSlots(bag) then -- do not scan empty bag :-)
+				local isAmmo,isSoul = false,false;
+				if bag>=1 then
+					local link = GetInventoryItemLink("player", bag+19);
+					if link then
+						local _, _, _, _, _, _, _, _, _, _, _, itemClassID, itemSubClassID  = GetItemInfo(link);
+						--if not itemClassID or not itemSubClassID then
+						--	ns.debug("ns.items.scanner","itemClassID:",itemClassID,"itemSubClassID:",itemSubClassID,"link:",link);
+						--end
+						if itemClassID==LE_ITEM_CLASS_QUIVER then -- quiver / ammo pouch
+							isAmmo = true;
+						elseif itemSubClassID==3 then
+							isSoul = true;
+						end
+					end
+				end
+				if GetContainerNumSlots(bag)~=GetContainerNumFreeSlots(bag) then -- do not scan empty bag ;-)
 					for slot=1, GetContainerNumSlots(bag) do
 						local _, count, _, quality, readable, lootable, link, _, _, id = GetContainerItemInfo(bag,slot);
 						id = tonumber(id);
 						if id then
 							local d,dM = GetContainerItemDurability(bag,slot);
-							local info = {bag=bag,slot=slot,id=id,link=link,count=count,quality=quality,readable=readable,lootable=lootable,durability=d or 0,durabilityMax=dM or 0};
-							addItem(tmp,prev,info);
+							ns.debug("x",bag,slot,id,isAmmo);
+							addItem(
+								(isAmmo and tmp_ammo) or (isSoul and tmp_soul) or tmp_bags,
+								(isAmmo and prev_ammo) or (isSoul and prev_soul) or prev_bags,
+								{bag=bag,slot=slot,id=id,link=link,count=count,quality=quality,readable=readable,lootable=lootable,durability=d or 0,durabilityMax=dM or 0}
+							);
 						end
 					end
 				end
 			end
-			for index,obj in pairs(prev)do
+			for index,obj in pairs(prev_bags)do
 				if ns.items.bags[index]==nil then -- item disappeared or moved
 					hasChanged.bags = true;
 					break;
 				end
 			end
-			ns.items.bags = tmp;
-			prev = nil;
+			for index,obj in pairs(prev_ammo)do
+				if ns.items.ammo[index]==nil then -- item disappeared or moved
+					hasChanged.bags = true;
+					break;
+				end
+			end
+			for index,obj in pairs(prev_soul)do
+				if ns.items.soul[index]==nil then -- item disappeared or moved
+					hasChanged.bags = true;
+					break;
+				end
+			end
+			ns.items.bags = tmp_bags;
+			ns.items.ammo = tmp_ammo;
+			ns.items.soul = tmp_soul;
 		end
 
 		-- scan inventory
@@ -897,12 +929,11 @@ do
 				local id = GetInventoryItemID("player",index);
 				id = tonumber(id);
 				if id then
-					local d,dM = GetInventoryItemDurability(index);
 					local link = GetInventoryItemLink("player",index);
-					local quality = GetInventoryItemQuality("player",index);
-					local info = {slot=index,id=id,link=link,quality=quality,durability=d or 0,durabilityMax=dM or 0};
 					if not link:find("%[%]") then -- not nice. Query heirloom item info's looks like unstable. too often return invalid item links
-						addItem(tmp,prev,info);
+						local d,dM = GetInventoryItemDurability(index);
+						local quality = GetInventoryItemQuality("player",index);
+						addItem(tmp,prev,{slot=index,id=id,link=link,quality=quality,durability=d or 0,durabilityMax=dM or 0});
 					else
 						hasChanged.failed = true;
 					end

@@ -229,13 +229,17 @@ local function createTooltip(tt)
 end
 
 local function SendMailHook(targetName)
-	if debugstack():find("\?") then return end -- ignore double executed function
+	if debugstack():find("\?") and type(targetName)~="string" then return end -- ignore double executed function
 
 	local t = time()+30*86400;
-	local _,r = strsplit("-",targetName,2);
-	if type(r)=="string" and r:len()>0 then
-		targetName = targetName.."-"..ns.realms[r];
-	elseif not r then
+	if targetName:find("-") then
+		local tn,r = strsplit("-",targetName,2);
+		if type(r)=="string" and r:len()>0 and type(ns.realms[r])=="string" then
+			targetName = rn.."-"..ns.realms[r];
+		else
+			ns.debug("Something goes wrong...","tn: "..type(tn),"r: "..type(r));
+		end
+	else
 		targetName = targetName.."-"..ns.realm;
 	end
 	if Broker_Everything_CharacterDB[targetName] then

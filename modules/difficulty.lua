@@ -3,6 +3,7 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
+if ns.client_version<2 then return end
 
 
 -- module own local variables and local cached functions --
@@ -272,8 +273,12 @@ module.instanceReset = instanceReset;
 
 function module.onevent(self,event,...)
 	local update = false;
-
-	if (event=="PLAYER_ENTERING_WORLD") then
+	if event=="BE_UPDATE_CFG" then
+		if arg1 and arg1:find("^ClickOpt") then
+			ns.ClickOpts.update(name);
+			return;
+		end
+	elseif (event=="PLAYER_ENTERING_WORLD") then
 		update = true
 	elseif (event=="GROUP_ROSTER_UPDATE") then
 		update = true

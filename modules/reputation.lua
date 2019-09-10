@@ -13,7 +13,7 @@ local Name,description,standingID,barMin,barMax,barValue,atWarWith,canToggleAtWa
 local barPercent,sessionValue,factionStandingText,friendID,isParagon,hideSession,rewardMin,rewardMax,rewardValue,rewardQuestID,rewardPercent,hasRewardPending,rewardsFinished,rewardSessionValue=30,31,32,33,34,35,36,37,38,39,40,41,42,43,44;
 
 local tinsert,tconcat,ipairs,pairs,unpack=tinsert,table.concat,ipairs,pairs,unpack;
-local IsFactionParagon,GetFactionParagonInfo,CTimerAfter = C_Reputation.GetFactionParagonInfo,C_Reputation.IsFactionParagon,C_Timer.After
+local CTimerAfter,IsFactionParagon,GetFactionParagonInfo = C_Timer.After
 local GetFriendshipReputation,GetFactionInfoByID,CTimerNewTicker = GetFriendshipReputation,GetFactionInfoByID,C_Timer.NewTicker;
 local ExpandFactionHeader,CollapseFactionHeader,GetWatchedFactionInfo = ExpandFactionHeader,CollapseFactionHeader,GetWatchedFactionInfo;
 local GetNumFactions,GetFactionInfo,GetFactionInfoByID = GetNumFactions,GetFactionInfo,GetFactionInfoByID;
@@ -34,11 +34,21 @@ local formats = {
 
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile="Interface\\Icons\\Achievement_Reputation_01", coords={0.1,0.9,0.1,0.9}} --IconName::Reputation--
+I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\Achievement_Reputation_01", coords={0.1,0.9,0.1,0.9}} --IconName::Reputation--
 
 
 -- some local functions --
 --------------------------
+if C_Reputation then
+	IsFactionParagon,GetFactionParagonInfo = C_Reputation.GetFactionParagonInfo,C_Reputation.IsFactionParagon
+else
+	function IsFactionParagon()
+		return false;
+	end
+	function GetFactionParagonInfo()
+		return;
+	end
+end
 
 local function _GetFactionInfoByID(faction_id,paragonOnly)
 	local data = {GetFactionInfoByID(faction_id)};
@@ -53,20 +63,21 @@ local function _GetFactionInfoByID(faction_id,paragonOnly)
 			data[factionStandingText] = _G["FACTION_STANDING_LABEL"..data[standingID]];
 
 			-- IsFriend
-			local _friendID,friendRep,friendMaxRep,friendName,friendText,friendTexture,friendTextLevel,friendThreshold,nextFriendThreshold = GetFriendshipReputation(data[factionID]);
-			if _friendID~=nil then
-				data[friendID] = _friendID;
-				data[factionStandingText] = friendTextLevel;
-				if nextFriendThreshold then
-					data[barMin], data[barMax], data[barValue] = friendThreshold, nextFriendThreshold, friendRep;
-				else
-					data[barMin], data[barMax], data[barValue] = 0, 1, 1;
-					data[hideSession] = true
+			if GetFriendshipReputation then
+				local _friendID,friendRep,friendMaxRep,friendName,friendText,friendTexture,friendTextLevel,friendThreshold,nextFriendThreshold = GetFriendshipReputation(data[factionID]);
+				if _friendID~=nil then
+					data[friendID] = _friendID;
+					data[factionStandingText] = friendTextLevel;
+					if nextFriendThreshold then
+						data[barMin], data[barMax], data[barValue] = friendThreshold, nextFriendThreshold, friendRep;
+					else
+						data[barMin], data[barMax], data[barValue] = 0, 1, 1;
+						data[hideSession] = true
+					end
+				elseif data[standingID]==8 then
+					data[barMin], data[barMax], data[barValue] = 0, 999, 999;
 				end
-			elseif data[standingID]==8 then
-				data[barMin], data[barMax], data[barValue] = 0, 999, 999;
 			end
-
 			data[barPercent] = (data[barValue]-data[barMin])/(data[barMax]-data[barMin]);
 
 			-- session difference
@@ -460,7 +471,6 @@ module = {
 	events = {
 		"PLAYER_LOGIN",
 		"UPDATE_FACTION",
-		"QUEST_LOOT_RECEIVED",
 	},
 	config_defaults = {
 		enabled = false,
@@ -489,6 +499,10 @@ module = {
 		["menu"] = "OptionMenuCustom"
 	}
 }
+
+if ns.client_version>=2 then
+	tinsert(module.events,"QUEST_LOOT_RECEIVED")
+end
 
 ns.ClickOpts.addDefaults(module,{
 	reputation = "_LEFT",
@@ -569,7 +583,7 @@ function module.onevent(self,event,arg1,...)
 		return; -- prevent update broker if quest loot not from paragon quest
 	end
 	if ns.eventPlayerEnteredWorld then
-		if not self.loadedBodyguards then
+		if ns.client_version >= 6 and not self.loadedBodyguards then
 			self.loadedBodyguards = updateBodyguards();
 		end
 		if round==false then

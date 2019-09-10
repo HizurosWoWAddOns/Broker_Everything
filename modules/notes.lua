@@ -15,9 +15,9 @@ local titleLimit,textLimit = 32,10000;
 
 -- register icon names and default files --
 -------------------------------------------
-I[name]              = {iconfile="Interface\\Icons\\INV_Misc_PaperBundle04a", coords={0.05,0.95,0.05,0.95}}; --IconName::Notes--
-I[name..'_alliance'] = {iconfile="Interface\\Icons\\INV_Misc_PaperBundle04c", coords={0.05,0.95,0.05,0.95}}; --IconName::Notes_alliance--
-I[name..'_horde']    = {iconfile="Interface\\Icons\\INV_Misc_PaperBundle04b", coords={0.05,0.95,0.05,0.95}}; --IconName::Notes_horde--
+I[name]              = {iconfile="Interface\\Addons\\"..addon.."\\media\\INV_Misc_PaperBundle04a", coords={0.05,0.95,0.05,0.95}}; --IconName::Notes--
+I[name..'_alliance'] = {iconfile="Interface\\Addons\\"..addon.."\\media\\INV_Misc_PaperBundle04c", coords={0.05,0.95,0.05,0.95}}; --IconName::Notes_alliance--
+I[name..'_horde']    = {iconfile="Interface\\Addons\\"..addon.."\\media\\INV_Misc_PaperBundle04b", coords={0.05,0.95,0.05,0.95}}; --IconName::Notes_horde--
 
 
 -- some local functions --
@@ -175,8 +175,7 @@ end
 ------------------------------------
 module = {
 	events = {
-		"PLAYER_LOGIN",
-		"NEUTRAL_FACTION_SELECT_RESULT"
+		"PLAYER_LOGIN"
 	},
 	config_defaults = {
 		enabled = false,
@@ -190,6 +189,10 @@ module = {
 		["menu"] = "OptionMenu"
 	}
 }
+
+if ns.client_version>=5 then
+	tinsert(module.events,"NEUTRAL_FACTION_SELECT_RESULT");
+end
 
 ns.ClickOpts.addDefaults(module,{
 	newnote = "__NONE",

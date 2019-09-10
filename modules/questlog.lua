@@ -473,16 +473,18 @@ function module.onevent(self,event,msg)
 					tinsert(tags,frequencies[q[frequency]][2]);
 					tinsert(shortTags,C("dailyblue",frequencies[q[frequency]][1]));
 				end
-				local mapId,mapName;
-				if not questZones[q[questID]] and not WorldMapFrame:IsShown() then
-					mapId = GetQuestUiMapID(q[questID]);
-					if mapId then
-						local mapInfo = C_Map.GetMapInfo(mapId);
-						if mapInfo then
-							mapName = mapInfo.name;
+				if ns.client_version>=2 then
+					local mapId,mapName;
+					if not questZones[q[questID]] and not WorldMapFrame:IsShown() then
+						mapId = GetQuestUiMapID(q[questID]);
+						if mapId then
+							local mapInfo = C_Map.GetMapInfo(mapId);
+							if mapInfo then
+								mapName = mapInfo.name;
+							end
 						end
+						questZones[q[questID]] = {mapId=mapId,mapName=mapName};
 					end
-					questZones[q[questID]] = {mapId=mapId,mapName=mapName};
 				end
 				if #tags==0 then
 					tinsert(tags," ");

@@ -3,6 +3,7 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
+if ns.client_version<6 then return end
 
 
 -- module own local variables and local cached functions --
@@ -260,7 +261,7 @@ end
 -- function module.init() end
 
 function module.onevent(self,event,...)
-	if event=="BE_UPDATE_CFG" then
+	if event=="BE_UPDATE_CFG" and ... and (...):find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGIN" then
 		resetSessionCounter();

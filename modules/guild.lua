@@ -34,23 +34,26 @@ I[name] = {iconfile=135026,coords={0.05,0.95,0.05,0.95}} --IconName::Guild--
 local function updateGuild()
 	if not IsInGuild() then wipe(guild); return; end
 	local tmp,_={};
-	tmp[gName], tmp[gDesc], player[pStanding], player[pStandingMin], player[pStandingMax], player[pStandingValue] = GetGuildFactionInfo();
-	player[pStandingText] = _G["FACTION_STANDING_LABEL"..player[pStanding]];
+	if GetGuildFactionInfo then
+		tmp[gName], tmp[gDesc], player[pStanding], player[pStandingMin], player[pStandingMax], player[pStandingValue] = GetGuildFactionInfo();
+		player[pStandingText] = _G["FACTION_STANDING_LABEL"..player[pStanding]];
+		tmp[gNumApplicants] = GetNumGuildApplicants and GetNumGuildApplicants() or 0;
+		if tmp[gNumApplicants]>0 then
+			doApplicantsUpdate = true;
+		end
+		if guild[gNumMembers]~=tmp[gNumMembers] then
+			doTradeskillsUpdate = true;
+		end
+	else -- for classic
+		tmp[gName] = GetGuildInfo("player")
+	end
 	_,_,_,tmp[gRealm] = GetGuildInfo("player");
 	if tmp[gRealm]==nil then
 		tmp[gRealm]=ns.realm;
 	end
 	tmp[gRealmNoSpacer] = gsub(tmp[gRealm]," ","");
-	tmp[gMotD] = GetGuildRosterMOTD();
 	tmp[gNumMembers], tmp[gNumMembersOnline] = GetNumGuildMembers();
-	tmp[gNumApplicants] = GetNumGuildApplicants();
 	tmp[gNumMobile] = 0;
-	if tmp[gNumApplicants]>0 then
-		doApplicantsUpdate = true;
-	end
-	if guild[gNumMembers]~=tmp[gNumMembers] then
-		doTradeskillsUpdate = true;
-	end
 	guild = tmp;
 end
 
@@ -184,7 +187,7 @@ local function updateBroker()
 	local broker = ns.LDB:GetDataObjectByName(module.ldbName);
 	if guild[gName] then
 		local txt = {};
-		if (ns.profile[name].showApplicantsBroker) and (guild[gNumApplicants]>0) then
+		if ns.profile[name].showApplicantsBroker and guild[gNumApplicants] and guild[gNumApplicants]>0 then
 			tinsert(txt, C("orange",guild[gNumApplicants]));
 		end
 		if (ns.profile[name].showMobileChatterBroker) then
@@ -308,7 +311,7 @@ local function tooltipAddLine(v,flags)
 	if flags.showNotes then
 		tinsert(line,ns.scm(v[mNote])); -- notes
 	end
-	if flags.showONotes and CanViewOfficerNote() then -- extend if
+	if flags.showONotes and C_GuildInfo.CanViewOfficerNote and C_GuildInfo.CanViewOfficerNote() then -- extend if
 		tinsert(line,ns.scm(v[mOfficerNote])); -- onotes
 	end
 	if flags.showRank then
@@ -375,11 +378,15 @@ local function createTooltip(tt,update)
 	local sep=false;
 	if (ns.profile[name].showMOTD) then
 		local l = tt:AddLine(C("ltblue",MOTD_COLON));
-		tt:SetCell(l, 2, C("ltgreen",ns.scm(ns.strWrap(guild[gMotD],56),true)), nil, nil, ttColumns-1)
+		local motd,color = GetGuildRosterMOTD() or "","ltgreen";
+		if motd=="" then
+			motd,color = "Not set","gray"
+		end
+		tt:SetCell(l, 2, C(color,ns.scm(ns.strWrap(motd,56),true)), nil, nil, ttColumns-1)
 		sep = true;
 	end
 
-	if (ns.profile[name].showRep) then
+	if ns.profile[name].showRep and player[pStandingValue] then
 		local l = tt:AddLine(("%s: "):format(C("ltblue",REPUTATION_ABBR)));
 		tt:SetCell(l,2,("%s: (%d/%d)"):format(player[pStandingText], player[pStandingValue]-player[pStandingMin], player[pStandingMax]-player[pStandingMin]), nil, nil, ttColumns - 1);
 		sep=true;
@@ -431,7 +438,7 @@ local function createTooltip(tt,update)
 	if flags.showNotes then
 		tinsert(titles,C("ltyellow",LABEL_NOTE));
 	end
-	if flags.showONotes and CanViewOfficerNote() then -- extend if
+	if flags.showONotes and C_GuildInfo.CanViewOfficerNote and C_GuildInfo.CanViewOfficerNote() then -- extend if
 		tinsert(titles,C("ltyellow",OFFICER_NOTE_COLON));
 	end
 	if flags.showRank then
@@ -519,7 +526,7 @@ local function updater()
 	if doTradeskillsUpdate then
 		updateTradeSkills();
 	end
-	if doApplicantsUpdate then
+	if ns.client_version>=2 and doApplicantsUpdate then
 		doApplicantsUpdate = false;
 		updateApplicants();
 	end
@@ -635,7 +642,7 @@ end
 function module.onevent(self,event,msg,...)
 	if event=="BE_UPDATE_CFG" and msg and msg:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
-	elseif event=="PLAYER_LOGIN" or event=="LF_GUILD_RECRUIT_LIST_CHANGED" then
+	elseif ns.client_version>=2 and (event=="PLAYER_LOGIN" or event=="LF_GUILD_RECRUIT_LIST_CHANGED") then
 		RequestGuildApplicantsList();
 	elseif event=="CHAT_MSG_SYSTEM" then
 		msg = msg:gsub("[\124:%[%]]","#");
@@ -688,18 +695,22 @@ function module.onevent(self,event,msg,...)
 			self:UnregisterEvent("GUILD_RANKS_UPDATE");
 			self:UnregisterEvent("GUILD_MOTD");
 			self:UnregisterEvent("GUILD_ROSTER_UPDATE");
-			self:UnregisterEvent("GUILD_TRADESKILL_UPDATE");
-			self:UnregisterEvent("LF_GUILD_RECRUIT_LIST_CHANGED");
-			self:UnregisterEvent("LF_GUILD_RECRUITS_UPDATED");
 			self:UnregisterEvent("CHAT_MSG_SYSTEM");
+			if ns.client_version>=2 then
+				self:UnregisterEvent("GUILD_TRADESKILL_UPDATE");
+				self:UnregisterEvent("LF_GUILD_RECRUIT_LIST_CHANGED");
+				self:UnregisterEvent("LF_GUILD_RECRUITS_UPDATED");
+			end
 		else
 			self:RegisterEvent("GUILD_RANKS_UPDATE");
 			self:RegisterEvent("GUILD_MOTD");
 			self:RegisterEvent("GUILD_ROSTER_UPDATE");
-			self:RegisterEvent("GUILD_TRADESKILL_UPDATE");
-			self:RegisterEvent("LF_GUILD_RECRUIT_LIST_CHANGED");
-			self:RegisterEvent("LF_GUILD_RECRUITS_UPDATED");
 			self:RegisterEvent("CHAT_MSG_SYSTEM");
+			if ns.client_version>=2 then
+				self:RegisterEvent("GUILD_TRADESKILL_UPDATE");
+				self:RegisterEvent("LF_GUILD_RECRUIT_LIST_CHANGED");
+				self:RegisterEvent("LF_GUILD_RECRUITS_UPDATED");
+			end
 			doGuildUpdate      = true;
 			doMembersUpdate    = true;
 			doApplicantsUpdate = true;
@@ -707,7 +718,11 @@ function module.onevent(self,event,msg,...)
 	end
 	if updaterLocked==false and (doGuildUpdate or doMembersUpdate or doTradeskillsUpdate or doApplicantsUpdate or doUpdateTooltip) then
 		updaterLocked = true;
-		GuildRoster();
+		if GuildRoster then
+			GuildRoster(); -- for classic
+		else
+			C_GuildInfo.GuildRoster();
+		end
 		C_Timer.After(0.1570595,updater); -- sometimes blizzard firing GUILD_ROSTER_UPDATE twice.
 	end
 end
@@ -739,7 +754,7 @@ function module.onenter(self)
 			tinsert(ttAlignings,"LEFT"); -- notes
 			flags.showNotes=true;
 		end
-		if ns.profile[name].showONotes and CanViewOfficerNote() then -- extend if
+		if ns.profile[name].showONotes and C_GuildInfo.CanViewOfficerNote and C_GuildInfo.CanViewOfficerNote() then -- extend if
 			tinsert(ttAlignings,"LEFT"); -- onotes
 			flags.showONotes=true;
 		end

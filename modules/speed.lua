@@ -26,7 +26,11 @@ local function updateTrainerName(data)
 end
 
 local function updateBroker()
-	local currentSpeed = GetUnitSpeed( UnitInVehicle("player") and "vehicle" or "player" );
+	local unit = "player";
+	if UnitInVehicle and UnitInVehicle("player") then
+		unit = "vehicle";
+	end
+	local currentSpeed = GetUnitSpeed( unit );
 	local str = ("%."..ns.profile[name].precision.."f"):format(currentSpeed / 7 * 100 ) .. "%";
 	local l = 4 + (ns.profile[name].precision>0 and ns.profile[name].precision+1 or 0) - str:len();
 	ns.LDB:GetDataObjectByName(module.ldbName).text = strrep(" ",l)..str;
@@ -55,7 +59,7 @@ local function tooltipOnEnter(self,data)
 	elseif data.link then
 		GameTooltip:SetHyperlink(data.link);
 	end
-	if data.extend=="trainerfaction" then
+	if data.extend=="trainerfaction" and ns.client_version>=2 then
 		GameTooltip:AddLine(" ");
 		GameTooltip:AddLine(C("ltblue",L["Trainer that offer reputation dicount"]));
 		local faction,ttTrainerLine,ttFactionLine = false,"%s (%0.1f, %0.1f)","%s (%0.1f%%)";
@@ -76,13 +80,9 @@ local function tooltipOnEnter(self,data)
 				end
 			end
 			local mapName
-			if GetMapNameByID then -- pre BfA
-				mapName = GetMapNameByID(v[3]);
-			else
-				local mapInfo = C_Map.GetMapInfo(v[3]);
-				if mapInfo then
-					mapName = mapInfo.name;
-				end
+			local mapInfo = C_Map.GetMapInfo(v[3]);
+			if mapInfo then
+				mapName = mapInfo.name;
 			end
 			GameTooltip:AddDoubleLine(v[6] or UNKNOWN, ttTrainerLine:format(mapName, v[4], v[5] ) ); -- TODO: BfA - removed function
 			--GetMapNameByID()
@@ -111,7 +111,7 @@ local function createTooltip(tt)
 	local learned = nil;
 	for i,v in ipairs(riding_skills) do
 		local Name, rank, icon, castTime, minRange, maxRange, spellId = GetSpellInfo(v[1]);
-		local l,Link,ttExtend = nil,GetSpellLink(v[1]);
+		local l,Link,ttExtend = nil,"spell:"..v[1];
 		if(learned==nil and IsSpellKnown(v[1]))then
 			learned = true;
 		end
@@ -119,6 +119,9 @@ local function createTooltip(tt)
 			if(lvl>=v[2])then
 				l=tt:AddLine(C("yellow",Name), C("ltgray",L["Learnable"]));
 				ttExtend = true;
+			elseif v.race==false then
+				local factionName = GetFactionInfoByID(v.faction);
+				l=tt:AddLine(C("red",Name), C("ltgray", L["Need excalted reputation:"].." "..factionName));
 			else
 				l=tt:AddLine(C("red",Name), C("ltgray", L["Need level"].." "..v[2]));
 			end
@@ -133,13 +136,18 @@ local function createTooltip(tt)
 			tt:SetLineScript(l,"OnLeave",tooltipOnLeave);
 		end
 	end
-	if (lvl<20)then
+	if ns.client_version<2 then
+		if lvl<40 then
+			tt:AddSeparator();
+			tt:SetCell(tt:AddLine(),1,C("orange","You must be reach level 40 to learn riding."),nil,nil,0);
+		end
+	elseif (lvl<20) then
 		tt:AddSeparator();
-		tt:AddLine(C("orange","You must be reach level 20 to learn riding."),"",C("ltgray",lvl.."/20"));
+		tt:SetCell(tt:AddLine(),1,C("orange","You must be reach level 20 to learn riding."),nil,nil,0);
 	end
 
 	tt:AddSeparator(4,0,0,0,0);
-	tt:AddLine(C("ltblue",L["Speed bonus"]));
+	tt:SetCell(tt:AddLine(),1,C("ltblue",L["Speed bonus"]),nil,nil,0);
 	tt:AddSeparator();
 	local Id,ChkActive,Type,TypeValue,CustomText,Speed,Special,count=1,2,3,4,5,6,7,0;
 	for i,spell in ipairs(bonus_spells)do
@@ -211,11 +219,11 @@ local function createTooltip(tt)
 	end
 	--- inventory items and enchants?
 	if(count==0)then
-		tt:AddLine(L["No speed bonus found..."]);
+		tt:SetCell(tt:AddLine(),1,L["No speed bonus found..."],nil,nil,0);
 	end
 
 
-	if (lvl>=20)then
+	if ns.client_version>=2 and lvl>=20 then
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",L["Flight licences"]));
 		tt:AddSeparator();
@@ -300,6 +308,44 @@ function module.options()
 end
 
 function module.init()
+	if ns.client_version<2 then
+		local skills = {};
+		if ns.player.faction=="Alliance" then
+			tinsert(skills,{828,   40, 60, race="NightElf", faction=69}); -- NightElf
+			tinsert(skills,{824,   40, 60, race="Human",    faction=72}); -- Human
+			tinsert(skills,{826,   40, 60, race="Dwarf",    faction=47}); -- Dwarf
+			tinsert(skills,{10907, 40, 60, race="Gnome",    faction=54}); -- Gnome
+		else
+			tinsert(skills,{825,   40, 60, race="Orc",      faction=76}); -- Orc
+			tinsert(skills,{10861, 40, 60, race="Troll",    faction=530}); -- Troll
+			tinsert(skills,{18995, 40, 60, race="Tauren",   faction=81}); -- Tauren
+			tinsert(skills,{10906, 40, 60, race="Scourge",  faction=68}); -- Scourge
+		end
+		riding_skills = {};
+		for i=1, #skills do
+			if skills[i].race~=ns.player.race then
+				skills[i].race = false;
+				tinsert(riding_skills,skills[i]);
+			end
+		end
+		for i=1, #skills do
+			if skills[i].race==ns.player.race then
+				skills[i].race = true;
+				tinsert(riding_skills,skills[i]);
+			end
+		end
+		--[[
+		trainer_faction = UnitFactionGroup("player")=="Alliance" and {
+			-- { <factionID>, <npcID>, <zoneID>, <x>, <y> }
+			{  72, 43693, 84, 77.6, 67.2},
+			{  72, 43769, 84, 70.6, 73.0},
+		} or {
+			{  76, 44919, 85, 49.0, 59.6},
+			{  76, 35093, 100, 54.2, 41.6},
+		};
+		--]]
+		return;
+	end
 	riding_skills = { -- <spellid>, <skill>, <minLevel>, <air speed increase>, <ground speed increase>
 		{90265, 80, 310},
 		{34091, 70, 280},

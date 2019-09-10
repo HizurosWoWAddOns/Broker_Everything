@@ -45,7 +45,7 @@ local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local icon,iconCoords,text = I[name].iconfile,{0,1,0,1},{};
 
-	if ns.profile[name].showCurrentSet then
+	if ns.profile[name].showCurrentSet and C_EquipmentSet then
 		local numEquipSets = C_EquipmentSet.GetNumEquipmentSets();
 
 		if numEquipSets > 0 then
@@ -79,8 +79,13 @@ local function updateBroker()
 		tinsert(text,pending);
 	end
 
-	if(ns.profile[name].showItemLevel)then
-		tinsert(text,("%1.1f"):format(select(2,GetAverageItemLevel()) or 0));
+	if ns.profile[name].showItemLevel and GetAverageItemLevel then
+		local _, ilevel = GetAverageItemLevel();
+		tinsert(text,("%1.1f"):format(ilevel or 0));
+	end
+
+	if ns.profile[name].showAmmoBroker and ns.client_version<2 then
+		-- ammo in classic
 	end
 
 	obj.iconCoords = iconCoords;
@@ -97,14 +102,15 @@ local function UpdateInventory()
 	for _, d in pairs(ns.items.inventory)do
 		if d and d.slot~=4 and d.slot~=19 then
 			local obj,_ = CopyTable(d);
-			--_, _, _, obj.level = GetItemInfo(d.link);
 			ns.ScanTT.query(obj,true);
 			lst[d.slot] = obj;
-			if lst.iLevelMin==0 or (obj.level or 0)<lst.iLevelMin then
-				lst.iLevelMin=obj.level;
-			end
-			if (obj.level or 0)>lst.iLevelMax then
-				lst.iLevelMax=obj.level;
+			if ns.client_version>=2 then
+				if lst.iLevelMin==0 or (obj.level or 0)<lst.iLevelMin then
+					lst.iLevelMin=obj.level;
+				end
+				if (obj.level or 0)>lst.iLevelMax then
+					lst.iLevelMax=obj.level;
+				end
 			end
 		end
 	end
@@ -203,7 +209,7 @@ local function createTooltip(tt)
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",BAG_FILTER_EQUIPMENT))
 
-	if (ns.profile[name].showSets) then
+	if (ns.profile[name].showSets) and C_EquipmentSet then
 		-- equipment sets
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",WARDROBE_SETS));
@@ -241,11 +247,14 @@ local function createTooltip(tt)
 	if (ns.profile[name].showInventory) then
 		UpdateInventory();
 		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(
+		local l=tt:AddLine(
 			C("ltblue",TRADESKILL_FILTER_SLOTS),
-			C("ltblue",NAME),
-			C("ltblue",LEVEL)
+			C("ltblue",NAME)
 		);
+		if ns.client_version>=2 then
+			tt:SetCell(l,3,C("ltblue",LEVEL));
+		end
+
 		tt:AddSeparator();
 		local none,miss=true,false;
 		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do
@@ -286,8 +295,10 @@ local function createTooltip(tt)
 					upgrades = " "..C(col,itemInfo.upgrades);
 				end
 
-				if itemInfo.level and itemInfo.level~=itemLevel then
-					itemLevel = itemInfo.level;
+				if ns.client_version>=2 and itemInfo.level and itemInfo.level~=itemLevel then
+					itemLevel = C(GetILevelColor(itemInfo.level),itemInfo.level);
+				else
+					itemLevel = "";
 				end
 
 				if ns.profile[name].showTSet and tSetItems[obj.id] then
@@ -297,7 +308,7 @@ local function createTooltip(tt)
 				local l = tt:AddLine(
 					C("ltyellow",_G[slots[i].."SLOT"]),
 					C("quality"..itemQuality,itemName) .. greenline .. tSetItem .. setName .. upgrades .. enchanted .. gems,
-					C(GetILevelColor(itemLevel),itemLevel)
+					itemLevel
 				);
 
 				tt:SetLineScript(l,"OnEnter",InventoryTooltipShow, obj.slot);
@@ -319,10 +330,11 @@ local function createTooltip(tt)
 			tt:SetCell(l,1,L["All slots are empty"],nil,nil,ttColumns);
 		end
 		tt:AddSeparator();
-		local _, avgItemLevelEquipped = GetAverageItemLevel();
-		local avgItemLevelEquippedf = floor(avgItemLevelEquipped);
-		local l = tt:AddLine(nil,nil,C(GetILevelColor(avgItemLevelEquipped),"%.1f"):format(avgItemLevelEquipped));
-		tt:SetCell(l,1,C("ltblue",STAT_AVERAGE_ITEM_LEVEL),nil,nil,2);
+		if ns.client_version>=2 then
+			local _, avgItemLevelEquipped = GetAverageItemLevel();
+			local l = tt:AddLine(nil,nil,C(GetILevelColor(avgItemLevelEquipped),"%.1f"):format(avgItemLevelEquipped));
+			tt:SetCell(l,1,C("ltblue",STAT_AVERAGE_ITEM_LEVEL),nil,nil,2);
+		end
 		if (miss) then
 			ns.AddSpannedLine(tt,C("red","#")..": "..C("ltgray",L["Item is not enchanted"]) .. " || " .. C("yellow","#")..": "..C("ltgray",L["Item has empty socket"]));
 		end
@@ -342,13 +354,10 @@ end
 module = {
 	events = {
 		"UNIT_INVENTORY_CHANGED",
-		"EQUIPMENT_SWAP_FINISHED",
-		"EQUIPMENT_SETS_CHANGED",
 		"PLAYER_LOGIN",
 		"PLAYER_REGEN_ENABLED",
 		"PLAYER_ALIVE",
 		"PLAYER_UNGHOST",
-		"ITEM_UPGRADE_MASTER_UPDATE"
 	},
 	config_defaults = {
 		enabled = true,
@@ -382,6 +391,12 @@ module = {
 	}
 }
 
+if ns.client_version>=2 then
+	tinsert(module.events,"EQUIPMENT_SWAP_FINISHED");
+	tinsert(module.events,"ITEM_UPGRADE_MASTER_UPDATE");
+	tinsert(module.events,"EQUIPMENT_SETS_CHANGED");
+end
+
 ns.ClickOpts.addDefaults(module,{
 	charinfo = "_LEFT",
 	sets = "__NONE",
@@ -396,9 +411,10 @@ end
 function module.options()
 	return {
 		broker = {
-			showCurrentSet={ type="toggle", order=1, name=L["Show current set"], desc=L["Display your current equipment set on broker button"]},
-			showItemLevel={ type="toggle", order=2, name=L["Show average item level"], desc=L["Display your average item level on broker button"]},
-			showShorterInfo={ type="toggle", order=3, name=L["Show shorter Info for 'Unknown set' and more"], desc=L["Display shorter Info on broker button. 'Set?' instead of 'Unknown set'. 'No sets' instead of 'No sets found'."]}
+			showCurrentSet={ type="toggle", order=1, name=L["Show current set"], desc=L["Display your current equipment set on broker button"], hidden=ns.IsClassicClient},
+			showItemLevel={ type="toggle", order=2, name=L["Show average item level"], desc=L["Display your average item level on broker button"], hidden=ns.IsClassicClient},
+			showShorterInfo={ type="toggle", order=3, name=L["Show shorter Info for 'Unknown set' and more"], desc=L["Display shorter Info on broker button. 'Set?' instead of 'Unknown set'. 'No sets' instead of 'No sets found'."], hidden=ns.IsClassicClient},
+			showAmmoBroker={ type="toggle", order=1, name=L["Show ammo"], desc=L["Display ammo on broker button"], hidden=ns.IsNotClassicClient}
 		},
 		tooltip = {
 			showSets={ type="toggle", order=1, name=L["Show equipment sets"], desc=L["Display a list of your equipment sets"]},
@@ -508,15 +524,23 @@ function module.init()
 end
 
 function module.onevent(self,event,arg1,...)
-	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
-		ns.ClickOpts.update(name);
+	if event=="BE_UPDATE_CFG" then
+		if arg1 and arg1:find("^ClickOpt") then
+			ns.ClickOpts.update(name);
+			return;
+		end
+		updateBroker();
 	elseif event=="ADDON_LOADED" and arg1=="Blizzard_ArtifactUI" and ArtifactRelicForgeFrame then
 		ArtifactRelicForgeFrame:HookScript("OnHide",updateBroker);
 	elseif event=="PLAYER_LOGIN" then
 		ns.items.RegisterCallback(name,UpdateInventory,"inv");
-		hooksecurefunc("UpgradeItem",updateBroker);
+		if UpgradeItem then
+			hooksecurefunc("UpgradeItem",updateBroker);
+		end
 	elseif (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and equipPending~=nil then
-		C_EquipmentSet.UseEquipmentSet(equipPending);
+		if C_EquipmentSet then
+			C_EquipmentSet.UseEquipmentSet(equipPending);
+		end
 		equipPending = nil
 		updateBroker();
 	end

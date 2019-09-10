@@ -87,26 +87,47 @@ function crap.search()
 	end
 end
 
+function GetLocaleBagType(id,en)
+	local _, _, _, _, _, _, itemSubTypeLocale = GetItemInfo(id);
+	if itemSubTypeLocale then
+		L[en] = itemSubTypeLocale;
+	end
+end
+
 -- Function to determine the total number of bag slots and the number of free bag slots.
 local function BagsFreeUsed()
-	local t = GetContainerNumSlots(0) or 0; -- new: sometimes returns nil on startup
-	local f = GetContainerNumFreeSlots(0) or 0;
-	if t==0 then
-		return 0,0;
+	local T,F = (GetContainerNumSlots(0) or 0),(GetContainerNumFreeSlots(0) or 0);
+	local total,free = {[1]=T,ammo=0},{[1]=F,ammo=0},0,0;
+	--for i=2, 11 do total[i] = 0; end
+
+	if total[1]==0 then
+		return 0,0,free,total; -- error
 	end
 
-	for i=1,NUM_BAG_SLOTS do
-		local idtoinv = ContainerIDToInventoryID(i);
-		local il = GetInventoryItemLink("player", idtoinv);
-		if il then
-			local st = select(7, GetItemInfo(il));
-			if(st ~= "Soul Bag" and st ~= "Ammo Pouch" and st ~= "Quiver")then
-				t = t + GetContainerNumSlots(i);
-				f = f + GetContainerNumFreeSlots(i);
+	for slotIndex=1,NUM_BAG_SLOTS do
+		local link, typeID, subTypeID = GetInventoryItemLink("player", slotIndex+19);
+		if link then
+			local _, _, _, _, _, x, y, _, _, _, _, itemClassID, itemSubClassID  = GetItemInfo(link);
+			if not itemSubClassID then
+				itemSubClassID = 0;
+			end
+
+			local t,f = (GetContainerNumSlots(slotIndex)),(GetContainerNumFreeSlots(slotIndex));
+			if itemClassID==LE_ITEM_CLASS_QUIVER then -- quiver / ammo pouch
+				total.ammo, free.ammo = total.ammo+t, free.ammo+f;
+			else
+				itemSubClassID = itemSubClassID+1; -- itemSubClassID starts with 0
+				if not total[itemSubClassID] then
+					total[itemSubClassID], free[itemSubClassID] = t,f;
+				else
+					total[itemSubClassID] = total[itemSubClassID]+t;
+					free[itemSubClassID] = free[itemSubClassID]+f;
+				end
+				T,F = T+t,F+f;
 			end
 		end
 	end
-	return f, t;
+	return F,T, free, total;
 end
 
 local function itemQuality()
@@ -128,39 +149,106 @@ local function itemQuality()
 	return price, sum;
 end
 
+local function countAmmo()
+	local sum,counts,data,_ = 0,{},{};
+	for index,entry in pairs(ns.items.ammo) do
+		if not data[entry.id] then
+			data[entry.id],counts[entry.id] = {},0;
+			data[entry.id].name, _, data[entry.id].quality = GetItemInfo(entry.id);
+		end
+		counts[entry.id] = counts[entry.id] + entry.count;
+		sum = sum + entry.count;
+	end
+	return sum,counts,data;
+end
+
 local function updateBroker()
-	local f, t = BagsFreeUsed()
-	local u = t - f
-	local p = u / t
-	local txt = u .. "/" .. t
+	local txt = {};
+
+	local f, t = BagsFreeUsed();
+	local u = t - f;
+	local p = u / t;
+
 	local c = "white"
-	local min1 = tonumber(ns.profile[name].critLowFree)
-	local min2 = tonumber(ns.profile[name].warnLowFree)
-	if ns.profile[name].freespace == false then
-		txt = u .. "/" .. t
-	elseif ns.profile[name].freespace == true then
-		txt = (t - u) .. " ".. L["Free"]
-	end
-
-	if f<=min1 then
+	if f<=tonumber(ns.profile[name].critLowFree) then
 		c = "red"
-	elseif f<=min2 then
-		c = "dkyellow"
+	elseif f<=tonumber(ns.profile[name].warnLowFree) then
+		c = "yellow"
 	end
 
-	local obj = ns.LDB:GetDataObjectByName(module.ldbName) or {}
-	obj.text = C(c,txt)
+	if ns.profile[name].freespace then
+		tinsert(txt,C(c,(t - u) .. " ".. L["Free"]));
+	else
+		tinsert(txt,C(c,u .. "/" .. t));
+	end
+
+	if ns.player.class=="HUNTER" then
+		local ammoSum = countAmmo();
+		tinsert(txt,ammoSum.." "..AMMOSLOT);
+	elseif ns.player.class=="WARLOCK" then
+		--
+	end
+
+	(ns.LDB:GetDataObjectByName(module.ldbName) or {}).text = table.concat(txt,", ");
+end
+
+local function sortAmmo(a,b)
+	return a.name>b.name;
 end
 
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
-	local f, total = BagsFreeUsed()
+	local free, total, tFree,tTotal = BagsFreeUsed()
 
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",L[name]));
-	tt:AddSeparator(1);
-	tt:AddLine(C("ltyellow",L["Free slots"] .. " :"),"",C("white",f).." ");
-	tt:AddLine(C("ltyellow",L["Total slots"] .. " :"),"",C("white",total).." ");
+
+	if ns.profile[name].showByBagTypes then
+		tt:AddSeparator(4,0,0,0,0);
+		tt:AddLine(C("ltblue","Type"));
+		tt:AddSeparator(1);
+	else
+		tt:AddSeparator(1);
+		tt:AddLine(C("ltyellow",L["Free slots"]),"",C("white",free));
+		tt:AddLine(C("ltyellow",L["Total slots"]),"",C("white",total));
+	end
+
+	if ns.client_version<2 then
+		if ns.player.class=="HUNTER" then
+			tt:AddSeparator(4,0,0,0,0);
+			tt:AddLine(C("ltblue",L["Ammo Pouch"]));
+			tt:AddSeparator(1);
+			if tTotal.ammo==0 then
+				tt:AddLine(C("ltgray",L["No ammo pouch found..."]));
+			else
+				tt:AddLine(C("ltyellow",L["Free slots"]),"",C("white",tFree.ammo));
+				tt:AddLine(C("ltyellow",L["Total slots"]),"",C("white",tTotal.ammo));
+				tt:AddSeparator(1);
+
+				local ammoInUse = GetInventoryItemID("player",0);
+				local ammoSum,ammoCounts,ammoData = countAmmo();
+				table.sort(ammoData,sortAmmo);
+				for id,ammo in pairs(ammoData)do
+					tt:AddLine(C("quality"..ammo.quality,ammo.name),(ammoInUse==id and C("green",CONTRIBUTION_ACTIVE) or ""),C("white",ammoCounts[id]));
+				end
+			end
+		elseif ns.player.class=="WARLOCK" then
+			tt:AddSeparator(4,0,0,0,0);
+			tt:AddLine(C("ltblue",L["Soul Pouch"]));
+			tt:AddSeparator(1);
+			if tTotal.ammo==0 then
+				tt:AddLine(C("ltgray",L["No soul pouch found..."]));
+			else
+				tt:AddLine(C("ltyellow",L["Free slots"]),"",C("white",tFree.soul));
+				tt:AddLine(C("ltyellow",L["Total slots"]),"",C("white",tTotal.soul));
+			end
+		end
+
+		--tt:AddSeparator(4,0,0,0,0);
+		--tt:AddLine(C("ltblue",KEYRING));
+		--tt:AddSeparator(1);
+		--
+	end
 
 	if ns.profile[name].showQuality then
 		local mode=qualityModes[ns.profile[name].qualityMode];
@@ -177,7 +265,7 @@ local function createTooltip(tt)
 				tt:AddLine(
 					C("quality"..i,G["ITEM_QUALITY"..i.."_DESC"]),
 					(price[i]>0 and mode.vendor) and ns.GetCoinColorOrTextureString(name,price[i],{inTooltip=true}) or "",
-					ns.FormatLargeNumber(name,sum[i],true).." "
+					ns.FormatLargeNumber(name,sum[i],true)
 				);
 			end
 		end
@@ -198,7 +286,8 @@ module = {
 		"PLAYER_LOGIN",
 		"MERCHANT_SHOW",
 		"MERCHANT_CLOSED",
-		"UI_ERROR_MESSAGE"
+		"UI_ERROR_MESSAGE",
+		"GET_ITEM_INFO_RECEIVED"
 	},
 	config_defaults = {
 		enabled = true,
@@ -213,27 +302,18 @@ module = {
 	},
 	clickOptionsRename = {
 		["bags"] = "1_open_bags",
-		["space"] = "2_toggle_freespace",
 		["menu"] = "3_open_menu"
 	},
 	clickOptions = {
 		["bags"] = {"Open all bags","call","ToggleAllBags"}, -- L["Open all bags"]
-		["space"] = {"Switch (free or used/max bag space)","module","switch"}, -- L["Switch (free or used/max bag space)"]
 		["menu"] = "OptionMenu"
 	}
 }
 
 ns.ClickOpts.addDefaults(module,{
 	bags = "_LEFT",
-	space = "_RIGHT",
-	menu = "__NONE"
+	menu = "_RIGHT"
 });
-
-function module.switch(self,button)
-	ns.profile[name].freespace = not ns.profile[name].freespace;
-	module.onevent(self,"BE_DUMMY_EVENT");
-end
-
 
 function module.options()
 	return {
@@ -243,14 +323,14 @@ function module.options()
 		tooltip = {
 			showQuality={ type="toggle", order=1, name=L["Show item summary by quality"],    desc=L["Display an item summary list by qualities in tooltip"], width="double" },
 			qualityMode={ type="select", order=2, name=L["Item summary by quality mode"],    desc=L["Choose your favorite"], values=qualityModeValues, width="double" },
-			critLowFree={ type="range", order=3, name=L["Critical low free slots"],         desc=L["Select the maximum free slot count to coloring in red."], min=1, max=50, step=1 },
-			warnLowFree={ type="range", order=4, name=L["Warn low free slots"],             desc=L["Select the maximum free slot count to coloring in yellow."], min=2, max=100, step=1 },
 		},
 		misc = {
-			shortNumbers=1,
-			header={ type="header", order=2, name=L["Crap selling options"] },
-			autoCrapSelling={ type="toggle", order=3, name=L["Enable auto crap selling"], desc=L["Enable automatically crap selling on opening a mergant frame"] },
-			autoCrapSellingInfo={ type="toggle", order=4, name=L["Summary of earned gold in chat"], desc=L["Post summary of earned gold in chat window"] },
+			critLowFree={ type="range", order=1, name=L["Critical low free slots"],         desc=L["Select the maximum free slot count to coloring in red."], min=1, max=50, step=1 },
+			warnLowFree={ type="range", order=2, name=L["Warn low free slots"],             desc=L["Select the maximum free slot count to coloring in yellow."], min=2, max=100, step=1 },
+			shortNumbers=3,
+			header={ type="header", order=4, name=L["Crap selling options"] },
+			autoCrapSelling={ type="toggle", order=5, name=L["Enable auto crap selling"], desc=L["Enable automatically crap selling on opening a mergant frame"] },
+			autoCrapSellingInfo={ type="toggle", order=6, name=L["Summary of earned gold in chat"], desc=L["Post summary of earned gold in chat window"] },
 		},
 	},
 	{
@@ -270,6 +350,13 @@ function module.onevent(self,event,...)
 	local arg1 = ...;
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
+	elseif event=="BE_UPDATE_CFG" then
+		updateBroker();
+	elseif event=="PLAYER_LOGIN" and ns.client_version<2 then
+		C_Timer.After(5,function()
+			GetLocaleBagType(2102,"Ammo Pouch");
+			GetLocaleBagType(22243,"Soul Pouch");
+		end);
 	elseif event=="MERCHANT_SHOW" and ns.profile[name].autoCrapSelling then
 		IsMerchantOpen = true;
 		C_Timer.After(0.314159,crap.search);
@@ -282,6 +369,16 @@ function module.onevent(self,event,...)
 		local messageType, message = ...; -- 41, ERR_VENDOR_DOESNT_BUY
 		if message==ERR_VENDOR_DOESNT_BUY then
 			crap.ERR_VENDOR_DOESNT_BUY = true;
+		end
+	elseif event=="GET_ITEM_INFO_RECEIVED" then
+		local en,id = nil,...; -- Get localized item names from classic client
+		if id==2102 then
+			en = "Ammo Pouch";
+		elseif id==22243 then
+			en = "Soul Pouch"
+		end
+		if en then
+			GetLocaleBagType(id, en);
 		end
 	end
 end
