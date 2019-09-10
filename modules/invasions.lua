@@ -3,6 +3,7 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
+if ns.client_version<7 then return end
 
 
 -- module own local variables and local cached functions --

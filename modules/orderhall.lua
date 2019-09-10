@@ -2,7 +2,7 @@
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
-if ns.build<700 then return end
+if ns.client_version<7 then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 

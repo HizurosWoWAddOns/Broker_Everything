@@ -73,6 +73,41 @@ ns.LC.colorset({
 
 
   ---------------------------------------
+--- nice little print function          ---
+  ---------------------------------------
+do
+	local addon_short = L[addon.."_Shortcut"];
+	local colors = {"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"};
+	local function colorize(...)
+		local t,c,a1 = {tostringall(...)},1,...;
+		if type(a1)=="boolean" then tremove(t,1); end
+		if a1~=false then
+			tinsert(t,1,"|cff0099ff"..((a1==true and addon_short) or (a1=="||" and "||") or addon).."|r"..(a1~="||" and ":" or ""));
+			c=2;
+		end
+		for i=c, #t do
+			if not t[i]:find("\124c") then
+				t[i],c = "|cff"..colors[c]..t[i].."|r", c<#colors and c+1 or 1;
+			end
+		end
+		return unpack(t);
+	end
+	function ns.print(...)
+		print(colorize(...));
+	end
+	function ns.debug(name,...)
+		ConsolePrint(date("|cff999999%X|r"),colorize("<debug::"..name..">",...));
+	end
+	if ("@project-version@" == "@".."project-version".."@") then
+		local function GetNamespace()
+			return ns;
+		end
+		_G[addon.."_GetNS"] = GetNamespace
+	end
+end
+
+
+  ---------------------------------------
 --- misc shared data                    ---
   ---------------------------------------
 ns.icon_fallback = 134400; -- interface\\icons\\INV_MISC_QUESTIONMARK;
@@ -92,9 +127,23 @@ do
 		ns.realm_short = ns.realm:gsub(" ",""):gsub("%-","");
 	end
 end
+
+
+  -----------------------
+-- Client version checks --
+  -----------------------
 do
 	local version,build = GetBuildInfo();
-	ns.build = tonumber(version:gsub("[|.]","").."."..build);
+	local v1,v2,v3 = strsplit(".",version);
+	ns.client_version = tonumber(v1.."."..v2..v3..build);
+end
+
+function ns.IsClassicClient() -- for AceOptions
+	return ns.client_version<2;
+end
+
+function ns.IsNotClassicClient() -- for AceOptions
+	return ns.client_version>=2;
 end
 
 
@@ -114,7 +163,7 @@ _, ns.player.class,ns.player.classId = UnitClass("player");
 ns.player.faction,ns.player.factionL  = UnitFactionGroup("player");
 L[ns.player.faction] = ns.player.factionL;
 ns.player.classLocale = ns.player.female and _G.LOCALIZED_CLASS_NAMES_FEMALE[ns.player.class] or _G.LOCALIZED_CLASS_NAMES_MALE[ns.player.class];
-ns.player.raceLocale,ns.player.race = UnitRace("player");
+ns.player.raceLocale,ns.player.race,ns.player.raceIndex = UnitRace("player");
 ns.LC.colorset("suffix",ns.LC.colorset[ns.player.class:lower()]);
 ns.realms = {};
 do
@@ -189,35 +238,6 @@ function ns.showRealmName(mod,name,color,prepDash)
 end
 
 
-  ---------------------------------------
---- nice little print function          ---
-  ---------------------------------------
-do
-	local addon_short = L[addon.."_Shortcut"];
-	local colors = {"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"};
-	local function colorize(...)
-		local t,c,a1 = {tostringall(...)},1,...;
-		if type(a1)=="boolean" then tremove(t,1); end
-		if a1~=false then
-			tinsert(t,1,"|cff0099ff"..((a1==true and addon_short) or (a1=="||" and "||") or addon).."|r"..(a1~="||" and ":" or ""));
-			c=2;
-		end
-		for i=c, #t do
-			if not t[i]:find("\124c") then
-				t[i],c = "|cff"..colors[c]..t[i].."|r", c<#colors and c+1 or 1;
-			end
-		end
-		return unpack(t);
-	end
-	function ns.print(...)
-		print(colorize(...));
-	end
-	function ns.debug(name,...)
-		ConsolePrint(date("|cff999999%X|r"),colorize("<debug::"..name..">",...));
-	end
-end
-
-
   -----------------------------------------
 --- SetCVar hook                          ---
 --- Thanks at blizzard for blacklisting   ---
@@ -227,7 +247,7 @@ do
 	local blacklist = {alwaysShowActionBars = true, bloatnameplates = true, bloatTest = true, bloatthreat = true, consolidateBuffs = true, fullSizeFocusFrame = true, maxAlgoplates = true, nameplateMotion = true, nameplateOverlapH = true, nameplateOverlapV = true, nameplateShowEnemies = true, nameplateShowEnemyGuardians = true, nameplateShowEnemyPets = true, nameplateShowEnemyTotems = true, nameplateShowFriendlyGuardians = true, nameplateShowFriendlyPets = true, nameplateShowFriendlyTotems = true, nameplateShowFriends = true, repositionfrequency = true, showArenaEnemyFrames = true, showArenaEnemyPets = true, showPartyPets = true, showTargetOfTarget = true, targetOfTargetMode = true, uiScale = true, useCompactPartyFrames = true, useUiScale = true}
 	function ns.SetCVar(...)
 		local cvar = ...
-		if ns.build>548 and InCombatLockdown() and blacklist[cvar]==true then
+		if ns.client_version>5.48 and InCombatLockdown() and blacklist[cvar]==true then
 			local msg
 			-- usefull blacklisted cvars...
 			if cvar=="uiScale" or cvar=="useUiScale" then
@@ -1000,11 +1020,13 @@ do
 		IsEnabled = true;
 
 		f:SetScript("OnEvent",OnEvent);
-		f:RegisterEvent("ITEM_UPGRADE_MASTER_UPDATE");
 		f:RegisterEvent("BAG_UPDATE_DELAYED");
 		f:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
 		f:RegisterEvent("UPDATE_INVENTORY_DURABILITY");
-		f:RegisterEvent("AZERITE_EMPOWERED_ITEM_SELECTION_UPDATED");
+		if ns.client_version>2 then
+			f:RegisterEvent("ITEM_UPGRADE_MASTER_UPDATE");
+			f:RegisterEvent("AZERITE_EMPOWERED_ITEM_SELECTION_UPDATED");
+		end
 		if ns.eventPlayerEnteredWorld then
 			OnEvent(f,"PLAYER_LOGIN");
 		else

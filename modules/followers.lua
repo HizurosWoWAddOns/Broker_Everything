@@ -2,7 +2,7 @@
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
-if ns.build<600 then return end
+if ns.client_version<6 then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
@@ -216,7 +216,7 @@ local function createTooltip(tt, name)
 	if tt.lines~=nil then tt:Clear(); end
 	if name==nameS then
 		tt:AddHeader(C("dkyellow",GARRISON_SHIPYARD_FOLLOWERS));
-	elseif ns.build>700 then
+	elseif ns.client_version>7 then
 		tt:AddHeader(C("dkyellow",("%s, %s, %s"):format(GARRISON_FOLLOWERS,FOLLOWERLIST_LABEL_CHAMPIONS,FOLLOWERLIST_LABEL_TROOPS)));
 	else
 		tt:AddHeader(C("dkyellow",GARRISON_FOLLOWERS));
@@ -601,7 +601,7 @@ function moduleF.onevent(self,event)
 		garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0;
 
 		-- order hall level
-		if ns.build>700 then
+		if ns.client_version>7 then
 			ohLevel = LE_GARRISON_TYPE_7_0~=nil and C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
 		end
 
@@ -626,7 +626,7 @@ function moduleS.onevent(self,event,arg1)
 		end
 
 		-- order hall level
-		if ns.build>700 then
+		if ns.client_version>7 then
 			ohLevel = LE_GARRISON_TYPE_7_0~=nil and C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
 		end
 

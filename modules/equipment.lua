@@ -420,17 +420,17 @@ function module.options()
 end
 
 function module.init()
-	if ns.build<600 then -- pre wod
+	if ns.client_version<6 then -- pre wod
 		enchantSlots = {
 			[1]=1,[5]=1,[6]=1,[8]=1,[9]=1,[10]=1,[11]=1,[12]=1,[15]=1,[16]=1,[17]=1, -- enchanters
 			[3]=1, -- inscription
 			[7]=1, -- misc trade skills
 		};
-	elseif ns.build<700 then -- pre legion
+	elseif ns.client_version<7 then -- pre legion
 		enchantSlots = {
 			[2]=1,[11]=1,[12]=1,[15]=1,[16]=1 -- enchanters
 		};
-	elseif ns.build<800 then -- pre bfa
+	elseif ns.client_version<8 then -- pre bfa
 		enchantSlots = {
 			[2]=1,[3]=1,[10]=1,[11]=1,[12]=1,[15]=1 -- enchanters
 		};
