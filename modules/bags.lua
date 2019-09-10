@@ -183,8 +183,9 @@ local function updateBroker()
 	end
 
 	if ns.player.class=="HUNTER" then
-		local ammoSum = countAmmo();
-		tinsert(txt,ammoSum.." "..AMMOSLOT);
+		local ammoInUse = GetInventoryItemID("player",0);
+		local ammoSum,ammoCounts,ammoData = countAmmo();
+		tinsert(txt,C((ammoInUse and ammoData[ammoInUse] and "quality"..ammoData[ammoInUse].quality or "red"),ammoSum.." "..AMMOSLOT));
 	elseif ns.player.class=="WARLOCK" then
 		--
 	end
@@ -310,6 +311,11 @@ module = {
 	}
 }
 
+if ns.client_version<2 then
+	module.config_defaults.autoCrapSelling = false;
+	module.config_defaults.autoCrapSellingInfo = false;
+end
+
 ns.ClickOpts.addDefaults(module,{
 	bags = "_LEFT",
 	menu = "_RIGHT"
@@ -329,8 +335,8 @@ function module.options()
 			warnLowFree={ type="range", order=2, name=L["Warn low free slots"],             desc=L["Select the maximum free slot count to coloring in yellow."], min=2, max=100, step=1 },
 			shortNumbers=3,
 			header={ type="header", order=4, name=L["Crap selling options"] },
-			autoCrapSelling={ type="toggle", order=5, name=L["Enable auto crap selling"], desc=L["Enable automatically crap selling on opening a mergant frame"] },
-			autoCrapSellingInfo={ type="toggle", order=6, name=L["Summary of earned gold in chat"], desc=L["Post summary of earned gold in chat window"] },
+			autoCrapSelling={ type="toggle", order=5, name=L["Enable auto crap selling"], desc=L["Enable automatically crap selling on opening a mergant frame"], hidden=ns.IsClassicClient },
+			autoCrapSellingInfo={ type="toggle", order=6, name=L["Summary of earned gold in chat"], desc=L["Post summary of earned gold in chat window"], hidden=ns.IsClassicClient },
 		},
 	},
 	{

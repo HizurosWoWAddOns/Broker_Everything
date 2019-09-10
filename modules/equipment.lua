@@ -417,26 +417,30 @@ function module.options()
 			showAmmoBroker={ type="toggle", order=1, name=L["Show ammo"], desc=L["Display ammo on broker button"], hidden=ns.IsNotClassicClient}
 		},
 		tooltip = {
-			showSets={ type="toggle", order=1, name=L["Show equipment sets"], desc=L["Display a list of your equipment sets"]},
+			showSets={ type="toggle", order=1, name=L["Show equipment sets"], desc=L["Display a list of your equipment sets"], hidden=ns.IsClassicClient},
 			showInventory={ type="toggle", order=2, name=L["Show inventory"], desc=L["Display a list of currently equipped items"]},
 			showEmptySlots={ type="toggle", order=3, name=L["Show emtpy slots"], desc=L["Display empty equipment slots"]},
 			showNotEnchanted={ type="toggle", order=4, name=L["Show 'not enchanted' mark"], desc=L["Display a red # on not enchanted/enchantable items"]},
 			showEmptyGems={ type="toggle", order=5, name=L["Show 'empty socket' mark"], desc=L["Display a yellow # on items with empty sockets"]},
-			showTSet={ type="toggle", order=6, name=L["Show T-Set"], desc=L["Display a T-Set label on items"]},
-			showSetName={ type="toggle", order=7, name=L["Show Set name"], desc=L["Display set name on items"]},
-			showGreenText={ type="toggle", order=8, name=L["Show green text"], desc=L["Display green text line from item tooltip like titanforged"]},
-			showUpgrades={ type="toggle", order=9, name=L["Show upgrade info"], desc=L["Display upgrade info like 2/6"]},
-			fullyUpgraded={ type="toggle", order=10, name=L["Darker blue for fully upgraded"], desc=L["Display upgrade counter in darker blue on fully upgraded items"]},
+			showTSet={ type="toggle", order=6, name=L["Show T-Set"], desc=L["Display a T-Set label on items"], hidden=ns.IsClassicClient},
+			showSetName={ type="toggle", order=7, name=L["Show Set name"], desc=L["Display set name on items"], hidden=ns.IsClassicClient},
+			showGreenText={ type="toggle", order=8, name=L["Show green text"], desc=L["Display green text line from item tooltip like titanforged"], hidden=ns.IsClassicClient},
+			showUpgrades={ type="toggle", order=9, name=L["Show upgrade info"], desc=L["Display upgrade info like 2/6"], hidden=ns.IsClassicClient},
+			fullyUpgraded={ type="toggle", order=10, name=L["Darker blue for fully upgraded"], desc=L["Display upgrade counter in darker blue on fully upgraded items"], hidden=ns.IsClassicClient},
 		},
 		misc = {
-			ignoreMainHand={ type="select", order=1, name=L["Ignore main hand"], desc=L["'Save set' should ignore main hand weapon"], values=ignoreWeapon },
-			ignoreOffHand={ type="select", order=2, name=L["Ignore off-hand"], desc=L["'Save set' should ignore off-hand weapon"], values=ignoreWeapon }
+			ignoreMainHand={ type="select", order=1, name=L["Ignore main hand"], desc=L["'Save set' should ignore main hand weapon"], values=ignoreWeapon, hidden=ns.IsClassicClient },
+			ignoreOffHand={ type="select", order=2, name=L["Ignore off-hand"], desc=L["'Save set' should ignore off-hand weapon"], values=ignoreWeapon, hidden=ns.IsClassicClient }
 		},
 	}
 end
 
 function module.init()
-	if ns.client_version<6 then -- pre wod
+	if ns.client_version<2 then -- classic
+		enchantSlots = {
+			[8]=1, [9]=1,[5]=1,[10]=1,[15]=1,[17]=1,[16]=1, -- enchanters
+		}
+	elseif ns.client_version<6 then -- pre wod
 		enchantSlots = {
 			[1]=1,[5]=1,[6]=1,[8]=1,[9]=1,[10]=1,[11]=1,[12]=1,[15]=1,[16]=1,[17]=1, -- enchanters
 			[3]=1, -- inscription

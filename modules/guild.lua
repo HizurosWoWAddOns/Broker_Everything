@@ -436,7 +436,7 @@ local function createTooltip(tt,update)
 		tinsert(titles,C("ltyellow",ZONE));
 	end
 	if flags.showNotes then
-		tinsert(titles,C("ltyellow",LABEL_NOTE));
+		tinsert(titles,C("ltyellow",COMMUNITIES_ROSTER_COLUMN_TITLE_NOTE));
 	end
 	if flags.showONotes and C_GuildInfo.CanViewOfficerNote and C_GuildInfo.CanViewOfficerNote() then -- extend if
 		tinsert(titles,C("ltyellow",OFFICER_NOTE_COLON));
@@ -584,6 +584,15 @@ module = {
 	}
 }
 
+if ns.client_version<2 then
+	module.config_defaults.showONotes = false
+	module.config_defaults.showONotesInTT2 = false
+	module.config_defaults.showProfessions = false
+	module.config_defaults.showProfessionsInTT2 = false
+	module.config_defaults.showApplicants = false
+	module.config_defaults.showApplicantsBroker = false
+end
+
 ns.ClickOpts.addDefaults(module,{
 	guild = "_LEFT",
 	menu = "_RIGHT"
@@ -592,7 +601,7 @@ ns.ClickOpts.addDefaults(module,{
 function module.options()
 	return {
 		broker = {
-			showApplicantsBroker    = { type="toggle", order=1, name=L["Applicants"], desc=L["Show applicants on broker button"] },
+			showApplicantsBroker    = { type="toggle", order=1, name=L["Applicants"], desc=L["Show applicants on broker button"], hidden=ns.IsClassicClient },
 			showMobileChatterBroker = { type="toggle", order=2, name=L["Mobile app user"], desc=L["Show count of mobile chatter on broker button"]},
 			showTotalMembersBroker  = { type="toggle", order=3, name=L["Total members count"], desc=L["Show total members count on broker button"] },
 		},
@@ -605,11 +614,11 @@ function module.options()
 			showRace          = { type="toggle", order= 4, name=RACE, desc=L["Show race from guild members in tooltip"]},
 			showZone          = { type="toggle", order= 5, name=ZONE, desc=L["Show current zone from guild members in tooltip"]},
 			showNotes         = { type="toggle", order= 6, name=L["Notes"], desc=L["Show notes from guild members in tooltip"]},
-			showONotes        = { type="toggle", order= 7, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"]},
+			showONotes        = { type="toggle", order= 7, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"], hidden=ns.IsClassicClient},
 			showRank          = { type="toggle", order= 8, name=RANK, desc=L["Show rank name from guild members in tooltip"]},
 			showRankID        = { type="toggle", order= 9, name=RANK.."ID", desc=L["Show rank id from guild members in tooltip"]},
-			showProfessions   = { type="toggle", order=10, name=TRADE_SKILLS, desc=L["Show professions from guild members in tooltip"] },
-			showApplicants    = { type="toggle", order=11, name=L["Applicants"], desc=L["Show applicants in tooltip"] },
+			showProfessions   = { type="toggle", order=10, name=TRADE_SKILLS, desc=L["Show professions from guild members in tooltip"], hidden=ns.IsClassicClient },
+			showApplicants    = { type="toggle", order=11, name=L["Applicants"], desc=L["Show applicants in tooltip"], hidden=ns.IsClassicClient },
 			showMobileChatter = { type="toggle", order=12, name=L["Mobile app user"], desc=L["Show mobile chatter in tooltip (Armory App users)"] },
 			splitTables       = { type="toggle", order=13, name=L["Separate mobile app user"], desc=L["Display mobile chatter with own table in tooltip"] },
 
@@ -621,9 +630,9 @@ function module.options()
 			showRaceInTT2        = { type="toggle",      order=2, name=RACE, desc=L["Show race from guild member"]},
 			showZoneInTT2        = { type="toggle",      order=2, name=ZONE, desc=L["Show current zone from guild member"]},
 			showNotesInTT2       = { type="toggle",      order=3, name=L["Notes"], desc=L["Show notes from guild member"]},
-			showONotesInTT2      = { type="toggle",      order=4, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild member"]},
+			showONotesInTT2      = { type="toggle",      order=4, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild member"], hidden=ns.IsClassicClient},
 			showRankInTT2        = { type="toggle",      order=5, name=RANK, desc=L["Show rank from guild member"]},
-			showProfessionsInTT2 = { type="toggle",      order=6, name=TRADE_SKILLS, desc=L["Show professions from guild member"]}
+			showProfessionsInTT2 = { type="toggle",      order=6, name=TRADE_SKILLS, desc=L["Show professions from guild member"], hidden=ns.IsClassicClient}
 		},
 		misc = {
 			order = 4,
