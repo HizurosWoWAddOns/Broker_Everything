@@ -75,7 +75,7 @@ local function _GetFactionInfoByID(faction_id,paragonOnly)
 						data[hideSession] = true
 					end
 				elseif data[standingID]==8 then
-					data[barMin], data[barMax], data[barValue] = 0, 999, 999;
+					data[barMin], data[barMax], data[barValue] = 42000, 42999, 42999;
 				end
 			end
 			data[barPercent] = (data[barValue]-data[barMin])/(data[barMax]-data[barMin]);
@@ -306,6 +306,47 @@ local function toggleHeader(self,data)
 	createTooltip(tt);
 end
 
+local function factionTooltipOnEnter(self,data)
+	local _Min,_Max,_Value,_Percent = 0,data[barMax]-data[barMin],data[barValue]-data[barMin];
+	local __value,__max,need = _Value, _Max, _Max-_Value;
+	local fstr = "%s/%s (%1.1f%%)";
+
+	GameTooltip:SetOwner(self,"ANCHOR_NONE");
+	GameTooltip:SetPoint(ns.GetTipAnchor(self,"horizontal",tt));
+	GameTooltip:SetText(data[Name],1,1,1);
+
+	GameTooltip:AddLine(" ");
+	GameTooltip:AddDoubleLine(data[factionStandingText], fstr:format(__value,__max,data[barPercent]*100));
+	if need>0 then
+		GameTooltip:AddDoubleLine(" ",need.." "..L["need"]);
+	end
+
+	if data[isParagon] then
+		--local num = GetNumQuestLogRewards(questID);
+		local itemName, itemTexture, quantity, quality, isUsable, itemID = GetQuestLogRewardInfo(1, data[rewardQuestID]);
+		if itemName then
+			GameTooltip:AddLine(" ");
+			GameTooltip:AddLine("|T"..itemTexture..":0|t "..ITEM_QUALITY_COLORS[quality].color:WrapTextInColorCode(itemName));
+			GameTooltip:AddDoubleLine(" ",fstr:format(data[rewardValue],data[rewardMax], data[rewardPercent]*100));
+		end
+		--field = ("%1.1f%%"):format(data[rewardPercent]*100);
+		--field = ("%s/%s"):format(ns.FormatLargeNumber(name,data[rewardValue],true),ns.FormatLargeNumber(name,data[rewardMax],true));
+
+		--if data[hasRewardPending] then
+			--field = field.." |TInterface/GossipFrame/ActiveQuestIcon:14:14:0:0|t";
+		--else
+			--field = field.." |TInterface/GossipFrame/VendorGossipIcon:14:14:0:0|t";
+		--end
+
+	end
+
+	GameTooltip:Show();
+end
+
+local function factionTooltipOnLeave(self)
+	GameTooltip:Hide();
+end
+
 function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
@@ -414,8 +455,8 @@ function createTooltip(tt)
 					--end
 				end
 
-				--tt:SetLineScript(l,"OnEnter",factionTooltipOnEnter,data);
-				--tt:SetLineScript(l,"OnLeave",factionTooltipOnLeave);
+				tt:SetLineScript(l,"OnEnter",factionTooltipOnEnter,data);
+				tt:SetLineScript(l,"OnLeave",factionTooltipOnLeave);
 
 				if data[isHeader] then
 					tt:SetLineScript(l,"OnMouseUp",toggleHeader,data);
@@ -471,6 +512,7 @@ module = {
 	events = {
 		"PLAYER_LOGIN",
 		"UPDATE_FACTION",
+		"QUEST_LOOT_RECEIVED",
 	},
 	config_defaults = {
 		enabled = false,
