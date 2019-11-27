@@ -22,6 +22,7 @@ local raceCache,raceById,flags = {},{},{};
 local MOBILE_BUSY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-BusyMobile:14:14:0:0:16:16:0:16:0:16|t";
 local MOBILE_AWAY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-AwayMobile:14:14:0:0:16:16:0:16:0:16|t";
 local last,membersUpdateTicker = {};
+local bnetFriends = {};
 
 
 -- register icon names and default files --
@@ -111,6 +112,14 @@ local function updateMembers()
 	end
 	members = tmp;
 	membersName2Index = tmpNames;
+
+	wipe(bnetFriends);
+	for i=1, (BNGetNumFriends()) do
+		local accountInfo = C_BattleNet.GetFriendAccountInfo(i);
+		if accountInfo.accountName and accountInfo.gameAccountInfo.characterName and accountInfo.gameAccountInfo.realmName and accountInfo.gameAccountInfo.clientProgram=="WoW" then
+			bnetFriends[accountInfo.gameAccountInfo.characterName.."-"..accountInfo.gameAccountInfo.realmName] = accountInfo.accountName;
+		end
+	end
 end
 
 local function updateTradeSkills()
@@ -301,6 +310,10 @@ local function tooltipAddLine(v,flags)
 		v[mLevel],
 		status .. " " .. C(v[mClassFile],ns.scm(v[mName])) .. ns.showRealmName(name,v[mRealm]),
 	};
+
+	if bnetFriends[v[mName].."-"..v[mRealm]] then
+		line[2] = line[2].." "..C("ltblue","("..ns.scm(bnetFriends[v[mName].."-"..v[mRealm]]..")"));
+	end
 
 	if flags.showRace then
 		tinsert(line,v[mRaceId] and raceById[v[mRaceId]] and raceById[v[mRaceId]] or ""); -- race
