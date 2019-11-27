@@ -105,7 +105,7 @@ local function updateQuestStatus()
 		if c[id]==nil then c[id]=0; end
 		if nC[v]==nil then nC[v]=0; end
 		local index = GetQuestLogIndexByID(id) or 0;
-		if IsQuestFlaggedCompleted(id)==true then
+		if C_QuestLog.IsQuestFlaggedCompleted(id)==true then
 			c[id]=t; nC[v]=nC[v]+1; cQ=cQ+1;
 		elseif index>0 then
 			questlog[id]=true;
