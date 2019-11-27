@@ -235,7 +235,7 @@ local function SendMailHook(targetName)
 	if targetName:find("-") then
 		local tn,r = strsplit("-",targetName,2);
 		if type(r)=="string" and r:len()>0 and type(ns.realms[r])=="string" then
-			targetName = rn.."-"..ns.realms[r];
+			targetName = tn.."-"..ns.realms[r];
 		else
 			ns.debug("Something goes wrong...","tn: "..type(tn),"r: "..type(r));
 		end
