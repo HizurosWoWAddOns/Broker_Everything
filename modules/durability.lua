@@ -157,7 +157,7 @@ local function createTooltip(tt)
 	local repairCost, equipCost, bagCost, durabilityA, durabilityL, durabilityLslot = unpack(currentDurability);
 	local repairCostN = repairCost;
 	local reputation = UnitReaction("npc", "player");
-	if (discount[reputation]) then
+	if discount[reputation] and ns.client_version>=2 then
 		repairCostN = floor(repairCost/discount[reputation]);
 	end
 	durabilityA = floor(durabilityA);
@@ -172,7 +172,7 @@ local function createTooltip(tt)
 	lst({c1=CHARACTER,c2=ns.GetCoinColorOrTextureString(name,equipCost,{inTooltip=true})});
 	lst({c1=L["Bags"],c2=ns.GetCoinColorOrTextureString(name,bagCost,{inTooltip=true})});
 
-	if ns.profile[name].showDiscount then
+	if ns.profile[name].showDiscount and ns.client_version>=2 then
 		lst({sep={3,0,0,0,0}});
 		lst({c0=C("ltblue",L["Reputation discounts"])});
 		lst({sep={1}});
@@ -294,7 +294,7 @@ function module.options()
 			},
 		},
 		tooltip = {
-			showDiscount={ type="toggle", order=1, name=L["Show discount"], desc=L["Show list of reputation discounts in tooltip"] },
+			showDiscount={ type="toggle", order=1, name=L["Show discount"], desc=L["Show list of reputation discounts in tooltip"], hidden=ns.IsClassicClient },
 			dateFormat={ type="select", order=2, name=L["Date format"], desc=L["Choose the date format if used in the list of repair costs"], values=date_formats },
 		},
 		misc = {
