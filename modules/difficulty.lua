@@ -92,6 +92,25 @@ local function _SetLootSpecialization(self,specId)
 	securecall("SetLootSpecialization",specId);
 end
 
+local function updateBroker()
+	local short = {}
+	local mode = modes[(IsInRaid() and 3) or (IsInGroup() and 2) or 1];
+	local ids = { {"dungeons",GetDungeonDifficultyID()}, {"raids",GetRaidDifficultyID()}, {"classic",GetLegacyRaidDifficultyID()} };
+	local dungeonID,raidID,legacyID = GetDungeonDifficultyID(), GetRaidDifficultyID(), GetLegacyRaidDifficultyID();
+	local inInstance, instanceType = IsInInstance();
+
+	tinsert(short,C(mode.color,mode.short));
+	for _,id in pairs(ids)do
+		for _,v in ipairs(diff[id[1]])do
+			if(mIf(id[2],v.id))then
+				tinsert(short,C(v.color,v.short));
+			end
+		end
+	end
+
+	(ns.LDB:GetDataObjectByName(ns.modules[name].ldbName) or {}).text = #short>0 and table.concat(short,", ") or L[name];
+end
+
 function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end
 	local mode = modes[(IsInRaid() and 3) or (IsInGroup() and 2) or 1];
@@ -297,36 +316,18 @@ function module.onevent(self,event,...)
 	end
 
 	if update==true then
-		local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName)
-		local short = {}
-		local mode = modes[(IsInRaid() and 3) or (IsInGroup() and 2) or 1];
-		local ids = { {"dungeons",GetDungeonDifficultyID()}, {"raids",GetRaidDifficultyID()}, {"classic",GetLegacyRaidDifficultyID()} };
-		local dungeonID,raidID,legacyID = GetDungeonDifficultyID(), GetRaidDifficultyID(), GetLegacyRaidDifficultyID();
-		local inInstance, instanceType = IsInInstance();
-
-		tinsert(short,C(mode.color,mode.short));
-		for _,id in pairs(ids)do
-			for _,v in ipairs(diff[id[1]])do
-				if(mIf(id[2],v.id))then
-					tinsert(short,C(v.color,v.short));
-				end
-			end
-		end
-
-		if(#short>0)then
-			obj.text = table.concat(short,", ")
-		else
-			obj.text = L[name];
-		end
+		updateBroker();
 	elseif update=="INSTANCE" then
 		local obj = ns.LDB:GetDataObjectByName(ns.modules[name].ldbName)
-		local short = {}
+		local short,roleCountPattern = {},"%s/%s/%s"
 		local mode = (IsInRaid() and 3) or (IsInGroup() and 2) or 1
 		local m=modes[mode]
 		local roleCount = "";
 		if mode>1 then
 			local counts = GetGroupMemberCounts();
-			roleCount = roleCountPattern:format(counts.TANK,counts.HEALER,counts.DAMAGER);
+			if counts and counts.TANK and counts.HEALER and counts.DAMAGER then
+				roleCount = roleCountPattern:format(counts.TANK,counts.HEALER,counts.DAMAGER);
+			end
 		end
 		tinsert(short,C(m.color,m.short)..roleCount);
 	end
