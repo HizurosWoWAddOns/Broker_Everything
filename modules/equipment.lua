@@ -295,7 +295,7 @@ local function createTooltip(tt)
 					upgrades = " "..C(col,itemInfo.upgrades);
 				end
 
-				if ns.client_version>=2 and itemInfo.level and itemInfo.level~=itemLevel then
+				if ns.client_version>=2 and itemInfo.level then
 					itemLevel = C(GetILevelColor(itemInfo.level),itemInfo.level);
 				else
 					itemLevel = "";
