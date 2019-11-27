@@ -210,7 +210,11 @@ end
 local function memberInviteOrWhisper(self,info)
 	if IsAltKeyDown() then
 		if not info[mIsMobile] then
-			InviteUnit(info[mFullName]);
+			if C_PartyInfo.InviteUnit then
+				C_PartyInfo.InviteUnit(info[mFullName]);
+			elseif InviteUnit then
+				InviteUnit(info[mFullName]);
+			end
 		end
 	else
 		SetItemRef("player:"..info[mFullName], ("|Hplayer:%1$s|h[%1$s]|h"):format(info[mFullName]), "LeftButton");

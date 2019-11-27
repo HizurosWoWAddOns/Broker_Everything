@@ -888,7 +888,6 @@ do
 						id = tonumber(id);
 						if id then
 							local d,dM = GetContainerItemDurability(bag,slot);
-							ns.debug("x",bag,slot,id,isAmmo);
 							addItem(
 								(isAmmo and tmp_ammo) or (isSoul and tmp_soul) or tmp_bags,
 								(isAmmo and prev_ammo) or (isSoul and prev_soul) or prev_bags,
