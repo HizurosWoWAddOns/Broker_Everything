@@ -13,7 +13,7 @@ local ldbName, ttName, ttColumns, tt, module = name, name.."TT", 4
 local illusions,weapons = {0,0},{};
 local ctForm = C("green","%d")..C("gray","/")..C("dkyellow","%d");
 local pForm = C("ltgrey","%.1f");
-local session = {};
+local session = false;
 local brokerValues = {
 	["_none"] = NONE.."/"..HIDE,
 	p = "<"..STATUS_TEXT_PERCENT..">".." "..L["+<Collected in this session>"],
@@ -97,6 +97,9 @@ local function updateBroker()
 end
 
 local function resetSessionCounter(x)
+	if not session then
+		session = {};
+	end
 	session.armor = {};
 	for i=1, 11 do
 		local v = TRANSMOG_SLOTS[i];
@@ -263,10 +266,10 @@ end
 function module.onevent(self,event,...)
 	if event=="BE_UPDATE_CFG" and ... and (...):find("^ClickOpt") then
 		ns.ClickOpts.update(name);
-	elseif event=="PLAYER_LOGIN" then
-		resetSessionCounter();
-	end
-	if ns.eventPlayerEnteredWorld then
+	elseif ns.eventPlayerEnteredWorld then
+		if not session then
+			resetSessionCounter();
+		end
 		updateBroker();
 	end
 end
