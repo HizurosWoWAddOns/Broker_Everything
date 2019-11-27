@@ -24,8 +24,10 @@ local urls = {
 	end
 	--
 }
-local hidePvPQuests = {
+local hideQuestsAnytime = {
 	[54180] = true, -- weekly pvp
+};
+local hidePvPQuests = {
 	[44891] = true; -- PvP 2vs2
 	[44908] = true; -- PvP 3vs3
 	[44909] = true; -- PvP battlefield
@@ -436,7 +438,7 @@ function module.onevent(self,event,msg)
 			local q = {GetQuestLogTitle(index)};
 			if q[isHeader]==true then
 				header = q[title];
-			elseif header and not (ns.profile[name].showPvPWeeklys and hidePvPQuests[q[questID]]) and not (ns.profile[name].showWorldQuests and hideEmissaryQuests[q[questID]]) then
+			elseif header and not hideQuestsAnytime[q[questID]] and not (ns.profile[name].showPvPWeeklys and hidePvPQuests[q[questID]]) and not (ns.profile[name].showWorldQuests and hideEmissaryQuests[q[questID]]) then
 				local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(q[questID]);
 				local tagNameLong = tagName;
 				q.text,q.objectives = GetQuestLogQuestText(index);
