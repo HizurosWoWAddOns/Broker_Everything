@@ -180,7 +180,11 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 	if data.type=="realm" then
 		-- whisper toon to toon
 		if IsAltKeyDown() then
-			InviteUnit(data.fullName);
+			if C_PartyInfo.InviteUnit then
+				C_PartyInfo.InviteUnit(data.fullName);
+			elseif InviteUnit then
+				InviteUnit(data.fullName);
+			end
 		else
 			ChatFrame_SendTell(data.fullName);
 		end
@@ -203,6 +207,62 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 	end
 end
 
+local C_BattleNet_GetFriendNumGameAccounts = (C_BattleNet and C_BattleNet.GetFriendNumGameAccounts) or BNGetNumFriendGameAccounts;
+local C_BattleNet_GetFriendAccountInfo = (C_BattleNet and C_BattleNet.GetFriendAccountInfo) or function(friendIndex)
+	-- upgrade old to new
+	local accountInfo={gameAccountInfo={}};
+	accountInfo.bnetAccountID,
+	accountInfo.accountName,
+	accountInfo.battleTag,
+	accountInfo.isBattleTagFriend,
+	accountInfo.gameAccountInfo.characterName,
+	accountInfo.gameAccountInfo.gameAccountID,
+	accountInfo.gameAccountInfo.clientProgram,
+	accountInfo.gameAccountInfo.isOnline,
+	accountInfo.lastOnlineTime,
+	accountInfo.isAFK,
+	accountInfo.isDND,
+	accountInfo.customMessage,
+	accountInfo.note,
+	accountInfo.isFriend,
+	accountInfo.customMessageTime,
+	accountInfo.gameAccountInfo.wowProjectID,
+	accountInfo.rafLinkType,
+	accountInfo.gameAccountInfo.canSummon,
+	accountInfo.isFavorite,
+	accountInfo.gameAccountInfo.isWowMobile
+	= BNGetFriendInfo(friendIndex)
+	return accountInfo;
+end
+
+local C_BattleNet_GetFriendGameAccountInfo = (C_BattleNet and C_BattleNet.GetFriendGameAccountInfo) or function(friendIndex, accountIndex)
+	local gameAccountInfo,_ = {};
+	gameAccountInfo.hasFocus, -- 1
+	gameAccountInfo.characterName, -- 2
+	gameAccountInfo.clientProgram, -- 3
+	gameAccountInfo.realmName, -- 4
+	gameAccountInfo.realmID, -- 5
+	gameAccountInfo.factionName, -- 6
+	gameAccountInfo.raceName, -- 7
+	gameAccountInfo.className, -- 8
+	_, -- 9
+	gameAccountInfo.areaName, -- 10
+	gameAccountInfo.characterLevel, -- 11
+	gameAccountInfo.richPresence, -- 12
+	_, --accountInfo.customMessage, -- 13
+	_, --accountInfo.customMessageTime, -- 14
+	gameAccountInfo.isOnline, -- 15
+	gameAccountInfo.gameAccountID, -- 16
+	_, --accountInfo.bnetAccountID, -- 17
+	gameAccountInfo.isGameAFK, -- 18
+	gameAccountInfo.isGameBusy, -- 19
+	gameAccountInfo.playerGuid, -- 20
+	gameAccountInfo.wowProjectID, -- 21
+	gameAccountInfo.isWowMobile -- 22
+	= BNGetFriendGameAccountInfo(friendIndex, accountIndex)
+	return gameAccountInfo
+end
+
 local function createTooltip(tt)
 	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
 
@@ -222,9 +282,6 @@ local function createTooltip(tt)
 		tt:SetCell(tt:AddLine(),1,C("white",ns.scm(broadcastText,true)),nil,nil,columns);
 	end
 
-	local bnetIDAccount, accountName, battleTag, isBattleTag, characterName, bnetIDGameAccount, _client, isBnetOnline, lastBnetOnline, isBnetAFK, isBnetDND, messageText, BnetNoteText, isRIDFriend, messageTime, canSoR = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- BNGetFriendInfo
-	local accountName,battleTag,isBattleTagPresence,isOnline,isAFK,isDND,noteText = 2,3,4,8,10,11,13; -- BNGetFriendInfo
-	local toonName,client,realmName,_,faction,_,class,_,zoneName,level,gameText,broadcastText,broadcastTime,_,toonID = 2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- BNGetFriendGameAccountInfo
 	local fi,nt,ti;
 	local visible = {};
 
@@ -250,30 +307,27 @@ local function createTooltip(tt)
 		else
 			-- RealId	Status Character	Level	Zone	Game	Realm	Notes
 			for i=1, numBNFriends do
-				local nt,fi = BNGetNumFriendGameAccounts(i),{BNGetFriendInfo(i)};
-				if fi[isOnline] then
+				local nt = C_BattleNet_GetFriendNumGameAccounts(i);
+				local fi = C_BattleNet_GetFriendAccountInfo(i);
+				if fi.gameAccountInfo.isOnline then
 					for I=1, nt do
-						local ti = {BNGetFriendGameAccountInfo(i, I)};
-						local bcIcon = ti[broadcastText]~="" and "|Tinterface\\chatframe\\ui-chatinput-focusicon:0|t" or "";
-						if visible[fi[accountName]..ti[client]..ti[zoneName]] then
-							-- filter duplicates...
-						elseif (nt>1 and ti[client]~="App" and ti[client]~="BSAp") or nt==1 then
+						local ti =  C_BattleNet_GetFriendGameAccountInfo(i,I);
+						local bcIcon = fi.customMessage~="" and "|Tinterface\\chatframe\\ui-chatinput-focusicon:0|t" or "";
+						if not visible[fi.bnetAccountID] then -- filter duplicates...
 							local isBNColor=false;
-							visible[fi[accountName]..ti[client]..ti[zoneName]] = true;
-							if ti[toonName]=="" or ti[client]=="Hero" then
-								if fi[isBattleTag] then
-									ti[toonName] = fi[accountName];
-								else
-									ti[toonName] = strsplit("#",fi[battleTag]);
-								end
-								isBNColor=true;
-							end
+							visible[fi.bnetAccountID] = true
 							local l = tt:AddLine();
+
+							-- wow logout is buggy. sometimes level==0 and reamid==0. player is logout out but displayed as playing wow
+							if ti.characterLevel==0 and ti.realmID==0 then
+								ti.clientProgram = "App"
+							end
+
 							-- battle tags / realids
 							if ns.profile[name].showBattleTags~="0" then
-								local a,b = strsplit("#",fi[battleTag]);
+								local a,b = strsplit("#",fi.battleTag);
 								local BattleTag = C("ltblue",ns.scm(a))..C("ltgray","#"..ns.scm(b));
-								local bnName=C("ltblue",ns.scm(fi[accountName]));
+								local bnName=C("ltblue",ns.scm(fi.accountName));
 								-- 0 Disabled
 								-- 1 Name
 								-- 2 Name (BattleTag)
@@ -285,85 +339,102 @@ local function createTooltip(tt)
 								end
 								tt:SetCell(l,1,"    "..bnName..bcIcon); -- 1
 							end
+
 							-- level
-							tt:SetCell(l,2,C("white",ti[level]));		-- 2
+							if ti.characterLevel and ti.characterLevel>0 then
+								tt:SetCell(l,2,C("white",ti.characterLevel or ""));		-- 2
+							end
+
 							-- toon name
-							local nameStr = _status(fi[isAFK],fi[isDND])..C(isBNColor and "ltblue" or ti[class],ns.scm(ti[toonName]));
-							if tonumber(ns.profile[name].showRealm)>1 and ti[realmName]~=ns.realm_short and ti[client]~="App" then
+							local nameStr = (ti.characterName and ti.characterName~="" and ti.characterName) or (fi.isBattleTagFriend and fi.accountName and fi.accountName~="" and fi.accountName) or strsplit("#",fi.battleTag);
+							if ti.clientProgram=="WoW" and ti.realmID>0 and ti.className then
+								nameStr = C(ti.className,ns.scm(nameStr)); -- wow character name in class color
+							else
+								nameStr = C("ltblue",ns.scm(nameStr)); -- all other in light blue
+							end
+							-- toon name - append realm name or asterisk
+							if tonumber(ns.profile[name].showRealm)>1 and ti.realmName~=ns.realm_short and ti.realmID and ti.realmID>0 then
 								if ns.profile[name].showRealm=="2" then
-									nameStr = nameStr..C("dkyellow","-"..ns.scm(ti[realmName]));
+									nameStr = nameStr..C("dkyellow","-"..ns.scm(ti.realmName));
 								else
 									nameStr = nameStr..C("dkyellow","*");
 								end
 							end
-							if ns.profile[name].showFaction=="1" and ti[client]=="WoW" and ti[faction] then
-								nameStr = nameStr.."|TInterface\\PVPFrame\\PVP-Currency-"..ti[faction]..":16:16:0:-1:32:32:2:30:2:30|t";
-							end
-							if ns.profile[name].showBattleTags=="0" and ti[client]~="App" then
+							-- toon name - append faction icon
+							if ns.profile[name].showFaction=="1" and ti.clientProgram=="WoW" and ti.factionName then
+								nameStr = nameStr.."|TInterface\\PVPFrame\\PVP-Currency-"..ti.factionName..":16:16:0:-1:32:32:2:30:2:30|t";
+							elseif ns.profile[name].showBattleTags=="0" and ti.clientProgram~="App" then
 								nameStr = nameStr.." "..bcIcon;
 							end
-							tt:SetCell(l,3,nameStr); -- 3
+							tt:SetCell(l,3,_status(fi.isAFK,fi.isDND)..nameStr); -- 3
+
 							-- game icon or text
 							if ns.profile[name].showGame~="0" then
-								tt:SetCell(l,4,C("white", BNet_GetClientTexture(ti[client]) ));	-- 4
+								tt:SetCell(l,4,C("white", BNet_GetClientTexture(ti.clientProgram) ));	-- 4
 							end
-							if ti[client]=="WoW" then
-								-- zone
-								if ns.profile[name].showZone then
-									if ti[zoneName] and ti[zoneName]:match("^"..GARRISON_LOCATION_TOOLTIP) and ti[zoneName]~=GARRISON_LOCATION_TOOLTIP then
-										ti[zoneName] = GARRISON_LOCATION_TOOLTIP;
-									end
-									tt:SetCell(l,5,C("white",ti[zoneName]~="" and ti[zoneName] or ti[gameText]));			-- 5
+
+							-- zone or current screen
+							if ns.profile[name].showZone then
+								if ti.clientProgram=="WoW" and ti.areaName and ti.areaName:match("^"..GARRISON_LOCATION_TOOLTIP) and ti.areaName~=GARRISON_LOCATION_TOOLTIP then
+									ti.areaName = GARRISON_LOCATION_TOOLTIP;
 								end
+								local zoneStr = (ti.areaName and ti.areaName~="" and ti.areaName) or (ti.richPresence and ti.richPresence~="" and ti.richPresence) or UNKNOWN;
+								tt:SetCell(l,5,C("white",zoneStr),nil,nil, ti.clientProgram=="WoW" and 1 or 3);			-- 5,6,7
+							end
+
+							if ti.clientProgram=="WoW" then
 								-- realm (own column)
-								if ns.profile[name].showRealm=="1" then
-									local realm,_ = ti[realmName];
+								if ns.profile[name].showRealm=="1" and ti.realmID>0 then
+									local realm,_ = ti.realmName;
 									if type(realm)=="string" and realm:len()>0 then
 										local _,_realm = ns.LRI:GetRealmInfo(realm);
-										if _realm then realm = _realm; end
+										if _realm and _realm~="" then
+											realm = _realm;
+										end
 									end
-									tt:SetCell(l,6,C(ns.realms[realm] and "green" or "white",realm));			-- 6
+									tt:SetCell(l,6,C(ns.realms[realm] and "green" or "white",ti.realmName or L["Classic realm"]));			-- 6
 								end
 								-- faction (own column)
-								if ns.profile[name].showFaction=="2" then
-									local color = "green";
-									if ti[faction]=="Alliance" then
-										color = "ff0077ff"
-									elseif ti[faction]=="Horde" then
-										color = "red"
-									end
-									tt:SetCell(l,7,C(color,_G["FACTION_"..ti[faction]:upper()] or ti[faction]));		-- 7
-								elseif ns.profile[name].showFaction=="3" then
-									if ti[faction]=="Neutral" then
-										tt:SetCell(l,7,"|TInterface\\minimap\\tracking\\battlemaster:16:16:0:-1:32:32:2:30:2:30|t");
-									else
-										tt:SetCell(l,7,"|TInterface\\PVPFrame\\PVP-Currency-"..ti[faction]..":16:16:0:-1:32:32:2:30:2:30|t");
+								if ti.factionName then
+									if ns.profile[name].showFaction=="2" then
+										local color = "green";
+										if ti.factionName=="Alliance" then
+											color = "ff0077ff"
+										elseif ti.factionName=="Horde" then
+											color = "red"
+										end
+										tt:SetCell(l,7,C(color,_G["FACTION_"..ti.factionName:upper()] or ti.factionName));		-- 7
+									elseif ns.profile[name].showFaction=="3" then
+										if ti.factionName=="Neutral" then
+											tt:SetCell(l,7,"|TInterface\\minimap\\tracking\\battlemaster:16:16:0:-1:32:32:2:30:2:30|t");
+										else
+											tt:SetCell(l,7,"|TInterface\\PVPFrame\\PVP-Currency-"..ti.factionName..":16:16:0:-1:32:32:2:30:2:30|t");
+										end
 									end
 								end
-							elseif ns.profile[name].showZone then
-								-- zone or current screen
-								tt:SetCell(l,5,C("white",C("white",ti[zoneName]~="" and ti[zoneName] or ti[gameText])),nil,nil,3); -- 5 6 7
 							end
 							-- notes
-							if ns.profile[name].showNotes and fi[noteText] then
-								tt:SetCell(l,8,C("white",C("white",ns.scm(fi[noteText],true)))); -- 8
+							if ns.profile[name].showNotes and fi.note then
+								tt:SetCell(l,8,C("white",C("white",ns.scm(fi.note,true)))); -- 8
 							end
 
 							local data = {
 								type = "battlenet",
-								toonID = ti[16],
-								account = fi[2],
-								className = ti[8] or false,
-								name = ti[2],
-								client = ti[3],
-								realm = ti[4],
-								factionT = ti[6]:upper(),
-								factionL = _G["FACTION_"..ti[6]:upper()],
-								area = ti[3]~="App" and (ti[10] or ti[12]) or false,
-								notes = (fi[13] or ""):trim(),
-								broadcast = (fi[12] or ""):trim(),
-								broadcastTime = fi[15] or false,
+								toonID = ti.gameAccountID,
+								account = fi.accountName,
+								className = ti.className or false,
+								name = ti.characterName,
+								client = ti.clientProgram,
+								realm = ti.realmName,
+								area = ti.clientProgram~="App" and (ti.areaName or ti.richPresence) or false,
+								notes = (fi.note or ""):trim(),
+								broadcast = (fi.customMessage or ""):trim(),
+								broadcastTime = fi.customMessageTime or false,
 							};
+							if ti.factionName then
+								data.factionT = ti.factionName:upper();
+								data.factionL = _G["FACTION_"..ti.factionName:upper()];
+							end
 
 							tt:SetLineScript(l, "OnMouseUp", tooltipLineScript_OnMouseUp, data);
 							tt:SetLineScript(l, "OnEnter", createTooltip2, data);
