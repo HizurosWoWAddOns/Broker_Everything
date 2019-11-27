@@ -167,7 +167,7 @@ local function updateData()
 	table.sort(ns.data[name].factions,sortFactions);
 
 	for id, data in pairs(ns.data[name].factions)do
-		if (data.extension or data.expansion) and Time < data.eventEnding then
+		if (data.factionID and GetFactionInfoByID(data.factionID)) and (data.extension or data.expansion) and Time < data.eventEnding then
 			if data.extension then
 				data.expansion = exps[data.extension];
 				data.extension = nil;
@@ -254,12 +254,14 @@ local function createTooltip(tt)
 		tt:AddSeparator(12,0,0,0,0);
 		local c,l=ttColumns,tt:AddLine(C("ltblue",CHARACTER));
 		for e=#expansions, 1, -1 do
-			table.sort(factions[e],sortInvertFactions);
-			for i=1, #factions[e] do
-				local v = factions[e][i];
-				if ns.profile[name][expansions[v.expansion].name.."Quests"] and v.eventEnding-Time>=0 then
-					tt:SetCell(l,c,"|T"..v.icon..":24:24:0:0:64:64:4:56:4:56|t",nil,"CENTER");
-					c=c-1;
+			if factions[e] then
+				table.sort(factions[e],sortInvertFactions);
+				for i=1, #factions[e] do
+					local v = factions[e][i];
+					if ns.profile[name][expansions[v.expansion].name.."Quests"] and v.eventEnding-Time>=0 then
+						tt:SetCell(l,c,"|T"..v.icon..":24:24:0:0:64:64:4:56:4:56|t",nil,"CENTER");
+						c=c-1;
+					end
 				end
 			end
 		end
