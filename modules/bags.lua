@@ -165,9 +165,12 @@ end
 local function updateBroker()
 	local txt = {};
 
+	local u,p = 0,0;
 	local f, t = BagsFreeUsed();
-	local u = t - f;
-	local p = u / t;
+	if t and t>0 then
+		u = t - f;
+		p = u / t;
+	end
 
 	local c = "white"
 	if f<=tonumber(ns.profile[name].critLowFree) then
