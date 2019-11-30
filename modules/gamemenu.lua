@@ -22,7 +22,7 @@ local menu = {};
 
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\stuff"}; --IconName::Game Menu--
+I[name] = {iconfile=ns.media.."stuff"}; --IconName::Game Menu--
 
 
 -- some local functions --
@@ -241,8 +241,10 @@ function module.init()
 	I["gm_UiOpts"]            = {iconfile="Interface\\ICONS\\inv_gizmo_02"}																						--IconName::gm_UiOpts--
 	I["gm_Macros"]            = {iconfile="interface\\macroframe\\macroframe-icon"}																				--IconName::gm_Macros--
 	I["gm_MacOpts"]           = {iconfile="Interface\\ICONS\\inv_gizmo_02"}																						--IconName::gm_MacOpts--
-	I["gm_Addons"]            = {iconfile="Interface\\ICONS\\INV_Misc_EngGizmos_20"}																			--IconName::gm_Addons--
-	I["gm_ReloadUi"]          = {iconfile="Interface\\ICONS\\achievement_guildperk_quick and dead"}																--IconName::gm_ReloadUi--
+	--I["gm_Addons"]            = {iconfile="Interface\\ICONS\\INV_Misc_EngGizmos_20"}																			--IconName::gm_Addons--
+	I["gm_Addons"]            = {iconfile=ns.media.."INV_Misc_EngGizmos_20"}																			--IconName::gm_Addons--
+	--I["gm_ReloadUi"]          = {iconfile="Interface\\ICONS\\achievement_guildperk_quick and dead"}																--IconName::gm_ReloadUi--
+	I["gm_ReloadUi"]          = {iconfile=ns.media.."achievement_guildperk_quick and dead"}																--IconName::gm_ReloadUi--
 	I["gm_gmticket"]          = {iconfile="Interface\\CHATFRAME\\UI-CHATICON-BLIZZ", coordsStr="0:2"}															--IconName::gm_gmticket--
 	I["gm_gmticket_edit"]     = {iconfile="Interface\\ICONS\\inv_misc_note_05"}																					--IconName::gm_gmticket_edit--
 	I["gm_gmticket_cancel"]   = {iconfile="Interface\\buttons\\ui-grouploot-pass-up",coordsStr="16:16:0:-1:32:32:2:32:2:32"}									--IconName::gm_gmticket_cancel--
