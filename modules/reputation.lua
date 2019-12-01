@@ -512,7 +512,7 @@ module = {
 	events = {
 		"PLAYER_LOGIN",
 		"UPDATE_FACTION",
-		"QUEST_LOOT_RECEIVED",
+		-- "QUEST_LOOT_RECEIVED", -- added later; needs client version check
 	},
 	config_defaults = {
 		enabled = false,
@@ -543,6 +543,7 @@ module = {
 }
 
 if ns.client_version>=2 then
+	-- event does not exists on classic clients
 	tinsert(module.events,"QUEST_LOOT_RECEIVED")
 end
 
