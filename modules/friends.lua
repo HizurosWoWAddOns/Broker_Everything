@@ -341,8 +341,9 @@ local function createTooltip(tt)
 							end
 
 							-- level
+							ti.characterLevel = tonumber(ti.characterLevel);
 							if ti.characterLevel and ti.characterLevel>0 then
-								tt:SetCell(l,2,C("white",ti.characterLevel or ""));		-- 2
+								tt:SetCell(l,2,C("white",ti.characterLevel));		-- 2
 							end
 
 							-- toon name
