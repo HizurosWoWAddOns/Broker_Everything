@@ -868,16 +868,13 @@ do
 			local tmp_bags,tmp_ammo,tmp_soul,_ = {},{},{};
 			for bag=0, NUM_BAG_SLOTS do
 				local isAmmo,isSoul = false,false;
-				if bag>=1 then
+				if ns.client_version<2 and bag>=1 then -- detect special containers on classic client
 					local link = GetInventoryItemLink("player", bag+19);
 					if link then
 						local _, _, _, _, _, _, _, _, _, _, _, itemClassID, itemSubClassID  = GetItemInfo(link);
-						--if not itemClassID or not itemSubClassID then
-						--	ns.debug("ns.items.scanner","itemClassID:",itemClassID,"itemSubClassID:",itemSubClassID,"link:",link);
-						--end
 						if itemClassID==LE_ITEM_CLASS_QUIVER then -- quiver / ammo pouch
 							isAmmo = true;
-						elseif itemSubClassID==3 then
+						elseif itemSubClassID==1 then -- soul pouch
 							isSoul = true;
 						end
 					end
@@ -903,21 +900,23 @@ do
 					break;
 				end
 			end
-			for index,obj in pairs(prev_ammo)do
-				if ns.items.ammo[index]==nil then -- item disappeared or moved
-					hasChanged.bags = true;
-					break;
-				end
-			end
-			for index,obj in pairs(prev_soul)do
-				if ns.items.soul[index]==nil then -- item disappeared or moved
-					hasChanged.bags = true;
-					break;
-				end
-			end
 			ns.items.bags = tmp_bags;
-			ns.items.ammo = tmp_ammo;
-			ns.items.soul = tmp_soul;
+			if ns.client_version<2 then
+				for index,obj in pairs(prev_ammo)do
+					if ns.items.ammo[index]==nil then -- item disappeared or moved
+						hasChanged.bags = true;
+						break;
+					end
+				end
+				ns.items.soul = tmp_soul;
+				for index,obj in pairs(prev_soul)do
+					if ns.items.soul[index]==nil then -- item disappeared or moved
+						hasChanged.bags = true;
+						break;
+					end
+				end
+				ns.items.ammo = tmp_ammo;
+			end
 		end
 
 		-- scan inventory
@@ -959,15 +958,15 @@ do
 		end
 
 		-- execute callback functions
-		if doUpdate.inv or doUpdate.bags then
+		if (doUpdate.inv or doUpdate.bags) and (hasChanged.inv or hasChanged.bags or hasChanged.ammo or hasChanged.soul) then
 			-- 'prepare' callbacks
 			if callbacks.prepareNum>0 then
-				doCallbacks(callbacks.prepare,"prepare");
+				doCallbacks(callbacks.prepare,"prepare",hasChanged);
 			end
 
 			-- 'any' callbacks
 			if callbacks.anyNum>0 then
-				doCallbacks(callbacks.any,"any");
+				doCallbacks(callbacks.any,"any",hasChanged);
 			end
 
 			-- 'equipment' callbacks
@@ -987,11 +986,19 @@ do
 
 		-- 'bags' callbacks
 		if doUpdate.bags and callbacks.bagsNum>0 then
-			doCallbacks(callbacks.bags,"bags");
+			if hasChanged.bags then
+				doCallbacks(callbacks.bags,"bags");
+			elseif hasChanged.ammo then
+				-- 'ammo' callbacks
+				doCallbacks(callbacks.ammo,"ammo");
+			elseif hasChanged.soul then
+				-- 'soul' callbacks
+				doCallbacks(callbacks.soul,"soul");
+			end
 		end
 
 		-- 'inv' callbacks
-		if doUpdate.inv and not invFailed and callbacks.invNum>0 then
+		if doUpdate.inv and not invFailed and callbacks.invNum>0 and hasChanged.inv then
 			doCallbacks(callbacks.inv,"inv");
 		end
 
