@@ -146,7 +146,7 @@ local function tooltip2Hide(self)
 end
 
 function createTooltip(tt,update)
-	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",CURRENCY))

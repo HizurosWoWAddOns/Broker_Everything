@@ -264,7 +264,7 @@ local C_BattleNet_GetFriendGameAccountInfo = (C_BattleNet and C_BattleNet.GetFri
 end
 
 local function createTooltip(tt)
-	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
 	local columns,l,c=8;
 	local numFriends = C_FriendList.GetNumFriends();

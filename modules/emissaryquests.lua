@@ -201,6 +201,7 @@ local function updateData()
 end
 
 local function createTooltip(tt)
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local minLevel,Time,level = 999,time(),UnitLevel("player");
 
 	for e=1, #expansions do

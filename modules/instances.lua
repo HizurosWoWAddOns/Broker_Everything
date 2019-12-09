@@ -150,7 +150,7 @@ end
 
 function createTooltip(tt,name,mode)
 	local ttName = name==name1 and ttName1 or ttName2;
-	if not (tt and tt.key and tt.key==ttName) then return end
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
 	if tt.lines~=nil then tt:Clear(); end
 

@@ -34,7 +34,7 @@ local function date(dateStr)
 end
 
 local function createTooltip(tt,update)
-	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local h24 = ns.profile[name].format24;
 	local dSec = ns.profile[name].showSeconds;
 	local pT,pL,pS = ns.LT.GetPlayedTime();

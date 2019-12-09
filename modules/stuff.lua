@@ -19,7 +19,7 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\stuff"}; --IconName:
 -- some local functions --
 --------------------------
 local function createTooltip(tt)
-	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
 	local line, column
 

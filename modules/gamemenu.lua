@@ -65,7 +65,7 @@ local function deleteGMTicket()
 end
 
 local function createTooltip(tt)
-	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
 	local line, column
 	local section, secHide = 1, false

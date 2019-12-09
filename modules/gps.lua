@@ -218,7 +218,7 @@ end
 
 -- shared tooltip for modules Location, GPS and ZoneText
 local function createTooltip(tt,ttName,modName)
-	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
 	local zoneColor,zoneLabel,zoneType = GetZoneInfo()
 	local line, column

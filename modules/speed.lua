@@ -98,7 +98,7 @@ local function tooltipOnLeave()
 end
 
 local function createTooltip(tt)
-	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local _=function(d) if tonumber(d) then return ("+%d%%"):format(d); end return d; end;
 	local lvl = UnitLevel("player");
 

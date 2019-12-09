@@ -64,7 +64,7 @@ local function toggleAchievementFrame(self,achievementId)
 end
 
 local function createTooltip(tt)
-	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local now, timeleft, timeleftAll, shipmentsCurrent = time();
 	local none, qualities = true,{"white","ff1eaa00","ff0070dd","ffa335ee"};
 	local _,title = ns.DurationOrExpireDate(0,false,"Single|nduration","Single|nexpire date")

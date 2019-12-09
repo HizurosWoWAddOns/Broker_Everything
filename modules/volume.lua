@@ -133,7 +133,9 @@ local function volumeClick(self,data,button)
 end
 
 function createTooltip(tt, update)
-	if (tt) and (tt.Clear) and (tt.key) and (tt.key~=ttName) and (tt.lines~=nil) and (tt.columns~=nil) then return end -- don't override other LibQTip tooltips...
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
+	if not (tt.lines==nil or tt.columns==nil) then return end
+
 	local wheels,l,c={};
 
 	if tt.lines~=nil then tt:Clear(); end

@@ -173,7 +173,7 @@ local function createTooltip2(self,tt2,Class,Name,Realm,Data)
 end
 
 local function createTooltip(tt)
-	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
 	if tt.lines~=nil then tt:Clear(); end
 	local l = tt:AddHeader();

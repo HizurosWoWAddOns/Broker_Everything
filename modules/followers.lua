@@ -208,7 +208,7 @@ local function charSummary(lst,c,v,t,a)
 end
 
 local function createTooltip(tt, name)
-	--if (tt) and (tt.key) and (tt.key~=name) then return end -- don't override other LibQTip tooltips...
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local colors,qualities,count = {"ltblue","yellow","yellow","green","red"},{"white","ff1eaa00","ff0070dd","ffa335ee","ffff8000","ffB3965D"},0
 	local statuscolors = {["onresting"]="ltblue",["onwork"]="orange",["onmission"]="yellow",["available"]="green",["disabled"]="red"};
 	local none=true;

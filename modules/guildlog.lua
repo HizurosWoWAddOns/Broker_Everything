@@ -29,7 +29,7 @@ I[name] = {iconfile="Interface\\icons\\inv_misc_note_05",coords={0.05,0.95,0.05,
 -- some local functions --
 --------------------------
 local function createTooltip(tt)
-	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local doHide = {
 		["join"] = ns.profile[name].hideJoin==true,
 		["quit"] = ns.profile[name].hideLeave==true,

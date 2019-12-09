@@ -193,7 +193,7 @@ local function AddFactionRecipeLines(tt,expansion,recipesByProfession)
 end
 
 local function createTooltip(tt)
-	if (tt) and (tt.key) and (tt.key~=ttName) then return end -- don't override other LibQTip tooltips...
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local iconnameLocale = "|T%s:12:12:0:0:64:64:2:62:4:62|t %s";
 	local function item_icon(name,icon) return select(10,GetItemInfo(name)) or icon or ns.icon_fallback; end
 
