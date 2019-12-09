@@ -101,7 +101,7 @@ local function UpdateStatus(event)
 		local toonName = Broker_Everything_CharacterDB.order[i];
 		if toonName and toonName~=ns.player.name_realm then
 			local mail = Broker_Everything_CharacterDB[toonName].mail;
-			if (mail.new and #mail.new>0) or (mail.stored and #mail.stored>0) then
+			if mail and ((mail.new and #mail.new>0) or (mail.stored and #mail.stored>0)) then
 				mailStored = true;
 			end
 		end
