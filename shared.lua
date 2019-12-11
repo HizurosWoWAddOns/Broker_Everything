@@ -792,7 +792,7 @@ do
 		local n,loc,index = GetItemInfo(info.link);
 		if info.bag then
 			loc,index = "bags",((info.bag+1)*1000)+info.slot;
-			if prev[index]==nil then
+			if prev[index]==nil or (prev[index] and prev[index].id==info.id and prev[index].count~=info.count) then
 				hasChanged.bags = true;
 			end
 		else
@@ -958,7 +958,7 @@ do
 		end
 
 		-- execute callback functions
-		if (doUpdate.inv or doUpdate.bags) and (hasChanged.inv or hasChanged.bags or hasChanged.ammo or hasChanged.soul) then
+		if (doUpdate.inv or doUpdate.bags) and (hasChanged.inv or hasChanged.bags) then
 			-- 'prepare' callbacks
 			if callbacks.prepareNum>0 then
 				doCallbacks(callbacks.prepare,"prepare",hasChanged);
@@ -985,16 +985,8 @@ do
 		end
 
 		-- 'bags' callbacks
-		if doUpdate.bags and callbacks.bagsNum>0 then
-			if hasChanged.bags then
-				doCallbacks(callbacks.bags,"bags");
-			elseif hasChanged.ammo then
-				-- 'ammo' callbacks
-				doCallbacks(callbacks.ammo,"ammo");
-			elseif hasChanged.soul then
-				-- 'soul' callbacks
-				doCallbacks(callbacks.soul,"soul");
-			end
+		if doUpdate.bags and callbacks.bagsNum>0 and hasChanged.bags then
+			doCallbacks(callbacks.bags,"bags");
 		end
 
 		-- 'inv' callbacks
