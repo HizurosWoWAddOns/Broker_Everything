@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Bags" -- L["Bags"] L["ModDesc-Bags"]
 local ttName,ttColumns,tt,module = name.."TT",3;
 local IsMerchantOpen,G = false,{};
-local crap = {limit=3,sum=0,items={}};
+local crap,bags = {limit=3,sum=0,items={}},{sumFree=0,sumTotal=0,byTypeFree={},byTypeTotal={}};
 local qualityModeValues = {
 	["1"]=L["BagsQualityAll"],
 	["2"]=L["BagsQualityAll"].." + "..L["BagsQualityVendor"],
@@ -87,42 +87,6 @@ function crap.search()
 	end
 end
 
--- Function to determine the total number of bag slots and the number of free bag slots.
-local function BagsFreeUsed()
-	local T,F = (GetContainerNumSlots(0) or 0),(GetContainerNumFreeSlots(0) or 0);
-	local total,free = {[1]=T,ammo=0},{[1]=F,ammo=0},0,0;
-	--for i=2, 11 do total[i] = 0; end
-
-	if total[1]==0 then
-		return 0,0,free,total; -- error
-	end
-
-	for slotIndex=1,NUM_BAG_SLOTS do
-		local link, typeID, subTypeID = GetInventoryItemLink("player", slotIndex+19);
-		if link then
-			local _, _, _, _, _, x, y, _, _, _, _, itemClassID, itemSubClassID  = GetItemInfo(link);
-			if not itemSubClassID then
-				itemSubClassID = 0;
-			end
-
-			local t,f = (GetContainerNumSlots(slotIndex)),(GetContainerNumFreeSlots(slotIndex));
-			if itemClassID==LE_ITEM_CLASS_QUIVER then -- quiver / ammo pouch
-				total.ammo, free.ammo = total.ammo+t, free.ammo+f;
-			else
-				itemSubClassID = itemSubClassID+1; -- itemSubClassID starts with 0
-				if not total[itemSubClassID] then
-					total[itemSubClassID], free[itemSubClassID] = t,f;
-				else
-					total[itemSubClassID] = total[itemSubClassID]+t;
-					free[itemSubClassID] = free[itemSubClassID]+f;
-				end
-				T,F = T+t,F+f;
-			end
-		end
-	end
-	return F,T, free, total;
-end
-
 local function itemQuality()
 	local price, sum, _ = {[99]=0},{[99]=0};
 	for i in pairs(ITEM_QUALITY_COLORS) do
@@ -146,7 +110,7 @@ local function updateBroker()
 	local txt = {};
 
 	local u,p = 0,0;
-	local f, t = BagsFreeUsed();
+	local f, t = bags.sumFree,bags.sumTotal;
 	if t and t>0 then
 		u = t - f;
 		p = u / t;
@@ -173,16 +137,9 @@ local function createTooltip(tt)
 
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",L[name]));
-
-	if ns.profile[name].showByBagTypes then
-		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(C("ltblue","Type"));
-		tt:AddSeparator(1);
-	else
-		tt:AddSeparator(1);
-		tt:AddLine(C("ltyellow",L["Free slots"]),"",C("white",free));
-		tt:AddLine(C("ltyellow",L["Total slots"]),"",C("white",total));
-	end
+	tt:AddSeparator(1);
+	tt:AddLine(C("ltyellow",L["Free slots"]),"",C("white",bags.sumFree));
+	tt:AddLine(C("ltyellow",L["Total slots"]),"",C("white",bags.sumTotal));
 
 	if ns.profile[name].showQuality then
 		local mode=qualityModes[ns.profile[name].qualityMode];
@@ -212,6 +169,42 @@ local function createTooltip(tt)
 	ns.roundupTooltip(tt);
 end
 
+-- Function to determine the total number of bag slots and the number of free bag slots.
+local function updateBags()
+	local T,F = (GetContainerNumSlots(0) or 0),(GetContainerNumFreeSlots(0) or 0);
+	if T==0 then
+		return; -- api return invalid value
+	end
+
+	local total,free,bagTypesLock = {["1:0"]=T},{["1:0"]=F},{["1:0"]=true};
+
+	for slotIndex=1,NUM_BAG_SLOTS do
+		local link = GetInventoryItemLink("player", slotIndex+19);
+		if link then
+			local _, _, _, _, _, _, _, _, _, _, _, itemClassID, itemSubClassID  = GetItemInfo(link);
+			if not itemSubClassID then
+				itemSubClassID = 0;
+			end
+			local t,f = (GetContainerNumSlots(slotIndex)),(GetContainerNumFreeSlots(slotIndex));
+			local bT = itemClassID..":"..itemSubClassID;
+			if not bagTypesLock[bT] then
+				bagTypesLock[bT]=true;
+			end
+			if not total[bT] then
+				total[bT], free[bT] = t,f;
+			else
+				total[bT] = total[bT]+t;
+				free[bT] = free[bT]+f;
+			end
+			T,F = T+t,F+f;
+		end
+	end
+
+	bags = {sumFree=F,sumTotal=T,byTypeFree=free,byTypeTotal=total};
+
+	updateBroker();
+	createTooltip(tt,true);
+end
 
 -- module variables for registration --
 ---------------------------------------
@@ -230,7 +223,7 @@ module = {
 		qualityMode = "1",
 
 		autoCrapSelling = false,
-		autoCrapSellingInfo = true
+		autoCrapSellingInfo = true,
 	},
 	clickOptionsRename = {
 		["bags"] = "1_open_bags",
@@ -265,7 +258,7 @@ function module.options()
 			critLowFree={ type="range", order=1, name=L["Critical low free slots"],         desc=L["Select the maximum free slot count to coloring in red."], min=1, max=50, step=1 },
 			warnLowFree={ type="range", order=2, name=L["Warn low free slots"],             desc=L["Select the maximum free slot count to coloring in yellow."], min=2, max=100, step=1 },
 			shortNumbers=3,
-			header={ type="header", order=4, name=L["Crap selling options"] },
+			header={ type="header", order=4, name=L["Crap selling options"], hidden=ns.IsClassicClient },
 			autoCrapSelling={ type="toggle", order=5, name=L["Enable auto crap selling"], desc=L["Enable automatically crap selling on opening a mergant frame"], hidden=ns.IsClassicClient },
 			autoCrapSellingInfo={ type="toggle", order=6, name=L["Summary of earned gold in chat"], desc=L["Post summary of earned gold in chat window"], hidden=ns.IsClassicClient },
 		},
@@ -274,13 +267,13 @@ function module.options()
 		showQuality=true,
 		critLowFree=true,
 		warnLowFree=true
-	}
+	};
 end
 
 function module.init()
 	for i=0, 7 do G["ITEM_QUALITY"..i.."_DESC"] = _G["ITEM_QUALITY"..i.."_DESC"] end
 	G.ITEM_QUALITY99_DESC = UNKNOWN;
-	ns.items.RegisterCallback(name,updateBroker,"bags");
+	ns.items.RegisterCallback(name,updateBags,"bags");
 end
 
 function module.onevent(self,event,...)
