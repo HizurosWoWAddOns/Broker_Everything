@@ -113,11 +113,13 @@ local function updateMembers()
 	members = tmp;
 	membersName2Index = tmpNames;
 
-	wipe(bnetFriends);
-	for i=1, (BNGetNumFriends()) do
-		local accountInfo = C_BattleNet.GetFriendAccountInfo(i);
-		if accountInfo.accountName and accountInfo.gameAccountInfo.characterName and accountInfo.gameAccountInfo.realmName and accountInfo.gameAccountInfo.clientProgram=="WoW" then
-			bnetFriends[accountInfo.gameAccountInfo.characterName.."-"..accountInfo.gameAccountInfo.realmName] = accountInfo.accountName;
+	if ns.client_version>=2 then
+		wipe(bnetFriends);
+		for i=1, (BNGetNumFriends()) do
+			local accountInfo = C_BattleNet.GetFriendAccountInfo(i);
+			if accountInfo.accountName and accountInfo.gameAccountInfo.characterName and accountInfo.gameAccountInfo.realmName and accountInfo.gameAccountInfo.clientProgram=="WoW" then
+				bnetFriends[accountInfo.gameAccountInfo.characterName.."-"..accountInfo.gameAccountInfo.realmName] = accountInfo.accountName;
+			end
 		end
 	end
 end
@@ -311,7 +313,7 @@ local function tooltipAddLine(v,flags)
 		status .. " " .. C(v[mClassFile],ns.scm(v[mName])) .. ns.showRealmName(name,v[mRealm]),
 	};
 
-	if bnetFriends[v[mName].."-"..v[mRealm]] then
+	if ns.profile[name].showBattleTag and bnetFriends[v[mName].."-"..v[mRealm]] then
 		line[2] = line[2].." "..C("ltblue","("..ns.scm(bnetFriends[v[mName].."-"..v[mRealm]]..")"));
 	end
 
@@ -579,6 +581,7 @@ module = {
 		showRank = true,		showRankInTT2 = false,
 		showRankID = false,
 		showProfessions = true,	showProfessionsInTT2 = false,
+		showBattleTag = true,
 
 		-- misc
 		showApplicants = true,
@@ -619,7 +622,7 @@ function module.options()
 	return {
 		broker = {
 			showApplicantsBroker    = { type="toggle", order=1, name=L["Applicants"], desc=L["Show applicants on broker button"], hidden=ns.IsClassicClient },
-			showMobileChatterBroker = { type="toggle", order=2, name=L["Mobile app user"], desc=L["Show count of mobile chatter on broker button"]},
+			showMobileChatterBroker = { type="toggle", order=2, name=L["Mobile app user"], desc=L["Show count of mobile chatter on broker button"] },
 			showTotalMembersBroker  = { type="toggle", order=3, name=L["Total members count"], desc=L["Show total members count on broker button"] },
 		},
 		tooltip1 = {
@@ -638,7 +641,7 @@ function module.options()
 			showApplicants    = { type="toggle", order=11, name=L["Applicants"], desc=L["Show applicants in tooltip"], hidden=ns.IsClassicClient },
 			showMobileChatter = { type="toggle", order=12, name=L["Mobile app user"], desc=L["Show mobile chatter in tooltip (Armory App users)"] },
 			splitTables       = { type="toggle", order=13, name=L["Separate mobile app user"], desc=L["Display mobile chatter with own table in tooltip"] },
-
+			showBattleTag     = { type="toggle", order=14, name=BATTLETAG, desc=L["Append the BattleTag of your friends to the character name"], hidden=ns.IsClassicClient },
 		},
 		tooltip2 = {
 			name = L["Secondary tooltip options"],
