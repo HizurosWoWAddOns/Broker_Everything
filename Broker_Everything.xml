@@ -65,6 +65,11 @@
 	<Script file="modules/xp.lua"/>
 	<!-- modules -->
 
+	<!-- modules for classic -->
+	<Script file="modules/professions_classic.lua"/>
+	<Script file="modules/ammo_classic.lua"/>
+	<!-- /modules for classic -->
+
 	<Script file="chatcommand.lua" />
 	<Script file="core.lua"/>
 
