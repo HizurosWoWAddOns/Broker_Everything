@@ -286,6 +286,10 @@ function module.init()
 				if not v.disabled and IsInGuild() then
 					v.name=GUILD;
 					v.iconName = "Guild";
+					if ns.IsClassicClient() then
+						function v.func() securecall("ToggleFriendsFrame",FRIEND_TAB_GUILD); end
+						v.click = nil;
+					end
 				end
 			end,
 			taint=true
