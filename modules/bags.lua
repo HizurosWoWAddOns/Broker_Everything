@@ -87,13 +87,6 @@ function crap.search()
 	end
 end
 
-function GetLocaleBagType(id,en)
-	local _, _, _, _, _, _, itemSubTypeLocale = GetItemInfo(id);
-	if itemSubTypeLocale then
-		L[en] = itemSubTypeLocale;
-	end
-end
-
 -- Function to determine the total number of bag slots and the number of free bag slots.
 local function BagsFreeUsed()
 	local T,F = (GetContainerNumSlots(0) or 0),(GetContainerNumFreeSlots(0) or 0);
@@ -149,19 +142,6 @@ local function itemQuality()
 	return price, sum;
 end
 
-local function countAmmo()
-	local sum,counts,data,_ = 0,{},{};
-	for index,entry in pairs(ns.items.ammo) do
-		if not data[entry.id] then
-			data[entry.id],counts[entry.id] = {},0;
-			data[entry.id].name, _, data[entry.id].quality = GetItemInfo(entry.id);
-		end
-		counts[entry.id] = counts[entry.id] + entry.count;
-		sum = sum + entry.count;
-	end
-	return sum,counts,data;
-end
-
 local function updateBroker()
 	local txt = {};
 
@@ -185,19 +165,7 @@ local function updateBroker()
 		tinsert(txt,C(c,u .. "/" .. t));
 	end
 
-	if ns.player.class=="HUNTER" then
-		local ammoInUse = GetInventoryItemID("player",0);
-		local ammoSum,ammoCounts,ammoData = countAmmo();
-		tinsert(txt,C((ammoInUse and ammoData[ammoInUse] and "quality"..ammoData[ammoInUse].quality or "red"),ammoSum.." "..AMMOSLOT));
-	elseif ns.player.class=="WARLOCK" then
-		--
-	end
-
 	(ns.LDB:GetDataObjectByName(module.ldbName) or {}).text = table.concat(txt,", ");
-end
-
-local function sortAmmo(a,b)
-	return a.name>b.name;
 end
 
 local function createTooltip(tt)
@@ -214,43 +182,6 @@ local function createTooltip(tt)
 		tt:AddSeparator(1);
 		tt:AddLine(C("ltyellow",L["Free slots"]),"",C("white",free));
 		tt:AddLine(C("ltyellow",L["Total slots"]),"",C("white",total));
-	end
-
-	if ns.client_version<2 then
-		if ns.player.class=="HUNTER" then
-			tt:AddSeparator(4,0,0,0,0);
-			tt:AddLine(C("ltblue",L["Ammo Pouch"]));
-			tt:AddSeparator(1);
-			if tTotal.ammo==0 then
-				tt:AddLine(C("ltgray",L["No ammo pouch found..."]));
-			else
-				tt:AddLine(C("ltyellow",L["Free slots"]),"",C("white",tFree.ammo));
-				tt:AddLine(C("ltyellow",L["Total slots"]),"",C("white",tTotal.ammo));
-				tt:AddSeparator(1);
-
-				local ammoInUse = GetInventoryItemID("player",0);
-				local ammoSum,ammoCounts,ammoData = countAmmo();
-				table.sort(ammoData,sortAmmo);
-				for id,ammo in pairs(ammoData)do
-					tt:AddLine(C("quality"..ammo.quality,ammo.name),(ammoInUse==id and C("green",CONTRIBUTION_ACTIVE) or ""),C("white",ammoCounts[id]));
-				end
-			end
-		elseif ns.player.class=="WARLOCK" then
-			tt:AddSeparator(4,0,0,0,0);
-			tt:AddLine(C("ltblue",L["Soul Pouch"]));
-			tt:AddSeparator(1);
-			if tTotal.ammo==0 then
-				tt:AddLine(C("ltgray",L["No soul pouch found..."]));
-			else
-				tt:AddLine(C("ltyellow",L["Free slots"]),"",C("white",tFree.soul));
-				tt:AddLine(C("ltyellow",L["Total slots"]),"",C("white",tTotal.soul));
-			end
-		end
-
-		--tt:AddSeparator(4,0,0,0,0);
-		--tt:AddLine(C("ltblue",KEYRING));
-		--tt:AddSeparator(1);
-		--
 	end
 
 	if ns.profile[name].showQuality then
@@ -286,11 +217,9 @@ end
 ---------------------------------------
 module = {
 	events = {
-		"PLAYER_LOGIN",
 		"MERCHANT_SHOW",
 		"MERCHANT_CLOSED",
 		"UI_ERROR_MESSAGE",
-		"GET_ITEM_INFO_RECEIVED"
 	},
 	config_defaults = {
 		enabled = true,
@@ -360,11 +289,6 @@ function module.onevent(self,event,...)
 		ns.ClickOpts.update(name);
 	elseif event=="BE_UPDATE_CFG" then
 		updateBroker();
-	elseif event=="PLAYER_LOGIN" and ns.client_version<2 then
-		C_Timer.After(5,function()
-			GetLocaleBagType(2102,"Ammo Pouch");
-			GetLocaleBagType(22243,"Soul Pouch");
-		end);
 	elseif event=="MERCHANT_SHOW" and ns.profile[name].autoCrapSelling then
 		IsMerchantOpen = true;
 		C_Timer.After(0.314159,crap.search);
@@ -377,16 +301,6 @@ function module.onevent(self,event,...)
 		local messageType, message = ...; -- 41, ERR_VENDOR_DOESNT_BUY
 		if message==ERR_VENDOR_DOESNT_BUY then
 			crap.ERR_VENDOR_DOESNT_BUY = true;
-		end
-	elseif event=="GET_ITEM_INFO_RECEIVED" then
-		local en,id = nil,...; -- Get localized item names from classic client
-		if id==2102 then
-			en = "Ammo Pouch";
-		elseif id==22243 then
-			en = "Soul Pouch"
-		end
-		if en then
-			GetLocaleBagType(id, en);
 		end
 	end
 end
