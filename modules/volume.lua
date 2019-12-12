@@ -134,11 +134,10 @@ end
 
 function createTooltip(tt, update)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
-	if not (tt.lines==nil or tt.columns==nil) then return end
+	if tt.lines~=nil then tt:Clear(); end
 
 	local wheels,l,c={};
 
-	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",VOLUME))
 	tt:AddSeparator()
 
