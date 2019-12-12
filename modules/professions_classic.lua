@@ -562,7 +562,7 @@ function module.onevent(self,event,arg1,...)
 			skillRank = skillRank + numTempPoints;
 			if header then
 				lastHeader = skillName;
-			elseif lastHeader==TRADE_SKILLS or lastHeader==SECONDARY_SKILLS then
+			elseif lastHeader==TRADE_SKILLS or lastHeader==SECONDARY_SKILLS and profs.name2Id[skillName] then
 				local d = {skillName,nil,skillRank,skillMaxRank,0,nil,nil,skillModifier,nil,nil,nil,nil,nil};
 
 				d.spellId = profs.name2Id[skillName];
