@@ -276,6 +276,7 @@ module = {
 		"MERCHANT_CLOSED",
 		"UI_ERROR_MESSAGE",
 		"BAG_UPDATE_DELAYED",
+		"PLAYER_ENTERING_WORLD"
 	},
 	config_defaults = {
 		enabled = true,
@@ -359,7 +360,7 @@ function module.onevent(self,event,...)
 		ns.ClickOpts.update(name);
 	elseif event=="BE_UPDATE_CFG" then
 		updateBroker();
-	elseif event=="BAG_UPDATE_DELAYED" then
+	elseif event=="BAG_UPDATE_DELAYED" or event=="PLAYER_ENTERING_WORLD" then
 		updateBags();
 	elseif event=="MERCHANT_SHOW" and ns.profile[name].autoCrapSelling then
 		IsMerchantOpen = true;
