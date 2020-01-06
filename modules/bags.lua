@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Bags" -- L["Bags"] L["ModDesc-Bags"]
 local ttName,ttColumns,tt,module = name.."TT",3;
 local IsMerchantOpen,G = false,{};
-local crap,bags,bagTypes = {limit=3,sum=0,items={}},{sumFree=0,sumTotal=0,byTypeFree={},byTypeTotal={}},{};
+local crap,bags,bagTypes,retry = {limit=3,sum=0,items={}},{sumFree=0,sumTotal=0,byTypeFree={},byTypeTotal={}},{};
 local qualityModeValues = {
 	["1"]=L["BagsQualityAll"],
 	["2"]=L["BagsQualityAll"].." + "..L["BagsQualityVendor"],
@@ -226,11 +226,30 @@ local function createTooltip(tt)
 	ns.roundupTooltip(tt);
 end
 
+local updateBags
+local function updateBagsRetry(delay,msg)
+	if type(delay)=="number" and retry==nil then
+		retry = 0;
+		for i=1, #msg do
+			if type(msg[i])=="string" then
+				msg[i] = msg[i]:gsub("\124","¦");
+			end
+		end
+		ns.debug(name,unpack(msg));
+		C_Timer.After(delay,updateBagsRetry);
+	elseif retry~=nil and retry<5 then
+		ns.debug(name,"<updateBagsRetry>",delay,retry);
+		retry = retry + 1;
+		updateBags();
+	end
+end
+
 -- Function to determine the total number of bag slots and the number of free bag slots.
-local function updateBags()
+function updateBags()
 	local T,F = (GetContainerNumSlots(0) or 0),(GetContainerNumFreeSlots(0) or 0);
-	if T==0 then
-		return; -- api return invalid value
+	if T==0 then -- api return invalid value
+		updateBagsRetry(.5,{"<retry>","<invalid api value>","GetContainerNumSlots(0) == 0"});
+		return;
 	end
 
 	local total,free = {["1:0"]=T},{["1:0"]=F};
@@ -241,8 +260,8 @@ local function updateBags()
 		if link then
 			_, _, _, _, _, _, _, _, _, itemIcon, _, itemClassID, itemSubClassID = GetItemInfo(link);
 			if not itemIcon then
-				ns.debug(name,"retry",link,itemIcon);
-				C_Timer.After(1,updateBags);
+				updateBagsRetry(.5,{"<retry>","<invalid item info>",link,tostring(itemIcon)});
+				return;
 			end
 		end
 		if itemIcon and itemClassID and itemSubClassID then
@@ -263,6 +282,7 @@ local function updateBags()
 
 	bags = {sumFree=F,sumTotal=T,byTypeFree=free,byTypeTotal=total};
 
+	retry = nil;
 	updateBroker();
 	createTooltip(tt,true);
 end
@@ -361,6 +381,7 @@ function module.onevent(self,event,...)
 	elseif event=="BE_UPDATE_CFG" then
 		updateBroker();
 	elseif event=="BAG_UPDATE_DELAYED" or event=="PLAYER_ENTERING_WORLD" then
+		retry = nil;
 		updateBags();
 	elseif event=="MERCHANT_SHOW" and ns.profile[name].autoCrapSelling then
 		IsMerchantOpen = true;
