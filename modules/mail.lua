@@ -18,7 +18,7 @@ local icons = {}
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="interface\\icons\\inv_letter_15",coords={0.05,0.95,0.05,0.95}}					--IconName::Mail--
-I[name..'_new'] = {iconfile="interface\\icons\\inv_letter_18",coords={0.05,0.95,0.05,0.95}}			--IconName::Mail_new--
+I[name..'_new'] = {iconfile="interface\\icons\\inv_letter_"..(ns.client_version<2 and 16 or 18),coords={0.05,0.95,0.05,0.95}}			--IconName::Mail_new--
 I[name..'_stored'] = {iconfile="interface\\icons\\inv_letter_03",coords={0.05,0.95,0.05,0.95}}		--IconName::Mail_stored--
 
 
