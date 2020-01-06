@@ -558,33 +558,34 @@ function module.onevent(self,event,arg1,...)
 		local n = 1;
 		for skillIndex=1, numSkills do
 			local skillName, header, isExpanded, skillRank, numTempPoints, skillModifier, skillMaxRank, isAbandonable, stepCost, rankCost, minLevel, skillCostType = GetSkillLineInfo(skillIndex);
-			skillRankStart = skillRank;
-			skillRank = skillRank + numTempPoints;
-			if header then
-				lastHeader = skillName;
-			elseif lastHeader==TRADE_SKILLS or lastHeader==SECONDARY_SKILLS and profs.name2Id[skillName] then
-				local d = {skillName,nil,skillRank,skillMaxRank,0,nil,nil,skillModifier,nil,nil,nil,nil,nil};
+			if skillName then
+				local _profs = profs; -- for debugging
+				if header then
+					lastHeader = skillName;
+				elseif (lastHeader==TRADE_SKILLS or lastHeader==SECONDARY_SKILLS) and profs.name2Id[skillName] then
+					skillRank = skillRank + numTempPoints;
+					local d = {skillName,nil,skillRank,skillMaxRank,0,nil,nil,skillModifier,nil,nil,nil,nil,nil};
 
-				d.spellId = profs.name2Id[skillName];
-				d[icon] = profs.data[d.spellId][spellIcon];
-				d.skillId = profs.spellId2skillId[d.spellId];
-				if d.spellId==2575 then
-					d.spellId = 2656; -- replace mining with smelting to open skillframe window
+					d.spellId = profs.name2Id[skillName];
+					d[icon] = profs.data[d.spellId][spellIcon];
+					d.skillId = profs.spellId2skillId[d.spellId];
+					if d.spellId==2575 then
+						d.spellId = 2656; -- replace mining with smelting to open skillframe window
+					end
+					d.nameEnglish = L[skillName];
+
+					if lastHeader==TRADE_SKILLS then
+						short[n] = {d[skillLine],skillName,d[icon],d[skill],d[maxSkill],d.skillId,d.spellId};
+					end
+
+					if d.nameEnglish == "Fishing" then -- hide fishing in profession menu to prevent error message
+						d[disabled]=true;
+					end
+
+					tmp[n] = d or false;
+					n = n + 1;
 				end
-				d.nameEnglish = L[skillName];
-
-				if lastHeader==TRADE_SKILLS then
-					short[n] = {d[skillLine],skillName,d[icon],d[skill],d[maxSkill],d.skillId,d.spellId};
-				end
-
-				if d.nameEnglish == "Fishing" then -- hide fishing in profession menu to prevent error message
-					d[disabled]=true;
-				end
-
-				tmp[n] = d or false;
-				n = n + 1;
 			end
-
 		end
 		if #tmp>0 then
 			professions = tmp;
