@@ -94,10 +94,6 @@ local function updateBagTypes()
 		local n = GetItemSubClassInfo(LE_ITEM_CLASS_CONTAINER,i);
 		bagTypes[LE_ITEM_CLASS_CONTAINER..":"..i] = {name=n,icon=0};
 	end
-	if ns.client_version<2 then
-		local n = GetItemSubClassInfo(LE_ITEM_CLASS_QUIVER,3);
-		bagTypes["11:3"] = {name=n,icon=0};
-	end
 end
 
 local function chkBagTypes()
@@ -273,7 +269,10 @@ function updateBags()
 				total[bT] = total[bT]+t;
 				free[bT] = free[bT]+f;
 			end
-			if bagTypes[bT].icon < itemIcon then
+			if not (bagTypes[bT] and bagTypes[bT].icon) then
+				local n = GetItemSubClassInfo(itemClassID,itemSubClassID);
+				bagTypes[bT] = {name=n,icon=itemIcon};
+			elseif bagTypes[bT].icon < itemIcon then
 				bagTypes[bT].icon = itemIcon;
 			end
 			T,F = T+t,F+f;
