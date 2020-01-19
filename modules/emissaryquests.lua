@@ -22,11 +22,24 @@ local questID2factionID = {
 	[42170]=1883, [42233]=1828, [42234]=1948, [42420]=1900, [42421]=1859,
 	[42422]=1894, [43179]=1090, [48639]=2165, [48641]=2045, [48642]=2170,
 	-- bfa
-	[50600]=2161, [50601]=2162, [50599]=2160, [50605]=2159, [50603]=2158,
-	[50598]=2103, [50602]=2156, [50606]=2157, [50604]=2163, [50562]=2164,
+	[50600]=2161, [50601]=2162, [50599]=2160, [50605]=2159, -- alliance
+	[50603]=2158, [50598]=2103, [50602]=2156, [50606]=2157, -- horde
+	[50604]=2163, [50562]=2164, -- neutral
 	-- bfa 8.2
-	[56119]=2400, [56120]=2373
+	[56119]=2400, -- alliance
+	[56120]=2373, -- horde
+	-- bfa 8.3
+	--[0]=2415, -- Rajani
+	--[0]=2417, -- Uldum Accord
 }
+
+local hideFactions = Alliance and {
+	-- list of horde factions to hide on alliance characters
+	[2158]=1,[2103]=1,[2156]=1,[2157]=1,[2373]=1,
+} or {
+	[2161]=1,[2162]=1,[2160]=1,[2159]=1,[2400]=1,
+};
+
 local factionName = setmetatable({},{__index=function(t,k)
 	local v = GetFactionInfoByID(k);
 	if v then
@@ -68,7 +81,7 @@ local function updateBroker()
 		if factions[e] then
 			table.sort(factions[e],sortFactions);
 			for _,v in ipairs(factions[e]) do
-				if ns.profile[name][expansions[e].name.."QuestsBroker"] and v.eventEnding-Time>=0 then
+				if ns.profile[name][expansions[e].name.."QuestsBroker"] and v.eventEnding-Time>=0  and not hideFactions[v.factionID] then
 					local toon = ns.toon[name].factions[v.factionID] or {};
 					if toon.lastEnding==nil then
 						toon.lastEnding = 0;
@@ -223,7 +236,7 @@ local function createTooltip(tt)
 			table.sort(factions[e],sortFactions);
 			for i=1, #factions[e] do
 				local v = factions[e][i];
-				if ns.profile[name][expansions[v.expansion].name.."Quests"] and v.eventEnding-Time>=0 then
+				if ns.profile[name][expansions[v.expansion].name.."Quests"] and v.eventEnding-Time>=0 and not hideFactions[v.factionID] then
 					if expansion~=expansions[v.expansion].index then
 						expansion=expansions[v.expansion].index;
 						tt:SetCell(tt:AddLine(),1,C("ltgreen",_G["EXPANSION_NAME"..expansions[v.expansion].index]),nil,"LEFT",0);
@@ -259,7 +272,7 @@ local function createTooltip(tt)
 				table.sort(factions[e],sortInvertFactions);
 				for i=1, #factions[e] do
 					local v = factions[e][i];
-					if ns.profile[name][expansions[v.expansion].name.."Quests"] and v.eventEnding-Time>=0 then
+					if ns.profile[name][expansions[v.expansion].name.."Quests"] and v.eventEnding-Time>=0  and not hideFactions[v.factionID] then
 						tt:SetCell(l,c,"|T"..v.icon..":24:24:0:0:64:64:4:56:4:56|t",nil,"CENTER");
 						c=c-1;
 					end
@@ -283,7 +296,7 @@ local function createTooltip(tt)
 				for e=#expansions, 1, -1 do
 					for i=1, #factions[e] do
 						local data = factions[e][i];
-						if ns.profile[name][expansions[e].name.."Quests"] and data.eventEnding-Time>=0 then
+						if ns.profile[name][expansions[e].name.."Quests"] and data.eventEnding-Time>=0 and not hideFactions[data.factionID] then
 							if v.level>=expansions[e].minLevel then
 								local color,text = "gray","?/?";
 								if data.factionID and v[name].factions[data.factionID] then
