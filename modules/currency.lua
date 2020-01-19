@@ -425,7 +425,7 @@ function module.init()
 		headers[n] = _G[n];
 	end
 	Currencies = {
-		"EXPANSION_NAME7",1721,1717 --[[1716]],1299,1560,1587,1710,1580,1718,1565,1553,
+		"EXPANSION_NAME7",1755,1719,1721,1718,1717 --[[1716]],1299,1560 --[[1580]],1587,1710,1565,1553,
 		"DUNGEON_AND_RAID",1166,
 		"PLAYER_V_PLAYER",391,
 		"MISCELLANEOUS",402,81,515,1388,1401,1379,
@@ -439,7 +439,7 @@ function module.init()
 	};
 	CurrenciesHorde = {
 		[1717]=1716,
-		--[1560]=1587,
+		[1560]=1587,
 	}
 end
 
