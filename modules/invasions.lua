@@ -12,7 +12,8 @@ local name = "Invasions"; -- L["ModDesc-Invasions"]
 local ttName, ttColumns, tt, module = name.."TT", 3;
 local regionLabel,region,timeStamp = {L["North america / Brazil / Oceania"],L["Korea"],L["Europe / Russia"],L["Taiwan"],L["China"]};
 local events = {--- 1491375600000
-	{ enabled=true, icon=nil, label=SPLASH_LEGION_PREPATCH_FEATURE1_TITLE.." ("..EXPANSION_NAME6..")", start1=1491337800, start3=1491375600, interval=66600, length=21600, achievement=11544, zoneOrder={641,634,630,650,634,650,641,630,634,641,650,630} },
+	--{ enabled=true, icon=nil, label=SPLASH_LEGION_PREPATCH_FEATURE1_TITLE.." ("..EXPANSION_NAME6..")", start1=1491337800, start3=1491375600, interval=66600, length=21600, achievement=11544, zoneOrder={641,634,630,650,634,650,641,630,634,641,650,630} },
+	{ enabled=true, icon=nil, label=SPLASH_LEGION_PREPATCH_FEATURE1_TITLE.." ("..EXPANSION_NAME6..")", start1=1491337800, start3=1491375600, interval=66600, length=21600, achievement=11544, zoneOrder=false },
 	{ enabled=true, icon=nil, label=SPLASH_BATTLEFORAZEROTH_8_1_FEATURE2_TITLE.." ("..EXPANSION_NAME7..")", start1=1544612400, start3=1544580000, interval=68400, length=25200, achievement=13283, zoneOrder={942,864,896,862,895,863} },
 }
 
@@ -48,8 +49,8 @@ local function updateInvasionsList(noTimer)
 		ev.numStarts = floor( (currentTime-ev.start) / ev.interval );
 		ev.lastStart = ev.start + (ev.numStarts*ev.interval);
 		ev.lastStartEnds = ev.lastStart + ev.length;
-		ev.lastStartZone = (ev.numStarts % #ev.zoneOrder) + 1;
-		if not ev.zoneNames then
+		if ev.zoneOrder and not ev.zoneNames then
+			ev.lastStartZone = (ev.numStarts % #ev.zoneOrder) + 1;
 			ev.zoneNames={};
 			for z=1, #ev.zoneOrder do
 				local mapInfo = C_Map.GetMapInfo(ev.zoneOrder[z]) or {};
@@ -76,7 +77,11 @@ local function updateBroker()
 		if ns.profile[name]["event"..i.."bb"] then
 			if ev.lastStartEnds >= t then
 				seconds = ev.lastStartEnds-t;
-				tinsert(inv,C("green",ev.zoneNames[ev.lastStartZone]) .. " " .. SecondsToTime(seconds));
+				if not ev.lastStartZone then
+					tinsert(inv,C("green",MAP_UNDER_INVASION) .. " " .. SecondsToTime(seconds));
+				else
+					tinsert(inv,C("green",ev.zoneNames[ev.lastStartZone]) .. " " .. SecondsToTime(seconds));
+				end
 			else
 				seconds = (ev.lastStart+ev.interval) - t;
 				tinsert(inv,L["InvasionsNextIn"] .. " " ..  SecondsToTime(seconds));
@@ -114,29 +119,33 @@ local function createTooltip(tt)
 	for i=1, #events do
 		ev = events[i];
 		if ns.profile[name]["event"..i.."tt"] then
-			local numNext,numZones = ns.profile[name].numNext+1,#ev.zoneNames;
+			local numNext,numZones,zoneIndex = ns.profile[name].numNext+1,ev.zoneNames and #ev.zoneNames or false;
 			tt:AddSeparator(4,0,0,0,0);
 			tt:SetCell(tt:AddLine(),1,C("ltblue",ev.label),nil,"LEFT",0);
 			tt:AddSeparator();
-			local nx,timeStart,timeColor,zoneColor,zoneStr,timeStrType = 2,ev.lastStart,"dkgreen","ltgreen",ev.zoneNames[ev.lastStartZone],1;
+			local nx,timeStart,timeColor,zoneColor,zoneStr,timeStrType = 2,ev.lastStart,"dkgreen","ltgreen",numZones and ev.zoneNames[ev.lastStartZone] or "",1;
 			if ev.lastStartEnds < currentTime then
-				local zoneIndex = (ev.lastStartZone+1) % numZones;
-				if zoneIndex==0 then
-					zoneIndex = numZones;
-				elseif zoneIndex>numZones then
-					zoneIndex = 1;
+				if numZones then
+					zoneIndex = (ev.lastStartZone+1) % numZones;
+					if zoneIndex==0 then
+						zoneIndex = numZones;
+					elseif zoneIndex>numZones then
+						zoneIndex = 1;
+					end
 				end
-				nx,numNext,timeStart,timeColor,zoneColor,zoneStr,timeStrType = 3,numNext+1,timeStart+ev.interval,"dkyellow","ltyellow",ev.zoneNames[zoneIndex],0;
+				nx,numNext,timeStart,timeColor,zoneColor,zoneStr,timeStrType = 3,numNext+1,timeStart+ev.interval,"dkyellow","ltyellow",numZones and ev.zoneNames[zoneIndex] or "",0;
 			end
 			AddLine(tt,currentTime,timeStart,ev.length,zoneStr,timeStrType,timeColor,zoneColor);
 			for n=nx, numNext do
-				local zoneIndex = (ev.numStarts+n) % numZones;
-				if zoneIndex==0 then
-					zoneIndex = numZones;
-				elseif zoneIndex>numZones then
-					zoneIndex = 1;
+				if numZones then
+					zoneIndex = (ev.numStarts+n) % numZones;
+					if zoneIndex==0 then
+						zoneIndex = numZones;
+					elseif zoneIndex>numZones then
+						zoneIndex = 1;
+					end
 				end
-				AddLine(tt,currentTime,ev.lastStart + (n*ev.interval),ev.length,ev.zoneNames[zoneIndex],2,"gray","ltgray");
+				AddLine(tt,currentTime,ev.lastStart + ((n-1)*ev.interval),ev.length,numZones and ev.zoneNames[zoneIndex] or "",2,"gray","ltgray");
 			end
 			empty = false;
 		end
