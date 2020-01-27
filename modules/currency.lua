@@ -439,7 +439,6 @@ function module.init()
 	};
 	CurrenciesHorde = {
 		[1717]=1716,
-		[1560]=1587,
 	}
 end
 
