@@ -275,7 +275,7 @@ local function createTooltip(tt)
 		tt:AddSeparator(12,0,0,0,0);
 		local c,l=ttColumns,tt:AddLine(C("ltblue",CHARACTER));
 		for e=#expansions, 1, -1 do
-			if factions[e] then
+			if factions[e] and factions[e].eventEnding then
 				table.sort(factions[e],sortInvertFactions);
 				for i=1, #factions[e] do
 					local v = factions[e][i];
