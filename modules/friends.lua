@@ -25,8 +25,8 @@ local gameShortcut = setmetatable({
 	["BSAp"] = "Mobile",
 },{ __index = function(t, k) return k end });
 local gameNames = setmetatable({
-	[BNET_CLIENT_APP]="Blizzard Desktop App",
-	["BSAp"] = "Blizzard Mobile App",
+	[BNET_CLIENT_APP]="Desktop App",
+	["BSAp"] = "Mobile App",
 	[BNET_CLIENT_D3]="Diablo 3",
 	[BNET_CLIENT_DESTINY2]="Destiny 2",
 	[BNET_CLIENT_HEROES]="Heroes of the Storm",
@@ -379,7 +379,7 @@ local function createTooltip(tt)
 								if ti.clientProgram=="WoW" and ti.areaName and ti.areaName:match("^"..GARRISON_LOCATION_TOOLTIP) and ti.areaName~=GARRISON_LOCATION_TOOLTIP then
 									ti.areaName = GARRISON_LOCATION_TOOLTIP;
 								end
-								local zoneStr = (ti.areaName and ti.areaName~="" and ti.areaName) or (ti.richPresence and ti.richPresence~="" and ti.richPresence) or UNKNOWN;
+								local zoneStr = (ti.areaName and ti.areaName~="" and ti.areaName) or --[[(ti.richPresence and ti.richPresence~="" and ti.richPresence) or]] (ti.clientProgram and ti.clientProgram~="" and gameNames[ti.clientProgram]) or UNKNOWN;
 								tt:SetCell(l,5,C("white",zoneStr),nil,nil, ti.clientProgram=="WoW" and 1 or 3);			-- 5,6,7
 							end
 
