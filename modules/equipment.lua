@@ -25,8 +25,7 @@ local ignoreWeapon = {
 
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\equip"}; --IconName::Equipment--
-
+I[name] = {iconfile="Interface\\ICONS\\INV_Chest_Chain"}; --IconName::Equipment--
 
 -- some local functions --
 --------------------------
@@ -82,10 +81,6 @@ local function updateBroker()
 	if ns.profile[name].showItemLevel and GetAverageItemLevel then
 		local _, ilevel = GetAverageItemLevel();
 		tinsert(text,("%1.1f"):format(ilevel or 0));
-	end
-
-	if ns.profile[name].showAmmoBroker and ns.client_version<2 then
-		-- ammo in classic
 	end
 
 	obj.iconCoords = iconCoords;
@@ -414,7 +409,6 @@ function module.options()
 			showCurrentSet={ type="toggle", order=1, name=L["Show current set"], desc=L["Display your current equipment set on broker button"], hidden=ns.IsClassicClient},
 			showItemLevel={ type="toggle", order=2, name=L["Show average item level"], desc=L["Display your average item level on broker button"], hidden=ns.IsClassicClient},
 			showShorterInfo={ type="toggle", order=3, name=L["Show shorter Info for 'Unknown set' and more"], desc=L["Display shorter Info on broker button. 'Set?' instead of 'Unknown set'. 'No sets' instead of 'No sets found'."], hidden=ns.IsClassicClient},
-			showAmmoBroker={ type="toggle", order=1, name=L["Show ammo"], desc=L["Display ammo on broker button"], hidden=ns.IsNotClassicClient}
 		},
 		tooltip = {
 			showSets={ type="toggle", order=1, name=L["Show equipment sets"], desc=L["Display a list of your equipment sets"], hidden=ns.IsClassicClient},
