@@ -27,7 +27,7 @@ local gpsLoc = {zone=" ",color="white",pvp="contested",pos=""}
 local zoneDisplayValues = {
 	["1"] = ZONE,
 	["2"] = L["Subzone"],
-	["3"] = ZONE..": "..L["Subzone"],
+	["3"] = ZONE..CHAT_HEADER_SUFFIX..L["Subzone"],
 	["4"] = ("%s (%s)"):format(ZONE,L["Subzone"]),
 	["5"] = ("%s (%s)"):format(L["Subzone"],ZONE),
 }
@@ -232,10 +232,10 @@ local function createTooltip(tt,ttName,modName)
 	tt:AddSeparator()
 
 	local lst = {
-		{C("ltyellow",ZONE .. ":"),GetRealZoneText()},
-		{C("ltyellow",L["Subzone"] .. ":"),GetSubZoneText()},
-		{C("ltyellow",L["Zone status"] .. ":"),zoneColor:format(zoneLabel)},
-		{C("ltyellow",L["Coordinates"] .. ":"),position(modName) or C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos)}
+		{C("ltyellow",ZONE .. HEADER_COLON),GetRealZoneText()},
+		{C("ltyellow",L["Subzone"] .. HEADER_COLON),GetSubZoneText()},
+		{C("ltyellow",L["Zone status"] .. HEADER_COLON),zoneColor:format(zoneLabel)},
+		{C("ltyellow",L["Coordinates"] .. HEADER_COLON),position(modName) or C(gpsLoc.posColor or gpsLoc.color,gpsLoc.pos)}
 	}
 
 	for _, d in pairs(lst) do
@@ -252,7 +252,7 @@ local function createTooltip(tt,ttName,modName)
 	tt:AddSeparator()
 
 	line, column = tt:AddLine()
-	tt:SetCell(line,1,C("ltyellow",L["Inn"]..":"),nil,nil,1)
+	tt:SetCell(line,1,C("ltyellow",L["Inn"]..HEADER_COLON),nil,nil,1)
 	tt:SetCell(line,2,GetBindLocation(),nil,nil,2)
 
 	if ns.profile.GeneralOptions.showHints then
@@ -266,7 +266,7 @@ local function createTooltip3(_,data)
 	if not (data.tooltip and data.tooltip.parent and data.tooltip.parent:IsShown()) then return end
 	GameTooltip:SetOwner(data.tooltip.parent,"ANCHOR_NONE");
 	GameTooltip:SetPoint(ns.GetTipAnchor(data.tooltip.parent,"horizontal"));
-	GameTooltip:SetHyperlink(data.tooltip.type..":"..data.tooltip.id);
+	GameTooltip:SetHyperlink(data.tooltip.type..HEADER_COLON..data.tooltip.id);
 	GameTooltip:Show();
 end
 

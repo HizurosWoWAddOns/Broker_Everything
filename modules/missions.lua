@@ -133,7 +133,7 @@ local function createTooltip(tt)
 						local tex = md.followerTypeID==2 and I[name.."Ship"] or I[name.."Follower"];
 
 						local c = 2;
-						local l = tt:AddLine(C(color, "|T"..tex.iconfile..":"..tex.coordsStr.."|t " .. ns.strCut(md["name"],32)));
+						local l = tt:AddLine(C(color, "|T"..tex.iconfile..HEADER_COLON..tex.coordsStr.."|t " .. ns.strCut(md["name"],32)));
 						if ns.profile[name].showMissionLevel then         tt:SetCell(l,c,C(color_lvl,lvl),nil,"RIGHT"); c=c+1; end
 						if ns.profile[name].showMissionType then          tt:SetCell(l,c,C(color,md["type"]),nil,"LEFT"); c=c+1; end
 						if ns.profile[name].showMissionItemLevel then     tt:SetCell(l,c,C(color,(md["iLevel"]>0 and md["iLevel"] or "-")),nil,"CENTER"); c=c+1; end

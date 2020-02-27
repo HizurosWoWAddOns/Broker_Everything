@@ -204,7 +204,7 @@ local function createTooltip(tt)
 			if activeResearch and activeResearch.show then
 				tt:AddSeparator(2,1,1,1,1);
 				local l=tt:AddLine();
-				local line = C("ltyellow",activeResearch.name..":");
+				local line = C("ltyellow",activeResearch.name..HEADER_COLON);
 				if activeResearch.researchTimeRemaining>0 then
 					line = line .." ("..SecondsToTime(activeResearch.researchTimeRemaining)..")";
 				end

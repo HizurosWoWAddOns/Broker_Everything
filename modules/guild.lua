@@ -701,7 +701,7 @@ function module.onevent(self,event,msg,...)
 						end
 					end
 					if #t>0 then
-						tinsert(t,1,C("ltgray",LFG_LIST_GUILD_MEMBER)..": "..C(members[i][mClassFile],members[i][mName]));
+						tinsert(t,1,C("ltgray",LFG_LIST_GUILD_MEMBER)..CHAT_HEADER_SUFFIX..C(members[i][mClassFile],members[i][mName]));
 						ns.print(true,table.concat(t," || "));
 					end
 				end

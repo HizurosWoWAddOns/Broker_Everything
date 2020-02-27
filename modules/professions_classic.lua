@@ -553,7 +553,7 @@ function module.onevent(self,event,arg1,...)
 		end
 
 		local numSkills,lastHeader = GetNumSkillLines();
-		local SECONDARY_SKILLS = SECONDARY_SKILLS:gsub(":","");
+		local SECONDARY_SKILLS = SECONDARY_SKILLS:gsub(HEADER_COLON,"");
 		local tmp,short = {},{};
 		local n = 1;
 		for skillIndex=1, numSkills do

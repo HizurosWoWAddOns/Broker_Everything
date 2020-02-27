@@ -131,7 +131,7 @@ local function AutoRepairAll(costs)
 			RepairAllItems(true);
 			lastRepairs_add(costs,true,true);
 			if (chat) then
-				ns.print(L["Automatically repaired with guild money"]..":",ns.GetCoinColorOrTextureString(name,costs,{color="white"}));
+				ns.print(L["Automatically repaired with guild money"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,costs,{color="white"}));
 			end
 			return true;
 		elseif (chat) then
@@ -143,7 +143,7 @@ local function AutoRepairAll(costs)
 		RepairAllItems();
 		lastRepairs_add(costs,nil,true);
 		if (chat) then
-			ns.print(L["Automatically repaired with player money"]..":",ns.GetCoinColorOrTextureString(name,costs,{color="white"}));
+			ns.print(L["Automatically repaired with player money"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,costs,{color="white"}));
 		end
 		return nil;
 	end
@@ -167,7 +167,7 @@ local function createTooltip(tt)
 	local lst = setmetatable({},{__call = function(t,a) rawset(t,#t+1,a) end});
 
 	lst({sep={3,0,0,0,0}});
-	lst({c1=C("ltblue",gsub(REPAIR_COST,":","")),c2=ns.GetCoinColorOrTextureString(name,repairCost,{inTooltip=true})});
+	lst({c1=C("ltblue",gsub(REPAIR_COST,HEADER_COLON,"")),c2=ns.GetCoinColorOrTextureString(name,repairCost,{inTooltip=true})});
 	lst({sep={1}});
 	lst({c1=CHARACTER,c2=ns.GetCoinColorOrTextureString(name,equipCost,{inTooltip=true})});
 	lst({c1=L["Bags"],c2=ns.GetCoinColorOrTextureString(name,bagCost,{inTooltip=true})});
@@ -176,11 +176,11 @@ local function createTooltip(tt)
 		lst({sep={3,0,0,0,0}});
 		lst({c0=C("ltblue",L["Reputation discounts"])});
 		lst({sep={1}});
-		lst({c1=C("white",FACTION_STANDING_LABEL4),  c2=ns.GetCoinColorOrTextureString(name,repairCostN,{inTooltip=true})});
+		lst({c1=C("white",FACTION_STANDING_LABEL4), c2=ns.GetCoinColorOrTextureString(name,repairCostN,{inTooltip=true})});
 		lst({c1=C("white",FACTION_STANDING_LABEL5), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[5]),{inTooltip=true})});
 		lst({c1=C("white",FACTION_STANDING_LABEL6), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[6]),{inTooltip=true})});
-		lst({c1=C("white",FACTION_STANDING_LABEL7),  c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[7]),{inTooltip=true})});
-		lst({c1=C("white",FACTION_STANDING_LABEL8),  c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[8]),{inTooltip=true})});
+		lst({c1=C("white",FACTION_STANDING_LABEL7), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[7]),{inTooltip=true})});
+		lst({c1=C("white",FACTION_STANDING_LABEL8), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[8]),{inTooltip=true})});
 	end
 
 	if (ns.profile[name].listCosts) then
@@ -388,13 +388,13 @@ function module.onevent(self,event,arg1)
 		if (event=="BE_EVENT_REPAIRALL_GUILD") then
 			lastRepairs_add(merchant.costs,true);
 			if (ns.profile[name].chatRepairInfo) then
-				ns.print(L["RepairAll"],L["by guild fund"]..":",ns.GetCoinColorOrTextureString(name,merchant.costs,{color="white"}));
+				ns.print(L["RepairAll"],L["by guild fund"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,merchant.costs,{color="white"}));
 			end
 			merchant.costs=0;
 		elseif (event=="BE_EVENT_REPAIRALL_PLAYER") then
 			lastRepairs_add(merchant.costs);
 			if (ns.profile[name].chatRepairInfo) then
-				ns.print(L["RepairAll"],L["by player money"]..":",ns.GetCoinColorOrTextureString(name,merchant.costs,{color="white"}));
+				ns.print(L["RepairAll"],L["by player money"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,merchant.costs,{color="white"}));
 			end
 			merchant.costs=0;
 		end
@@ -413,7 +413,7 @@ function module.onevent(self,event,arg1)
 				if (merchant.single>0) then -- single item repair mode, step 2
 					lastRepairs_add(merchant.single, nil, false);
 					if (ns.profile[name].chatRepairInfo) then
-						ns.print(L["SingleRepairSummary"]..":",ns.GetCoinColorOrTextureString(name,merchant.single,{color="white"}));
+						ns.print(L["SingleRepairSummary"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,merchant.single,{color="white"}));
 					end
 				end
 				merchant = {repair=false,costs=0,diff=0,single=0};

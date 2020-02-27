@@ -97,10 +97,10 @@ L["XP"] = XP
 --@end-do-not-package@
 
 -- localization by Blizzard - step 2
-L["FPS"] = FRAMERATE_LABEL:gsub(":",""):gsub("：",""):trim();
+L["FPS"] = FRAMERATE_LABEL:gsub(HEADER_COLON,""):gsub("：",""):trim();
 L["Home"], L["World"] = MAINMENUBAR_LATENCY_LABEL:match("%((.*)%).*%((.*)%)");
-L["Officer notes"] = OFFICER_NOTE_COLON:gsub(":",""):gsub("：",""):trim();
-L["Realm"] = FRIENDS_LIST_REALM:gsub(":",""):gsub("：",""):trim(); -- "Realm: "
+L["Officer notes"] = OFFICER_NOTE_COLON:gsub(HEADER_COLON,""):gsub("：",""):trim();
+L["Realm"] = FRIENDS_LIST_REALM:gsub(HEADER_COLON,""):gsub("：",""):trim(); -- "Realm: "
 
 -- localization by Blizzard - step 3 (by events)
 local byItemId = {

@@ -42,7 +42,7 @@ I[name] = {iconfile=133633,coords={0.05,0.95,0.05,0.95}}; --IconName::Bags--
 --------------------------
 function crap.info()
 	if ns.profile[name].autoCrapSellingInfo and not crap.ERR_VENDOR_DOESNT_BUY and crap.sum>0 then
-		ns.print(L["Auto crap selling - Summary"]..":",ns.GetCoinColorOrTextureString(name,crap.sum,{color="white"}));
+		ns.print(L["Auto crap selling - Summary"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,crap.sum,{color="white"}));
 	end
 end
 
@@ -92,7 +92,7 @@ local function updateBagTypes()
 	bagTypes[LE_ITEM_CLASS_CONTAINER..":0"] = {name=L["Bags"],icon=133633};
 	for i=1, 10 do
 		local n = GetItemSubClassInfo(LE_ITEM_CLASS_CONTAINER,i);
-		bagTypes[LE_ITEM_CLASS_CONTAINER..":"..i] = {name=n,icon=0};
+		bagTypes[LE_ITEM_CLASS_CONTAINER..HEADER_COLON..i] = {name=n,icon=0};
 	end
 end
 

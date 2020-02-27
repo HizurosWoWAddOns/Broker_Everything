@@ -154,7 +154,7 @@ function createTooltip(tt)
 	end
 
 	--- dungeons
-	l = tt:AddLine(C("ltyellow",LFG_TYPE_DUNGEON..":"));
+	l = tt:AddLine(C("ltyellow",LFG_TYPE_DUNGEON..HEADER_COLON));
 	for i,v in ipairs(diff.dungeons)do
 		local color = enabled and "ltgray" or "dkgray";
 		if(mIf(dungeonID,v.id)) then
@@ -167,7 +167,7 @@ function createTooltip(tt)
 	end
 
 	--- raids
-	l = tt:AddLine(C("ltyellow",RAID..":"));
+	l = tt:AddLine(C("ltyellow",RAID..HEADER_COLON));
 	for i,v in ipairs(diff.raids) do
 		local color = enabled and "ltgray" or "dkgray";
 		if(mIf(raidID,v.id))then
@@ -180,7 +180,7 @@ function createTooltip(tt)
 	end
 
 	--- legacy raid size
-	l = tt:AddLine(C("ltyellow",UNIT_FRAME_DROPDOWN_SUBSECTION_TITLE_LEGACY_RAID..":"));
+	l = tt:AddLine(C("ltyellow",UNIT_FRAME_DROPDOWN_SUBSECTION_TITLE_LEGACY_RAID..HEADER_COLON));
 	local I=0;
 	for i,v in ipairs(diff.classic) do
 		local color = enabled and "ltgray" or "dkgray";
@@ -208,7 +208,7 @@ function createTooltip(tt)
 	tt:SetCellScript(l,3,"OnMouseUp",_SetOptOutOfLoot,optOut);
 
 	tt:AddSeparator();
-	l=tt:AddLine(C("ltyellow",SPECIALIZATION..":"));
+	l=tt:AddLine(C("ltyellow",SPECIALIZATION..HEADER_COLON));
 	local lootSpec = GetLootSpecialization();
 
 	local cell=2;
@@ -264,8 +264,8 @@ module = {
 	},
 	clickOptionsRename = nil,
 	clickOptions = {
-		["rollneed"] = {ROLL..": "..NEED, "module", "roll"},
-		["rollgreed"] = {ROLL..": "..GREED,"module","roll"},
+		["rollneed"] = {ROLL..CHAT_HEADER_SUFFIX..NEED, "module", "roll"},
+		["rollgreed"] = {ROLL..CHAT_HEADER_SUFFIX..GREED,"module","roll"},
 		["resetinstances"] = {RESET_INSTANCES,"module","instanceReset"},
 	}
 }

@@ -147,11 +147,11 @@ local function AddStoredMailsLine(tt,player)
 		if counter.new>0 or counter.stored>0 then
 			local str="";
 			if counter.stored==0 and counter.new>0 then
-				str = C("green",L["New mails"]..": "..counter.new);
+				str = C("green",L["New mails"]..CHAT_HEADER_SUFFIX..counter.new);
 			elseif counter.stored>0 or counter.new>0 then
-				str = L["Mails"]..": "..counter.stored;
+				str = L["Mails"]..CHAT_HEADER_SUFFIX..counter.stored;
 				if counter.new>0 then
-					str = str.." "..C("green","("..NEW..": "..counter.new..")");
+					str = str.." "..C("green","("..NEW..CHAT_HEADER_SUFFIX..counter.new..")");
 				end
 			end
 			local l=tt:AddLine(

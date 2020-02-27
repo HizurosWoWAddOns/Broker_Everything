@@ -580,7 +580,7 @@ function createTooltip(tt)
 				end
 				if count>0 then
 					tt:AddSeparator();
-					tt:AddLine(C("ltblue",ACHIEVEMENT_SUMMARY_CATEGORY..":"),nil,ns.FormatLargeNumber(name,sum,true));
+					tt:AddLine(C("ltblue",ACHIEVEMENT_SUMMARY_CATEGORY..HEADER_COLON),nil,ns.FormatLargeNumber(name,sum,true));
 				else
 					local l = tt:AddLine();
 					tt:SetCell(l,1,C("ltgray",L["Currently no artifact power items found"]), nil, nil, ttColumns);
@@ -790,7 +790,7 @@ function module.init()
 	})[ns.locale];
 
 	for _,expo in ipairs({{SECOND_NUMBER,6},{THIRD_NUMBER,9},{FOURTH_NUMBER,12}})do
-		local strs = {strsplit(":",(expo[1]:gsub("%\1247(.*);","%1")))};
+		local strs = {strsplit(HEADER_COLON,(expo[1]:gsub("%\1247(.*);","%1")))};
 		table.sort(strs,sort_up_down);
 		for i,v in pairs(strs)do
 			table.insert(number_pattern,{v,expo[2]});

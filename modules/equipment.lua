@@ -331,7 +331,7 @@ local function createTooltip(tt)
 			tt:SetCell(l,1,C("ltblue",STAT_AVERAGE_ITEM_LEVEL),nil,nil,2);
 		end
 		if (miss) then
-			ns.AddSpannedLine(tt,C("red","#")..": "..C("ltgray",L["Item is not enchanted"]) .. " || " .. C("yellow","#")..": "..C("ltgray",L["Item has empty socket"]));
+			ns.AddSpannedLine(tt,C("red","#")..CHAT_HEADER_SUFFIX..C("ltgray",L["Item is not enchanted"]) .. " || " .. C("yellow","#")..CHAT_HEADER_SUFFIX..C("ltgray",L["Item has empty socket"]));
 		end
 	end
 

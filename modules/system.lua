@@ -292,46 +292,46 @@ local function createTooltip(tt, name, ttName, update)
 	if name_sys==name then
 		if ns.profile[name].showFpsInTooltip then
 			tt:AddSeparator(4,0,0,0,0);
-			tt:AddLine(C("ltblue",FPS_ABBR..":"),fps.curStr);
+			tt:AddLine(C("ltblue",FPS_ABBR..HEADER_COLON),fps.curStr);
 			tt:AddSeparator();
-			tt:AddLine(C("ltyellow",L["Min."]..":"),fps.minStr);
-			tt:AddLine(C("ltyellow",L["Max."]..":"),fps.maxStr);
+			tt:AddLine(C("ltyellow",L["Min."]..HEADER_COLON),fps.minStr);
+			tt:AddLine(C("ltyellow",L["Max."]..HEADER_COLON),fps.maxStr);
 			allHidden=false;
 		end
 		if ns.profile[name].showLatencyInTooltip then
 			tt:AddSeparator(4,0,0,0,0);
 			tt:AddLine(C("ltblue",L["Latency"].." ("..L["Home"].."):"), latency.home.curStr);
 			tt:AddSeparator();
-			tt:AddLine(C("ltyellow",L["Min."] .. ":"), latency.home.minStr);
-			tt:AddLine(C("ltyellow",L["Max."] .. ":"), latency.home.maxStr);
+			tt:AddLine(C("ltyellow",L["Min."] .. HEADER_COLON), latency.home.minStr);
+			tt:AddLine(C("ltyellow",L["Max."] .. HEADER_COLON), latency.home.maxStr);
 
 			tt:AddSeparator(4,0,0,0,0);
 			tt:AddLine(C("ltblue",L["Latency"].." ("..L["World"].."):"), latency.world.curStr);
 			tt:AddSeparator();
-			tt:AddLine(C("ltyellow",L["Min."] .. ":"), latency.world.minStr);
-			tt:AddLine(C("ltyellow",L["Max."] .. ":"), latency.world.maxStr);
+			tt:AddLine(C("ltyellow",L["Min."] .. HEADER_COLON), latency.world.minStr);
+			tt:AddLine(C("ltyellow",L["Max."] .. HEADER_COLON), latency.world.maxStr);
 			allHidden=false;
 		end
 		if ns.profile[name].showTrafficInTooltip then
 			tt:AddSeparator(4,0,0,0,0);
 			tt:AddLine(C("ltblue",L["Traffic"].." ("..L["Inbound"].."):"),traffic.inCurStr);
 			tt:AddSeparator();
-			tt:AddLine(C("ltyellow",L["Min."] .. ":"), traffic.inMinStr);
-			tt:AddLine(C("ltyellow",L["Max."] .. ":"), traffic.inMaxStr);
+			tt:AddLine(C("ltyellow",L["Min."] .. HEADER_COLON), traffic.inMinStr);
+			tt:AddLine(C("ltyellow",L["Max."] .. HEADER_COLON), traffic.inMaxStr);
 
 			tt:AddSeparator(4,0,0,0,0);
 			tt:AddLine(C("ltblue",L["Traffic"].." ("..L["Outbound"].."):"),traffic.outCurStr);
 			tt:AddSeparator();
-			tt:AddLine(C("ltyellow",L["Min."] .. ":"), traffic.outMinStr);
-			tt:AddLine(C("ltyellow",L["Max."] .. ":"), traffic.outMaxStr);
+			tt:AddLine(C("ltyellow",L["Min."] .. HEADER_COLON), traffic.outMinStr);
+			tt:AddLine(C("ltyellow",L["Max."] .. HEADER_COLON), traffic.outMaxStr);
 			allHidden=false;
 		end
 		if ns.profile[name].showMemoryUsageInTooltip then
 			tt:AddSeparator(4,0,0,0,0);
 			tt:SetCell(tt:AddLine(),1,C("ltblue",L["AddOns and memory"]),nil,nil,0);
 			tt:AddSeparator();
-			tt:AddLine(C("ltyellow",L["Loaded AddOns"]..":"), memory.loadedAddOns.."/"..memory.numAddOns);
-			tt:AddLine(C("ltyellow",L["Memory usage"]..":"), memory.curStr);
+			tt:AddLine(C("ltyellow",L["Loaded AddOns"]..HEADER_COLON), memory.loadedAddOns.."/"..memory.numAddOns);
+			tt:AddLine(C("ltyellow",L["Memory usage"]..HEADER_COLON), memory.curStr);
 
 			local num = _G.min(#memory.list,ns.profile[name].numDisplayAddOns);
 			if num==0 then num=_G.min(#memory.list,1000); end
@@ -349,11 +349,11 @@ local function createTooltip(tt, name, ttName, update)
 			tt:AddSeparator(4,0,0,0,0);
 			tt:SetCell(tt:AddLine(),1,C("ltblue",L["Client info"]),nil,nil,0);
 			tt:AddSeparator();
-			tt:AddLine(C("ltyellow",GAME_VERSION_LABEL..":"),version);
-			tt:AddLine(C("ltyellow",L["Build version"]..":"),build);
-			tt:AddLine(C("ltyellow",L["Build date"]..":"),buildDate);
-			tt:AddLine(C("ltyellow",L["Interface version"]..":"),interfaceVersion);
-			tt:AddLine(C("ltyellow",L["Locale code"]..":"),ns.locale);
+			tt:AddLine(C("ltyellow",GAME_VERSION_LABEL..HEADER_COLON),version);
+			tt:AddLine(C("ltyellow",L["Build version"]..HEADER_COLON),build);
+			tt:AddLine(C("ltyellow",L["Build date"]..HEADER_COLON),buildDate);
+			tt:AddLine(C("ltyellow",L["Interface version"]..HEADER_COLON),interfaceVersion);
+			tt:AddLine(C("ltyellow",L["Locale code"]..HEADER_COLON),ns.locale);
 			allHidden=false;
 		end
 		if allHidden then
@@ -366,26 +366,26 @@ local function createTooltip(tt, name, ttName, update)
 
 	elseif name_fps==name then
 		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(C("ltblue",REFORGE_CURRENT..":"),fps.curStr);
+		tt:AddLine(C("ltblue",REFORGE_CURRENT..HEADER_COLON),fps.curStr);
 		tt:AddSeparator();
-		tt:AddLine(C("ltyellow",L["Min."]..":"),fps.minStr);
-		tt:AddLine(C("ltyellow",L["Max."]..":"),fps.maxStr);
+		tt:AddLine(C("ltyellow",L["Min."]..HEADER_COLON),fps.minStr);
+		tt:AddLine(C("ltyellow",L["Max."]..HEADER_COLON),fps.maxStr);
 
 	elseif name_lat==name then
 		tt:AddSeparator(4,0,0,0,0);
 		tt:SetCell(tt:AddLine(),1,C("ltgreen",L["Home"]),nil,"CENTER",ttColumnsLat);
 		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(C("ltblue",REFORGE_CURRENT..":"),latency.home.curStr);
+		tt:AddLine(C("ltblue",REFORGE_CURRENT..HEADER_COLON),latency.home.curStr);
 		tt:AddSeparator();
-		tt:AddLine(C("ltyellow",L["Min."] .. ":"), latency.home.minStr);
-		tt:AddLine(C("ltyellow",L["Max."] .. ":"), latency.home.maxStr);
+		tt:AddLine(C("ltyellow",L["Min."] .. HEADER_COLON), latency.home.minStr);
+		tt:AddLine(C("ltyellow",L["Max."] .. HEADER_COLON), latency.home.maxStr);
 		tt:AddSeparator(4,0,0,0,0);
 		tt:SetCell(tt:AddLine(),1,C("ltgreen",L["World"]),nil,"CENTER",ttColumnsLat);
 		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(C("ltblue",REFORGE_CURRENT..":"),latency.world.curStr);
+		tt:AddLine(C("ltblue",REFORGE_CURRENT..HEADER_COLON),latency.world.curStr);
 		tt:AddSeparator();
-		tt:AddLine(C("ltyellow",L["Min."] .. ":"), latency.world.minStr);
-		tt:AddLine(C("ltyellow",L["Max."] .. ":"), latency.world.maxStr);
+		tt:AddLine(C("ltyellow",L["Min."] .. HEADER_COLON), latency.world.minStr);
+		tt:AddLine(C("ltyellow",L["Max."] .. HEADER_COLON), latency.world.maxStr);
 
 	elseif name_mem==name then
 		tt:AddSeparator(4,0,0,0,0);
@@ -401,7 +401,7 @@ local function createTooltip(tt, name, ttName, update)
 		end
 		tt:AddSeparator();
 		local l = tt:AddLine();
-		tt:SetCell(l,1,L["Total Memory usage"]..":",nil,nil,2);
+		tt:SetCell(l,1,L["Total Memory usage"]..HEADER_COLON,nil,nil,2);
 		tt:SetCell(l,3,memory.curStr,nil,nil,1);
 		if (ns.profile.GeneralOptions.showHints) then
 			tt:AddSeparator(4,0,0,0,0)
@@ -412,17 +412,17 @@ local function createTooltip(tt, name, ttName, update)
 		tt:AddSeparator(4,0,0,0,0);
 		tt:SetCell(tt:AddLine(),1,C("ltgreen",L["Inbound / Download"]),nil,"CENTER",ttColumnsTraf);
 		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(C("ltblue",REFORGE_CURRENT..":"),traffic.inCurStr);
+		tt:AddLine(C("ltblue",REFORGE_CURRENT..HEADER_COLON),traffic.inCurStr);
 		tt:AddSeparator();
-		tt:AddLine(C("ltyellow",L["Min."] .. ":"), traffic.inMinStr);
-		tt:AddLine(C("ltyellow",L["Max."] .. ":"), traffic.inMaxStr);
+		tt:AddLine(C("ltyellow",L["Min."] .. HEADER_COLON), traffic.inMinStr);
+		tt:AddLine(C("ltyellow",L["Max."] .. HEADER_COLON), traffic.inMaxStr);
 		tt:AddSeparator(4,0,0,0,0);
 		tt:SetCell(tt:AddLine(),1,C("ltgreen",L["Outbound / Upload"]),nil,"CENTER",ttColumnsTraf);
 		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(C("ltblue",REFORGE_CURRENT..":"),traffic.outCurStr);
+		tt:AddLine(C("ltblue",REFORGE_CURRENT..HEADER_COLON),traffic.outCurStr);
 		tt:AddSeparator();
-		tt:AddLine(C("ltyellow",L["Min."] .. ":"), traffic.outMinStr);
-		tt:AddLine(C("ltyellow",L["Max."] .. ":"), traffic.outMaxStr);
+		tt:AddLine(C("ltyellow",L["Min."] .. HEADER_COLON), traffic.outMinStr);
+		tt:AddLine(C("ltyellow",L["Max."] .. HEADER_COLON), traffic.outMaxStr);
 
 	end
 

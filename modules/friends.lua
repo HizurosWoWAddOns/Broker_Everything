@@ -169,7 +169,7 @@ local function createTooltip2(self,data)
 		end
 		tt2:SetCell(tt2:AddLine(),1,broadcast,nil,"LEFT",0);
 		if data.broadcastTime then
-			tt2:SetCell(tt2:AddLine(),1,C("ltgray","("..L["Active since"]..": "..SecondsToTime(time()-data.broadcastTime)..")"),nil,"RIGHT",0);
+			tt2:SetCell(tt2:AddLine(),1,C("ltgray","("..L["Active since"]..CHAT_HEADER_SUFFIX..SecondsToTime(time()-data.broadcastTime)..")"),nil,"RIGHT",0);
 		end
 	end
 

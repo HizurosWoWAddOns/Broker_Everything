@@ -235,7 +235,7 @@ local function createTooltip(tt)
 
 	tt:AddSeparator(4,0,0,0,0);
 	local missing,l=false,tt:AddLine(C("ltblue",FACTION));
-	tt:SetCell(l,2,C("ltblue",TIME_REMAINING:gsub(":",""):gsub("：",""):trim()),nil,"RIGHT",0);
+	tt:SetCell(l,2,C("ltblue",TIME_REMAINING:gsub(HEADER_COLON,""):gsub("：",""):trim()),nil,"RIGHT",0);
 	tt:AddSeparator();
 	if level>=minLevel then
 		local expansion=0;

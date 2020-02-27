@@ -91,7 +91,7 @@ local commands = {
 	version = {
 		desc = L["CmdVersion"],
 		func = function()
-			ns.print(GAME_VERSION_LABEL,GetAddOnMetadata(addon,"Version"));
+			ns.print(GAME_VERSION_LABEL,"@project-version@");
 		end
 	}
 }

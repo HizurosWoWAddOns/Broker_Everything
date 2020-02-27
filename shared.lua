@@ -6,7 +6,7 @@ local addon, ns = ...;
 local L,_ = ns.L;
 local UnitName,UnitSex,UnitClass,UnitFactionGroup=UnitName,UnitSex,UnitClass,UnitFactionGroup;
 local UnitRace,GetRealmName,GetLocale,UnitGUID=UnitRace,GetRealmName,GetLocale,UnitGUID;
-local InCombatLockdown,GetCVar,SetCVar,CreateFrame=InCombatLockdown,GetCVar,SetCVar,CreateFrame;
+local InCombatLockdown,CreateFrame=InCombatLockdown,CreateFrame;
 local GetScreenHeight,GetMouseFocus,GetAddOnInfo=GetScreenHeight,GetMouseFocus,GetAddOnInfo;
 local GetAddOnEnableState,GetSpellInfo,IsAltKeyDown=GetAddOnEnableState,GetSpellInfo,IsAltKeyDown;
 local IsShiftKeyDown,IsControlKeyDown,GetItemInfo=IsShiftKeyDown,IsControlKeyDown,GetItemInfo;
@@ -20,6 +20,8 @@ local tremove,tostring,type,print,unpack,assert=tremove,tostring,type,print,unpa
 local securecall,ipairs,pairs,tconcat,tsort=securecall,ipairs,pairs,table.concat,table.sort;
 local time,wipe,mod,hooksecurefunc,strsplit=time,wipe,mod,hooksecurefunc,strsplit;
 
+-- could be deprecated in future.
+local GetCVar,SetCVar = C_CVar.GetCVar or GetCVar,C_CVar.SetCVar or SetCVar
 
   -------------
 --- Libraries ---
@@ -82,7 +84,7 @@ do
 		local t,c,a1 = {tostringall(...)},1,...;
 		if type(a1)=="boolean" then tremove(t,1); end
 		if a1~=false then
-			tinsert(t,1,"|cff0099ff"..((a1==true and addon_short) or (a1=="||" and "||") or addon).."|r"..(a1~="||" and ":" or ""));
+			tinsert(t,1,"|cff0099ff"..((a1==true and addon_short) or (a1=="||" and "||") or addon).."|r"..(a1~="||" and HEADER_COLON or ""));
 			c=2;
 		end
 		for i=c, #t do
@@ -1130,7 +1132,7 @@ do
 	local QueueModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip",UIParent,"GameTooltipTemplate");
 	local InstantModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip2",UIParent,"GameTooltipTemplate");
 	local _ITEM_LEVEL = ITEM_LEVEL:gsub("%%d","(%%d*)");
-	local _UPGRADES = ITEM_UPGRADE_TOOLTIP_FORMAT:gsub(": %%d/%%d","");
+	local _UPGRADES = ITEM_UPGRADE_TOOLTIP_FORMAT:gsub(CHAT_HEADER_SUFFIX.."%%d/%%d","");
 	-- EMPTY_SOCKET_PRISMATIC and EMPTY_SOCKET_NO_COLOR are identical in some languages... Need only one of it.
 	local EMPTY_SOCKETS = {"RED","YELLOW","META","HYDRAULIC","BLUE","PRISMATIC","COGWHEEL"};
 	if EMPTY_SOCKET_PRISMATIC~=EMPTY_SOCKET_NO_COLOR then
@@ -1156,7 +1158,7 @@ do
 
 	local function GetLinkData(link)
 		local _,_,_,link = link:match("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
-		link = {strsplit(":",link or "")};
+		link = {strsplit(HEADER_COLON,link or "")};
 		for i=1, #link do
 			link[i] = tonumber(link[i]) or 0;
 		end
@@ -1220,7 +1222,7 @@ do
 			data.link=data.link or "item:"..data.id;
 		elseif data._type=="quest" then
 			data._type="link";
-			data.link=data.link or "quest:"..data.id..":"..(data.level or 0);
+			data.link=data.link or "quest:"..data.id..HEADER_COLON..(data.level or 0);
 		end
 
 		if data._type=="link" and data.link then

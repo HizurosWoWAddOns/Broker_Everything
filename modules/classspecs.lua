@@ -100,7 +100,7 @@ local function updateBroker()
 	end
 
 	if #lst>0 then
-		txt = C("ltred",L["Unspent talents"]..": ".. table.concat(lst,", "));
+		txt = C("ltred",L["Unspent talents"]..CHAT_HEADER_SUFFIX.. table.concat(lst,", "));
 	end
 
 	obj.text = txt;
@@ -150,7 +150,7 @@ function createTooltip(tt,update)
 	end
 	tt:AddSeparator(1,1,1,1,.6);
 	local l=tt:AddLine();
-	tt:SetCell(l,1,C("dkyellow",strtrim(LOOT_SPECIALIZATION_DEFAULT:gsub("%([ ]?%%s[ ]?%)",""))..":"),nil,"RIGHT",3);
+	tt:SetCell(l,1,C("dkyellow",strtrim(LOOT_SPECIALIZATION_DEFAULT:gsub("%([ ]?%%s[ ]?%)",""))..HEADER_COLON),nil,"RIGHT",3);
 	tt:SetCell(l,4,lootSpecID==0 and C("green",ACTIVE_PETS) or C( "gray", L["Set"]));
 	if lootSpecID~=0 then
 		tt:SetCellScript(l,4,"OnMouseUp",setLootSpec, 0);
