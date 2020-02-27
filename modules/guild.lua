@@ -23,6 +23,7 @@ local MOBILE_BUSY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-BusyMob
 local MOBILE_AWAY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-AwayMobile:14:14:0:0:16:16:0:16:0:16|t";
 local last,membersUpdateTicker = {};
 local bnetFriends = {};
+local guildClubId = false;
 
 
 -- register icon names and default files --
@@ -117,7 +118,7 @@ local function updateMembers()
 		wipe(bnetFriends);
 		for i=1, (BNGetNumFriends()) do
 			local accountInfo = C_BattleNet.GetFriendAccountInfo(i);
-			if accountInfo.accountName and accountInfo.gameAccountInfo.characterName and accountInfo.gameAccountInfo.realmName and accountInfo.gameAccountInfo.clientProgram=="WoW" then
+			if accountInfo and accountInfo.accountName and accountInfo.gameAccountInfo.characterName and accountInfo.gameAccountInfo.realmName and accountInfo.gameAccountInfo.clientProgram=="WoW" then
 				bnetFriends[accountInfo.gameAccountInfo.characterName.."-"..accountInfo.gameAccountInfo.realmName] = accountInfo.accountName;
 			end
 		end
@@ -179,6 +180,8 @@ local function updateTradeSkills()
 end
 
 local function updateApplicants()
+--@do-not-package@
+	--[[
 	local temp = {};
 	guild[gNumApplicants] = GetNumGuildApplicants();
 	for index=1, guild[gNumApplicants] do
@@ -191,6 +194,52 @@ local function updateApplicants()
 	applicants = temp;
 	if #temp~=guild[gNumApplicants] then
 		doApplicantsUpdate = true;
+	end
+	--]]
+
+
+		--[[
+
+		local applicantList = C_ClubFinder.ReturnClubApplicantList(guildClubId) or {};
+{ { -- table: 000000008E00CB40
+        classID = 8,
+        closed = 0,
+        clubFinderGUID = "ClubFinder-1-5841-1327-5149252",
+        ilvl = 152,
+        lastUpdatedTime = 1580336368,
+        level = 106,
+        lookupSuccess = true,
+        message = "Mein Schurke ist auch in Gilde und ist grade level 107",
+        name = "Kas\195\187ra",
+        playerGUID = "Player-1327-050B5CAA",
+        requestStatus = 1,
+        specIds = { -- table: 00000000775B3090
+            62,
+            64
+        } -- table: 00000000775B3090
+    } -- table: 000000008E00CB40 }
+
+		--local pendingList = C_ClubFinder.ReturnPendingClubApplicantList(guildClubId);
+  { -- table: 00000000B12FF800
+        classID = 6,
+        closed = 0,
+        clubFinderGUID = "ClubFinder-1-5841-1327-5149252",
+        ilvl = 50,
+        lastUpdatedTime = 1580069875,
+        level = 58,
+        lookupSuccess = true,
+        message = "Hallo Andi und co, hab mir nen mechagnom erstellt und wollt wieder zu euch in die gilde, gr\195\188\195\159e, christian =)",
+        name = "Ferriflux",
+        playerGUID = "Player-1327-07C30DB0",
+        requestStatus = 4,
+        specIds = <table: 00000000B12FF850>
+    } -- table: 00000000B12FF800
+		]]
+	--end
+--@end-do-not-package@
+	if guildClubId then
+		applicants = C_ClubFinder.ReturnClubApplicantList(guildClubId) or {};
+		guild[gNumApplicants] = #applicants;
 	end
 end
 
@@ -427,19 +476,33 @@ local function createTooltip(tt,update)
 		for i, a in ipairs(applicants) do
 			if not (tt and tt.key and tt.key==ttName) then return end -- interupt processing on close tooltip
 			local roles = {};
-			if a[app_bTank] then table.insert(roles,TANK); end
-			if a[app_bHealer] then table.insert(roles,HEALER); end
-			if a[app_bDamage] then table.insert(roles,DAMAGER); end
+
+			local isDps,isHealer,isTank = false,false,false;
+			for _, specID in ipairs(a.specIds) do
+				local role = GetSpecializationRoleByID(specID);
+				if role=="DAMAGER" and not isDps then
+					isDps = true;
+					tinsert(roles,DAMAGER);
+				elseif role=="HEALER" and not isHealer then
+					isHealer = true;
+					tinsert(roles,HEALER);
+				elseif role=="TANK" and not isTank then
+					isTank = true;
+					tinsert(roles,TANK);
+				end
+			end
+
+			local localizedClass, englishClass, localizedRace, englishRace, sex, playerName, realm = GetPlayerInfoByGUID(a.playerGUID);
 
 			local l = tt:AddLine(
-				a[app_level],
-				C(a[app_class], ns.scm(a[app_name])) .. ns.showRealmName(name,a[app_realm]),
+				a.level,
+				C(englishClass, ns.scm(playerName)) .. ns.showRealmName(name,realm),
 				table.concat(roles,", "),
-				date("%Y-%m-%d",time()+a[app_timeLeft])
+				date("%Y-%m-%d",a.lastUpdatedTime+(86400*30))
 			);
-			tt:SetCell(l,5,(strlen(a[app_comment])>0 and ns.scm(ns.strCut(a[app_comment],60)) or L["No Text"]),nil,nil,ttColumns-4);
+			tt:SetCell(l,5,(strlen(a.message)>0 and ns.scm(ns.strCut(a.message,60)) or L["No Text"]),nil,nil,ttColumns-4);
 
-			tt:SetLineScript(l,"OnMouseUp",showApplication,a[app_index]);
+			tt:SetLineScript(l,"OnMouseUp",showApplication,i);
 		end
 		tt:AddSeparator(4,0,0,0,0);
 	end
@@ -671,8 +734,6 @@ end
 function module.onevent(self,event,msg,...)
 	if event=="BE_UPDATE_CFG" and msg and msg:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
-	elseif ns.client_version>=2 and (event=="PLAYER_LOGIN" or event=="LF_GUILD_RECRUIT_LIST_CHANGED") then
-		RequestGuildApplicantsList();
 	elseif event=="CHAT_MSG_SYSTEM" then
 		msg = msg:gsub("[\124:%[%]]","#");
 		local On,Off = (msg:match(on)),(msg:match(off));
@@ -708,14 +769,16 @@ function module.onevent(self,event,msg,...)
 			end
 			return;
 		end
-	elseif event=="GUILD_ROSTER_UPDATE" or event=="LF_GUILD_RECRUITS_UPDATED" or event=="BE_DUMMY_EVENT" then
+	elseif event=="GUILD_ROSTER_UPDATE" or event=="BE_DUMMY_EVENT" then
 		doGuildUpdate = true;
 		doMembersUpdate = true;
 	elseif event=="GUILD_TRADESKILL_UPDATE" then
 		doTradeskillsUpdate = true;
+	elseif ns.client_version>=2 and (event=="CLUB_FINDER_RECRUIT_LIST_CHANGED" or event=="CLUB_FINDER_RECRUITS_UPDATED") then
+		doApplicantsUpdate = true;
 	end
-	if event=="PLAYER_LOGIN" or ns.eventPlayerEnteredWorld then
-		if not IsInGuild() then
+	if event=="PLAYER_LOGIN" or event=="PLAYER_GUILD_UPDATE" then
+		if not IsInGuild() and guildClubId~=false then
 			wipe(guild);
 			wipe(tradeskills);
 			wipe(applicants);
@@ -727,22 +790,37 @@ function module.onevent(self,event,msg,...)
 			self:UnregisterEvent("CHAT_MSG_SYSTEM");
 			if ns.client_version>=2 then
 				self:UnregisterEvent("GUILD_TRADESKILL_UPDATE");
-				self:UnregisterEvent("LF_GUILD_RECRUIT_LIST_CHANGED");
-				self:UnregisterEvent("LF_GUILD_RECRUITS_UPDATED");
+				self:UnregisterEvent("CLUB_FINDER_RECRUITS_UPDATED");
+				self:UnregisterEvent("CLUB_FINDER_RECRUIT_LIST_CHANGED");
 			end
-		else
+			guildClubId = false;
+		elseif not guildClubId then
+			guildClubId = C_Club.GetGuildClubId();
+			if guildClubId == nil then
+				C_Timer.After(0.314159,function()
+					-- C_Club.GetGuildClubId response nil???
+					module.onevent(self,"PLAYER_GUILD_UPDATE");
+				end);
+				return;
+			end
 			self:RegisterEvent("GUILD_RANKS_UPDATE");
 			self:RegisterEvent("GUILD_MOTD");
 			self:RegisterEvent("GUILD_ROSTER_UPDATE");
 			self:RegisterEvent("CHAT_MSG_SYSTEM");
 			if ns.client_version>=2 then
 				self:RegisterEvent("GUILD_TRADESKILL_UPDATE");
-				self:RegisterEvent("LF_GUILD_RECRUIT_LIST_CHANGED");
-				self:RegisterEvent("LF_GUILD_RECRUITS_UPDATED");
+				self:RegisterEvent("CLUB_FINDER_RECRUITS_UPDATED");
+				self:RegisterEvent("CLUB_FINDER_RECRUIT_LIST_CHANGED");
 			end
 			doGuildUpdate      = true;
 			doMembersUpdate    = true;
 			doApplicantsUpdate = true;
+			if ns.client_version>=2 then
+				if C_ClubFinder.IsEnabled() then
+					C_ClubFinder.RequestSubscribedClubPostingIDs(); -- init clubfinder recuits list
+					C_ClubFinder.RequestApplicantList(Enum.ClubFinderRequestType.Guild); -- trigger update
+				end
+			end
 		end
 	end
 	if updaterLocked==false and (doGuildUpdate or doMembersUpdate or doTradeskillsUpdate or doApplicantsUpdate or doUpdateTooltip) then
@@ -751,6 +829,7 @@ function module.onevent(self,event,msg,...)
 			GuildRoster(); -- for classic
 		else
 			C_GuildInfo.GuildRoster();
+			C_ClubFinder.RequestApplicantList(Enum.ClubFinderRequestType.Guild); -- trigger update
 		end
 		C_Timer.After(0.1570595,updater); -- sometimes blizzard firing GUILD_ROSTER_UPDATE twice.
 	end
