@@ -101,7 +101,7 @@ function profs.build()
 	for spellId, spellData in pairs({
 		[1804] = {"Lockpicking"}, [2018] = {"Blacksmithing",164}, [2108] = {"Leatherworking",165}, [2259] = {"Alchemy",171},     [2550] = {"Cooking"},         [2575] = {"Mining"},
 		[2656] = {"Smelting"},    [2366] = {"Herbalism"},         [3273] = {"First Aid"},          [3908] = {"Tailoring",197},   [4036] = {"Engineering",202}, [7411] = {"Enchanting",333},
-		[7620] = {"Fishing"},     [8613] = {"Skinning"},
+		[7620] = {"Fishing"},     [8613] = {"Skinning"},          [2842] = {"Poisons"},
 	}) do
 		local spellLocaleName,_,spellIcon = GetSpellInfo(spellId);
 		if (spellLocaleName) then
@@ -192,6 +192,10 @@ local function AddFactionRecipeLines(tt,expansion,recipesByProfession)
 	end
 end
 
+local function toggleTradeSkillWindow(self,data)
+	securecall("CastSpellByName",data);
+end
+
 local function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local iconnameLocale = "|T%s:12:12:0:0:64:64:2:62:4:62|t %s";
@@ -233,7 +237,10 @@ local function createTooltip(tt)
 					nameStr = C(color1,nameStr);
 				end
 			end
-			tt:AddLine((iconnameLocale):format(v[icon] or ns.icon_fallback,nameStr),C(color2,skill)..modifier..C(color2,"/"..maxSkill));
+			local l=tt:AddLine((iconnameLocale):format(v[icon] or ns.icon_fallback,nameStr),C(color2,skill)..modifier..C(color2,"/"..maxSkill));
+			if not v[disabled] and ns.profile[name].ttOnClick then
+				tt:SetLineScript(l,"OnMouseUp",toggleTradeSkillWindow,v[nameLocale]);
+			end
 			if v[7] and v.nameEnglish then
 				ts[v[7]] = v.nameEnglish;
 			end
