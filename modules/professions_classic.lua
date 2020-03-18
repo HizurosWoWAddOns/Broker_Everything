@@ -399,7 +399,8 @@ module = {
 		inTitle = {},
 		showAllFactions=true,
 		showRealmNames=true,
-		showCharsFrom="2"
+		showCharsFrom="2",
+		ttOnClick = false,
 	},
 	clickOptionsRename = {
 		["profmenu"] = "1_open_character_info",
@@ -484,7 +485,7 @@ end
 function module.options()
 	local opts = {
 		tooltip={
-			--showCooldowns={ type="toggle", order=3, name=L["Show cooldowns"], desc=L["Show/Hide profession cooldowns from all characters."] },
+			ttOnClick = { type="toggle", order=1, name=L["ProfessionTTOnClick"], desc=L["ProfessionTTOnClickDesc"]},
 			showAllFactions=4,
 			showRealmNames=5,
 			showCharsFrom=6,
@@ -517,6 +518,10 @@ function module.init()
 	};
 	skillsMax = {
 		300, -- vanilla
+	}
+	poisons = {
+		-- recipe, level, prof spellId, questrow
+		{18160, 20, 2550, {}}
 	}
 	if(ns.toon.professions==nil)then
 		ns.toon.professions = {cooldowns={},hasCooldowns=false};
@@ -562,6 +567,7 @@ function module.onevent(self,event,arg1,...)
 		local numSkills,lastHeader = GetNumSkillLines();
 		local SECONDARY_SKILLS = SECONDARY_SKILLS:gsub(HEADER_COLON,"");
 		local tmp,short = {},{};
+		local knownSpellIDs = {};
 		local n = 1;
 		for skillIndex=1, numSkills do
 			local skillName, header, isExpanded, skillRank, numTempPoints, skillModifier, skillMaxRank, isAbandonable, stepCost, rankCost, minLevel, skillCostType = GetSkillLineInfo(skillIndex);
@@ -576,17 +582,19 @@ function module.onevent(self,event,arg1,...)
 					d.spellId = profs.name2Id[skillName];
 					d[icon] = profs.data[d.spellId][spellIcon];
 					d.skillId = profs.spellId2skillId[d.spellId];
+					knownSpellIDs[d.spellId] = true;
+
 					if d.spellId==2575 then
 						d.spellId = 2656; -- replace mining with smelting to open skillframe window
+					elseif d.spellId == 7620 or d.spellId == 2842 or d.spellId == 1804 then
+						 -- hide some progessions in profession menu to prevent error message
+						d[disabled] = true;
 					end
+
 					d.nameEnglish = L[skillName];
 
 					if lastHeader==TRADE_SKILLS then
 						short[n] = {d[skillLine],skillName,d[icon],d[skill],d[maxSkill],d.skillId,d.spellId};
-					end
-
-					if d.nameEnglish == "Fishing" then -- hide fishing in profession menu to prevent error message
-						d[disabled]=true;
 					end
 
 					tmp[n] = d or false;
@@ -596,18 +604,6 @@ function module.onevent(self,event,arg1,...)
 		end
 		if #tmp>0 then
 			professions = tmp;
-		end
-
-		if (ns.player.class=="ROGUE") then
-			d = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil};
-			d.spellId = 1804;
-			if (IsSpellKnown(d.spellId)) then
-				d[skill] = UnitLevel("player") * 5;
-				d[maxSkill] = d[skill];
-			end
-			d.nameEnglish,d[nameLocale],d[icon] = unpack(profs.data[d.spellId] or {});
-			d[disabled] = true;
-			tinsert(professions,d);
 		end
 
 		db.hasCooldowns = false;
@@ -638,7 +634,7 @@ end
 
 function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT"},{false},{self});
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT"},{not ns.profile[name].ttOnClick},{self});
 	createTooltip(tt);
 end
 
