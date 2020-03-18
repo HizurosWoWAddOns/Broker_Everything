@@ -25,7 +25,7 @@ local ignoreWeapon = {
 
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile="Interface\\ICONS\\INV_Chest_Chain"}; --IconName::Equipment--
+I[name] = {iconfile="Interface\\ICONS\\INV_Chest_Chain", coords={0.1,0.9,0.1,0.9}}; --IconName::Equipment--
 
 -- some local functions --
 --------------------------
@@ -42,7 +42,7 @@ end
 
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
-	local icon,iconCoords,text = I[name].iconfile,{0,1,0,1},{};
+	local icon,iconCoords,text = I[name].iconfile,{0.1,0.9,0.1,0.9},{};
 
 	if ns.profile[name].showCurrentSet and C_EquipmentSet then
 		local numEquipSets = C_EquipmentSet.GetNumEquipmentSets();
