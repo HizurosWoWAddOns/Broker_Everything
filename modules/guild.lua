@@ -182,64 +182,8 @@ local function updateTradeSkills()
 end
 
 local function updateApplicants()
---@do-not-package@
-	--[[
-	local temp = {};
-	guild[gNumApplicants] = GetNumGuildApplicants();
-	for index=1, guild[gNumApplicants] do
-		local applicant,Realm = {GetGuildApplicantInfo(index)};
-		tinsert(applicant,1,index);
-		applicant[app_name], Realm = strsplit("-",applicant[app_name],2);
-		tinsert(applicant,app_realm,Realm or guild[gRealmNoSpacer]);
-		tinsert(temp,applicant);
-	end
-	applicants = temp;
-	if #temp~=guild[gNumApplicants] then
-		doApplicantsUpdate = true;
-	end
-	--]]
-
-
-		--[[
-
-		local applicantList = C_ClubFinder.ReturnClubApplicantList(guildClubId) or {};
-{ { -- table: 000000008E00CB40
-        classID = 8,
-        closed = 0,
-        clubFinderGUID = "ClubFinder-1-5841-1327-5149252",
-        ilvl = 152,
-        lastUpdatedTime = 1580336368,
-        level = 106,
-        lookupSuccess = true,
-        message = "Mein Schurke ist auch in Gilde und ist grade level 107",
-        name = "Kas\195\187ra",
-        playerGUID = "Player-1327-050B5CAA",
-        requestStatus = 1,
-        specIds = { -- table: 00000000775B3090
-            62,
-            64
-        } -- table: 00000000775B3090
-    } -- table: 000000008E00CB40 }
-
-		--local pendingList = C_ClubFinder.ReturnPendingClubApplicantList(guildClubId);
-  { -- table: 00000000B12FF800
-        classID = 6,
-        closed = 0,
-        clubFinderGUID = "ClubFinder-1-5841-1327-5149252",
-        ilvl = 50,
-        lastUpdatedTime = 1580069875,
-        level = 58,
-        lookupSuccess = true,
-        message = "Hallo Andi und co, hab mir nen mechagnom erstellt und wollt wieder zu euch in die gilde, gr\195\188\195\159e, christian =)",
-        name = "Ferriflux",
-        playerGUID = "Player-1327-07C30DB0",
-        requestStatus = 4,
-        specIds = <table: 00000000B12FF850>
-    } -- table: 00000000B12FF800
-		]]
-	--end
---@end-do-not-package@
-	if guildClubId then
+	if ns.client_version<2 then return end
+	if tonumber(guildClubId) then
 		applicants = C_ClubFinder.ReturnClubApplicantList(guildClubId) or {};
 		guild[gNumApplicants] = #applicants;
 	end
@@ -349,6 +293,32 @@ local function createTooltip2(self,info)
 	ns.roundupTooltip(tt2);
 end
 
+local function ttGuildChallengeInfo_OnEnter(self,orderIndex)
+	local index, current, max, gold, maxGold = GetGuildChallengeInfo(orderIndex);
+	if ( index ) then
+		GameTooltip:SetOwner(self, "ANCHOR_NONE");
+		GameTooltip:SetPoint(ns.GetTipAnchor(self,"horizontal",tt));
+		GameTooltip:SetText(_G["GUILD_CHALLENGE_LABEL"..index]);
+		GameTooltip:AddLine(_G["GUILD_CHALLENGE_TOOLTIP"..index], 1, 1, 1, true);
+		GameTooltip:AddLine(" ")
+		local info = strsplit("\n",GUILD_CHALLENGE_REWARD_GOLD);
+		GameTooltip:AddLine(info,1,1,1,true);
+		GameTooltip:AddLine(" ")
+		local goldString = GetMoneyString(maxGold * COPPER_PER_SILVER * SILVER_PER_GOLD);
+		GameTooltip:AddDoubleLine(TITLE_REWARD:format(""):trim(), goldString, 1, 0.82, 0, 1, 1, 1);
+		local available = max-current;
+		if available>1 then
+			local goldSum = GetMoneyString((maxGold*available) * COPPER_PER_SILVER * SILVER_PER_GOLD);
+			GameTooltip:AddDoubleLine(L["GuildChallengesStillAvailable"], goldSum, 1, 0.82, 0, 1, 1, 1);
+		end
+		GameTooltip:Show();
+	end
+end
+
+local function ttGuildChallengeInfo_OnLeave()
+	GameTooltip:Hide();
+end
+
 local function tooltipAddLine(v,flags)
 	if not (tt and tt.key and tt.key==ttName) then return end
 
@@ -440,11 +410,13 @@ local function createTooltip(tt,update)
 		return;
 	end
 
+	-- HEADER
 	local l = tt:AddHeader();
 	tt:SetCell(l,1,C("dkyellow",GUILD) .. "  " .. C("green",ns.scm(guild[gName])) .. ns.showRealmName(name,guild[gRealm]), nil,"LEFT",ttColumns);
 
 	tt:AddSeparator(4,0,0,0,0);
 
+	-- MOTD
 	local sep=false;
 	if (ns.profile[name].showMOTD) then
 		local l = tt:AddLine(C("ltblue",MOTD_COLON));
@@ -456,6 +428,7 @@ local function createTooltip(tt,update)
 		sep = true;
 	end
 
+	-- PLAYER STANDING
 	if ns.profile[name].showRep and player[pStandingValue] then
 		local l = tt:AddLine(("%s: "):format(C("ltblue",REPUTATION_ABBR)));
 		tt:SetCell(l,2,("%s: (%d/%d)"):format(player[pStandingText], player[pStandingValue]-player[pStandingMin], player[pStandingMax]-player[pStandingMin]), nil, nil, ttColumns - 1);
@@ -466,6 +439,27 @@ local function createTooltip(tt,update)
 		tt:AddSeparator(4,0,0,0,0);
 	end
 
+	-- CHALLENGES
+	if ns.profile[name].showChallenges then
+		local l = tt:AddLine();
+		tt:SetCell(l,1,C("ltblue",GUILD_CHALLENGE_LABEL),nil,"LEFT",ttColumns-1);
+		tt:SetCell(l,ttColumns,C("ltblue",STATUS),nil,"RIGHT",0);
+		tt:AddSeparator();
+
+		local order,numChallenges = {1,4,2,3},GetNumGuildChallenges();
+		for i = 1, numChallenges do
+			local orderIndex = order[i] or i;
+			local index, current, max = GetGuildChallengeInfo(orderIndex);
+			local l = tt:AddLine();
+			tt:SetCell(l,1,C("ltyellow",_G["GUILD_CHALLENGE_TYPE"..index]),nil,"LEFT",ttColumns-1);
+			tt:SetCell(l,ttColumns,C(current==max and "green" or "white",("%d/%d"):format(current,max)),nil,"RIGHT",0);
+			tt:SetLineScript(l,"OnEnter",ttGuildChallengeInfo_OnEnter,orderIndex);
+			tt:SetLineScript(l,"OnLeave",ttGuildChallengeInfo_OnLeave);
+		end
+		tt:AddSeparator(4,0,0,0,0);
+	end
+
+	-- APPLICANTS
 	if (ns.profile[name].showApplicants) and type(guild[gNumApplicants])=="number" and (guild[gNumApplicants]>0) then
 		local line,column = tt:AddLine(
 			C("orange",LEVEL),
@@ -636,6 +630,7 @@ module = {
 		-- guild
 		showRep = true,
 		showMOTD = true,
+		showChallenges = true,
 
 		-- guild members
 		showRealmNames = true,
@@ -707,6 +702,7 @@ function module.options()
 			showMobileChatter = { type="toggle", order=12, name=L["Mobile app user"], desc=L["Show mobile chatter in tooltip (Armory App users)"] },
 			splitTables       = { type="toggle", order=13, name=L["Separate mobile app user"], desc=L["Display mobile chatter with own table in tooltip"] },
 			showBattleTag     = { type="toggle", order=14, name=BATTLETAG, desc=L["Append the BattleTag of your friends to the character name"], hidden=ns.IsClassicClient },
+			showChallenges    = { type="toggle", order=15, name=GUILD_CHALLENGE_LABEL, desc=L["GuildShowChallengesDesc"], hidden=ns.IsClassicClient },
 		},
 		tooltip2 = {
 			name = L["Secondary tooltip options"],
@@ -771,7 +767,7 @@ function module.onevent(self,event,msg,...)
 			end
 			return;
 		end
-	elseif event=="GUILD_ROSTER_UPDATE" or event=="BE_DUMMY_EVENT" then
+	elseif event=="GUILD_ROSTER_UPDATE" or event=="BE_DUMMY_EVENT" or event=="GUILD_CHALLENGE_UPDATED" then
 		doGuildUpdate = true;
 		doMembersUpdate = true;
 	elseif event=="GUILD_TRADESKILL_UPDATE" then
@@ -791,25 +787,31 @@ function module.onevent(self,event,msg,...)
 			self:UnregisterEvent("GUILD_ROSTER_UPDATE");
 			self:UnregisterEvent("CHAT_MSG_SYSTEM");
 			if ns.client_version>=2 then
+				self:UnregisterEvent("GUILD_CHALLENGE_UPDATED");
 				self:UnregisterEvent("GUILD_TRADESKILL_UPDATE");
 				self:UnregisterEvent("CLUB_FINDER_RECRUITS_UPDATED");
 				self:UnregisterEvent("CLUB_FINDER_RECRUIT_LIST_CHANGED");
 			end
 			guildClubId = false;
 		elseif not guildClubId then
-			guildClubId = C_Club.GetGuildClubId();
-			if guildClubId == nil then
-				C_Timer.After(0.314159,function()
-					-- C_Club.GetGuildClubId response nil???
-					module.onevent(self,"PLAYER_GUILD_UPDATE");
-				end);
-				return;
+			if ns.client_version>=2 then
+				guildClubId = C_Club.GetGuildClubId();
+				if guildClubId == nil then
+					C_Timer.After(0.314159,function()
+						-- C_Club.GetGuildClubId response nil???
+						module.onevent(self,"PLAYER_GUILD_UPDATE");
+					end);
+					return;
+				end
+			else
+				guildClubId = true;
 			end
 			self:RegisterEvent("GUILD_RANKS_UPDATE");
 			self:RegisterEvent("GUILD_MOTD");
 			self:RegisterEvent("GUILD_ROSTER_UPDATE");
 			self:RegisterEvent("CHAT_MSG_SYSTEM");
 			if ns.client_version>=2 then
+				self:RegisterEvent("GUILD_CHALLENGE_UPDATED");
 				self:RegisterEvent("GUILD_TRADESKILL_UPDATE");
 				self:RegisterEvent("CLUB_FINDER_RECRUITS_UPDATED");
 				self:RegisterEvent("CLUB_FINDER_RECRUIT_LIST_CHANGED");
@@ -821,6 +823,7 @@ function module.onevent(self,event,msg,...)
 				if C_ClubFinder.IsEnabled() then
 					C_ClubFinder.RequestSubscribedClubPostingIDs(); -- init clubfinder recuits list
 					C_ClubFinder.RequestApplicantList(Enum.ClubFinderRequestType.Guild); -- trigger update
+					RequestGuildChallengeInfo();
 				end
 			end
 		end
@@ -832,6 +835,7 @@ function module.onevent(self,event,msg,...)
 		else
 			C_GuildInfo.GuildRoster();
 			C_ClubFinder.RequestApplicantList(Enum.ClubFinderRequestType.Guild); -- trigger update
+			RequestGuildChallengeInfo();
 		end
 		C_Timer.After(0.1570595,updater); -- sometimes blizzard firing GUILD_ROSTER_UPDATE twice.
 	end
@@ -879,6 +883,7 @@ function module.onenter(self)
 		end
 
 		ttColumns = #ttAlignings;
+
 		if ns.profile[name].showApplicants then
 			ttColumns = max(ttColumns,5); -- min 5 cols for applicants
 		end
