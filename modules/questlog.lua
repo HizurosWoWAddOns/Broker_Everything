@@ -39,6 +39,8 @@ local hideEmissaryQuests = {
 	-- bfa
 	[50600]=true, [50601]=true, [50599]=true, [50605]=true, [50603]=true,
 	[50598]=true, [50602]=true, [50606]=true, [50604]=true, [50562]=true,
+	-- bfa 8.2.5
+	[56120]=true, [56119]=true
 }
 local Level, Title, Header, Color, Status, Type, ShortType, QuestId, Index, IsHidden, Text = 1,2,3,4,5,6,7,8,9,10,11,12;
 local frequencies = {
@@ -169,6 +171,11 @@ end
 
 local function ttAddLine(obj)
 	assert(type(obj)=="table","object must be a table, got "..type(obj));
+
+	if (not ns.profile[name].showPvPWeeklys and hidePvPQuests[obj[QuestId]]) or (not ns.profile[name].showWorldQuests and hideEmissaryQuests[obj[QuestId]]) then
+		return;
+	end
+
 	local l,c = tt:AddLine();
 	local cell, color,GroupQuest = 1,"red",{};
 
@@ -438,7 +445,7 @@ function module.onevent(self,event,msg)
 			local q = {GetQuestLogTitle(index)};
 			if q[isHeader]==true then
 				header = q[title];
-			elseif header and not hideQuestsAnytime[q[questID]] and not (ns.profile[name].showPvPWeeklys and hidePvPQuests[q[questID]]) and not (ns.profile[name].showWorldQuests and hideEmissaryQuests[q[questID]]) then
+			elseif header and not hideQuestsAnytime[q[questID]] then
 				local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(q[questID]);
 				local tagNameLong = tagName;
 				q.text,q.objectives = GetQuestLogQuestText(index);
