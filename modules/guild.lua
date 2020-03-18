@@ -116,10 +116,12 @@ local function updateMembers()
 
 	if ns.client_version>=2 then
 		wipe(bnetFriends);
-		for i=1, (BNGetNumFriends()) do
-			local accountInfo = C_BattleNet.GetFriendAccountInfo(i);
-			if accountInfo and accountInfo.accountName and accountInfo.gameAccountInfo.characterName and accountInfo.gameAccountInfo.realmName and accountInfo.gameAccountInfo.clientProgram=="WoW" then
-				bnetFriends[accountInfo.gameAccountInfo.characterName.."-"..accountInfo.gameAccountInfo.realmName] = accountInfo.accountName;
+		if BNConnected() then
+			for i=1, (BNGetNumFriends()) do
+				local accountInfo = C_BattleNet.GetFriendAccountInfo(i);
+				if accountInfo and accountInfo.accountName and accountInfo.gameAccountInfo.characterName and accountInfo.gameAccountInfo.realmName and accountInfo.gameAccountInfo.clientProgram=="WoW" then
+					bnetFriends[accountInfo.gameAccountInfo.characterName.."-"..accountInfo.gameAccountInfo.realmName] = accountInfo.accountName;
+				end
 			end
 		end
 	end
