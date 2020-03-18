@@ -169,8 +169,14 @@ local function prepareBountyTables(init)
 
 	if init then
 		-- check / create tables
+		if ns.data[name]==nil then
+			ns.data[name] = {};
+		end
 		if ns.data[name].bounties==nil then
 			ns.data[name].bounties = {};
+		end
+		if ns.toon[name]==nil then
+			ns.toon[name] = {}
 		end
 		if ns.toon[name].bounties==nil then
 			ns.toon[name].bounties = {};
