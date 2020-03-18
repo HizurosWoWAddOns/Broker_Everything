@@ -242,6 +242,15 @@ function module.onevent(self,event,...)
 			end
 		end
 		updateInvasionsList();
+		for i,v in ipairs(events)do
+			local mapInfo,mapID = false,v.label:match("\{map:([0-9]*)\}");
+			if mapID then
+				mapInfo = C_Map.GetMapInfo(mapID);
+			end
+			if mapInfo then
+				events[i].label:gsub("\{map:[0-9]*\}",mapInfo.name);
+			end
+		end
 		C_Timer.After(2,updateBroker);
 	end
 end
