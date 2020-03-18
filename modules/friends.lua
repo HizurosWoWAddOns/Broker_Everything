@@ -309,7 +309,7 @@ local function createTooltip(tt)
 			for i=1, numBNFriends do
 				local nt = C_BattleNet_GetFriendNumGameAccounts(i);
 				local fi = C_BattleNet_GetFriendAccountInfo(i);
-				if fi.gameAccountInfo.isOnline then
+				if nt and fi and fi.gameAccountInfo.isOnline then
 					for I=1, nt do
 						local ti =  C_BattleNet_GetFriendGameAccountInfo(i,I);
 						local bcIcon = fi.customMessage~="" and "|Tinterface\\chatframe\\ui-chatinput-focusicon:0|t" or "";
