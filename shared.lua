@@ -21,7 +21,7 @@ local securecall,ipairs,pairs,tconcat,tsort=securecall,ipairs,pairs,table.concat
 local time,wipe,mod,hooksecurefunc,strsplit=time,wipe,mod,hooksecurefunc,strsplit;
 
 -- could be deprecated in future.
-local GetCVar,SetCVar = C_CVar.GetCVar or GetCVar,C_CVar.SetCVar or SetCVar
+local GetCVar,SetCVar = C_CVar and C_CVar.GetCVar or GetCVar,C_CVar and C_CVar.SetCVar or SetCVar
 
   -------------
 --- Libraries ---
