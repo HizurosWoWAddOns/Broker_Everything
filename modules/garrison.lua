@@ -42,10 +42,6 @@ local function AchievementTooltipShow(self, achievementId)
 	GameTooltip:Show();
 end
 
-local function AchievementTooltipHide()
-	GameTooltip:Hide();
-end
-
 local function toggleAchievementFrame(self,achievementId)
 	if ( not AchievementFrame ) then
 		AchievementFrame_LoadUI();
@@ -203,7 +199,7 @@ local function createTooltip(tt)
 				tt:SetCell(l,3, v.need, nil,"LEFT",5);
 				tt:SetLineScript(l,"OnMouseUp", toggleAchievementFrame,v.id);
 				tt:SetLineScript(l,"OnEnter", AchievementTooltipShow,v.id);
-				tt:SetLineScript(l,"OnLeave", AchievementTooltipHide);
+				tt:SetLineScript(l,"OnLeave", GameTooltip_Hide);
 			end
 		end
 	end

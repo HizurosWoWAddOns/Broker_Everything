@@ -127,10 +127,6 @@ local function note_show(self,index)
 	GameTooltip:Show();
 end
 
-local function note_hide(self)
-	GameTooltip:Hide();
-end
-
 function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
@@ -149,7 +145,7 @@ function createTooltip(tt)
 		end
 		tt:SetLineScript(l,"OnMouseUp",note_options,i);
 		tt:SetLineScript(l,"OnEnter",note_show,i);
-		tt:SetLineScript(l,"OnLeave",note_hide);
+		tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 	end
 	if #ns.data[name]==0 then
 		local l=tt:AddLine();

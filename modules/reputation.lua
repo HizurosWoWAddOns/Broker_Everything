@@ -343,10 +343,6 @@ local function factionTooltipOnEnter(self,data)
 	GameTooltip:Show();
 end
 
-local function factionTooltipOnLeave(self)
-	GameTooltip:Hide();
-end
-
 function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
@@ -456,7 +452,7 @@ function createTooltip(tt)
 				end
 
 				tt:SetLineScript(l,"OnEnter",factionTooltipOnEnter,data);
-				tt:SetLineScript(l,"OnLeave",factionTooltipOnLeave);
+				tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 
 				if data[isHeader] then
 					tt:SetLineScript(l,"OnMouseUp",toggleHeader,data);

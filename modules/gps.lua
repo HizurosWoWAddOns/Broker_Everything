@@ -270,10 +270,6 @@ local function createTooltip3(_,data)
 	GameTooltip:Show();
 end
 
-local function hideTooltip3()
-	GameTooltip:Hide();
-end
-
 -- tooltip as transport menu
 local function tpmOnEnter(self,info)
 	local parent, v, t = unpack(info);
@@ -281,7 +277,7 @@ local function tpmOnEnter(self,info)
 		attributes={type=t,[t]=v.name},
 		tooltip={parent=tt4,type=t,id=v.id},
 		OnEnter=createTooltip3,
-		OnLeave=hideTooltip3
+		OnLeave=GameTooltip_Hide
 	};
 	ns.secureButton(self,data);
 end

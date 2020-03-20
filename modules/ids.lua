@@ -69,10 +69,6 @@ local function EncounterTT_Show(frame,index)
 	GameTooltip:Show();
 end
 
-local function EncounterTT_Hide()
-	GameTooltip:Hide();
-end
-
 local function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local allNothing,iniNothing = true,true;
@@ -188,7 +184,7 @@ local function createTooltip(tt)
 								tt:SetCellScript(l,4,"OnMouseUp", extendInstance, {index=v.index,doExtend=doExtend});
 							end
 							tt:SetLineScript(l,"OnEnter", EncounterTT_Show, v.index);
-							tt:SetLineScript(l,"OnLeave", EncounterTT_Hide);
+							tt:SetLineScript(l,"OnLeave", GameTooltip_Hide);
 						end
 					end
 					allNothing = false;

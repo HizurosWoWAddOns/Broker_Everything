@@ -116,10 +116,6 @@ local function createTalentTooltip(self,talent)
 	GameTooltip:Show();
 end
 
-local function hideTalentTooltip()
-	GameTooltip:Hide();
-end
-
 local function addShipment(tt,...)
 	local name, texture, shipmentCapacity, shipmentsReady, shipmentsTotal, creationTime, duration, timeleftString = ...;
 	if name then
@@ -198,7 +194,7 @@ local function createTooltip(tt)
 				end
 
 				tt:SetCellScript(line,cell,"OnEnter",createTalentTooltip, v);
-				tt:SetCellScript(line,cell,"OnLeave",hideTalentTooltip);
+				tt:SetCellScript(line,cell,"OnLeave",GameTooltip_Hide);
 			end
 
 			if activeResearch and activeResearch.show then

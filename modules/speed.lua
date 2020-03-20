@@ -93,10 +93,6 @@ local function tooltipOnEnter(self,data)
 	GameTooltip:Show();
 end
 
-local function tooltipOnLeave()
-	GameTooltip:Hide();
-end
-
 local function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local _=function(d) if tonumber(d) then return ("+%d%%"):format(d); end return d; end;
@@ -133,7 +129,7 @@ local function createTooltip(tt)
 		end
 		if l and Link then
 			tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {link=Link,extend=ttExtend and "trainerfaction" or nil});
-			tt:SetLineScript(l,"OnLeave",tooltipOnLeave);
+			tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 		end
 	end
 	if ns.client_version<2 then
@@ -211,7 +207,7 @@ local function createTooltip(tt)
 				local l=tt:AddLine(C("ltyellow",Name .. custom), _(spell[Speed]));
 				if Link then
 					tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {link=Link});
-					tt:SetLineScript(l,"OnLeave",tooltipOnLeave);
+					tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 				end
 				count=count+1;
 			end
@@ -280,7 +276,7 @@ local function createTooltip(tt)
 				l=tt:AddLine(C(color1,Name),info==" " and info or C(color2,info));
 				if type(v[4])=="table" or link then
 					tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {link=link, info=v[4]});
-					tt:SetLineScript(l,"OnLeave",tooltipOnLeave);
+					tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 				end
 			end
 		end

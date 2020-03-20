@@ -139,10 +139,6 @@ local function createTooltip2(self,instance)
 	GameTooltip:Show();
 end
 
-local function hideTooltip2()
-	GameTooltip:Hide();
-end
-
 local function toggleExpansion(self,data)
 	ns.profile[data.name]['showExpansion'..data.expansion] = not ns.profile[data.name]['showExpansion'..data.expansion];
 	createTooltip(data.name==name1 and tt1 or tt2,data.name,data.mode); -- force update tooltip?
@@ -213,7 +209,7 @@ function createTooltip(tt,name,mode)
 						);
 
 						tt:SetLineScript(l,"OnEnter",createTooltip2,{instance_id,name,instance_name});
-						tt:SetLineScript(l,"OnLeave",hideTooltip2);
+						tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 
 						if ns.toon[name]==nil then
 							ns.toon[name]={};

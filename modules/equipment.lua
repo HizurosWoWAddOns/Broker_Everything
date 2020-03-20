@@ -152,10 +152,6 @@ local function InventoryTooltipShow(self,slot)
 	GameTooltip:Show();
 end
 
-local function InventoryTooltipHide()
-	GameTooltip:Hide();
-end
-
 local function equipOnClick(self,equipSetID)
 	if (IsShiftKeyDown()) then
 		if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
@@ -193,10 +189,6 @@ local function equipOnEnter(self,equipSetID)
 	end
 end
 
-local function equipOnLeave(self)
-	GameTooltip:Hide();
-end
-
 local function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
@@ -225,7 +217,7 @@ local function createTooltip(tt)
 						local line = ns.AddSpannedLine(tt, "|T"..(icon or ns.icon_fallback)..":0|t "..formatName);
 						tt:SetLineScript(line, "OnMouseUp", equipOnClick,setID);
 						tt:SetLineScript(line, "OnEnter", equipOnEnter,setID);
-						tt:SetLineScript(line, "OnLeave", equipOnLeave);
+						tt:SetLineScript(line, "OnLeave", GameTooltip_Hide);
 					end
 				end
 				if (ns.profile.GeneralOptions.showHints) then
@@ -307,7 +299,7 @@ local function createTooltip(tt)
 				);
 
 				tt:SetLineScript(l,"OnEnter",InventoryTooltipShow, obj.slot);
-				tt:SetLineScript(l,"OnLeave",InventoryTooltipHide);
+				tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 			elseif ns.items.inventory[i] then
 				tt:AddLine(
 					C("ltyellow",_G[slots[i].."SLOT"]),

@@ -303,10 +303,6 @@ local function itemTooltipShow(self,info)
 	GameTooltip:Show();
 end
 
-local function itemTooltipHide(self)
-	GameTooltip:Hide();
-end
-
 local function createTooltip2(parent,artifactID)
 	local item,missingdata,l = ns.toon[name][artifactID],false;
 	local tt = ns.acquireTooltip({ttNameAlt, ttColumns, "LEFT", "RIGHT", "RIGHT", "LEFT", "LEFT","RIGHT", "CENTER", "LEFT", "LEFT", "LEFT"},{false},{parent,"horizontal",tt});
@@ -381,7 +377,7 @@ local function createTooltip2(parent,artifactID)
 				tt:SetCell(l,2,icon .. n,nil,nil,0);
 				if v.locked or v.link then
 					tt:SetLineScript(l,"OnEnter",itemTooltipShow,v);
-					tt:SetLineScript(l,"OnLeave",itemTooltipHide);
+					tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 				end
 			end
 		else
@@ -522,7 +518,7 @@ function createTooltip(tt)
 						tt:SetCell(l,2,icon .. n,nil,nil,0);
 						if v.locked or v.link then
 							tt:SetLineScript(l,"OnEnter",itemTooltipShow,v);
-							tt:SetLineScript(l,"OnLeave",itemTooltipHide);
+							tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 						end
 					end
 				else
@@ -574,7 +570,7 @@ function createTooltip(tt)
 					end
 					if v.link then
 						tt:SetLineScript(l,"OnEnter",itemTooltipShow,v);
-						tt:SetLineScript(l,"OnLeave",itemTooltipHide);
+						tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 					end
 					count=count+1;
 				end

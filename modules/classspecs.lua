@@ -41,10 +41,6 @@ local function infoTooltipShow(self, info)
 	end
 end
 
-local function infoTooltipHide()
-	GameTooltip:Hide();
-end
-
 local function setSpec(self, spec)
 	if not InCombatLockdown() then
 		SetSpecialization(spec.index,spec.ispet);
@@ -140,13 +136,13 @@ function createTooltip(tt,update)
 		if lootSpecID~=spec[i].id then
 			tt:SetCellScript(l,4,"OnMouseUp",setLootSpec, spec[i].id);
 			tt:SetCellScript(l,4,"OnEnter",infoTooltipShow, {type="text", {L["Click to change your loot specialization"]}});
-			tt:SetCellScript(l,4,"OnLeave",infoTooltipHide);
+			tt:SetCellScript(l,4,"OnLeave",GameTooltip_Hide);
 		end
 		if i~=active then
 			tt:SetLineScript(l,"OnMouseUp",setSpec, {index=i});
 		end
 		tt:SetLineScript(l,"OnEnter",infoTooltipShow, {type="text", {("|T%s:32:32|t %s"):format(spec[i].icon,spec[i].name)},{spec[i].desc,1,1,1,true}});
-		tt:SetLineScript(l,"OnLeave",infoTooltipHide);
+		tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 	end
 	tt:AddSeparator(1,1,1,1,.6);
 	local l=tt:AddLine();
@@ -155,7 +151,7 @@ function createTooltip(tt,update)
 	if lootSpecID~=0 then
 		tt:SetCellScript(l,4,"OnMouseUp",setLootSpec, 0);
 		tt:SetCellScript(l,4,"OnEnter",infoTooltipShow, {type="text", {L["Click to change your loot specialization"]}});
-		tt:SetCellScript(l,4,"OnLeave",infoTooltipHide);
+		tt:SetCellScript(l,4,"OnLeave",GameTooltip_Hide);
 	end
 
 	if ns.player.class:lower()=="hunter" then
@@ -227,7 +223,7 @@ function createTooltip(tt,update)
 						extraLine=level<tierLevels[row] and C("red",L["TalentLocked"]) or nil
 					};
 					tt:SetCellScript(l,c,"OnEnter",infoTooltipShow, info);
-					tt:SetCellScript(l,c,"OnLeave",infoTooltipHide);
+					tt:SetCellScript(l,c,"OnLeave",GameTooltip_Hide);
 					if not tmp[Selected] and level>=tierLevels[row] then
 						tt:SetCellScript(l,c,"OnMouseUp",changeTalent, {id=tmp[Id]});
 					end
@@ -237,7 +233,7 @@ function createTooltip(tt,update)
 				if selected then
 					tt:SetCell(l,2,str:format(selected[Icon],C("ltyellow",selected[Name])),nil,nil,0);
 					tt:SetLineScript(l,"OnEnter",infoTooltipShow, {type="talent",args={selected[Id],false,talentGroup}});
-					tt:SetLineScript(l,"OnLeave",infoTooltipHide);
+					tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 				elseif isUnlocked then
 					tt:SetCell(l,2,C("orange",L["TalentUnlocked"]),nil,nil,0);
 				else

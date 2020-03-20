@@ -151,10 +151,6 @@ local function ItemTooltipShow(self,itemId)
 	end
 end
 
-local function ItemTooltipHide(self)
-	GameTooltip:Hide();
-end
-
 local function toggleArchaeologyFrame(self,raceIndex)
 	if ( not ArchaeologyFrame ) then
 		securecall("ArchaeologyFrame_LoadUI");
@@ -209,7 +205,7 @@ local function createTooltip(tt)
 				);
 				if(raceData[raceKeystoneItemID]~=0)then
 					tt:SetLineScript(l,"OnEnter", ItemTooltipShow,raceData[raceKeystoneItemID]);
-					tt:SetLineScript(l,"OnLeave", ItemTooltipHide);
+					tt:SetLineScript(l,"OnLeave", GameTooltip_Hide);
 				end
 				tt:SetLineScript(l,"OnMouseUp", toggleArchaeologyFrame, raceData[raceIndex]);
 			elseif raceData[raceName] then
