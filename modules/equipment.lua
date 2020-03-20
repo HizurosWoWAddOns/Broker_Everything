@@ -21,6 +21,7 @@ local ignoreWeapon = {
 	["1"] = L["Ignore all"],
 	["2"] = L["Ignore artifact weapons"],
 };
+local ownSlotByProfessionals = {},{}
 
 
 -- register icon names and default files --
@@ -256,7 +257,16 @@ local function createTooltip(tt)
 				itemQuality = itemQuality or itemInfo.quality or "black";
 				itemName = itemName or obj.link:match("%[(.*)%]");
 
-				if ns.profile[name].showNotEnchanted and obj.id~=158075 --[[ hearth of azeroth can't be enchanted ]] and enchantSlots[i] and (tonumber(itemInfo.linkData[1]) or 0)==0 then
+				local canEnchant = enchantSlots[i];
+				if ownSlotByProfessionals[i] then
+					for spellId,v in pairs(ownSlotByProfessionals[i])do
+						if IsSpellKnown(spellId) and (v==true --[[or]]) then
+							canEnchant = true;
+						end
+					end
+				end
+
+				if ns.profile[name].showNotEnchanted and obj.id~=158075 --[[ hearth of azeroth can't be enchanted ]] and canEnchant and (tonumber(itemInfo.linkData[1]) or 0)==0 then
 					enchanted=C("red"," #");
 					miss=true;
 				end
@@ -511,6 +521,32 @@ function module.init()
 		-- Tier 20 (Legion 7.?)
 	}
 	ns.items.RegisterCallback(name,updateBroker,"inv");
+
+	-- slots = { invSlot = {1,<levelLimit>}|{2,<itemLevelLimit>}|true }
+	ownSlotByProfessionals = {
+		[6] = { -- waist
+			[4036] = true, -- Engineering
+		},
+		[7] = { -- legs
+			--[3908] = 90, -- Tailoring - max itemLevel[136] or character level[90] ?? missing tooltip description
+		},
+		[9] = { -- wrist
+			[7411] = true, -- Enchanting
+		},
+		[15] = { -- back
+			[3908] = true, -- Tailoring
+			[4036] = true, -- Engineering
+		}
+	};
+	--[[
+	profession spell IDs
+	2018  = Blacksmithing
+	2108  = Leatherworking
+	3908  = Tailoring
+	4036  = Engineering
+	7411  = Enchanting
+	45357 = Inscription
+	--]]
 end
 
 function module.onevent(self,event,arg1,...)
