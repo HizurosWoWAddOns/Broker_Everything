@@ -21,6 +21,7 @@ local app_index, app_name, app_realm, app_level, app_class, app_bQuest, app_bDun
 local raceCache,raceById,flags = {},{},{};
 local MOBILE_BUSY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-BusyMobile:14:14:0:0:16:16:0:16:0:16|t";
 local MOBILE_AWAY_ICON = "|TInterface\\ChatFrame\\UI-ChatIcon-ArmoryChat-AwayMobile:14:14:0:0:16:16:0:16:0:16|t";
+local icon_arrow_right = "|T"..ns.icon_arrow_right..":0|t";
 local last,membersUpdateTicker = {};
 local bnetFriends = {};
 local guildClubId = false;
@@ -244,6 +245,54 @@ local function showApplication(self,appIndex)
 	end
 end
 
+local function guildChallengeLineColor(bool)
+	if bool then
+		return 1,1,1, 0,1,0;
+	end
+	return 1,1,1, 1,1,1;
+end
+
+local function createTooltip3(parent,sel)
+	GameTooltip:SetOwner(parent, "ANCHOR_NONE");
+	GameTooltip:SetPoint(ns.GetTipAnchor(parent,"horizontal",tt));
+	local show = false;
+	if sel=="info" then
+		GameTooltip:SetText(GUILD_INFORMATION);
+		GameTooltip:AddLine(" ");
+		GameTooltip:AddLine(GetGuildInfoText() or "",1,1,1,true);
+		show = true;
+	elseif sel=="challenges" then
+		GameTooltip:AddLine(GUILD_CHALLENGE_LABEL,1,0.82,0);
+
+		local order,numChallenges = {1,4,2,3},GetNumGuildChallenges();
+		for i = 1, numChallenges do
+			local orderIndex = order[i] or i;
+			local index, current, max, gold, maxGold = GetGuildChallengeInfo(orderIndex);
+			if index then
+				GameTooltip:AddLine(" ");
+				local goldSum,goldPerRun = "",GetMoneyString(maxGold * COPPER_PER_SILVER * SILVER_PER_GOLD);
+				--local available = max-current;
+				--if available>1 then
+				--	goldSum = " ( "..GetMoneyString((maxGold*available) * COPPER_PER_SILVER * SILVER_PER_GOLD).." )";
+				--end
+				GameTooltip:AddDoubleLine(
+					C("ltblue",_G["GUILD_CHALLENGE_TYPE"..index]),
+					("%d/%d"):format(current,max),
+					guildChallengeLineColor(current==max)
+				);
+				GameTooltip:AddDoubleLine(
+					goldPerRun,
+					goldSum,
+					1,1,1, 1,1,1
+				);
+			end
+			--tt:SetCell(l,ttColumns-1,C(current==max and "green" or "white",),nil,"RIGHT",0);
+		end
+		show = true;
+	end
+	GameTooltip:Show();
+end
+
 local function createTooltip2(self,info)
 	local v,s,t,_ = info,"";
 	local realm = v[mRealm] or "";
@@ -291,32 +340,6 @@ local function createTooltip2(self,info)
 	end
 	tt2:AddSeparator(1,0,0,0,0);
 	ns.roundupTooltip(tt2);
-end
-
-local function ttGuildChallengeInfo_OnEnter(self,orderIndex)
-	local index, current, max, gold, maxGold = GetGuildChallengeInfo(orderIndex);
-	if ( index ) then
-		GameTooltip:SetOwner(self, "ANCHOR_NONE");
-		GameTooltip:SetPoint(ns.GetTipAnchor(self,"horizontal",tt));
-		GameTooltip:SetText(_G["GUILD_CHALLENGE_LABEL"..index]);
-		GameTooltip:AddLine(_G["GUILD_CHALLENGE_TOOLTIP"..index], 1, 1, 1, true);
-		GameTooltip:AddLine(" ")
-		local info = strsplit("\n",GUILD_CHALLENGE_REWARD_GOLD);
-		GameTooltip:AddLine(info,1,1,1,true);
-		GameTooltip:AddLine(" ")
-		local goldString = GetMoneyString(maxGold * COPPER_PER_SILVER * SILVER_PER_GOLD);
-		GameTooltip:AddDoubleLine(TITLE_REWARD:format(""):trim(), goldString, 1, 0.82, 0, 1, 1, 1);
-		local available = max-current;
-		if available>1 then
-			local goldSum = GetMoneyString((maxGold*available) * COPPER_PER_SILVER * SILVER_PER_GOLD);
-			GameTooltip:AddDoubleLine(L["GuildChallengesStillAvailable"], goldSum, 1, 0.82, 0, 1, 1, 1);
-		end
-		GameTooltip:Show();
-	end
-end
-
-local function ttGuildChallengeInfo_OnLeave()
-	GameTooltip:Hide();
 end
 
 local function tooltipAddLine(v,flags)
@@ -424,38 +447,37 @@ local function createTooltip(tt,update)
 		if motd=="" then
 			motd,color = "Not set","gray"
 		end
-		tt:SetCell(l, 2, C(color,ns.scm(ns.strWrap(motd,56),true)), nil, nil, ttColumns-1)
+		tt:SetCell(l, 2, C(color,ns.scm(ns.strWrap(motd,56),true)), nil, nil, 0);
 		sep = true;
 	end
 
 	-- PLAYER STANDING
 	if ns.profile[name].showRep and player[pStandingValue] then
 		local l = tt:AddLine(("%s: "):format(C("ltblue",REPUTATION_ABBR)));
-		tt:SetCell(l,2,("%s: (%d/%d)"):format(player[pStandingText], player[pStandingValue]-player[pStandingMin], player[pStandingMax]-player[pStandingMin]), nil, nil, ttColumns - 1);
+		tt:SetCell(l,2,("%s: (%d/%d)"):format(player[pStandingText], player[pStandingValue]-player[pStandingMin], player[pStandingMax]-player[pStandingMin]), nil, nil, 0);
 		sep=true;
 	end
 
-	if (sep) then
-		tt:AddSeparator(4,0,0,0,0);
+	if ns.profile[name].showInfo then
+		local l = tt:AddLine();
+		tt:SetCell(l,1,C("ltblue",GUILD_INFORMATION),nil,"LEFT",ttColumns-1);
+		tt:SetCell(l,ttColumns,icon_arrow_right,nil,"RIGHT");
+		tt:SetLineScript(l,"OnEnter",createTooltip3,"info");
+		tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
+		sep=true;
 	end
 
 	-- CHALLENGES
 	if ns.profile[name].showChallenges then
 		local l = tt:AddLine();
 		tt:SetCell(l,1,C("ltblue",GUILD_CHALLENGE_LABEL),nil,"LEFT",ttColumns-1);
-		tt:SetCell(l,ttColumns,C("ltblue",STATUS),nil,"RIGHT",0);
-		tt:AddSeparator();
+		tt:SetCell(l,ttColumns,icon_arrow_right,nil,"RIGHT");
+		tt:SetLineScript(l,"OnEnter",createTooltip3,"challenges");
+		tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
+		sep = true;
+	end
 
-		local order,numChallenges = {1,4,2,3},GetNumGuildChallenges();
-		for i = 1, numChallenges do
-			local orderIndex = order[i] or i;
-			local index, current, max = GetGuildChallengeInfo(orderIndex);
-			local l = tt:AddLine();
-			tt:SetCell(l,1,C("ltyellow",_G["GUILD_CHALLENGE_TYPE"..index]),nil,"LEFT",ttColumns-1);
-			tt:SetCell(l,ttColumns,C(current==max and "green" or "white",("%d/%d"):format(current,max)),nil,"RIGHT",0);
-			tt:SetLineScript(l,"OnEnter",ttGuildChallengeInfo_OnEnter,orderIndex);
-			tt:SetLineScript(l,"OnLeave",ttGuildChallengeInfo_OnLeave);
-		end
+	if (sep) then
 		tt:AddSeparator(4,0,0,0,0);
 	end
 
@@ -496,7 +518,7 @@ local function createTooltip(tt,update)
 				table.concat(roles,", "),
 				date("%Y-%m-%d",a.lastUpdatedTime+(86400*30))
 			);
-			tt:SetCell(l,5,(strlen(a.message)>0 and ns.scm(ns.strCut(a.message,60)) or L["No Text"]),nil,nil,ttColumns-4);
+			tt:SetCell(l,5,(strlen(a.message)>0 and ns.scm(ns.strCut(a.message,60)) or L["No Text"]),nil,nil,ttColumns-5);
 
 			tt:SetLineScript(l,"OnMouseUp",showApplication,i);
 		end
@@ -631,6 +653,7 @@ module = {
 		showRep = true,
 		showMOTD = true,
 		showChallenges = true,
+		showInfo = true,
 
 		-- guild members
 		showRealmNames = true,
@@ -690,19 +713,21 @@ function module.options()
 			order = 2,
 			showRep           = { type="toggle", order= 1, name=GUILD_REPUTATION, desc=L["Enable/Disable the display of Guild Reputation in tooltip"] },
 			showMOTD          = { type="toggle", order= 2, name=L["Guild MotD"], desc=L["Show Guild Message of the Day in tooltip"] },
-			showRealmNames    = 3,
-			showRace          = { type="toggle", order= 4, name=RACE, desc=L["Show race from guild members in tooltip"]},
-			showZone          = { type="toggle", order= 5, name=ZONE, desc=L["Show current zone from guild members in tooltip"]},
-			showNotes         = { type="toggle", order= 6, name=L["Notes"], desc=L["Show notes from guild members in tooltip"]},
-			showONotes        = { type="toggle", order= 7, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"], hidden=ns.IsClassicClient},
-			showRank          = { type="toggle", order= 8, name=RANK, desc=L["Show rank name from guild members in tooltip"]},
-			showRankID        = { type="toggle", order= 9, name=RANK.."ID", desc=L["Show rank id from guild members in tooltip"]},
-			showProfessions   = { type="toggle", order=10, name=TRADE_SKILLS, desc=L["Show professions from guild members in tooltip"], hidden=ns.IsClassicClient },
-			showApplicants    = { type="toggle", order=11, name=L["Applicants"], desc=L["Show applicants in tooltip"], hidden=ns.IsClassicClient },
-			showMobileChatter = { type="toggle", order=12, name=L["Mobile app user"], desc=L["Show mobile chatter in tooltip (Armory App users)"] },
-			splitTables       = { type="toggle", order=13, name=L["Separate mobile app user"], desc=L["Display mobile chatter with own table in tooltip"] },
-			showBattleTag     = { type="toggle", order=14, name=BATTLETAG, desc=L["Append the BattleTag of your friends to the character name"], hidden=ns.IsClassicClient },
-			showChallenges    = { type="toggle", order=15, name=GUILD_CHALLENGE_LABEL, desc=L["GuildShowChallengesDesc"], hidden=ns.IsClassicClient },
+			showInfo          = { type="toggle", order= 3, name=GUILD_INFORMATION, desc=L["GuildShowInfoDesc"], hidden=ns.IsClassicClient },
+			showChallenges    = { type="toggle", order= 4, name=GUILD_CHALLENGE_LABEL, desc=L["GuildShowChallengesDesc"], hidden=ns.IsClassicClient },
+
+			showRealmNames    = 20,
+			showRace          = { type="toggle", order=21, name=RACE, desc=L["Show race from guild members in tooltip"]},
+			showZone          = { type="toggle", order=22, name=ZONE, desc=L["Show current zone from guild members in tooltip"]},
+			showNotes         = { type="toggle", order=23, name=L["Notes"], desc=L["Show notes from guild members in tooltip"]},
+			showONotes        = { type="toggle", order=24, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"], hidden=ns.IsClassicClient},
+			showRank          = { type="toggle", order=25, name=RANK, desc=L["Show rank name from guild members in tooltip"]},
+			showRankID        = { type="toggle", order=26, name=RANK.."ID", desc=L["Show rank id from guild members in tooltip"]},
+			showProfessions   = { type="toggle", order=27, name=TRADE_SKILLS, desc=L["Show professions from guild members in tooltip"], hidden=ns.IsClassicClient },
+			showApplicants    = { type="toggle", order=28, name=L["Applicants"], desc=L["Show applicants in tooltip"], hidden=ns.IsClassicClient },
+			showMobileChatter = { type="toggle", order=29, name=L["Mobile app user"], desc=L["Show mobile chatter in tooltip (Armory App users)"] },
+			splitTables       = { type="toggle", order=30, name=L["Separate mobile app user"], desc=L["Display mobile chatter with own table in tooltip"] },
+			showBattleTag     = { type="toggle", order=31, name=BATTLETAG, desc=L["Append the BattleTag of your friends to the character name"], hidden=ns.IsClassicClient },
 		},
 		tooltip2 = {
 			name = L["Secondary tooltip options"],
@@ -881,6 +906,8 @@ function module.onenter(self)
 			tinsert(ttAlignings,"LEFT"); -- professions 2
 			flags.showProfessions=true;
 		end
+
+		tinsert(ttAlignings,"RIGHT"); -- arrow right
 
 		ttColumns = #ttAlignings;
 

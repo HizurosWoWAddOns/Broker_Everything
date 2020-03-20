@@ -113,6 +113,7 @@ end
 --- misc shared data                    ---
   ---------------------------------------
 ns.icon_fallback = 134400; -- interface\\icons\\INV_MISC_QUESTIONMARK;
+ns.icon_arrow_right = "interface\\CHATFRAME\\ChatFrameExpandArrow";
 ns.media = "Interface\\AddOns\\"..addon.."\\media\\";
 ns.locale = GetLocale();
 ns.ui = {size={UIParent:GetSize()},center={UIParent:GetCenter()}};
