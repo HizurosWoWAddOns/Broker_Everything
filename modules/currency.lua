@@ -67,7 +67,9 @@ local function resetCurrencySession()
 			if faction=="Horde" and CurrenciesHorde[id] then
 				id = CurrenciesHorde[id];
 			end
-			_, currencySession[id] = GetCurrencyInfo(id);
+			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(id);
+			currencySession[id] = currencyInfo.quantity;
+			--_, currencySession[id] = GetCurrencyInfo(id); -- TODO: removed in shadowlands
 		end
 	end
 end
@@ -84,21 +86,22 @@ local function updateBroker()
 			if faction=="Horde" and CurrenciesHorde[id] then
 				id = CurrenciesHorde[id];
 			end
-			local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(id);
-			if isDiscovered then
-				local str = ns.FormatLargeNumber(name,count);
-				if ns.profile[name].showCapBroker and totalMax>0 then
-					str = str.."/"..ns.FormatLargeNumber(name,totalMax);
+			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(id);
+			--local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(id); -- TODO: removed in shadowlands
+			if currencyInfo.discovered then
+				local str = ns.FormatLargeNumber(name,currencyInfo.quantity);
+				if ns.profile[name].showCapBroker and currencyInfo.maxQuantity>0 then
+					str = str.."/"..ns.FormatLargeNumber(name,currencyInfo.maxQuantity);
 				end
-				if ns.profile[name].showCapColorBroker and (totalMax>0 or weeklyMax>0) then
-					local t = {{"green","yellow","orange","red"},str,count>0,count,totalMax};
-					if weeklyMax>0 then
-						tinsert(t,earnedThisWeek);
-						tinsert(t,weeklyMax);
+				if ns.profile[name].showCapColorBroker and (currencyInfo.maxQuantity>0 or currencyInfo.maxWeeklyQuantity>0) then
+					local t = {{"green","yellow","orange","red"},str,currencyInfo.quantity>0,currencyInfo.quantity,currencyInfo.maxQuantity};
+					if currencyInfo.maxWeeklyQuantity>0 then
+						tinsert(t,currencyInfo.quantityEarnedThisWeek);
+						tinsert(t,currencyInfo.maxWeeklyQuantity);
 					end
 					str = CapColor(unpack(t));
 				end
-				tinsert(elems, str.."|T"..icon..":0|t");
+				tinsert(elems, str.."|T"..currencyInfo.iconFileID..":0|t");
 			end
 		end
 	end
@@ -177,27 +180,28 @@ function createTooltip(tt,update)
 			if faction=="Horde" and CurrenciesHorde[currencyId] then
 				currencyId = CurrenciesHorde[currencyId];
 			end
-			local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(currencyId);
-			if Name~="" and isDiscovered then
-				local str = ns.FormatLargeNumber(name,count,true);
+			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(currencyId);
+			--local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(currencyId); -- TODO: removed in shadowlands
+			if currencyInfo and currencyInfo.name and currencyInfo.discovered then
+				local str = ns.FormatLargeNumber(name,currencyInfo.quantity,true);
 
 				-- cap
-				if ns.profile[name].showTotalCap and totalMax>0 then
-					str = str .."/".. ns.FormatLargeNumber(name,totalMax,true);
+				if ns.profile[name].showTotalCap and currencyInfo.maxQuantity>0 then
+					str = str .."/".. ns.FormatLargeNumber(name,currencyInfo.maxQuantity,true);
 
 					-- cap coloring
 					if ns.profile[name].showCapColor then
-						str = CapColor(weeklyMax>0 and {"dkgreen","dkyellow","dkorange","dkred"} or {"green","yellow","orange","red"},str,count>0,count,totalMax);
+						str = CapColor(currencyInfo.maxWeeklyQuantity>0 and {"dkgreen","dkyellow","dkorange","dkred"} or {"green","yellow","orange","red"},str,currencyInfo.quantity>0,currencyInfo.quantity,currencyInfo.maxQuantity);
 					end
 				end
 
 				-- weekly cap
-				if ns.profile[name].showWeeklyCap and weeklyMax>0 then
-					local wstr = "("..ns.FormatLargeNumber(name,earnedThisWeek,true).."/"..ns.FormatLargeNumber(name,weeklyMax,true)..")";
+				if ns.profile[name].showWeeklyCap and currencyInfo.maxWeeklyQuantity>0 then
+					local wstr = "("..ns.FormatLargeNumber(name,currencyInfo.quantityEarnedThisWeek,true).."/"..ns.FormatLargeNumber(name,currencyInfo.maxWeeklyQuantity,true)..")";
 
 					-- cap coloring
 					if ns.profile[name].showCapColor then
-						wstr = CapColor({"green","yellow","orange","red"},wstr,count>0,earnedThisWeek,weeklyMax);
+						wstr = CapColor({"green","yellow","orange","red"},wstr,currencyInfo.quantity>0,currencyInfo.quantityEarnedThisWeek,currencyInfo.maxWeeklyQuantity);
 					end
 
 					str = wstr.." "..str;
@@ -210,13 +214,13 @@ function createTooltip(tt,update)
 				end
 
 				local l = tt:AddLine(
-					"    "..C(isDiscovered==0 and "gray" or "ltyellow",Name)..id,
-					str.."  |T"..icon..":14:14:0:0:64:64:4:56:4:56|t"
+					"    "..C(currencyInfo.discovered==0 and "gray" or "ltyellow",currencyInfo.name)..id,
+					str.."  |T"..currencyInfo.iconFileID..":14:14:0:0:64:64:4:56:4:56|t"
 				);
 
 				-- session earn/loss
 				if ns.profile[name].showSession and currencySession[currencyId] then
-					local color,num = false,count-currencySession[currencyId];
+					local color,num = false,currencyInfo.quantity-currencySession[currencyId];
 					if num>0 then
 						color,num = "ltgreen","+"..num;
 					elseif num<0 then
@@ -267,13 +271,14 @@ local function AceOptOnBrokerValues(info)
 			if faction=="Horde" and CurrenciesHorde[currencyId] then
 				currencyId = CurrenciesHorde[currencyId];
 			end
-			local Name, _, Icon, _, _, _, isDiscovered = GetCurrencyInfo(currencyId);
-			if Name~="" then
-				if not isDiscovered then
-					Name = C("orange",Name);
+			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(currencyId);
+			--local Name, _, Icon, _, _, _, isDiscovered = GetCurrencyInfo(currencyId); -- TODO: removed in shadowlands
+			if currencyInfo and currencyInfo.name then
+				if not currencyInfo.discovered then
+					currencyInfo.name = C("orange",currencyInfo.name);
 				end
 				local order,id = ("%04d"):format(n),("%05d"):format(Currencies[i]);
-				list[order..":"..id] = "|T"..Icon..":0|t "..Name;
+				list[order..":"..id] = "|T"..Icon..":0|t "..currencyInfo.name;
 				aceValuesCurrencyOrder[id] = order;
 				n=n+1;
 			end
@@ -360,11 +365,12 @@ function module.OptionMenu(parent)
 		local id = ns.profile[name].currenciesInTitle[place];
 
 		if tonumber(id) then
-			local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(id);
-			if Name~="" then
+			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(talentid);
+			--local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(id);  -- TODO: removed in shadowlands
+			if currencyInfo and currencyInfo.name then
 				pList = ns.EasyMenu:AddEntry({
 					arrow = true,
-					label = (C("dkyellow","%s%d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"],place,icon,C("ltblue",Name)),
+					label = (C("dkyellow","%s%d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"],place,currencyInfo.iconFileID,C("ltblue",currencyInfo.name)),
 				});
 				ns.EasyMenu:AddEntry({ label = C("ltred",L["Remove the currency"]), func=function() setInTitle(place, false); end }, pList);
 				ns.EasyMenu:AddEntry({separator=true}, pList);
@@ -380,15 +386,16 @@ function module.OptionMenu(parent)
 
 		for i=1, #Currencies do
 			if tonumber(Currencies[i]) then
-				local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(Currencies[i]);
-				if Name~="" then
-					local nameStr,disabled = Name,true;
+				local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(Currencies[i]);
+				--local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(Currencies[i]); -- TODO: removed in shadowlands
+				if currencyInfo and currencyInfo.name then
+					local nameStr,disabled = currencyInfo.name,true;
 					if ns.profile[name].currenciesInTitle[place]~=Currencies[i] then
 						nameStr,disabled = C("ltyellow",nameStr),false;
 					end
 					ns.EasyMenu:AddEntry({
 						label = nameStr,
-						icon = icon,
+						icon = currencyInfo.iconFileID,
 						disabled = disabled,
 						func = function() setInTitle(place,Currencies[i]); end
 					}, pList2);
@@ -453,8 +460,10 @@ function module.onevent(self,event,arg1)
 	elseif event=="CHAT_MSG_CURRENCY" then -- detecting new currencies
 		local id = tonumber(arg1:match("currency:(%d*)"));
 		if id and not currencySession[id] then
-			local _
-			_, currencySession[id] = GetCurrencyInfo(id);
+			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(id);
+			currencySession[id] = currencyInfo.quantity;
+			--local _
+			--_, currencySession[id] = GetCurrencyInfo(id); -- TODO: removed in shadowlands
 		end
 	end
 	if ns.eventPlayerEnteredWorld then
@@ -484,29 +493,3 @@ end
 -------------------------------
 ns.modules[name] = module;
 
---@do-not-package@
-if false then
-	-- collect function for "Currencies" table
-	function collect_currencies()
-		ns.data._currencies = {};
-		local n,h,o,t,_;
-		for i=1,GetCurrencyListSize()do
-			n,h=GetCurrencyListInfo(i);
-			if h then
-				-- search matching globalstrings
-				t={};
-				for k,v in pairs(_G)do
-					_,o=issecurevariable(_G,k);
-					if n==BE_DUNGEON_AND_RAID or (n==v and o==nil) then
-						tinsert(t,k);
-					end
-				end
-				n=t;
-			else
-				n=tonumber(tostring(GetCurrencyListLink(i)):match("currency:(%d+)"));
-			end
-			tinsert(ns.data._currencies,n);
-		end
-	end
-end
---@end-do-not-package@

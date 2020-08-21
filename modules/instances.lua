@@ -21,6 +21,7 @@ local hide = {
 	[822] = true, -- legion world bosses // no raid
 	[959] = true, -- legion invasionpoints (argus) // no raid
 	[1028] = true, -- bfa world bosses // no raid
+	[1192] = true, -- shadowlands world bosses // no raid
 }
 -- some entries have not exact matching names between encounter journal and raidinfo frame
 local rename_il,rename_ej,ignore_ej = {},{},{};

@@ -110,7 +110,10 @@ local function updateRaces(firstUpdate)
 			t[raceTexture] = iconFormat2:format(t[raceTexture]);
 
 			if t[raceCurrencyId]~=0 then
-				t[raceCurrencyName],_,iconFile = GetCurrencyInfo(t[raceCurrencyId]);
+				-- t[raceCurrencyName],_,iconFile = GetCurrencyInfo(t[raceCurrencyId]); -- TODO: removed in shadowlands
+				local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(t[raceCurrencyId]);
+				t[raceCurrencyName] = currencyInfo.name;
+				iconFile = currencyInfo.iconFileID
 			end
 			t[raceFragmentsIcon] = iconFormat1:format(iconFile or ns.icon_fallback);
 

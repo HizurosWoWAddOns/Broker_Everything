@@ -399,7 +399,7 @@ function module.onevent(self,event,arg1,...)
 		end
 	elseif event=="PLAYER_LOGIN" or (ns.eventPlayerEnteredWorld and event~="BE_UPDATE_CFG") then
 		local progress,ready=0,0;
-		local garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0;
+		local garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0 or Enum.GarrisonType.Type_6_0) or 0;
 		local tmp, names, _, bName, texture, shipmentCapacity, shipmentsReady, shipmentsTotal, creationTime, duration, timeleftString, shipmentsCurrent = {}, {};
 
 		wipe(construct); wipe(blueprints3); wipe(achievements3);
@@ -409,7 +409,7 @@ function module.onevent(self,event,arg1,...)
 		ns.toon.garrison={garrLevel,0,{0,0},{}};
 		local cache=ns.toon.garrison;
 
-		buildings = C_Garrison.GetBuildings(LE_GARRISON_TYPE_6_0) or {};
+		buildings = C_Garrison.GetBuildings(LE_GARRISON_TYPE_6_0 or Enum.GarrisonType.Type_6_0) or {};
 
 		for i=1, #buildings do
 			if (buildings[i]) and (buildings[i].buildingID) then
@@ -591,7 +591,7 @@ function module.onevent(self,event,arg1,...)
 	end
 
 	-- garrison level
-	garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0;
+	garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0 or Enum.GarrisonType.Type_6_0) or 0;
 
 	-- shipyard level
 	if garrLevel>0 then

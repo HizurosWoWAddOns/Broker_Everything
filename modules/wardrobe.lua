@@ -60,11 +60,13 @@ local function updateBroker()
 
 	if ns.profile[name].brokerArmor~="_none" then
 		local collected,total,sess = 0,0,0;
-		for i=1, 11 do
-			local v = TRANSMOG_SLOTS[i];
-			collected = collected + (C_TransmogCollection.GetCategoryCollectedCount(v.armorCategoryID) or 0);
-			total = total + (C_TransmogCollection.GetCategoryTotal(v.armorCategoryID) or 0);
-			sess = sess + (session.armor[v.slot] or 0);
+
+		for k, v in pairs(TRANSMOG_SLOTS) do
+			if v.armorCategoryID then
+				collected = collected + (C_TransmogCollection.GetCategoryCollectedCount(v.armorCategoryID) or 0);
+				total = total + (C_TransmogCollection.GetCategoryTotal(v.armorCategoryID) or 0);
+				sess = sess + (session.armor[v.slot or v.location.slotID] or 0);
+			end
 		end
 		addToBroker(tmp,"dkyellow","Armor",collected,total,sess);
 	end
@@ -101,10 +103,11 @@ local function resetSessionCounter(x)
 		session = {};
 	end
 	session.armor = {};
-	for i=1, 11 do
-		local v = TRANSMOG_SLOTS[i];
-		local collected = C_TransmogCollection.GetCategoryCollectedCount(v.armorCategoryID);
-		session.armor[v.slot] = collected;
+	for k, v in pairs(TRANSMOG_SLOTS) do
+		if v.armorCategoryID then
+			local collected = C_TransmogCollection.GetCategoryCollectedCount(v.armorCategoryID);
+			session.armor[v.slot or v.location.slotID] = collected;
+		end
 	end
 
 	session.weapons = {};
@@ -151,13 +154,15 @@ local function createTooltip(tt)
 
 	-- armor
 	local collected,total,sess,lines = 0,0,0,{};
-	for i=1, 11 do
-		local c,t,s;
-		c = C_TransmogCollection.GetCategoryCollectedCount(TRANSMOG_SLOTS[i].armorCategoryID) or 0;
-		t = C_TransmogCollection.GetCategoryTotal(TRANSMOG_SLOTS[i].armorCategoryID) or 0;
-		s = session.armor[TRANSMOG_SLOTS[i].slot] or 0;
-		collected,total,sess = collected+c,total+t,sess+s;
-		tinsert(lines,{"ltyellow",_G[TRANSMOG_SLOTS[i].slot],c,t,s});
+	for k, v in pairs(TRANSMOG_SLOTS) do
+		if v.armorCategoryID then
+			local slot,c,t,s = v.slot or v.location.slotID;
+			c = C_TransmogCollection.GetCategoryCollectedCount(v.armorCategoryID) or 0;
+			t = C_TransmogCollection.GetCategoryTotal(v.armorCategoryID) or 0;
+			s = session.armor[slot] or 0;
+			collected,total,sess = collected+c,total+t,sess+s;
+			tinsert(lines,{"ltyellow",_G[v.slot or v.location:GetSlotName()],c,t,s});
+		end
 	end
 	tt:AddSeparator(4,0,0,0,0);
 	addLine("ltblue",ARMOR,collected,total,sess);

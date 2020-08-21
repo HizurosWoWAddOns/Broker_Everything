@@ -432,8 +432,10 @@ function createTooltip(tt)
 			-- display current and next artifact knowledge level
 			if ns.toon[name].knowledgeLevel and ns.toon[name].knowledgeLevel>0 and itemID~=133755 then
 				tt:AddSeparator(3,0,0,0,0);
-				local ak = GetCurrencyInfo(1171); -- localized name if artifact knowledge
-				tt:AddLine(C("ltblue",ak or L["Artifact knowledge"]));
+				-- localized name if artifact knowledge
+				local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(1171);
+				--local ak = GetCurrencyInfo(1171); -- TODO: removed in shadowlands
+				tt:AddLine(C("ltblue",currencyInfo.name or L["Artifact knowledge"]));
 				tt:AddSeparator();
 				l=tt:AddLine();
 				tt:SetCell(l,1,C("ltgreen",REFORGE_CURRENT));

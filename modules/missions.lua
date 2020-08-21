@@ -15,10 +15,11 @@ local qualities = {"white","ff1eaa00","ff0070dd","ffa335ee","red"};
 local garrLevel,syLevel,ohLevel = 0,0,0;
 local expansions = {
 	-- {<expansionIndex>,<LE_FOLLOWER_TYPE*>,<LE_GARRISON_TYPE_*>,<function:chkAvailable>}
-	{index=5, typeStr="followers",		label=GARRISON_FOLLOWERS,			ftype=LE_FOLLOWER_TYPE_GARRISON_6_0, gtype=LE_GARRISON_TYPE_6_0, levelFnc=C_Garrison.GetGarrisonInfo},
-	{index=5, typeStr="ships", 			label=GARRISON_SHIPYARD_FOLLOWERS,	ftype=LE_FOLLOWER_TYPE_SHIPYARD_6_2, gtype=LE_GARRISON_TYPE_6_0, levelFnc=function() return (C_Garrison.GetOwnedBuildingInfoAbbrev(98) or 204)-204; end},
-	{index=6, typeStr="champions",		label=FOLLOWERLIST_LABEL_CHAMPIONS,	ftype=LE_FOLLOWER_TYPE_GARRISON_7_0, gtype=LE_GARRISON_TYPE_7_0, levelFnc=C_Garrison.GetGarrisonInfo},
-	{index=7, typeStr="champions_bfa",	label=FOLLOWERLIST_LABEL_CHAMPIONS,	ftype=LE_FOLLOWER_TYPE_GARRISON_8_0, gtype=LE_GARRISON_TYPE_8_0, levelFnc=C_Garrison.GetGarrisonInfo},
+	{index=5, typeStr="followers",		label=GARRISON_FOLLOWERS,			ftype=LE_FOLLOWER_TYPE_GARRISON_6_0 or Enum.GarrisonFollowerType.FollowerType_6_0, gtype=LE_GARRISON_TYPE_6_0 or Enum.GarrisonType.Type_6_0, levelFnc=C_Garrison.GetGarrisonInfo},
+	{index=5, typeStr="ships", 			label=GARRISON_SHIPYARD_FOLLOWERS,	ftype=LE_FOLLOWER_TYPE_SHIPYARD_6_2 or Enum.GarrisonFollowerType.FollowerType_6_2, gtype=LE_GARRISON_TYPE_6_0 or Enum.GarrisonType.Type_6_0, levelFnc=function() return (C_Garrison.GetOwnedBuildingInfoAbbrev(98) or 204)-204; end},
+	{index=6, typeStr="champions",		label=FOLLOWERLIST_LABEL_CHAMPIONS,	ftype=LE_FOLLOWER_TYPE_GARRISON_7_0 or Enum.GarrisonFollowerType.FollowerType_7_0, gtype=LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0, levelFnc=C_Garrison.GetGarrisonInfo},
+	{index=7, typeStr="champions_bfa",	label=FOLLOWERLIST_LABEL_CHAMPIONS,	ftype=LE_FOLLOWER_TYPE_GARRISON_8_0 or Enum.GarrisonFollowerType.FollowerType_8_0, gtype=LE_GARRISON_TYPE_8_0 or Enum.GarrisonType.Type_8_0, levelFnc=C_Garrison.GetGarrisonInfo},
+--  {index=8, typeStr="champoins_sl",	label=FOLLOWERLIST_LABEL_CHAMPIONS, ftype=LE_FOLLOWER_TYPE_GARRISON_9_0 or Enum.GarrisonFollowerType.FollowerType_9_0, gtype=LE_GARRISON_TYPE_9_0 or Enum.GarrisonType.Type_9_0, levelFnc=C_Garrison.GetGarrisonInfo},
 };
 
 
@@ -65,7 +66,12 @@ local function updateMissions()
 			end
 			m.available = C_Garrison.GetAvailableMissions(exp.ftype) or {};
 			for i=1, #m.available do
-				_,_,_,_,_,_,m.available[i].isExhausting = C_Garrison.GetMissionInfo(m.available[i].missionID);
+				if C_Garrison.GetMissionInfo then
+					_,_,_,_,_,_,m.available[i].isExhausting = C_Garrison.GetMissionInfo(m.available[i].missionID); -- TODO: removed in shadowlands
+				elseif C_Garrison.GetMissionDeploymentInfo then
+					local info = C_Garrison.GetMissionDeploymentInfo(m.available[i].missionID);
+					m.available[i].isExhausting = info.isExhausting;
+				end
 			end
 			counter.completed=counter.completed+#m.completed;
 			counter.inprogress=counter.inprogress+#m.inprogress;

@@ -267,6 +267,13 @@ function module.init()
 		I["gm_Challenges"]        = {iconfile="Interface\\Icons\\Achievement_ChallengeMode_ArakkoaSpires_Hourglass",coordsStr="16:16:0:-1:16:16:1:14:1:14"}			--IconName::gm_Challenges--
 	end
 
+	local canLFD
+	if SHOW_LFD_LEVEL then
+		canLFD = (UnitLevel("player")>=SHOW_LFD_LEVEL); -- bfa
+	elseif C_LFGInfo and C_LFGInfo.CanPlayerUseGroupFinder then
+		canLFD = C_LFGInfo.CanPlayerUseGroupFinder(); -- shadowlands
+	end
+
 	menu = { --section 1
 		{name=CHARACTER_BUTTON,		iconName="Character-{class}",	func=function() securecall("ToggleCharacter", "PaperDollFrame") end },
 		{name=SPELLBOOK,			iconName="Spellbook",			click='SpellbookMicroButton',			disabled=IsBlizzCon(), taint=true},
@@ -296,9 +303,9 @@ function module.init()
 		},
 		{name=SOCIAL_BUTTON,		iconName="Friends",			func=function() securecall("ToggleFriendsFrame", 1) end,		disabled=IsTrialAccount()},
 
-		{name=GROUP_FINDER,			iconName="PvP-{faction}",	func=function() securecall("PVEFrame_ToggleFrame","GroupFinderFrame"); end, disabled=(UnitLevel("player")<SHOW_LFD_LEVEL or IsBlizzCon()), hide=ns.IsClassicClient},
-		{name=PLAYER_V_PLAYER,		iconName="LFDungeon",		func=function() securecall("PVEFrame_ToggleFrame","PVPUIFrame"); end, disabled=(UnitLevel("player")<SHOW_PVP_LEVEL or IsBlizzCon()), hide=ns.IsClassicClient},
-		{name=CHALLENGES,			iconName="Challenges",		func=function() securecall("PVEFrame_ToggleFrame","ChallengesFrame"); end, disabled=(UnitLevel("player")<SHOW_LFD_LEVEL or IsBlizzCon()), hide=ns.IsClassicClient},
+		{name=GROUP_FINDER,			iconName="PvP-{faction}",	func=function() securecall("PVEFrame_ToggleFrame","GroupFinderFrame"); end, disabled=not canLFD, hide=ns.IsClassicClient},
+		{name=PLAYER_V_PLAYER,		iconName="LFDungeon",		func=function() securecall("PVEFrame_ToggleFrame","PVPUIFrame"); end, disabled=not canLFD, hide=ns.IsClassicClient},
+		{name=CHALLENGES,			iconName="Challenges",		func=function() securecall("PVEFrame_ToggleFrame","ChallengesFrame"); end, disabled=not canLFD, hide=ns.IsClassicClient},
 
 		{name=MOUNTS,				iconName="Mounts",			func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 1) end,		taint=true, hide=ns.IsClassicClient},
 		{name=PET_JOURNAL,			iconName="Pets",			func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 2) end,		taint=true, hide=ns.IsClassicClient},

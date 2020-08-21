@@ -44,8 +44,8 @@ local hideEmissaryQuests = {
 }
 local Level, Title, Header, Color, Status, Type, ShortType, QuestId, Index, IsHidden, Text = 1,2,3,4,5,6,7,8,9,10,11,12;
 local frequencies = {
-	[LE_QUEST_FREQUENCY_DAILY] = {"*",DAILY},
-	[LE_QUEST_FREQUENCY_WEEKLY] = {"**",WEEKLY},
+	[LE_QUEST_FREQUENCY_DAILY or Enum.QuestFrequency.Daily] = {"*",DAILY},
+	[LE_QUEST_FREQUENCY_WEEKLY or Enum.QuestFrequency.Weekly] = {"**",WEEKLY},
 };
 local MATCH_DUNGEON_DIFFICULTY = DUNGEON_DIFFICULTY.." '(.*)'";
 local difficulties = {
@@ -94,7 +94,7 @@ local function updateBroker()
 end
 
 local function showQuest(self,questIndex)
-	securecall("QuestMapFrame_OpenToQuestDetails",select(8, GetQuestLogTitle(questIndex)));
+	securecall("QuestMapFrame_OpenToQuestDetails",select(8, (GetQuestLogTitle or C_QuestLog.GetTitleForLogIndex)(questIndex))); -- TODO: removed in shadowlands
 end
 
 local function showQuestURL(self,questId)
@@ -108,9 +108,9 @@ end
 
 local function deleteQuest(self,questId)
 	if requested==questId then
-		SelectQuestLogEntry(GetQuestLogIndexByID(questId));
-		SetAbandonQuest();
-		AbandonQuest();
+		SelectQuestLogEntry((GetQuestLogIndexByID or C_QuestLog.GetLogIndexForQuestID)(questId)); -- TODO: removed in shadowlands
+		(SetAbandonQuest or C_QuestLog.SetAbandonQuest)(); -- TODO: removed in shadowlands
+		(AbandonQuest or C_QuestLog.AbandonQuest)(); -- TODO: removed in shadowlands
 		requested = false;
 	else
 		requested = questId;
@@ -185,7 +185,7 @@ local function ttAddLine(obj)
 
 	if (type(obj[QuestId])=="number") and (IsInGroup()) then
 		for i=1, GetNumSubgroupMembers() do -- GetNumSubgroupMembers
-			if (IsUnitOnQuestByQuestID(obj[QuestId],"party"..i)) then
+			if ((IsUnitOnQuestByQuestID or C_QuestLog.IsUnitOnQuest)(obj[QuestId],"party"..i)) then -- TODO: removed in shadowlands
 				tinsert(GroupQuest,C(select(2,UnitClass("party"..i)),UnitName("party"..i)));
 			end
 		end
@@ -218,7 +218,7 @@ local function ttAddLine(obj)
 	end
 
 	if ns.profile[name].showQuestOptions then
-		tt:SetCell(l,cell,IsQuestWatched(obj[Index]) and UNTRACK_QUEST_ABBREV or TRACK_QUEST_ABBREV);
+		tt:SetCell(l,cell,ns.IsQuestWatched(obj[Index]) and UNTRACK_QUEST_ABBREV or TRACK_QUEST_ABBREV); -- TODO: removed in shadowlands
 		tt:SetCellScript(l,cell,"OnMouseUp",trackQuest,obj[QuestId]);
 		cell=cell+1; -- [7]
 
@@ -227,7 +227,7 @@ local function ttAddLine(obj)
 		cell=cell+1; -- [8]
 
 		if IsInGroup() then
-			if GetNumGroupMembers()>1 and GetQuestLogPushable(obj[Index]) then
+			if GetNumGroupMembers()>1 and ns.GetQuestLogPushable(obj[Index]) then -- TODO: removed in shadowlands
 				tt:SetCell(l,cell,SHARE_QUEST_ABBREV);
 				tt:SetCellScript(l,cell,"OnMouseUp",pushQuest,obj[Index]);
 				cell=cell+1 -- [9]
@@ -436,18 +436,20 @@ function module.onevent(self,event,msg)
 		ns.tradeskills();
 	end
 	if event=="PLAYER_LOGIN" or event=="QUEST_LOG_UPDATE" then
-		local numEntries, numQuests = GetNumQuestLogEntries()
+		local numEntries, numQuests = (GetNumQuestLogEntries or C_QuestLog.GetNumQuestLogEntries)() -- TODO: removed in shadowlands
 		local header, status, isBounty, _ = false;
 		local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, isHidden, isScaling = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- GetQuestLogTitle(index)
 		sum,quests,numQuestStatus = numQuests,{},{fail=0,complete=0,active=0};
 
 		for index=1, numEntries do
-			local q = {GetQuestLogTitle(index)};
-			if q[isHeader]==true then
-				header = q[title];
-			elseif header and not hideQuestsAnytime[q[questID]] then
-				local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(q[questID]);
-				local tagNameLong = tagName;
+			--local q = {GetQuestLogTitle(index)}; -- TODO: removed in shadowlands
+			local q = ns.C_QuestLog_GetInfo(index);
+			if q.isHeader==true then
+				header = q.title;
+			elseif header and not hideQuestsAnytime[q.questID] then
+				--local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(q.questID); -- TODO: removed in shadowlands
+				local tagInfo = ns.C_QuestLog_GetQuestTagInfo(q.questID);
+				local tagNameLong = tagInfo and tagInfo.tagName or "";
 				q.text,q.objectives = GetQuestLogQuestText(index);
 
 				-- second way to check quest is completed. GetQuestLogTitle argument 6 aren't longer secure enough.
@@ -462,21 +464,21 @@ function module.onevent(self,event,msg)
 					end
 				end
 
-				if tagName==GROUP and q[suggestedGroup]>0 then
-					tagNameLong = tagName.."["..q[suggestedGroup].."]";
-				elseif tagName==PLAYER_DIFFICULTY2 then
-					tagNameLong = LFG_TYPE_DUNGEON.." ("..tagName..")";
+				if tagInfo and tagInfo.tagName==GROUP and q.suggestedGroup>0 then
+					tagNameLong = tagInfo.tagName.."["..q.suggestedGroup.."]";
+				elseif tagInfo and tagInfo.tagName==PLAYER_DIFFICULTY2 then
+					tagNameLong = LFG_TYPE_DUNGEON.." ("..tagInfo.tagName..")";
 				end
 				local tags,shortTags = {},{};
 				if q.text:find(_PLAYER_DIFFICULTY6) or q.objectives:find(_PLAYER_DIFFICULTY6) then
 					tinsert(tags,LFG_TYPE_DUNGEON.." ("..PLAYER_DIFFICULTY6..")");
 					tinsert(shortTags,C(ns.questTags.DUNGEON_MYTHIC[2],ns.questTags.DUNGEON_MYTHIC[1]));
-				elseif ns.questTags[tagID] then
-					tinsert(tags,tagNameLong);
-					if type(ns.questTags[tagID])=="table" then
-						tinsert(shortTags,C(ns.questTags[tagID][2],ns.questTags[tagID][1]));
+				elseif tagInfo and ns.questTags[tagInfo.tagID] then
+					tinsert(tags,tagInfo.tagNameLong);
+					if type(ns.questTags[tagInfo.tagID])=="table" then
+						tinsert(shortTags,C(ns.questTags[tagInfo.tagID][2],ns.questTags[tagInfo.tagID][1]));
 					else
-						tinsert(shortTags,C("dailyblue",ns.questTags[tagID]));
+						tinsert(shortTags,C("dailyblue",ns.questTags[tagInfo.tagID]));
 					end
 				end
 				if ns.tradeskills[header] then
@@ -486,38 +488,38 @@ function module.onevent(self,event,msg)
 					tinsert(tags,TRACKER_HEADER_WORLD_QUESTS);
 					tinsert(shortTags,C(ns.questTags.WORLD_QUESTS[2],ns.questTags.WORLD_QUESTS[1]));
 				end
-				if frequencies[q[frequency]] then
-					tinsert(tags,frequencies[q[frequency]][2]);
-					tinsert(shortTags,C("dailyblue",frequencies[q[frequency]][1]));
+				if q.frequency and frequencies[q.frequency] then
+					tinsert(tags,frequencies[q.frequency][2]);
+					tinsert(shortTags,C("dailyblue",frequencies[q.frequency][1]));
 				end
 				if ns.client_version>=2 then
 					local mapId,mapName;
-					if not questZones[q[questID]] and not WorldMapFrame:IsShown() then
-						mapId = GetQuestUiMapID(q[questID]);
+					if not questZones[q.questID] and not WorldMapFrame:IsShown() then
+						mapId = GetQuestUiMapID(q.questID,true);
 						if mapId then
 							local mapInfo = C_Map.GetMapInfo(mapId);
 							if mapInfo then
 								mapName = mapInfo.name;
 							end
 						end
-						questZones[q[questID]] = {mapId=mapId,mapName=mapName};
+						questZones[q.questID] = {mapId=mapId,mapName=mapName};
 					end
 				end
 				if #tags==0 then
 					tinsert(tags," ");
 				end
 
-				status = (q[isComplete]==-1 and "fail") or ((q[isComplete==1] or fin) and "complete") or "active";
+				status = (q.isComplete==-1 and "fail") or ((q.isComplete==1 or fin) and "complete") or "active";
 				table.insert(quests,{
-					q[level],
-					q[title],
-					header,GetQuestDifficultyColor(q[level]),
+					q.level,
+					q.title,
+					header,GetQuestDifficultyColor(q.level),
 					status,
 					table.concat(tags,", "),
 					table.concat(shortTags,""),
-					q[questID],
+					q.questID,
 					index,
-					q[isHidden],
+					q.isHidden,
 					q.text,
 					mapId or 0
 				});

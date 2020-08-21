@@ -239,7 +239,13 @@ local function updateData()
 	for e=1, #expansions do
 		local exp = expansions[e];
 		if exp then
-			local bounties, location, locked  = GetQuestBountyInfoForMapID(exp.zone); -- empty table on chars lower than 110
+			local bounties
+			if GetQuestBountyInfoForMapID then
+				bounties = GetQuestBountyInfoForMapID(exp.zone); -- empty table on chars lower than 110
+			elseif C_QuestLog.GetBountiesForMapID then
+				bounties = C_QuestLog.GetBountiesForMapID(exp.zone);
+			end
+			 -- TODO: removed in shadowlands
 			for b=1, #bounties do
 				local bty = bounties[b];
 				C_TaskQuest.RequestPreloadRewardData(bty.questID);
@@ -301,11 +307,10 @@ local function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local minLevel,Time,level = 999,time(),UnitLevel("player");
 
-	-- MAX_PLAYER_LEVEL_TABLE
-
 	for e=1, #expansions do
-		if expansions[e] and ns.profile[name][expansions[e].name.."Quests"] and MAX_PLAYER_LEVEL_TABLE[e]<minLevel then
-			minLevel = MAX_PLAYER_LEVEL_TABLE[e];
+		local expMaxLevel = GetMaxLevelForExpansionLevel(e);
+		if expansions[e] and ns.profile[name][expansions[e].name.."Quests"] and expMaxLevel<minLevel then
+			minLevel = expMaxLevel;
 		end
 	end
 
@@ -400,7 +405,7 @@ local function createTooltip(tt)
 
 				for e=1, #expansions do
 					for _,ending in ipairs(endings) do
-						if expansions[e] and v.level>=MAX_PLAYER_LEVEL_TABLE[e] and ns.profile[name][expansions[e].name.."Quests"] and ns.data[name].bounties[ending] and ns.data[name].bounties[ending][e] then
+						if expansions[e] and v.level>=GetMaxLevelForExpansionLevel(e) and ns.profile[name][expansions[e].name.."Quests"] and ns.data[name].bounties[ending] and ns.data[name].bounties[ending][e] then
 							local cellContent,completed,total = "",0,ns.data[name].bounties[ending][e].totalQuests;
 							if v[name].bounties and v[name].bounties[ending] and v[name].bounties[ending][e] then
 								completed = v[name].bounties[ending][e] or 0;

@@ -171,7 +171,7 @@ end
 
 local function updateBodyguards()
 	-- collect names of bodyguards
-	local glvl = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0);
+	local glvl = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0 or Enum.GarrisonType.Type_6_0);
 	if UnitLevel("player")>=90 and glvl then
 		for i=1,#bodyguards do
 			local data = C_Garrison.GetFollowerInfo(bodyguards[i]);

@@ -198,11 +198,14 @@ function createTooltip(tt,update)
 		tt:SetCell(l,2,C("ltblue",TALENTS),nil,nil,2);
 		tt:AddSeparator();
 		local Id, Name, Icon, Selected, Available, spellId = 1,2,3,4,5,6;
-		local tierLevels = CLASS_TALENT_LEVELS[ns.player.class] or CLASS_TALENT_LEVELS.DEFAULT
+		-- GetTalentTierInfo
+		-- local tierAvailable, selectedTalent, tierUnlockLevel = GetTalentTierInfo(2, PlayerTalentFrame.talentGroup, false, "player");
+		--local tierLevels = CLASS_TALENT_LEVELS[ns.player.class] or CLASS_TALENT_LEVELS.DEFAULT
 		local level = UnitLevel("player");
 		for row=1, MAX_TALENT_TIERS do
 			local selected, isUnlocked = false,false;
-			local l=tt:AddLine(C("ltyellow",tierLevels[row]));
+			local unlockLevel = ns.GetTalentTierLevel(row);
+			local l=tt:AddLine(C("ltyellow",unlockLevel));
 			for col=1, NUM_TALENT_COLUMNS do
 				local tmp = {GetTalentInfo(row,col,talentGroup)};
 				if ns.profile[name].showTalentsShort then
@@ -214,17 +217,17 @@ function createTooltip(tt,update)
 						break;
 					end
 				else
-					local c,color = col+1,(tmp[Selected] and "ltyellow") or (level>=tierLevels[row] and "gray") or "dkred";
+					local c,color = col+1,(tmp[Selected] and "ltyellow") or (level>=unlockLevel and "gray") or "dkred";
 					tt:SetCell(l,c,str:format(tmp[Icon],C(color,tmp[Name])),nil,"LEFT");
 					local info = {
-						type=level>=tierLevels[row] and "talent" or "spell",
+						type=level>=unlockLevel and "talent" or "spell",
 						spellId=tmp[spellId],
 						args={tmp[Id],false,talentGroup},
-						extraLine=level<tierLevels[row] and C("red",L["TalentLocked"]) or nil
+						extraLine=level<unlockLevel and C("red",L["TalentLocked"]) or nil
 					};
 					tt:SetCellScript(l,c,"OnEnter",infoTooltipShow, info);
 					tt:SetCellScript(l,c,"OnLeave",GameTooltip_Hide);
-					if not tmp[Selected] and level>=tierLevels[row] then
+					if not tmp[Selected] and level>=unlockLevel then
 						tt:SetCellScript(l,c,"OnMouseUp",changeTalent, {id=tmp[Id]});
 					end
 				end
@@ -252,16 +255,18 @@ function createTooltip(tt,update)
 		for slotIndex=1, 4 do
 			local slotMinLevel = C_SpecializationInfo.GetPvpTalentSlotUnlockLevel(slotIndex);
 			local slotInfo = C_SpecializationInfo.GetPvpTalentSlotInfo(slotIndex);
-			local l = tt:AddLine(C("ltyellow",slotMinLevel));
-			if slotInfo.enabled then
-				if slotInfo.selectedTalentID then
-					local _, talentName, texture = GetPvpTalentInfoByID(slotInfo.selectedTalentID);
-					tt:SetCell(l,2,str:format(texture,C("ltyellow",talentName)),nil,nil,0);
+			if slotMinLevel and slotInfo then
+				local l = tt:AddLine(C("ltyellow",slotMinLevel));
+				if slotInfo.enabled then
+					if slotInfo.selectedTalentID then
+						local _, talentName, texture = GetPvpTalentInfoByID(slotInfo.selectedTalentID);
+						tt:SetCell(l,2,str:format(texture,C("ltyellow",talentName)),nil,nil,0);
+					else
+						tt:SetCell(l,2,C("orange",L["TalentUnlocked"]),nil,nil,0);
+					end
 				else
-					tt:SetCell(l,2,C("orange",L["TalentUnlocked"]),nil,nil,0);
+					tt:SetCell(l,2,C("gray",L["TalentLocked"]),nil,nil,0);
 				end
-			else
-				tt:SetCell(l,2,C("gray",L["TalentLocked"]),nil,nil,0);
 			end
 		end
 	end

@@ -491,7 +491,13 @@ local function buildCharDataOptions()
 	for order,name_realm in ipairs(Broker_Everything_CharacterDB.order)do
 		if Broker_Everything_CharacterDB[name_realm] then
 			local charName, realm = strsplit("%-",name_realm,2);
-			local label = C(Broker_Everything_CharacterDB[name_realm].class,charName).."\n"..C("gray",realm);
+			local label,hasError = "",false
+			if Broker_Everything_CharacterDB[name_realm].class and charName and realm then
+				label = C(Broker_Everything_CharacterDB[name_realm].class or "ffff0000",charName or "error").."\n"..C("gray",realm or "error");
+			else
+				label = C("ffff0000",charName) .. "\n" .. C("gray",realm);
+				hasError = true;
+			end
 			lst[name_realm] = {
 				type = "group", order = order, inline=true,
 				name = "",
@@ -507,6 +513,7 @@ local function buildCharDataOptions()
 					up   = {type="execute", order=3, width="half", name=L["Up"], desc=label, disabled=(order==1) },
 					down = {type="execute", order=4, width="half", name=L["Down"], desc=label, disabled=(order==#Broker_Everything_CharacterDB.order) },
 					del  = {type="execute", order=5, width="half", name=DELETE, desc=label, disabled=(name_realm==ns.player.name_realm) },
+					error = {type = "description", order=6, fontSize = "medium", name = C("red",L["CharDataError"].." "..name_realm).."\n"..L["CharDataErrorTODO"], hidden=not hasError },
 				}
 			}
 		end

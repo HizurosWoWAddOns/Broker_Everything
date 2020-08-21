@@ -63,7 +63,7 @@
 	<Script file="modules/wardrobe.lua"/>
 	<Script file="modules/wowtoken.lua"/>
 	<Script file="modules/xp.lua"/>
-	<!-- modules -->
+	<!-- /modules -->
 
 	<!-- modules for classic -->
 	<Script file="modules/professions_classic.lua"/>

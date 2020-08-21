@@ -50,16 +50,16 @@ local function getFollowers(tableName)
 	local name,isTroop,Table,garrType,followerType = nameF;
 	if tableName=="followers" then
 		followers = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table,garrType,followerType = followers,LE_GARRISON_TYPE_6_0,LE_FOLLOWER_TYPE_GARRISON_6_0;
+		Table,garrType,followerType = followers,LE_GARRISON_TYPE_6_0 or Enum.GarrisonType.Type_6_0,LE_FOLLOWER_TYPE_GARRISON_6_0;
 	elseif tableName=="ships" then
 		ships = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table,garrType,followerType,name = ships,LE_GARRISON_TYPE_6_0,LE_FOLLOWER_TYPE_SHIPYARD_6_2,nameS;
+		Table,garrType,followerType,name = ships,LE_GARRISON_TYPE_6_0 or Enum.GarrisonType.Type_6_0,LE_FOLLOWER_TYPE_SHIPYARD_6_2,nameS;
 	elseif tableName=="champions" then
 		champions = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table,garrType,followerType,isTroop = champions,LE_GARRISON_TYPE_7_0,LE_FOLLOWER_TYPE_GARRISON_7_0,false;
+		Table,garrType,followerType,isTroop = champions,LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0,LE_FOLLOWER_TYPE_GARRISON_7_0,false;
 	elseif tableName=="troops" then
 		troops = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table,garrType,followerType,isTroop = troops,LE_GARRISON_TYPE_7_0,LE_FOLLOWER_TYPE_GARRISON_7_0,true;
+		Table,garrType,followerType,isTroop = troops,LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0,LE_FOLLOWER_TYPE_GARRISON_7_0,true;
 	end
 
 	ns.toon[tableName]={}; -- wipe
@@ -131,7 +131,7 @@ local function updateBroker(name)
 			aio[5]=aio[5]+(followers.num or 0);
 			tinsert(single, ("%s/%s/%s/%s"):format(C("ltblue",followers.onresting_num),C("yellow",followers.onmission_num+followers.onwork_num),C("green",followers.available_num),followers.num));
 		end
-		if ns.profile[name].showChampionsOnBroker and LE_GARRISON_TYPE_7_0 and ohLevel>0 then
+		if ns.profile[name].showChampionsOnBroker and LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0 and ohLevel>0 then
 			getFollowers("champions");
 			aio[1]=aio[1]+(champions.onresting_num or 0);
 			aio[2]=aio[2]+(champions.onmission_num or 0);
@@ -140,7 +140,7 @@ local function updateBroker(name)
 			aio[5]=aio[5]+(champions.num or 0);
 			tinsert(single, ("%s/%s/%s/%s"):format(C("ltblue",champions.onresting_num),C("yellow",champions.onmission_num+champions.onwork_num),C("green",champions.available_num),champions.num));
 		end
-		if ns.profile[name].showTroopsOnBroker and LE_GARRISON_TYPE_7_0 and ohLevel>0 then
+		if ns.profile[name].showTroopsOnBroker and LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0 and ohLevel>0 then
 			getFollowers("troops");
 			aio[1]=aio[1]+(troops.onresting_num or 0);
 			aio[2]=aio[2]+(troops.onmission_num or 0);
@@ -598,11 +598,11 @@ function moduleF.onevent(self,event)
 		end
 
 		-- garrison level
-		garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0) or 0;
+		garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0 or Enum.GarrisonType.Type_6_0) or 0;
 
 		-- order hall level
 		if ns.client_version>7 then
-			ohLevel = LE_GARRISON_TYPE_7_0~=nil and C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
+			ohLevel = LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0~=nil and C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0) or 0;
 		end
 
 		updateBroker(nameF);
@@ -627,7 +627,7 @@ function moduleS.onevent(self,event,arg1)
 
 		-- order hall level
 		if ns.client_version>7 then
-			ohLevel = LE_GARRISON_TYPE_7_0~=nil and C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
+			ohLevel = LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0~=nil and C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0) or 0;
 		end
 
 		updateBroker(nameS);

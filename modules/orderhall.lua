@@ -10,16 +10,28 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Order hall" -- L["Order hall"] L["ModDesc-Order hall"]
 local ldbName,ttName,ttColumns,tt,module = name, name.."TT",3;
-local now = 0;
-local TalentUnavailableReasons = {
-	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_ANOTHER_IS_RESEARCHING] = ORDER_HALL_TALENT_UNAVAILABLE_ANOTHER_IS_RESEARCHING,
-	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_NOT_ENOUGH_RESOURCES] = ORDER_HALL_TALENT_UNAVAILABLE_NOT_ENOUGH_RESOURCES,
-	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_NOT_ENOUGH_GOLD] = ORDER_HALL_TALENT_UNAVAILABLE_NOT_ENOUGH_GOLD,
-	[LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_TIER_UNAVAILABLE] = ORDER_HALL_TALENT_UNAVAILABLE_TIER_UNAVAILABLE,
-};
+local now,GarrisonTalentAvailability = 0;
+if Enum.GarrisonTalentAvailability then
+	GarrisonTalentAvailability = Enum.GarrisonTalentAvailability;
+else
+	GarrisonTalentAvailability = {
+		UnavailableAnotherIsResearching = LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_ANOTHER_IS_RESEARCHING,
+		UnavailableNotEnoughResources = LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_NOT_ENOUGH_RESOURCES,
+		UnavailableNotEnoughGold = LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_NOT_ENOUGH_GOLD,
+		UnavailableTierUnavailable = LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_TIER_UNAVAILABLE,
+		UnavailableRequiresPrerequisiteTalent = LE_GARRISON_TALENT_AVAILABILITY_UNAVAILABLE_REQUIRES_PREREQUISITE_TALENT,
+	}
+end
+local TalentUnavailableReasons = {}
+TalentUnavailableReasons[GarrisonTalentAvailability.UnavailableAnotherIsResearching] = ORDER_HALL_TALENT_UNAVAILABLE_ANOTHER_IS_RESEARCHING;
+TalentUnavailableReasons[GarrisonTalentAvailability.UnavailableNotEnoughResources] = ORDER_HALL_TALENT_UNAVAILABLE_NOT_ENOUGH_RESOURCES;
+TalentUnavailableReasons[GarrisonTalentAvailability.UnavailableNotEnoughGold] = ORDER_HALL_TALENT_UNAVAILABLE_NOT_ENOUGH_GOLD;
+TalentUnavailableReasons[GarrisonTalentAvailability.UnavailableTierUnavailable] = ORDER_HALL_TALENT_UNAVAILABLE_TIER_UNAVAILABLE;
+TalentUnavailableReasons[GarrisonTalentAvailability.UnavailableRequiresPrerequisiteTalent] = ORDER_HALL_TALENT_UNAVAILABLE_REQUIRES_PREREQUISITE_TALENT;
+
 local ClassTalents = {
 	-- legion
-	[LE_GARRISON_TYPE_7_0] = {
+	[LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0] = {
 		-- 18 hours instant world quest
 		InstantWQ = {
 			-- [<talentId>] = {<classId>,<itemId>}
@@ -50,7 +62,7 @@ local function GetClassTalentTreeInfoByType(garrType,talentType)
 		if (treeIDs and #treeIDs > 0) then
 			garrTalentTreeID = treeIDs[1];
 		end
-		local _, _, tree = C_Garrison.GetTalentTreeInfoForID(garrTalentTreeID);
+		local _, _, tree = (C_Garrison.GetTalentTreeInfoForID or C_Garrison.GetTalentTreeInfo)(garrTalentTreeID); -- TODO: removed in shadowlands
 		if tree and #tree>0 then
 			for i=1, #tree do
 				if talentIds[tree[i].id] then
@@ -96,8 +108,9 @@ local function createTalentTooltip(self,talent)
 			local str = NORMAL_FONT_COLOR_CODE..COSTS_LABEL..FONT_COLOR_CODE_CLOSE;
 
 			if (talent.researchCost and talent.researchCurrency) then
-				local _, _, currencyTexture = GetCurrencyInfo(talent.researchCurrency);
-				str = str.." "..BreakUpLargeNumbers(talent.researchCost).."|T"..currencyTexture..":0:0:2:0|t";
+				local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(talent.researchCurrency);
+				--local _, _, currencyTexture = GetCurrencyInfo(talent.researchCurrency); -- TODO: removed in shadowlands
+				str = str.." "..BreakUpLargeNumbers(talent.researchCost).."|T"..currencyInfo.iconFileID..":0:0:2:0|t";
 			end
 			if (talent.researchGoldCost ~= 0) then
 				str = str.." "..talent.researchGoldCost.."|TINTERFACE\\MONEYFRAME\\UI-MoneyIcons.blp:16:16:2:0:64:16:0:16:0:16|t";
@@ -146,17 +159,17 @@ local function createTooltip(tt)
 
 	tt:AddSeparator(4,0,0,0,0);
 
-	local ohLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0) or 0;
+	local ohLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0) or 0;
 	if ohLevel>0 then
 		now = time();
 
 		-- create order hall talent tree
 		local garrTalentTreeID = 0
-		local treeIDs = C_Garrison.GetTalentTreeIDsByClassID(LE_GARRISON_TYPE_7_0, select(3, UnitClass("player")));
+		local treeIDs = C_Garrison.GetTalentTreeIDsByClassID(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0, select(3, UnitClass("player")));
 		if (treeIDs and #treeIDs > 0) then
 			garrTalentTreeID = treeIDs[1];
 		end
-		local _, _, tree = C_Garrison.GetTalentTreeInfoForID(garrTalentTreeID);
+		local _, _, tree = (C_Garrison.GetTalentTreeInfoForID or C_Garrison.GetTalentTreeInfo)(garrTalentTreeID);
 		if tree and #tree>0 then
 			local t,l={},tt:AddLine(C("ltblue",ORDER_HALL_TALENT_TITLE));
 			tt:AddSeparator();
@@ -214,9 +227,9 @@ local function createTooltip(tt)
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",L["Shipments"]));
 		tt:AddSeparator();
-		local buildings = C_Garrison.GetBuildings(LE_GARRISON_TYPE_7_0);
-		local followerShipments = C_Garrison.GetFollowerShipments(LE_GARRISON_TYPE_7_0);
-		local looseShipments = C_Garrison.GetLooseShipments(LE_GARRISON_TYPE_7_0);
+		local buildings = C_Garrison.GetBuildings(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0);
+		local followerShipments = C_Garrison.GetFollowerShipments(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0);
+		local looseShipments = C_Garrison.GetLooseShipments(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0);
 		if (#looseShipments+#followerShipments+#buildings)>0 then
 			if #buildings>0 then
 				tt:AddLine(C("gray","Buildings"));
@@ -285,7 +298,7 @@ function module.onevent(self,event,arg1,...)
 		ns.ClickOpts.update(name);
 	end
 	if event=="PLAYER_LOGIN" then
-		local InstantWQ = GetClassTalentTreeInfoByType(LE_GARRISON_TYPE_7_0,"InstantWQ");
+		local InstantWQ = GetClassTalentTreeInfoByType(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0,"InstantWQ");
 		if InstantWQ and InstantWQ.reagentItem then
 			GetItemInfo(InstantWQ.reagentItem);
 		end

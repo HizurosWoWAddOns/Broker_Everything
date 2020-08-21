@@ -47,17 +47,18 @@ function crap.info()
 end
 
 function crap.sell()
-	local num = #crap.items;
+	local num,sum = #crap.items,0;
 	for i=1, min(num,crap.limit) do
 		if crap.ERR_VENDOR_DOESNT_BUY then
 			return;
 		end
 		local I=num-(i-1);
 		local bag,slot,price = unpack(crap.items[I]);
-		crap.sum = crap.sum+price;
+		sum = sum+price;
 		UseContainerItem(bag, slot);
 		tremove(crap.items,I);
 	end
+	crap.sum = sum;
 	if crap.ERR_VENDOR_DOESNT_BUY then
 		return;
 	end
@@ -231,10 +232,8 @@ local function updateBagsRetry(delay,msg)
 				msg[i] = msg[i]:gsub("\124","¦");
 			end
 		end
-		ns.debug(name,unpack(msg));
 		C_Timer.After(delay,updateBagsRetry);
 	elseif retry~=nil and retry<5 then
-		ns.debug(name,"<updateBagsRetry>",delay,retry);
 		retry = retry + 1;
 		updateBags();
 	end

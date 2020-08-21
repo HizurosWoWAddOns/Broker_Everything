@@ -2123,3 +2123,151 @@ function ns.textBar(num,values,colors,Char)
 		.. (resting>0 and ns.LC.color(colors[iRest] or "white",Char:rep(resting)) or "")
 		.. (tonextlvl>0 and ns.LC.color(colors[iMax] or "white",Char:rep(tonextlvl)) or "");
 end
+
+
+
+-- -------------------------------
+-- Retail / Classic compatibility
+-- -------------------------------
+
+function ns.C_CurrencyInfo_GetCurrencyInfo(currency)
+	local info
+	if GetCurrencyInfo then
+		local name, currentAmount, texture, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(currency); -- classic and bfa
+		if name then
+			info = {
+				-- from GetCurrencyInfo
+				name = name,
+				quantity = currentAmount,
+				iconFileID = texture,
+				quantityEarnedThisWeek = earnedThisWeek,
+				maxWeeklyQuantity = weeklyMax,
+				maxQuantity = totalMax,
+				discovered = isDiscovered,
+				quality = rarity,
+				-- ??
+				-- canEarnPerWeek
+				-- isHeaderExpanded
+				-- isTradeable
+				-- isHeader
+				-- isTypeUnused
+				-- isShowInBackpack
+			};
+		end
+	elseif C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo then
+		info = C_CurrencyInfo.GetCurrencyInfo(currency); -- added with shadowlands
+	end
+	return info
+end
+
+function ns.C_CurrencyInfo_GetCurrencyListInfo(index)
+	-- GetCurrencyListInfo
+	local info
+	if GetCurrencyListInfo then
+		local name, isHeader, isExpanded, isUnused, isWatched, count, icon, maximum, hasWeeklyLimit, currentWeeklyAmount, unknown, itemID = GetCurrencyListInfo(index)
+		local _, _, _, earnedThisWeek, weeklyMax, _, isDiscovered, rarity = GetCurrencyInfo(itemID);
+		info = {
+			canEarnPerWeek = earnedThisWeek,
+			quantityEarnedThisWeek = currentWeeklyAmount,
+			isHeaderExpanded = isExpanded,
+			--isTradeable = ,
+			maxQuantity = maximum,
+			maxWeeklyQuantity = weeklyMax,
+			isHeader = isHeader,
+			name = name,
+			isTypeUnused = isUnused,
+			--isShowInBackpack = ,
+			discovered = isDiscovered,
+			quantity = count,
+			quality = rarity,
+		}
+	elseif C_CurrencyInfo and C_CurrencyInfo.GetCurrencyListInfo then
+		info = C_CurrencyInfo.GetCurrencyListInfo(index); -- added with shadowlands
+		--/run XYDB.GetCurrencyListInfo = C_CurrencyInfo.GetCurrencyListInfo(1)
+	end
+	return info;
+end
+
+function ns.C_QuestLog_GetInfo(questLogIndex)
+	local info
+	if GetQuestLogTitle then
+		local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, isHidden, isScaling  = GetQuestLogTitle(questLogIndex);
+		info = {
+			--difficultyLevel = 0,
+			hasLocalPOI = hasLocalPOI,
+			--isAutoComplete = false,
+			--isBounty = false,
+			isCollapsed = isCollapsed,
+			isHeader = isHeader,
+			isHidden = isHidden,
+			isOnMap = isOnMap,
+			isScaling = isScaling,
+			isStory = isStory,
+			isTask = isTask,
+			level = level,
+			--overridesSortOrder = false,
+			questID = questID,
+			questLogIndex = questLogIndex,
+			--readyForTranslation = false,
+			startEvent = startEvent,
+			suggestedGroup = suggestedGroup,
+			title = title,
+			--
+			frequency = frequency,
+			isComplete = isComplete,
+		}
+	elseif C_QuestLog.GetInfo then
+		info = C_QuestLog.GetInfo(questLogIndex);
+		info.isComplete = C_QuestLog.IsComplete(info.questID);
+		-- frequency?
+		-- isComplete?
+	end
+	return info;
+end
+
+function ns.C_QuestLog_GetQuestTagInfo(questID)
+	local info
+	if GetQuestTagInfo then
+		local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(questID);
+		info = {
+			tagID = tagID,
+			tagName = tagName,
+
+			-- not found in returned table from C_QuestLog.GetQuestTagInfo
+			worldQuestType = worldQuestType,
+			rarity = rarity,
+			isElite = isElite,
+			tradeskillLineIndex = tradeskillLineIndex
+		};
+	elseif C_QuestLog.GetQuestTagInfo then
+		info = C_QuestLog.GetQuestTagInfo(questID)
+	end
+	return info;
+end
+
+function ns.IsQuestWatched(questLogIndex)
+	if IsQuestWatched then
+		return IsQuestWatched(questLogIndex);
+	elseif C_QuestLog.GetQuestWatchType then
+		local info = C_QuestLog.GetInfo(questLogIndex);
+		return C_QuestLog.GetQuestWatchType(info.questID) ~= nil;
+	end
+end
+
+function ns.GetQuestLogPushable(questLogIndex)
+	if GetQuestLogPushable then
+		return GetQuestLogPushable(questLogIndex);
+	elseif C_QuestLog.IsPushableQuest then
+		local info = C_QuestLog.GetInfo(questLogIndex);
+		return C_QuestLog.IsPushableQuest(info.questID);
+	end
+end
+
+function ns.GetTalentTierLevel(tier)
+	if CLASS_TALENT_LEVELS then
+		return (CLASS_TALENT_LEVELS[ns.player.class] or CLASS_TALENT_LEVELS.DEFAULT)[tier];
+	elseif GetTalentTierInfo then
+		local tierAvailable, selectedTalent, tierUnlockLevel = GetTalentTierInfo(tier, 1, false, "player");
+		return tierUnlockLevel
+	end
+end
