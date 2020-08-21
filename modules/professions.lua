@@ -16,7 +16,7 @@ local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rank
 local nameEnglish,spellId,skillId,disabled = 11, 12, 13, 14; -- custom after GetProfessionInfo
 local spellName,spellLocaleName,spellIcon,spellId = 1,2,3,4;
 local legion_faction_recipes,bfa_faction_recipes,cdSpells = {},{},{};
-local profs = {data={},id2Name={},test={}, generated=false};
+local profs = {data={},name2Id={},test={}, generated=false};
 local ts = {};
 local cd_groups = { -- %s cooldown group
 	"Transmutation",	-- L["Transmutation cooldown group"]
@@ -106,11 +106,10 @@ function profs.build()
 		local spellLocaleName,_,spellIcon = GetSpellInfo(spellId);
 		if (spellLocaleName) then
 			profs.data[spellId]   = {spellName,spellLocaleName,spellIcon,spellId};
-			profs.id2Name[spellName] = spellId;
 			L[spellName] = spellLocaleName; -- localization
 			L[spellLocaleName] = spellName; -- localization backwards
-			profs.test[spellName] = spellLocaleName; -- localization
-			profs.test[spellLocaleName] = spellName; -- localization backwards
+			profs.name2Id[spellName] = spellId;
+			profs.name2Id[L[spellName]] = spellId;
 			profs.generated=true;
 		end
 	end
@@ -204,7 +203,7 @@ local function createTooltip(tt)
 	tt:AddLine(C("ltblue",NAME),C("ltblue",SKILL),C("ltblue",ABILITIES));
 	tt:AddSeparator();
 	if #professions>0 then
-		for i,v in ipairs(professions) do
+		for i,v in pairs(professions) do
 			local color1,color2 = "ltyellow","white";
 			local skill, maxSkill,nameStr,modifier = v[skill] or 0,v[maxSkill] or 0,v[fullNameLocale] or v[nameLocale] or "?","";
 			if maxSkill==0 then
@@ -393,6 +392,7 @@ module = {
 		--"TRADE_SKILL_NAME_UPDATE",
 		--"CHAT_MSG_TRADESKILLS",
 		"NEW_RECIPE_LEARNED",
+		"TRADE_SKILL_LIST_UPDATE",
 
 		-- archaeology
 		"ARTIFACT_UPDATE",
@@ -664,27 +664,19 @@ function module.onevent(self,event,arg1,...)
 		end
 
 		local t = {GetProfessions()};
-		if (#t>0) then
+		if #t>0 then
 			wipe(professions);
-			local short, d, tsIds, add, _ = {},{},{},true,nil;
+			local short, d, tsIds, _ = {},{},{};
 
-			for n=1, #t do
-				add = true;
+			for n in pairs(t) do
 				d = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil};
-
 				if t[n] then
 					d = {GetProfessionInfo(t[n])};
 				end
-
 				if (t[n]~=nil) then
-					--d = {GetProfessionInfo(t[n])};
 					d.skillId = t[n];
-					d.spellId = profs.id2Name[L[d[nameLocale]]] or nil;
+					d.spellId = profs.name2Id[L[d[nameLocale]]] or nil;
 					d.nameEnglish = L[d[nameLocale]];
-
-					if (n<=2) then
-						short[n] = {d[skillLine],d[nameLocale],d[icon],d[skill],d[maxSkill],d.skillId,d.spellId};
-					end
 					if (n==4) then -- hide fishing in profession menu to prevent error message
 						d[disabled]=true;
 					end
@@ -694,15 +686,15 @@ function module.onevent(self,event,arg1,...)
 					d[icon] = ns.icon_fallback;
 					d.spellId = false;
 				elseif (n>=3 and n<=5) then
-					d.spellId = (n==3 and 78670) or (n==4 and 131474) or (n==5 and 2550);-- or (n==6 and 3273) first aid removed in bfa;
+					d.spellId = (n==3 and 78670) or (n==4 and 271990) or (n==5 and 2550);
 					d.nameEnglish,d[nameLocale],d[icon] = unpack(profs.data[d.spellId] or {});
-				else
-					add=false;
 				end
-				if (add) then
-					professions[n] = d;
+				if d[icon] then
+					tinsert(professions,d);
 				end
 			end
+
+			d = {nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil,nil};
 
 			if (ns.player.class=="DEATHKNIGHT") then
 				d.spellId = 53428;
@@ -710,6 +702,7 @@ function module.onevent(self,event,arg1,...)
 					d[skill],d[maxSkill] = 1,1;
 				end
 				d.nameEnglish,d[nameLocale],d[icon] = unpack(profs.data[d.spellId] or {});
+				tinsert(professions,d);
 			elseif (ns.player.class=="ROGUE") then
 				d.spellId = 1804;
 				if (IsSpellKnown(d.spellId)) then
@@ -718,10 +711,9 @@ function module.onevent(self,event,arg1,...)
 				end
 				d.nameEnglish,d[nameLocale],d[icon] = unpack(profs.data[d.spellId] or {});
 				d[disabled] = true;
+				tinsert(professions,d);
 			end
 
-			db.profession1 = short[1] or false;
-			db.profession2 = short[2] or false;
 			db.hasCooldowns = false;
 
 			local nCooldowns = 0;
