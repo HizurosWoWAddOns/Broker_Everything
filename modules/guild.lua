@@ -12,7 +12,7 @@ local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module = name.."TT", name.."TT2
 local off,on = strtrim(ERR_FRIEND_OFFLINE_S:gsub("%%s","(.*)")),strtrim(ERR_FRIEND_ONLINE_SS:gsub("[\124:%[%]]","#"):gsub("%%s","(.*)"));
 local tradeskillsLockUpdate,tradeskillsLastUpdate,tradeskillsUpdateTimeout = false,0,20;
 local guild, player, members, membersName2Index, mobile, tradeskills, applicants = {},{},{},{},{},{},{};
-local doGuildUpdate,doMembersUpdate, doTradeskillsUpdate, doApplicantsUpdate, doUpdateTooltip,updaterLocked = false,false,false,false,false,false;
+local doGuildUpdate,doMembersUpdate, doTradeskillsUpdate, doApplicantsUpdate, canApplicantUpdate, doUpdateTooltip,updaterLocked = false,false,false,false,false,false,false;
 local gName, gDesc, gRealm, gRealmNoSpacer, gMotD, gNumMembers, gNumMembersOnline, gNumMobile, gNumApplicants = 1,2,3,4,5,6,7,8,9;
 local pStanding, pStandingText, pStandingMin, pStandingMax, pStandingValue = 1,2,3,4,5;
 local mFullName, mName, mRealm, mRank, mRankIndex, mLevel, mClassLocale, mZone, mNote, mOfficerNote, mOnline, mIsAway, mClassFile, mAchievementPoints, mAchievementRank, mIsMobile, mCanSoR, mStanding, mGUID, mStandingText, mRaceId = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21;
@@ -837,6 +837,9 @@ function module.onevent(self,event,msg,...)
 			else
 				guildClubId = true;
 			end
+
+			canApplicantUpdate = IsGuildLeader() or C_GuildInfo.IsGuildOfficer() and C_ClubFinder.IsEnabled();
+
 			self:RegisterEvent("GUILD_RANKS_UPDATE");
 			self:RegisterEvent("GUILD_MOTD");
 			self:RegisterEvent("GUILD_ROSTER_UPDATE");
@@ -844,18 +847,18 @@ function module.onevent(self,event,msg,...)
 			if ns.client_version>=2 then
 				self:RegisterEvent("GUILD_CHALLENGE_UPDATED");
 				self:RegisterEvent("GUILD_TRADESKILL_UPDATE");
-				self:RegisterEvent("CLUB_FINDER_RECRUITS_UPDATED");
-				self:RegisterEvent("CLUB_FINDER_RECRUIT_LIST_CHANGED");
+				if canApplicantUpdate then
+					self:RegisterEvent("CLUB_FINDER_RECRUITS_UPDATED");
+					self:RegisterEvent("CLUB_FINDER_RECRUIT_LIST_CHANGED");
+				end
 			end
 			doGuildUpdate      = true;
 			doMembersUpdate    = true;
 			doApplicantsUpdate = true;
-			if ns.client_version>=2 then
-				if C_ClubFinder.IsEnabled() then
-					C_ClubFinder.RequestSubscribedClubPostingIDs(); -- init clubfinder recuits list
-					C_ClubFinder.RequestApplicantList(Enum.ClubFinderRequestType.Guild); -- trigger update
-					RequestGuildChallengeInfo();
-				end
+			if ns.client_version>=2 and C_ClubFinder.IsEnabled() and canApplicantUpdate then
+				C_ClubFinder.RequestSubscribedClubPostingIDs(); -- init clubfinder recuits list
+				C_ClubFinder.RequestApplicantList(Enum.ClubFinderRequestType.Guild); -- trigger update
+				RequestGuildChallengeInfo();
 			end
 		end
 	end
@@ -865,7 +868,9 @@ function module.onevent(self,event,msg,...)
 			GuildRoster(); -- for classic
 		else
 			C_GuildInfo.GuildRoster();
-			C_ClubFinder.RequestApplicantList(Enum.ClubFinderRequestType.Guild); -- trigger update
+			if canApplicantUpdate then
+				C_ClubFinder.RequestApplicantList(Enum.ClubFinderRequestType.Guild); -- trigger update
+			end
 			RequestGuildChallengeInfo();
 		end
 		C_Timer.After(0.1570595,updater); -- sometimes blizzard firing GUILD_ROSTER_UPDATE twice.
