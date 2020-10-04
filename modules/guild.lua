@@ -259,7 +259,13 @@ local function createTooltip3(parent,sel)
 	if sel=="info" then
 		GameTooltip:SetText(GUILD_INFORMATION);
 		GameTooltip:AddLine(" ");
-		GameTooltip:AddLine(GetGuildInfoText() or "",1,1,1,true);
+		local info = (GetGuildInfoText() or ""):trim();
+		if info=="" then
+			info = EMPTY;
+		else
+			info = ns.scm(info);
+		end
+		GameTooltip:AddLine(info,1,1,1,true);
 		show = true;
 	elseif sel=="challenges" then
 		GameTooltip:AddLine(GUILD_CHALLENGE_LABEL,1,0.82,0);
