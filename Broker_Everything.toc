@@ -1,4 +1,4 @@
-## Interface: 80300
+## Interface: 90001
 ## Title: Broker: Everything
 ## Notes: A collection of modules to display various informations as Broker-buttons on Broker Display AddOns or minimap buttons.
 ## Author: Hizuro, Ekaterina, Hungtar
