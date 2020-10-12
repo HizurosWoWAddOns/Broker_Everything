@@ -35,6 +35,29 @@ local function clearAllStoredMails()
 	module.onevent({},"BE_DUMMY_EVENT");
 end
 
+local function toonHasMails(toonMails,key,counter)
+	local has,t,semder,returns = false,time();
+	local mails = toonMails[key];
+	if mails and #mails>0 then
+		for i=1, #mails do
+			sender,returns = strsplit(";",mails[i]);
+			returns = tonumber(returns);
+			if returns then
+				if returns<t then
+					counter.returned = counter.returned + 1;
+				else
+					has = true;
+					counter[key] = (counter[key] or 0) + 1;
+					if (not oldest) or (oldest and returns<oldest) then
+						oldest = returns;
+					end
+				end
+			end
+		end
+	end
+	return has,oldest;
+end
+
 local function sortStoredMails(a,b)
 	return (a.returns or 0)<(b.returns or 0);
 end
@@ -96,13 +119,19 @@ local function UpdateStatus(event)
 		end
 	end
 
-	local mailStored = false;
+	local mailStored,counter,_time,oldest = false,{stored=0,new=0,returned=0},time();
 	for i=1, #Broker_Everything_CharacterDB.order do
 		local toonName = Broker_Everything_CharacterDB.order[i];
 		if toonName and toonName~=ns.player.name_realm then
-			local mail = Broker_Everything_CharacterDB[toonName].mail;
-			if mail and ((mail.new and #mail.new>0) or (mail.stored and #mail.stored>0)) then
-				mailStored = true;
+			local toonMails = Broker_Everything_CharacterDB[toonName].mail;
+			for _,key in pairs({"stored","new"}) do
+				local has,_oldest = toonHasMails(toonMails,key,counter);
+				if has then
+					if (not oldest) or (oldest and oldest>_oldest) then
+						oldest = _oldest;
+					end
+					mailStored = true;
+				end
 			end
 		end
 	end
@@ -118,29 +147,16 @@ local function UpdateStatus(event)
 	obj.iconCoords,obj.icon,obj.text = icon.coords or {0,1,0,1},icon.iconfile,text;
 end
 
-local function AddStoredMailsLine(tt,player)
-	local hasData = false;
-	local _time = time();
-	local v,n = Broker_Everything_CharacterDB[player],{strsplit("-",player,2)}
-	if v.mail and ns.showThisChar(name,n[2],v.faction) then
-		local counter,key,oldest={stored=0,new=0,returned=0},{"stored","new"};
-
-		for k=1, #key do
-			if v.mail[key[k]] and #v.mail[key[k]]>0 then
-				for i=1, #v.mail[key[k]] do
-					local sender,returns = strsplit(";",v.mail[key[k]][i]);
-					returns = tonumber(returns);
-					if returns then
-						if returns<_time then
-							counter.returned = counter.returned+1;
-						else
-							counter[key[k]] = counter[key[k]]+1;
-							if (not oldest) or (oldest and returns<oldest) then
-								oldest = returns;
-							end
-						end
-					end
-				end
+local function AddStoredMailsLine(tt,toon)
+	local hasData,toonName,_time = false,{strsplit("-",toon,2)},time();
+	local faction,class = Broker_Everything_CharacterDB[toon].faction, Broker_Everything_CharacterDB[toon].class;
+	if Broker_Everything_CharacterDB[toon].mail and ns.showThisChar(name,toonName[2],faction) then
+		local toonMails = Broker_Everything_CharacterDB[toon].mail;
+		local counter,key,oldest,has={stored=0,new=0,returned=0};
+		for _,key in pairs({"stored","new"}) do
+			local has,_oldest = toonHasMails(toonMails,key,counter);
+			if has then
+				oldest = _oldest;
 			end
 		end
 
@@ -155,10 +171,10 @@ local function AddStoredMailsLine(tt,player)
 				end
 			end
 			local l=tt:AddLine(
-				(v.faction=="Neutral" and storedMailLineNeutral or storedMailLineFaction):format(C(v.class,ns.scm(n[1])),ns.showRealmName(name,n[2]),v.faction),
+				(faction=="Neutral" and storedMailLineNeutral or storedMailLineFaction):format(C(class,ns.scm(toonName[1])),ns.showRealmName(name,toonName[2]),faction),
 				str
 			);
-			if player==ns.player.name_realm then
+			if toon==ns.toon.name_realm then
 				tt:SetLineColor(l, .5, .5, .5);
 			end
 			hasData = true;
