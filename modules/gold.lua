@@ -37,7 +37,7 @@ local function getProfit(Type,last)
 	local value = 0;
 	if Type then
 		ns.tablePath(ns.data,name,"Profit",Type,player);
-		local p,d=ns.data[name].Profit[Type][player],profit[Type];
+		local p,d=ns.data[name].Profit[Type][player],profit[Type] or {};
 		if not last then
 			value = current_money-p[d[1]];
 		elseif p[d[2]]~=false then
