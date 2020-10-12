@@ -95,30 +95,6 @@ local function updateBroker()
 	end
 end
 
-local function broadcastTooltip(self)
-	local broadcastText,broadcastTime = 13,14; -- BNGetFriendToonInfo
-	if (self~=false) then
-		local blue = C("ltblue","colortable");
-
-		GameTooltip:SetOwner(self,"ANCHOR_NONE");
-		if (select(1,self:GetCenter()) > (select(1,UIParent:GetWidth()) / 2)) then
-			GameTooltip:SetPoint("RIGHT",tt,"LEFT",-2,0);
-		else
-			GameTooltip:SetPoint("LEFT",tt,"RIGHT",2,0);
-		end
-		GameTooltip:SetPoint("TOP",self,"TOP", 0, 4);
-
-		GameTooltip:ClearLines();
-		GameTooltip:AddLine(self.name,blue[1],blue[2],blue[3]);
-		GameTooltip:AddLine(date("%Y-%m-%d %H:%M:%S",self.toonInfo[broadcastTime]),.7,.7,.7);
-		GameTooltip:AddLine(SecondsToTime(time()-self.toonInfo[broadcastTime]),.7,.7,.7);
-		GameTooltip:AddLine(self.toonInfo[broadcastText],1,1,1,true);
-		GameTooltip:Show();
-	else
-		GameTooltip:Hide();
-	end
-end
-
 local function createTooltip2(self,data)
 	if not (ns.profile[name].showBroadcastTT2 or ns.profile[name].showBattleTagTT2 or ns.profile[name].showRealIDTT2 or ns.profile[name].showZoneTT2 or ns.profile[name].showGameTT2 or ns.profile[name].showNotesTT2) then return end
 	local color1 = "ltblue";
@@ -300,10 +276,9 @@ local function createTooltip(tt)
 
 	if ns.profile[name].showBNFriends then
 		tt:SetCell(tt:AddLine(),1,C("ltgray",L["BattleNet friends"]),nil,"LEFT",0);
+		local friendsDisplayed = false;
 		if not BNConnected() then
 			tt:SetCell(tt:AddLine(),1,"    "..C("ltred",BATTLENET_UNAVAILABLE),nil,"LEFT",0);
-		elseif numOnlineBNFriends==0 then
-			tt:SetCell(tt:AddLine(),1,"    "..C("gray",L["Currently no battle.net friends online..."]),nil,"LEFT",0);
 		else
 			-- RealId	Status Character	Level	Zone	Game	Realm	Notes
 			for i=1, numBNFriends do
@@ -313,7 +288,11 @@ local function createTooltip(tt)
 					for I=1, nt do
 						local ti =  C_BattleNet_GetFriendGameAccountInfo(i,I);
 						local bcIcon = fi.customMessage~="" and "|Tinterface\\chatframe\\ui-chatinput-focusicon:0|t" or "";
-						if not visible[fi.bnetAccountID] then -- filter duplicates...
+						local cl = ti.clientProgram;
+						local mobileApp =  cl~="BSAp" or (cl=="BSAp" and ns.profile[name].showMobileApp); -- filter mobile app
+						local desktopApp = cl~= "App" or (cl== "App" and ns.profile[name].showDesktopApp); -- filter desktop app
+						local duplicates = not visible[fi.bnetAccountID]; -- filter duplicates...
+						if duplicates and mobileApp and desktopApp then
 							local isBNColor=false;
 							visible[fi.bnetAccountID] = true
 							local l = tt:AddLine();
@@ -439,10 +418,15 @@ local function createTooltip(tt)
 
 							tt:SetLineScript(l, "OnMouseUp", tooltipLineScript_OnMouseUp, data);
 							tt:SetLineScript(l, "OnEnter", createTooltip2, data);
+
+							friendsDisplayed = true;
 						end
 					end
 				end
 			end
+		end
+		if not friendsDisplayed then
+			tt:SetCell(tt:AddLine(),1,"    "..C("gray",L["Currently no battle.net friends online..."]),nil,"LEFT",0);
 		end
 	end
 
@@ -579,6 +563,8 @@ module = {
 		showZone = true,
 		showNotes = true,
 		showTotalCount = true,
+		showMobileApp = true,
+		showDesktopApp = true,
 
 		-- tooltip 2
 		showBroadcastTT2 = true,
@@ -658,6 +644,8 @@ function module.options()
 			},
 			showZone={ type="toggle", order=8, name=ZONE, desc=L["Display zone in tooltip"] },
 			showNotes={ type="toggle", order=9, name=L["Notes"], desc=L["Display notes in tooltip"] },
+			showMobileApp={ type="toggle", order=9, name=L["Show MobileApp"], desc=L["Display Battle.Net-Friends on MobileApp in tooltip"] },
+			showDesktopApp={ type="toggle", order=9, name=L["Show DesktopApp"], desc=L["Display Battle.Net-Friends on DesktopApp in tooltip"] },
 		},
 		tooltip2 = {
 			name=L["Second tooltip options"],
