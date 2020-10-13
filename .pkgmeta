@@ -61,26 +61,5 @@ enable-nolib-creation: yes
 
 ignore:
 	- libs/LibStub/tests
-	- libs/LibStub/LibStub.toc
-	- libs/CallbackHandler-1.0/CallbackHandler-1.0.xml
-	- libs/LibDataBroker-1.0/README.textile
-	- libs/LibRealmInfo/.gitignore
-	- libs/LibRealmInfo/.pkgmeta
-	- libs/LibRealmInfo/LibRealmInfo.toc
-	- libs/LibRealmInfo/README.md
-	- libs/LibQTip-1.0/.pkgmeta
-	- libs/LibQTip-1.0/lib.xml
-	- libs/LibQTip-1.0/LibQTip-1.0.toc
-	- libs/LibColors-1.0/.pkgmeta
-	- libs/LibColors-1.0/colors_fed_standard_595.lua
-	- libs/LibColors-1.0/colors_web.lua
-	- libs/LibColors-1.0/colors_x11.lua
-	- libs/LibColors-1.0/LibColors-1.0-all.xml
-	- libs/LibColors-1.0/LibColors-1.0-fed595.xml
-	- libs/LibColors-1.0/LibColors-1.0-web.xml
-	- libs/LibColors-1.0/LibColors-1.0-x11.xml
-	- libs/LibColors-1.0/LibColors-1.0.toc
-	- libs/LibTime-1.0/LibTime-1.0.toc
-	- libs/LibSharedMedia-3.0/lib.xml
 
 license-output: LICENSE.txt
