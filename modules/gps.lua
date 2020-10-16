@@ -582,7 +582,7 @@ function module3.init()
 end
 
 local eventActive = false;
-local function onevent(name,self,event,...)
+local function onevent(name,self,event,arg1,...)
 	if event=="BE_UPDATE_CFG" then
 		if msg and msg:find("^ClickOpt") then
 			ns.ClickOpts.update(name);
@@ -590,8 +590,8 @@ local function onevent(name,self,event,...)
 		if not eventActive then
 			eventActive = name;
 		end
-	elseif event=="GET_ITEM_INFO_RECEIVED" and eventActive==name and _namelessToys[msg] then
-		addToy(msg,true);
+	elseif event=="GET_ITEM_INFO_RECEIVED" and eventActive==name and _namelessToys[arg1] then
+		addToy(arg1,true);
 	end
 end
 
