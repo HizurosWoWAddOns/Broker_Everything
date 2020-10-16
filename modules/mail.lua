@@ -40,7 +40,11 @@ local function toonHasMails(toonMails,key,counter)
 	local mails = toonMails[key];
 	if mails and #mails>0 then
 		for i=1, #mails do
-			sender,returns = strsplit(";",mails[i]);
+			if type(mails[i])=="table" then
+				sender,returns = mails[i].sender,mails[i].returns;
+			else
+				sender,returns = strsplit(";",mails[i]);
+			end
 			returns = tonumber(returns);
 			if returns then
 				if returns<t then
