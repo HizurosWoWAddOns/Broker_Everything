@@ -246,41 +246,43 @@ local function updateData()
 				bounties = C_QuestLog.GetBountiesForMapID(exp.zone);
 			end
 			 -- TODO: removed in shadowlands
-			for b=1, #bounties do
-				local bty = bounties[b];
-				C_TaskQuest.RequestPreloadRewardData(bty.questID);
-				local TimeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(bty.questID);
-				local factionID = questID2factionID[bty.questID];
-				if TimeLeft and factionID then
-					local ending = TimeLeft>0 and floorTime(Time)+(TimeLeft*60) or 0;
-					local m = date("%M",ending);
-					if m=="01" or m=="31" then
-						ending = ending - 60;
-					end
-					if ns.data[name].bounties[ending] then
-						if ns.data[name].bounties[ending][e]==nil then
-							ns.data[name].bounties[ending][e] = {}
+			if bounties then
+				for b=1, #bounties do
+					local bty = bounties[b];
+					C_TaskQuest.RequestPreloadRewardData(bty.questID);
+					local TimeLeft = C_TaskQuest.GetQuestTimeLeftMinutes(bty.questID);
+					local factionID = questID2factionID[bty.questID];
+					if TimeLeft and factionID then
+						local ending = TimeLeft>0 and floorTime(Time)+(TimeLeft*60) or 0;
+						local m = date("%M",ending);
+						if m=="01" or m=="31" then
+							ending = ending - 60;
 						end
-						local completed,total = GetBountyObjectivesSum(bty.questID,bty.numObjectives);
-						ns.data[name].bounties[ending][e][ns.player.faction] = factionID;
-						ns.data[name].bounties[ending][e][ns.player.faction.."Icon"] = bty.icon;
-						ns.data[name].bounties[ending][e].totalQuests = total;
-						ns.data[name].bounties[ending][e].dirty = nil;
+						if ns.data[name].bounties[ending] then
+							if ns.data[name].bounties[ending][e]==nil then
+								ns.data[name].bounties[ending][e] = {}
+							end
+							local completed,total = GetBountyObjectivesSum(bty.questID,bty.numObjectives);
+							ns.data[name].bounties[ending][e][ns.player.faction] = factionID;
+							ns.data[name].bounties[ending][e][ns.player.faction.."Icon"] = bty.icon;
+							ns.data[name].bounties[ending][e].totalQuests = total;
+							ns.data[name].bounties[ending][e].dirty = nil;
 
-						if C_QuestLog.IsQuestFlaggedCompleted(bty.questID) then
-							ns.toon[name].bounties[ending][e] = true;
-						else -- if not flagged completed but 4/4 quests. player can travel to questgiver
-							ns.toon[name].bounties[ending][e] = completed or -1;
+							if C_QuestLog.IsQuestFlaggedCompleted(bty.questID) then
+								ns.toon[name].bounties[ending][e] = true;
+							else -- if not flagged completed but 4/4 quests. player can travel to questgiver
+								ns.toon[name].bounties[ending][e] = completed or -1;
+							end
+--@do-not-package@
+						else
+							ns.debug("<ending~=endings[i]>",date("%d %H.%M.%S",ending),date("%d %H.%M.%S",endings[1]),date("%d %H.%M.%S",endings[2]),date("%d %H.%M.%S",endings[3]));
+--@end-do-not-package@
 						end
 --@do-not-package@
-					else
-						ns.debug("<ending~=endings[i]>",date("%d %H.%M.%S",ending),date("%d %H.%M.%S",endings[1]),date("%d %H.%M.%S",endings[2]),date("%d %H.%M.%S",endings[3]));
+					elseif factionID==nil then
+						ns.debug("<missing factionID>","<bountyQuestID>",bty.questID);
 --@end-do-not-package@
 					end
---@do-not-package@
-				elseif factionID==nil then
-					ns.debug("<missing factionID>","<bountyQuestID>",bty.questID);
---@end-do-not-package@
 				end
 			end
 		end
