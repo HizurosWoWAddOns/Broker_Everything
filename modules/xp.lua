@@ -97,7 +97,7 @@ local function updateBroker()
 	(module.obj or ns.LDB:GetDataObjectByName(module.ldbName) or {}).text = text;
 end
 
-local function createTooltip2(parentLine,name_realm)
+local function createTooltip2(parentLine,name_realm) -- DEPRECATED
 	local toon = Broker_Everything_CharacterDB[name_realm];
 
 	local lst,sum = {},0;
@@ -234,7 +234,7 @@ function createTooltip(tt)
 					("%s/%s"):format(ns.FormatLargeNumber(name,v.xp.cur,true),ns.FormatLargeNumber(name,v.xp.max,true))
 				);
 				tt:SetLineScript(l,"OnMouseUp",deleteCharacterXP, name_realm);
-				tt:SetLineScript(l,"OnEnter",createTooltip2,name_realm);
+				--tt:SetLineScript(l,"OnEnter",createTooltip2,name_realm);
 				count = count + 1;
 			end
 		end
@@ -357,6 +357,7 @@ function module.init()
 			497060,501580,506100,510620,515140,519660,524180,528690,533210,537730, -- 101-110
 			831000,837930,844850,851780,858700,865630,872550,879480,886400,893550  -- 111-120
 		};
+		--[[ removed in SL
 		heirloomXP = {
 			-- Head
 			[61931] = 10, [61935] = 10, [61936] = 10, [61937] = 10, [61942] = 10, [61958] = 10, [69887] = 10,
@@ -395,6 +396,7 @@ function module.init()
 			--- (new since wod 6.0)
 			[128169] = 5, [128172] = 5, [128173] = 5,
 		};
+		--]]
 	else -- classic client
 		xp2levelup = {
 			   400,   900,  1400,  2100,  2800,  3600,  4500,  5400,  6500,  7600, --   1- 10
@@ -429,8 +431,8 @@ function module.onevent(self,event,msg)
 			};
 		else
 			data = {
-				cur = UnitXP("player"),
-				max = UnitXPMax("player"),
+				cur = UnitXP("player") or 0,
+				max = UnitXPMax("player") or 0,
 				rest = GetXPExhaustion() or 0,
 				logoutTime=0,
 				isResting=false,
@@ -438,6 +440,7 @@ function module.onevent(self,event,msg)
 			}
 
 			--- Bonus by inventory items
+			--[[
 			if ns.client_version>=2 then
 				for slotId,slotName in pairs(slots) do
 					local itemId = GetInventoryItemID("player",slotId);
@@ -446,6 +449,7 @@ function module.onevent(self,event,msg)
 					end
 				end
 			end
+			--]]
 		end
 
 		ns.toon.xp = data;
