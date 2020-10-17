@@ -838,7 +838,7 @@ function module.onevent(self,event,msg,...)
 				guildClubId = true;
 			end
 
-			canApplicantUpdate = IsGuildLeader() or C_GuildInfo.IsGuildOfficer() and C_ClubFinder.IsEnabled();
+			canApplicantUpdate = (IsGuildLeader() or C_GuildInfo.IsGuildOfficer()) and C_ClubFinder.IsEnabled();
 
 			self:RegisterEvent("GUILD_RANKS_UPDATE");
 			self:RegisterEvent("GUILD_MOTD");
