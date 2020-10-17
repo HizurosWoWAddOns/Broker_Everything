@@ -365,7 +365,7 @@ function module.OptionMenu(parent)
 		local id = ns.profile[name].currenciesInTitle[place];
 
 		if tonumber(id) then
-			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(talentid);
+			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(id);
 			--local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(id);  -- TODO: removed in shadowlands
 			if currencyInfo and currencyInfo.name then
 				pList = ns.EasyMenu:AddEntry({
