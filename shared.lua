@@ -2069,7 +2069,7 @@ do
 			if not Enum.QuestTag then
 				Enum.QuestTag = {}
 			end
-			Enum.QuestTag.Group     = LE_QUEST_TAG_TYPE_GROUP     or QUEST_TAG_GROUP     or 1 -- "grp" 
+			Enum.QuestTag.Group     = LE_QUEST_TAG_TYPE_GROUP     or QUEST_TAG_GROUP     or 1 -- "grp"
 			Enum.QuestTag.PvP       = LE_QUEST_TAG_TYPE_PVP       or QUEST_TAG_PVP       or 41 -- "pvp"
 			Enum.QuestTag.Dungeon   = LE_QUEST_TAG_TYPE_DUNGEON   or QUEST_TAG_DUNGEON   or 81 -- "d"
 			Enum.QuestTag.Heroic    = LE_QUEST_TAG_TYPE_HEROIC    or QUEST_TAG_HEROIC    or 85 -- "hc" -- missing in bfa
@@ -2098,6 +2098,21 @@ do
 			WORLD_QUESTS              = {L["QuestTagWQ"],"yellow"},
 			DUNGEON_MYTHIC            = {L["QuestTagMD"],"ltred"}
 		};
+		ns.questTagsLong = {
+			[Enum.QuestTag.Group]     = GROUP,
+			[Enum.QuestTag.PvP or Enum.QuestTag.Pvp]       = {PVP,"violet"},
+			[Enum.QuestTag.Dungeon]   = LFG_TYPE_DUNGEON,
+			[Enum.QuestTag.Heroic]    = LFG_TYPE_HEROIC_DUNGEON,
+			[Enum.QuestTag.Raid]      = LFG_TYPE_RAID,
+			[Enum.QuestTag.Raid10]    = LFG_TYPE_RAID.." (10)",
+			[Enum.QuestTag.Raid25]    = LFG_TYPE_RAID.." (25)",
+			[Enum.QuestTag.Scenario]  = TRACKER_HEADER_SCENARIO,
+			[Enum.QuestTag.Account]   = ITEM_BIND_TO_ACCOUNT,
+			[Enum.QuestTag.Legendary] = TRACKER_HEADER_CAMPAIGN_QUESTS,
+			TRADE_SKILLS              = {TRADE_SKILLS,"green"},
+			WORLD_QUESTS              = {WORLD_QUEST_BANNER,"yellow"},
+			DUNGEON_MYTHIC            = {LFG_TYPE_DUNGEON.." ("..PLAYER_DIFFICULTY6..")","ltred"}
+		}
 	else
 		local QUEST_TAG_GROUP     = LE_QUEST_TAG_TYPE_GROUP     or QUEST_TAG_GROUP     or "grp" -- missing in bfa
 		local QUEST_TAG_PVP       = LE_QUEST_TAG_TYPE_PVP       or QUEST_TAG_PVP       or "pvp"

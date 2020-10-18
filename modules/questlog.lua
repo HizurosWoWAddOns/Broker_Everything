@@ -94,7 +94,7 @@ local function updateBroker()
 end
 
 local function showQuest(self,questIndex)
-	securecall("QuestMapFrame_OpenToQuestDetails",select(8, (GetQuestLogTitle or C_QuestLog.GetTitleForLogIndex)(questIndex))); -- TODO: removed in shadowlands
+	securecall("QuestMapFrame_OpenToQuestDetails",select(8, C_QuestLog.GetTitleForLogIndex)(questIndex));
 end
 
 local function showQuestURL(self,questId)
@@ -108,9 +108,9 @@ end
 
 local function deleteQuest(self,questId)
 	if requested==questId then
-		SelectQuestLogEntry((GetQuestLogIndexByID or C_QuestLog.GetLogIndexForQuestID)(questId)); -- TODO: removed in shadowlands
-		(SetAbandonQuest or C_QuestLog.SetAbandonQuest)(); -- TODO: removed in shadowlands
-		(AbandonQuest or C_QuestLog.AbandonQuest)(); -- TODO: removed in shadowlands
+		C_QuestLog.SetSelectedQuest(questId);
+		C_QuestLog.SetAbandonQuest();
+		C_QuestLog.AbandonQuest();
 		requested = false;
 	else
 		requested = questId;
@@ -185,7 +185,7 @@ local function ttAddLine(obj)
 
 	if (type(obj[QuestId])=="number") and (IsInGroup()) then
 		for i=1, GetNumSubgroupMembers() do -- GetNumSubgroupMembers
-			if ((IsUnitOnQuestByQuestID or C_QuestLog.IsUnitOnQuest)(obj[QuestId],"party"..i)) then -- TODO: removed in shadowlands
+			if C_QuestLog.IsUnitOnQuest(obj[QuestId],"party"..i) then
 				tinsert(GroupQuest,C(select(2,UnitClass("party"..i)),UnitName("party"..i)));
 			end
 		end
@@ -218,7 +218,7 @@ local function ttAddLine(obj)
 	end
 
 	if ns.profile[name].showQuestOptions then
-		tt:SetCell(l,cell,ns.IsQuestWatched(obj[Index]) and UNTRACK_QUEST_ABBREV or TRACK_QUEST_ABBREV); -- TODO: removed in shadowlands
+		tt:SetCell(l,cell,ns.IsQuestWatched(obj[Index]) and UNTRACK_QUEST_ABBREV or TRACK_QUEST_ABBREV);
 		tt:SetCellScript(l,cell,"OnMouseUp",trackQuest,obj[QuestId]);
 		cell=cell+1; -- [7]
 
@@ -227,7 +227,7 @@ local function ttAddLine(obj)
 		cell=cell+1; -- [8]
 
 		if IsInGroup() then
-			if GetNumGroupMembers()>1 and ns.GetQuestLogPushable(obj[Index]) then -- TODO: removed in shadowlands
+			if GetNumGroupMembers()>1 and ns.GetQuestLogPushable(obj[Index]) then
 				tt:SetCell(l,cell,SHARE_QUEST_ABBREV);
 				tt:SetCellScript(l,cell,"OnMouseUp",pushQuest,obj[Index]);
 				cell=cell+1 -- [9]
@@ -432,24 +432,29 @@ end
 function module.onevent(self,event,msg)
 	if event=="BE_UPDATE_CFG" then
 		ns.ClickOpts.update(name);
-	elseif event=="PLAYER_LOGIN" then
-		ns.tradeskills();
 	end
 	if event=="PLAYER_LOGIN" or event=="QUEST_LOG_UPDATE" then
-		local numEntries, numQuests = (GetNumQuestLogEntries or C_QuestLog.GetNumQuestLogEntries)() -- TODO: removed in shadowlands
+		local numEntries, numQuests = C_QuestLog.GetNumQuestLogEntries();
 		local header, status, isBounty, _ = false;
 		local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, isHidden, isScaling = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- GetQuestLogTitle(index)
 		sum,quests,numQuestStatus = numQuests,{},{fail=0,complete=0,active=0};
 
+		-- list trade skills
+		local lst = {GetProfessions()}; -- prof1, prof2, arch, fish, cook
+		local tradeskills = {}
+		for order,index in pairs(lst) do
+			if index then
+				local skillName, texture, rank, maxRank, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset, skillLineName = GetProfessionInfo(index);
+				tradeskills[skillName] = true;
+			end
+		end
+
 		for index=1, numEntries do
-			--local q = {GetQuestLogTitle(index)}; -- TODO: removed in shadowlands
 			local q = ns.C_QuestLog_GetInfo(index);
 			if q.isHeader==true then
 				header = q.title;
 			elseif header and not hideQuestsAnytime[q.questID] then
-				--local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(q.questID); -- TODO: removed in shadowlands
 				local tagInfo = ns.C_QuestLog_GetQuestTagInfo(q.questID);
-				local tagNameLong = tagInfo and tagInfo.tagName or "";
 				q.text,q.objectives = GetQuestLogQuestText(index);
 
 				-- second way to check quest is completed. GetQuestLogTitle argument 6 aren't longer secure enough.
@@ -464,25 +469,34 @@ function module.onevent(self,event,msg)
 					end
 				end
 
-				if tagInfo and tagInfo.tagName==GROUP and q.suggestedGroup>0 then
-					tagNameLong = tagInfo.tagName.."["..q.suggestedGroup.."]";
-				elseif tagInfo and tagInfo.tagName==PLAYER_DIFFICULTY2 then
-					tagNameLong = LFG_TYPE_DUNGEON.." ("..tagInfo.tagName..")";
-				end
-				local tags,shortTags = {},{};
-				if q.text:find(_PLAYER_DIFFICULTY6) or q.objectives:find(_PLAYER_DIFFICULTY6) then
-					tinsert(tags,LFG_TYPE_DUNGEON.." ("..PLAYER_DIFFICULTY6..")");
-					tinsert(shortTags,C(ns.questTags.DUNGEON_MYTHIC[2],ns.questTags.DUNGEON_MYTHIC[1]));
-				elseif tagInfo and ns.questTags[tagInfo.tagID] then
-					tinsert(tags,tagInfo.tagNameLong);
-					if type(ns.questTags[tagInfo.tagID])=="table" then
-						tinsert(shortTags,C(ns.questTags[tagInfo.tagID][2],ns.questTags[tagInfo.tagID][1]));
-					else
-						tinsert(shortTags,C("dailyblue",ns.questTags[tagInfo.tagID]));
+				local tags,shortTags,long = {},{};
+				if tagInfo then
+					if tagInfo.tagName==GROUP and q.suggestedGroup>0 then
+						tagInfo.tagName = tagInfo.tagName.."["..q.suggestedGroup.."]";
+					elseif tagInfo.tagName==PLAYER_DIFFICULTY2 or tagInfo.tagName==PLAYER_DIFFICULTY6 then
+						tagInfo.tagName = LFG_TYPE_DUNGEON.." ("..tagInfo.tagName..")";
+					end
+					if ns.questTags[tagInfo.tagID] then
+						if tagInfo.tagName and tagInfo.tagName~="" then
+							tinsert(tags,tagInfo.tagName);
+							long=true;
+						end
+						if type(ns.questTags[tagInfo.tagID])=="table" then
+							if not long then
+								tinsert(tags,C(ns.questTagsLong[tagInfo.tagID][2],ns.questTagsLong[tagInfo.tagID][1]));
+							end
+							tinsert(shortTags,C(ns.questTags[tagInfo.tagID][2],ns.questTags[tagInfo.tagID][1]));
+						else
+							if not long then
+								tinsert(tags,ns.questTagsLong[tagInfo.tagID]);
+							end
+							tinsert(shortTags,C("dailyblue",ns.questTags[tagInfo.tagID]));
+						end
 					end
 				end
-				if ns.tradeskills[header] then
+				if tradeskills[header] then
 					tinsert(tags,TRADE_SKILLS);
+					tinsert(tags,header);
 					tinsert(shortTags,C(ns.questTags.TRADE_SKILLS[2],ns.questTags.TRADE_SKILLS[1]));
 				elseif q.text:find(TRACKER_HEADER_WORLD_QUESTS) then
 					tinsert(tags,TRACKER_HEADER_WORLD_QUESTS);
@@ -516,7 +530,7 @@ function module.onevent(self,event,msg)
 					header,GetQuestDifficultyColor(q.level),
 					status,
 					table.concat(tags,", "),
-					table.concat(shortTags,""),
+					table.concat(shortTags," "),
 					q.questID,
 					index,
 					q.isHidden,
