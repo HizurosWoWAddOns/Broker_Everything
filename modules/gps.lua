@@ -128,19 +128,19 @@ local function updateItems()
 	wipe(foundItems);
 	for i=1, #_itemIds do
 		local id = _itemIds[i];
-		if ns.items.item[id] and ns.items.item[id][1] then
-			local index = ns.items.item[id][1];
-			local item = ns.items[index<1000 and "inv" or "bags"][index];
-			local isHS,hsLoc = itemIsHearthstone(id);
-			local obj = {id=id};
-			obj.name, _, _, _, _, _, _, _, _, obj.icon = GetItemInfo(item.link);
-			if obj.name then
-				obj.name2 = isHS and obj.name..hsLoc or obj.name;
-				if _itemMustBeEquipped[id] then
-					obj.mustBeEquipped = true;
-					obj.equipped = item.type=="inventory";
+		if ns.items.byID[id] then
+			for sharedSlot,item in pairs(ns.items.byID[id]) do
+				local isHS,hsLoc = itemIsHearthstone(id);
+				local obj = {id=id};
+				obj.name, _, _, _, _, _, _, _, _, obj.icon = GetItemInfo(item.link);
+				if obj.name then
+					obj.name2 = isHS and obj.name..hsLoc or obj.name;
+					if _itemMustBeEquipped[id] then
+						obj.mustBeEquipped = true;
+						obj.equipped = item.bag==-1;
+					end
+					tinsert(foundItems,obj);
 				end
-				tinsert(foundItems,obj);
 			end
 		end
 	end
@@ -484,6 +484,9 @@ local function init()
 
 	--_itemReplacementIds = {64488,28585,6948,44315,44314,37118,142542,142298};
 	_itemMustBeEquipped = {[32757]=1,[40585]=1,[142298]=1};
+
+	-- init ns.items
+	ns.items.Init("any");
 
 	C_Timer.After(5,function()
 		C_Timer.NewTicker(updateinterval,updater);

@@ -71,26 +71,22 @@ local function updateBroker()
 end
 
 local function nsItems2Callback()
-	local repairCost,durabilitySum,lowest,tbl,obj,slot,bag = {bags=0,inv=0},{current=0,max=0,count=0},{1,false};
+	local repairCost,durabilitySum,lowest,tbl,slot,bag = {bags=0,inv=0},{current=0,max=0,count=0},{1,false};
 
-	for _, index in pairs(ns.items.equipment)do
-		if index>1000 then
-			tbl,obj,bag = "bags",ns.items.bags[index],floor(index/1000);
-			slot,bag = index-bag*1000,bag-1;
-		else
-			tbl,obj,slot,bag = "inv",ns.items.inventory[index],index;
-		end
-		if obj then
+	for sharedSlot in pairs(ns.items.equip)do
+		local tbl = sharedSlot<0 and "inv" or "bags";
+		local obj = ns.items.bySlot[sharedSlot];
+		if obj and obj.equip and obj.durabilityMax>0 then
 			durabilitySum.count = durabilitySum.count+1;
 			durabilitySum.current = durabilitySum.current + obj.durability;
 			durabilitySum.max = durabilitySum.max + obj.durabilityMax;
 
-			local percentage = obj.durabilityMax==0 and 0 or obj.durability/obj.durabilityMax;
-			if obj.durabilityMax>0 and percentage<1 then
+			local percentage = obj.durability/obj.durabilityMax;
+			if percentage<1 then
 				if tbl=="inv" and percentage<lowest[1] then
 					lowest = {percentage,obj.slot};
 				end
-				local data = {type=tbl=="bags" and "bag" or "inventory",slot=slot,bag=bag};
+				local data = {type=tbl=="bags" and "bag" or "inventory",slot=obj.slot,bag=obj.bag};
 				ns.ScanTT.query(data,true);
 				repairCost[tbl] = repairCost[tbl] + (tonumber(data.repairCost) or 0);
 			end
@@ -362,7 +358,7 @@ function module.init()
 		module.onevent({},"BE_EVENT_REPAIRALL_GUILD");
 	end);
 
-	ns.items.RegisterCallback(name,nsItems2Callback,"equipment");
+	ns.items.RegisterCallback(name,nsItems2Callback,"equip");
 end
 
 function module.onevent(self,event,arg1)

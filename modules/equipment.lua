@@ -15,13 +15,13 @@ local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSub
 local slots = {"HEAD","NECK","SHOULDER","SHIRT","CHEST","WAIST","LEGS","FEET","WRIST","HANDS","FINGER0","FINGER1","TRINKET0","TRINKET1","BACK","MAINHAND","SECONDARYHAND","RANGED"};
 local inventory,enchantSlots = {iLevelMin=0,iLevelMax=0},{}; -- (enchantSlots) -1 = [iLevel<600], 0 = both, 1 = [iLevel=>600]
 local warlords_crafted,tSetItems = {},{};
-local extendedItemInfos = {};
+local extendedItemInfos,isRegistered = {};
 local ignoreWeapon = {
 	["0"] = L["Do not ignore"],
 	["1"] = L["Ignore all"],
 	["2"] = L["Ignore artifact weapons"],
 };
-local ownSlotByProfessionals = {},{}
+local ownSlotByProfessionals,oldImprovements = {},{}
 
 
 -- register icon names and default files --
@@ -95,9 +95,10 @@ end
 
 local function UpdateInventory()
 	local lst,lvl={iLevelMin=0,iLevelMax=0};
-	for _, d in pairs(ns.items.inventory)do
-		if d and d.slot~=4 and d.slot~=19 then
+	for _, d in pairs(ns.items.bySlot)do
+		if d and d.bag==-1 and d.slot~=4 and d.slot~=19 then
 			local obj,_ = CopyTable(d);
+			obj.type = "inv";
 			ns.ScanTT.query(obj,true);
 			lst[d.slot] = obj;
 			if ns.client_version>=2 then
@@ -156,11 +157,11 @@ end
 local function equipOnClick(self,equipSetID)
 	if (IsShiftKeyDown()) then
 		if (tt) and (tt:IsShown()) then ns.hideTooltip(tt); end
-		local main = ns.items.inventory[16];
+		local main = ns.items.bySlot[-0.16];
 		if (ns.profile[name].ignoreMainHand=="2" and main and main.quality==6) or ns.profile[name].ignoreMainHand=="1" then
 			C_EquipmentSet.IgnoreSlotForSave(16);
 		end
-		local off = ns.items.inventory[17];
+		local off = ns.items.bySlot[-0.17];
 		if (ns.profile[name].ignoreOffHand=="2" and off and off.quality==6) or ns.profile[name].ignoreOffHand=="1" then
 			C_EquipmentSet.IgnoreSlotForSave(17);
 		end
@@ -246,75 +247,77 @@ local function createTooltip(tt)
 		tt:AddSeparator();
 		local none,miss=true,false;
 		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do
-			if ns.items.inventory[i] and inventory[ns.items.inventory[i].slot] then
+			local obj = ns.items.bySlot[-(i/100)];
+			if obj and inventory[obj.slot] then
 				none=false;
 
-				local obj = ns.items.inventory[i];
 				-- nice blizzard. Query heirloom item info's. very unstable/slow...
 				local itemName, _, itemQuality, itemLevel, _, itemType, subType, _, itemEquipLoc, itemIcon, itemPrice = GetItemInfo(obj.link);
-				local itemInfo = inventory[obj.slot];
-				local tSetItem,setName,enchanted,greenline,upgrades,gems = "","","","","","";
-				itemQuality = itemQuality or itemInfo.quality or "black";
-				itemName = itemName or obj.link:match("%[(.*)%]");
+				if not itemName then
+					tt:AddLine(
+						C("ltyellow",_G[slots[i].."SLOT"]),
+						C("gray",L["Pending item info request..."])
+					);
+				else
+					local itemInfo = inventory[obj.slot];
+					local tSetItem,setName,enchanted,greenline,upgrades,gems = "","","","","","";
+					itemQuality = itemQuality or itemInfo.quality or "black";
+					itemName = itemName or obj.link:match("%[(.*)%]");
 
-				local canEnchant = enchantSlots[i];
-				if ownSlotByProfessionals[i] then
-					for spellId,v in pairs(ownSlotByProfessionals[i])do
-						if IsSpellKnown(spellId) and (v==true --[[or]]) then
-							canEnchant = true;
+					local canEnchant = enchantSlots[i];
+					if ownSlotByProfessionals[i] then
+						for spellId,v in pairs(ownSlotByProfessionals[i])do
+							if IsSpellKnown(spellId) and (v==true --[[or]]) then
+								canEnchant = true;
+							end
 						end
 					end
-				end
 
-				if ns.profile[name].showNotEnchanted and obj.id~=158075 --[[ hearth of azeroth can't be enchanted ]] and canEnchant and (tonumber(itemInfo.linkData[1]) or 0)==0 then
-					enchanted=C("red"," #");
-					miss=true;
-				end
-
-				if ns.profile[name].showEmptyGems and itemInfo.empty_gem then
-					gems=C("yellow"," #");
-					miss=true;
-				end
-
-				if ns.profile[name].showSetName and itemInfo.setname then
-					setName=" "..C("dkgreen",itemInfo.setname);
-				end
-
-				if(ns.profile[name].showGreenText and itemInfo.lines and type(itemInfo.lines[2])=="string" and itemInfo.lines[2]:find("\124"))then
-					greenline = " "..itemInfo.lines[2];
-				end
-
-				if ns.profile[name].showUpgrades and itemInfo.upgrades then
-					local col,cur,max = "ltblue",strsplit("/",itemInfo.upgrades);
-					if ns.profile[name].fullyUpgraded and cur==max then
-						col="blue";
+					if ns.profile[name].showNotEnchanted and obj.id~=158075 --[[ hearth of azeroth can't be enchanted ]] and canEnchant and (tonumber(itemInfo.linkData[1]) or 0)==0 then
+						enchanted=C("red"," #");
+						miss=true;
 					end
-					upgrades = " "..C(col,itemInfo.upgrades);
+
+					if ns.profile[name].showEmptyGems and itemInfo.empty_gem then
+						gems=C("yellow"," #");
+						miss=true;
+					end
+
+					if ns.profile[name].showSetName and itemInfo.setname then
+						setName=" "..C("dkgreen",itemInfo.setname);
+					end
+
+					if(ns.profile[name].showGreenText and itemInfo.lines and type(itemInfo.lines[2])=="string" and itemInfo.lines[2]:find("\124"))then
+						greenline = " "..itemInfo.lines[2];
+					end
+
+					if ns.profile[name].showUpgrades and itemInfo.upgrades then
+						local col,cur,max = "ltblue",strsplit("/",itemInfo.upgrades);
+						if ns.profile[name].fullyUpgraded and cur==max then
+							col="blue";
+						end
+						upgrades = " "..C(col,itemInfo.upgrades);
+					end
+
+					if ns.client_version>=2 and itemInfo.level then
+						itemLevel = C(GetILevelColor(itemInfo.level),itemInfo.level);
+					else
+						itemLevel = "";
+					end
+
+					if ns.profile[name].showTSet and tSetItems[obj.id] then
+						tSetItem=C("yellow"," T"..tSetItems[obj.id]);
+					end
+
+					local l = tt:AddLine(
+						C("ltyellow",_G[slots[i].."SLOT"]),
+						C("quality"..itemQuality,itemName) .. greenline .. tSetItem .. setName .. upgrades .. enchanted .. gems,
+						itemLevel
+					);
+
+					tt:SetLineScript(l,"OnEnter",InventoryTooltipShow, obj.slot);
+					tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 				end
-
-				if ns.client_version>=2 and itemInfo.level then
-					itemLevel = C(GetILevelColor(itemInfo.level),itemInfo.level);
-				else
-					itemLevel = "";
-				end
-
-				if ns.profile[name].showTSet and tSetItems[obj.id] then
-					tSetItem=C("yellow"," T"..tSetItems[obj.id]);
-				end
-
-				local l = tt:AddLine(
-					C("ltyellow",_G[slots[i].."SLOT"]),
-					C("quality"..itemQuality,itemName) .. greenline .. tSetItem .. setName .. upgrades .. enchanted .. gems,
-					itemLevel
-				);
-
-				tt:SetLineScript(l,"OnEnter",InventoryTooltipShow, obj.slot);
-				tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
-			elseif ns.items.inventory[i] then
-				tt:AddLine(
-					C("ltyellow",_G[slots[i].."SLOT"]),
-					C("gray",L["Pending item info request..."])
-				);
 			elseif ns.profile[name].showEmptySlots then
 				tt:AddLine(
 					C("ltyellow",_G[slots[i].."SLOT"]),
@@ -520,7 +523,10 @@ function module.init()
 		[138375]=19,[138376]=19,[138377]=19,[138378]=19,[138379]=19,[138380]=19,
 		-- Tier 20 (Legion 7.?)
 	}
-	ns.items.RegisterCallback(name,updateBroker,"inv");
+	if not isRegistered then
+		ns.items.RegisterCallback(name,updateBroker,"inv");
+		isRegistered = true;
+	end
 
 	-- slots = { invSlot = {1,<levelLimit>}|{2,<itemLevelLimit>}|true }
 	ownSlotByProfessionals = {
@@ -559,7 +565,10 @@ function module.onevent(self,event,arg1,...)
 	elseif event=="ADDON_LOADED" and arg1=="Blizzard_ArtifactUI" and ArtifactRelicForgeFrame then
 		ArtifactRelicForgeFrame:HookScript("OnHide",updateBroker);
 	elseif event=="PLAYER_LOGIN" then
-		ns.items.RegisterCallback(name,UpdateInventory,"inv");
+		if not isRegistered then
+			ns.items.RegisterCallback(name,UpdateInventory,"inv");  -- oops. register twice
+			isRegistered = true;
+		end
 		if UpgradeItem then
 			hooksecurefunc("UpgradeItem",updateBroker);
 		end

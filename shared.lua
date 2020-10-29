@@ -806,312 +806,274 @@ end
 -- event driven with delayed execution                            --
 -- -------------------------------------------------------------- --
 do
-	-- note: this new version is a downgrade to reduce memory usage. it is only for detect changes.
-	ns.items = {bags={},ammo={},soul={},inventory={},item={},equipment={}};
-	local slotNames = {"Head","Neck","Shoulder","Shirt","Chest","Waist","Legs","Feet","Wrist","Hands","Finger0","Finger1","Trinket0","Trinket1","Back","MainHand","SecondaryHand","Range","Tabard"};
-	local doUpdate,f,prev = {bags=false,inv=false,idCallback={},ticker=false,tickerLength=0.5,defaultDelay=2,delay=false,locked=false},CreateFrame("Frame");
-	local callbacks,hasChanged,IsEnabled = {bags={},inv={},any={},item={},equipment={},prepare={},bagsNum=0,invNum=0,anyNum=0,itemNum=0,equipmentNum=0,prepareNum=0};
+	local itemsByID,itemsBySlot,equip,ammo = {},{},{},{};
+	ns.items = {byID=itemsByID,bySlot=itemsBySlot,equip=equip,ammo=ammo};
 
-	local function doCallbacks(tbl,...)
-		for modName,fnc in pairs(tbl)do
+	local hasChanged,updateBags,IsEnabledBags,IsEnabledInv = {bags=false,inv=false,equip=false,ammo=false,items=false,item={},itemNum=0},{};
+	local callbacks = {any={},inv={},bags={},item={},equip={},prepare={}};
+	local eventFrame = CreateFrame("Frame");
+
+	local function doCallbacks(...)
+		local tbl = ...;
+		if callbacks[tbl.."Num"]==0 then
+			return; -- no callbacks registered
+		end
+		for modName,fnc in pairs(callbacks[tbl])do
 			fnc(...);
 		end
 	end
 
-	local function addItem(tbl,prev,info)
-		local n,loc,index = GetItemInfo(info.link);
-		if info.bag then
-			loc,index = "bags",((info.bag+1)*1000)+info.slot;
-			if prev[index]==nil or (prev[index] and prev[index].id==info.id and prev[index].count~=info.count) then
-				hasChanged.bags = true;
-			end
-		else
-			loc,index = "inv",info.slot;
-			if prev[index]==nil then
-				hasChanged.inv = true;
-			end
-		end
-
-		info.type = loc;
-		info.diffCheckStr = info.id..";"..info.link..";"..info.durability..";"..info.durabilityMax
-
-		tbl[index] = info;
-
-		local ttData = {type=loc,slot=info.slot,bag=info.bag};
-		ns.ScanTT.query(ttData,true);
-		if ttData.repairCost and ttData.repairCost>0 then
-			tbl[index].repairCost = ttData.repairCost;
-		end
-
-		if ttData.level then
-			info.level = ttData.level;
-		end
-
-		if ns.items.item[info.id]==nil then
-			ns.items.item[info.id]={};
-		end
-		tinsert(ns.items.item[info.id],index);
-
-		if (info.durabilityMax>0) or (loc=="inv" and info.slot~=4 and info.slot~=19) then
-			tinsert(ns.items.equipment,index);
-		end
-
-		if prev[index]==nil or (prev[index] and prev[index].diffCheckStr~=tbl[index].diffCheckStr) then
-			hasChanged[loc] = true;
-			if callbacks.item[info.id] and #callbacks.item[info.id]>0 then
-				if hasChanged.item[info.id]==nil then
-					hasChanged.item[info.id]={};
-				end
-				tinsert(hasChanged.item[info.id],index);
-			end
-		end
-
-		if prev[index] then
-			prev[index] = nil;
-		end
-		return index;
-	end
-
-	local function scanner()
-		hasChanged = {bags=false,inv=false,item={},failed=false};
-
-		-- cleanup item table
-		for index in pairs(ns.items.equipment)do
-			if (doUpdate.bags and index>1000) or (doUpdate.inv and index<1000) then
-				ns.items.equipment[index] = nil;
-			end
-		end
-		local tmp = {};
-		for id,entries in pairs(ns.items.item)do
-			for i=1, #entries do
-				tmp[id] = tmp[id] or {};
-				if not ( (doUpdate.bags and entries[i]>1000) or (doUpdate.inv and entries[i]<1000) ) then
-					tinsert(tmp[id],entries[i]);
-				end
-			end
-		end
-		ns.items.item = tmp;
-
-		-- scan bags
-		if doUpdate.bags then
-			local prev_bags,prev_ammo,prev_soul = ns.items.bags,ns.items.ammo,ns.items.soul;
-			local tmp_bags,tmp_ammo,tmp_soul,_ = {},{},{};
-			for bag=0, NUM_BAG_SLOTS do
-				local isAmmo,isSoul = false,false;
-				if ns.client_version<2 and bag>=1 then -- detect special containers on classic client
-					local link = GetInventoryItemLink("player", bag+19);
-					if link then
-						local _, _, _, _, _, _, _, _, _, _, _, itemClassID, itemSubClassID  = GetItemInfo(link);
-						if itemClassID==LE_ITEM_CLASS_QUIVER then -- quiver / ammo pouch
-							isAmmo = true;
-						elseif itemSubClassID==1 then -- soul pouch
-							isSoul = true;
-						end
-					end
-				end
-				if GetContainerNumSlots(bag)~=GetContainerNumFreeSlots(bag) then -- do not scan empty bag ;-)
-					for slot=1, GetContainerNumSlots(bag) do
-						local _, count, _, quality, readable, lootable, link, _, _, id = GetContainerItemInfo(bag,slot);
-						id = tonumber(id);
-						if id then
-							local d,dM = GetContainerItemDurability(bag,slot);
-							addItem(
-								(isAmmo and tmp_ammo) or (isSoul and tmp_soul) or tmp_bags,
-								(isAmmo and prev_ammo) or (isSoul and prev_soul) or prev_bags,
-								{bag=bag,slot=slot,id=id,link=link,count=count,quality=quality,readable=readable,lootable=lootable,durability=d or 0,durabilityMax=dM or 0}
-							);
-						end
-					end
-				end
-			end
-			for index,obj in pairs(prev_bags)do
-				if ns.items.bags[index]==nil then -- item disappeared or moved
-					hasChanged.bags = true;
-					break;
-				end
-			end
-			ns.items.bags = tmp_bags;
-			if ns.client_version<2 then
-				for index,obj in pairs(prev_ammo)do
-					if ns.items.ammo[index]==nil then -- item disappeared or moved
-						hasChanged.bags = true;
-						break;
-					end
-				end
-				ns.items.soul = tmp_soul;
-				for index,obj in pairs(prev_soul)do
-					if ns.items.soul[index]==nil then -- item disappeared or moved
-						hasChanged.bags = true;
-						break;
-					end
-				end
-				ns.items.ammo = tmp_ammo;
-			end
-		end
-
-		-- scan inventory
-		if doUpdate.inv then
-			prev = ns.items.inventory;
-			local tmp = {};
-			for index=1, 19 do
-				local id = GetInventoryItemID("player",index);
-				id = tonumber(id);
-				if id then
-					local link = GetInventoryItemLink("player",index);
-					if not link:find("%[%]") then -- not nice. Query heirloom item info's looks like unstable. too often return invalid item links
-						local d,dM = GetInventoryItemDurability(index);
-						local quality = GetInventoryItemQuality("player",index);
-						addItem(tmp,prev,{slot=index,id=id,link=link,quality=quality,durability=d or 0,durabilityMax=dM or 0});
-					else
-						hasChanged.failed = true;
-					end
-				end
-			end
-			if hasChanged.failed==false then
-				for index,obj in pairs(prev)do
-					if ns.items.inventory[index]==nil then -- item disappeared or moved
-						hasChanged.inv = true;
-						break;
-					end
-				end
-				ns.items.inventory = tmp;
-			end
-			prev = nil;
-		end
-
-		if hasChanged.failed then
-			C_Timer.After(2.2,function()
-				doUpdate.locked = false;
-				scanner();
-			end);
-			return;
-		end
-
+	local function callbackHandler(changedItems)
 		-- execute callback functions
-		if (doUpdate.inv or doUpdate.bags) and (hasChanged.inv or hasChanged.bags) then
+
+		if hasChanged.bags or hasChanged.inv or hasChanged.equip or hasChanged.items or hasChanged.ammo then
 			-- 'prepare' callbacks
-			if callbacks.prepareNum>0 then
-				doCallbacks(callbacks.prepare,"prepare",hasChanged);
-			end
+			doCallbacks("prepare",hasChanged);
 
 			-- 'any' callbacks
-			if callbacks.anyNum>0 then
-				doCallbacks(callbacks.any,"any",hasChanged);
-			end
+			doCallbacks("any",hasChanged);
+		end
 
-			-- 'equipment' callbacks
-			if callbacks.equipmentNum>0 then
-				doCallbacks(callbacks.equipment,"equipment");
+		-- 'item' callbacks
+		if hasChanged.items then
+			for id,locations in pairs(hasChanged.item)do
+				if callbacks.item[id] and #callbacks.item[id] then
+					doCallbacks("item",id,location);
+				end
 			end
+			wipe(hasChanged.item);
+			hasChanged.items = false;
+		end
 
-			-- callbacks.item
-			if callbacks.itemNum>0 then
-				for id,locations in pairs(hasChanged.item)do
-					if callbacks.item[id] and #callbacks.item[id] then
-						doCallbacks(callbacks.item,"item",id,location);
+		-- callbacks by type
+		for _, cbType in ipairs({"bags","inv","equip","ammo"}) do
+			if hasChanged[cbType] then
+				doCallbacks(cbType);
+				hasChanged[cbType] = false;
+			end
+		end
+	end
+
+	local function addItem(info,scanner)
+		if itemsBySlot[info.sharedSlot] and itemsBySlot[info.sharedSlot].diff==diffStr then
+			return false; -- item has not changed; must be added again.
+		end
+		if itemsByID[info.id]==nil then
+			itemsByID[info.id] = {};
+		end
+		itemsByID[info.id][info.sharedSlot] = info;
+		itemsBySlot[info.sharedSlot] = info;
+		if info.equip then
+			equip[info.sharedSlot] = true;
+			hasChanged.equip = true;
+		end
+		if ns.client_version<2 then
+			if info.ammo then
+				ammo[info.sharedSlot] = true;
+				hasChanged.ammo = true;
+			end
+			-- souls?
+		end
+		if callbacks.item[id] then
+			hasChanged.item[id][info.sharedSlot] = true;
+			hasChanged.items = true;
+		end
+		hasChanged[scanner] = true;
+		return true;
+	end
+
+	local function removeItem(sharedSlotIndex,scanner)
+		itemsByID[itemsBySlot[sharedSlotIndex].id][sharedSlotIndex] = nil;
+		itemsBySlot[sharedSlotIndex] = nil;
+		if equip[sharedSlotIndex] then
+			equip[sharedSlotIndex] = nil;
+			hasChanged.equip = true;
+		end
+		if ns.client_version<2 and ammo[sharedSlotIndex] then
+			ammo[sharedSlotIndex] = nil;
+			hasChanged.ammo = true;
+		end
+		if callbacks.item[id] then
+			hasChanged.item[id][sharedSlotIndex] = true;
+			hasChanged.items = true;
+		end
+		hasChanged[scanner] = true;
+	end
+
+	local scanInventory
+	function scanInventory()
+		local retry,removeItems = false,false;
+		for slotIndex=1, 19 do
+			local sharedSlotIndex = -(slotIndex/100);
+			local id = tonumber((GetInventoryItemID("player",slotIndex)));
+			if id then
+				local link = GetInventoryItemLink("player",slotIndex);
+				local d,dM = GetInventoryItemDurability(slotIndex);
+				local diffStr = table.concat({link,d or 0,dm or 0},"^");
+				addItem({
+					bag=-1,
+					slot=slotIndex,
+					sharedSlot=sharedSlotIndex,
+					id=id,
+					link=link,
+					durability = d or 0,
+					durabilityMax = dM or 0,
+					diff=diffStr,
+					equip=true
+				},"inv");
+				if link:find("%[%]") then
+					retry = true; -- Query heirloom item info looks like unstable. too often return invalid item links
+				end
+			elseif itemsBySlot[sharedSlotIndex] then
+				-- no item in inventory slot
+				removeItem(sharedSlotIndex,"inv");
+			end
+		end
+		callbackHandler();
+		if retry then
+			-- retry on heirloom link bug
+			C_Timer.After(1.2,scanInventory);
+		end
+	end
+
+	local function scanBags()
+		for _,bagIndex in ipairs(updateBags) do
+			local numBagSlots = GetContainerNumSlots(bagIndex);
+			local numFreeSlots = GetContainerNumFreeSlots(bagIndex);
+			if numBagSlots~=numFreeSlots then -- do not scan empty bag ;-)
+				--[[
+				local isSoul = false; -- currently could not test. have no warlock on classic realms.
+				if ns.client_version<2 then
+					local _, _, _, _, _, itemClassID, itemSubClassID = GetItemInfoInstant(GetInventoryItemLink("player", bagIndex+19));
+					if itemSubClassID==1 then -- soul pouch
+						isSoul = true;
+					end
+				end
+				--]]
+				for slotIndex=1, numBagSlots do
+					local sharedSlotIndex = bagIndex+(slotIndex/100);
+					local _, count, _, _, _, _, link, _, _, id = GetContainerItemInfo(bagIndex,slotIndex);
+					if id then
+						local _, _, _, itemEquipLocation, _, itemClassID, itemSubClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
+						local d,dM = GetContainerItemDurability(bagIndex,slotIndex);
+						local diffStr = table.concat({link,d or 0,dM or 0,count},"^");
+						local isEquipment = false;
+						if not (itemEquipLocation=="" or itemEquipLocation==(INVTYPE_TABARD or Enum.InventoryType.IndexTabardType) or itemEquipLocation==(INVTYPE_BODY or Enum.InventoryType.IndexBodyType)) then
+							isEquipment = true; -- ignore shirts and tabards
+						end
+						local changed = addItem({
+							bag=bagIndex,
+							slot=slotIndex,
+							sharedSlot=sharedSlotIndex,
+							id=id,
+							link=link,
+							durability = d or 0,
+							durabilityMax = dM or 0,
+							diff=diffStr,
+							equip=isEquipment,
+							ammo=itemClassID==LE_ITEM_CLASS_PROJECTILE
+						},"bags");
+					elseif itemsBySlot[sharedSlotIndex] then
+						removeItem(sharedSlotIndex,"bags");
+					end
+				end
+			else
+				-- bag is empty but previosly it had items
+				for slotIndex=1, numBagSlots do
+					local sharedSlotIndex = bagIndex+(slotIndex/100);
+					if itemsBySlot[sharedSlotIndex] then
+						removeItem(sharedSlotIndex,"bags");
 					end
 				end
 			end
 		end
-
-		-- 'bags' callbacks
-		if doUpdate.bags and callbacks.bagsNum>0 and hasChanged.bags then
-			doCallbacks(callbacks.bags,"bags");
-		end
-
-		-- 'inv' callbacks
-		if doUpdate.inv and not invFailed and callbacks.invNum>0 and hasChanged.inv then
-			doCallbacks(callbacks.inv,"inv");
-		end
-
-		doUpdate.bags = false;
-		doUpdate.inv = false;
+		wipe(updateBags);
+		callbackHandler();
 	end
 
-	function doUpdate.unlock()
-		doUpdate.locked = false;
+	local function afterItemUpgrade()
+		-- TODO: get item id, or inv slot or bag slot for faster update
 	end
 
-	function doUpdate.execute()
-		if not doUpdate.delay or doUpdate.locked then
-			return;
-		end
-		doUpdate.delay = doUpdate.delay - doUpdate.tickerLength;
-		if doUpdate.delay<=0 then
-			doUpdate.locked = true;
-			doUpdate.delay = false;
-			doUpdate.ticker:Cancel();
-			doUpdate.ticker = false;
-			scanner();
-			C_Timer.After(1,doUpdate.unlock);
-		end
-	end
-
-	function doUpdate.init(event)
-		if not IsEnabled or (not doUpdate.bags and not doUpdate.inv) then return end
-		doUpdate.delay = (tostring(event)=="PLAYER_LOGIN" and .5) or doUpdate.defaultDelay;
-		if not doUpdate.ticker then
-			doUpdate.ticker = C_Timer.NewTicker(doUpdate.tickerLength,doUpdate.execute);
-		end
-	end
+	local firstBagUpdateDelay,inventoryEvents = true,{
+		PLAYER_LOGIN = true,
+		PLAYER_EQUIPMENT_CHANGED = true,
+		UPDATE_INVENTORY_DURABILITY = true,
+		ITEM_UPGRADE_MASTER_UPDATE = true
+	};
 
 	local function OnEvent(self,event,...)
-		if event=="ADDON_LOADED" then
-			if (...)=="Blizzard_ItemUpgradeUI" then
-				ItemUpgradeFrameUpgradeButton:HookScript("OnClick",doUpdate.init);
-				hooksecurefunc(_G,"ItemUpgradeFrame_UpgradeClick",doUpdate.init);
+		if event=="ADDON_LOADED" and (...)=="Blizzard_ItemUpgradeUI" then
+			ItemUpgradeFrameUpgradeButton:HookScript("OnClick",afterItemUpgrade);
+			hooksecurefunc(_G,"ItemUpgradeFrame_UpgradeClick",afterItemUpgrade);
+			eventFrame:UnregisterEvent(event);
+		elseif event=="BAG_UPDATE" and tonumber(...) and ... <= NUM_BAG_SLOTS then
+			tinsert(updateBags,...);
+		elseif event=="BAG_UPDATE_DELAYED" and #updateBags>0 then
+			if firstBagUpdateDelay then
+				firstBagUpdateDelay = nil;
+				tinsert(updateBags,1,0); -- BAG_UPDATE does not fire argument1 = 0 (for backpack) on login
 			end
-		elseif event=="PLAYER_LOGIN" or ns.eventPlayerEnteredWorld then
-			if event=="PLAYER_LOGIN" or event=="UPDATE_INVENTORY_DURABILITY" then
-				doUpdate.inv = true;
-				doUpdate.bags = true;
-			elseif event=="PLAYER_EQUIPMENT_CHANGED" or event=="AZERITE_EMPOWERED_ITEM_SELECTION_UPDATED" or event=="ITEM_UPGRADE_MASTER_UPDATE" then
-				doUpdate.inv = true;
-			elseif event=="BAG_UPDATE_DELAYED" then
-				doUpdate.bags = true;
-			end
-			doUpdate.init(event);
+			scanBags();
+		elseif inventoryEvents[event] then
+			scanInventory();
 		end
 	end
+	eventFrame:SetScript("OnEvent",OnEvent);
 
-	local function init()
-		if IsEnabled then return end
-		IsEnabled = true;
+	local function initBags()
+		if IsEnabledBags then return end
+		IsEnabledBags = true;
 
-		f:SetScript("OnEvent",OnEvent);
-		f:RegisterEvent("BAG_UPDATE_DELAYED");
-		f:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
-		f:RegisterEvent("UPDATE_INVENTORY_DURABILITY");
-		if ns.client_version>2 then
-			f:RegisterEvent("ITEM_UPGRADE_MASTER_UPDATE");
-			f:RegisterEvent("AZERITE_EMPOWERED_ITEM_SELECTION_UPDATED");
-		end
+		-- bag events
+		eventFrame:RegisterEvent("BAG_UPDATE");
+		eventFrame:RegisterEvent("BAG_UPDATE_DELAYED");
+
 		if ns.eventPlayerEnteredWorld then
-			OnEvent(f,"PLAYER_LOGIN");
-		else
-			f:RegisterEvent("PLAYER_LOGIN");
-		end
-		if IsAddOnLoaded("Blizzard_ItemUpgradeUI") then
-			OnEvent(f,"ADDON_LOADED","Blizzard_ItemUpgradeUI");
-		else
-			f:RegisterEvent("ADDON_LOADED");
+			-- module registered after PLAYER_ENTERING_WORLD
+			updateBags = {0,1,2,3,4};
+			OnEvent(eventFrame,"BAG_UPDATE_DELAYED");
 		end
 	end
 
-	function ns.items.UpdateLock()
-		doUpdate.locked = true;
+	local function initInventory()
+		if IsEnabledInv then return end
+		IsEnabledInv = true;
+
+		-- inventory events
+		eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
+		eventFrame:RegisterEvent("UPDATE_INVENTORY_DURABILITY");
+
+		if ns.client_version>2 then
+			eventFrame:RegisterEvent("ITEM_UPGRADE_MASTER_UPDATE");
+			if IsAddOnLoaded("Blizzard_ItemUpgradeUI") then
+				OnEvent(eventFrame,"ADDON_LOADED","Blizzard_ItemUpgradeUI");
+			else
+				eventFrame:RegisterEvent("ADDON_LOADED");
+			end
+		end
+
+		if ns.eventPlayerEnteredWorld then
+			-- module registered after PLAYER_ENTERING_WORLD
+			OnEvent(eventFrame,"PLAYER_EQUIPMENT_CHANGED");
+		end
 	end
 
-	function ns.items.UpdateForce()
-		doUpdate.locked = false;
-		doUpdate.init();
+	function ns.items.Init(initType)
+		assert(initType,"Missing argument initType");
+		if initType~="inv" then
+			initBags();
+		end
+		if initType~="bags" then
+			initInventory();
+		end
 	end
 
 	function ns.items.RegisterCallback(modName,func,mode,id)
 		mode = tostring(mode):lower();
 		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
 		assert(type(func)=="function","argument #2 (function) must be a function, got "..type(func));
-		assert(type(callbacks[mode])=="table", "argument #3 must be 'any', 'inv', 'bags', 'item', 'equipment' or 'prepare'.");
+		assert(type(callbacks[mode])=="table", "argument #3 must be 'any', 'inv', 'bags', 'item', 'equip' or 'prepare'.");
 		if mode=="item" then
 			assert(type(id)=="number","argument #4 must be number, got "..type(id));
 			if callbacks.item[id]==nil then
@@ -1121,8 +1083,8 @@ do
 		else
 			callbacks[mode][modName] = func;
 		end
-		callbacks[mode.."Num"] = callbacks[mode.."Num"] + 1;
-		init();
+		callbacks[mode.."Num"] = (callbacks[mode.."Num"] or 0) + 1;
+		ns.items.Init(mode);
 	end
 end
 
@@ -2140,44 +2102,6 @@ do
 			WORLD_QUESTS          = {L["QuestTagWQ"],"yellow"},
 			DUNGEON_MYTHIC        = {L["QuestTagMD"],"ltred"}
 		};
-	end
-	local tradeskills_update;
-	local tradeskills_mt = {__call=function(t,k)
-		if value then return rawget(t,k); end
-		tradeskills_update();
-	end};
-	ns.tradeskills = setmetatable({},tradeskills_mt);
-	local ts_try=0;
-	function tradeskills_update()
-		if ns.data.tradeskills==nil then
-			ns.data.tradeskills = {};
-		end
-		if ns.data.tradeskills[ns.locale]==nil then
-			ns.data.tradeskills[ns.locale]={};
-		end
-		ns.tradeskills = setmetatable(ns.data.tradeskills[ns.locale],tradeskills_mt);
-		ts_try = ts_try+1;
-		local fail = false;
-		for spellId, spellName in pairs({
-			[1804] = "Lockpicking", [2018]  = "Blacksmithing", [2108]  = "Leatherworking", [2259]  = "Alchemy",     [2550]  = "Cooking",     [2575]   = "Mining",
-			[2656] = "Smelting",    [2366]  = "Herbalism",     [3273]  = "First Aid",      [3908]  = "Tailoring",   [4036]  = "Engineering", [7411]   = "Enchanting",
-			[8613] = "Skinning",    [25229] = "Jewelcrafting", [45357] = "Inscription",    [53428] = "Runeforging", [78670] = "Archaeology", [131474] = "Fishing",
-		}) do
-			if ns.tradeskills[spellId]==nil then
-				local spellLocaleName,_,spellIcon = GetSpellInfo(spellId);
-				if spellLocaleName then
-					ns.tradeskills[spellLocaleName] = true;
-					ns.tradeskills[spellId] = true;
-				else
-					fail = true;
-				end
-			end
-		end
-		if fail and ts_try<=3 then
-			C_Timer.After(0.5, function()
-				tradeskills_update()
-			end);
-		end
 	end
 end
 

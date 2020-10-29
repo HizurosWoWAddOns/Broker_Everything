@@ -43,14 +43,12 @@ end
 
 local function bagCheck()
 	wipe(founds);
-	for id,v in pairs(items)do
-		if ns.items.item[id] then
-			for i,index in pairs(ns.items.item[id]) do
-				local t = CopyTable(ns.items.bags[index]);
-				t.type = "bag";
-				t.callback = ScanTT_Callback;
-				ns.ScanTT.query(t);
-			end
+	for sharedSlot,item in pairs(ns.items.bySlot) do
+		if item.bag>=0 and items[item.id] then
+			local t = CopyTable(item);
+			t.type = "bag";
+			t.callback = ScanTT_Callback;
+			ns.ScanTT.query(t);
 		end
 	end
 end

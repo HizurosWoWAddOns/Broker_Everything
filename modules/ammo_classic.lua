@@ -61,13 +61,16 @@ end
 
 local function updateAmmo()
 	local sum,itemInfo,_ = 0,{};
-	for index,entry in pairs(ns.items.ammo) do
-		if not itemInfo[entry.id] then
-			itemInfo[entry.id] = {count=0};
-			itemInfo[entry.id].name,_,itemInfo[entry.id].quality,_,_,_,_,_,_,itemInfo[entry.id].icon = GetItemInfo(entry.id);
+	for sharedSlot in pairs(ns.items.ammo) do
+		local item = ns.items.bySlot[sharedSlot];
+		local _, count = GetContainerItemInfo(item.bag,item.slot);
+		if not itemInfo[item.id] then
+			itemInfo[item.id] = {count=count};
+			itemInfo[item.id].name,_,itemInfo[item.id].quality,_,_,_,_,_,_,itemInfo[item.id].icon = GetItemInfo(item.id);
+		else
+			itemInfo[item.id].count = itemInfo[item.id].count + count;
 		end
-		itemInfo[entry.id].count = itemInfo[entry.id].count + entry.count;
-		sum = sum + entry.count;
+		sum = sum + count;
 	end
 	ammo.inUse = GetInventoryItemID("player",0);
 	ammo.sum = sum;

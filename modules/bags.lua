@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Bags" -- L["Bags"] L["ModDesc-Bags"]
-local ttName,ttColumns,tt,module = name.."TT",3;
+local ttName,ttColumns,tt,module,createTooltip = name.."TT",3;
 local IsMerchantOpen,G = false,{};
 local crap,bags,bagTypes,retry = {limit=3,sum=0,items={}},{sumFree=0,sumTotal=0,byTypeFree={},byTypeTotal={}},{};
 local qualityModeValues = {
@@ -113,19 +113,35 @@ end
 
 local function itemQuality()
 	local price, sum, _ = {[99]=0},{[99]=0};
+	local failed = false;
 	for i in pairs(ITEM_QUALITY_COLORS) do
 		price[i],sum[i]=0,0;
 	end
-	for index,entry in pairs(ns.items.bags)do
-		local _,itemCount,_,itemQuality = GetContainerItemInfo(entry.bag,entry.slot);
-		local itemName, _, _, _, _, _, _, _, _, _, itemPrice = GetItemInfo(entry.link);
-		if itemName and itemCount then
-			itemQuality = itemQuality or 99; -- unknown quality [nil]
-			sum[itemQuality] = sum[itemQuality] + itemCount;
-			if itemPrice then
-				price[itemQuality] = price[itemQuality] + (itemPrice*itemCount);
+	for itemID,items in pairs(ns.items.byID)do
+		local itemPrice,itemName,itemQuality;
+		for sharedSlot, item in pairs(items) do
+			if item.bag>=0 then
+				if not itemPrice then
+					itemName, _, itemQuality, _, _, _, _, _, _, _, itemPrice = GetItemInfo(item.link);
+					if not itemName then
+						failed = true;
+					end
+				end
+				local _,count = GetContainerItemInfo(item.bag,item.slot);
+				itemQuality = itemQuality or 99; -- unknown quality [nil]
+				if count and itemPrice then
+					price[itemQuality] = price[itemQuality] + (itemPrice*count);
+				end
+				if count then
+					sum[itemQuality] = sum[itemQuality] + count;
+				end
 			end
 		end
+	end
+	if failed then
+		C_Timer.After(0.7,function()
+			createTooltip(tt)
+		end);
 	end
 	return price, sum;
 end
@@ -174,7 +190,7 @@ local function updateBroker()
 	(ns.LDB:GetDataObjectByName(module.ldbName) or {}).text = table.concat(txt,", ");
 end
 
-local function createTooltip(tt)
+function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
 	if tt.lines~=nil then tt:Clear(); end
@@ -370,6 +386,9 @@ end
 function module.init()
 	for i=0, 7 do G["ITEM_QUALITY"..i.."_DESC"] = _G["ITEM_QUALITY"..i.."_DESC"] end
 	G.ITEM_QUALITY99_DESC = UNKNOWN;
+
+	-- init ns.items
+	ns.items.Init("bags");
 end
 
 function module.onevent(self,event,...)
