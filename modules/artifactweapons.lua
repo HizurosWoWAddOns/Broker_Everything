@@ -64,57 +64,52 @@ end
 
 function updateItemState()
 	wipe(ap_items_found);
-	for id,items in pairs(ns.items.item) do
-		if ns.artifactpower_items[id]~=nil then
-			-- group items with same item id by knowledge levels
-			local klvls = {};
-			for i=1, #items do
-				local tbl,index = "inv",items[i];
-				if index>1000 then
-					tbl = "bags";
-				end
-				if ns.items[tbl][index].quality~=0 then
-					local item,_ = CopyTable(ns.items[tbl][index]);
-					ns.ScanTT.query(item,true);
-					item.name, _, _, _, _, _, _, _, _, item.icon = GetItemInfo(item.link);
-					local knowledge = item.linkData[#item.linkData-3];
-					if knowledge then
-						if klvls[knowledge]==nil then klvls[knowledge]={}; end
-						tinsert(klvls[knowledge],item);
-					end
-				end
-			end
-			for klvl,items in pairs(klvls)do
-				local knowledgeLevel = klvl-1;
-				local isFishing = false;
-				local artefact_power = nil;
-				-- read artefact power from single item tooltip with same item id and knowledge level
-				if items[1].tooltip then
-					for i=2, #items[1].tooltip do
-						artefact_power = ttMatchString(items[1].tooltip[i],AP_MATCH_STRINGS); -- artefact power for artefact weapons?
-						if not artefact_power then
-							artefact_power = ttMatchString(items[1].tooltip[i],FISHING_AP_MATCH_STRINGS); -- artefact power for artefact pole?
-							if artefact_power then
-								isFishing = true;
-							end
-						end
-						if artefact_power then
-							break;
-						end
-					end
-				end
-				tinsert(ap_items_found,{
-					id=id,
-					count=#items,
-					link=items[1].link,
-					name=items[1].name,
-					icon=items[1].icon,
-					artifact_power=artefact_power or -1,
-					quality=items[1].quality,
-					isFishing = isFishing
-				});
+
+	local klvls = {};
+
+	for sharedSlot,itemInfo in pairs(ns.items.bySlot) do
+		if itemInfo.bag>=0 and ns.artifactpower_items[itemInfo.id] then
+			local item = CopyTable(itemInfo);
+			item.type = "bag";
+			ns.ScanTT.query(item,true);
+			item.name, _, _, _, _, _, _, _, _, item.icon = GetItemInfo(item.link);
+			local knowledge = item.linkData[#item.linkData-3];
+			if knowledge then
+				if klvls[knowledge]==nil then klvls[knowledge]={}; end
+				tinsert(klvls[knowledge],item);
 			end
 		end
+	end
+
+	for klvl,items in pairs(klvls)do
+		local knowledgeLevel = klvl-1;
+		local isFishing = false;
+		local artefact_power = nil;
+		-- read artefact power from single item tooltip with same item id and knowledge level
+		if items[1].tooltip then
+			for i=2, #items[1].tooltip do
+				artefact_power = ttMatchString(items[1].tooltip[i],AP_MATCH_STRINGS); -- artefact power for artefact weapons?
+				if not artefact_power then
+					artefact_power = ttMatchString(items[1].tooltip[i],FISHING_AP_MATCH_STRINGS); -- artefact power for artefact pole?
+					if artefact_power then
+						isFishing = true;
+					end
+				end
+				if artefact_power then
+					break;
+				end
+			end
+		end
+		tinsert(ap_items_found,{
+			id=id,
+			count=#items,
+			link=items[1].link,
+			name=items[1].name,
+			icon=items[1].icon,
+			artifact_power=artefact_power or -1,
+			quality=items[1].quality,
+			isFishing = isFishing
+		});
 	end
 	updateBroker()
 end
@@ -159,7 +154,7 @@ local function updateCharacterDB(equipped)
 			end
 		end
 
-		local weapon = ns.items.inventory[16];
+		local weapon = ns.items.bySlot[-0.16];
 
 		ns.toon[name][itemID] = {
 			name=itemName,
@@ -489,7 +484,7 @@ function createTooltip(tt)
 			end
 
 			-- display average item level
-			local weapon = ns.items.inventory[16];
+			local weapon = ns.items.bySlot[-0.16];
 			if weapon then
 				tt:AddLine(C("ltgreen",STAT_AVERAGE_ITEM_LEVEL),"",C("ltyellow",weapon.level));
 			end
