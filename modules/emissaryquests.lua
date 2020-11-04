@@ -86,11 +86,10 @@ end
 
 local function updateBroker()
 	local lst,obj = {},ns.LDB:GetDataObjectByName(module.ldbName);
-	if UnitLevel("player")<110 then
+	if UnitLevel("player")<GetMaxLevelForExpansionLevel(6) then
 		obj.text = ns.profile[name].shortTitle and L["Emissary Quests-ShortCut"] or L[name];
 		return
 	end
-
 	local Time = time();
 	for e=1, #expansions do
 		if expansions[e] and ns.profile[name][expansions[e].name.."QuestsBroker"] then
