@@ -836,10 +836,10 @@ function module.onevent(self,event,arg1,...)
 			if toonDB.cooldown_locks==nil then
 				toonDB.cooldown_locks = {};
 			end
+			--[[
 			if ns.data[name]==nil then
 				ns.data[name]={};
 			end
-			--[[
 			dataDB = ns.data[name];
 			if dataDB.recipeCooldownsBuild==nil or dataDB.recipeCooldownsBuild~=ns.client_version then
 				dataDB.recipeCooldownsBuild = ns.client_version;
@@ -864,6 +864,21 @@ function module.onevent(self,event,arg1,...)
 			toonDB.unlearnedRecipes[arg1] = nil;
 		end
 	elseif event=="PLAYER_LOGIN" or ns.eventPlayerEnteredWorld then
+		if not toonDB then
+			if ns.toon[name]==nil then
+				ns.toon[name]={};
+			end
+			toonDB = ns.toon[name];
+			if toonDB.unlearnedRecipes==nil then
+				toonDB.unlearnedRecipes = {}
+			end
+			if toonDB.cooldowns==nil then
+				toonDB.cooldowns = {};
+			end
+			if toonDB.cooldown_locks==nil then
+				toonDB.cooldown_locks = {};
+			end
+		end
 		updateTradeSkills();
 		updateBroker();
 	end
