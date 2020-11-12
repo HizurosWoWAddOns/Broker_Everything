@@ -80,6 +80,7 @@ ns.LC.colorset({
 do
 	local addon_short = L[addon.."_Shortcut"];
 	local colors = {"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"};
+	local debugMode = "@project-version@" == "@".."project-version".."@";
 	local function colorize(...)
 		local t,c,a1 = {tostringall(...)},1,...;
 		if type(a1)=="boolean" then tremove(t,1); end
@@ -100,11 +101,14 @@ do
 	function ns.debug(name,...)
 		ConsolePrint(date("|cff999999%X|r"),colorize("<debug::"..name..">",...));
 	end
-	if ("@project-version@" == "@".."project-version".."@") then
-		local function GetNamespace()
+	function ns.debugPrint(name,...)
+		if not debugMode then return end
+		print(colorize("<debug::"..name..">",...))
+	end
+	if debugMode then
+		_G[addon.."_GetNamespace"] = function()
 			return ns;
 		end
-		_G[addon.."_GetNS"] = GetNamespace
 	end
 end
 
