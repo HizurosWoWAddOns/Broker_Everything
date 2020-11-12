@@ -37,7 +37,14 @@ local function updateBroker()
 	local text = {};
 	local numWarning = #limitWarning;
 	if currencySeen then
-		local str,color = currencySeen[raceName].." "..currencySeen[raceFragmentsCollected].."/"..currencySeen[raceFragmentsMax],limitColors(currencySeen[raceFragmentsMax]-currencySeen[raceFragmentsCollected],"white");
+		local str = currencySeen[raceName].." "..currencySeen[raceFragmentsCollected];
+		if ns.profile[name].infoRequiredFragments then
+			str = str.."/"..currencySeen[raceNumFragmentsRequired];
+		end
+		if ns.profile[name].infoMaxFragments then
+			str = str.." ("..currencySeen[raceFragmentsMax]..")";
+		end
+		local color = limitColors(currencySeen[raceFragmentsMax]-currencySeen[raceFragmentsCollected],"white");
 		tinsert(text,color~="white" and C(color,str) or str);
 	end
 	if #solvables>0 then
@@ -246,7 +253,9 @@ module = {
 	config_defaults = {
 		enabled = false,
 		inTitle = {},
-		continentOrder=true
+		continentOrder=true,
+		infoMaxFragments=true,
+		infoMaxFragments=true,
 	},
 	clickOptionsRename = {
 		["archaeology"] = "1_open_archaeology_frame",
@@ -266,6 +275,10 @@ ns.ClickOpts.addDefaults(module,{
 
 function module.options()
 	return {
+		broker = {
+			infoRequiredFragments = { type="toggle", order=1, name=L["ArchaeologyInfoRequiredFragements"], desc=L["ArchaeologyInfoRequiredFragementsDesc"] },
+			infoMaxFragments = { type="toggle", order=2, name=L["ArchaeologyInfoMaxFragements"], desc=L["ArchaeologyInfoMaxFragementsDesc"]},
+		},
 		tooltip = {
 			continentOrder = { type="toggle", order=1, name=L["OptArchOrder"], desc=L["OptArchOrderDesc"] }
 		}
