@@ -6,7 +6,7 @@ local C,L,I=ns.LC.color,ns.L,ns.I;
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name = "Guild2"; -- GUILD L["ModDesc-Guild"]
+local name = "Guild"; -- GUILD L["ModDesc-Guild"]
 local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module = name.."TT", name.."TT2",10,2;
 local pattern_FRIEND_OFFLINE = ERR_FRIEND_OFFLINE_S:gsub("%%s","(.*)"):trim();
 local pattern_FRIEND_ONLINE = ERR_FRIEND_ONLINE_SS:gsub("[\124:%[%]]","#"):gsub("%%s","(.*)"):trim();
