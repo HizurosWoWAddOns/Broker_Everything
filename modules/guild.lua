@@ -634,7 +634,7 @@ local function createTooltip(tt,update)
 		tt:SetCell(l,#titles+1,C("ltyellow",TRADE_SKILLS), nil,nil,2); -- [8,9]
 	end
 
-	tt:SetCell(l,#titles+3,"  ");
+	tt:SetCell(l,ttColoumns,"  ");
 
 	tt:AddSeparator();
 
