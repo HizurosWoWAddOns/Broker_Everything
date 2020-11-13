@@ -260,7 +260,7 @@ local function createTooltip2(self,memberIndex)
 	local mName, mRealm = strsplit("-",mFullName,2);
 
 	local s,t,_ = "";
-	local realm = info.mRealm or "";
+	local realm = mRealm or "";
 
 	tt2 = ns.acquireTooltip(
 		{ttName2, ttColumns2, "LEFT","RIGHT"},
