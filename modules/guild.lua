@@ -19,10 +19,20 @@ local tradeskills = {}; -- filled by updateTradeSkills
 local bnetFriends = {}; -- filled by updateBattleNetFriends
 local flags = {}; -- filled by module.onenter
 local ttHooks = {} -- filled by module.onenter
-local membScroll = {step=0,stepWidth=5,numLines=15,lines={},lineCols={},bar=false};
-local applScroll = {step=0,stepWidth=3,numLines=15,lines={},lineCols={},bar=false};
-local tradeSkillLock,tradeSkillsUpdateDelay,chatNotificationEnabled = false,0;
+local applScroll = {step=0,stepWidth=3,numLines=5,lines={},lineCols={},slider=false};
+local membScroll = {step=0,stepWidth=5,numLines=15,lines={},lineCols={},slider=false};
+local applScrollRegionColor,membScrollRegionColor = {1,.5,0,.15},{1,.82,0,.11}
+local tradeSkillLock,tradeSkillsUpdateDelay,chatNotificationEnabled,frame = false,0;
 local CanViewOfficerNote = CanViewOfficerNote or C_GuildInfo.CanViewOfficerNote;
+local BACKDROP_SLIDER_8_8 = BACKDROP_SLIDER_8_8 or { -- classic
+	bgFile = "Interface\\Buttons\\UI-SliderBar-Background",
+	edgeFile = "Interface\\Buttons\\UI-SliderBar-Border",
+	tile = true,
+	tileEdge = true,
+	tileSize = 8,
+	edgeSize = 8,
+	insets = { left = 3, right = 3, top = 6, bottom = 6 },
+};
 
 
 -- register icon names and default files --
@@ -40,7 +50,6 @@ local function GetApplicants()
 	if CanUpdateApplicants() then
 		local guildClubId = C_Club.GetGuildClubId();
 		if guildClubId then
-			--ns.debugPrint(name,"<GetApplicants>");
 			return (C_ClubFinder.ReturnClubApplicantList(guildClubId) or {});
 		end
 	end
@@ -342,7 +351,6 @@ local function ttAddApplicant(lineIndex,applicantInfo)
 	tt:SetCell(lineIndex,3,table.concat(roles,", "));
 	tt:SetCell(lineIndex,4,date("%Y-%m-%d",applicantInfo.lastUpdatedTime+(86400*30)));
 	tt:SetCell(lineIndex,5,(strlen(applicantInfo.message)>0 and ns.scm(ns.strCut(applicantInfo.message,60)) or C("gray","<"..EMPTY..">")),nil,nil,ttColumns-5);
-
 	--tt:SetLineScript(lineIndex,"OnMouseUp",showApplication,applicantIndex);
 end
 
@@ -372,7 +380,7 @@ local function ttAddMember(lineIndex,memberIndex)
 	tt:SetCell(lineIndex,1,mLevel);
 
 	-- status / member name / realm
-	local status_name = status .. " " .. C(offColor or mClassFile,ns.scm(mName)) .. ns.showRealmName(name,mRealm);
+	local status_name = status .. " " .. C(offColor or mClassFile,ns.scm(mName)) .. ns.showRealmName(name,mRealm,offColor);
 	if ns.profile[name].showBattleTag and bnetFriends[mName.."-"..mRealm] then
 		status_name = status_name.." "..C(offColor or "ltblue","("..ns.scm(bnetFriends[mName.."-"..mRealm]..")"));
 	end
@@ -387,6 +395,9 @@ local function ttAddMember(lineIndex,memberIndex)
 			if mRaceName then
 				knownMemberRaces[mGUID] = mRaceName;
 			end
+		end
+		if offColor then
+			mRaceName = C(offColor,mRaceName);
 		end
 		tt:SetCell(lineIndex,cellIndex,mRaceName or "");
 		cellIndex = cellIndex + 1;
@@ -458,27 +469,65 @@ local function ttAddMember(lineIndex,memberIndex)
 end
 
 local function ttScrollList(delta,tbl) -- executed by createTooltip and ttWheelHook
-	local start,numEntries,new,scrollInfo,stop = 0,#tbl,false,membScroll;
+	local scrollInfo,target,new = membScroll,"Members",false;
 	if tbl==applicants then
-		scrollInfo = applScroll;
+		scrollInfo,target = applScroll,"Applicants";
 	end
-	stop = scrollInfo.numLines;
+	local start,stop,numEntries = 0,scrollInfo.numLines,#tbl;
+	local maxSteps = ceil(numEntries/scrollInfo.stepWidth)-floor(scrollInfo.numLines/scrollInfo.stepWidth);
 
 	if delta == 0 then
 		wipe(scrollInfo.lines);
 		scrollInfo.step,new = 0,true;
+		if not scrollInfo.slider then
+			-- create scroll region
+			local scrollRegion = CreateFrame("Frame",nil,tt,BackdropTemplateMixin and "BackdropTemplate");
+			scrollInfo.region = scrollRegion;
+			scrollRegion:SetBackdrop({bgFile="interface/buttons/white8x8"});
+			if ns.profile[name].showTableBackground==false then
+				scrollRegion:SetBackdropColor(0,0,0,0); -- transparent
+			elseif scrollInfo==applScroll then
+				scrollRegion:SetBackdropColor(unpack(applScrollRegionColor));
+			else
+				scrollRegion:SetBackdropColor(unpack(membScrollRegionColor));
+			end
+			scrollRegion:SetFrameLevel(tt:GetFrameLevel()+1);
+			-- create slider
+			local slider = CreateFrame("Slider",addon.."Guild"..target.."ScrollSlider",tt,BackdropTemplateMixin and "BackdropTemplate");
+			scrollInfo.slider = slider;
+			slider.parent = scrollInfo;
+			slider:SetOrientation("VERTICAL");
+			slider:SetBackdrop(BACKDROP_SLIDER_8_8);
+			slider:SetThumbTexture([[Interface\Buttons\UI-SliderBar-Button-Vertical]]);
+			slider:SetWidth(12)
+			slider:SetMinMaxValues(0, 1)
+			slider:SetValueStep(1)
+			slider:SetValue(0)
+			slider:SetScript("OnValueChanged", slider_OnValueChanged)
+			slider:SetScript("OnShow",function(self)
+				-- hide scroll region and slider
+				if self:GetParent().key~=ttName then
+					scrollRegion:ClearAllPoints();
+					scrollRegion:SetParent(frame);
+					scrollRegion:Hide();
+					self:ClearAllPoints();
+					self:SetParent(frame);
+					self:Hide();
+				end
+			end);
+		end
 	else
 		local newStep = scrollInfo.step + (delta==true and 0 or delta);
-		start = newStep*scrollInfo.stepWidth;
-		stop = start+scrollInfo.numLines;
-		if newStep<0 or start>numEntries then
-			return; -- update lines not necessary
+		if newStep>maxSteps or numEntries<=scrollInfo.numLines then
+			return; -- update not necessary
 		end
 		scrollInfo.step = newStep;
+		start = newStep*scrollInfo.stepWidth;
+		stop = start+scrollInfo.numLines;
 	end
 
 	-- clear lines
-	if stop>#tbl then
+	if stop>numEntries then
 		for i=1, #scrollInfo.lines do
 			local line = scrollInfo.lines[i];
 			for cell in pairs(tt.lines[line].cells) do
@@ -487,23 +536,42 @@ local function ttScrollList(delta,tbl) -- executed by createTooltip and ttWheelH
 		end
 	end
 
-	local index = 1;
-	for i=1+start, #tbl do
-		local line = scrollInfo.lines[index];
-		if not line then
-			line = tt:AddLine();
-			scrollInfo.lines[index] = line;
-		end
-		if tbl==applicants then
-			ttAddApplicant(line,tbl[i]);
-		else
-			ttAddMember(line,tbl[i]);
-		end
-		index = index + 1;
-		if i>stop then
-			break;
+	-- set lines
+	local lineIndex = 1;
+	for i=1+start, stop do
+		if tbl[i] then
+			local line = scrollInfo.lines[lineIndex];
+			if not line then
+				line = tt:AddLine();
+				scrollInfo.lines[lineIndex] = line;
+			end
+			if tbl==applicants then
+				ttAddApplicant(line,tbl[i]);
+			else
+				ttAddMember(line,tbl[i]);
+			end
+			lineIndex = lineIndex + 1;
 		end
 	end
+
+	-- update scroll region
+	scrollInfo.region:SetParent(tt);
+	scrollInfo.region:SetPoint("TOPLEFT",tt.lines[ scrollInfo.lines[1]-2 ],-4,2);
+	scrollInfo.region:SetPoint("BOTTOMRIGHT",tt.lines[ scrollInfo.lines[#scrollInfo.lines] ],4,-2);
+	scrollInfo.region:SetFrameLevel(tt:GetFrameLevel()+1);
+	scrollInfo.region:Show();
+
+	if new and maxSteps>1 then
+		-- update slider
+		scrollInfo.slider:SetParent(tt);
+		scrollInfo.slider:SetPoint("TOPRIGHT",tt.lines[ scrollInfo.lines[1] ],"TOPRIGHT",0,4);
+		scrollInfo.slider:SetPoint("BOTTOMRIGHT",tt.lines[ scrollInfo.lines[#scrollInfo.lines] ],"BOTTOMRIGHT",0,-4);
+		scrollInfo.slider:SetFrameLevel(tt.lines[1]:GetFrameLevel()+1);
+		scrollInfo.slider:SetMinMaxValues(0,maxSteps);
+		scrollInfo.slider:Show();
+	end
+
+	scrollInfo.slider:SetValue(scrollInfo.step);
 end
 
 local function createTooltip(tt,update)
@@ -605,7 +673,7 @@ local function createTooltip(tt,update)
 			);
 			tt:AddSeparator();
 			ttScrollList(0,applicants);
-			tt:AddSeparator(4,0,0,0,0);
+			tt:AddLine(" ");
 		end
 	end
 
@@ -634,7 +702,7 @@ local function createTooltip(tt,update)
 		tt:SetCell(l,#titles+1,C("ltyellow",TRADE_SKILLS), nil,nil,2); -- [8,9]
 	end
 
-	tt:SetCell(l,ttColumns,"  ");
+	tt:SetCell(l,ttColumns,"    ");
 
 	tt:AddSeparator();
 
@@ -694,30 +762,20 @@ local function createTooltip(tt,update)
 	end
 end
 
-local function MouseIsOverScrollArea(tbl)
-	for i=1, #tbl do
-		return MouseIsOver(tbl[i]);
-	end
-	return false;
-end
-
 local function ttWheelHook(parent,delta)
-	if tt~=parent then
-		return; -- LibQTip reuse tooltips. a good pratice. respect foreign addon tooltips ;-)
+	if tt~=parent and tt.key~=ttName then
+		-- LibQTip reuse tooltips and it is a good practice.
+		-- This should respect foreign addon tooltips ;-) after bypassing LibQTips HookScript blocker.
+		-- The blocker is good and should stay. A good reminder not to be too careless about using HookScript.
+		return;
 	end
-	if applicants and #applicants>0 and MouseIsOverScrollArea(applScroll.lines) then
+	if applicants and #applicants>0 and MouseIsOver(applScroll.region) then
 		ttScrollList(-delta,applicants);
-	else --if MouseIsOverScrollArea(membScroll.lines) then
+	elseif MouseIsOver(membScroll.region) then
 		ttScrollList(-delta,membersOnline);
 	end
 end
 
-local function ttOnLeaveHook(parent)
-	if tt~=parent then
-		return; -- LibQTip reuse tooltips. a good pratice. respect foreign addon tooltips ;-)
-	end
-	-- scrollbar hide
-end
 
 -- module functions and variables --
 ------------------------------------
@@ -750,6 +808,7 @@ module = {
 		showRankID = false,
 		showProfessions = true,	showProfessionsInTT2 = false,
 		showBattleTag = true,
+		showTableBackground = true,
 
 		-- misc
 		showApplicants = true,
@@ -779,6 +838,7 @@ if ns.client_version<2 then
 	module.config_defaults.showProfessionsInTT2 = false
 	module.config_defaults.showApplicants = false
 	module.config_defaults.showApplicantsBroker = false
+	module.config_defaults.showTableBackground = false;
 end
 
 ns.ClickOpts.addDefaults(module,{
@@ -813,6 +873,7 @@ function module.options()
 			showMobileChatter = { type="toggle", order=29, name=L["Mobile app user"], desc=L["Show mobile chatter in tooltip (Armory App users)"] },
 			--splitTables       = { type="toggle", order=30, name=L["Separate mobile app user"], desc=L["Display mobile chatter with own table in tooltip"] }, -- deprecated
 			showBattleTag     = { type="toggle", order=31, name=BATTLETAG, desc=L["Append the BattleTag of your friends to the character name"], hidden=ns.IsClassicClient },
+			showTableBackground={ type="toggle", order=32, name=L["GuildTableBg"], desc=L["GuildTableBgDesc"], hidden=ns.IsClassicClient },
 		},
 		tooltip2 = {
 			name = L["Secondary tooltip options"],
@@ -842,8 +903,20 @@ end
 function module.onevent(self,event,msg,...)
 	if event=="BE_UPDATE_CFG" and msg and msg:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
+	elseif event=="BE_UPDATE_CFG" and msg=="showTableBackground" then
+		local hide = false;
+		if not ns.profile[name].showTableBackground then
+			hide = {0,0,0,0};
+		end
+		if applScroll.region then
+			applScroll.region:SetBackdropColor(unpack(hide or applScrollRegionColor));
+		end
+		if membScroll.region then
+			membScroll.region:SetBackdropColor(unpack(hide or membScrollRegionColor));
+		end
 	elseif event=="PLAYER_LOGIN" or (ns.eventPlayerEnteredWorld and not self.IsLoaded) then
 		self.IsLoaded = true;
+		frame = self;
 		if GuildRoster then
 			GuildRoster(); -- for classic
 		else
@@ -921,8 +994,6 @@ function module.onevent(self,event,msg,...)
 		end
 
 		updateBroker();
-
-		--ns.debugPrint(name,event,msg,...)
 	end
 end
 
@@ -982,8 +1053,7 @@ function module.onenter(self)
 		tt:EnableMouseWheel(true);
 		if not ttHooks[tt] then
 			ttHooks[tt] = true;
-			self.HookScript(tt,"OnMouseWheel",ttWheelHook);
-			self.HookScript(tt,"OnLeave",ttOnLeaveHook);
+			self.HookScript(tt,"OnMouseWheel",ttWheelHook); -- see comment in function ttWheelHook
 		end
 	end
 end

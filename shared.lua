@@ -238,7 +238,7 @@ function ns.showRealmName(mod,name,color,prepDash)
 				end
 			end
 		else
-			return ns.LC.color("dkyellow"," *");
+			return ns.LC.color(color or "dkyellow"," *");
 		end
 	end
 	return "";
