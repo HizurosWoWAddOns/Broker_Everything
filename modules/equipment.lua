@@ -102,10 +102,11 @@ local function UpdateInventory()
 			ns.ScanTT.query(obj,true);
 			lst[d.slot] = obj;
 			if ns.client_version>=2 then
-				if lst.iLevelMin==0 or (obj.level or 0)<lst.iLevelMin then
+				obj.level = obj.level or 0;
+				if lst.iLevelMin==0 or obj.level<lst.iLevelMin then
 					lst.iLevelMin=obj.level;
 				end
-				if (obj.level or 0)>lst.iLevelMax then
+				if obj.level>lst.iLevelMax then
 					lst.iLevelMax=obj.level;
 				end
 			end
