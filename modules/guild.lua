@@ -23,6 +23,7 @@ local applScroll = {step=0,stepWidth=3,numLines=5,lines={},lineCols={},slider=fa
 local membScroll = {step=0,stepWidth=5,numLines=15,lines={},lineCols={},slider=false};
 local applScrollRegionColor,membScrollRegionColor = {1,.5,0,.15},{1,.82,0,.11}
 local tradeSkillLock,tradeSkillsUpdateDelay,chatNotificationEnabled,frame = false,0;
+local icon_arrow_right = "|T"..ns.icon_arrow_right..":0|t";
 local CanViewOfficerNote = CanViewOfficerNote or C_GuildInfo.CanViewOfficerNote;
 local BACKDROP_SLIDER_8_8 = BACKDROP_SLIDER_8_8 or { -- classic
 	bgFile = "Interface\\Buttons\\UI-SliderBar-Background",
