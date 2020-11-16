@@ -1337,49 +1337,60 @@ end
 -- a per module and a addon wide toggle.                 --
 -- ----------------------------------------------------- --
 function ns.GetCoinColorOrTextureString(modName,amount,opts)
-	local zz,tex="%02d","|TInterface\\MoneyFrame\\UI-%sIcon:14:14:2:0|t";
-	amount = tonumber(amount) or 0;
-	opts = opts or {};
-	opts.sep = opts.sep or " ";
-	opts.hideMoney = opts.hideMoney or tonumber(ns.profile.GeneralOptions.goldHide);
+	local zz,tex,stop="%02d","|TInterface\\MoneyFrame\\UI-%sIcon:14:14:2:0|t",false;
+	opts,amount = opts or {},tonumber(amount) or 0;
+
+	-- color option
 	opts.color = (opts.color or ns.profile.GeneralOptions.goldColor):lower();
-	if not opts.coins then
-		opts.coins = ns.profile.GeneralOptions.goldCoins;
-	end
-
-	if opts.hideMoney==1 then
-		amount = floor(amount/100)*100;
-		opts.hideCopper = true;
-	elseif opts.hideMoney==2 then
-		amount = floor(amount/10000)*10000;
-		opts.hideSilver = true;
-		opts.hideCopper = true;
-	end
-
 	local colors = (opts.color=="white" and {"white","white","white"}) or (opts.color=="color" and {"copper","silver","gold"}) or false;
-	local gold, silver, copper, t = floor(amount/10000), mod(floor(amount/100),100), mod(floor(amount),100), {};
 
-	if opts.hideMoney==3 then
-		opts.hideSilver = (silver==0);
-		opts.hideCopper = (copper==0);
+	-- goin icon option
+	opts.coins = opts.coins or ns.profile.GeneralOptions.goldCoins;
+
+	-- hide option
+	local hideMoney = tonumber(ns.profile.GeneralOptions.goldHide) or 0;
+	opts.hideMoney = tonumber(opts.hideMoney or 0);
+	if opts.hideMoney>0 then
+		hideMoney = opts.hideMoney; -- override general option by module option
+	end
+	local gold, silver, copper, t = floor(amount/10000), mod(floor(amount/100),100), mod(floor(amount),100), {};
+	local showSilver,showCopper = (gold>0 or silver>0),true;
+
+	if hideMoney==1 then -- Hide Copper values
+		showCopper = false;
+	elseif hideMoney==2 then -- Hide Silver & copper
+		showSilver = false;
+		showCopper = false;
+	elseif hideMoney==3 then -- Hide zeros values
+		showSilver = (silver>0);
+		showCopper = (not showSilver or copper>0);
+	elseif hideMoney==4 then -- show highest value only
+		showSilver = (gold==0 and silver>0);
+		showCopper = (gold==0 and silver==0 and copper>0);
 	end
 
 	if gold>0 then
 		local str = ns.FormatLargeNumber(modName,gold,opts.inTooltip);
 		tinsert(t, (colors and ns.LC.color(colors[3],str) or str) .. (opts.coins and tex:format("Gold") or "") );
+		if hideMoney==4 then
+			stop = true;
+		end
 	end
 
-	if (gold==0 and silver>0) or (silver>0 and (not opts.hideSilver)) then
+	if showSilver and (not stop) then
 		local str = gold>0 and zz:format(silver) or silver;
 		tinsert(t, (colors and ns.LC.color(colors[2],str) or str) .. (opts.coins and tex:format("Silver") or "") );
+		if hideMoney==4 then
+			stop = true;
+		end
 	end
 
-	if amount<100 or (not opts.hideCopper) then
+	if showCopper and (not stop) then
 		local str = (silver>0 or gold>0) and zz:format(copper) or copper;
 		tinsert(t, (colors and ns.LC.color(colors[1],str) or str) .. (opts.coins and tex:format("Copper") or "") );
 	end
 
-	return tconcat(t,opts.sep);
+	return tconcat(t,opts.sep or " ");
 end
 
 
@@ -1743,6 +1754,7 @@ do
 									},p);
 								end
 							elseif value.type=="range" then
+								-- coming soon
 							end
 						end
 					end

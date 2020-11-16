@@ -27,12 +27,21 @@ local dbDefaults,db = {
 	}
 };
 
-ns.showCharsFrom_Values = {
+ns.showCharsFrom_Values = { -- used in xp.lua to display current mode in tooltip
 	["1"] = ns.realm,
 	["2"] = L["Connected realms"],
 	["3"] = L["Same battlegroup"],
 	["4"] = L["All realms"]
 };
+
+local goldHideValues = {
+	["0"]=ADDON_DISABLED,
+	["1"]=L["HideMoneyCopper"],
+	["2"]=L["HideMoneySilver"],
+	["3"]=L["HideMoneyZeros"],
+	["4"]=L["ShowHighestOnly"]
+};
+
 
 local nsProfileMT = {
 	__newindex = function(t,k,v)
@@ -216,14 +225,7 @@ local options = {
 						goldColor          = {type="select",order=1,name=L["GoldColor"],desc=L["GoldColorDesc"],values={_none=ADDON_DISABLED,color=L["GoldColorCoin"],white=L["GoldColorWhite"]} },
 						goldCoins          = {type="toggle",order=2,name=L["GoldCoins"],desc=L["GoldCoinsDesc"]},
 						separateThousands  = {type="toggle",order=3,name=L["DigitGroup"],desc=L["DigitGroupDesc"]},
-						goldHide           = {type="select",order=4,name=L["HideMoney"],desc=L["HideMoneyDesc"],
-							values={
-								["0"]=NONE,
-								["1"]=L["HideMoneyCopper"],
-								["2"]=L["HideMoneySilver"],
-								["3"]=L["HideMoneyZeros"]
-							}
-						}
+						goldHide           = {type="select",order=4,name=L["HideMoney"],desc=L["HideMoneyDescEverywhere"], width = "double", values= goldHideValues }
 					}
 				},
 				tooltip = {
@@ -306,9 +308,9 @@ ns.sharedOptions = {
 	shortNumbers    = { type="toggle", name=L["ShortNum"], desc=L["ShortNumDesc"]},
 	showAllFactions = { type="toggle", name=L["AllFactions"], desc=L["AllFactionsDesc"]},
 	showRealmNames  = { type="toggle", name=L["RealmNames"], desc=L["RealmNamesDesc"]},
-	showCharsFrom   = { type="select", name=L["CharsFrom"], desc=L["CharsFromDesc"],
-		values=ns.showCharsFrom_Values,
-	}
+	showCharsFrom   = { type="select", name=L["CharsFrom"], desc=L["CharsFromDesc"], values=ns.showCharsFrom_Values },
+	goldHideBB      = { type="select", name=L["HideMoney"], desc=L["HideMoneyDescBrokerButton"], width = "double", values = goldHideValues },
+	goldHideTT      = { type="select", name=L["HideMoney"], desc=L["HideMoneyDescTooltip"], width = "double", values = goldHideValues },
 }
 
 local sharedDefaults = {
