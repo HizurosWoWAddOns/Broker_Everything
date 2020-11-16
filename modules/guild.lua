@@ -19,9 +19,8 @@ local tradeskills = {}; -- filled by updateTradeSkills
 local bnetFriends = {}; -- filled by updateBattleNetFriends
 local flags = {}; -- filled by module.onenter
 local ttHooks = {} -- filled by module.onenter
-local applScroll = {step=0,stepWidth=3,numLines=5,lines={},lineCols={},slider=false};
-local membScroll = {step=0,stepWidth=5,numLines=15,lines={},lineCols={},slider=false};
-local applScrollRegionColor,membScrollRegionColor = {1,.5,0,.15},{1,.82,0,.11}
+local applScroll = {step=0,stepWidth=3,numLines=5,lines={},lineCols={},slider=false,regionColor={1,.5,0,.15}};
+local membScroll = {step=0,stepWidth=5,numLines=15,lines={},lineCols={},slider=false,regionColor={1,.82,0,.11}};
 local tradeSkillLock,tradeSkillsUpdateDelay,chatNotificationEnabled,frame = false,0;
 local icon_arrow_right = "|T"..ns.icon_arrow_right..":0|t";
 local CanViewOfficerNote = CanViewOfficerNote or C_GuildInfo.CanViewOfficerNote;
@@ -485,13 +484,7 @@ local function ttScrollList(delta,tbl) -- executed by createTooltip and ttWheelH
 			local scrollRegion = CreateFrame("Frame",nil,tt,BackdropTemplateMixin and "BackdropTemplate");
 			scrollInfo.region = scrollRegion;
 			scrollRegion:SetBackdrop({bgFile="interface/buttons/white8x8"});
-			if ns.profile[name].showTableBackground==false then
-				scrollRegion:SetBackdropColor(0,0,0,0); -- transparent
-			elseif scrollInfo==applScroll then
-				scrollRegion:SetBackdropColor(unpack(applScrollRegionColor));
-			else
-				scrollRegion:SetBackdropColor(unpack(membScrollRegionColor));
-			end
+			scrollRegion:SetBackdropColor(unpack(ns.profile[name].showTableBackground and scrollInfo.regionColor or {0,0,0,0}));
 			scrollRegion:SetFrameLevel(tt:GetFrameLevel()+1);
 			-- create slider
 			local slider = CreateFrame("Slider",addon.."Guild"..target.."ScrollSlider",tt,BackdropTemplateMixin and "BackdropTemplate");
@@ -505,17 +498,6 @@ local function ttScrollList(delta,tbl) -- executed by createTooltip and ttWheelH
 			slider:SetValueStep(1)
 			slider:SetValue(0)
 			slider:SetScript("OnValueChanged", slider_OnValueChanged)
-			slider:SetScript("OnShow",function(self)
-				-- hide scroll region and slider
-				if self:GetParent().key~=ttName then
-					scrollRegion:ClearAllPoints();
-					scrollRegion:SetParent(frame);
-					scrollRegion:Hide();
-					self:ClearAllPoints();
-					self:SetParent(frame);
-					self:Hide();
-				end
-			end);
 		end
 	else
 		local newStep = scrollInfo.step + (delta==true and 0 or delta);
@@ -777,6 +759,21 @@ local function ttWheelHook(parent,delta)
 	end
 end
 
+local function ttOnHideHook(self)
+	if tt~=parent and tt.key~=ttName then return end
+	for _,si in ipairs({applScroll,membScroll})do
+			if si.region then
+			si.region:ClearAllPoints();
+			si.region:SetParent(frame);
+			si.region:Hide();
+		end
+		if si.slider then
+			si.slider:ClearAllPoints();
+			si.slider:SetParent(frame);
+			si.slider:Hide();
+		end
+	end
+end
 
 -- module functions and variables --
 ------------------------------------
@@ -910,10 +907,10 @@ function module.onevent(self,event,msg,...)
 			hide = {0,0,0,0};
 		end
 		if applScroll.region then
-			applScroll.region:SetBackdropColor(unpack(hide or applScrollRegionColor));
+			applScroll.region:SetBackdropColor(unpack(hide or applScroll.regionColor));
 		end
 		if membScroll.region then
-			membScroll.region:SetBackdropColor(unpack(hide or membScrollRegionColor));
+			membScroll.region:SetBackdropColor(unpack(hide or membScroll.regionColor));
 		end
 	elseif event=="PLAYER_LOGIN" or (ns.eventPlayerEnteredWorld and not self.IsLoaded) then
 		self.IsLoaded = true;
@@ -1055,6 +1052,7 @@ function module.onenter(self)
 		if not ttHooks[tt] then
 			ttHooks[tt] = true;
 			self.HookScript(tt,"OnMouseWheel",ttWheelHook); -- see comment in function ttWheelHook
+			self.HookScript(tt,"OnHide",ttOnHideHook);
 		end
 	end
 end
