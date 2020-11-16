@@ -427,11 +427,16 @@ function module.init()
 			break;
 		end
 	end
-	for i=1, EXPANSION_LEVEL or 0 do
+	for i=1, 99 do
 		local n = "EXPANSION_NAME"..i;
-		headers[n] = _G[n];
+		if _G[n] then
+			headers[n] = _G[n];
+		else
+			break;
+		end
 	end
 	Currencies = {
+		"EXPANSION_NAME8",1754,
 		"EXPANSION_NAME7",1803,1755,1719,1721,1718,1717 --[[1716]],1299,1560,1580,1587,1710,1565,1553,
 		"DUNGEON_AND_RAID",1166,
 		"PLAYER_V_PLAYER",391,
