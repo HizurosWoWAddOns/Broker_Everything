@@ -100,12 +100,12 @@ end
 local function updateBroker()
 	local broker = {};
 	if ns.profile[name].showCharGold then
-		tinsert(broker,ns.GetCoinColorOrTextureString(name,current_money));
+		tinsert(broker,ns.GetCoinColorOrTextureString(name,current_money,{hideMoney=ns.profile[name].goldHideBB}));
 	end
 	if ns.profile[name].showProfitSessionBroker and login_money then
 		local profit, direction = getProfit();
 		local sign = (direction==1 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (direction==-1 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
-		tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,profit));
+		tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,profit,{hideMoney=ns.profile[name].goldHideBB}));
 	end
 	if #broker==0 then
 		broker = {BONUS_ROLL_REWARD_MONEY};
@@ -131,7 +131,7 @@ function createTooltip(tt,update)
 	end
 
 	local faction = ns.player.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..ns.player.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-	tt:AddLine(C(ns.player.class,ns.player.name) .. faction, ns.GetCoinColorOrTextureString(name,current_money,{inTooltip=true}));
+	tt:AddLine(C(ns.player.class,ns.player.name) .. faction, ns.GetCoinColorOrTextureString(name,current_money,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
 	tt:AddSeparator();
 
 	local lineCount=0;
@@ -142,7 +142,7 @@ function createTooltip(tt,update)
 
 		if (v.gold) and (ns.player.name_realm~=name_realm) and ns.showThisChar(name,realm,v.faction) then
 			local faction = v.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-			local line, column = tt:AddLine( C(v.class,ns.scm(charName)) .. ns.showRealmName(name,realm) .. faction, ns.GetCoinColorOrTextureString(name,v.gold,{inTooltip=true}));
+			local line, column = tt:AddLine( C(v.class,ns.scm(charName)) .. ns.showRealmName(name,realm) .. faction, ns.GetCoinColorOrTextureString(name,v.gold,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
 
 			tt:SetLineScript(line, "OnMouseUp", deleteCharacterGoldData, name_realm);
 
@@ -156,16 +156,16 @@ function createTooltip(tt,update)
 	if(lineCount>0)then
 		tt:AddSeparator()
 		if ns.profile[name].splitSummaryByFaction and ns.profile[name].showAllFactions then
-			tt:AddLine(L["Total Gold"].." |TInterface\\PVPFrame\\PVP-Currency-Alliance:16:16:0:-1:16:16:0:16:0:16|t", ns.GetCoinColorOrTextureString(name,totalGold.Alliance,{inTooltip=true}));
-			tt:AddLine(L["Total Gold"].." |TInterface\\PVPFrame\\PVP-Currency-Horde:16:16:0:-1:16:16:0:16:0:16|t", ns.GetCoinColorOrTextureString(name,totalGold.Horde,{inTooltip=true}));
+			tt:AddLine(L["Total Gold"].." |TInterface\\PVPFrame\\PVP-Currency-Alliance:16:16:0:-1:16:16:0:16:0:16|t", ns.GetCoinColorOrTextureString(name,totalGold.Alliance,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
+			tt:AddLine(L["Total Gold"].." |TInterface\\PVPFrame\\PVP-Currency-Horde:16:16:0:-1:16:16:0:16:0:16|t", ns.GetCoinColorOrTextureString(name,totalGold.Horde,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
 		else
-			tt:AddLine(L["Total Gold"], ns.GetCoinColorOrTextureString(name,totalGold.Alliance+totalGold.Horde+totalGold.Neutral,{inTooltip=true}))
+			tt:AddLine(L["Total Gold"], ns.GetCoinColorOrTextureString(name,totalGold.Alliance+totalGold.Horde+totalGold.Neutral,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}))
 		end
 	end
 
 	if ns.profile[name].showProfitSession or ns.profile[name].showProfitDaily or ns.profile[name].showProfitWeekly or ns.profile[name].showProfitMonthly then
 		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(C("ltyellow","Profit / Loss"),C("orange","("..L["Experimental"]..")"));
+		tt:AddLine(C("ltyellow","Profit / Loss"));
 		tt:AddSeparator();
 		for i=1, #ttLines do
 			local v = ttLines[i];
@@ -177,7 +177,7 @@ function createTooltip(tt,update)
 				elseif direction==-1 then
 					color,icon = "ltred","|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t";
 				end
-				tt:AddLine(C(color,v[2]), icon .. ns.GetCoinColorOrTextureString(name,profit,{inTooltip=true}));
+				tt:AddLine(C(color,v[2]), icon .. ns.GetCoinColorOrTextureString(name,profit,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
 			end
 		end
 	end
@@ -215,6 +215,8 @@ module = {
 		showProfitDaily = true,
 		showProfitWeekly = true,
 		showProfitMonthly = true,
+		goldHideBB = "0",
+		goldHideTT = "0",
 	},
 	clickOptionsRename = {
 		["1_open_tokenframe"] = "currency",
@@ -240,18 +242,20 @@ ns.ClickOpts.addDefaults(module,{
 function module.options()
 	return {
 		broker = {
-			showCharGold={ type="toggle", order=1, name=L["Show character gold"],     desc=L["Show character gold on broker button"] },
-			showProfitSessionBroker={ type="toggle", order=2, name=L["Show session profit"],     desc=L["Show session profit on broker button"] },
+			goldHideBB = 1,
+			showCharGold={ type="toggle", order=2, name=L["Show character gold"],     desc=L["Show character gold on broker button"] },
+			showProfitSessionBroker={ type="toggle", order=3, name=L["Show session profit"],     desc=L["Show session profit on broker button"] },
 		},
 		tooltip = {
-			splitSummaryByFaction={ type="toggle", order=1, name=L["Split summary by faction"], desc=L["Separate summary by faction (Alliance/Horde)"] },
-			showProfitSession = { type="toggle", order=1, name=L["Show session profit"], desc=L["Display profit/loss of the current session in tooltip"]},
-			showProfitDaily   = { type="toggle", order=2, name=L["Show daily profit"],   desc=L["Display today and yesterday profit in tooltip"] },
-			showProfitWeekly  = { type="toggle", order=2, name=L["Show weekly profit"],  desc=L["Display this week and last week profit in tooltip"] },
-			showProfitMonthly = { type="toggle", order=2, name=L["Show monthly profit"], desc=L["Display this month and last month profit in tooltip"] },
-			showAllFactions=2,
-			showRealmNames=3,
-			showCharsFrom=4,
+			goldHideTT = 1,
+			splitSummaryByFaction={type="toggle",order=2, name=L["Split summary by faction"], desc=L["Separate summary by faction (Alliance/Horde)"] },
+			showProfitSession = { type="toggle", order=3, name=L["Show session profit"], desc=L["Display profit/loss of the current session in tooltip"]},
+			showProfitDaily   = { type="toggle", order=4, name=L["Show daily profit"],   desc=L["Display today and yesterday profit in tooltip"] },
+			showProfitWeekly  = { type="toggle", order=5, name=L["Show weekly profit"],  desc=L["Display this week and last week profit in tooltip"] },
+			showProfitMonthly = { type="toggle", order=6, name=L["Show monthly profit"], desc=L["Display this month and last month profit in tooltip"] },
+			showAllFactions=7,
+			showRealmNames=8,
+			showCharsFrom=9,
 		},
 		misc = {
 			shortNumbers=1,
