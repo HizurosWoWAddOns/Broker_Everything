@@ -33,7 +33,10 @@ local diffModeShort = {
 	[RAID_DIFFICULTY3] = "10hc",
 	[RAID_DIFFICULTY4] = "25hc",
 };
-
+local renameManually = {}
+if LOCALE_enUS or LOCALE_enGB then
+	renameManually["Ahn'Qiraj Temple"] = "Temple of Ahn'Qiraj";
+end
 
 -- register icon names and default files --
 -------------------------------------------
@@ -58,6 +61,8 @@ local function updateInstances(name,mode)
 			local name = data[instanceName];
 			if rename_il[name] then
 				name = rename_il[name];
+			elseif renameManually[name] then
+				name = renameManually[name];
 			end
 			if activeRaids[name]==nil then
 				activeRaids[name] = {new=true};
