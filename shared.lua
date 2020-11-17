@@ -497,7 +497,7 @@ do
 	};
 	ns.coexist = {};
 	function ns.coexist.IsNotAlone(info)
-		if found==false then
+		if not found then
 			found = {};
 			for name in pairs(list) do
 				if (GetAddOnInfo(name)) and (GetAddOnEnableState(ns.player.name,name)==2) then
@@ -1132,12 +1132,10 @@ do
 	if EMPTY_SOCKET_PRISMATIC~=EMPTY_SOCKET_NO_COLOR then
 		tinsert(EMPTY_SOCKETS,"NO_COLOR");
 	end
-	QueueModeScanTT:SetScale(0.0001);
-	InstantModeScanTT:SetScale(0.0001);
-	QueueModeScanTT:SetAlpha(0);
-	InstantModeScanTT:SetAlpha(0);
-	QueueModeScanTT:Hide();
-	InstantModeScanTT:Hide();
+	for f, v in pairs({SetScale=0.0001,SetAlpha=0,Hide=true,SetClampedToScreen=false,SetFrameStrata="BACKGROUND",ClearAllPoints=true})do
+		QueueModeScanTT[f](QueueModeScanTT,v);
+		InstantModeScanTT[f](InstantModeScanTT,v);
+	end
 	-- remove scripts from tooltip... prevents taint log spamming.
 	for _,v in ipairs({"OnLoad","OnHide","OnTooltipAddMoney","OnTooltipSetDefaultAnchor","OnTooltipCleared"})do
 		QueueModeScanTT:SetScript(v,nil);
@@ -1176,7 +1174,8 @@ do
 		end
 
 		local success,num,regions = false,0;
-		tt:SetOwner(UIParent,"ANCHOR_LEFT");
+		tt:SetOwner(UIParent,"ANCHOR_NONE");
+		tt:SetPoint("RIGHT",UIParent,"LEFT",0,0);
 
 		if not data._type then
 			data._type=data.type;
