@@ -408,7 +408,7 @@ local function createTooltip(tt)
 					for _,ending in ipairs(endings) do
 						if expansions[e] and v.level>=GetMaxLevelForExpansionLevel(e) and ns.profile[name][expansions[e].name.."Quests"] and ns.data[name].bounties[ending] and ns.data[name].bounties[ending][e] then
 							local cellContent,completed,total = "",0,ns.data[name].bounties[ending][e].totalQuests;
-							if v[name].bounties and v[name].bounties[ending] and v[name].bounties[ending][e] then
+							if v[name] and v[name].bounties and v[name].bounties[ending] and v[name].bounties[ending][e] then -- error?
 								completed = v[name].bounties[ending][e] or 0;
 							end
 							if not completed then
