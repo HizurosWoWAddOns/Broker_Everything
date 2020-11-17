@@ -381,8 +381,8 @@ local function ttAddMember(lineIndex,memberIndex)
 
 	-- status / member name / realm
 	local status_name = status .. " " .. C(offColor or mClassFile,ns.scm(mName)) .. ns.showRealmName(name,mRealm,offColor);
-	if ns.profile[name].showBattleTag and bnetFriends[mName.."-"..mRealm] then
-		status_name = status_name.." "..C(offColor or "ltblue","("..ns.scm(bnetFriends[mName.."-"..mRealm]..")"));
+	if ns.profile[name].showBattleTag and bnetFriends[mGUID] then
+		status_name = status_name.." "..C(offColor or "ltblue","("..ns.scm(bnetFriends[mGUID]..")"));
 	end
 	tt:SetCell(lineIndex,2,status_name);
 
