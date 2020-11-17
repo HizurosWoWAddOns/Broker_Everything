@@ -245,7 +245,7 @@ local function updateData()
 				bounties = C_QuestLog.GetBountiesForMapID(exp.zone);
 			end
 			 -- TODO: removed in shadowlands
-			if bounties then
+			if type(bounties)=="table" then
 				for b=1, #bounties do
 					local bty = bounties[b];
 					C_TaskQuest.RequestPreloadRewardData(bty.questID);
