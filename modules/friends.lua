@@ -372,6 +372,16 @@ local function createTooltip(tt)
 											realm = _realm;
 										end
 									end
+									if not ti.realmName then
+										local _, realmName = ns.LRI:GetRealmInfoByID(ti.realmID);
+										if realmName then
+											ti.realmName = realmName .. " |cffffee00("..EXPANSION_NAME0..")|r";
+--@end-do-not-package@
+										else
+											ns.debugPrint(name,"<unknownRealmID>",ti.realmID);
+--@end-do-not-package@
+										end
+									end
 									tt:SetCell(l,6,C(ns.realms[realm] and "green" or "white",ti.realmName or L["Classic realm"]));			-- 6
 								end
 								-- faction (own column)
