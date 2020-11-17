@@ -347,7 +347,12 @@ local function ttAddApplicant(lineIndex,applicantInfo)
 	local localizedClass, englishClass, localizedRace, englishRace, sex, playerName, realm = GetPlayerInfoByGUID(applicantInfo.playerGUID);
 
 	tt:SetCell(lineIndex,1,applicantInfo.level);
-	tt:SetCell(lineIndex,2,C(englishClass, ns.scm(playerName)) .. ns.showRealmName(name,realm));
+
+	local toonName = C(englishClass, ns.scm(playerName)) .. ns.showRealmName(name,realm);
+	if ns.profile[name].showBattleTag and bnetFriends[mGUID] then
+		toonName = toonName.." "..C("ltblue","("..ns.scm(bnetFriends[mGUID]..")"));
+	end
+	tt:SetCell(lineIndex,2,toonName);
 	tt:SetCell(lineIndex,3,table.concat(roles,", "));
 	tt:SetCell(lineIndex,4,date("%Y-%m-%d",applicantInfo.lastUpdatedTime+(86400*30)));
 	tt:SetCell(lineIndex,5,(strlen(applicantInfo.message)>0 and ns.scm(ns.strCut(applicantInfo.message,60)) or C("gray","<"..EMPTY..">")),nil,nil,ttColumns-5);
