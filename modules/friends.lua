@@ -365,24 +365,26 @@ local function createTooltip(tt)
 							if ti.clientProgram=="WoW" then
 								-- realm (own column)
 								if ns.profile[name].showRealm=="1" and ti.realmID>0 then
-									local realm,_ = ti.realmName;
-									if type(realm)=="string" and realm:len()>0 then
-										local _,_realm = ns.LRI:GetRealmInfo(realm);
-										if _realm and _realm~="" then
-											realm = _realm;
-										end
-									end
-									if not ti.realmName then
-										local _, realmName = ns.LRI:GetRealmInfoByID(ti.realmID);
-										if realmName then
+									local realmName, realmLocale, realmRegion, realmTimezone, _
+									if ti.realmName then
+										_, realmName, _, _, realmLocale, _, realmRegion, realmTimezone = ns.LRI:GetRealmInfo(ti.realmName); -- retail realms
+									else
+										-- C_BattleNet.GetFriendGameAccountInfo returns realmID without realmName for classic realms
+										_, realmName, _, _, realmLocale, _, realmRegion, realmTimezone = ns.LRI:GetRealmInfoByID(ti.realmID); -- classic realms
+										if realmName and realmName~="" then
 											ti.realmName = realmName .. " |cffffee00("..EXPANSION_NAME0..")|r";
---@end-do-not-package@
-										else
-											ns.debugPrint(name,"<unknownRealmID>",ti.realmID);
---@end-do-not-package@
 										end
 									end
-									tt:SetCell(l,6,C(ns.realms[realm] and "green" or "white",ti.realmName or L["Classic realm"]));			-- 6
+									local realmLocaleIcon = ""
+									if ns.profile[name].showRealmLanguageFlag and realmLocale then
+										if realmRegion=="EU" and realmLocale=="enUS" then
+											realmLocale = "enGB"; -- Great Britain
+										elseif realmRegion=="US" and realmTimezone=="AEST" then
+											realmLocale = "enAU"; -- flag of australian
+										end
+										realmLocaleIcon = "|T"..ns.media..realmLocale..":0:2|t"
+									end
+									tt:SetCell(l,6,C(ns.realms[ti.realmName] and "green" or "white",ti.realmName .. realmLocaleIcon));			-- 6
 								end
 								-- faction (own column)
 								if ti.factionName then
@@ -575,6 +577,7 @@ module = {
 		showTotalCount = true,
 		showMobileApp = true,
 		showDesktopApp = true,
+		showRealmLanguageFlag = true,
 
 		-- tooltip 2
 		showBroadcastTT2 = true,
@@ -630,6 +633,7 @@ function module.options()
 					["3"] = L["* (Asterisk) behind character name if on foreign realm"]
 				},
 			},
+			showRealmLanguageFlag = { type="toggle", order=4, name=L["Show country flag"], desc = L["Display country flag behind realm names"] },
 			showFaction={ type="select", order=5, name=L["Show faction"], desc=L["Display faction in tooltip (WoW only)"], width="double",
 				values={
 					["0"]=NONE.." / "..ADDON_DISABLED,
