@@ -167,6 +167,7 @@ function createTooltip(tt)
 		tt:AddLine(C("ltyellow",GARRISON_FOLLOWER_XP_STRING),"",C("white",ns.FormatLargeNumber(name,data.max-data.cur,true)));
 		tt:AddLine(C("ltyellow",TUTORIAL_TITLE26),"",C("cyan",percentExhaustionStr));
 
+		--[[
 		tt:AddSeparator(5,0,0,0,0);
 		tt:AddLine(C("ltblue",L["XP bonus"]),C("ltblue",L["max Level"]),C("ltblue",L["XP bonus"]));
 		tt:AddSeparator();
@@ -184,6 +185,7 @@ function createTooltip(tt)
 		end
 		tt:AddSeparator();
 		tt:AddLine(C("ltblue",ACHIEVEMENT_SUMMARY_CATEGORY),"",C(sum>0 and "green" or "gray",sum.."%"));
+		--]]
 	end
 
 	if ns.profile[name].showMyOtherChars then
