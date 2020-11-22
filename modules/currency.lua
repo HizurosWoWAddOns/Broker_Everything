@@ -12,7 +12,7 @@ local name = "Currency"; -- CURRENCY L["ModDesc-Currency"]
 local ttName,ttColumns,tt,tt2,module = name.."TT",5;
 local currencies,currencySession,faction = {},{},UnitFactionGroup("player");
 local BrokerPlacesMax,createTooltip = 4;
-local Currencies,CurrenciesHorde = {},{};
+local Currencies = {};
 local headers = {
 	HIDDEN_CURRENCIES = "Hidden currencies", -- L["Hidden currencies"]
 	DUNGEON_AND_RAID = "Dungeon and Raid", -- L["Dungeons and Raids"]
@@ -64,12 +64,8 @@ local function resetCurrencySession()
 	local _
 	for _,id in ipairs(Currencies)do
 		if tonumber(id) then
-			if faction=="Horde" and CurrenciesHorde[id] then
-				id = CurrenciesHorde[id];
-			end
 			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(id);
 			currencySession[id] = currencyInfo.quantity;
-			--_, currencySession[id] = GetCurrencyInfo(id); -- TODO: removed in shadowlands
 		end
 	end
 end
@@ -83,11 +79,7 @@ local function updateBroker()
 	end
 	for i, id in ipairs(ns.profile[name].currenciesInTitle) do
 		if tonumber(id) then
-			if faction=="Horde" and CurrenciesHorde[id] then
-				id = CurrenciesHorde[id];
-			end
 			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(id);
-			--local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(id); -- TODO: removed in shadowlands
 			if currencyInfo.discovered then
 				local str = ns.FormatLargeNumber(name,currencyInfo.quantity);
 				if ns.profile[name].showCapBroker and currencyInfo.maxQuantity>0 then
@@ -177,11 +169,7 @@ function createTooltip(tt,update)
 			tt:SetLineScript(l,"OnMouseUp", toggleCurrencyHeader,Currencies[i]);
 		elseif not parentIsCollapsed then
 			local currencyId = Currencies[i];
-			if faction=="Horde" and CurrenciesHorde[currencyId] then
-				currencyId = CurrenciesHorde[currencyId];
-			end
 			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(currencyId);
-			--local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(currencyId); -- TODO: removed in shadowlands
 			if currencyInfo and currencyInfo.name and currencyInfo.discovered then
 				local str = ns.FormatLargeNumber(name,currencyInfo.quantity,true);
 
@@ -366,7 +354,6 @@ function module.OptionMenu(parent)
 
 		if tonumber(id) then
 			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(id);
-			--local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(id);  -- TODO: removed in shadowlands
 			if currencyInfo and currencyInfo.name then
 				pList = ns.EasyMenu:AddEntry({
 					arrow = true,
@@ -387,7 +374,6 @@ function module.OptionMenu(parent)
 		for i=1, #Currencies do
 			if tonumber(Currencies[i]) then
 				local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(Currencies[i]);
-				--local Name, count, icon, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(Currencies[i]); -- TODO: removed in shadowlands
 				if currencyInfo and currencyInfo.name then
 					local nameStr,disabled = currencyInfo.name,true;
 					if ns.profile[name].currenciesInTitle[place]~=Currencies[i] then
@@ -412,21 +398,16 @@ function module.OptionMenu(parent)
 end
 
 function module.init()
-	local strs = {
-		deDE = {"Dungeon und Schlachtzug","Versteckt"},			esES = {"Mazmorra y banda","Moneda de Oculto"},
-		esMX = {"Mazmorra y banda","Moneda de Oculto"},			frFR = {"Donjons & Raids","Monnaies Caché"},
-		itIT = {"Spedizioni e Incursioni","Valuta: Nascosto"},	ptBR = {"Masmorras e Raides","Moeda de Escondido"},
-		ptPT = {"Masmorras e Raides","Moeda de Escondido"},		ruRU = {"Подземелья и рейды","Валюты Невидимые чары"},
-		koKR = {"던전 및 공격대","숨김 화폐들"},					zhCN = {"地下城与团队副本","隐藏货币"},
-		zhTW = {"地下城与团队副本","隐藏货币"}
-	}
-	for k,v in pairs(strs)do
-		if _G["LOCALE_"..k] then
-			headers.DUNGEON_AND_RAID = v[1];
-			headers.HIDDEN_CURRENCIES = v[2];
-			break;
-		end
-	end
+	local strs = ({
+		deDE = {"Dungeon und Schlachtzug","Versteckte Währungen"}, esES = {"Mazmorra y banda","Monedas ocultas"},
+		esMX = {"Mazmorra y banda","Kaŝaj valutoj"},               frFR = {"Donjons & Raids","Monnaies cachées"},
+		itIT = {"Spedizioni e Incursioni","Valute nascoste"},      ptBR = {"Masmorras e Raides","Moedas ocultas"},
+		ptPT = {"Masmorras e Raides","Moedas ocultas"},            ruRU = {"Подземелья и рейды","Скрытые валюты"},
+		koKR = {"던전 및 공격대","숨겨진 통화"},                     zhCN = {"地下城与团队副本","隐藏的货币"},
+		zhTW = {"地下城与团队副本","隱藏的貨幣"}
+	})[GetLocale()];
+	headers.DUNGEON_AND_RAID = strs and strs[1] or "Dungeons and raids";
+	headers.HIDDEN_CURRENCIES = strs and strs[2] or "Hidden currencies";
 	for i=1, 99 do
 		local n = "EXPANSION_NAME"..i;
 		if _G[n] then
@@ -435,23 +416,20 @@ function module.init()
 			break;
 		end
 	end
+	local A = faction=="Alliance";
 	Currencies = {
 		"EXPANSION_NAME8",1754,
-		"EXPANSION_NAME7",1803,1755,1719,1721,1718,1717 --[[1716]],1299,1560,1580,1587,1710,1565,1553,
 		"DUNGEON_AND_RAID",1166,
 		"PLAYER_V_PLAYER",391,
 		"MISCELLANEOUS",402,81,515,1388,1401,1379,
+		"EXPANSION_NAME7",1803,1755,1719,1721,1718,A and 1717 or 1716,1299,1560,1580,1587,1710,1565,1553,
 		"EXPANSION_NAME6",1149,1533,1342,1275,1226,1220,1273,1155,1508,1314,1154,1268,
 		"EXPANSION_NAME5",823,824,1101,994,1129,944,980,910,1020,1008,1017,999,
 		"EXPANSION_NAME4",697,738,776,752,777,789,
 		"EXPANSION_NAME3",416,615,614,361,
 		"EXPANSION_NAME2",241,61,
 		"EXPANSION_NAME1",1704,
-		--"HIDDEN_CURRENCIES",1599,1325,1506,1171,1703,1579,1602,1559,1600,1324,1541,1349,1347,1350,1592,1593,1594,1595,1598,1191,1596,1705,1714,1540,1501,1597,1585,1586,
 	};
-	CurrenciesHorde = {
-		[1717]=1716,
-	}
 end
 
 function module.onevent(self,event,arg1)
@@ -467,8 +445,6 @@ function module.onevent(self,event,arg1)
 		if id and not currencySession[id] then
 			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(id);
 			currencySession[id] = currencyInfo.quantity;
-			--local _
-			--_, currencySession[id] = GetCurrencyInfo(id); -- TODO: removed in shadowlands
 		end
 	end
 	if ns.eventPlayerEnteredWorld then
