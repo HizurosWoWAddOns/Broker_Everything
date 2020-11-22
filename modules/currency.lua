@@ -151,11 +151,14 @@ function createTooltip(tt,update)
 		tt:AddSeparator()
 	end
 
-	local parentIsCollapsed,empty = false,nil;
+	local parentIsCollapsed,hiddenSection,empty = false,false,nil;
 	for i=1, #Currencies do
 		if Currencies[i]=="HIDDEN_CURRENCIES" and not ns.profile[name].showHidden then
 			break;
 		elseif not tonumber(Currencies[i]) then
+			if Currencies[i]=="HIDDEN_CURRENCIES" then
+				hiddenSection = true;
+			end
 			if empty==true and not parentIsCollapsed then
 				tt:SetCell(tt:AddLine(),1,C("gray",L["No currencies discovered..."]),nil,nil,0);
 			end
@@ -172,7 +175,7 @@ function createTooltip(tt,update)
 		elseif not parentIsCollapsed then
 			local currencyId = Currencies[i];
 			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(currencyId);
-			if currencyInfo and currencyInfo.name and currencyInfo.discovered then
+			if currencyInfo and currencyInfo.name and (currencyInfo.discovered or hiddenSection) then
 				local str = ns.FormatLargeNumber(name,currencyInfo.quantity,true);
 
 				-- cap
@@ -375,10 +378,12 @@ function module.OptionMenu(parent)
 			});
 		end
 
+		local page = {limit=40,counter=0,num=0,currentHeader=false,headers={["HIDDEN_CURRENCIES"]=true}};
 		for i=1, #Currencies do
 			if Currencies[i]=="HIDDEN_CURRENCIES" and not ns.profile[name].showHidden then
 				break;
 			elseif tonumber(Currencies[i]) then
+				--isHidden = Currencies[i]=="HIDDEN_CURRENCIES";
 				local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(Currencies[i]);
 				if currencyInfo and currencyInfo.name then
 					local nameStr,disabled = currencyInfo.name,true;
@@ -391,9 +396,25 @@ function module.OptionMenu(parent)
 						disabled = disabled,
 						func = function() setInTitle(place,Currencies[i]); end
 					}, pList2);
+					-- next page
+					if page.currentHeader and page.headers[ Currencies[page.currentHeader] ] then
+						page.counter = page.counter + 1;
+						if page.counter == page.limit then
+							page.counter = 0;
+							--pList2 = ns.EasyMenu:AddEntry({label=C("ltblue",label), arrow=true}, pList);
+							pList2 = addMenuSubPage(pList,page);
+						end
+					end
 				end
 			else
-				pList2 = ns.EasyMenu:AddEntry({label=C("ltblue",headers[Currencies[i]]), arrow=true}, pList);
+				-- headers with paging
+				if page.currentHeader~=i and page.headers[Currencies[i]] then
+					page.currentHeader = i;
+					pList2 = addMenuSubPage(pList,page);
+				else -- without paging
+					page.currentHeader = false;
+					pList2 = addMenuSubPage(pList,i);
+				end
 			end
 		end
 	end
@@ -437,6 +458,7 @@ function module.init()
 		"EXPANSION_NAME1",1704,
 	};
 	if ns.client_version>=2 then
+		local ignore = {["n/a"]=1,["UNUSED"]=1};
 		tinsert(Currencies,"HIDDEN_CURRENCIES");
 		local known = {};
 		for i=1, #Currencies do
@@ -444,10 +466,11 @@ function module.init()
 				known[Currencies[i]] = true;
 			end
 		end
-		for i=1, 2500 do
+		for i=42, 2500 do
 			if not known[i] and not ns.isArchaeologyCurrency(i) then
 				local info = C_CurrencyInfo.GetCurrencyInfo(i);
-				if info then -- (and not info.isHeader)
+				if info and info.name and not (ignore[info.name] or info.name:find("zzzold") or info.name:find("Test")) then -- (and not info.isHeader)
+					ns.debug(name,i,info.name);
 					tinsert(Currencies,i);
 				end
 			end
