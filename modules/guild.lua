@@ -472,7 +472,8 @@ local function ttAddMember(lineIndex,memberIndex)
 	end
 end
 
-local function ttScrollList(delta,tbl) -- executed by createTooltip and ttWheelHook
+local ttScrollList
+function ttScrollList(delta,tbl) -- executed by createTooltip and ttWheelHook
 	local scrollInfo,target,new = membScroll,"Members",false;
 	if tbl==applicants then
 		scrollInfo,target = applScroll,"Applicants";
@@ -485,11 +486,16 @@ local function ttScrollList(delta,tbl) -- executed by createTooltip and ttWheelH
 		scrollInfo.step,new = 0,true;
 		if not scrollInfo.slider then
 			-- create scroll region
-			local scrollRegion = CreateFrame("Frame",nil,tt,BackdropTemplateMixin and "BackdropTemplate");
+			local scrollRegion = CreateFrame("Frame",addon.."Guild"..target.."ScrollRegion",tt,BackdropTemplateMixin and "BackdropTemplate");
 			scrollInfo.region = scrollRegion;
 			scrollRegion:SetBackdrop({bgFile="interface/buttons/white8x8"});
 			scrollRegion:SetBackdropColor(unpack(ns.profile[name].showTableBackground and scrollInfo.regionColor or {0,0,0,0}));
 			scrollRegion:SetFrameLevel(tt:GetFrameLevel()+1);
+			scrollRegion:SetScript("OnMouseWheel",function(self,delta)
+				ttScrollList(-delta, tbl);
+			end);
+			scrollRegion:EnableMouseWheel(true);
+
 			-- create slider
 			local slider = CreateFrame("Slider",addon.."Guild"..target.."ScrollSlider",tt,BackdropTemplateMixin and "BackdropTemplate");
 			scrollInfo.slider = slider;
@@ -505,7 +511,7 @@ local function ttScrollList(delta,tbl) -- executed by createTooltip and ttWheelH
 		end
 	else
 		local newStep = scrollInfo.step + (delta==true and 0 or delta);
-		if newStep>maxSteps or numEntries<=scrollInfo.numLines then
+		if newStep>maxSteps or numEntries<=scrollInfo.numLines or newStep<0 then
 			return; -- update not necessary
 		end
 		scrollInfo.step = newStep;
@@ -547,6 +553,7 @@ local function ttScrollList(delta,tbl) -- executed by createTooltip and ttWheelH
 	scrollInfo.region:SetPoint("BOTTOMRIGHT",tt.lines[ scrollInfo.lines[#scrollInfo.lines] ],4,-2);
 	scrollInfo.region:SetFrameLevel(tt:GetFrameLevel()+1);
 	scrollInfo.region:Show();
+	scrollInfo.region.hidden = nil;
 
 	if new and maxSteps>1 then
 		-- update slider
@@ -556,6 +563,7 @@ local function ttScrollList(delta,tbl) -- executed by createTooltip and ttWheelH
 		scrollInfo.slider:SetFrameLevel(tt.lines[1]:GetFrameLevel()+1);
 		scrollInfo.slider:SetMinMaxValues(0,maxSteps);
 		scrollInfo.slider:Show();
+		scrollInfo.slider.hidden = nil;
 	end
 
 	scrollInfo.slider:SetValue(scrollInfo.step);
@@ -749,34 +757,34 @@ local function createTooltip(tt,update)
 	end
 end
 
-local function ttWheelHook(parent,delta)
-	if tt~=parent and tt.key~=ttName then
-		-- LibQTip reuse tooltips and it is a good practice.
-		-- This should respect foreign addon tooltips ;-) after bypassing LibQTips HookScript blocker.
-		-- The blocker is good and should stay. A good reminder not to be too careless about using HookScript.
-		return;
-	end
-	if applicants and #applicants>0 and MouseIsOver(applScroll.region) then
-		ttScrollList(-delta,applicants);
-	elseif MouseIsOver(membScroll.region) then
-		ttScrollList(-delta,membersOnline);
-	end
-end
-
-local function ttOnHideHook(self)
-	if tt~=parent and tt.key~=ttName then return end
+local function hideScrollElements()
 	for _,si in ipairs({applScroll,membScroll})do
-			if si.region then
+		if si.region and not si.region.hidden then
 			si.region:ClearAllPoints();
 			si.region:SetParent(frame);
 			si.region:Hide();
+			si.region.hidden = true
 		end
-		if si.slider then
+		if si.slider and not si.slider.hidden then
 			si.slider:ClearAllPoints();
 			si.slider:SetParent(frame);
 			si.slider:Hide();
+			si.slider.hidden = true
 		end
 	end
+end
+
+local function ttOnShowHook(self)
+	if tt and tt.key==ttName then return end
+	hideScrollElements(); -- force hide of scroll elements if tooltip owned by another addon or module
+end
+
+local function ttOnHideHook(self)
+	if tt and tt~=self and tt.key~=ttName then return end
+	-- LibQTip reuse tooltips and it is a good practice.
+	-- This should respect foreign addon tooltips ;-) after bypassing LibQTips HookScript blocker.
+	-- The blocker is good and should stay. A good reminder not to be too careless about using HookScript.
+	hideScrollElements();
 end
 
 -- module functions and variables --
@@ -1033,8 +1041,8 @@ function module.onenter(self)
 			flags.showRank=true;
 		end
 		if ns.profile[name].showProfessions then
-			tinsert(ttAlignings,"LEFT"); -- professions 1
-			tinsert(ttAlignings,"LEFT"); -- professions 2
+			tinsert(ttAlignings,"CENTER"); -- professions 1
+			tinsert(ttAlignings,"CENTER"); -- professions 2
 			flags.showProfessions=true;
 		end
 
@@ -1052,11 +1060,10 @@ function module.onenter(self)
 	createTooltip(tt);
 
 	if inGuild then
-		tt:EnableMouseWheel(true);
 		if not ttHooks[tt] then
 			ttHooks[tt] = true;
-			self.HookScript(tt,"OnMouseWheel",ttWheelHook); -- see comment in function ttWheelHook
 			self.HookScript(tt,"OnHide",ttOnHideHook);
+			self.HookScript(tt,"OnShow",ttOnShowHook);
 		end
 	end
 end
