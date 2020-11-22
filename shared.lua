@@ -815,7 +815,7 @@ do
 
 	local hasChanged,updateBags,IsEnabledBags,IsEnabledInv = {bags=false,inv=false,equip=false,ammo=false,items=false,item={},itemNum=0},{};
 	local callbacks = {any={},inv={},bags={},item={},equip={},prepare={}};
-	local eventFrame = CreateFrame("Frame");
+	local eventFrame,inventoryDelayed = CreateFrame("Frame");
 
 	local function doCallbacks(...)
 		local tbl = ...;
@@ -937,7 +937,9 @@ do
 		if retry then
 			-- retry on heirloom link bug
 			C_Timer.After(1.2,scanInventory);
+			return;
 		end
+		inventoryDelayed = false;
 	end
 
 	local function scanBags()
@@ -1019,8 +1021,9 @@ do
 				tinsert(updateBags,1,0); -- BAG_UPDATE does not fire argument1 = 0 (for backpack) on login
 			end
 			scanBags();
-		elseif inventoryEvents[event] then
-			scanInventory();
+		elseif inventoryEvents[event] and not inventoryDelayed then
+			inventoryDelayed = true;
+			C_Timer.After(0.5,scanInventory);
 		end
 	end
 	eventFrame:SetScript("OnEvent",OnEvent);
@@ -1149,6 +1152,7 @@ do
 	local try = 0;
 
 	local function GetLinkData(link)
+		if not link then return end
 		local _,_,_,link = link:match("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
 		link = {strsplit(HEADER_COLON,link or "")};
 		for i=1, #link do
@@ -1686,10 +1690,13 @@ do
 					for key, value in pairsByAceOptions(optGrp.args)do
 						local hide = (value.hidden==true) or (value.disabled==true) or false;
 						if not hide and type(value.hidden)=="function" then
-							hide = value.hidden();
+							hide = value.hidden({key},"EasyMenu");
+							if hide==true or hide=="EasyMenu" then
+								hide = true;
+							end
 						end
 						if not hide and type(value.disabled)=="function" then
-							hide = value.disabled();
+							hide = value.disabled({key});
 						end
 
 						if not hide then
