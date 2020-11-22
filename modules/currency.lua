@@ -348,6 +348,17 @@ function module.options()
 	}, nil, true
 end
 
+local function addMenuSubPage(pList,page)
+	local pageIsTable = type(page)=="table";
+	local i = (pageIsTable and page.currentHeader) or page;
+	local label = headers[Currencies[i]];
+	if pageIsTable and page.headers[Currencies[i]] then
+		page.num = page.num + 1;
+		label = label .." - ".. PAGE_NUMBER:format(page.num);
+	end
+	return ns.EasyMenu:AddEntry({label=C("ltblue",label), arrow=true}, pList);
+end
+
 function module.OptionMenu(parent)
 	if (tt~=nil) and (tt:IsShown()) then tt:Hide(); end
 
