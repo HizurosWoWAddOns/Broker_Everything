@@ -20,6 +20,14 @@ local solvables,limitWarning,currencyName2race,currencySeen = {},{},{};
 local iconFormat1 = "|T%s:14:14:0:0:64:64:4:56:4:56|t";
 local iconFormat2 = "|T%s:14:14:0:0:128:128:3:70:8:75|t";
 local CHAT_MSG_CURRENCY_PATTERN = "%[(.*)%]";
+local knownCurrencies = { -- for module currency but managed here
+	[384]=true,[385]=true,[393]=true,[394]=true,
+	[401]=true,[398]=true,[397]=true,[399]=true,
+	[400]=true,[676]=true,[677]=true,[754]=true,
+	[821]=true,[828]=true,[829]=true,[1172]=true,
+	[1173]=true,[1174]=true,[1535]=true,[1534]=true,
+}
+
 
 -- register icon names and default files --
 -------------------------------------------
@@ -28,6 +36,10 @@ I[name] = {iconfile="INTERFACE\\ICONS\\trade_archaeology",coords={0.05,0.95,0.05
 
 -- some local functions --
 --------------------------
+function ns.isArchaeologyCurrency(id)
+	return knownCurrencies[id];
+end
+
 local function limitColors(numFree,default)
 	return (numFree<=10 and "red") or (numFree<=30 and "orange") or (numFree<=50 and "yellow") or default;
 end

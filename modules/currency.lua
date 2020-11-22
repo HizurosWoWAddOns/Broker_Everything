@@ -153,7 +153,9 @@ function createTooltip(tt,update)
 
 	local parentIsCollapsed,empty = false,nil;
 	for i=1, #Currencies do
-		if not tonumber(Currencies[i]) then
+		if Currencies[i]=="HIDDEN_CURRENCIES" and not ns.profile[name].showHidden then
+			break;
+		elseif not tonumber(Currencies[i]) then
 			if empty==true and not parentIsCollapsed then
 				tt:SetCell(tt:AddLine(),1,C("gray",L["No currencies discovered..."]),nil,nil,0);
 			end
@@ -203,7 +205,7 @@ function createTooltip(tt,update)
 
 				local l = tt:AddLine(
 					"    "..C(currencyInfo.discovered==0 and "gray" or "ltyellow",currencyInfo.name)..id,
-					str.."  |T"..currencyInfo.iconFileID..":14:14:0:0:64:64:4:56:4:56|t"
+					str.."  |T"..(currencyInfo.iconFileID or ns.icon_fallback)..":14:14:0:0:64:64:4:56:4:56|t"
 				);
 
 				-- session earn/loss
@@ -296,7 +298,8 @@ module = {
 		showCapColorBroker = true,
 		showSession = true,
 		spacer=0,
-		showIDs = false
+		showIDs = false,
+		showHidden = false,
 	},
 	clickOptionsRename = {
 		["charinfo"] = "1_open_character_info",
@@ -328,15 +331,16 @@ function module.options()
 --@end-do-not-package@
 		},
 		tooltip = {
-			showTotalCap={ type="toggle", order=1, name=L["Show total cap"], desc=L["Display currency total cap in tooltip."] },
-			showWeeklyCap={ type="toggle", order=2, name=L["Show weekly cap"], desc=L["Display currency weekly earned and cap in tooltip."] },
-			showCapColor={ type="toggle", order=3, name=L["Coloring total cap"], desc=L["Coloring limited currencies by total and/or weekly cap."] },
-			showSession={ type="toggle", order=4, name=L["Show session earn/loss"], desc=L["Display session profit in tooltip"] },
-			showIDs={ type="toggle", order=5, name=L["Show currency id's"], desc=L["Display the currency id's in tooltip"] },
-			shortTT={ type="toggle", order=6, name=L["Short Tooltip"], desc=L["Display the content of the tooltip shorter"] },
+			showTotalCap  = { type="toggle", order=1, name=L["CurrencyCapTotal"], desc=L["CurrencyCapTotalDesc"] },
+			showWeeklyCap = { type="toggle", order=2, name=L["CurrencyCapWeekly"], desc=L["CurrencyCapWeeklyDesc"] },
+			showCapColor  = { type="toggle", order=3, name=L["Coloring total cap"], desc=L["Coloring limited currencies by total and/or weekly cap."] },
+			showSession   = { type="toggle", order=4, name=L["Show session earn/loss"], desc=L["Display session profit in tooltip"] },
+			showIDs       = { type="toggle", order=5, name=L["Show currency id's"], desc=L["Display the currency id's in tooltip"] },
+			shortTT       = { type="toggle", order=6, name=L["Short Tooltip"], desc=L["Display the content of the tooltip shorter"] },
 		},
 		misc = {
 			shortNumbers=1,
+			showHidden = {type="toggle", order=2, name=L["CurrenyHidden"], desc=L["CurrencyHiddenDesc"], hidden=ns.IsClassicClient }
 		},
 	}, nil, true
 end
@@ -357,7 +361,7 @@ function module.OptionMenu(parent)
 			if currencyInfo and currencyInfo.name then
 				pList = ns.EasyMenu:AddEntry({
 					arrow = true,
-					label = (C("dkyellow","%s%d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"],place,currencyInfo.iconFileID,C("ltblue",currencyInfo.name)),
+					label = (C("dkyellow","%s %d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"],place,currencyInfo.iconFileID,C("ltblue",currencyInfo.name)),
 				});
 				ns.EasyMenu:AddEntry({ label = C("ltred",L["Remove the currency"]), func=function() setInTitle(place, false); end }, pList);
 				ns.EasyMenu:AddEntry({separator=true}, pList);
@@ -367,12 +371,14 @@ function module.OptionMenu(parent)
 		if not pList then
 			pList = ns.EasyMenu:AddEntry({
 				arrow = true,
-				label = (C("dkyellow","%s%d:").."  %s"):format(L["Place"],place,L["Add a currency"])
+				label = (C("dkyellow","%s %d:").."  %s"):format(L["Place"],place,L["Add a currency"])
 			});
 		end
 
 		for i=1, #Currencies do
-			if tonumber(Currencies[i]) then
+			if Currencies[i]=="HIDDEN_CURRENCIES" and not ns.profile[name].showHidden then
+				break;
+			elseif tonumber(Currencies[i]) then
 				local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(Currencies[i]);
 				if currencyInfo and currencyInfo.name then
 					local nameStr,disabled = currencyInfo.name,true;
@@ -430,6 +436,23 @@ function module.init()
 		"EXPANSION_NAME2",241,61,
 		"EXPANSION_NAME1",1704,
 	};
+	if ns.client_version>=2 then
+		tinsert(Currencies,"HIDDEN_CURRENCIES");
+		local known = {};
+		for i=1, #Currencies do
+			if tonumber(Currencies[i]) then
+				known[Currencies[i]] = true;
+			end
+		end
+		for i=1, 2500 do
+			if not known[i] and not ns.isArchaeologyCurrency(i) then
+				local info = C_CurrencyInfo.GetCurrencyInfo(i);
+				if info then -- (and not info.isHeader)
+					tinsert(Currencies,i);
+				end
+			end
+		end
+	end
 end
 
 function module.onevent(self,event,arg1)
