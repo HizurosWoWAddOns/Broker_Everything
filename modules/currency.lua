@@ -11,7 +11,7 @@ if ns.client_version<2 then return end
 local name = "Currency"; -- CURRENCY L["ModDesc-Currency"]
 local ttName,ttColumns,tt,tt2,module = name.."TT",5;
 local currencies,currencySession,faction = {},{},UnitFactionGroup("player");
-local BrokerPlacesMax,createTooltip = 4;
+local BrokerPlacesMax,createTooltip = 10;
 local Currencies = {};
 local headers = {
 	HIDDEN_CURRENCIES = "Hidden currencies", -- L["Hidden currencies"]
@@ -77,7 +77,8 @@ local function updateBroker()
 		obj.iconCoords = i.coords or {0,1,0,1};
 		obj.icon = i.iconfile;
 	end
-	for i, id in ipairs(ns.profile[name].currenciesInTitle) do
+	for i=1, BrokerPlacesMax do
+		local id = ns.profile[name].currenciesInTitle[i];
 		if tonumber(id) then
 			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(id);
 			if currencyInfo.discovered then
@@ -238,7 +239,12 @@ function createTooltip(tt,update)
 	ns.roundupTooltip(tt);
 end
 
-local aceValuesCurrencyOrder = {};
+local aceCurrencies = {values={},order={},created=false};
+
+local function isHidden(info,isEasyMenu)
+	return isEasyMenu; -- only for easymenu
+end
+
 local function AceOptOnBroker(info,value)
 	local place=tonumber((info[#info]:gsub("currenciesInTitle","")));
 	if value~=nil then
@@ -250,34 +256,41 @@ local function AceOptOnBroker(info,value)
 		module.onevent(module.eventFrame,"BE_UPDATE_CFG",info[#info]);
 	end
 	local id = ("%05d"):format(ns.profile[name].currenciesInTitle[place]);
-	return aceValuesCurrencyOrder[id]..":"..id;
+	if aceCurrencies.order[id] then
+		return aceCurrencies.order[id]..":"..id;
+	end
+	return false;
 end
 
-local function AceOptOnBrokerValues(info)
-	local place=tonumber(info[#info]:match("(%d+)$"));
-	local id = ns.profile[name].currenciesInTitle[place];
-	local list,n = {},1;
-	wipe(aceValuesCurrencyOrder);
-	for i=1, #Currencies do
-		if tonumber(Currencies[i]) then
-			local currencyId = Currencies[i];
-			if faction=="Horde" and CurrenciesHorde[currencyId] then
-				currencyId = CurrenciesHorde[currencyId];
-			end
-			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(currencyId);
-			--local Name, _, Icon, _, _, _, isDiscovered = GetCurrencyInfo(currencyId); -- TODO: removed in shadowlands
-			if currencyInfo and currencyInfo.name then
-				if not currencyInfo.discovered then
-					currencyInfo.name = C("orange",currencyInfo.name);
+local function aceOptOnBrokerValues(info)
+	-- generate currencies list one time per AceOptions creation/refresh. one table for all select fields.
+	if info[#info]=="currenciesInTitle1" or not aceCurrencies.created then
+	ns.debugPrint(name,info[#info],aceCurrencies.created)
+		aceCurrencies.created = true;
+		local id = ns.profile[name].currenciesInTitle[place];
+		local list,orderList,n = {},{},1;
+		wipe(aceCurrencies.values);
+		wipe(aceCurrencies.order);
+		aceCurrencies.values[false] = NONE;
+		for i=1, #Currencies do
+			if Currencies[i]=="HIDDEN_CURRENCIES" and ns.profile[name].showHidden then
+				break;
+			elseif tonumber(Currencies[i]) then
+				local currencyId = Currencies[i];
+				local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(currencyId);
+				if currencyInfo and currencyInfo.name then
+					if not currencyInfo.discovered then
+						currencyInfo.name = C("gray",currencyInfo.name);
+					end
+					local order,id = ("%04d"):format(n),("%05d"):format(Currencies[i]);
+					aceCurrencies.values[order..":"..id] = currencyInfo.name;
+					aceCurrencies.order[id] = order;
+					n=n+1;
 				end
-				local order,id = ("%04d"):format(n),("%05d"):format(Currencies[i]);
-				list[order..":"..id] = "|T"..Icon..":0|t "..currencyInfo.name;
-				aceValuesCurrencyOrder[id] = order;
-				n=n+1;
 			end
 		end
 	end
-	return list;
+	return aceCurrencies.values;
 end
 
 
@@ -320,19 +333,20 @@ ns.ClickOpts.addDefaults(module,{
 });
 
 function module.options()
+	local broker = {
+		showCapBroker={ type="toggle", order=1, name=L["Show total/weekly cap"], desc=L["Display currency total cap in tooltip."] },
+		showCapColorBroker={ type="toggle", order=2, name=L["Coloring total/weekly cap"], desc=L["Display total/weekly caps in different colors"] },
+		spacer={ type="range", order=3, name=L["Space between currencies"], desc=L["Add more space between displayed currencies on broker button"], min=0, max=10, step=1 },
+		header={ type="header", order=4, name=L["Currency on broker"], hidden=isHidden },
+		info={ type="description", order=9, name=L["CurrencyBrokerInfo"], fontSize="medium", hidden=true },
+	};
+
+	for i=1, BrokerPlacesMax do
+		broker["currenciesInTitle"..i] = {type="select", order=4+(i>4 and i+1 or i), name=L["Place"].." "..i, desc=L["CurrencyOnBrokerDesc"], values=aceOptOnBrokerValues, get=AceOptOnBroker, set=AceOptOnBroker, hidden=isHidden };
+	end
+
 	return {
-		broker = {
-			showCapBroker={ type="toggle", order=1, name=L["Show total/weekly cap"], desc=L["Display currency total cap in tooltip."] },
-			showCapColorBroker={ type="toggle", order=2, name=L["Coloring total/weekly cap"], desc=L["Display total/weekly caps in different colors"] },
-			spacer={ type="range", order=3, name=L["Space between currencies"], desc=L["Add more space between displayed currencies on broker button"], min=0, max=10, step=1 },
---@do-not-package@
-			header={ type="header", order=4, name=L["Currency on broker"] },
-			currenciesInTitle1 = {type="select", order=5, name=L["CurrencyOnBrokerPlace1"], desc=L["CurrencyOnBrokerDesc"], values=AceOptOnBrokerValues, get=AceOptOnBroker, set=AceOptOnBroker },
-			currenciesInTitle2 = {type="select", order=6, name=L["CurrencyOnBrokerPlace2"], desc=L["CurrencyOnBrokerDesc"], values=AceOptOnBrokerValues, get=AceOptOnBroker, set=AceOptOnBroker },
-			currenciesInTitle3 = {type="select", order=7, name=L["CurrencyOnBrokerPlace3"], desc=L["CurrencyOnBrokerDesc"], values=AceOptOnBrokerValues, get=AceOptOnBroker, set=AceOptOnBroker },
-			currenciesInTitle4 = {type="select", order=8, name=L["CurrencyOnBrokerPlace4"], desc=L["CurrencyOnBrokerDesc"], values=AceOptOnBrokerValues, get=AceOptOnBroker, set=AceOptOnBroker },
---@end-do-not-package@
-		},
+		broker = broker,
 		tooltip = {
 			showTotalCap  = { type="toggle", order=1, name=L["CurrencyCapTotal"], desc=L["CurrencyCapTotalDesc"] },
 			showWeeklyCap = { type="toggle", order=2, name=L["CurrencyCapWeekly"], desc=L["CurrencyCapWeeklyDesc"] },
@@ -405,6 +419,7 @@ function module.OptionMenu(parent)
 						label = nameStr,
 						icon = currencyInfo.iconFileID,
 						disabled = disabled,
+						keepShown = false,
 						func = function() setInTitle(place,Currencies[i]); end
 					}, pList2);
 					-- next page
@@ -492,6 +507,8 @@ end
 function module.onevent(self,event,arg1)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
+	elseif event=="BE_UPDATE_CFG" and arg1 and arg1:find("showHidden") then
+		aceCurrencies.created = false; -- recreate currency tables
 	elseif event=="PLAYER_LOGIN" then
 		if ns.toon[name]==nil or (ns.toon[name] and ns.toon[name].headers==nil) then
 			ns.toon[name] = {headers={}};
