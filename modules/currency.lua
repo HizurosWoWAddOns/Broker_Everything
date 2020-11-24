@@ -12,7 +12,7 @@ local name = "Currency"; -- CURRENCY L["ModDesc-Currency"]
 local ttName,ttColumns,tt,tt2,module = name.."TT",5;
 local currencies,currencySession,faction = {},{},UnitFactionGroup("player");
 local BrokerPlacesMax,createTooltip = 10;
-local Currencies = {};
+local Currencies,CovenantCurrencies,covenantID = {},{},0;
 local headers = {
 	HIDDEN_CURRENCIES = "Hidden currencies", -- L["Hidden currencies"]
 	DUNGEON_AND_RAID = "Dungeon and Raid", -- L["Dungeons and Raids"]
@@ -469,9 +469,93 @@ function module.init()
 			break;
 		end
 	end
+	local KY,NL,NF,VE,NX = 1,4,3,2;
+	CovenantCurrencies = {
+		-- general sl currencies??
+		--[1769] = NX, -- Questerfahrung (Standard, versteckt)
+		--[[
+		[1792] = NX, -- Ehre
+		[1802] = NX, -- Stand der wöchentlichen Belohnungen im PvP der Schattenlande
+		[1828] = NX, -- Seelenasche
+		[1877] = NX, -- Bonuserfahrung
+		[1883] = NX, -- Seelenbandmedienenergie
+		[1885] = NX, -- Dankbare Gabe
+		[1889] = NX, -- Abenteuerkampagnenfortschritt
+		[1891] = NX, -- Honor from Rated
+		[1808] = NX, -- Kanalisierte Anima
+		[1767] = NX, -- Stygia
+
+		[1822] = NX, -- Ruhm
+		[1813] = NX, -- Reservoiranima
+		[1810] = NX, -- Erlöste Seele
+		--]]
+
+		-- unsorted covenant currencies
+		[1794] = NX, -- Sühnenanima
+		[1804] = NX, -- Aufgestiegene
+		[1805] = NX, -- Unvergängliche Armee
+		[1806] = NX, -- Wilde Jagd
+		[1807] = NX, -- Hof der Ernter
+		[1837] = NX, -- Der Gluthof
+		[1839] = NX, -- Rendel und Knüppelfratze
+		[1840] = NX, -- Steinkopf
+		[1841] = NX, -- Grufthüter Kassir
+		[1843] = NX, -- Seuchenerfinder Marileth
+		[1844] = NX, -- Großmeister Vole
+		[1845] = NX, -- Alexandros Mograine
+		[1846] = NX, -- Sika
+		[1849] = NX, -- Mikanikos
+		[1850] = NX, -- Choofa
+		[1851] = NX, -- Dromanin Aliothe
+		[1852] = NX, -- Jagdhauptmann Korayn
+		[1880] = NX, -- Ve'nari
+		[1884] = NX, -- Die Eingeschworenen
+		[1887] = NX, -- Hof der Nacht
+		[1888] = NX, -- Marasmius
+
+		-- kyrianer currencies
+		--[1829] = KY, -- Ruhm (Kyrianer)
+		--[1859] = KY, -- Reservoiranima - Kyrianer
+		--[1863] = KY, -- Erlöste Seele - Kyrianer
+		[1867] = KY, -- Architekt des Sanktums - Kyrianer
+		[1871] = KY, -- Animaweber des Sanktums - Kyrianer
+
+		[1819] = KY, -- Medaillon des Dienstes
+		[1847] = KY, -- Kleia und Pelagos
+		[1848] = KY, -- Polemarch Adrestes
+
+		-- night fae currencies
+		--[1831] = NF, -- Ruhm (Nachtfae)
+		--[1861] = NF, -- Reservoiranima - Nachtfae
+		--[1865] = NF, -- Erlöste Seele - Nachtfae
+		[1869] = NF, -- Architekt des Sanktums - Nachtfae
+		[1873] = NF, -- Animaweber des Sanktums - Nachtfae
+
+		[1853] = NX, -- Lady Mondbeere
+
+		-- necrolords currencies
+		--[1832] = NL, -- Ruhm (Nekrolords)
+		--[1862] = NL, -- Reservoiranima - Nekrolords
+		--[1866] = NL, -- Erlöste Seele - Nekrolords
+		[1870] = NL, -- Architekt des Sanktums - Nekrolords
+		[1874] = NL, -- Animaweber des Sanktums - Nekrolords
+
+		[1842] = NX, -- Baronin Vashj
+		[1878] = NX, -- Flickmeister
+
+		-- venthyr currencies
+		--[1830] = VE, -- Ruhm (Venthyr)
+		--[1860] = VE, -- Reservoiranima - Venthyr
+		--[1864] = VE, -- Erlöste Seele - Venthyr
+		[1868] = VE, -- Architekt des Sanktums - Venthyr
+		[1872] = VE, -- Animaweber des Sanktums - Venthyr
+		[1820] = VE, -- Durchfluteter Rubin
+		[1816] = NX, -- Sündensteinfragmente
+		[1838] = NX, -- Die Gräfin
+	};
 	local A = faction=="Alliance";
 	Currencies = {
-		"EXPANSION_NAME8",1754,
+		"EXPANSION_NAME8",1822,1813,1810,1828,1767,1885,1877,1883,1889,1808,1792,1802,1891,1754,
 		"DUNGEON_AND_RAID",1166,
 		"PLAYER_V_PLAYER",391,
 		"MISCELLANEOUS",402,81,515,1388,1401,1379,
@@ -483,22 +567,41 @@ function module.init()
 		"EXPANSION_NAME2",241,61,
 		"EXPANSION_NAME1",1704,
 	};
-	if ns.client_version>=2 then
-		local ignore = {["n/a"]=1,["UNUSED"]=1};
-		tinsert(Currencies,"HIDDEN_CURRENCIES");
-		local known = {};
-		for i=1, #Currencies do
-			if tonumber(Currencies[i]) then
-				known[Currencies[i]] = true;
+
+	local ignore = {["n/a"]=1,["UNUSED"]=1};
+	tinsert(Currencies,"HIDDEN_CURRENCIES");
+	local known = {};
+	for i=1, #Currencies do
+		if tonumber(Currencies[i]) then
+			known[Currencies[i]] = true;
+		end
+	end
+	for i=42, 2500 do
+		if not known[i] and not ns.isArchaeologyCurrency(i) then
+			local info = C_CurrencyInfo.GetCurrencyInfo(i);
+			if info and info.name and not (ignore[info.name] or info.name:find("zzzold") or info.name:find("Test")) then -- (and not info.isHeader)
+				--ns.debug(name,i,info.name);
+				tinsert(Currencies,i);
 			end
 		end
-		for i=42, 2500 do
-			if not known[i] and not ns.isArchaeologyCurrency(i) then
-				local info = C_CurrencyInfo.GetCurrencyInfo(i);
-				if info and info.name and not (ignore[info.name] or info.name:find("zzzold") or info.name:find("Test")) then -- (and not info.isHeader)
-					ns.debug(name,i,info.name);
-					tinsert(Currencies,i);
-				end
+	end
+end
+
+local insertShadowlandCurrencies
+do
+	local insertIndex,hasInsertedCovenant = 15,false;
+	local function InsertCurrency(id)
+		tinsert(Currencies,insertIndex,id);
+		insertIndex=insertIndex+1;
+	end
+	function insertShadowlandCurrencies()
+		if hasInsertedCovenant then return end
+		hasInsertedCovenant = true;
+
+		-- covenantID
+		for id,covenant in ns.pairsByKeys(CovenantCurrencies)do
+			if covenant==covenantID then
+				InsertCurrency(id);
 			end
 		end
 	end
@@ -514,6 +617,20 @@ function module.onevent(self,event,arg1)
 			ns.toon[name] = {headers={}};
 		end
 		resetCurrencySession();
+
+		-- covenant
+		covenantID = C_Covenants.GetActiveCovenantID();
+		if covenantID==0 then
+			self:RegisterEvent("COVENANT_CHOSEN");
+		else
+			ns.debugPrint(name,"<insertShadowlandCurrencies("..covenantID..")>",event);
+			insertShadowlandCurrencies();
+		end
+	elseif event=="COVENANT_CHOSEN" then
+		-- update Covenant currencies
+		covenantID = C_Covenants.GetActiveCovenantID();
+		ns.debugPrint(name,"<insertShadowlandCurrencies("..covenantID..")>",event);
+		insertShadowlandCurrencies();
 	elseif event=="CHAT_MSG_CURRENCY" then -- detecting new currencies
 		local id = tonumber(arg1:match("currency:(%d*)"));
 		if id and not currencySession[id] then
@@ -528,6 +645,17 @@ function module.onevent(self,event,arg1)
 		end
 	end
 end
+
+--[[
+-- C_Covenants.GetCovenantIDs(); -- only a little table with 4 entries
+-- C_Covenants.GetCovenantData(id); -- to get names for comment line
+{
+ 1, -- kyrian
+ 2, -- venthyr
+ 3, -- nightfae
+ 4, -- necrolords
+}
+--]]
 
 -- function module.optionspanel(panel) end
 -- function module.onmousewheel(self,direction) end
