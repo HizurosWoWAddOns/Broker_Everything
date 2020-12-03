@@ -47,18 +47,18 @@ function crap.info()
 end
 
 function crap.sell()
-	local num,sum = #crap.items,0;
-	for i=1, min(num,crap.limit) do
+	local numItems,sum = #crap.items,0;
+	for i=1, min(numItems,crap.limit) do
 		if crap.ERR_VENDOR_DOESNT_BUY then
 			return;
 		end
-		local I=num-(i-1);
+		local I=numItems-(i-1);
 		local bag,slot,price = unpack(crap.items[I]);
-		sum = sum+price;
+		sum = sum + price;
 		UseContainerItem(bag, slot);
 		tremove(crap.items,I);
 	end
-	crap.sum = sum;
+	crap.sum = crap.sum + sum;
 	if crap.ERR_VENDOR_DOESNT_BUY then
 		return;
 	end
