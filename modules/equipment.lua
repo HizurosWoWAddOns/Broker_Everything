@@ -21,7 +21,6 @@ local ignoreWeapon = {
 	["1"] = L["Ignore all"],
 	["2"] = L["Ignore artifact weapons"],
 };
-local ownSlotByProfessionals,oldImprovements = {},{}
 
 
 -- register icon names and default files --
@@ -246,6 +245,12 @@ local function createTooltip(tt)
 		end
 
 		tt:AddSeparator();
+
+		local prof1, prof2 = GetProfessions();
+		local _,_,_,_,_,_,prof1SkillLine = GetProfessionInfo(prof1);
+		local _,_,_,_,_,_,prof2SkillLine = GetProfessionInfo(prof2);
+		ns.debugPrint(name,prof1SkillLine,prof2SkillLine)
+
 		local none,miss=true,false;
 		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do
 			local obj = ns.items.bySlot[-(i/100)];
@@ -253,7 +258,7 @@ local function createTooltip(tt)
 				none=false;
 
 				-- nice blizzard. Query heirloom item info's. very unstable/slow...
-				local itemName, _, itemQuality, itemLevel, _, itemType, subType, _, itemEquipLoc, itemIcon, itemPrice = GetItemInfo(obj.link);
+				local itemName, _, itemQuality, itemLevel, _, itemType, subType = GetItemInfo(obj.link);
 				if not itemName then
 					tt:AddLine(
 						C("ltyellow",_G[slots[i].."SLOT"]),
@@ -265,13 +270,17 @@ local function createTooltip(tt)
 					itemQuality = itemQuality or itemInfo.quality or "black";
 					itemName = itemName or obj.link:match("%[(.*)%]");
 
-					local canEnchant = enchantSlots[i];
-					if ownSlotByProfessionals[i] then
-						for spellId,v in pairs(ownSlotByProfessionals[i])do
-							if IsSpellKnown(spellId) and (v==true --[[or]]) then
+					local canEnchant = false;
+					if type(enchantSlots[i])=="table" then -- tradeSkillID table
+						for profSkillLine in pairs(enchantSlots[i]) do
+							if profSkillLine==prof1SkillLine or profSkillLine==prof2SkillLine then
 								canEnchant = true;
 							end
 						end
+					elseif i==17 and itemType==LE_ITEM_CLASS_WEAPON then -- has equipped weapon in off-hand
+						canEnchant = enchantSlots[16]==true;
+					else
+						canEnchant = enchantSlots[i]==true;
 					end
 
 					if ns.profile[name].showNotEnchanted and obj.id~=158075 --[[ hearth of azeroth can't be enchanted ]] and canEnchant and (tonumber(itemInfo.linkData[1]) or 0)==0 then
@@ -436,28 +445,45 @@ function module.options()
 end
 
 function module.init()
+	--[[
+	profession skill line id
+	171 -- Alchemy
+	164 -- Blacksmithing
+	333 -- Enchanting
+	202 -- Engineering
+	773 -- Inscription
+	755 -- Jewelcrafting
+	165 -- Leatherworking
+	197 -- Tailoring
+	--]]
+
 	if ns.client_version<2 then -- classic
 		enchantSlots = {
-			[8]=1, [9]=1,[5]=1,[10]=1,[15]=1,[17]=1,[16]=1, -- enchanters
+			[8]=true, [9]=true,[5]=true,[10]=true,[15]=true,[17]=true,[16]=true, -- enchanters
 		}
 	elseif ns.client_version<6 then -- pre wod
 		enchantSlots = {
-			[1]=1,[5]=1,[6]=1,[8]=1,[9]=1,[10]=1,[11]=1,[12]=1,[15]=1,[16]=1,[17]=1, -- enchanters
-			[3]=1, -- inscription
-			[7]=1, -- misc trade skills
+			[1]=true,[5]=true,[6]=true,[8]=true,[9]=true,[10]=true,[11]=true,[12]=true,[15]=true,[16]=true,[17]=true, -- enchanters
+			[3]=true, -- inscription
+			[7]=true, -- misc trade skills
 		};
 	elseif ns.client_version<7 then -- pre legion
 		enchantSlots = {
-			[2]=1,[11]=1,[12]=1,[15]=1,[16]=1 -- enchanters
+			[2]=true,[11]=true,[12]=true,[15]=true,[16]=true -- enchanters
 		};
 	elseif ns.client_version<8 then -- pre bfa
 		enchantSlots = {
-			[2]=1,[3]=1,[10]=1,[11]=1,[12]=1,[15]=1 -- enchanters
+			[2]=true,[3]=true,[10]=true,[11]=true,[12]=true,[15]=true -- enchanters
 		};
-	else -- current (bfa)
+	elseif ns.client_version<9 then -- bfa
 		enchantSlots = {
-			[9]=1,[10]=1,[11]=1,[12]=1,[15]=1,[16]=1 -- enchanters
+			[9]=true,[6]={[202]=true},[9]={[333]=true},[10]=true,[11]=true,[12]=true,[15]=true,[16]=true -- enchanters
 		};
+	else-- if ns.client_version<10 then -- sl
+		-- idea: [<invSlot>] = true | { [<tradeSkillID>]=true, ... }
+		enchantSlots = {
+			[5]=true,[6]={[202]=true},[8]=true,[9]=true,[10]=true,[11]=true,[12]=true,[15]=true,[16]=true -- enchanters
+		}
 	end
 	warlords_crafted = {
 		-- Alchemy
@@ -528,32 +554,6 @@ function module.init()
 		ns.items.RegisterCallback(name,updateBroker,"inv");
 		isRegistered = true;
 	end
-
-	-- slots = { invSlot = {1,<levelLimit>}|{2,<itemLevelLimit>}|true }
-	ownSlotByProfessionals = {
-		[6] = { -- waist
-			[4036] = true, -- Engineering
-		},
-		[7] = { -- legs
-			--[3908] = 90, -- Tailoring - max itemLevel[136] or character level[90] ?? missing tooltip description
-		},
-		[9] = { -- wrist
-			[7411] = true, -- Enchanting
-		},
-		[15] = { -- back
-			[3908] = true, -- Tailoring
-			[4036] = true, -- Engineering
-		}
-	};
-	--[[
-	profession spell IDs
-	2018  = Blacksmithing
-	2108  = Leatherworking
-	3908  = Tailoring
-	4036  = Engineering
-	7411  = Enchanting
-	45357 = Inscription
-	--]]
 end
 
 function module.onevent(self,event,arg1,...)
