@@ -80,7 +80,7 @@ ns.LC.colorset({
 do
 	local addon_short = L[addon.."_Shortcut"];
 	local colors = {"0099ff","00ff00","ff6060","44ffff","ffff00","ff8800","ff44ff","ffffff"};
-	local debugMode = "@project-version@" == "@".."project-version".."@";
+	ns.debugMode = "@project-version@" == "@".."project-version".."@";
 	local function colorize(...)
 		local t,c,a1 = {tostringall(...)},1,...;
 		if type(a1)=="boolean" then tremove(t,1); end
@@ -102,10 +102,10 @@ do
 		ConsolePrint(date("|cff999999%X|r"),colorize("<debug::"..name..">",...));
 	end
 	function ns.debugPrint(name,...)
-		if not debugMode then return end
+		if not ns.debugMode then return end
 		print(colorize("<debug::"..name..">",...))
 	end
-	if debugMode then
+	if ns.debugMode then
 		_G[addon.."_GetNamespace"] = function()
 			return ns;
 		end
@@ -1854,7 +1854,7 @@ do
 		Currency = {CURRENCY,"call",{"ToggleCharacter","TokenFrame"}}, -- "ClickOptCurrency"
 		QuestLog = {QUEST_LOG,"call","ToggleQuestLog"} -- "ClickOptQuestLog"
 	};
-	local iLabel,iSrc,iFnc,iPrefix = 1,2,3,4;
+	local iLabel,iSource,iFunction,iPrefix = 1,2,3,4;
 
 	function ns.ClickOpts.func(self,button,modName)
 		local mod = ns.modules[modName];
@@ -1862,7 +1862,7 @@ do
 
 		-- click(plan)A = combine modifier if pressed with named button (left,right)
 		-- click(panl)B = combine modifier if pressed with left or right mouse button without expliced check.
-		local clickA,clickB,act,actName="","";
+		local clickA,clickB,action,actName="","";
 
 		-- check modifier
 		if (IsAltKeyDown()) then		clickA=clickA.."ALT";   clickB=clickB.."ALT"; end
@@ -1888,32 +1888,36 @@ do
 
 		if (mod.onclick[clickA]) then
 			actName = mod.onclick[clickA];
-			act = mod.clickOptions[actName];
+			action = mod.clickOptions[actName];
 		elseif (mod.onclick[clickB]) then
 			actName = mod.onclick[clickB];
-			act = mod.clickOptions[actName];
+			action = mod.clickOptions[actName];
 		end
 
-		if act then
-			local fnc
-			if act[iSrc]=="direct" then
-				fnc = act[iFnc];
-			elseif act[iSrc]=="module" then
-				fnc = mod[act[iFnc]];
-			elseif act[iSrc]=="namespace" then
-				fnc = ns[act[iFnc]];
-			elseif act[iSrc]=="shared" then
-				fnc = shared[act[iFnc]];
-			elseif act[iSrc]=="call" then
-				if type(act[iFnc])=="table" then
-					securecall(unpack(act[iFnc]));
+		if action then
+			local func
+			if action[iSource]=="direct" then
+				func = action[iFunction];
+			elseif action[iSource]=="module" then
+				func = mod[action[iFunction]];
+			elseif action[iSource]=="namespace" then
+				func = ns[action[iFunction]];
+			elseif action[iSource]=="shared" then
+				func = shared[action[iFunction]];
+			elseif action[iSource]=="call" then
+				if type(action[iFunction])=="table" then
+					if action[iFunction][1]=="ToggleFrame" then
+						securecall("ToggleFrame",_G[action[iFunction][2]]);
+						return;
+					end
+					securecall(unpack(action[iFunction]));
 				else
-					securecall(act[iFnc]);
+					securecall(action[iFunction]);
 				end
 				return;
 			end
-			if fnc then
-				fnc(self,button,modName,actName);
+			if func then
+				func(self,button,modName,actName);
 			end
 		end
 	end
@@ -1936,7 +1940,7 @@ do
 		end
 
 		for _, actName in ipairs(order)do
-			local act = mod.clickOptions[actName];
+			local action = mod.clickOptions[actName];
 			local cfgKey = ns.ClickOpts.prefix..actName;
 			if mod.clickOptionsRename and mod.clickOptionsRename[cfgKey] then
 				local altKey = mod.clickOptionsRename[cfgKey];
@@ -1947,21 +1951,21 @@ do
 			end
 			local key = ns.profile[modName][cfgKey];
 			if key and key~="__NONE" then
-				local fSrc,func = act[iSrc];
-				if fSrc=="direct" then
-					func = act[iFnc];
-				elseif fSrc=="module" then
-					func = mod[act[iFnc]];
-				elseif fSrc=="namespace" then
-					func = ns[act[iFnc]];
-				elseif fSrc=="shared" then
-					func = shared[act[iFnc]];
-				elseif fSrc=="call" then
-					func = _G[type(act[iFnc])=="table" and act[iFnc][1] or act[iFnc]];
+				local functionType,func = action[iSource];
+				if functionType=="direct" then
+					func = action[iFunction];
+				elseif functionType=="module" then
+					func = mod[action[iFunction]];
+				elseif functionType=="namespace" then
+					func = ns[action[iFunction]];
+				elseif functionType=="shared" then
+					func = shared[action[iFunction]];
+				elseif functionType=="call" then
+					func = _G[type(action[iFunction])=="table" and action[iFunction][1] or action[iFunction]];
 				end
 				if func and type(func)=="function" then
 					mod.onclick[key] = actName;
-					tinsert(mod.clickHints,ns.LC.color("copper",values[key]).." || "..ns.LC.color("green",L[act[iLabel]]));
+					tinsert(mod.clickHints,ns.LC.color("copper",values[key]).." || "..ns.LC.color("green",L[action[iLabel]]));
 					hasOptions = true;
 				end
 			end

@@ -52,7 +52,7 @@ local function updateBroker()
 	obj.text = #txt>0 and table.concat(txt,"/") or CHAT_CHANNELS;
 end
 
-local function addChannel(tbl,index)
+local function addSystemChannel(tbl,index)
 	local data = {GetChannelDisplayInfo(index)};
 	local chatTypeName = "SYSTEM";
 	if(type(data[iChannelNumber])=="number")then
@@ -101,9 +101,10 @@ end
 
 local function updateChannelList()
 	local tmp = {};
-	local num = GetNumDisplayChannels();
-	for index=1, num do
-		addChannel(tmp,index);
+
+	local numTotalChatChannels = GetNumDisplayChannels();
+	for i = 1, numTotalChatChannels do
+		addSystemChannel(tmp,i);
 	end
 	channels = tmp;
 	updateChannelListLock = false;
@@ -171,7 +172,7 @@ module = {
 		["menu"] = "2_open_menu"
 	},
 	clickOptions = {
-		["chats"] = {CHAT_CHANNELS,"call",{"ToggleFriendsFrame",3}},
+		["chats"] = {CHAT_CHANNELS,"call",{"ToggleFrame","ChannelFrame"}},
 		["menu"] = "OptionMenu"
 	}
 }
@@ -200,7 +201,7 @@ function module.onevent(self,event,...)
 	elseif event=="CHANNEL_COUNT_UPDATE" then
 		local index, count = ...;
 		if channels[index]==nil then
-			addChannel(channels,index);
+			addSystemChannel(channels,index);
 		end
 		channels[index][iCount] = count or 0;
 		channels[index][iLastUpdate] = time();
