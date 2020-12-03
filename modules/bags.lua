@@ -85,6 +85,7 @@ function crap.search()
 		end
 	end
 	if #crap.items>0 then
+		crap.sum = 0;
 		crap.sell();
 	end
 end
