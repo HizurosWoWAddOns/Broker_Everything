@@ -19,7 +19,7 @@ local expansions = {
 	{index=5, typeStr="ships", 			label=GARRISON_SHIPYARD_FOLLOWERS,	ftype=LE_FOLLOWER_TYPE_SHIPYARD_6_2 or Enum.GarrisonFollowerType.FollowerType_6_2, gtype=LE_GARRISON_TYPE_6_0 or Enum.GarrisonType.Type_6_0, levelFnc=function() return (C_Garrison.GetOwnedBuildingInfoAbbrev(98) or 204)-204; end},
 	{index=6, typeStr="champions",		label=FOLLOWERLIST_LABEL_CHAMPIONS,	ftype=LE_FOLLOWER_TYPE_GARRISON_7_0 or Enum.GarrisonFollowerType.FollowerType_7_0, gtype=LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0, levelFnc=C_Garrison.GetGarrisonInfo},
 	{index=7, typeStr="champions_bfa",	label=FOLLOWERLIST_LABEL_CHAMPIONS,	ftype=LE_FOLLOWER_TYPE_GARRISON_8_0 or Enum.GarrisonFollowerType.FollowerType_8_0, gtype=LE_GARRISON_TYPE_8_0 or Enum.GarrisonType.Type_8_0, levelFnc=C_Garrison.GetGarrisonInfo},
---  {index=8, typeStr="champoins_sl",	label=FOLLOWERLIST_LABEL_CHAMPIONS, ftype=LE_FOLLOWER_TYPE_GARRISON_9_0 or Enum.GarrisonFollowerType.FollowerType_9_0, gtype=LE_GARRISON_TYPE_9_0 or Enum.GarrisonType.Type_9_0, levelFnc=C_Garrison.GetGarrisonInfo},
+	{index=8, typeStr="champoins_sl",	label=FOLLOWERLIST_LABEL_CHAMPIONS, ftype=LE_FOLLOWER_TYPE_GARRISON_9_0 or Enum.GarrisonFollowerType.FollowerType_9_0, gtype=LE_GARRISON_TYPE_9_0 or Enum.GarrisonType.Type_9_0, levelFnc=C_Garrison.GetGarrisonInfo},
 };
 
 
@@ -267,7 +267,20 @@ function module.options()
 			showMissionItemLevel={ type="toggle", order=10, name=L["Show mission iLevel"], desc=L["Show mission item level in tooltip."] },
 			showMissionFollowerSlots={ type="toggle", order=11, name=L["Show follower slots"], desc=L["Show mission follower slots in tooltip."] },
 		},
-		misc = nil,
+		misc = {
+			showExpansion6 = {
+				type="toggle", order=1,
+				name=EXPANSION_NAME6, desc=L["MissionsExpansionsDesc"]:format(EXPANSION_NAME6)
+			},
+			showExpansion7 = {
+				type="toggle", order=2,
+				name=EXPANSION_NAME7, desc=L["MissionsExpansionsDesc"]:format(EXPANSION_NAME7)
+			},
+			showExpansion8 = {
+				type="toggle", order=3,
+				name=EXPANSION_NAME8, desc=L["MissionsExpansionsDesc"]:format(EXPANSION_NAME8)
+			},
+		},
 	}
 end
 
