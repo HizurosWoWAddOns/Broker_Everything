@@ -122,6 +122,7 @@ local function initReputationList()
 	if round==false then
 		return false;
 	elseif round<0 then
+		-- uncollapse headers
 		local collapsed
 		if round==-2 then
 			collapsedL1 = collapsedL1 or {};
@@ -139,6 +140,7 @@ local function initReputationList()
 		end
 		round=round+1;
 	elseif round==0 then
+		-- read factions
 		wipe(factions);
 		for i=1, GetNumFactions() do
 			local fName, desc, standingID, barMin, barMax, barValue, _, _, isHeader, isCollapsed, hasRep, _, isChild, factionID = GetFactionInfo(i);
@@ -146,6 +148,7 @@ local function initReputationList()
 		end
 		round=round+1;
 	else
+		-- collapse headers again
 		local collapsed = round==1 and collapsedL2 or collapsedL1;
 		if collapsed and #collapsed>0 then
 			CollapseFactionHeader(collapsed[1]);

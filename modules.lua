@@ -65,8 +65,7 @@ local function moduleInit(name)
 			end
 			local icon = ns.I(mod.iconName .. (mod.icon_suffix or ""));
 			local iColor = ns.profile.GeneralOptions.iconcolor;
-			mod.ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
-			mod.obj = ns.LDB:NewDataObject(mod.ldbName, {
+			local ldbOblectTable = {
 				-- button data
 				type          = "data source",
 				label         = L[name],
@@ -85,12 +84,22 @@ local function moduleInit(name)
 				-- displayable by broker dispay addons...
 				-- DataBrokerGroups using it in option panel.
 				parent        = addon
-			});
+			};
+
+			mod.ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
+			mod.obj = ns.LDB:NewDataObject(mod.ldbName,ldbOblectTable);
+			if not mod.obj then -- another addon has used the same name for registration
+				mod.ldbName = "BE.."..mod.ldbName;
+				mod.obj = ns.LDB:NewDataObject(mod.ldbName,ldbOblectTable);
+			end
 
 			ns.updateIcons(name);
 
-			-- register minimap button on demand
-			ns.toggleMinimapButton(name);
+			-- is possible that
+			if mod.obj then
+				-- register minimap button
+				ns.toggleMinimapButton(name);
+			end
 		end
 
 		-- event handling
