@@ -5,6 +5,11 @@ local addon, ns = ...;
 local C,L,I = ns.LC.color,ns.L,ns.I;
 if ns.client_version<2 then return end
 
+--#- missing event to update list of professions... [?]
+--#- update cooldown list
+--#- invert ns.toon.professions.learnedRecipes to unlearnedRecipes. reduce memory usage
+--#- max skills / get skill from event / get skill list from open profession frame
+--#- toonDB error, wenn das module nachgeladen wird
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
@@ -67,8 +72,9 @@ local cdResetTypes = {
 }
 
 local function OnLearnRecipe(itemId,info) -- info {<expansionIndex>,<index>}
-	if faction_recipes[info[1]][info[2]][faction_recipes.itemId]==itemId then
-		toonDB.unlearnedRecipes[faction_recipes[info[1]][info[2]][faction_recipes.itemId]]=nil;
+	local recipeItemID = faction_recipes[ info[1] ][ info[2] ][ faction_recipes.itemId ];
+	if recipeItemID==itemId then
+		toonDB.unlearnedRecipes[recipeItemID]=nil;
 	end
 end
 
@@ -132,24 +138,21 @@ local function updateTradeSkills()
 			chkExpiredCooldowns();
 			skillNameById[skillLine] = skillName;
 
-			-- register unlearned faction recipes
+			-- register unlearned faction recipes // not working anymore. IsSpellKnown return false for known recipes
+			--[[
 			for expansionIndex, recipes in pairs(faction_recipes) do
 				if tonumber(expansionIndex) and recipes[skillLine] then
 					for index,recipe in ipairs(recipes[skillLine]) do
-						if ns.toon[name].learnedRecipes and ns.toon[name].learnedRecipes[recipe[faction_recipes.itemId]]~=true then -- migration / deprecated
-							toonDB.unlearnedRecipes[recipe[faction_recipes.itemId]] = true;
-						end
-						if not IsSpellKnown(recipe[faction_recipes.spellId]) then
+						if IsSpellKnown(recipe[faction_recipes.spellId]) then
+							toonDB.unlearnedRecipes[recipe[faction_recipes.itemId] ] = nil;
+						else
+							toonDB.unlearnedRecipes[recipe[faction_recipes.itemId] ] = true;
 							ns.UseContainerItemHook.registerItemID(name,recipe[faction_recipes.itemId],OnLearnRecipe,{expansionIndex,index});
 						end
 					end
 				end
 			end
-
-			if ns.toon[name].learnedRecipes~=nil then -- migration / deprecated
-				ns.toon[name].learnedRecipes = nil;
-			end
-
+			--]]
 		else
 			professions[order] = false;
 		end
@@ -279,6 +282,9 @@ local function CreateTooltip2(self, content)
 					end
 					-- recipe
 					local color,faction,buyable = "red",_G["FACTION_STANDING_LABEL"..standing],NO;
+					if toonDB.unlearnedRecipes[itemId] and IsSpellKnown(spellId) then
+						toonDB.unlearnedRecipes[itemId]	= nil;
+					end
 					if toonDB.unlearnedRecipes[itemId]==nil then
 						color,buyable = "ltgreen",ALREADY_LEARNED;
 					elseif currentStanding>=standing then
@@ -310,7 +316,7 @@ local function AddFactionRecipeLines(tt,expansion,recipesByProfession)
 					factions[recipe[1]] = {};
 					factions[recipe[1]].name,_,factions[recipe[1]].standing = GetFactionInfoByID(recipe[1]);
 				end
-				if toonDB.unlearnedRecipes[recipe[4]]==nil then
+				if toonDB.unlearnedRecipes[recipe[3]]==nil then
 					count[1] = count[1]+1; -- learned
 				end
 				if recipe[2]==factions[recipe[1]].standing then
@@ -403,9 +409,9 @@ local function createTooltip(tt)
 		end
 
 		-- link to second tooltip
-		local showLegion = ns.profile[name].showLegionFactionRecipes and ns.toon.level>=GetMaxLevelForExpansionLevel(6);
-		local showBfA = ns.profile[name].showBfAFactionRecipes and ns.toon.level>=GetMaxLevelForExpansionLevel(7);
-		--local showShadow = ns.profile[name].showShadowFactionRecipes and ns.toon.level>=GetMaxLevelForExpansionLevel(8);
+		local showLegion = ns.profile[name].showLegionFactionRecipes and ns.toon.level>=GetMaxLevelForExpansionLevel(5);
+		local showBfA = ns.profile[name].showBfAFactionRecipes and ns.toon.level>=GetMaxLevelForExpansionLevel(6);
+		local showShadow = ns.profile[name].showShadowFactionRecipes and ns.toon.level>=GetMaxLevelForExpansionLevel(7);
 		if showLegion or showBfA then
 			tt:AddSeparator(4,0,0,0,0);
 			tt:AddLine(C("ltblue",L["Recipes from faction vendors by expansion"]));
@@ -417,9 +423,9 @@ local function createTooltip(tt)
 			if showBfA then
 				AddFactionRecipeLines(tt,7,faction_recipes[7]);
 			end
-			--if showShadow then
-			--	AddFactionRecipeLines(tt,8,faction_recipes[8]);
-			--end
+			if showShadow then
+				AddFactionRecipeLines(tt,8,faction_recipes[8]);
+			end
 		end
 	else
 		tt:AddLine(C("gray",L["No professions learned..."]));
@@ -527,6 +533,7 @@ module = {
 		showDigSiteStatus = true,
 		showLegionFactionRecipes = true,
 		showBfAFactionRecipes = true,
+		showShadowFactionRecipes = true,
 		inTitle = {},
 		showAllFactions=true,
 		showRealmNames=true,
@@ -619,10 +626,11 @@ function module.options()
 		tooltip = {
 			showLegionFactionRecipes={ type="toggle", order=1, name=L["EmissaryVendorRecipes"].." ("..EXPANSION_NAME6..")", desc=L["EmissaryVendorRecipesDesc"], width="full" },
 			showBfAFactionRecipes={ type="toggle", order=2, name=L["EmissaryVendorRecipes"].." ("..EXPANSION_NAME7..")", desc=L["EmissaryVendorRecipesDesc"], width="full" },
-			showCooldowns={ type="toggle", order=3, name=L["Show cooldowns"], desc=L["Show/Hide profession cooldowns from all characters."] },
-			showAllFactions=4,
-			showRealmNames=5,
-			showCharsFrom=6,
+			showShadowFactionRecipes={ type="toggle", order=3, name=L["EmissaryVendorRecipes"].." ("..EXPANSION_NAME8..")", desc=L["EmissaryVendorRecipesDesc"], width="full" },
+			showCooldowns={ type="toggle", order=10, name=L["Show cooldowns"], desc=L["Show/Hide profession cooldowns from all characters."] },
+			showAllFactions=11,
+			showRealmNames=12,
+			showCharsFrom=13,
 		},
 		misc = nil,
 	}
@@ -694,7 +702,54 @@ function module.init()
 			[185] = {{2163,6,162288,259422,2},{2163,7,162292,259432,3},{2163,7,162293,259435,3},{2163,7,162287,259420,3},{2163,7,162289,259423,3},{2163,8,166806,290472,2},{2163,8,166263,287110,2},{2163,8,166367,288029,3},{2163,8,166368,288033,3}},
 		};
 	end
-	-- faction_recipes[8] = {}
+	faction_recipes[8] = { -- https://www.wowhead.com/items/recipes
+			-- Alchemy
+			[171] = {
+				{2465, 5, 183106, 307087},
+			},
+			-- Blacksmithing
+			[164] = {
+				{2407, 6, 183094, 322590},
+				{2410, 6, 183095, 322593},
+			},
+			-- Enchanting
+			[333] = {
+				{2465, 6, 183096, 309644},
+			},
+			-- Engineering
+			[202] = {
+				--{2465, 6, 183069, 309644},
+				{2407, 8, 183097, 331007},
+				{2410, 6, 183858, 310535},
+				--{,, 182666, 309636},
+				--{,, 183866, 343682},
+			},
+			-- Inscription
+			[773] = {
+				{2407, 5, 183098, 311424},
+				{2407, 7, 183103, 311409},
+				{2465, 7, 183093, 311410},
+				{2410, 7, 183104, 311411},
+				{2413, 7, 183102, 311412},
+			},
+			-- Jewelcrafting
+			[755] = {
+				{2413, 6, 183099, 311870},
+			},
+			-- Leatherworking
+			[165] = {
+				{2465, 6, 183100, 324088},
+				-- {2413, 7, 183839, 308897}, -- no source
+			},
+			-- Tailoring
+			[197] = {
+				{2410, 6, 183101, 310898},
+			},
+			-- Cooking
+			[185] = {
+				{ 2413, 7, 182668, 308403},
+			},
+	}
 
 	cdSpells = {
 		-- [<skillLine|tradeSkillId>] = { {<spellID|recipeID>,<Cd Group>,<Cd type>}, ... }
