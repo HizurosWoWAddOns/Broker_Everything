@@ -99,12 +99,15 @@ function module.onupdate()
 
 			if F == nil then
 				F = "<anonym>";
-				for i,v in pairs(f:GetParent() or {})do
-					if(v==f)then
-						P = "parentKey";
-						F = i;
-						O = ownership(f,i);
-						break;
+				local parent = f:GetParent();
+				if parent then
+					for i,v in pairs(parent)do
+						if v==f then
+							P = "parentKey";
+							F = i;
+							O = ownership(parent,i);
+							break;
+						end
 					end
 				end
 			end
