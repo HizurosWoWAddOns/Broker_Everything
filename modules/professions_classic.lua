@@ -5,10 +5,6 @@ local addon, ns = ...;
 local C,L,I = ns.LC.color,ns.L,ns.I;
 if ns.client_version>1.9 then return end
 
---#- missing event to update list of professions... [?]
---#- update cooldown list
---#- invert ns.toon.professions.learnedRecipes to unlearnedRecipes. reduce memory usage
---#- max skills / get skill from event / get skill list from open profession frame
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------

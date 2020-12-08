@@ -38,6 +38,7 @@ if LOCALE_enUS or LOCALE_enGB then
 	renameManually["Ahn'Qiraj Temple"] = "Temple of Ahn'Qiraj";
 end
 
+
 -- register icon names and default files --
 -------------------------------------------
 I[name1] = {iconfile="interface\\minimap\\raid", coords={0.25,0.75,0.25,0.75}};
