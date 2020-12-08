@@ -40,7 +40,7 @@ end
 
 local function GetExperience(level,currentXP,maxXP,exhaustion)
 	if level>=MAX_PLAYER_LEVEL then return 0,0,-1; end
-	local xpOverLevelup,percentCurrentXP = (currentXP+exhaustion)-maxXP,currentXP/maxXP,0;
+	local xpOverLevelup,percentCurrentXP,percentExhaustion = (currentXP+exhaustion)-maxXP,currentXP/maxXP,0;
 	if xpOverLevelup>0 then
 		percentExhaustion = (xpOverLevelup/xp2levelup[level+1]) + 1;
 		if percentExhaustion>2 then

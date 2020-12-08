@@ -268,7 +268,7 @@ local function CreateTooltip2(self, content)
 		tt2:AddLine(C("ltblue",L["Recipes from faction vendors"].." ("..skillNameById[tsId]..")"),C("ltblue",REPUTATION),C("ltblue",L["Buyable"]));
 		tt2:AddSeparator();
 
-		local factionID,factionName,factionId,standingID,_ = 0;
+		local factionID,factionName,currentStanding,standingID,_ = 0;
 		for _, recipeData in ipairs(recipes) do
 			local factionId, standing, itemId, spellId, recipeRank = unpack(recipeData);
 			if skillNameById[tsId] then

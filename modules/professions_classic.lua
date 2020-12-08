@@ -17,7 +17,7 @@ local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module = name.."TT",name.."TT2"
 local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset, fullNameLocale = 1,2,3,4,5,6,7,8,9,10,11; -- GetProfessionInfo
 local nameEnglish,spellId,skillId,disabled = 11, 12, 13, 14; -- custom after GetProfessionInfo
 local spellName,spellLocaleName,spellIcon,spellId = 1,2,3,4;
-local professions,db,locked = {};
+local professions,db,locked,cdSpells,poisons = {};
 local Faction = UnitFactionGroup("player")=="Alliance" and 1 or 2;
 local profs = {data={},name2Id={},spellId2skillId={},generated=false};
 local ts,skillsMax = {},{};

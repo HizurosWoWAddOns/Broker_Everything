@@ -36,7 +36,7 @@ local function clearAllStoredMails()
 end
 
 local function toonHasMails(toonMails,key,counter)
-	local has,t,semder,returns = false,time();
+	local has,t,sender,oldest,returns = false,time();
 	local mails = toonMails[key];
 	if mails and #mails>0 then
 		for i=1, #mails do
@@ -84,7 +84,7 @@ local function UpdateStatus(event)
 			wipe(ns.toon.mail.stored);
 		end
 		for i=1, ns.toon.mail.num do
-			_, _, sender_realm, _, _, _, daysLeft = GetInboxHeaderInfo(i);
+			local _, _, sender_realm, _, _, _, daysLeft = GetInboxHeaderInfo(i);
 			if sender_realm then
 				local returns = _time + floor(daysLeft * 86400);
 				if not sender_realm:find("%-") then

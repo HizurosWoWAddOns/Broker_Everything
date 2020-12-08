@@ -92,10 +92,6 @@ local function updateLocaleNames()
 	end
 end
 
-local function doUpdateFunc()
-	doUpdate=true;
-end
-
 local function updateQuestStatus()
 	if updateLock then return end
 	updateLock = true;

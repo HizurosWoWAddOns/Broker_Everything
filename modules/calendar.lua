@@ -153,7 +153,6 @@ local function createTooltip(tt)
 					local clubInfo = C_Club.GetClubInfo(event.clubID);
 					tt:SetCell(tt:AddLine(),1,C("ltgray",clubInfo.name),nil,"LEFT",0);
 					club = event.clubID;
-					DSWERFW = event
 				end
 				local todayOrTomorrow = (event.isToday and IS_TODAY) or (event.isTomorrow and IS_TOMORROW) or "";
 				local l = tt:AddLine(inset..C("ltblue",event.title),todayOrTomorrow..event.startTime.string,"");
