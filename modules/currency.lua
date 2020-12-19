@@ -519,7 +519,6 @@ function module.init()
 		--[1863] = KY, -- Erlöste Seele - Kyrianer
 		[1867] = KY, -- Architekt des Sanktums - Kyrianer
 		[1871] = KY, -- Animaweber des Sanktums - Kyrianer
-
 		[1819] = KY, -- Medaillon des Dienstes
 		[1847] = KY, -- Kleia und Pelagos
 		[1848] = KY, -- Polemarch Adrestes
@@ -530,8 +529,7 @@ function module.init()
 		--[1865] = NF, -- Erlöste Seele - Nachtfae
 		[1869] = NF, -- Architekt des Sanktums - Nachtfae
 		[1873] = NF, -- Animaweber des Sanktums - Nachtfae
-
-		[1853] = NX, -- Lady Mondbeere
+		[1853] = NF, -- Lady Mondbeere
 
 		-- necrolords currencies
 		--[1832] = NL, -- Ruhm (Nekrolords)
@@ -539,9 +537,8 @@ function module.init()
 		--[1866] = NL, -- Erlöste Seele - Nekrolords
 		[1870] = NL, -- Architekt des Sanktums - Nekrolords
 		[1874] = NL, -- Animaweber des Sanktums - Nekrolords
-
-		[1842] = NX, -- Baronin Vashj
-		[1878] = NX, -- Flickmeister
+		[1842] = NL, -- Baronin Vashj
+		[1878] = NL, -- Flickmeister
 
 		-- venthyr currencies
 		--[1830] = VE, -- Ruhm (Venthyr)
@@ -549,14 +546,14 @@ function module.init()
 		--[1864] = VE, -- Erlöste Seele - Venthyr
 		[1868] = VE, -- Architekt des Sanktums - Venthyr
 		[1872] = VE, -- Animaweber des Sanktums - Venthyr
-		[1816] = NX, -- Sündensteinfragmente
-		[1838] = NX, -- Die Gräfin
+		--[1816] = NX, -- Sündensteinfragmente
+		[1838] = VE, -- Die Gräfin
 	};
 	local A = faction=="Alliance";
 	Currencies = {
-		"EXPANSION_NAME8",1822,1813,1810,1828,1767,1885,1877,1883,1889,1808,1802,1891,1754,1820,1728,
+		"EXPANSION_NAME8",1822,1813,1810,1828,1767,1885,1877,1883,1889,1808,1802,1891,1754,1820,1728,1816,
 		"DUNGEON_AND_RAID",1166,
-		"PLAYER_V_PLAYER",391,1792,1602,
+		"PLAYER_V_PLAYER",391,1792,1586,1602,
 		"MISCELLANEOUS",402,81,515,1388,1401,1379,
 		"EXPANSION_NAME7",1803,1755,1719,1721,1718,A and 1717 or 1716,1299,1560,1580,1587,1710,1565,1553,
 		"EXPANSION_NAME6",1149,1533,1342,1275,1226,1220,1273,1155,1508,1314,1154,1268,
