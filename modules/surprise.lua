@@ -142,7 +142,9 @@ function module.init()
 		[166525] = {ITEM_DURATION, "tooltip", 3},
 		[166528] = {ITEM_LOOTABLE},
 
-
+		-- 13. hairy egg >> Bloodlouse Larva
+		[182607] = {ITEM_DURATION, "tooltip", 4},
+		[182606] = {ITEM_LOOTABLE},
 	}
 	ns.items.RegisterCallback(name,bagCheck,"bags");
 end
