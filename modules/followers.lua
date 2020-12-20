@@ -14,6 +14,7 @@ local ttNameS, ttColumnsS, ttS, moduleS = nameS.."TT" ,7;
 local followers,ships,champions,troops = {num=0},{num=0},{num=0},{num=0};
 local updateinterval, garrLevel, ohLevel, syLevel = 30,0,0,0;
 local delayF,delayS,ticker=true,true;
+local updateGarrLevelsLock,garrLevels = false,{};
 local clickOptionsRename = {
 	["1_open_garrison_report"] = "garrreport",
 	["2_open_menu"] = "OptionMenu"
@@ -36,6 +37,24 @@ I[nameS]  = {iconfile="Interface\\Icons\\Achievement_GarrisonFolLower_Rare", coo
 
 -- some local functions --
 --------------------------
+local function updateGarrLevels()
+	if updateGarrLevelsLock then return end;
+	updateGarrLevelsLock = true;
+	garrLevels = {}
+	for GarrTypeKey, GarrType in pairs(Enum.GarrisonType)do
+		garrLevels[GarrTypeKey] = C_Garrison.GetGarrisonInfo(GarrType) or 0;
+	end
+	if garrLevels.Type_6_0 > 0 then
+		local lvl = C_Garrison.GetOwnedBuildingInfoAbbrev(98);
+		if lvl then
+			garrLevels.Type_6_2=lvl-204; -- ship yard
+		end
+	end
+	C_Timer.After(0.1, function()
+		updateGarrLevelsLock = false;
+	end);
+end
+
 local function getFollowers(tableName)
 	local _ = function(count,level,xp,quality,ilevel)
 		local num = ("%04d"):format(count);
@@ -50,16 +69,16 @@ local function getFollowers(tableName)
 	local name,isTroop,Table,garrType,followerType = nameF;
 	if tableName=="followers" then
 		followers = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table,garrType,followerType = followers,LE_GARRISON_TYPE_6_0 or Enum.GarrisonType.Type_6_0,LE_FOLLOWER_TYPE_GARRISON_6_0;
+		Table,garrType,followerType = followers,Enum.GarrisonType.Type_6_0,LE_FOLLOWER_TYPE_GARRISON_6_0;
 	elseif tableName=="ships" then
 		ships = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table,garrType,followerType,name = ships,LE_GARRISON_TYPE_6_0 or Enum.GarrisonType.Type_6_0,LE_FOLLOWER_TYPE_SHIPYARD_6_2,nameS;
+		Table,garrType,followerType,name = ships,Enum.GarrisonType.Type_6_0,LE_FOLLOWER_TYPE_SHIPYARD_6_2,nameS;
 	elseif tableName=="champions" then
 		champions = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table,garrType,followerType,isTroop = champions,LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0,LE_FOLLOWER_TYPE_GARRISON_7_0,false;
+		Table,garrType,followerType,isTroop = champions,Enum.GarrisonType.Type_7_0,LE_FOLLOWER_TYPE_GARRISON_7_0,false;
 	elseif tableName=="troops" then
 		troops = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table,garrType,followerType,isTroop = troops,LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0,LE_FOLLOWER_TYPE_GARRISON_7_0,true;
+		Table,garrType,followerType,isTroop = troops, Enum.GarrisonType.Type_7_0,LE_FOLLOWER_TYPE_GARRISON_7_0,true;
 	end
 
 	ns.toon[tableName]={}; -- wipe
@@ -122,7 +141,7 @@ local function updateBroker(name)
 	if name==nameF then
 		local aio = {0,0,0,0,0};
 		local single = {};
-		if ns.profile[name].showFollowersOnBroker and garrLevel>0 then
+		if ns.profile[name].showFollowersOnBroker and garrLevels.Type_6_0>0 then
 			getFollowers("followers");
 			aio[1]=aio[1]+(followers.onresting_num or 0);
 			aio[2]=aio[2]+(followers.onmission_num or 0);
@@ -131,7 +150,7 @@ local function updateBroker(name)
 			aio[5]=aio[5]+(followers.num or 0);
 			tinsert(single, ("%s/%s/%s/%s"):format(C("ltblue",followers.onresting_num),C("yellow",followers.onmission_num+followers.onwork_num),C("green",followers.available_num),followers.num));
 		end
-		if ns.profile[name].showChampionsOnBroker and LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0 and ohLevel>0 then
+		if ns.profile[name].showChampionsOnBroker and LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0 and garrLevels.Type_7_0>0 then
 			getFollowers("champions");
 			aio[1]=aio[1]+(champions.onresting_num or 0);
 			aio[2]=aio[2]+(champions.onmission_num or 0);
@@ -140,7 +159,7 @@ local function updateBroker(name)
 			aio[5]=aio[5]+(champions.num or 0);
 			tinsert(single, ("%s/%s/%s/%s"):format(C("ltblue",champions.onresting_num),C("yellow",champions.onmission_num+champions.onwork_num),C("green",champions.available_num),champions.num));
 		end
-		if ns.profile[name].showTroopsOnBroker and LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0 and ohLevel>0 then
+		if ns.profile[name].showTroopsOnBroker and LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0 and garrLevels.Type_7_0>0 then
 			getFollowers("troops");
 			aio[1]=aio[1]+(troops.onresting_num or 0);
 			aio[2]=aio[2]+(troops.onmission_num or 0);
@@ -157,7 +176,7 @@ local function updateBroker(name)
 		end
 	elseif name==nameS then
 		local obj = ns.LDB:GetDataObjectByName(moduleS.ldbName);
-		if LE_FOLLOWER_TYPE_SHIPYARD_6_2 and garrLevel>0 and syLevel>0 then
+		if LE_FOLLOWER_TYPE_SHIPYARD_6_2 and garrLevels.Type_6_0>0 and garrLevels.Type_6_2>0 then
 			getFollowers("ships");
 			obj.text = ("%s/%s/%s/%s"):format(C("ltblue",ships.onresting_num),C("yellow",ships.onmission_num+ships.onwork_num),C("green",ships.available_num),ships.num);
 		else
@@ -327,7 +346,7 @@ local function createTooltip(tt, name)
 			local lst = {};
 			if name==nameF then
 				lst = {{"followers",GARRISON_FOLLOWERS}};
-				if ohLevel>0 then
+				if garrLevels.Type_7_0>0 then
 					tinsert(lst,1,{"champions",FOLLOWERLIST_LABEL_CHAMPIONS});
 					tinsert(lst,2,{"troops",FOLLOWERLIST_LABEL_TROOPS});
 					inset="   ";
@@ -590,20 +609,15 @@ end
 function moduleF.onevent(self,event)
 	if (event=="BE_UPDATE_CFG") then
 		ns.ClickOpts.update(moduleF,ns.profile[nameF]);
-	elseif UnitLevel("player")>=90 then
+	elseif UnitLevel("player")>=GetMaxLevelForExpansionLevel(5) then
 		if (delayF==true) then
 			delayF = false;
 			C_Timer.After(4,moduleF.onevent);
 			return;
 		end
 
-		-- garrison level
-		garrLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_6_0 or Enum.GarrisonType.Type_6_0) or 0;
-
-		-- order hall level
-		if ns.client_version>7 then
-			ohLevel = LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0~=nil and C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0) or 0;
-		end
+		ns.debugPrint(nameF,"events");
+		updateGarrLevels();
 
 		updateBroker(nameF);
 	end
@@ -612,23 +626,14 @@ end
 function moduleS.onevent(self,event,arg1)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(moduleS,ns.profile[nameS]);
-	elseif UnitLevel("player")>=90 then
+	elseif UnitLevel("player")>=GetMaxLevelForExpansionLevel(5) then
 		if (delayS==true) then
 			delayS = false;
 			C_Timer.After(4,moduleS.onevent);
 			return;
 		end
 
-		-- shipyard level
-		if garrLevel>0 then
-			local lvl = C_Garrison.GetOwnedBuildingInfoAbbrev(98);
-			if lvl then syLevel=lvl-204; end
-		end
-
-		-- order hall level
-		if ns.client_version>7 then
-			ohLevel = LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0~=nil and C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0) or 0;
-		end
+		updateGarrLevels();
 
 		updateBroker(nameS);
 	end
