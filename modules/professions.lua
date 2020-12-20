@@ -701,6 +701,7 @@ function module.init()
 			-- Alchemy
 			[171] = {
 				{2465, 5, 183106, 307087},
+				{2439, 5, 182660, 307143},
 			},
 			-- Blacksmithing
 			[164] = {
