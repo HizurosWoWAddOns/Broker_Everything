@@ -391,7 +391,7 @@ function module.onevent(self,event,arg1,...)
 		end
 
 		--- usage tracking for the trade agreement to set garrison cache limit up to 1000
-		if(not UseContainerItemHooked and UnitLevel("player")==MAX_PLAYER_LEVEL and not ns.toon.garrison_cache[2])then
+		if(not UseContainerItemHooked and UnitLevel("player")>=GetMaxLevelForExpansionLevel(5) and not ns.toon.garrison_cache[2])then
 			ns.UseContainerItemHook.registerItemID(name,128294,function(bag,slot,itemId)
 				ns.toon.garrison_cache[2]=true;
 				module.onevent(self,"BE_CUSTOM_EVENT");
