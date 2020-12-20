@@ -616,7 +616,6 @@ function moduleF.onevent(self,event)
 			return;
 		end
 
-		ns.debugPrint(nameF,"events");
 		updateGarrLevels();
 
 		updateBroker(nameF);
