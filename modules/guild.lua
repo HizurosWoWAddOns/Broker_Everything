@@ -46,6 +46,17 @@ local function CanUpdateApplicants()
 	return (IsGuildLeader() or C_GuildInfo.IsGuildOfficer()) and C_ClubFinder.IsEnabled();
 end
 
+local function RequestGuildRosterUpdate(canRequest)
+	if canRequest then
+		if GuildRoster then
+			GuildRoster(); -- for classic // trigger GUILD_ROSTER_UPDATE
+		else
+			C_GuildInfo.GuildRoster(); -- trigger GUILD_ROSTER_UPDATE
+			RequestGuildChallengeInfo(); -- trigger GUILD_CHALLENGE_UPDATED
+		end
+	end
+end
+
 local function GetApplicants()
 	if CanUpdateApplicants() then
 		local guildClubId = C_Club.GetGuildClubId();
@@ -927,20 +938,17 @@ function module.onevent(self,event,msg,...)
 	elseif event=="PLAYER_LOGIN" or (ns.eventPlayerEnteredWorld and not self.IsLoaded) then
 		self.IsLoaded = true;
 		frame = self;
-		if GuildRoster then
-			GuildRoster(); -- for classic
-		else
+		if C_GuildInfo and C_GuildInfo.GuildRoster then
 			--self:RegisterEvent("GUILD_CHALLENGE_UPDATED");
 			self:RegisterEvent("GUILD_TRADESKILL_UPDATE");
 			--self:RegisterEvent("CLUB_FINDER_RECRUITS_UPDATED");
 			self:RegisterEvent("CLUB_FINDER_RECRUIT_LIST_CHANGED");
 			if CanUpdateApplicants() then
 				C_ClubFinder.RequestSubscribedClubPostingIDs(); -- init clubfinder recuits list
-				C_ClubFinder.RequestApplicantList(Enum.ClubFinderRequestType.Guild); -- trigger update
+				C_ClubFinder.RequestApplicantList(Enum.ClubFinderRequestType.Guild); -- trigger CLUB_FINDER_RECRUITS_UPDATED
 			end
-			C_GuildInfo.GuildRoster();
-			RequestGuildChallengeInfo();
 		end
+		RequestGuildRosterUpdate(true);
 	elseif event=="GUILD_TRADESKILL_UPDATE" then
 		local t = time();
 		if tradeSkillsUpdateDelay+15>=t then
@@ -948,8 +956,6 @@ function module.onevent(self,event,msg,...)
 		end
 		tradeSkillsUpdateDelay = t;
 		updateTradeSkills();
-	--elseif event=="GUILD_ROSTER_UPDATE" then
-	--	updateBroker();
 	elseif event=="CHAT_MSG_SYSTEM" and (ns.profile[name].showMembersNotes or ns.profile[name].showMembersOffNotes) then
 		-- update online status; GUILD_ROSTER_UPDATE/GetGuildRosterInfo trigger too slow real updates
 		local state,member = "online",msg:gsub("[\124:%[%]]","#"):match(pattern_FRIEND_ONLINE);
@@ -1001,6 +1007,11 @@ function module.onevent(self,event,msg,...)
 					self:UnregisterEvent("CHAT_MSG_SYSTEM");
 				end
 			end
+		end
+
+		if event=="GUILD_ROSTER_UPDATE" and msg==true then
+			RequestGuildRosterUpdate(true);
+			return;
 		end
 
 		updateBroker();
