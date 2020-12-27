@@ -19,6 +19,9 @@ local headers = {
 	PLAYER_V_PLAYER = PLAYER_V_PLAYER,
 	MISCELLANEOUS = MISCELLANEOUS,
 }
+local countCorrectionList = {
+	[1822] = 1, -- Renown; currency value 1 count lower than display for players
+}
 
 
 -- register icon names and default files --
@@ -30,6 +33,16 @@ I[name..'_Alliance'] = {iconfile="Interface\\PVPFrame\\PVP-Currency-Alliance", c
 
 -- some local functions --
 --------------------------
+local function CountCorrection(id,info)
+	local v = countCorrectionList[id];
+	if v then
+		info.quantity = info.quantity + v;
+		if info.maxQuantity>0 then
+			info.maxQuantity = info.maxQuantity + v;
+		end
+	end
+end
+
 local function CapColor(colors,str,nonZero,count,mCount,count2,mCount2)
 	local col,c = nonZero and colors[1] or "gray",0;
 	if nonZero then
@@ -65,6 +78,7 @@ local function resetCurrencySession()
 	for _,id in ipairs(Currencies)do
 		if tonumber(id) then
 			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(id);
+			CountCorrection(id,currencyInfo);
 			currencySession[id] = currencyInfo.quantity;
 		end
 	end
@@ -82,6 +96,7 @@ local function updateBroker()
 		if tonumber(id) then
 			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(id);
 			if currencyInfo.discovered then
+				CountCorrection(id,currencyInfo);
 				local str = ns.FormatLargeNumber(name,currencyInfo.quantity);
 				if ns.profile[name].showCapBroker and currencyInfo.maxQuantity>0 then
 					str = str.."/"..ns.FormatLargeNumber(name,currencyInfo.maxQuantity);
@@ -177,6 +192,8 @@ function createTooltip(tt,update)
 			local currencyId = Currencies[i];
 			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(currencyId);
 			if currencyInfo and currencyInfo.name and (currencyInfo.discovered or hiddenSection) then
+				CountCorrection(currencyId,currencyInfo);
+
 				local str = ns.FormatLargeNumber(name,currencyInfo.quantity,true);
 
 				-- cap
@@ -411,6 +428,7 @@ function module.OptionMenu(parent)
 				--isHidden = Currencies[i]=="HIDDEN_CURRENCIES";
 				local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(Currencies[i]);
 				if currencyInfo and currencyInfo.name then
+					CountCorrection(Currencies[i],currencyInfo);
 					local nameStr,disabled = currencyInfo.name,true;
 					if ns.profile[name].currenciesInTitle[place]~=Currencies[i] then
 						nameStr,disabled = C("ltyellow",nameStr),false;
@@ -631,6 +649,7 @@ function module.onevent(self,event,arg1)
 		local id = tonumber(arg1:match("currency:(%d*)"));
 		if id and not currencySession[id] then
 			local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(id);
+			CountCorrection(id,currencyInfo);
 			currencySession[id] = currencyInfo.quantity;
 		end
 	end
