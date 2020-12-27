@@ -145,6 +145,12 @@ function module.init()
 		-- 13. hairy egg >> Bloodlouse Larva
 		[182607] = {ITEM_DURATION, "tooltip", 4},
 		[182606] = {ITEM_LOOTABLE},
+
+		-- 14. Blight-Touched Egg >>  Chewed Reins of the Callow Flayedwing
+		[184104] = {ITEM_DURATION, "tooltip", 3},
+		[181818] = {ITEM_LOOTABLE},
+
+		--
 	}
 	ns.items.RegisterCallback(name,bagCheck,"bags");
 end
