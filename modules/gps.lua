@@ -39,7 +39,7 @@ local sharedclickOptionsRename = {
 	["3_open_menu"] = "menu"
 };
 local sharedclickOptions = {
-	["worldmap"] = {"World map","call",{"ToggleFrame",WorldMapFrame}},
+	["worldmap"] = {"World map","call",{"ToggleFrame","WorldMapFrame"}},
 	["transport"] = {"Transport menu","module","transportMenu"},
 	["menu"] = "OptionMenu"
 };
