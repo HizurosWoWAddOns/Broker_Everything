@@ -480,6 +480,9 @@ local function init()
 		[166747]=1, -- Toy - Brewfest Reveler's Hearthstone
 		[168907]=1, -- Toy - Holographic Digitalization Hearthstone
 		[172179]=1, -- Toy - Eternal Traveler's Hearthstone
+		[184353]=1, -- Toy - Kyrian Hearthstone
+		[180290]=1, -- Toy - Night Fae Hearthstone
+		[182773]=1, -- Toy - Necrolord Hearthstone
 	};
 
 	--_itemReplacementIds = {64488,28585,6948,44315,44314,37118,142542,142298};
