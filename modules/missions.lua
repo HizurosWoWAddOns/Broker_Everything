@@ -14,12 +14,12 @@ local missions,started,counter = {},{},{};
 local qualities = {"white","ff1eaa00","ff0070dd","ffa335ee","red"};
 local garrLevel,syLevel,ohLevel = 0,0,0;
 local expansions = {
-	-- {<expansionIndex>,<LE_FOLLOWER_TYPE*>,<LE_GARRISON_TYPE_*>,<function:chkAvailable>}
-	{index=5, typeStr="followers",		label=GARRISON_FOLLOWERS,			ftype=LE_FOLLOWER_TYPE_GARRISON_6_0 or Enum.GarrisonFollowerType.FollowerType_6_0, gtype=LE_GARRISON_TYPE_6_0 or Enum.GarrisonType.Type_6_0, levelFnc=C_Garrison.GetGarrisonInfo},
-	{index=5, typeStr="ships", 			label=GARRISON_SHIPYARD_FOLLOWERS,	ftype=LE_FOLLOWER_TYPE_SHIPYARD_6_2 or Enum.GarrisonFollowerType.FollowerType_6_2, gtype=LE_GARRISON_TYPE_6_0 or Enum.GarrisonType.Type_6_0, levelFnc=function() return (C_Garrison.GetOwnedBuildingInfoAbbrev(98) or 204)-204; end},
-	{index=6, typeStr="champions",		label=FOLLOWERLIST_LABEL_CHAMPIONS,	ftype=LE_FOLLOWER_TYPE_GARRISON_7_0 or Enum.GarrisonFollowerType.FollowerType_7_0, gtype=LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0, levelFnc=C_Garrison.GetGarrisonInfo},
-	{index=7, typeStr="champions_bfa",	label=FOLLOWERLIST_LABEL_CHAMPIONS,	ftype=LE_FOLLOWER_TYPE_GARRISON_8_0 or Enum.GarrisonFollowerType.FollowerType_8_0, gtype=LE_GARRISON_TYPE_8_0 or Enum.GarrisonType.Type_8_0, levelFnc=C_Garrison.GetGarrisonInfo},
-	{index=8, typeStr="champoins_sl",	label=FOLLOWERLIST_LABEL_CHAMPIONS, ftype=LE_FOLLOWER_TYPE_GARRISON_9_0 or Enum.GarrisonFollowerType.FollowerType_9_0, gtype=LE_GARRISON_TYPE_9_0 or Enum.GarrisonType.Type_9_0, levelFnc=C_Garrison.GetGarrisonInfo},
+	-- { <expansionIndex>, <internalTypeString>, <localizedLabel>, <garrison-/follower-type>, <garrisonLevelFunction> }
+	{index=5, typeStr="followers",     label=GARRISON_FOLLOWERS,           type="6_0", levelFnc=C_Garrison.GetGarrisonInfo},
+	{index=5, typeStr="ships",         label=GARRISON_SHIPYARD_FOLLOWERS,  type="6_2", levelFnc=function() return (C_Garrison.GetOwnedBuildingInfoAbbrev(98) or 204)-204; end},
+	{index=6, typeStr="champions",     label=FOLLOWERLIST_LABEL_CHAMPIONS, type="7_0", levelFnc=C_Garrison.GetGarrisonInfo},
+	{index=7, typeStr="champions_bfa", label=FOLLOWERLIST_LABEL_CHAMPIONS, type="8_0", levelFnc=C_Garrison.GetGarrisonInfo},
+	{index=8, typeStr="champions_sl",  label=FOLLOWERLIST_LABEL_CHAMPIONS, type="9_0", levelFnc=C_Garrison.GetGarrisonInfo},
 };
 
 
@@ -55,23 +55,19 @@ local function updateMissions()
 	counter={completed=0,inprogress=0,available=0};
 	for e=1, #expansions do
 		local exp = expansions[e];
-		if exp.gtype and exp.ftype then
-			exp.level = exp.levelFnc(exp.gtype) or 0;
+		if exp.type then
+			exp.level = exp.levelFnc(Enum.GarrisonType["Type_"..exp.type]) or 0;
 			missions[exp.typeStr] = {inprogress={},available={},completed={}};
 			local m=missions[exp.typeStr];
-			local tmp = C_Garrison.GetInProgressMissions(exp.ftype) or {};
+			local tmp = C_Garrison.GetInProgressMissions(Enum.GarrisonFollowerType["FollowerType_"..exp.type]) or {};
 			for i=1, #tmp do
 				tinsert(m[tmp[i].missionEndTime-t>0 and "inprogress" or "completed"],tmp[i]);
 				tinsert(ns.toon.missions,tmp[i].missionEndTime);
 			end
-			m.available = C_Garrison.GetAvailableMissions(exp.ftype) or {};
+			m.available = C_Garrison.GetAvailableMissions(Enum.GarrisonFollowerType["FollowerType_"..exp.type]) or {};
 			for i=1, #m.available do
-				if C_Garrison.GetMissionInfo then
-					_,_,_,_,_,_,m.available[i].isExhausting = C_Garrison.GetMissionInfo(m.available[i].missionID); -- TODO: removed in shadowlands
-				elseif C_Garrison.GetMissionDeploymentInfo then
-					local info = C_Garrison.GetMissionDeploymentInfo(m.available[i].missionID);
-					m.available[i].isExhausting = info.isExhausting;
-				end
+				local info = C_Garrison.GetMissionDeploymentInfo(m.available[i].missionID);
+				m.available[i].isExhausting = info.isExhausting;
 			end
 			counter.completed=counter.completed+#m.completed;
 			counter.inprogress=counter.inprogress+#m.inprogress;
@@ -109,7 +105,7 @@ local function createTooltip(tt)
 
 			for e=1, #expansions do
 				local exp = expansions[e];
-				if missions and missions[exp.typeStr] and missions[exp.typeStr][show[i][1]] and #missions[exp.typeStr][show[i][1]]>0 then
+				if ns.profile[name]["showExpansion"..exp.index] and missions and missions[exp.typeStr] and missions[exp.typeStr][show[i][1]] and #missions[exp.typeStr][show[i][1]]>0 then
 					local tbl = missions[exp.typeStr][show[i][1]];
 					-- expansion header
 					tt:SetCell(tt:AddLine(),1,C("ltgray",exp.label.." (".._G["EXPANSION_NAME"..exp.index]..")"),nil,"LEFT",0);
@@ -232,7 +228,7 @@ module = {
 		showMissionType = true,
 		showMissionLevel = true,
 		showMissionItemLevel = true,
-		showMissionFollowerSlots = true
+		showMissionFollowerSlots = true,
 	},
 	clickOptionsRename = {
 		["garrreport"] = "1_open_garrison_report",
@@ -249,39 +245,38 @@ ns.ClickOpts.addDefaults(module,{
 	menu = "_RIGHT"
 });
 
-function module.options()
-	return {
-		broker = nil,
-		tooltip = {
-			showChars={ type="toggle", order=1, name=L["Show characters"],          desc=L["Show a list of your characters with count of ready and active missions in tooltip"] },
-			showAllFactions=2,
-			showRealmNames=3,
-			showCharsFrom=4,
+do
+	local misc,o = {},1;
+	for e=1, #expansions do
+		local key = "showExpansion"..expansions[e].index;
+		if not misc[key] then
+			local name = _G["EXPANSION_NAME"..expansions[e].index];
+			misc[key] = { type="toggle", order=o, name=name, desc=L["MissionsExpansionsDesc"]:format(name) }
+			module.config_defaults[key] = true;
+			o = o+1;
+		end
+	end
+	function module.options()
+		return {
+			broker = nil,
+			tooltip = {
+				showChars={ type="toggle", order=1, name=L["Show characters"],          desc=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+				showAllFactions=2,
+				showRealmNames=3,
+				showCharsFrom=4,
 
-			showReady={ type="toggle", order=5, name=L["Show ready missions"],     desc=L["Show ready missions in tooltip"] },
-			showActive={ type="toggle", order=6, name=L["Show active missions"],    desc=L["Show active missions in tooltip"] },
-			showAvailable={ type="toggle", order=7, name=L["Show available missions"], desc=L["Show available missions in tooltip"] },
+				showReady={ type="toggle", order=5, name=L["Show ready missions"],     desc=L["Show ready missions in tooltip"] },
+				showActive={ type="toggle", order=6, name=L["Show active missions"],    desc=L["Show active missions in tooltip"] },
+				showAvailable={ type="toggle", order=7, name=L["Show available missions"], desc=L["Show available missions in tooltip"] },
 
-			showMissionType={ type="toggle", order=8, name=L["Show mission type"],   desc=L["Show mission type in tooltip."] },
-			showMissionLevel={ type="toggle", order=9, name=L["Show mission level"],  desc=L["Show mission level in tooltip."] },
-			showMissionItemLevel={ type="toggle", order=10, name=L["Show mission iLevel"], desc=L["Show mission item level in tooltip."] },
-			showMissionFollowerSlots={ type="toggle", order=11, name=L["Show follower slots"], desc=L["Show mission follower slots in tooltip."] },
-		},
-		misc = {
-			showExpansion6 = {
-				type="toggle", order=1,
-				name=EXPANSION_NAME6, desc=L["MissionsExpansionsDesc"]:format(EXPANSION_NAME6)
+				showMissionType={ type="toggle", order=8, name=L["Show mission type"],   desc=L["Show mission type in tooltip."] },
+				showMissionLevel={ type="toggle", order=9, name=L["Show mission level"],  desc=L["Show mission level in tooltip."] },
+				showMissionItemLevel={ type="toggle", order=10, name=L["Show mission iLevel"], desc=L["Show mission item level in tooltip."] },
+				showMissionFollowerSlots={ type="toggle", order=11, name=L["Show follower slots"], desc=L["Show mission follower slots in tooltip."] },
 			},
-			showExpansion7 = {
-				type="toggle", order=2,
-				name=EXPANSION_NAME7, desc=L["MissionsExpansionsDesc"]:format(EXPANSION_NAME7)
-			},
-			showExpansion8 = {
-				type="toggle", order=3,
-				name=EXPANSION_NAME8, desc=L["MissionsExpansionsDesc"]:format(EXPANSION_NAME8)
-			},
-		},
-	}
+			misc = misc,
+		}
+	end
 end
 
 -- function module.init() end
