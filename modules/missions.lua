@@ -94,7 +94,7 @@ local function createTooltip(tt)
 	for i=1, #show do
 		if show[i][4] then
 			tt:AddSeparator(4,0,0,0,0);
-			local duration_title = aType=="inprogress" and "Duration" or "Time";
+			local duration_title = show[i][1]=="inprogress" and "Duration" or "Time";
 			local count,c,l=0,2,tt:AddLine(C(show[i][3],L[show[i][2]]));
 			if ns.profile[name].showMissionLevel then         tt:SetCell(l,c,C("ltblue",LEVEL),nil,"RIGHT");          c=c+1; end
 			if ns.profile[name].showMissionType then          tt:SetCell(l,c,C("ltblue",TYPE),nil,"LEFT");            c=c+1; end

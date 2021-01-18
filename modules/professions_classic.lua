@@ -17,6 +17,11 @@ local professions,db,locked,cdSpells,poisons = {};
 local Faction = UnitFactionGroup("player")=="Alliance" and 1 or 2;
 local profs = {data={},name2Id={},spellId2skillId={},generated=false};
 local ts,skillsMax = {},{};
+local cd_groups = { -- %s cooldown group
+	"Transmutation",	-- L["Transmutation cooldown group"]
+	"Jewels",			-- L["Jewels cooldown group"]
+	"Leather"			-- L["Leather cooldown group"]
+}
 
 local cdReset = function(id,more)
 	local cd = 0;
@@ -109,12 +114,6 @@ function profs.build()
 			profs.spellId2skillId[spellId] = spellData[2];
 			profs.generated=true;
 		end
-	end
-end
-
-local function OnLearnRecipe(itemId,i)
-	if legion_faction_recipes[i][4]==itemId then
-		ns.toon[name].learnedRecipes[legion_faction_recipes[i][5]]=true;
 	end
 end
 
@@ -335,17 +334,6 @@ local function updateTradeSkill(_,recipes)
 			end
 			local cooldown, isDayCooldown, charges, maxCharges = C_TradeSkillUI.GetRecipeCooldown(recipeID);
 		end
-
-	else
-		C_Timer.After(.314159,function()
-			local _,_,_,_,_,tsId = C_TradeSkillUI.GetTradeSkillLine();
-			if legion_faction_recipes[tsId] then
-				updateTradeSkill(true,legion_faction_recipes[tsId]);
-			end
-			if bfa_faction_recipes[tsId] then
-				updateTradeSkill(true,bfa_faction_recipes[tsId]);
-			end
-		end);
 	end
 end
 
@@ -419,7 +407,7 @@ ns.ClickOpts.addDefaults(module,{
 	menu = "_RIGHT"
 });
 
-function module.ProfessionMenu()
+function module.ProfessionMenu(self,button,modName,actName)
 	if (tt~=nil) then ns.hideTooltip(tt); end
 	ns.EasyMenu:InitializeMenu();
 	ns.EasyMenu:AddEntry({ label = L["Open"], title = true });
@@ -437,7 +425,7 @@ function module.ProfessionMenu()
 	ns.EasyMenu:ShowMenu(self);
 end
 
-function module.OptionMenu()
+function module.OptionMenu(self,button,modName,actName)
 	if (tt~=nil) then ns.hideTooltip(tt); end
 	ns.EasyMenu:InitializeMenu();
 	ns.EasyMenu:AddEntry({ label = L["In title"], title = true });

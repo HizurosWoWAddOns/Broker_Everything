@@ -110,7 +110,7 @@ local function calcDataSize(info,obj)
 	elseif obj_t=="number" then
 		return (floor(obj/2147483647)+1)*8;
 	end
-	return strlen(tostring(objStr));
+	return strlen(tostring(obj));
 end
 
 local function getIconSets()

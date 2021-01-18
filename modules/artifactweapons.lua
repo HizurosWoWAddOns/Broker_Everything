@@ -101,8 +101,8 @@ function updateItemState()
 			end
 		end
 		tinsert(ap_items_found,{
-			id=id,
 			count=#items,
+			id=items[1].id,
 			link=items[1].link,
 			name=items[1].name,
 			icon=items[1].icon,
@@ -165,7 +165,6 @@ local function updateCharacterDB(equipped)
 			artifactTier=artifactTier,
 			artifactXP=artifactXP,
 			xpForNextPoint=xpForNextPoint,
-			xpTotal=xpTotal,
 			relic=relic,
 			classSpec="", -- string
 			itemLevel=weapon and weapon.level or 0

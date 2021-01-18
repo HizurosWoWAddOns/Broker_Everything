@@ -43,6 +43,7 @@ end
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local icon,iconCoords,text = I[name].iconfile,{0.1,0.9,0.1,0.9},{};
+	local pending = (equipPending and C("orange",equipPending)) or false;
 
 	if ns.profile[name].showCurrentSet and C_EquipmentSet then
 		local numEquipSets = C_EquipmentSet.GetNumEquipmentSets();
@@ -52,11 +53,10 @@ local function updateBroker()
 			for i=0, numEquipSets do
 				equipName, iconFile, setID, isEquipped, _, _, _, numMissing = C_EquipmentSet.GetEquipmentSetInfo(i);
 				if equipName then
-					local pending = (equipPending and C("orange",equipPending)) or false;
 					if isEquipped then
 						iconCoords = {0.05,0.95,0.05,0.95}
 						icon = iconFile;
-						tinsert(text,pending~=false and pending or equipName);
+						tinsert(text,equipPending==setID and pending or equipName);
 					end
 				end
 			end

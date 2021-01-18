@@ -249,7 +249,7 @@ end
 function createTooltip(tt, update, from)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local header = false;
-	if self then requested=false; end
+	--if self then requested=false; end
 
 	if tt.lines~=nil then tt:Clear(); end
 	tt:SetCell(select(1,tt:AddLine()),1,C("dkyellow",name),tt:GetHeaderFont(),"LEFT",ttColumns)
@@ -506,8 +506,8 @@ function module.onevent(self,event,msg)
 					tinsert(tags,frequencies[q.frequency][2]);
 					tinsert(shortTags,C("dailyblue",frequencies[q.frequency][1]));
 				end
+				local mapId,mapName;
 				if ns.client_version>=2 then
-					local mapId,mapName;
 					if not questZones[q.questID] and not WorldMapFrame:IsShown() then
 						mapId = GetQuestUiMapID(q.questID,true);
 						if mapId then

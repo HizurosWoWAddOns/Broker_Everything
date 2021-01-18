@@ -79,6 +79,7 @@ local function GetClassTalentTreeInfoByType(garrType,talentType)
 	return;
 end
 
+--[[
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local title = {};
@@ -86,6 +87,7 @@ local function updateBroker()
 
 	obj.text = table.concat(title,", ");
 end
+--]]
 
 local function createTooltip2(tt)
 end
@@ -109,7 +111,6 @@ local function createTalentTooltip(self,talent)
 
 			if (talent.researchCost and talent.researchCurrency) then
 				local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(talent.researchCurrency);
-				--local _, _, currencyTexture = GetCurrencyInfo(talent.researchCurrency); -- TODO: removed in shadowlands
 				str = str.." "..BreakUpLargeNumbers(talent.researchCost).."|T"..currencyInfo.iconFileID..":0:0:2:0|t";
 			end
 			if (talent.researchGoldCost ~= 0) then
@@ -134,7 +135,7 @@ local function addShipment(tt,...)
 	if name then
 		tt:SetCell(tt:AddLine(),1,"  |T"..texture..":14:14:0:0:64:64:4:58:4:58|t "..C("ltyellow",name),nil,"LEFT",0);
 		if shipmentCapacity>0 then
-			local delim,line,remain = C("gray"," \| "),{},(creationTime+duration)-now;
+			local delim,line,remain = C("gray"," || "),{},(creationTime+duration)-now;
 			tinsert(line,C("green",shipmentsReady).."/"..C("yellow",shipmentsTotal));
 			if remain>0 then
 				tinsert(line,SecondsToTime((creationTime+duration)-now));

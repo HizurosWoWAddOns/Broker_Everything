@@ -204,7 +204,7 @@ end
 local function GetZoneInfo()
 	local zoneColor,zoneLabel,zoneType, _, f = "white","",GetZonePVPInfo()
 
-	if zoneType == "combat" or pzoneType == "arena" or zoneType == "hostile" then
+	if zoneType == "combat" or zoneType == "arena" or zoneType == "hostile" then
 		zoneColor,zoneLabel = zoneRed,HOSTILE;
 	elseif zoneType == "contested" or zoneType == nil then
 		zoneColor,zoneLabel,zoneType = zoneYellow,L["Contested"],"contested"
@@ -590,7 +590,7 @@ end
 local eventActive = false;
 local function onevent(name,self,event,arg1,...)
 	if event=="BE_UPDATE_CFG" then
-		if msg and msg:find("^ClickOpt") then
+		if arg1 and arg1:find("^ClickOpt") then
 			ns.ClickOpts.update(name);
 		end
 		if not eventActive then

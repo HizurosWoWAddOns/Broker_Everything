@@ -189,7 +189,7 @@ local function createTooltip(tt)
 					tt:SetCell(tt:AddLine(),1,"  "..ns.strWrap(table.concat(plainCriteria,", "),limit*2,2),nil,nil,0);
 				end
 				if num==0 then
-					tt:AddLine("  " ..  C(criteriaCompleted and "green" or "ltgray",ns.strWrap(description,limit,2)));
+					tt:AddLine("  " ..  C(completed and "green" or "ltgray",ns.strWrap(description,limit,2)));
 				end
 			end
 		end

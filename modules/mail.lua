@@ -249,7 +249,7 @@ local function createTooltip(tt)
 end
 
 local function SendMailHook(targetName)
-	if debugstack():find("\?") and type(targetName)~="string" then return end -- ignore double executed function
+	if debugstack():find("?") and type(targetName)~="string" then return end -- ignore double executed function
 
 	local t = time()+30*86400;
 	if targetName:find("-") then

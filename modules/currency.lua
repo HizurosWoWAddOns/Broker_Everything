@@ -282,9 +282,8 @@ end
 local function aceOptOnBrokerValues(info)
 	-- generate currencies list one time per AceOptions creation/refresh. one table for all select fields.
 	if info[#info]=="currenciesInTitle1" or not aceCurrencies.created then
-	ns.debugPrint(name,info[#info],aceCurrencies.created)
 		aceCurrencies.created = true;
-		local id = ns.profile[name].currenciesInTitle[place];
+		local id = ns.profile[name].currenciesInTitle[tonumber((info[#info]:gsub("currenciesInTitle","")))];
 		local list,orderList,n = {},{},1;
 		wipe(aceCurrencies.values);
 		wipe(aceCurrencies.order);

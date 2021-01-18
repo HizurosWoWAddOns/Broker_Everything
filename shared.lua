@@ -403,7 +403,7 @@ function ns.hideTooltip(tooltip)
 	if type(tooltip)~="table" then return; end
 	if type(tooltip.secureButtons)=="table" then
 		local f = GetMouseFocus()
-		if f and not f:IsForbidden() and (not f:IsProtected() and InCombatLockdown()) and type(f.key)=="string" and type(ttName)=="string" and f.key==ttName then
+		if f and not f:IsForbidden() and (not f:IsProtected() and InCombatLockdown()) and type(f.key)=="string" and type(tooltip.key)=="string" and f.key==tooltip.key then
 			return; -- why that? tooltip can't be closed in combat with securebuttons as child elements. results in addon_action_blocked...
 		end
 		ns.secureButton(false);
@@ -827,7 +827,7 @@ do
 		end
 	end
 
-	local function callbackHandler(changedItems)
+	local function callbackHandler()
 		-- execute callback functions
 
 		if hasChanged.bags or hasChanged.inv or hasChanged.equip or hasChanged.items or hasChanged.ammo then
@@ -842,7 +842,7 @@ do
 		if hasChanged.items then
 			for id,locations in pairs(hasChanged.item)do
 				if callbacks.item[id] and #callbacks.item[id] then
-					doCallbacks("item",id,location);
+					doCallbacks("item",id,locations);
 				end
 			end
 			wipe(hasChanged.item);
@@ -859,7 +859,7 @@ do
 	end
 
 	local function addItem(info,scanner)
-		if itemsBySlot[info.sharedSlot] and itemsBySlot[info.sharedSlot].diff==diffStr then
+		if itemsBySlot[info.sharedSlot] and itemsBySlot[info.sharedSlot].diff==info.diff then
 			return false; -- item has not changed; must be added again.
 		end
 		if itemsByID[info.id]==nil then
@@ -878,8 +878,8 @@ do
 			end
 			-- souls?
 		end
-		if callbacks.item[id] then
-			hasChanged.item[id][info.sharedSlot] = true;
+		if callbacks.item[info.id] then
+			hasChanged.item[info.id][info.sharedSlot] = true;
 			hasChanged.items = true;
 		end
 		hasChanged[scanner] = true;
@@ -913,7 +913,7 @@ do
 			if id then
 				local link = GetInventoryItemLink("player",slotIndex);
 				local d,dM = GetInventoryItemDurability(slotIndex);
-				local diffStr = table.concat({link,d or 0,dm or 0},"^");
+				local diffStr = table.concat({link,d or 0,dM or 0},"^");
 				addItem({
 					bag=-1,
 					slot=slotIndex,
@@ -958,7 +958,8 @@ do
 				--]]
 				for slotIndex=1, numBagSlots do
 					local sharedSlotIndex = bagIndex+(slotIndex/100);
-					local _, count, _, _, _, _, link, _, _, id = GetContainerItemInfo(bagIndex,slotIndex);
+					local id = GetContainerItemID(bagIndex,slotIndex);
+					local _, count, _, _, _, _, link = GetContainerItemInfo(bagIndex,slotIndex);
 					if id then
 						local _, _, _, itemEquipLocation, _, itemClassID, itemSubClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
 						local d,dM = GetContainerItemDurability(bagIndex,slotIndex);
@@ -970,6 +971,7 @@ do
 						local changed = addItem({
 							bag=bagIndex,
 							slot=slotIndex,
+							count=count,
 							sharedSlot=sharedSlotIndex,
 							id=id,
 							link=link,
@@ -1104,7 +1106,7 @@ do
 	hooksecurefunc("UseContainerItem",function(bag,slot)
 		if bag and slot then
 			local itemId = tonumber((GetContainerItemLink(bag,slot) or ""):match("Hitem:([0-9]+)"));
-			if itemid and callback[itemId] then
+			if itemId and callback[itemId] then
 				for i,v in pairs(callback[itemId])do
 					if type(v[1])=="function" then v[1]("UseContainerItem",itemId,v[2]); end
 				end
@@ -1477,7 +1479,7 @@ do
 		end,
 		num = function(D)
 			if (D.cvarKey) then
-			elseif (D.cvars) and (type(cvars)=="table") then
+			elseif type(D.cvars)=="table" then
 
 			end
 		end,
@@ -1538,7 +1540,7 @@ do
 		if (type(D)=="table") and (#D>0) then -- numeric table = multible entries
 			self.IsPrevSeparator = false;
 			for i,v in ipairs(D) do
-				self:AddEntry(v,parent);
+				self:AddEntry(v,P);
 			end
 			return;
 
@@ -1794,7 +1796,7 @@ do
 			ns.hideTooltip(openTooltip,openTooltip.key,true,false,true);
 		end
 
-		self:AddEntry({separator=true}, pList);
+		self:AddEntry({separator=true});
 		self:AddEntry({label=L["Close menu"], func=LibCloseDropDownMenus});
 
 		LDDM.EasyMenu(self.menu, self,anchor, x, y, "MENU");

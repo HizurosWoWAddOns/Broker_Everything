@@ -57,7 +57,7 @@ local function updateBroker()
 	local repairCosts, equipCost, bagCost, dA, dL, dLSlot, d = unpack(currentDurability);
 
 	if (ns.profile[name].inBroker=="costs") then
-		dataobj.text = ns.GetCoinColorOrTextureString(name,repairCosts)
+		obj.text = ns.GetCoinColorOrTextureString(name,repairCosts)
 	else
 		d = floor((ns.profile[name].lowestItem) and dL or dA);
 		if (ns.profile[name].inBroker=="percent") then

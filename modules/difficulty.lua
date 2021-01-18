@@ -293,6 +293,7 @@ module.instanceReset = instanceReset;
 function module.onevent(self,event,...)
 	local update = false;
 	if event=="BE_UPDATE_CFG" then
+		local arg1 = ...;
 		if arg1 and arg1:find("^ClickOpt") then
 			ns.ClickOpts.update(name);
 			return;

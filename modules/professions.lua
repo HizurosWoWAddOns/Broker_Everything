@@ -550,7 +550,7 @@ ns.ClickOpts.addDefaults(module,{
 	menu = "_RIGHT"
 });
 
-function module.ProfessionMenu()
+function module.ProfessionMenu(self,button,modName,actName)
 	if (tt~=nil) then ns.hideTooltip(tt); end
 	ns.EasyMenu:InitializeMenu();
 	ns.EasyMenu:AddEntry({ label = L["Open"], title = true });
@@ -574,7 +574,7 @@ local function OptionMenu_TitleSet(place,obj)
 	updateBroker();
 end
 
-function module.OptionMenu()
+function module.OptionMenu(self,button,modName,actName)
 	if (tt~=nil) then ns.hideTooltip(tt); end
 	ns.EasyMenu:InitializeMenu();
 	ns.EasyMenu:AddEntry({ label = L["In title"], title = true });

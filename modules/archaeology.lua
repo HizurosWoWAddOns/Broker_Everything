@@ -73,7 +73,7 @@ local function updateRaceArtifact(t,...)
 		t[raceArtifactIcon] = iconFormat1:format(t[raceArtifactIcon]);
 
 		if(type(t[raceKeystoneItemID])=="number" and t[raceKeystoneItemID]>0) then
-			keystoneItem2race[t[raceKeystoneItemID]] = k;
+			--keystoneItem2race[t[raceKeystoneItemID]] = t;
 			t[raceKeystoneIcon] = iconFormat1:format(GetItemIcon(t[raceKeystoneItemID]) or ns.icon_fallback);
 			t[raceKeystoneCount] = GetItemCount(t[raceKeystoneItemID],true,true);
 		end
@@ -129,7 +129,6 @@ local function updateRaces(firstUpdate)
 			t[raceTexture] = iconFormat2:format(t[raceTexture]);
 
 			if t[raceCurrencyId]~=0 then
-				-- t[raceCurrencyName],_,iconFile = GetCurrencyInfo(t[raceCurrencyId]); -- TODO: removed in shadowlands
 				local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(t[raceCurrencyId]);
 				t[raceCurrencyName] = currencyInfo.name;
 				iconFile = currencyInfo.iconFileID
@@ -147,7 +146,7 @@ local function updateRaces(firstUpdate)
 			local _;
 			t[raceKeystoneFragmentsValue] = 0;
 			_, _, _, t[raceFragmentsCollected], t[raceNumFragmentsRequired] = GetArchaeologyRaceInfo(t[raceIndex]);
-			updateRaceArtifact(t,GetActiveArtifactByRace(i));
+			updateRaceArtifact(t,GetActiveArtifactByRace(t[raceIndex]));
 		end
 	end
 	updateBroker();

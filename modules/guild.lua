@@ -484,6 +484,11 @@ local function ttAddMember(lineIndex,memberIndex)
 end
 
 local ttScrollList
+
+local function slider_OnValueChanged()
+	-- TODO: need content
+end
+
 function ttScrollList(delta,tbl) -- executed by createTooltip and ttWheelHook
 	local scrollInfo,target,new = membScroll,"Members",false;
 	if tbl==applicants then
@@ -518,7 +523,7 @@ function ttScrollList(delta,tbl) -- executed by createTooltip and ttWheelHook
 			slider:SetMinMaxValues(0, 1)
 			slider:SetValueStep(1)
 			slider:SetValue(0)
-			slider:SetScript("OnValueChanged", slider_OnValueChanged)
+			slider:SetScript("OnValueChanged", slider_OnValueChanged);
 		end
 	else
 		local newStep = scrollInfo.step + (delta==true and 0 or delta);
