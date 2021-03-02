@@ -104,8 +104,10 @@ local function updateBroker()
 	end
 	if ns.profile[name].showProfitSessionBroker and login_money then
 		local profit, direction = getProfit();
-		local sign = (direction==1 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (direction==-1 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
-		tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,profit,{hideMoney=ns.profile[name].goldHideBB}));
+		if profit~=0 then
+			local sign = (direction==1 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (direction==-1 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
+			tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,profit,{hideMoney=ns.profile[name].goldHideBB}));
+		end
 	end
 	if #broker==0 then
 		broker = {BONUS_ROLL_REWARD_MONEY};
