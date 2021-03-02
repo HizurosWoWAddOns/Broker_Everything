@@ -180,12 +180,12 @@ function module.options()
 			timeRealm = { type="toggle", order=3, name=L["TimeRealm"], desc=L["TimeRealmDesc"] }
 		},
 		tooltip = {
-			showSeconds={ type="toggle", order=1, name=L["Show seconds"], desc=L["Display the time with seconds in broker button and tooltip"] },
-			showDate={ type="toggle", order=2, name=L["Show date"], desc=L["Display date in tooltip"] },
+			showDate={ type="toggle", order=1, name=L["Show date"], desc=L["Display date in tooltip"] },
 		},
 		misc = {
 			format24={ type="toggle", order=1, name=TIMEMANAGER_24HOURMODE, desc=L["Switch between time format 24 hours and 12 hours with AM/PM"] },
-			dateFormat={ type="select", order=2, name=L["Date format"], desc=L["Choose your favorite date format"], values=dateFormatValues, width="double" },
+			showSeconds={ type="toggle", order=2, name=L["Show seconds"], desc=L["Display the time with seconds in broker button and tooltip"] },
+			dateFormat={ type="select", order=3, name=L["Date format"], desc=L["Choose your favorite date format"], values=dateFormatValues, width="double" },
 		},
 	}
 end
