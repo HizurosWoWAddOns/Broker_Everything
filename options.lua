@@ -132,7 +132,19 @@ end
 local function opt(info,value,...)
 	if not db then return end
 	-- section = GeneralOptions or module names
-	local key,section,isModEnable=info[#info],info[#info-2],(info[#info-1]=="modEnable");
+	local key,section,isModEnable = info[#info],info[#info-2],(info[#info-1]=="modEnable");
+	if #info>=5 then
+		local modOptDepth = false;
+		for i=#info, 1, -1 do
+			if info[i]=="modOptions" then
+				modOptDepth = i+1;
+				break;
+			end
+		end
+		if modOptDepth~=false then
+			section = info[modOptDepth];
+		end
+	end
 	if value~=nil then
 		if isModEnable then
 --@do-not-package@
