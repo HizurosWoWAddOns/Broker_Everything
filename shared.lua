@@ -810,10 +810,10 @@ end
 -- event driven with delayed execution                            --
 -- -------------------------------------------------------------- --
 do
-	local itemsByID,itemsBySlot,equip,ammo = {},{},{},{};
-	ns.items = {byID=itemsByID,bySlot=itemsBySlot,equip=equip,ammo=ammo};
+	local itemsByID,itemsBySlot,itemsBySpell,equip,ammo = {},{},{},{},{};
+	ns.items = {byID=itemsByID,bySlot=itemsBySlot,bySpell=itemsBySpell,equip=equip,ammo=ammo};
 
-	local hasChanged,updateBags,IsEnabledBags,IsEnabledInv = {bags=false,inv=false,equip=false,ammo=false,items=false,item={},itemNum=0},{};
+	local hasChanged,updateBags,IsEnabledBags,IsEnabledInv = {bags=false,inv=false,equip=false,ammo=false,items=false,spells=false,item={},itemNum=0},{};
 	local callbacks = {any={},inv={},bags={},item={},equip={},prepare={}};
 	local eventFrame,inventoryDelayed = CreateFrame("Frame");
 
@@ -871,6 +871,12 @@ do
 			equip[info.sharedSlot] = true;
 			hasChanged.equip = true;
 		end
+		if info.spell then
+			if itemsBySpell[info.spell] == nil then
+				itemsBySpell[info.spell] = {};
+			end
+			itemsBySpell[info.spell][info.sharedSlot] = info.count;
+		end
 		if ns.client_version<2 then
 			if info.ammo then
 				ammo[info.sharedSlot] = true;
@@ -887,6 +893,7 @@ do
 	end
 
 	local function removeItem(sharedSlotIndex,scanner)
+		local id = itemsBySlot[sharedSlotIndex].id;
 		itemsByID[itemsBySlot[sharedSlotIndex].id][sharedSlotIndex] = nil;
 		itemsBySlot[sharedSlotIndex] = nil;
 		if equip[sharedSlotIndex] then
@@ -962,6 +969,7 @@ do
 					local _, count, _, _, _, _, link = GetContainerItemInfo(bagIndex,slotIndex);
 					if id then
 						local _, _, _, itemEquipLocation, _, itemClassID, itemSubClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
+						local itemSpellName,itemSpellID = GetItemSpell(link);
 						local d,dM = GetContainerItemDurability(bagIndex,slotIndex);
 						local diffStr = table.concat({link,d or 0,dM or 0,count},"^");
 						local isEquipment = false;
@@ -971,6 +979,7 @@ do
 						local changed = addItem({
 							bag=bagIndex,
 							slot=slotIndex,
+							spell=itemSpellID,
 							count=count,
 							sharedSlot=sharedSlotIndex,
 							id=id,
@@ -1023,6 +1032,16 @@ do
 				tinsert(updateBags,1,0); -- BAG_UPDATE does not fire argument1 = 0 (for backpack) on login
 			end
 			scanBags();
+		elseif event=="GET_ITEM_INFO_RECEIVED" and (...)~=nil and itemsByID[(...)] then
+			local info = itemsByID[(...)];
+			local _, spell = GetItemSpell(info.link);
+			if spell then
+				for sharedSlot, info in pairs(itemsByID[...])do
+					local _, count, _, _, _, _, link, _, _, id = GetContainerItemInfo(info.bag,info.slot);
+					info.spell = spell;
+					itemsBySpell[spell][sharedSlot] = count;
+				end
+			end
 		elseif inventoryEvents[event] and not inventoryDelayed then
 			inventoryDelayed = true;
 			C_Timer.After(0.5,scanInventory);
@@ -1052,6 +1071,7 @@ do
 		-- inventory events
 		eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
 		eventFrame:RegisterEvent("UPDATE_INVENTORY_DURABILITY");
+		eventFrame:RegisterEvent("GET_ITEM_INFO_RECEIVED");
 
 		if ns.client_version>2 then
 			eventFrame:RegisterEvent("ITEM_UPGRADE_MASTER_UPDATE");
@@ -1082,7 +1102,7 @@ do
 		mode = tostring(mode):lower();
 		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
 		assert(type(func)=="function","argument #2 (function) must be a function, got "..type(func));
-		assert(type(callbacks[mode])=="table", "argument #3 must be 'any', 'inv', 'bags', 'item', 'equip' or 'prepare'.");
+		assert(type(callbacks[mode])=="table", "argument #3 must be 'any', 'inv', 'bags', 'item', 'spell', 'equip' or 'prepare'.");
 		if mode=="item" then
 			assert(type(id)=="number","argument #4 must be number, got "..type(id));
 			if callbacks.item[id]==nil then
