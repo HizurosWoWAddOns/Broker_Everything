@@ -15,7 +15,7 @@ local name2 = "Location"; -- L["Location"] L["ModDesc-Location"]
 local name3 = "ZoneText"; -- L["ZoneText"] L["ModDesc-ZoneText"]
 local updateinterval,module1,module2,module3 = 0.12;
 local ttName1, ttName2, ttName3, ttName4 = name1.."TT", name2.."TT", name3.."TT", "TransportMenuTT";
-local ttColumns,ttColumns4,onleave = 3,5;
+local ttColumns,ttColumns4,onleave,tt4Params = 3,5;
 local tt1, tt2, tt3, tt4, items;
 local zoneRed, zoneOrange, zoneYellow, zoneGreen,zoneBlue = C("red","%s"),C("orange","%s"),C("dkyellow","%s"),C("ltgreen","%s"),C("ltblue","%s");
 local tt5positions = {
@@ -270,6 +270,11 @@ local function createTooltip3(_,data)
 	GameTooltip:Show();
 end
 
+local transportMenu
+local function updateTPM()
+	C_Timer.After(0.2,function() transportMenu(unpack(tt4Params)) end);
+end
+
 -- tooltip as transport menu
 local function tpmOnEnter(self,info)
 	local parent, v, t = unpack(info);
@@ -277,7 +282,8 @@ local function tpmOnEnter(self,info)
 		attributes={type=t,[t]=v.name},
 		tooltip={parent=tt4,type=t,id=v.id},
 		OnEnter=createTooltip3,
-		OnLeave=GameTooltip_Hide
+		OnLeave=GameTooltip_Hide,
+		OnClick=updateTPM
 	};
 	ns.secureButton(self,data);
 end
@@ -304,7 +310,7 @@ local function tpmAddObject(tt,p,l,c,v,t,name)
 	end
 end
 
-local function transportMenu(self,button,name)
+function transportMenu(self,button,name)
 	if InCombatLockdown() then return; end
 	if (tt1~=nil) then tt1=ns.hideTooltip(tt1); end
 	if (tt2~=nil) then tt2=ns.hideTooltip(tt2); end
@@ -315,7 +321,10 @@ local function transportMenu(self,button,name)
 
 	local columns = 5;
 	ttColumns4 = ns.profile[name].shortMenu and columns or 1;
-	tt4 = ns.acquireTooltip({ttName4, ttColumns4, "LEFT","LEFT","LEFT","LEFT","LEFT"},{false},{self});
+	if not (tt4 and tt4.key and tt4.key==ttName4) then
+		tt4 = ns.acquireTooltip({ttName4, ttColumns4, "LEFT","LEFT","LEFT","LEFT","LEFT"},{false},{self});
+		tt4Params = {self,button,name};
+	end
 
 	local pts,ipts,tls,itls = {},{},{},{}
 	local line, column,cellcount = nil,nil,5
