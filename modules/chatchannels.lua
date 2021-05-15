@@ -12,22 +12,7 @@ local ttName,ttColumns,tt,module,ticker = name.."TT",2
 local iName, iHeader, iCollapsed, iChannelNumber, iCount, iActive, iCategory, iVoiceEnabled, iVoiceActive = 1,2,3,4,5,6,7,8,9; -- GetChannelDisplayInfo indexes
 local iLastUpdate, iNoUpdate = 10,11; -- custom indexes
 local channels,ChanIndex,updateChannelListLock,updateCountTicker={},0,"onlogin";
-local wd = ({
-	enUS="WorldDefense",
-	enBG="WorldDefense",
-	enCN="WorldDefense",
-	enTW="WorldDefense",
-	deDE="WeltVerteidigung",
-	esES="DefensaGeneral",
-	frFR="DéfenseUniverselle",
-	itIT="DifesaMondiale",
-	koKR="전쟁",
-	ptBR="DefesaGlobal",
-	ptPT="DefesaGlobal",
-	ruRU="ОборонаГлобальный",
-	zhCN="世界防务",
-	zhTW="世界防務",
-})[ns.locale];
+local wd = ({deDE="WeltVerteidigung",esES="DefensaGeneral",frFR="DéfenseUniverselle",itIT="DifesaMondiale",koKR="전쟁",ptBR="DefesaGlobal",ptPT="DefesaGlobal",ruRU="ОборонаГлобальный",zhCN="世界防务",zhTW="世界防務"})[ns.locale] or "WorldDefense";
 
 
 -- register icon names and default files --
@@ -187,7 +172,7 @@ function module.options()
 		broker = nil,
 		tooltip = nil,
 		misc = {
-			shortNumbers=true,
+			shortNumbers=1,
 		},
 	}
 end
