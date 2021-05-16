@@ -39,7 +39,7 @@ local sharedclickOptionsRename = {
 	["3_open_menu"] = "menu"
 };
 local sharedclickOptions = {
-	["worldmap"] = {"World map","call",{"ToggleFrame","WorldMapFrame"}},
+	["worldmap"] = {"World map","call",{"ToggleWorldMap"}},
 	["transport"] = {"Transport menu","module","transportMenu"},
 	["menu"] = "OptionMenu"
 };
@@ -97,7 +97,7 @@ local function itemIsHearthstone(id)
 end
 
 local function addToy(id)
-	if not foundToys[id] then
+	if not foundToys[id] and PlayerHasToy then
 		local toyName, _, _, _, _, _, _, _, _, toyIcon = GetItemInfo(id);
 		local hasToy = PlayerHasToy(id);
 		local canUse =  C_ToyBox.IsToyUsable(id);
