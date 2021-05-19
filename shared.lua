@@ -496,23 +496,24 @@ do
 		-- L["CoExistUnsave"] L["CoExistSimilar"] L["CoExistOwn"]
 	};
 	ns.coexist = {};
-	function ns.coexist.IsNotAlone(info)
-		if not found then
-			found = {};
-			for name in pairs(list) do
-				if (GetAddOnInfo(name)) and (GetAddOnEnableState(ns.player.name,name)==2) then
-					tinsert(found,name);
-				end
+	local function search()
+		found = {};
+		for name in pairs(list) do
+			if (GetAddOnInfo(name)) and (GetAddOnEnableState(ns.player.name,name)==2) then
+				tinsert(found,name);
 			end
 		end
+	end
+	function ns.coexist.IsNotAlone(info)
+		if not found then search() end
 		local b = #found>0;
 		if info and info[#info]:find("Info$") then -- for Ace3 Options (<hidden|disabled>=<thisFunction>)
 			return not b;
 		end
 		return b;
 	end
-
 	function ns.coexist.optionInfo()
+		if not found then search() end
 		-- This option is disabled because:
 		-- <addon> >> <msg>
 		local msgs = {};
