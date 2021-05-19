@@ -541,8 +541,8 @@ module = {
 	}
 }
 
-if ns.client_version>=2 then
-	-- event does not exists on classic clients
+if ns.client_version>=3 then
+	-- event does not exists on classic and tbc clients
 	tinsert(module.events,"QUEST_LOOT_RECEIVED")
 end
 

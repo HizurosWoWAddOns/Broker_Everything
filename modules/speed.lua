@@ -59,7 +59,7 @@ local function tooltipOnEnter(self,data)
 	elseif data.link then
 		GameTooltip:SetHyperlink(data.link);
 	end
-	if data.extend=="trainerfaction" and ns.client_version>=2 then
+	if data.extend=="trainerfaction" and ns.client_version>=3 then
 		GameTooltip:AddLine(" ");
 		GameTooltip:AddLine(C("ltblue",L["Trainer that offer reputation dicount"]));
 		local faction,ttTrainerLine,ttFactionLine = false,"%s (%0.1f, %0.1f)","%s (%0.1f%%)";
@@ -219,7 +219,7 @@ local function createTooltip(tt)
 	end
 
 
-	if ns.client_version>=2 and lvl>=20 then
+	if ns.client_version>=3 and lvl>=20 then
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",L["Flight licenses"]));
 		tt:AddSeparator();
@@ -232,7 +232,9 @@ local function createTooltip(tt)
 				local id = tonumber(v[1]:match("a(%d+)"));
 				achievement = true;
 				if id then
-					link = GetAchievementLink(id);
+					if GetAchievementLink then
+						link = GetAchievementLink(id);
+					end
 					if link then
 						_, Name, _, completed = GetAchievementInfo(id);
 						ready = completed;

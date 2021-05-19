@@ -246,10 +246,17 @@ local function createTooltip(tt)
 
 		tt:AddSeparator();
 
-		local prof1, prof2 = GetProfessions();
-		local _,_,_,_,_,_,prof1SkillLine = GetProfessionInfo(prof1);
-		local _,_,_,_,_,_,prof2SkillLine = GetProfessionInfo(prof2);
-		ns.debugPrint(name,prof1SkillLine,prof2SkillLine)
+		local prof1, prof2, prof1SkillLine, prof2SkillLine, _;
+		if GetProfessions then
+			prof1, prof2 = GetProfessions();
+		end
+		if prof1 then
+			_,_,_,_,_,_,prof1SkillLine = GetProfessionInfo(prof1);
+		end
+		if prof2 then
+			_,_,_,_,_,_,prof2SkillLine = GetProfessionInfo(prof2);
+		end
+		--ns.debugPrint(name,prof1SkillLine,prof2SkillLine)
 
 		local none,miss=true,false;
 		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do
@@ -340,7 +347,7 @@ local function createTooltip(tt)
 			tt:SetCell(l,1,L["All slots are empty"],nil,nil,ttColumns);
 		end
 		tt:AddSeparator();
-		if ns.client_version>=2 then
+		if ns.client_version>=3 then
 			local _, avgItemLevelEquipped = GetAverageItemLevel();
 			local l = tt:AddLine(nil,nil,C(GetILevelColor(avgItemLevelEquipped),"%.1f"):format(avgItemLevelEquipped));
 			tt:SetCell(l,1,C("ltblue",STAT_AVERAGE_ITEM_LEVEL),nil,nil,2);

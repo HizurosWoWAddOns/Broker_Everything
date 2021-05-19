@@ -3,7 +3,7 @@
 ----------------------------------
 local addon, ns = ...;
 local C,L,I = ns.LC.color,ns.L,ns.I;
-if ns.client_version>1.9 then return end
+if ns.client_version>3 then return end
 
 
 -- module own local variables and local cached functions --
@@ -398,7 +398,6 @@ module = {
 }
 
 if ns.client_version>2 then
-	tinsert(module.events,"ARTIFACT_UPDATE");
 	tinsert(module.events,"CURRENCY_DISPLAY_UPDATE");
 end
 

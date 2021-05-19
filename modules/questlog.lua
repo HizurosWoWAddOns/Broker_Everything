@@ -370,7 +370,7 @@ module = {
 	}
 }
 
-if ns.client_version<2 then
+if ns.client_version<3 then
 	module.config_defaults.showQuestZone = false
 	module.config_defaults.showQuestTags = false
 	module.config_defaults.showQuestTagsShort = false
@@ -434,18 +434,32 @@ function module.onevent(self,event,msg)
 		ns.ClickOpts.update(name);
 	end
 	if event=="PLAYER_LOGIN" or event=="QUEST_LOG_UPDATE" then
-		local numEntries, numQuests = C_QuestLog.GetNumQuestLogEntries();
+		local numEntries, numQuests = (GetNumQuestLogEntries or C_QuestLog.GetNumQuestLogEntries)();
 		local header, status, isBounty, _ = false;
 		local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, isHidden, isScaling = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- GetQuestLogTitle(index)
 		sum,quests,numQuestStatus = numQuests,{},{fail=0,complete=0,active=0};
 
 		-- list trade skills
-		local lst = {GetProfessions()}; -- prof1, prof2, arch, fish, cook
 		local tradeskills = {}
-		for order,index in pairs(lst) do
-			if index then
-				local skillName, texture, rank, maxRank, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset, skillLineName = GetProfessionInfo(index);
-				tradeskills[skillName] = true;
+		if GetProfessions then -- retail
+			for order,index in ipairs({GetProfessions()}) do -- prof1, prof2, arch, fish, cook
+				if index then
+					local skillName, texture, rank, maxRank, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset, skillLineName = GetProfessionInfo(index);
+					tradeskills[skillName] = true;
+				end
+			end
+		else -- classic & bc classic
+			local numSkills, lastHeader = GetNumSkillLines();
+			local SECONDARY_SKILLS = SECONDARY_SKILLS:gsub(HEADER_COLON,"");
+			for skillIndex=1, numSkills do
+				local skillName, header, isExpanded, skillRank, numTempPoints, skillModifier, skillMaxRank, isAbandonable, stepCost, rankCost, minLevel, skillCostType = GetSkillLineInfo(skillIndex);
+				if skillName then
+					if header then
+						lastHeader = skillName;
+					elseif (lastHeader==TRADE_SKILLS or lastHeader==SECONDARY_SKILLS) then
+						tradeskills[skillName] = true;
+					end
+				end
 			end
 		end
 
@@ -507,7 +521,7 @@ function module.onevent(self,event,msg)
 					tinsert(shortTags,C("dailyblue",frequencies[q.frequency][1]));
 				end
 				local mapId,mapName;
-				if ns.client_version>=2 then
+				if ns.client_version>=3 then
 					if not questZones[q.questID] and not WorldMapFrame:IsShown() then
 						mapId = GetQuestUiMapID(q.questID,true);
 						if mapId then

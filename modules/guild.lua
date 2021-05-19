@@ -944,13 +944,16 @@ function module.onevent(self,event,msg,...)
 		self.IsLoaded = true;
 		frame = self;
 		if C_GuildInfo and C_GuildInfo.GuildRoster then
-			--self:RegisterEvent("GUILD_CHALLENGE_UPDATED");
-			self:RegisterEvent("GUILD_TRADESKILL_UPDATE");
-			--self:RegisterEvent("CLUB_FINDER_RECRUITS_UPDATED");
-			self:RegisterEvent("CLUB_FINDER_RECRUIT_LIST_CHANGED");
-			if CanUpdateApplicants() then
-				C_ClubFinder.RequestSubscribedClubPostingIDs(); -- init clubfinder recuits list
-				C_ClubFinder.RequestApplicantList(Enum.ClubFinderRequestType.Guild); -- trigger CLUB_FINDER_RECRUITS_UPDATED
+			if ns.client_version>=7 then
+				self:RegisterEvent("GUILD_TRADESKILL_UPDATE");
+			end
+			if C_ClubFinder then
+				--self:RegisterEvent("CLUB_FINDER_RECRUITS_UPDATED");
+				self:RegisterEvent("CLUB_FINDER_RECRUIT_LIST_CHANGED");
+				if CanUpdateApplicants() then
+					C_ClubFinder.RequestSubscribedClubPostingIDs(); -- init clubfinder recuits list
+					C_ClubFinder.RequestApplicantList(Enum.ClubFinderRequestType.Guild); -- trigger CLUB_FINDER_RECRUITS_UPDATED
+				end
 			end
 		end
 		RequestGuildRosterUpdate(true);
