@@ -368,7 +368,8 @@ function module.onevent(self,event,arg1)
 			return;
 		end
 		date_format = ns.profile[name].dateFormat;
-	elseif event=="MERCHANT_SHOW" then
+	end
+	if event=="MERCHANT_SHOW" then
 		local costs, canRepair = GetRepairAllCost();
 		if (costs>0) and (canRepair) then
 			merchant.repair=true;
