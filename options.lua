@@ -128,6 +128,31 @@ local function noReload()
 	return false;
 end
 
+local function toggleAllModules(info,modName)
+	local state = info[#info];
+	if not (state=="enable" or state=="disable" or state=="default") then
+		return;
+	end
+	for modName,modObject in pairs(ns.modules) do
+		if not modObject.isHiddenModule then
+			local newValue
+			if state=="enable" and db.profile[modName].enabled==false then
+				newValue = true;
+			elseif state=="disable" and db.profile[modName].enabled==true then
+				newValue = false;
+			elseif state=="default" and db.profile[modName].enabled~=ns.modules[modName].config_defaults.enabled then
+				newValue = ns.modules[modName].config_defaults.enabled;
+			end
+			if newValue~=nil then
+				db.profile[modName].enabled = newValue;
+				if newValue then
+					ns.moduleInit(modName);
+				end
+			end
+		end
+	end
+end
+
 -- option set/get function
 local function opt(info,value,...)
 	if not db then return end
@@ -206,16 +231,6 @@ local options = {
 	get=opt, set=opt,
 	childGroups = "tab",
 	args = {
-		reloadinfo = {
-			type = "group", order=1, inline = true,
-			name = "",
-			args = {
-				spacer = { type="description", order=1, name=" ", width="half"},
-				reload = { type="execute", order=2, name=RELOADUI, func=C_UI.Reload },
-				info = { type="description", order=3, name=C("orange",L["OptReloadUIRequired"]), fontSize="medium", width="double", hidden=noReload},
-			},
-			hidden = true
-		},
 		GeneralOptions = {
 			type = "group", order = 1,
 			name = GENERAL,
@@ -277,6 +292,18 @@ local options = {
 			desc = L["ModsToggleDesc"],
 			childGroups = "tab",
 			args = {
+				info = {
+					type = "group", order = 0, inline = true,
+					name = "",
+					args = {
+						desc    = { type="description", order=0, fontSize="medium", width="double", name=C("orange",L["ModsToggleInfo"]) },
+						reload  = { type="execute", order=1, name=L["ReloadUI"], func=C_UI.Reload },
+
+						enable  = { type="execute", order=2, name=ENABLE_ALL_ADDONS, func=toggleAllModules },
+						disable = { type="execute", order=3, name=DISABLE_ALL_ADDONS, func=toggleAllModules },
+						default = { type="execute", order=4, name=DEFAULT, func=toggleAllModules }
+					}
+				},
 			}
 		},
 		modOptions = { -- dummy group
