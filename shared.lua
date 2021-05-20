@@ -365,6 +365,21 @@ function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
 	if not tooltip.mode[2] and ttParent[1] and not ttParent[1].parent then
 		hiddenMouseOver:SetPoint("TOPLEFT",ttParent[1],"TOPLEFT",0,1);
 		hiddenMouseOver:SetPoint("BOTTOMRIGHT",ttParent[1],"BOTTOMRIGHT",0,-1);
+
+		-- TitalPanelAutoHide
+		if TitanPanelSetVar and TitanUtils_GetWhichBar then
+			local titanBar,current,ldbName = nil,nil,string.match(ttParent[1]:GetName() or "", "TitanPanel(.*)Button");
+			if ldbName then
+				titanBar = TitanUtils_GetWhichBar(ldbName);
+			end
+			if titanBar then
+				current = TitanPanelGetVar(titanBar.."_Hide"); -- get autohide status
+			end
+			if current then
+				tooltip.TitanBar_AutoHide = titanBar;
+				TitanPanelSetVar(titanBar.."_Hide",false);
+			end
+		end
 	end
 	tooltip:SetScript("OnUpdate",hideOnUpdate);
 	tooltip:SetScript("OnLeave",hideOnLeave);
@@ -414,6 +429,13 @@ function ns.hideTooltip(tooltip)
 	if tooltip.scripts and type(tooltip.scripts.OnHide)=="function" then
 		tooltip.scripts.OnHide(tooltip);
 	end
+
+	-- TitalPanelAutoHide
+	if tooltip.TitanBar_AutoHide then
+		TitanPanelSetVar(tooltip.TitanBar_AutoHide.."_Hide",true);
+		tooltip.TitanBar_AutoHide = nil;
+	end
+
 	tooltip.parent = nil;
 	tooltip.mode = nil;
 	tooltip.scripts = nil;
