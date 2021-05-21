@@ -184,32 +184,6 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 end
 
 local C_BattleNet_GetFriendNumGameAccounts = (C_BattleNet and C_BattleNet.GetFriendNumGameAccounts) or BNGetNumFriendGameAccounts;
-local C_BattleNet_GetFriendAccountInfo = (C_BattleNet and C_BattleNet.GetFriendAccountInfo) or function(friendIndex)
-	-- upgrade old to new
-	local accountInfo={gameAccountInfo={}};
-	accountInfo.bnetAccountID,
-	accountInfo.accountName,
-	accountInfo.battleTag,
-	accountInfo.isBattleTagFriend,
-	accountInfo.gameAccountInfo.characterName,
-	accountInfo.gameAccountInfo.gameAccountID,
-	accountInfo.gameAccountInfo.clientProgram,
-	accountInfo.gameAccountInfo.isOnline,
-	accountInfo.lastOnlineTime,
-	accountInfo.isAFK,
-	accountInfo.isDND,
-	accountInfo.customMessage,
-	accountInfo.note,
-	accountInfo.isFriend,
-	accountInfo.customMessageTime,
-	accountInfo.gameAccountInfo.wowProjectID,
-	accountInfo.rafLinkType,
-	accountInfo.gameAccountInfo.canSummon,
-	accountInfo.isFavorite,
-	accountInfo.gameAccountInfo.isWowMobile
-	= BNGetFriendInfo(friendIndex)
-	return accountInfo;
-end
 
 local C_BattleNet_GetFriendGameAccountInfo = (C_BattleNet and C_BattleNet.GetFriendGameAccountInfo) or function(friendIndex, accountIndex)
 	local gameAccountInfo,_ = {};
@@ -283,7 +257,7 @@ local function createTooltip(tt)
 			-- RealId	Status Character	Level	Zone	Game	Realm	Notes
 			for i=1, numBNFriends do
 				local nt = C_BattleNet_GetFriendNumGameAccounts(i);
-				local fi = C_BattleNet_GetFriendAccountInfo(i);
+				local fi = ns.C_BattleNet_GetFriendAccountInfo(i);
 				if nt and fi and fi.gameAccountInfo.isOnline then
 					for I=1, nt do
 						local ti =  C_BattleNet_GetFriendGameAccountInfo(i,I);

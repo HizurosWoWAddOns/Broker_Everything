@@ -2346,3 +2346,32 @@ function ns.GetTalentTierLevel(tier)
 		return tierUnlockLevel
 	end
 end
+
+function ns.C_BattleNet_GetFriendAccountInfo(friendIndex)
+	if C_BattleNet and C_BattleNet.GetFriendAccountInfo then
+		return C_BattleNet.GetFriendAccountInfo(friendIndex);
+	end
+	local accountInfo={gameAccountInfo={}};
+	accountInfo.bnetAccountID,
+	accountInfo.accountName,
+	accountInfo.battleTag,
+	accountInfo.isBattleTagFriend,
+	accountInfo.gameAccountInfo.characterName,
+	accountInfo.gameAccountInfo.gameAccountID,
+	accountInfo.gameAccountInfo.clientProgram,
+	accountInfo.gameAccountInfo.isOnline,
+	accountInfo.lastOnlineTime,
+	accountInfo.isAFK,
+	accountInfo.isDND,
+	accountInfo.customMessage,
+	accountInfo.note,
+	accountInfo.isFriend,
+	accountInfo.customMessageTime,
+	accountInfo.gameAccountInfo.wowProjectID,
+	accountInfo.rafLinkType,
+	accountInfo.gameAccountInfo.canSummon,
+	accountInfo.isFavorite,
+	accountInfo.gameAccountInfo.isWowMobile
+	= BNGetFriendInfo(friendIndex)
+	return accountInfo;
+end

@@ -126,7 +126,7 @@ local function updateBattleNetFriends()
 	wipe(bnetFriends);
 	if BNConnected() then
 		for i=1, (BNGetNumFriends()) do
-			local accountInfo = C_BattleNet.GetFriendAccountInfo(i);
+			local accountInfo = ns.C_BattleNet_GetFriendAccountInfo(i);
 			if accountInfo and accountInfo.accountName and accountInfo.gameAccountInfo and accountInfo.gameAccountInfo.clientProgram=="WoW" and accountInfo.gameAccountInfo.playerGuid then
 				bnetFriends[accountInfo.gameAccountInfo.playerGuid] = accountInfo.accountName;
 			end
