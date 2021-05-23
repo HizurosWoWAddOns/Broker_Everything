@@ -672,7 +672,7 @@ local function createTooltip(tt,update)
 	end
 
 	-- applicants
-	if ns.client_version>=2 and ns.profile[name].showApplicants then
+	if ns.client_version>2 and ns.profile[name].showApplicants then
 		applicants = GetApplicants();
 		if applicants and #applicants>0 then
 			local line,column = tt:AddLine(
