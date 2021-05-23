@@ -2254,7 +2254,7 @@ ns.C_QuestLog_GetInfo = (C_QuestLog and C_QuestLog.GetInfo) or function(questLog
 	local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, isHidden, isScaling  = GetQuestLogTitle(questLogIndex);
 	if type(suggestedGroup)=="string" then
 		ns.debugPrint("C_QuestLog_GetInfo","suggestedGroup =",suggestedGroup);
-		suggestedGroup = 0; -- unknown reason
+		suggestedGroup = tonumber(suggestedGroup) or 0; -- problem on bc classic client?
 	end
 	return {
 		campaignID = 0, -- dummy

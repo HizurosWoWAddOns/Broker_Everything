@@ -485,7 +485,7 @@ function module.onevent(self,event,msg)
 
 				local tags,shortTags,long = {},{};
 				if tagInfo then
-					if tagInfo.tagName==GROUP and q.suggestedGroup>0 then
+					if tagInfo.tagName==GROUP and type(q.suggestedGroup)=="number" and q.suggestedGroup>0 then
 						tagInfo.tagName = tagInfo.tagName.."["..q.suggestedGroup.."]";
 					elseif tagInfo.tagName==PLAYER_DIFFICULTY2 or tagInfo.tagName==PLAYER_DIFFICULTY6 then
 						tagInfo.tagName = LFG_TYPE_DUNGEON.." ("..tagInfo.tagName..")";
