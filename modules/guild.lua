@@ -161,7 +161,7 @@ local function updateBroker()
 			memberIndex[mFullName] = i;
 		end
 
-		if ns.client_version>2 and ns.profile[name].showApplicantsBroker then
+		if ns.profile[name].showApplicantsBroker and C_ClubFinder and C_ClubFinder.ReturnClubApplicantList then
 			local applicants = GetApplicants();
 			if applicants and #applicants>0 then
 				tinsert(txt, C("orange",#applicants));
@@ -672,7 +672,7 @@ local function createTooltip(tt,update)
 	end
 
 	-- applicants
-	if ns.client_version>2 and ns.profile[name].showApplicants then
+	if ns.profile[name].showApplicants and C_ClubFinder and C_ClubFinder.ReturnClubApplicantList then
 		applicants = GetApplicants();
 		if applicants and #applicants>0 then
 			local line,column = tt:AddLine(
@@ -947,7 +947,7 @@ function module.onevent(self,event,msg,...)
 			if ns.client_version>=7 then
 				self:RegisterEvent("GUILD_TRADESKILL_UPDATE");
 			end
-			if C_ClubFinder then
+			if C_ClubFinder and C_ClubFinder.RequestApplicantList then
 				--self:RegisterEvent("CLUB_FINDER_RECRUITS_UPDATED");
 				self:RegisterEvent("CLUB_FINDER_RECRUIT_LIST_CHANGED");
 				if CanUpdateApplicants() then
