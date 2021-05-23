@@ -99,11 +99,15 @@ local function GetTimeLeft(a,b)
 end
 
 function profs.build()
-	for spellId, spellData in pairs({
+	local t = {
 		[1804] = {"Lockpicking"}, [2018] = {"Blacksmithing",164}, [2108] = {"Leatherworking",165}, [2259] = {"Alchemy",171},     [2550] = {"Cooking"},         [2575] = {"Mining"},
 		[2656] = {"Smelting"},    [2366] = {"Herbalism"},         [3273] = {"First Aid"},          [3908] = {"Tailoring",197},   [4036] = {"Engineering",202}, [7411] = {"Enchanting",333},
 		[7620] = {"Fishing"},     [8613] = {"Skinning"},          [2842] = {"Poisons"},
-	}) do
+	};
+	if ns.client_version>=2 then
+		t[25229] = {"Jewelcrafting",755};
+	end
+	for spellId, spellData in pairs(t) do
 		local spellLocaleName,_,spellIcon = GetSpellInfo(spellId);
 		if (spellLocaleName) then
 			profs.data[spellId]   = {spellData[1],spellLocaleName,spellIcon,spellId};
