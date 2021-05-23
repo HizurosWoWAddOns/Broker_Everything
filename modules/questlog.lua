@@ -218,9 +218,11 @@ local function ttAddLine(obj)
 	end
 
 	if ns.profile[name].showQuestOptions then
-		tt:SetCell(l,cell,ns.IsQuestWatched(obj[Index]) and UNTRACK_QUEST_ABBREV or TRACK_QUEST_ABBREV);
-		tt:SetCellScript(l,cell,"OnMouseUp",trackQuest,obj[QuestId]);
-		cell=cell+1; -- [7]
+		if ns.client_version>=5 then
+			tt:SetCell(l,cell,ns.IsQuestWatched(obj[Index]) and UNTRACK_QUEST_ABBREV or TRACK_QUEST_ABBREV);
+			tt:SetCellScript(l,cell,"OnMouseUp",trackQuest,obj[QuestId]);
+			cell=cell+1; -- [7]
+		end
 
 		tt:SetCell(l,cell,CANCEL .. (requested==obj[QuestId] and C("orange"," ("..L["really?"]..")") or ""));
 		tt:SetCellScript(l,cell,"OnMouseUp",deleteQuest,obj[QuestId]);
