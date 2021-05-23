@@ -79,6 +79,7 @@ L["Volume"] = VOLUME
 L["Wardrobe"] = WARDROBE
 L["WorkOrders"] = CAPACITANCE_WORK_ORDERS
 L["XP"] = XP
+L["WoWProjectId2"] = EXPANSION_NAME0;
 
 --@do-not-package@
 -- found in globalstrings by script

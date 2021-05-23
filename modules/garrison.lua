@@ -221,7 +221,7 @@ local function createTooltip(tt)
 				if not ns.profile[name].showRealms and realm and realm~=ns.realm then
 					realm = C("dkyellow","*");
 				else
-					local _,_realm = ns.LRI:GetRealmInfo(realm);
+					local _,_realm = ns.LRI:GetRealmInfo(realm,ns.region);
 					if _realm then realm = _realm; end
 					if realm then
 						realm = C("gray"," - ")..C("dkyellow",realm);

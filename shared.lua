@@ -122,6 +122,7 @@ ns.media = "Interface\\AddOns\\"..addon.."\\media\\";
 ns.locale = GetLocale();
 ns.ui = {size={UIParent:GetSize()},center={UIParent:GetCenter()}};
 ns.realm = GetRealmName();
+ns.region = ns.LRI:GetCurrentRegion() or ({"US","KR","EU","TW","CN"})[GetCurrentRegion()];
 do
 	local pattern = "^"..(ns.realm:gsub("(.)","[%1]*")).."$";
 	for i,v in ipairs(GetAutoCompleteRealms()) do
@@ -146,11 +147,11 @@ do
 end
 
 function ns.IsClassicClient() -- for AceOptions
-	return ns.client_version<2;
+	return ns.client_version<3;
 end
 
 function ns.IsNotClassicClient() -- for AceOptions
-	return ns.client_version>=2;
+	return ns.client_version>=3;
 end
 
 
@@ -175,7 +176,7 @@ ns.LC.colorset("suffix",ns.LC.colorset[ns.player.class:lower()]);
 ns.realms = {};
 do
 	local function Init()
-		local _,_,_,_,_,_,_,_,ids = ns.LRI:GetRealmInfoByGUID(UnitGUID("player"));
+		local _,_,_,_,_,_,_,_,ids = ns.LRI:GetRealmInfo(ns.realm,ns.region);
 		if type(ids)=="table" then
 			for i=1, #ids do
 				local _,name,apiName = ns.LRI:GetRealmInfoByID(ids[i]);
@@ -217,9 +218,9 @@ function ns.showThisChar(modName,realm,faction)
 	elseif ns.profile[modName].showCharsFrom=="2" and not ns.realms[realm] then -- connected realms
 		return false;
 	elseif ns.profile[modName].showCharsFrom=="3" then -- battlegroup
-		local _,_,_,_,_,battlegroup = ns.LRI:GetRealmInfo(realm);
+		local _,_,_,_,_,battlegroup = ns.LRI:GetRealmInfo(realm,ns.region);
 		if not ns.player.battlegroup then
-			_,_,_,_,_,ns.player.battlegroup = ns.LRI:GetRealmInfoByGUID(UnitGUID("player"));
+			_,_,_,_,_,ns.player.battlegroup = ns.LRI:GetRealmInfo(ns.realm,ns.region);
 		end
 		if ns.player.battlegroup~=battlegroup then
 			return false;
@@ -232,7 +233,7 @@ function ns.showRealmName(mod,name,color,prepDash)
 	if not (ns.realm_short==name or ns.realm==name) then
 		if ns.profile[mod].showRealmNames then
 			if type(name)=="string" and name:len()>0 then
-				local _,_name = ns.LRI:GetRealmInfo(name);
+				local _,_name = ns.LRI:GetRealmInfo(name,ns.region);
 				if _name then
 					return (prepDash~=false and ns.LC.color("white"," - "))..ns.LC.color(color or "dkyellow", ns.scm(name));
 				end
@@ -2202,140 +2203,106 @@ end
 
 
 -- -------------------------------
--- Retail / Classic compatibility
+-- Retail / Classic / BC Classic compatibility
 -- -------------------------------
 
-function ns.C_CurrencyInfo_GetCurrencyInfo(currency)
-	local info
-	if GetCurrencyInfo then
-		local name, currentAmount, texture, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(currency); -- classic and bfa
-		if name then
-			info = {
-				-- from GetCurrencyInfo
-				name = name,
-				quantity = currentAmount,
-				iconFileID = texture,
-				quantityEarnedThisWeek = earnedThisWeek,
-				maxWeeklyQuantity = weeklyMax,
-				maxQuantity = totalMax,
-				discovered = isDiscovered,
-				quality = rarity,
-				-- ??
-				-- canEarnPerWeek
-				-- isHeaderExpanded
-				-- isTradeable
-				-- isHeader
-				-- isTypeUnused
-				-- isShowInBackpack
-			};
-		end
-	elseif C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo then
-		info = C_CurrencyInfo.GetCurrencyInfo(currency); -- added with shadowlands
-	end
-	return info
-end
-
-function ns.C_CurrencyInfo_GetCurrencyListInfo(index)
-	-- GetCurrencyListInfo
-	local info
-	if GetCurrencyListInfo then
-		local name, isHeader, isExpanded, isUnused, isWatched, count, icon, maximum, hasWeeklyLimit, currentWeeklyAmount, unknown, itemID = GetCurrencyListInfo(index)
-		local _, _, _, earnedThisWeek, weeklyMax, _, isDiscovered, rarity = GetCurrencyInfo(itemID);
-		info = {
-			canEarnPerWeek = earnedThisWeek,
-			quantityEarnedThisWeek = currentWeeklyAmount,
-			isHeaderExpanded = isExpanded,
-			--isTradeable = ,
-			maxQuantity = maximum,
-			maxWeeklyQuantity = weeklyMax,
-			isHeader = isHeader,
+ns.C_CurrencyInfo_GetCurrencyInfo = (C_CurrencyInfo and C_CurrencyInfo.GetCurrencyInfo) or function(currency)
+	local name, currentAmount, texture, earnedThisWeek, weeklyMax, totalMax, isDiscovered, rarity = GetCurrencyInfo(currency); -- classic and bfa
+	if name then
+		return {
+			-- from GetCurrencyInfo
 			name = name,
-			isTypeUnused = isUnused,
-			--isShowInBackpack = ,
+			quantity = currentAmount,
+			iconFileID = texture,
+			quantityEarnedThisWeek = earnedThisWeek,
+			maxWeeklyQuantity = weeklyMax,
+			maxQuantity = totalMax,
 			discovered = isDiscovered,
-			quantity = count,
 			quality = rarity,
-		}
-	elseif C_CurrencyInfo and C_CurrencyInfo.GetCurrencyListInfo then
-		info = C_CurrencyInfo.GetCurrencyListInfo(index); -- added with shadowlands
-		--/run XYDB.GetCurrencyListInfo = C_CurrencyInfo.GetCurrencyListInfo(1)
-	end
-	return info;
-end
-
-function ns.C_QuestLog_GetInfo(questLogIndex)
-	local info
-	if GetQuestLogTitle then
-		local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, isHidden, isScaling  = GetQuestLogTitle(questLogIndex);
-		info = {
-			--difficultyLevel = 0,
-			hasLocalPOI = hasLocalPOI,
-			--isAutoComplete = false,
-			--isBounty = false,
-			isCollapsed = isCollapsed,
-			isHeader = isHeader,
-			isHidden = isHidden,
-			isOnMap = isOnMap,
-			isScaling = isScaling,
-			isStory = isStory,
-			isTask = isTask,
-			level = level,
-			--overridesSortOrder = false,
-			questID = questID,
-			questLogIndex = questLogIndex,
-			--readyForTranslation = false,
-			startEvent = startEvent,
-			suggestedGroup = suggestedGroup,
-			title = title,
-			--
-			frequency = frequency,
-			isComplete = isComplete,
-		}
-	elseif C_QuestLog.GetInfo then
-		info = C_QuestLog.GetInfo(questLogIndex);
-		info.isComplete = C_QuestLog.IsComplete(info.questID);
-		-- frequency?
-		-- isComplete?
-	end
-	return info;
-end
-
-function ns.C_QuestLog_GetQuestTagInfo(questID)
-	local info
-	if GetQuestTagInfo then
-		local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(questID);
-		info = {
-			tagID = tagID,
-			tagName = tagName,
-
-			-- not found in returned table from C_QuestLog.GetQuestTagInfo
-			worldQuestType = worldQuestType,
-			rarity = rarity,
-			isElite = isElite,
-			tradeskillLineIndex = tradeskillLineIndex
+			-- ??
+			-- canEarnPerWeek
+			-- isHeaderExpanded
+			-- isTradeable
+			-- isHeader
+			-- isTypeUnused
+			-- isShowInBackpack
 		};
-	elseif C_QuestLog.GetQuestTagInfo then
-		info = C_QuestLog.GetQuestTagInfo(questID)
-	end
-	return info;
-end
-
-function ns.IsQuestWatched(questLogIndex)
-	if IsQuestWatched then
-		return IsQuestWatched(questLogIndex);
-	elseif C_QuestLog.GetQuestWatchType then
-		local info = C_QuestLog.GetInfo(questLogIndex);
-		return C_QuestLog.GetQuestWatchType(info.questID) ~= nil;
 	end
 end
 
-function ns.GetQuestLogPushable(questLogIndex)
-	if GetQuestLogPushable then
-		return GetQuestLogPushable(questLogIndex);
-	elseif C_QuestLog.IsPushableQuest then
-		local info = C_QuestLog.GetInfo(questLogIndex);
-		return C_QuestLog.IsPushableQuest(info.questID);
+ns.C_CurrencyInfo_GetCurrencyListInfo = (C_CurrencyInfo and C_CurrencyInfo.GetCurrencyListInfo) or function(index)
+	local name, isHeader, isExpanded, isUnused, isWatched, count, icon, maximum, hasWeeklyLimit, currentWeeklyAmount, unknown, itemID = GetCurrencyListInfo(index)
+	local _, _, _, earnedThisWeek, weeklyMax, _, isDiscovered, rarity = GetCurrencyInfo(itemID);
+	return {
+		canEarnPerWeek = earnedThisWeek,
+		quantityEarnedThisWeek = currentWeeklyAmount,
+		isHeaderExpanded = isExpanded,
+		--isTradeable = ,
+		maxQuantity = maximum,
+		maxWeeklyQuantity = weeklyMax,
+		isHeader = isHeader,
+		name = name,
+		isTypeUnused = isUnused,
+		--isShowInBackpack = ,
+		discovered = isDiscovered,
+		quantity = count,
+		quality = rarity,
+	};
+end
+
+ns.C_QuestLog_GetInfo = (C_QuestLog and C_QuestLog.GetInfo) or function(questLogIndex)
+	local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, isHidden, isScaling  = GetQuestLogTitle(questLogIndex);
+	if type(suggestedGroup)=="string" then
+		ns.debugPrint("C_QuestLog_GetInfo","suggestedGroup =",suggestedGroup);
+		suggestedGroup = 0; -- unknown reason
 	end
+	return {
+		campaignID = 0, -- dummy
+		difficultyLevel = 0, -- dummy
+		frequency = frequency,
+		hasLocalPOI = hasLocalPOI,
+		isAutoComplete = false, -- dummy
+		isBounty = false, -- dummy
+		isCollapsed = isCollapsed,
+		isComplete = isComplete, -- missing in C_QuestLog.GetInfo ?
+		isHeader = isHeader,
+		isHidden = isHidden,
+		isOnMap = isOnMap,
+		isScaling = isScaling,
+		isStory = isStory,
+		isTask = isTask,
+		level = level,
+		overridesSortOrder = false, -- dummy
+		questID = questID,
+		questLogIndex = questLogIndex,
+		readyForTranslation = false, -- dummy
+		startEvent = startEvent,
+		suggestedGroup = suggestedGroup,
+		title = title,
+	};
+end
+
+ns.C_QuestLog_GetQuestTagInfo = (C_QuestLog and C_QuestLog.GetQuestTagInfo) or function(questID)
+	local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(questID);
+	return {
+		tagID = tagID,
+		tagName = tagName,
+		-- not found in returned table from C_QuestLog.GetQuestTagInfo
+		worldQuestType = worldQuestType,
+		rarity = rarity,
+		isElite = isElite,
+		tradeskillLineIndex = tradeskillLineIndex
+	};
+end
+
+ns.IsQuestWatched = IsQuestWatched or function(questLogIndex)
+	local info = C_QuestLog.GetInfo(questLogIndex);
+	return C_QuestLog.GetQuestWatchType(info.questID) ~= nil;
+end
+
+ns.GetQuestLogPushable = GetQuestLogPushable or function(questLogIndex)
+	local info = C_QuestLog.GetInfo(questLogIndex);
+	return C_QuestLog.IsPushableQuest(info.questID);
 end
 
 function ns.GetTalentTierLevel(tier)
@@ -2347,10 +2314,7 @@ function ns.GetTalentTierLevel(tier)
 	end
 end
 
-function ns.C_BattleNet_GetFriendAccountInfo(friendIndex)
-	if C_BattleNet and C_BattleNet.GetFriendAccountInfo then
-		return C_BattleNet.GetFriendAccountInfo(friendIndex);
-	end
+ns.C_BattleNet_GetFriendAccountInfo = (C_BattleNet and C_BattleNet.GetFriendAccountInfo) or function(friendIndex)
 	local accountInfo={gameAccountInfo={}};
 	accountInfo.bnetAccountID,
 	accountInfo.accountName,

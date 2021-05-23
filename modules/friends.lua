@@ -276,6 +276,33 @@ local function createTooltip(tt)
 								ti.clientProgram = "App"
 							end
 
+							-- wow clients compare
+							if ti.clientProgram=="WoW" then
+								ti.realmInfo = {};
+								local areaName,realmName,_ = ti.richPresence:match("^(.*) %- (.*)$");
+								_, ti.realmInfo.Name, _, _, ti.realmInfo.Locale, _, ti.realmInfo.Region, ti.realmInfo.Timezone = ns.LRI:GetRealmInfoByID(ti.realmID);
+								if not ti.realmInfo.Name and realmName then
+									-- get missing realmInfo via realmName from richPresence
+									_, ti.realmInfo.Name, _, _, ti.realmInfo.Locale, _, ti.realmInfo.Region, ti.realmInfo.Timezone = ns.LRI:GetRealmInfo(realmName,ns.region);
+								end
+								if not (ti.realmName and ti.realmName~="") then
+									if  ti.realmInfo.Name then
+										-- get realmName from realmInfo
+										ti.realmName = ti.realmInfo.Name;
+									elseif realmName then
+										-- get realmName from richPresence
+										ti.realmName = realmName;
+									end
+								end
+								-- show different project id
+								if WOW_PROJECT_ID ~= ti.wowProjectID then
+									-- add project name to realmName
+									ti.realmName = ti.realmName .. " |cffffee00("..L["WoWProjectId"..ti.wowProjectID]..")|r";
+									-- replace areaName
+									ti.areaName = areaName;
+								end
+							end
+
 							-- battle tags / realids
 							if ns.profile[name].showBattleTags~="0" then
 								local a,b = strsplit("#",fi.battleTag);
@@ -339,29 +366,19 @@ local function createTooltip(tt)
 							if ti.clientProgram=="WoW" then
 								-- realm (own column)
 								if ns.profile[name].showRealm=="1" and ti.realmID>0 then
-									local realmName, realmLocale, realmRegion, realmTimezone, _
-									if ti.realmName then
-										_, realmName, _, _, realmLocale, _, realmRegion, realmTimezone = ns.LRI:GetRealmInfo(ti.realmName); -- retail realms
-									else
-										-- C_BattleNet.GetFriendGameAccountInfo returns realmID without realmName for classic realms
-										_, realmName, _, _, realmLocale, _, realmRegion, realmTimezone = ns.LRI:GetRealmInfoByID(ti.realmID); -- classic realms
-										if realmName and realmName~="" then
-											ti.realmName = realmName .. " |cffffee00("..EXPANSION_NAME0..")|r";
-										end
-									end
 									local realmLocaleIcon = ""
-									if ns.profile[name].showRealmLanguageFlag and realmLocale then
-										if realmRegion=="EU" and realmLocale=="enUS" then
-											realmLocale = "enGB"; -- Great Britain
-										elseif realmRegion=="US" and realmTimezone=="AEST" then
-											realmLocale = "enAU"; -- flag of australian
+									if ns.profile[name].showRealmLanguageFlag and ti.realmInfo.Locale then
+										if ti.realmInfo.Region=="EU" and ti.realmInfo.Locale=="enUS" then
+											ti.realmInfo.Locale = "enGB"; -- Great Britain
+										elseif ti.realmInfo.Region=="US" and ti.realmInfo.Timezone=="AEST" then
+											ti.realmInfo.Locale = "enAU"; -- flag of australian
 										end
-										realmLocaleIcon = "|T"..ns.media..realmLocale..":0:2|t"
+										realmLocaleIcon = "|T"..ns.media .. ti.realmInfo.Locale .. ":0:2|t";
 									end
 									if not ti.realmName then
-										ti.realmName = (ti.realmID and "Realm [Id: "..ti.realmID.."]" or UNKNOWN).." |cffffee00("..EXPANSION_NAME0.."?)|r";
+										ti.realmName = (ti.realmID and "Unknown Realm [Id: "..ti.realmID.."]" or UNKNOWN) --.." |cffffee00("..EXPANSION_NAME0.."?)|r";
 									end
-									tt:SetCell(l,6,C( (ns.realms[ti.realmName] or (realmName and ns.realms[realmName])) and "green" or "white",ti.realmName .. realmLocaleIcon));			-- 6
+									tt:SetCell(l,6,C( (ns.realms[ti.realmName] or (ti.realmName and ns.realms[realmName])) and "green" or "white",ti.realmName .. realmLocaleIcon));			-- 6
 								end
 								-- faction (own column)
 								if ti.factionName then
@@ -448,7 +465,7 @@ local function createTooltip(tt)
 
 					local realm,_
 					if type(v.realm)=="string" and v.realm:len()>0 then
-						_,realm = ns.LRI:GetRealmInfo(v.realm);
+						_,realm = ns.LRI:GetRealmInfo(v.realm,ns.region);
 					end
 
 					if tonumber(ns.profile[name].showRealm)>1 and v.realm~=ns.realm then
