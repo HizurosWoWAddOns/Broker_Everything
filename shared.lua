@@ -147,11 +147,11 @@ do
 end
 
 function ns.IsClassicClient() -- for AceOptions
-	return ns.client_version<3;
+	return not WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
 end
 
 function ns.IsNotClassicClient() -- for AceOptions
-	return ns.client_version>=3;
+	return WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
 end
 
 
