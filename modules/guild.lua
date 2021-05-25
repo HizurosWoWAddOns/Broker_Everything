@@ -658,7 +658,7 @@ local function createTooltip(tt,update)
 	end
 
 	-- CHALLENGES
-	if ns.profile[name].showChallenges then
+	if ns.profile[name].showChallenges and ns.client_version>=6 then
 		local l = tt:AddLine();
 		tt:SetCell(l,1,C("ltblue",GUILD_CHALLENGE_LABEL),nil,"LEFT",ttColumns-1);
 		tt:SetCell(l,ttColumns,icon_arrow_right,nil,"RIGHT");
