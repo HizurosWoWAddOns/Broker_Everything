@@ -838,7 +838,7 @@ do
 	ns.items = {byID=itemsByID,bySlot=itemsBySlot,bySpell=itemsBySpell,equip=equip,ammo=ammo};
 
 	local hasChanged,updateBags,IsEnabledBags,IsEnabledInv = {bags=false,inv=false,equip=false,ammo=false,items=false,spells=false,item={},itemNum=0},{};
-	local callbacks = {any={},inv={},bags={},item={},equip={},prepare={}};
+	local callbacks = {any={},inv={},bags={},item={},equip={},prepare={},toys={}};
 	local eventFrame,inventoryDelayed = CreateFrame("Frame");
 
 	local function doCallbacks(...)
@@ -1056,14 +1056,24 @@ do
 				tinsert(updateBags,1,0); -- BAG_UPDATE does not fire argument1 = 0 (for backpack) on login
 			end
 			scanBags();
-		elseif event=="GET_ITEM_INFO_RECEIVED" and (...)~=nil and itemsByID[(...)] then
-			local info = itemsByID[(...)];
-			local _, spell = GetItemSpell(info.link);
-			if spell then
-				for sharedSlot, info in pairs(itemsByID[...])do
-					local _, count, _, _, _, _, link, _, _, id = GetContainerItemInfo(info.bag,info.slot);
-					info.spell = spell;
-					itemsBySpell[spell][sharedSlot] = count;
+		elseif event=="GET_ITEM_INFO_RECEIVED" and (...)~=nil then
+			local id = ...;
+			if itemsByID[id] then
+				local info = itemsByID[id];
+				local _, spell = GetItemSpell(info.link);
+				if spell then
+					for sharedSlot, info in pairs(itemsByID[...])do
+						local _, count, _, _, _, _, link, _, _ = GetContainerItemInfo(info.bag,info.slot);
+						info.spell = spell;
+						itemsBySpell[spell][sharedSlot] = count;
+					end
+				end
+			elseif callbacks.toys[id] and PlayerHasToy then
+				local toyName, _, _, _, _, _, _, _, _, toyIcon = GetItemInfo(id);
+				local hasToy = PlayerHasToy(id);
+				local canUse = C_ToyBox.IsToyUsable(id);
+				if toyName and hasToy and canUse then
+					callbacks.toys[id](id,toyIcon,toyName);
 				end
 			end
 		elseif inventoryEvents[event] and not inventoryDelayed then
@@ -1126,7 +1136,7 @@ do
 		mode = tostring(mode):lower();
 		assert(type(modName)=="string" and ns.modules[modName],"argument #1 (modName) must be a string, got "..type(modName));
 		assert(type(func)=="function","argument #2 (function) must be a function, got "..type(func));
-		assert(type(callbacks[mode])=="table", "argument #3 must be 'any', 'inv', 'bags', 'item', 'spell', 'equip' or 'prepare'.");
+		assert(type(callbacks[mode])=="table", "argument #3 must be 'any', 'inv', 'bags', 'item', 'spell', 'equip', 'toys' or 'prepare'.");
 		if mode=="item" then
 			assert(type(id)=="number","argument #4 must be number, got "..type(id));
 			if callbacks.item[id]==nil then

@@ -120,6 +120,15 @@ local function addToy(id)
 	return true;
 end
 
+local function addToyOnCallback(toyID,toyIcon,toyName)
+	local isHS, hsLoc = itemIsHearthstone(toyID);
+	foundToys[toyID] = { id=toyID, icon=toyIcon, name=toyName, name2=isHS and toyName..hsLoc or toyName };
+	foundToysNum = foundToysNum + 1;
+	if _namelessToys[toyID] then
+		_namelessToys[toyID] = nil;
+	end
+end
+
 local function updateItems()
 	-- update hearthstone location string
 	hearthstoneLocation = " "..C("ltblue","("..GetBindLocation()..")");
@@ -499,6 +508,8 @@ local function init()
 
 	-- init ns.items
 	ns.items.Init("any");
+	ns.items.RegisterCallback(name1,transportMenuDoUpdate,"any");
+	ns.items.RegisterCallback(name1,addToyOnCallback,"toys");
 
 	C_Timer.After(5,function()
 		C_Timer.NewTicker(updateinterval,updater);
@@ -511,9 +522,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module1 = { -- GPS
-	events = {
-		"GET_ITEM_INFO_RECEIVED"
-	},
+	events = {},
 	config_defaults = {
 		enabled = true,
 		bothZones = "2",
@@ -525,9 +534,7 @@ module1 = { -- GPS
 }
 
 module2 = { -- Location
-	events = {
-		"GET_ITEM_INFO_RECEIVED"
-	},
+	events = {},
 	config_defaults = {
 		enabled = false,
 		precision = 0,
@@ -538,9 +545,7 @@ module2 = { -- Location
 }
 
 module3 = { -- ZoneText
-	events = {
-		"GET_ITEM_INFO_RECEIVED"
-	},
+	events = {},
 	config_defaults = {
 		enabled = false,
 		bothZones = "2",
@@ -605,8 +610,6 @@ local function onevent(name,self,event,arg1,...)
 		if not eventActive then
 			eventActive = name;
 		end
-	elseif event=="GET_ITEM_INFO_RECEIVED" and eventActive==name and _namelessToys[arg1] then
-		addToy(arg1,true);
 	end
 end
 
