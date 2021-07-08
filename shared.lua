@@ -1046,7 +1046,7 @@ do
 	local function OnEvent(self,event,...)
 		if event=="ADDON_LOADED" and (...)=="Blizzard_ItemUpgradeUI" then
 			ItemUpgradeFrameUpgradeButton:HookScript("OnClick",afterItemUpgrade);
-			hooksecurefunc(_G,"ItemUpgradeFrame_UpgradeClick",afterItemUpgrade);
+			--hooksecurefunc(_G,"ItemUpgradeFrame_UpgradeClick",afterItemUpgrade);
 			eventFrame:UnregisterEvent(event);
 		elseif event=="BAG_UPDATE" and tonumber(...) and ... <= NUM_BAG_SLOTS then
 			tinsert(updateBags,...);
