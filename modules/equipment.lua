@@ -370,7 +370,6 @@ end
 ------------------------------------
 module = {
 	events = {
-		"UNIT_INVENTORY_CHANGED",
 		"PLAYER_LOGIN",
 		"PLAYER_REGEN_ENABLED",
 		"PLAYER_ALIVE",
@@ -572,6 +571,7 @@ function module.onevent(self,event,arg1,...)
 		updateBroker();
 	elseif event=="ADDON_LOADED" and arg1=="Blizzard_ArtifactUI" and ArtifactRelicForgeFrame then
 		ArtifactRelicForgeFrame:HookScript("OnHide",updateBroker);
+		self:UnregisterEvent("ADDON_LOADED");
 	elseif event=="PLAYER_LOGIN" then
 		if not isRegistered then
 			ns.items.RegisterCallback(name,UpdateInventory,"inv");  -- oops. register twice
@@ -580,6 +580,7 @@ function module.onevent(self,event,arg1,...)
 		if UpgradeItem then
 			hooksecurefunc("UpgradeItem",updateBroker);
 		end
+		self:RegisterEvent("ADDON_LOADED");
 	elseif (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and equipPending~=nil then
 		if C_EquipmentSet then
 			C_EquipmentSet.UseEquipmentSet(equipPending);

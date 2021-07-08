@@ -113,9 +113,11 @@ local function moduleInit(name)
 			if type(mod.onevent)=="function" and type(mod.events)=="table" then
 				mod.eventFrame:SetScript("OnEvent",mod.onevent);
 				mod.onevent(mod.eventFrame,"BE_UPDATE_CFG");
-				mod.onevent(mod.eventFrame,"BE_UPDATE_CFG","ClickOpt");
+				if mod.clickOptions then
+					mod.onevent(mod.eventFrame,"BE_UPDATE_CFG","ClickOpt");
+				end
 				for _, e in pairs(mod.events) do
-					if e=="ADDON_LOADED" then
+					if e=="VARIABLES_LOADED" then
 						mod.onevent(mod.eventFrame,e,addon);
 					elseif (e=="PLAYER_LOGIN" and ns.eventPlayerEnteredWorld) then
 						mod.onevent(mod.eventFrame,e);
@@ -140,8 +142,8 @@ local function moduleInit(name)
 		if (mod.chatcommands) then
 			for k,v in pairs(mod.chatcommands) do
 				if (type(k)=="string") then
+					-- Example: ns.AddChatCommand("<string>",{desc="<string>",func=function()end});
 					ns.AddChatCommand(k,v);
-					-- ns.AddChatCommand("<string>",{desc="<string>",func=function()end});
 				end
 			end
 		end

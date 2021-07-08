@@ -366,7 +366,7 @@ end
 ------------------------------------
 module = {
 	events = {
-		"ADDON_LOADED",
+		"VARIABLES_LOADED",
 		"PLAYER_LOGIN",
 
 		--"TRADE_SKILL_NAME_UPDATE",
@@ -527,7 +527,7 @@ function module.onevent(self,event,arg1,...)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 		return;
-	elseif event=="ADDON_LOADED" and arg1==addon then
+	elseif event=="VARIABLES_LOADED" then
 --@do-not-package@
 		ns.profileSilenceFIXME=true;
 --@end-do-not-package@

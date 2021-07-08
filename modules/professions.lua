@@ -502,7 +502,7 @@ end
 ------------------------------------
 module = {
 	events = {
-		"ADDON_LOADED",
+		"VARIABLES_LOADED",
 		"PLAYER_LOGIN",
 		"SKILL_LINES_CHANGED",
 
@@ -872,43 +872,41 @@ function module.onevent(self,event,arg1,...)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 		return;
-	elseif event=="ADDON_LOADED" then
-		if arg1==addon then
-			if ns.toon[name]==nil then
-				ns.toon[name]={};
-			end
-			toonDB = ns.toon[name];
-			if toonDB.unlearnedRecipes==nil then
-				toonDB.unlearnedRecipes = {}
-			end
-			if toonDB.cooldowns==nil then
-				toonDB.cooldowns = {};
-			end
-			if toonDB.cooldown_locks==nil then
-				toonDB.cooldown_locks = {};
-			end
-			--[[
-			if ns.data[name]==nil then
-				ns.data[name]={};
-			end
-			dataDB = ns.data[name];
-			if dataDB.recipeCooldownsBuild==nil or dataDB.recipeCooldownsBuild~=ns.client_version then
-				dataDB.recipeCooldownsBuild = ns.client_version;
-				dataDB.recipeCooldowns = {};
-			end
-			--]]
-		elseif arg1=="Blizzard_TradeSkillUI" then
-			hooksecurefunc(TradeSkillFrame,"RefreshTitle",function()
-				C_Timer.After(.2,function()
-					local skillLineID, skillLineDisplayName, skillLineRank, skillLineMaxRank, skillLineModifier, parentSkillLineID, parentSkillLineDisplayName = C_TradeSkillUI.GetTradeSkillLine();
-					if parentSkillLineID or skillLineID then
-						updateCooldownAndRecipeLists(parentSkillLineID or skillLineID);
-					end
-				end);
-			end);
+	elseif event=="VARIABLES_LOADED" then
+		if ns.toon[name]==nil then
+			ns.toon[name]={};
 		end
-	--elseif event=="CHAT_MSG_SYSTEM" then
-		--
+		toonDB = ns.toon[name];
+		if toonDB.unlearnedRecipes==nil then
+			toonDB.unlearnedRecipes = {}
+		end
+		if toonDB.cooldowns==nil then
+			toonDB.cooldowns = {};
+		end
+		if toonDB.cooldown_locks==nil then
+			toonDB.cooldown_locks = {};
+		end
+		--[[
+		if ns.data[name]==nil then
+			ns.data[name]={};
+		end
+		dataDB = ns.data[name];
+		if dataDB.recipeCooldownsBuild==nil or dataDB.recipeCooldownsBuild~=ns.client_version then
+			dataDB.recipeCooldownsBuild = ns.client_version;
+			dataDB.recipeCooldowns = {};
+		end
+		--]]
+		self:RegisterEvent("ADDON_LOADED");
+	elseif event=="ADDON_LOADED" and arg1=="Blizzard_TradeSkillUI" then
+		self:UnregisterEvent("ADDON_LOADED");
+		hooksecurefunc(TradeSkillFrame,"RefreshTitle",function()
+			C_Timer.After(.2,function()
+				local skillLineID, skillLineDisplayName, skillLineRank, skillLineMaxRank, skillLineModifier, parentSkillLineID, parentSkillLineDisplayName = C_TradeSkillUI.GetTradeSkillLine();
+				if parentSkillLineID or skillLineID then
+					updateCooldownAndRecipeLists(parentSkillLineID or skillLineID);
+				end
+			end);
+		end);
 	elseif event=="NEW_RECIPE_LEARNED" then
 		local id = tonumber(arg1)
 		if id  and toonDB.unlearnedRecipes[id] then
