@@ -3,6 +3,23 @@ local L = ns.L;
 local pairs,type=pairs,type;
 
 ns.modules = {};
+local queue,queue_ticker = {};
+
+local function queue_ticker_func()
+	local mod
+	if #queue>0 then
+		mod = ns.modules[tremove(queue,1)];
+		mod.onevent(mod.eventFrame,"PLAYER_LOGIN");
+	elseif queue_ticker then
+		queue_ticker:Cancel();
+		queue_ticker = nil;
+	end
+end
+
+function ns.modulePLQueueInit()
+	queue_ticker = C_Timer.NewTicker(0.125,queue_ticker_func);
+	ns.modulePLQueueInit = nil;
+end
 
 function ns.toggleMinimapButton(modName,setValue)
 	local mod = ns.modules[modName];
@@ -122,7 +139,11 @@ local function moduleInit(name)
 					elseif (e=="PLAYER_LOGIN" and ns.eventPlayerEnteredWorld) then
 						mod.onevent(mod.eventFrame,e);
 					end
-					mod.eventFrame:RegisterEvent(e);
+					if e=="PLAYER_LOGIN" then
+						tinsert(queue,name);
+					else
+						mod.eventFrame:RegisterEvent(e);
+					end
 				end
 			end
 		end

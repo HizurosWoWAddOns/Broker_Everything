@@ -90,6 +90,9 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 	elseif event == "DISPLAY_SIZE_CHANGED" then
 		ns.ui = {size={UIParent:GetSize()},center={UIParent:GetCenter()}};
 	elseif event=="PLAYER_LOGIN" then
+		-- start PLAYER_LOGIN event queue for modules
+		ns.modulePLQueueInit();
+
 		-- iconset
 		ns.I(true);
 		ns.updateIcons(true);
