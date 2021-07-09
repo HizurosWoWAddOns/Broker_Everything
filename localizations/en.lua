@@ -109,7 +109,7 @@ local byItemId = {
 };
 
 function ns.LocalizationsOnEvent(event,...) -- executed by core.lua > Broker_Everything:SetScript("OnEvent"...
-	if event=="ADDON_LOADED" and addon==... then
+	if event=="VARIABLES_LOADED" then
 		local name;
 		for id, key in pairs(byItemId) do
 			name = GetItemInfo(id);
