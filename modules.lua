@@ -44,10 +44,11 @@ function ns.toggleMinimapButton(modName,setValue)
 	end
 end
 
-local function moduleInit(name)
+-- [force] - used by child modules to enable core module (like gps and followers)
+local function moduleInit(name, force)
 	if not ns.modules[name] then return end
 
-	if (ns.profile[name] and ns.profile[name].enabled==true) or ns.modules[name].isHiddenModule then
+	if ns.profile[name] and (ns.profile[name].enabled==true or force) then
 		local mod = ns.modules[name];
 
 		mod.isEnabled = true;
@@ -124,6 +125,7 @@ local function moduleInit(name)
 			if not mod.noEventFrame then
 				mod.eventFrame=CreateFrame("Frame");
 			else
+				-- table as dummy to execute following BE_UPDATE_CFG, VARIABLES_LOADED and PLAYER_LOGIN only
 				mod.eventFrame={};
 			end
 			mod.eventFrame.modName = name;
@@ -171,12 +173,15 @@ local function moduleInit(name)
 	end
 end
 
-function ns.moduleInit(name) -- in core.lua on event ADDON_LOADED or option panel
+-- in core.lua on event ADDON_LOADED or option panel
+function ns.moduleInit(name,force)
 	if (name) then
+		-- enable module by name
 		ns.Options_RegisterModule(name);
 		ns.Options_RegisterDefaults();
-		moduleInit(name,true);
+		moduleInit(name,force);
 	else
+		-- enable all registered modules
 		for name, data in pairs(ns.modules) do
 			ns.Options_RegisterModule(name);
 		end
