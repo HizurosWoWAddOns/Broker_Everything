@@ -378,7 +378,7 @@ local function createTooltip(tt)
 									if not ti.realmName then
 										ti.realmName = (ti.realmID and "Unknown Realm [Id: "..ti.realmID.."]" or UNKNOWN) --.." |cffffee00("..EXPANSION_NAME0.."?)|r";
 									end
-									tt:SetCell(l,6,C( (ns.realms[ti.realmName] or (ti.realmName and ns.realms[realmName])) and "green" or "white",ti.realmName .. realmLocaleIcon));			-- 6
+									tt:SetCell(l,6,C( (ns.realms[ti.realmName] or (ti.realmName and ns.realms[ti.realmName])) and "green" or "white",ti.realmName .. realmLocaleIcon));			-- 6
 								end
 								-- faction (own column)
 								if ti.factionName then
