@@ -281,7 +281,10 @@ end
 
 local transportMenu
 local function updateTPM()
-	C_Timer.After(0.2,function() transportMenu(unpack(tt4Params)) end);
+	if tt4Params then
+		--C_Timer.After(0.2,function() transportMenu(unpack(tt4Params)) end);
+		transportMenu(unpack(tt4Params));
+	end
 end
 
 -- tooltip as transport menu
@@ -292,9 +295,19 @@ local function tpmOnEnter(self,info)
 		tooltip={parent=tt4,type=t,id=v.id},
 		OnEnter=createTooltip3,
 		OnLeave=GameTooltip_Hide,
-		OnClick=updateTPM
+		--OnClick=updateTPM
 	};
 	ns.secureButton(self,data);
+end
+
+local function transportMenuOnHide()
+	tt4Params = nil;
+end
+
+local function transportMenuDoUpdate()
+	if tt4Params then
+		transportMenu(unpack(tt4Params));
+	end
 end
 
 local function tpmAddObject(tt,p,l,c,v,t,name)
@@ -331,7 +344,7 @@ function transportMenu(self,button,name)
 	local columns = 5;
 	ttColumns4 = ns.profile[name].shortMenu and columns or 1;
 	if not (tt4 and tt4.key and tt4.key==ttName4) then
-		tt4 = ns.acquireTooltip({ttName4, ttColumns4, "LEFT","LEFT","LEFT","LEFT","LEFT"},{false},{self});
+		tt4 = ns.acquireTooltip({ttName4, ttColumns4, "LEFT","LEFT","LEFT","LEFT","LEFT"},{false},{self},{OnHide=transportMenuOnHide});
 		tt4Params = {self,button,name};
 	end
 
