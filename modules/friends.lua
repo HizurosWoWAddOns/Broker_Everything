@@ -373,7 +373,7 @@ local function createTooltip(tt)
 										elseif ti.realmInfo.Region=="US" and ti.realmInfo.Timezone=="AEST" then
 											ti.realmInfo.Locale = "enAU"; -- flag of australian
 										end
-										realmLocaleIcon = "|T"..ns.media .. ti.realmInfo.Locale .. ":0:2|t";
+										realmLocaleIcon = "|T"..ns.media .. "countries/" .. ti.realmInfo.Locale .. ":0:2|t";
 									end
 									if not ti.realmName then
 										ti.realmName = (ti.realmID and "Unknown Realm [Id: "..ti.realmID.."]" or UNKNOWN) --.." |cffffee00("..EXPANSION_NAME0.."?)|r";
