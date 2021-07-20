@@ -30,7 +30,7 @@ local dbDefaults,db = {
 ns.showCharsFrom_Values = { -- used in xp.lua to display current mode in tooltip
 	["1"] = ns.realm,
 	["2"] = L["Connected realms"],
-	["3"] = L["Same battlegroup"],
+	--["3"] = L["Same battlegroup"], -- deprecated
 	["4"] = L["All realms"]
 };
 
@@ -347,6 +347,7 @@ ns.sharedOptions = {
 	shortNumbers    = { type="toggle", name=L["ShortNum"], desc=L["ShortNumDesc"]},
 	showAllFactions = { type="toggle", name=L["AllFactions"], desc=L["AllFactionsDesc"]},
 	showRealmNames  = { type="toggle", name=L["RealmNames"], desc=L["RealmNamesDesc"]},
+	showChars       = { type="toggle", name=L["ShowChars"], desc=L["ShowCharsDesc"], customDescFormat="ShowCharsDesc-%s" }, -- TODO: translation ShowCharsDesc
 	showCharsFrom   = { type="select", name=L["CharsFrom"], desc=L["CharsFromDesc"], values=ns.showCharsFrom_Values },
 	goldHideBB      = { type="select", name=L["HideMoney"], desc=L["HideMoneyDescBrokerButton"], width = "double", values = goldHideValues },
 	goldHideTT      = { type="select", name=L["HideMoney"], desc=L["HideMoneyDescTooltip"], width = "double", values = goldHideValues },
@@ -383,13 +384,37 @@ end
 
 local function optionWalker(modName,group,lst)
 	for k, v in pairs(lst)do
-		local tV = type(v);
+		local tV,customModDesc = type(v);
+		if k=="showChars" then
+			ns.debug("opts",modName,k,tV,v,tV=="table" and #v or "?");
+		end
+		if tV=="table" and #v>0 then
+			-- short table {<order[number|bool]>, <customModDesc>}
+			customModDesc,v,tV = v[2],v[1],type(v[1]);
+		end
 		if tV=="number" or tV=="boolean" then
 			if ns.sharedOptions[k] then
-				lst[k] = ns.sharedOptions[k];
+				local shared = CopyTable(ns.sharedOptions[k]);
 				if tV=="number" then
-					lst[k].order = v;
+					shared.order = v;
 				end
+				if customModDesc then
+					local LStr = "";
+					if customModDesc==true then
+						customModDesc = modName;
+					end
+					ns.debug("opt",modName,k,shared.customDescFormat,customModDesc);
+					if shared.customDescFormat then
+						LStr = L[shared.customDescFormat:format(customModDesc)];
+						shared.customDescFormat = nil;
+					else
+						LStr = L[customModDesc];
+					end
+					if LStr~="" then
+						shared.desc = LStr;
+					end
+				end
+				lst[k] = shared;
 				dbDefaults.profile[modName][k] = sharedDefaults[k];
 			else
 				lst[k]=nil;

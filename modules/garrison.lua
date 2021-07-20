@@ -98,14 +98,11 @@ local function createTooltip(tt)
 			end
 			tt:AddSeparator();
 			local t=time();
-			for i=1, #Broker_Everything_CharacterDB.order do
-				local name_realm = Broker_Everything_CharacterDB.order[i];
-				local v = Broker_Everything_CharacterDB[name_realm];
-				local charName,realm,_=strsplit("-",name_realm,2);
-				if v.faction~=ns.player.faction and ns.showThisChar(name,realm,v.faction) and v.missions then
-					local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-					local l=tt:AddLine(C(v.class,ns.scm(charName)) .. ns.showRealmName(name,realm) .. faction );
-					if(name_realm==ns.player.name_realm)then
+			for index,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameFaction=true}) do
+				if toonData.missions then
+					local faction = toonData.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+					local l=tt:AddLine(C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction );
+					if isCurrent then
 						tt:SetLineColor(l, 0.1, 0.3, 0.6);
 					end
 				end
@@ -211,47 +208,46 @@ local function createTooltip(tt)
 		local None=true;
 		tt:SetCell(l,1,C("ltblue",L["Garrison cache forcast"]),nil,nil,ttColumns);
 		tt:AddSeparator();
-		for i=1, #Broker_Everything_CharacterDB.order do
-			local v = Broker_Everything_CharacterDB[Broker_Everything_CharacterDB.order[i]];
-			local c,r = strsplit("-",Broker_Everything_CharacterDB.order[i],2);
-			if ns.showThisChar(name,r,v.faction) and v.garrison and v.garrison_cache and v.garrison_cache[1]>0 then
-				local k=Broker_Everything_CharacterDB.order[i];
+		for index,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
+			-- TODO: code need more updates
+			if toonData.garrison and toonData.garrison_cache and toonData.garrison_cache[1]>0 then
 				local l,_=tt:AddLine();
-				local charName,realm = strsplit("-",k,2);
-				if not ns.profile[name].showRealms and realm and realm~=ns.realm then
-					realm = C("dkyellow","*");
+				if not ns.profile[name].showRealms and toonRealm and toonRealm~=ns.realm then
+					toonRealm = C("dkyellow","*");
 				else
-					local _,_realm = ns.LRI:GetRealmInfo(realm,ns.region);
-					if _realm then realm = _realm; end
-					if realm then
-						realm = C("gray"," - ")..C("dkyellow",realm);
+					local _,_realm = ns.LRI:GetRealmInfo(toonRealm,ns.region);
+					if _realm then
+						toonRealm = _realm;
+					end
+					if toonRealm then
+						toonRealm = C("gray"," - ")..C("dkyellow",toonRealm);
 					end
 				end
 				local factionSymbol="";
-				if v.faction and v.faction~="Neutral" then
-					factionSymbol = " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t";
+				if toonData.faction and toonData.faction~="Neutral" then
+					factionSymbol = " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t";
 				end
-				tt:SetCell(l,1,C(v.class or "white", charName)..(realm or "")..factionSymbol,nil,nil,ttColumns-1);
-				if(v.garrison_cache and v.garrison_cache[1]>0)then
-					local cache = floor((time()-v.garrison_cache[1])/600);
-					local cap = (v.garrison_cache[2]) and 1000 or 500;
-					if(v.garrison_cache[2]~=nil and cache>=cap)then
+				tt:SetCell(l,1,C(toonData.class or "white", toonName)..(toonRealm or "")..factionSymbol,nil,nil,ttColumns-1);
+				if(toonData.garrison_cache and toonData.garrison_cache[1]>0)then
+					local cache = floor((time()-toonData.garrison_cache[1])/600);
+					local cap = (toonData.garrison_cache[2]) and 1000 or 500;
+					if(toonData.garrison_cache[2]~=nil and cache>=cap)then
 						cache = C("red",cap);
 						cap = C("red",cap);
-					elseif(v.garrison_cache[2]==nil)then
+					elseif(toonData.garrison_cache[2]==nil)then
 						cap = C("dkyellow",cap);
 					end
 					tt:SetCell(l,ttColumns, ("~ %s/%s"):format(cache,cap)); -- 10 minutes = 1 garrison resource
 				else
 					tt:SetCell(l,ttColumns, C("orange","n/a"));
 				end
-				if(k==ns.player.name_realm)then
+				if isCurrent then
 					tt:SetLineColor(l, 0.1, 0.3, 0.6);
 				end
 				None=false;
 			end
 		end
-		if (None) then
+		if None then
 			tt:AddLine(L["No data found..."]);
 		end
 		none=false;
@@ -346,7 +342,7 @@ function module.options()
 			showBlueprints={ type="toggle", order=2, name=L["Show blueprints"],             desc=L["Show available blueprints in tooltip"] },
 			showAchievements={ type="toggle", order=3, name=L["Show archievements"],          desc=L["Show necessary archievements to unlock blueprints in tooltip"] },
 			showCacheForcast={ type="toggle", order=4, name=L["Show cache forcast"],          desc=L["Show garrison cache forecast for all your characters in tooltip"] },
-			showChars={ type="toggle", order=5, name=L["Show characters"],             desc=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+			showChars={5,true},
 			showAllFactions=6,
 			showRealmNames=7,
 			showCharsFrom=8,

@@ -175,13 +175,10 @@ local function createTooltip(tt)
 			(IsShiftKeyDown() and GOAL_COMPLETED.." - "..C("green",L["next"]).." / "..C("yellow",SPELL_TARGET_TYPE12_DESC) or C("green",GOAL_COMPLETED).." / "..C("yellow",L["In progress"])),
 			nil,"RIGHT",0);
 		tt:AddSeparator();
-		for i=1, #Broker_Everything_CharacterDB.order do
-			local toon_realm = Broker_Everything_CharacterDB.order[i];
-			local toon = Broker_Everything_CharacterDB[toon_realm];
-			if toon_realm~=ns.player.name_realm and toon.missions and #toon.missions>0 then
-				local toonName,toonRealm = strsplit("-",toon_realm,2);
-				local num = Counter(toon.missions);
-				local l = tt:AddLine(C(toon.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. (toon.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..toon.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "") );
+		for index,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
+			if toonData.missions and #toonData.missions>0 then
+				local num = Counter(toonData.missions);
+				local l = tt:AddLine(C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. (toonData.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "") );
 				tt:SetCell(l,2, C("green",num.completed).."/"..C("yellow",num.inprogress),nil,"RIGHT",0);
 				n=n+1;
 			end
@@ -260,7 +257,7 @@ do
 		return {
 			broker = nil,
 			tooltip = {
-				showChars={ type="toggle", order=1, name=L["Show characters"],          desc=L["Show a list of your characters with count of ready and active missions in tooltip"] },
+				showChars={1,true},
 				showAllFactions=2,
 				showRealmNames=3,
 				showCharsFrom=4,

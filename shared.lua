@@ -217,18 +217,14 @@ function ns.showThisChar(modName,realm,faction)
 	if not ns.profile[modName].showAllFactions and ns.player.faction~=faction then
 		return false;
 	end
+	local from = ns.profile[modName].showCharsFrom;
+	if from=="3" then -- migration from deprecated value "3"
+		ns.profile[modName].showCharsFrom = "2";
+	end
 	if ns.profile[modName].showCharsFrom=="1" and realm~=ns.realm then -- same realm
 		return false;
 	elseif ns.profile[modName].showCharsFrom=="2" and not ns.realms[realm] then -- connected realms
 		return false;
-	elseif ns.profile[modName].showCharsFrom=="3" then -- battlegroup
-		local _,_,_,_,_,battlegroup = ns.LRI:GetRealmInfo(realm,ns.region);
-		if not ns.player.battlegroup then
-			_,_,_,_,_,ns.player.battlegroup = ns.LRI:GetRealmInfo(ns.realm,ns.region);
-		end
-		if ns.player.battlegroup~=battlegroup then
-			return false;
-		end
 	end
 	return true;
 end
@@ -652,15 +648,18 @@ do
 	end
 end
 
-function ns.pairsToons(currentFirst,currentRealm)
-	currentFirst,currentRealm = not not currentFirst,not not currentRealm;
-	local t={};
-	for index,name in ipairs(Broker_Everything_CharacterDB.order) do
-		local _,r = strsplit("-",name,2);
-		if currentFirst and name==ns.player.name_realm then
-			tinsert(t,1,index);
-		elseif (not currentRealm) or (currentRealm and r==ns.realm) then
-			tinsert(t,index);
+function ns.pairsToons(modName,opts)
+	-- opts = {currentFirst=<bool>,forceSameRealm=<bool>,forceSameFaction=<bool>}
+	-- TODO: add ns.profile options from modules here
+	local t = {};
+	for index, toonNameRealm in ipairs(Broker_Everything_CharacterDB.order) do
+		local name,realm = strsplit("-",toonNameRealm,2);
+		if ns.showThisChar(modName,realm,Broker_Everything_CharacterDB[toonNameRealm].faction) then
+			if opts.currentFirst==true and toonNameRealm==ns.player.name_realm then
+				tinsert(t,1,index);
+			elseif not (opts.forceSameRealm==true and realm~=ns.realm) and not (opts.forceSameFaction==true and ns.faction~=Broker_Everything_CharacterDB[toonNameRealm].faction) then
+				tinsert(t,index);
+			end
 		end
 	end
 	local i=0;
@@ -670,9 +669,10 @@ function ns.pairsToons(currentFirst,currentRealm)
 		if Broker_Everything_CharacterDB.order[index]==nil then
 			return nil;
 		end
-		local name = Broker_Everything_CharacterDB.order[index];
-		local toonName,toonRealm = strsplit("-",name,2);
-		return index, toonName, toonRealm, Broker_Everything_CharacterDB[name], name==ns.player.name_realm; -- index, toonName, toonRealm, toonData, isCurrent
+		local toonNameRealm = Broker_Everything_CharacterDB.order[index];
+		local toonName,toonRealm = strsplit("-",toonNameRealm,2);
+		return index, toonNameRealm, toonName, toonRealm, Broker_Everything_CharacterDB[toonNameRealm], toonNameRealm==ns.player.name_realm;
+		-- index, toonNameRealm, toonName, toonRealm, toonData, isCurrent
 	end
 	return iter;
 end

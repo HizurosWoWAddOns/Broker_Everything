@@ -17,7 +17,7 @@ local function queue_ticker_func()
 end
 
 function ns.modulePLQueueInit()
-	queue_ticker = C_Timer.NewTicker(0.125,queue_ticker_func);
+	queue_ticker = C_Timer.NewTicker(0.001,queue_ticker_func);
 	ns.modulePLQueueInit = nil;
 end
 

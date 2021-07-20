@@ -106,9 +106,8 @@ local function createTooltip2(self,instance)
 	GameTooltip:AddLine(C("gray",ns.realm));
 	GameTooltip:AddLine(" ");
 
-	for i,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(true,true) do
+	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
 		if toonName then
-			--local c,r = strsplit("-",toonName,2); -- char, realm
 			local diffState = {};
 			if toonData[name] and toonData[name][id] then
 				if toonData[name][id].new then

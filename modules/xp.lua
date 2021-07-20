@@ -166,26 +166,6 @@ function createTooltip(tt)
 		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE.." ("..STATUS_TEXT_PERCENT..")"), "",percentCurrentXPStr);
 		tt:AddLine(C("ltyellow",GARRISON_FOLLOWER_XP_STRING),"",C("white",ns.FormatLargeNumber(name,data.max-data.cur,true)));
 		tt:AddLine(C("ltyellow",TUTORIAL_TITLE26),"",C("cyan",percentExhaustionStr));
-
-		--[[
-		tt:AddSeparator(5,0,0,0,0);
-		tt:AddLine(C("ltblue",L["XP bonus"]),C("ltblue",L["max Level"]),C("ltblue",L["XP bonus"]));
-		tt:AddSeparator();
-		local sum = 0;
-		for slotId,slotName in ns.pairsByKeys(slots) do
-			local v,maxLevel,xpPercent = data.bonus[slotId],0,0;
-			if tonumber(v) then
-				_, _, _, _, _, _, _, _, _, maxLevel = C_Heirloom.GetHeirloomInfo(v);
-				xpPercent = heirloomXP[v];
-			elseif type(v)=="table" then
-				maxLevel,xpPercent = v.maxLevel,v.percent;
-			end
-			sum = sum + xpPercent;
-			tt:AddLine(C("ltyellow", slotName),maxLevel>0 and maxLevel or "",(maxLevel==0 and C("ltgray",L["Not equipped"])) or (level>maxLevel and C("red",L["Level too high"])) or (xpPercent>0 and xpPercent.."%") or "");
-		end
-		tt:AddSeparator();
-		tt:AddLine(C("ltblue",ACHIEVEMENT_SUMMARY_CATEGORY),"",C(sum>0 and "green" or "gray",sum.."%"));
-		--]]
 	end
 
 	if ns.profile[name].showMyOtherChars then
@@ -195,46 +175,36 @@ function createTooltip(tt)
 		tt:SetCell(l,1,C("ltblue",L["Your other chars (%s)"]:format(ns.showCharsFrom_Values[ns.profile[name].showCharsFrom].."/"..showFactions)),nil,nil,3);
 		tt:AddSeparator();
 		local count = 0;
-		for i=1, #Broker_Everything_CharacterDB.order do
-			local name_realm = Broker_Everything_CharacterDB.order[i];
-			local v = Broker_Everything_CharacterDB[name_realm];
-			if v.xp and v.xp.bonus then --- little cleanup outdated boolean usage
-				for slotId, slot in pairs(v.xp.bonus)do
-					if slotId>900 then
-						v.xp.bonus[slotId] = nil; -- remove deprecated entries
-					elseif type(slot)=="table" and (slot.percent==nil or slot.percent==false) then
-						v.xp.bonus[slotId]=nil;
-					end
-				end
-				if v.xp.bonusSum then
-					v.xp.bonusSum = nil;
-				end
-			end
-			if showThisChar(name_realm,v) then
-				local Name,Realm,_ = strsplit("-",name_realm,2);
-				if type(Realm)=="string" and Realm:len()>0 then
-					local _,_realm = ns.LRI:GetRealmInfo(Realm,ns.region);
-					if _realm then Realm = _realm; end
-				end
-				local factionSymbol = "";
-				if v.faction and v.faction~="Neutral" then
-					factionSymbol = "|TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t";
+
+		for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
+			if toonData.xp~=nil and not isCurrent and not (ns.profile[name].showNonMaxLevelOnly and toonData.level==MAX_PLAYER_LEVEL) then
+				local Name,Realm,_ = strsplit("-",toonNameRealm,2);
+
+				if type(toonRealm)=="string" and toonRealm:len()>0 then
+					local _,_realm = ns.LRI:GetRealmInfo(toonRealm,ns.region);
+					if _realm then toonRealm = _realm; end
 				end
 
-				v.level = v.level or 1;
-				local needToLevelup, percentCurrentXP, percentExhaustion, percentCurrentXPStr, percentExhaustionStr = GetExperience(v.level,v.xp.cur or 0,v.xp.max or xp2levelup[v.level],v.xp.rest or 0);
+				local factionSymbol = "";
+				if toonData.faction and toonData.faction~="Neutral" then
+					factionSymbol = "|TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t";
+				end
+
+				toonData.level = toonData.level or 1;
+				local needToLevelup, percentCurrentXP, percentExhaustion, percentCurrentXPStr, percentExhaustionStr = GetExperience(toonData.level,toonData.xp.cur or 0,toonData.xp.max or xp2levelup[v.level],toonData.xp.rest or 0);
 
 				local restState = "";
 				if percentExhaustion>0 then
 					restState = " "..C("cyan",percentExhaustionStr.."~");
 				end
+
 				local l = tt:AddLine(
-					("(%d) %s %s"):format(v.level,C(v.class,ns.scm(Name))..ns.showRealmName(name,Realm), factionSymbol),
+					("(%d) %s %s"):format(toonData.level,C(toonData.class,ns.scm(toonName))..ns.showRealmName(name,toonRealm), factionSymbol),
 					(percentCurrentXPStr or 0)..restState,
-					("%s/%s"):format(ns.FormatLargeNumber(name,v.xp.cur,true),ns.FormatLargeNumber(name,v.xp.max,true))
+					("%s/%s"):format(ns.FormatLargeNumber(name,toonData.xp.cur,true),ns.FormatLargeNumber(name,toonData.xp.max,true))
 				);
-				tt:SetLineScript(l,"OnMouseUp",deleteCharacterXP, name_realm);
-				--tt:SetLineScript(l,"OnEnter",createTooltip2,name_realm);
+				tt:SetLineScript(l,"OnMouseUp",deleteCharacterXP, toonNameRealm);
+				--tt:SetLineScript(l,"OnEnter",createTooltip2,toonNameRealm);
 				count = count + 1;
 			end
 		end

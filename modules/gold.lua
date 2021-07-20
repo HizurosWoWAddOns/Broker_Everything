@@ -35,7 +35,7 @@ I[name] = {iconfile="Interface\\Minimap\\TRACKING\\Auctioneer",coords={0.05,0.95
 --------------------------
 local function getProfit(Type,last)
 	local value = 0;
-	if Type then
+	if Type and current_money then
 		ns.tablePath(ns.data,name,"Profit",Type,player);
 		local p,d=ns.data[name].Profit[Type][player],profit[Type] or {};
 		if not last then
@@ -43,7 +43,7 @@ local function getProfit(Type,last)
 		elseif p[d[2]]~=false then
 			value = tonumber(p[d[2]]);
 		end
-	elseif login_money~=nil then -- session
+	elseif login_money~=nil and current_money then -- session
 		value = current_money-login_money;
 	end
 	if value<0 then
@@ -137,18 +137,17 @@ function createTooltip(tt,update)
 	tt:AddSeparator();
 
 	local lineCount=0;
-	for i=1, #Broker_Everything_CharacterDB.order do
-		local name_realm = Broker_Everything_CharacterDB.order[i];
-		local charName,realm,_=strsplit("-",name_realm,2);
-		local v = Broker_Everything_CharacterDB[name_realm];
+	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
+		if toonData.gold then
+			local faction = toonData.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+			local line, column = tt:AddLine(
+				C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction,
+				ns.GetCoinColorOrTextureString(name,toonData.gold,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT})
+			);
 
-		if (v.gold) and (ns.player.name_realm~=name_realm) and ns.showThisChar(name,realm,v.faction) then
-			local faction = v.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-			local line, column = tt:AddLine( C(v.class,ns.scm(charName)) .. ns.showRealmName(name,realm) .. faction, ns.GetCoinColorOrTextureString(name,v.gold,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
+			tt:SetLineScript(line, "OnMouseUp", deleteCharacterGoldData, toonNameRealm);
 
-			tt:SetLineScript(line, "OnMouseUp", deleteCharacterGoldData, name_realm);
-
-			totalGold[v.faction] = totalGold[v.faction] + v.gold;
+			totalGold[toonData.faction] = totalGold[toonData.faction] + toonData.gold;
 
 			line, column = nil, nil;
 			lineCount=lineCount+1;

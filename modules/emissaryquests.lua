@@ -386,30 +386,28 @@ local function createTooltip(tt)
 
 		tt:AddSeparator();
 
-		local chars = 0;
-		for i=1, #Broker_Everything_CharacterDB.order do
-			local name_realm = Broker_Everything_CharacterDB.order[i];
-			local v,cell = Broker_Everything_CharacterDB[name_realm],2;
-			local c,realm,_ = strsplit("-",name_realm,2);
-			if realm and v.level>=minLevel and ns.showThisChar(name,realm,v.faction) then
-				local faction = v.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-				if type(realm)=="string" and realm:len()>0 then
-					local _,_realm = ns.LRI:GetRealmInfo(realm);
-					if _realm then realm = _realm; end
+		local chars,_ = 0;
+		for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
+			local cell,line = 2;
+			if toonData.level>=minLevel then
+				local faction = toonData.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+				if type(toonRealm)=="string" and toonRealm:len()>0 then
+					local _,_realm = ns.LRI:GetRealmInfo(toonRealm);
+					if _realm then toonRealm = _realm; end
 				end
 
-				local c,l=2,tt:AddLine(C(v.class,ns.scm(c)) .. ns.showRealmName(name,realm) .. faction);
+				cell,line = 2,tt:AddLine(C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction);
 
-				if ns.player.name_realm==name_realm then
-					tt:SetLineColor(l, .25, .25, .25); -- highlight current toon
+				if isCurrent then
+					tt:SetLineColor(line, .25, .25, .25); -- highlight current toon
 				end
 
 				for e=1, #expansions do
 					for _,ending in ipairs(endings) do
-						if expansions[e] and v.level>=GetMaxLevelForExpansionLevel(e) and ns.profile[name][expansions[e].name.."Quests"] and ns.data[name].bounties[ending] and ns.data[name].bounties[ending][e] then
+						if expansions[e] and toonData.level>=GetMaxLevelForExpansionLevel(e) and ns.profile[name][expansions[e].name.."Quests"] and ns.data[name].bounties[ending] and ns.data[name].bounties[ending][e] then
 							local cellContent,completed,total = "",0,ns.data[name].bounties[ending][e].totalQuests;
-							if v[name] and v[name].bounties and v[name].bounties[ending] and v[name].bounties[ending][e] then -- error?
-								completed = v[name].bounties[ending][e] or 0;
+							if toonData[name] and toonData[name].bounties and toonData[name].bounties[ending] and toonData[name].bounties[ending][e] then -- error?
+								completed = toonData[name].bounties[ending][e] or 0;
 							end
 							if not completed then
 								cellContent = C("gray","?/?");
@@ -418,14 +416,11 @@ local function createTooltip(tt)
 							else
 								cellContent = C("white",completed.."/"..total);
 							end
-							--cellContent = cellContent .."|n"..ending.."|n"..e.."|n".. GetFactionInfoByID(ns.data[name].bounties[ending][e][ns.player.faction]);
-
-							tt:SetCell(l,c,cellContent,nil,"CENTER");
-							c=c+1;
+							tt:SetCell(line,cell,cellContent,nil,"CENTER");
+							cell=cell+1;
 						end
 					end
 				end
-
 			end
 		end
 	end

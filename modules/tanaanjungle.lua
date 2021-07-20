@@ -125,11 +125,12 @@ local function updateQuestStatus()
 end
 
 local function listQuests(TT,questlog,completed,numCompleted)
+	local questNameUknown = C("orange",L["Wait on name..."]);
 	for _,i in ipairs(typeOrder) do
 		local num=0;
 		TT:AddSeparator(4,0,0,0,0);
 
-		TT:AddLine(C(colorIDTypes[i],L[titles[i][1]]), C(colorIDTypes[i], numCompleted[i]) .. "/" .. C(colorIDTypes[i], numIDTypes[i]));
+		TT:AddLine(C(colorIDTypes[i],L[titles[i][1]]), C(colorIDTypes[i], numCompleted[i] or 0) .. "/" .. C(colorIDTypes[i], numIDTypes[i]));
 		TT:AddSeparator();
 		for id,qType in pairs(ids)do
 			if qType==i then
@@ -148,7 +149,11 @@ local function listQuests(TT,questlog,completed,numCompleted)
 					end
 				end
 				if color then
-					TT:AddLine((ns.profile[name].showQuestIDs and C("gray",id).." " or "") .. C("ltyellow",names[id]),C(color,state));
+					local questName = questNameUknown;
+					if names[id] then
+						questName = C("ltyellow",names[id]);
+					end
+					TT:AddLine((ns.profile[name].showQuestIDs and C("gray",id).." " or "") .. questName,C(color,state));
 					num=num+1;
 				end
 			end
@@ -190,25 +195,22 @@ local function createTooltip(tt)
 		tt:AddSeparator(4,0,0,0,0);
 		local l=tt:AddLine( C("ltblue",CHARACTER) ); -- 1
 		tt:AddSeparator();
-		for i=1, #Broker_Everything_CharacterDB.order do
-			local name_realm = Broker_Everything_CharacterDB.order[i];
-			local v = Broker_Everything_CharacterDB[name_realm];
-			local c,r,_ = strsplit("-",name_realm,2);
-			if v.level>=100 and v.tanaanjungle and ns.showThisChar(name,r,v.faction) then
+		for index,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
+			if toonData.level>=100 and toonData.tanaanjungle then
 				local bbt = {}; -- broker button text
 				for _,i in ipairs(typeOrder) do
 					local num = 0;
-					if v.tanaanjungle.completed then
-						for I,v in pairs(v.tanaanjungle.completed)do
-							if ids[I]==numIDTypes[i] and v>dailiesReset then
+					if toonData.tanaanjungle.completed then
+						for I,V in pairs(toonData.tanaanjungle.completed)do
+							if ids[I]==numIDTypes[i] and V>dailiesReset then
 								num=num+1;
 							end
 						end
 					end
 					tinsert(bbt,C(colorIDTypes[i], num) .. "/" .. C(colorIDTypes[i], numIDTypes[i]));
 				end
-				local l=tt:AddLine(C(v.class,ns.scm(c))..ns.showRealmName(name,r),table.concat(bbt,", "));
-				if(name_realm==ns.player.name_realm)then
+				local l=tt:AddLine(C(toonData.class,ns.scm(toonName))..ns.showRealmName(name,toonRealm),table.concat(bbt,", "));
+				if isCurrent then -- highlight current toon
 					tt:SetLineColor(l, 0.1, 0.3, 0.6);
 				end
 			end
@@ -262,7 +264,7 @@ function module.options()
 		broker = nil,
 		tooltip = {
 			showQuestIDs={ type="toggle", order=1, name=L["QuestIDs"],   desc=L["Show QuestIDs in tooltip"] },
-			showChars={ type="toggle", order=2, name=L["Show characters"], desc=L["Show a list of your characters with count of ready and available targets in tooltip"] },
+			showChars={2,true},
 			showAllFactions=3,
 			showRealmNames=4,
 			showCharsFrom=5

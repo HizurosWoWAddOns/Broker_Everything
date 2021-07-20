@@ -445,29 +445,27 @@ local function createTooltip(tt)
 		end
 
 		-- cooldowns of other toons
-		for i=1, #Broker_Everything_CharacterDB.order do
-			local charName,charRealm,_ = strsplit("-",Broker_Everything_CharacterDB.order[i],2);
-			local charData = Broker_Everything_CharacterDB[Broker_Everything_CharacterDB.order[i]];
-			local char_header=false;
-			if (not (charRealm==ns.realm and charName==ns.player.name)) and (charData.professions) and (charData.professions.cooldowns) and (charData.professions.hasCooldowns==true) then
-				local outdated = true;
-				for spellid, spellData in pairs(charData.professions.cooldowns) do
+		for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
+			local hasHeader = false;
+			if toonData.professions and toonData.professions.cooldowns and toonData.professions.hasCooldowns==true then
+				local isOutdated = true;
+				for spellid, spellData in pairs(toonData.professions.cooldowns) do
 					if ( (spellData.timeLeft-(time()-spellData.lastUpdate)) > 0) then
-						if (not char_header) then
+						if (not hasHeader) then
 							if (cd1>0) or (sep) then
 								tinsert(lst,{type="sep",data={4,0,0,0,0}});
 							end
-							tinsert(lst,{type="line",data={C("ltblue",ns.scm(charName))..ns.showRealmName(name,charRealm),C("ltblue",L[durationHeader])}});
+							tinsert(lst,{type="line",data={C("ltblue",ns.scm(toonName))..ns.showRealmName(name,toonRealm),C("ltblue",L[durationHeader])}});
 							tinsert(lst,{type="sep",data={nil}});
-							char_header = true;
+							hasHeader = true;
 							sep=true;
 						end
 						tinsert(lst,{type="cdLine",data=spellData});
-						outdated = false;
+						isOutdated = false;
 					end
 				end
-				if(outdated)then
-					charData.professions = {cooldowns={},hasCooldowns=false};
+				if isOutdated then -- is outdated; reset cooldown data
+					toonData.professions = {cooldowns={},hasCooldowns=false};
 				end
 			end
 		end
