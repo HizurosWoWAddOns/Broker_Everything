@@ -1714,6 +1714,85 @@ do
 		return false;
 	end
 
+	function ns.EasyMenu:AddConfigEntry(modName,key,value,P)
+		if value.type=="separator" then
+			self:AddEntry({ separator=true },P);
+		elseif value.type=="header" then
+			self:AddEntry({ separator=true },P);
+			self:AddEntry({ label=value.name, title=true },P);
+		elseif value.type=="toggle" then
+			local tooltip = nil;
+			if value.desc then
+				tooltip = {value.name, value.desc};
+				if type(tooltip[2])=="function" then
+					tooltip[2] = tooltip[2]();
+				end
+			end
+			self:AddEntry({
+				label = value.name:gsub("|n"," "),
+				checked = function()
+					if key=="minimap" then
+						return not ns.profile[modName][key].hide;
+					end
+					return ns.profile[modName][key];
+				end,
+				func = function()
+					local info = {modName,"",key};
+					if key=="minimap" then
+						ns.option(info,ns.profile[modName].minimap.hide);
+					else
+						ns.option(info,not ns.profile[modName][key]);
+					end
+				end,
+				tooltip = tooltip,
+			},P);
+		elseif value.type=="select" then
+			local tooltip = {value.name, value.desc};
+			if type(tooltip[2])=="function" then
+				tooltip[2] = tooltip[2]();
+			end
+			local p = self:AddEntry({
+				label = value.name,
+				tooltip = tooltip,
+				arrow = true
+			},P);
+			local values = value.values;
+			if type(values)=="function" then
+				values = values({modName,"",key});
+			end
+			for valKey,valLabel in ns.pairsByKeys(values) do
+				self:AddEntry({
+					label = valLabel,
+					radio = valKey,
+					keepShown = false,
+					checked = function()
+						return (ns.profile[modName][key]==valKey);
+					end,
+					func = function(self)
+						ns.option({modName,"",key},valKey);
+						self:GetParent():Hide();
+					end
+				},p);
+			end
+		elseif value.type=="group" then
+			ns.debugPrint("EasyMenu",modName,value.name);
+			local tooltip = {value.name, value.desc};
+			if type(tooltip[2])=="function" then
+				tooltip[2] = tooltip[2]();
+			end
+			local p = self:AddEntry({
+				label = value.name,
+				tooltip = tooltip,
+				arrow = true,
+			},P);
+			for _key, _value in pairsByAceOptions(value.args) do
+				self:AddConfigEntry(modName,_key,_value,p);
+			end
+		elseif value.type=="range" then
+			-- coming soon
+		end
+	end
+
 	function ns.EasyMenu:AddConfig(modName,noTitle)
 		local noFirstSep,options,separator = true,ns.getModOptionTable(modName);
 		if noTitle==nil then
@@ -1760,68 +1839,7 @@ do
 						end
 
 						if not hide then
-							if value.type=="separator" then
-								self:AddEntry({ separator=true });
-							elseif value.type=="header" then
-								self:AddEntry({ separator=true });
-								self:AddEntry({ label=value.name, title=true });
-							elseif value.type=="toggle" then
-								local tooltip = nil;
-								if value.desc then
-									tooltip = {value.name, value.desc};
-									if type(tooltip[2])=="function" then
-										tooltip[2] = tooltip[2]();
-									end
-								end
-								self:AddEntry({
-									label = value.name:gsub("|n"," "),
-									checked = function()
-										if key=="minimap" then
-											return not ns.profile[modName][key].hide;
-										end
-										return ns.profile[modName][key];
-									end,
-									func = function()
-										local info = {modName,"",key};
-										if key=="minimap" then
-											ns.option(info,ns.profile[modName].minimap.hide);
-										else
-											ns.option(info,not ns.profile[modName][key]);
-										end
-									end,
-									tooltip = tooltip,
-								});
-							elseif value.type=="select" then
-								local tooltip = {value.name, value.desc};
-								if type(tooltip[2])=="function" then
-									tooltip[2] = tooltip[2]();
-								end
-								local p = self:AddEntry({
-									label = value.name,
-									tooltip = tooltip,
-									arrow = true
-								});
-								local values = value.values;
-								if type(values)=="function" then
-									values = values({modName,"",key});
-								end
-								for valKey,valLabel in ns.pairsByKeys(values) do
-									self:AddEntry({
-										label = valLabel,
-										radio = valKey,
-										keepShown = false,
-										checked = function()
-											return (ns.profile[modName][key]==valKey);
-										end,
-										func = function(self)
-											ns.option({modName,"",key},valKey);
-											self:GetParent():Hide();
-										end
-									},p);
-								end
-							elseif value.type=="range" then
-								-- coming soon
-							end
+							self:AddConfigEntry(modName,key,value);
 						end
 					end
 
