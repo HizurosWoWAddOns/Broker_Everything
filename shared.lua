@@ -1673,7 +1673,9 @@ do
 
 			if (D.tooltip) and (type(D.tooltip)=="table") then
 				entry.tooltipTitle = ns.LC.color("dkyellow",D.tooltip[1]);
-				entry.tooltipText = ns.LC.color("white",D.tooltip[2]);
+				if type(D.tooltip[2])=="string" and D.tooltip[2]~="" then
+					entry.tooltipText = ns.LC.color("white",D.tooltip[2]);
+				end
 				entry.tooltipOnButton=1;
 			end
 
