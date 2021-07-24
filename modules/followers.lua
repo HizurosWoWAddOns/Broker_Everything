@@ -8,13 +8,9 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local nameF,nameS = "Followers","Ships"; -- GARRISON_FOLLOWERS, GARRISON_SHIPYARD_FOLLOWERS L["ModDesc-Followers"] L["ModDesc-Ships"]
+local nameC,nameF,nameS = "FollowersCore","Followers","Ships"; -- GARRISON_FOLLOWERS, GARRISON_SHIPYARD_FOLLOWERS L["ModDesc-Followers"] L["ModDesc-Ships"]
 local ttNameF, ttColumnsF, ttF, moduleF = nameF.."TT", 7;
 local ttNameS, ttColumnsS, ttS, moduleS = nameS.."TT" ,7;
-local followers,ships,champions,troops = {num=0},{num=0},{num=0},{num=0};
-local updateinterval, garrLevel, ohLevel, syLevel = 30,0,0,0;
-local delayF,delayS,ticker=true,true;
-local updateGarrLevelsLock,garrLevels = false,{};
 local clickOptionsRename = {
 	["1_open_garrison_report"] = "garrreport",
 	["2_open_menu"] = "OptionMenu"
@@ -27,7 +23,93 @@ local clickOptionsDefaults = {
 	garrreport = "__NONE",
 	menu = "_RIGHT"
 };
+local FOLLOWERS,SHIPS = GARRISON_FOLLOWERS,GARRISON_SHIPYARD_FOLLOWERS;
+local CHAMPIONS,TROOPS = FOLLOWERLIST_LABEL_CHAMPIONS,FOLLOWERLIST_LABEL_TROOPS;
+local COMPANIONS = COVENANT_MISSIONS_FOLLOWERS;
+local ttInset1,ttInset2,ttHasStatusHeader,ttHasExpansionHeader = "  ","    ",false,false;
 
+local typeListF = {
+	{type="Type_9_0",exp=8,label=COMPANIONS,hasCombatSpells=true},
+	{type="Type_8_0",exp=7,label=CHAMPIONS,labelTroops=TROOPS},
+	{type="Type_7_0",exp=6,label=CHAMPIONS,labelTroops=TROOPS},
+	{type="Type_6_0",exp=5,label=FOLLOWERS},
+};
+
+local typeListS = {
+	{type="Type_6_2",exp=5,label=SHIPS},
+};
+
+local status2index = {
+	-- 1 = available
+	[GARRISON_FOLLOWER_ON_MISSION] = 2, -- onmission
+	[GARRISON_FOLLOWER_EXHAUSTED] = 3, -- exhausted
+	[GARRISON_FOLLOWER_WORKING] = 4, -- working
+	[GARRISON_FOLLOWER_INACTIVE] = 5, -- inactive
+};
+
+-- tooltipStatusColors by statusIndex
+local tooltipStatusColors = {"green","yellow","ltblue","orange","red"};
+local qualityColors = {"white","ff1eaa00","ff0070dd","ffa335ee","ffff8000","ffB3965D"};
+
+local tooltipStatusLabel = {
+	C("green",AVAILABLE),
+	C("yellow",GARRISON_FOLLOWER_ON_MISSION),
+	C("orange",GARRISON_FOLLOWER_WORKING),
+	C("ltblue",CHALLENGE_MODE_KEYSTONE_DEPLETED),--GARRISON_FOLLOWER_EXHAUSTED
+	C("red",ADDON_DISABLED),
+};
+
+-- available, onmission, working, exhausted, disabled, aftermission
+
+local traitIconStringPattern = {"Trade_","INV_Misc_Gem_01","Ability_HanzandFranz_ChestBump","INV_Misc_Pelt_Wolf_01","INV_Inscription_Tradeskill01"};
+
+local traitIconFildIDs = {
+	[136240] = true, -- Trade_Alchemy
+	[136241] = true, -- Trade_BlackSmithing
+	[136242] = true, -- Trade_BrewPoison
+	[136243] = true, -- Trade_Engineering
+	[136244] = true, -- Trade_Engraving
+	[136245] = true, -- Trade_Fishing
+	[136246] = true, -- Trade_Herbalism
+	[136247] = true, -- Trade_LeatherWorking
+	[136248] = true, -- Trade_Mining
+	[136249] = true, -- Trade_Tailoring
+	[134071] = true, -- INV_Misc_Gem_01
+	[1037260] = true, -- Ability_HanzandFranz_ChestBump
+	[134366] = true, -- INV_Misc_Pelt_Wolf_01
+	[237171] = true, -- INV_Inscription_Tradeskill01
+};
+
+local config_defaults = {
+	enabled = false,
+
+	-- broker options
+	--[[ -- filled by function
+	showBroker_<Type_%d_%d> = true,
+	]]
+
+	-- tooltip options
+	--[[ -- filled by function
+	showTooltip_<Type_%d_%d> = false,
+	showTooltip_<Type_%d_%d>t = false, -- troops
+	showSummary_<Type_%d_%d> = false,
+	--]]
+
+	-- tooltip status tables
+	showStatus1 = true, -- available
+	showStatus2 = true, -- on mission
+	showStatus3 = true, -- exhausted
+	showStatus4 = false, -- working
+	showStatus5 = false, -- inactive
+	bgColoredStatus = false,
+
+	-- tooltip alt/twink options
+	showChars = true,
+	showAllFactions = true,
+	showRealmNames=true,
+	showCharsFrom="2",
+	showHeaderInfo = true,
+};
 
 -- register icon names and default files --
 -------------------------------------------
@@ -37,202 +119,268 @@ I[nameS]  = {iconfile="Interface\\Icons\\Achievement_GarrisonFolLower_Rare", coo
 
 -- some local functions --
 --------------------------
-local function updateGarrLevels()
-	if updateGarrLevelsLock then return end;
-	updateGarrLevelsLock = true;
-	garrLevels = {}
-	for GarrTypeKey, GarrType in pairs(Enum.GarrisonType)do
-		garrLevels[GarrTypeKey] = C_Garrison.GetGarrisonInfo(GarrType) or 0;
+local sortKey;
+do -- creates a string with big number for sorting
+	local sortKeyFormat = "%02d%02d%03d%04d%04d";
+	function sortKey(count,level,xp,quality,iLevel)
+		return sortKeyFormat:format(100-level,10 --[[-quality]],100-ceil(xp),9999-iLevel,count);
 	end
-	if garrLevels.Type_6_0 > 0 then
-		local lvl = C_Garrison.GetOwnedBuildingInfoAbbrev(98);
-		if lvl then
-			garrLevels.Type_6_2=lvl-204; -- ship yard
-		end
-	end
-	C_Timer.After(0.1, function()
-		updateGarrLevelsLock = false;
-	end);
 end
 
-local function getFollowers(tableName)
-	local _ = function(count,level,xp,quality,ilevel)
-		local num = ("%04d"):format(count);
-		num = ("%03d"):format(700-ilevel)    .. num;
-		num = ("%03d"):format(100-ceil(xp))  .. num;
-		num = ("%02d"):format(10-quality)    .. num;
-		num = ("%02d"):format(100-level)     .. num;
-		return num
-	end
-	local xp = function(v) return (v.levelXP>0) and (v.xp/v.levelXP*100) or 100; end;
-
-	local name,isTroop,Table,garrType,followerType = nameF;
-	if tableName=="followers" then
-		followers = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table,garrType,followerType = followers,Enum.GarrisonType.Type_6_0,LE_FOLLOWER_TYPE_GARRISON_6_0;
-	elseif tableName=="ships" then
-		ships = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table,garrType,followerType,name = ships,Enum.GarrisonType.Type_6_0,LE_FOLLOWER_TYPE_SHIPYARD_6_2,nameS;
-	elseif tableName=="champions" then
-		champions = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table,garrType,followerType,isTroop = champions,Enum.GarrisonType.Type_7_0,LE_FOLLOWER_TYPE_GARRISON_7_0,false;
-	elseif tableName=="troops" then
-		troops = {allinone={},available={},available_num=0,onmission={},onwork_num=0,onwork={},onmission_num=0,onresting={},onresting_num=0,disabled={},disabled_num=0,num=0};
-		Table,garrType,followerType,isTroop = troops, Enum.GarrisonType.Type_7_0,LE_FOLLOWER_TYPE_GARRISON_7_0,true;
-	end
-
-	ns.toon[tableName]={}; -- wipe
-	local cache=ns.toon[tableName];
-
-	local tmp = C_Garrison.GetFollowers(followerType) or {};
-	for i,v in ipairs(tmp)do
-		if v.isCollected==true and (isTroop==nil or v.isTroop==isTroop) then
-			v.follower_Type = followerType; -- ?
-			v.AbilitiesAndTraits = C_Garrison.GetFollowerAbilities(v.followerID);
-			local s,m=0,0;
-			if (v.status==nil) then
-				v.status2="available";
-				Table.available_num = Table.available_num + 1
-				Table.available[_(Table.available_num,v.level,xp(v),v.quality,v.iLevel)] = v
-			elseif (v.status==GARRISON_FOLLOWER_ON_MISSION) then
-				v.status2="onmission";
-				Table.onmission_num = Table.onmission_num + 1
-				Table.onmission[_(Table.onmission_num,v.level,xp(v),v.quality,v.iLevel)] = v
-				m=time()+C_Garrison.GetFollowerMissionTimeLeftSeconds(v.followerID);
-			elseif (v.status==GARRISON_FOLLOWER_EXHAUSTED) then
-				v.status2="onresting";
-				Table.onresting_num = Table.onresting_num + 1
-				Table.onresting[_(Table.onresting_num,v.level,xp(v),v.quality,v.iLevel)] = v
-				s=1;
-			elseif (v.status==GARRISON_FOLLOWER_WORKING) then
-				v.status2="onwork";
-				Table.onwork_num = Table.onwork_num + 1
-				Table.onwork[_(Table.onwork_num,v.level,xp(v),v.quality,v.iLevel)] = v
-				s=2;
-			elseif (v.status==GARRISON_FOLLOWER_INACTIVE) then
-				v.status2="disabled";
-				Table.disabled_num = Table.disabled_num + 1
-				Table.disabled[_(Table.disabled_num,v.level,xp(v),v.quality,v.iLevel)] = v
-				s=3;
+local function isTrait(icon)
+	if traitIconFildIDs[icon] then
+		return true;
+	elseif type(icon)=="string" then
+		-- fallback for old icon path strings
+		ns.debug("follow.lua:isTrait","icon is a string");
+		for i=1, #traitIconStringPattern do
+			if icon:find(traitIconStringPattern) then
+				return true;
 			end
-			if (ns.profile[name].bgColoredStatus) then
-				if (v.status==nil) then v.status="available"; end
-				Table.allinone[_(Table.num,v.level,xp(v),v.quality,v.iLevel)] = v
-			end
-			local _,class = strsplit("-",v.classAtlas);
-			tinsert(cache,{
-				id=tonumber(v.garrFollowerID or v.followerID) or 0, -- id
-				level=v.level, -- level
-				name=v.name, -- name
-				quality=v.quality, -- quality
-				class=class, -- class
-				durability=v.durability,
-				maxDurability=v.maxDurability,
-				status=s, -- status (reduced)
-				missionEnd=m -- missionEndTime
-			});
-			Table.num = Table.num + 1;
 		end
 	end
-	Table.allinone_num=Table.num;
+	return false;
+end
+
+-- for broker only
+local function updateFollowers(name,Table,forTooltip)
+	-- get garrison/shipyard level
+	local garrLevel,name = false,nameF;
+	if Table.type=="Type_6_2" then
+		Table.garrLevel = (C_Garrison.GetOwnedBuildingInfoAbbrev(98) or 0) - 204;
+		name = nameS;
+	else
+		Table.garrLevel = C_Garrison.GetGarrisonInfo(Enum.GarrisonType[Table.type]) or 0;
+	end
+	if Table.garrLevel<1 then
+		-- garrison / shipyard not enabled
+		return false;
+	end
+	-- reset / prepare some entries
+	Table.follower_num = 0;
+	if Table.labelTroops then
+		Table.troop_num = 0;
+	end
+	for i=1, 5 do
+		Table["status"..i] = {};
+		Table["status"..i.."_num"] = 0;
+	end
+
+	local follower,troop,data,entryInfo,_ = {},{},C_Garrison.GetFollowers(Enum.GarrisonFollowerType["Follower"..Table.type]) or {};
+
+	for i=1, #data do
+		entryInfo = data[i];
+		if entryInfo.isCollected then
+			entryInfo.statusIndex = status2index[entryInfo.status] or 1; -- available
+			if entryInfo.statusIndex==2 then -- onmission
+				entryInfo.missionEnd = time()+C_Garrison.GetFollowerMissionTimeLeftSeconds(entryInfo.followerID);
+			end
+			if forTooltip then
+				entryInfo.classColor = "red";
+				if type(entryInfo.classAtlas)=="string" then -- has classAtlas
+					_,entryInfo.classColor = strsplit("-",entryInfo.classAtlas);
+				end
+				if strlen(entryInfo.name)==0 then
+					entryInfo.name = "["..UNKNOWN.."]";
+				end
+				entryInfo.xpPercent = 100;
+				if entryInfo.levelXP>0 then
+					entryInfo.xpPercent = entryInfo.xp/entryInfo.levelXP*100;
+					entryInfo.xpPercentStr = ("%1.1f"):format(entryInfo.xpPercent).."%";
+				end
+				if entryInfo.isTroop then
+					entryInfo.durabilityIconStr = "";
+					local t = {};
+					for i=1, entryInfo.maxDurability do
+						if i<=entryInfo.durability then
+							tinsert(t,"|T1384099:11:12:0:0:256:256:1:16:1:14|t"); --"GarrisonTroops-Health"
+						else
+							tinsert(t,"|T1384099:11:12:0:0:256:256:18:33:1:14|t"); --"GarrisonTroops-Health-Consume"
+						end
+					end
+					entryInfo.durabilityIconStr = table.concat(t," ");
+				end
+			end
+			if entryInfo.isTroop and Table.labelTroops then
+				-- for broker button
+				Table.troop_num = Table.troop_num + 1;
+
+				-- sortable entries for tooltip
+				if forTooltip then
+					troop[ sortKey(Table.troop_num, entryInfo.level, entryInfo.xpPercent, entryInfo.quality, entryInfo.iLevel) ] = entryInfo;
+				end
+			elseif not entryInfo.isTroop then
+				-- for broker button
+				Table["status"..entryInfo.statusIndex.."_num"] = Table["status"..entryInfo.statusIndex.."_num"] + 1;
+				Table.follower_num = Table.follower_num + 1;
+
+				-- sortable entries for tooltip
+				if forTooltip then
+					follower[ sortKey(Table.follower_num, entryInfo.level, entryInfo.xpPercent, entryInfo.quality, entryInfo.iLevel) ] = entryInfo;
+				end
+
+				-- for alts/twink display in tooltip
+				ns.toon[name][Table.type][entryInfo.garrFollowerID or entryInfo.followerID] = entryInfo.missionEnd or entryInfo.statusIndex; -- n < 10 == statusIndex; n > 10 == mission ending time
+			end
+		end
+	end
+
+	if forTooltip then
+		return follower,troop;
+	end
 end
 
 local function updateBroker(name)
-	if name==nameF then
-		local aio = {0,0,0,0,0};
-		local single = {};
-		if ns.profile[name].showFollowersOnBroker and garrLevels.Type_6_0>0 then
-			getFollowers("followers");
-			aio[1]=aio[1]+(followers.onresting_num or 0);
-			aio[2]=aio[2]+(followers.onmission_num or 0);
-			aio[3]=aio[3]+(followers.onwork_num or 0);
-			aio[4]=aio[4]+(followers.available_num or 0);
-			aio[5]=aio[5]+(followers.num or 0);
-			tinsert(single, ("%s/%s/%s/%s"):format(C("ltblue",followers.onresting_num),C("yellow",followers.onmission_num+followers.onwork_num),C("green",followers.available_num),followers.num));
-		end
-		if ns.profile[name].showChampionsOnBroker and LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0 and garrLevels.Type_7_0>0 then
-			getFollowers("champions");
-			aio[1]=aio[1]+(champions.onresting_num or 0);
-			aio[2]=aio[2]+(champions.onmission_num or 0);
-			aio[3]=aio[3]+(champions.onwork_num or 0);
-			aio[4]=aio[4]+(champions.available_num or 0);
-			aio[5]=aio[5]+(champions.num or 0);
-			tinsert(single, ("%s/%s/%s/%s"):format(C("ltblue",champions.onresting_num),C("yellow",champions.onmission_num+champions.onwork_num),C("green",champions.available_num),champions.num));
-		end
-		if ns.profile[name].showTroopsOnBroker and LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0 and garrLevels.Type_7_0>0 then
-			getFollowers("troops");
-			aio[1]=aio[1]+(troops.onresting_num or 0);
-			aio[2]=aio[2]+(troops.onmission_num or 0);
-			aio[3]=aio[3]+(troops.onwork_num or 0);
-			aio[4]=aio[4]+(troops.available_num or 0);
-			aio[5]=aio[5]+(troops.num or 0);
-			tinsert(single, ("%s/%s/%s/%s"):format(C("ltblue",troops.onresting_num),C("yellow",troops.onmission_num+troops.onwork_num),C("green",troops.available_num),troops.num));
-		end
-		local obj = ns.LDB:GetDataObjectByName(moduleF.ldbName);
-		if ns.profile[name].showAllInOne then
-			obj.text = ("%s/%s/%s/%s"):format(C("ltblue",aio[1]),C("yellow",aio[2]+aio[3]),C("green",aio[4]),aio[5]);
-		else
-			obj.text = #single>0 and table.concat(single,", ") or L[nameF];
-		end
-	elseif name==nameS then
-		local obj = ns.LDB:GetDataObjectByName(moduleS.ldbName);
-		if LE_FOLLOWER_TYPE_SHIPYARD_6_2 and garrLevels.Type_6_0>0 and garrLevels.Type_6_2>0 then
-			getFollowers("ships");
-			obj.text = ("%s/%s/%s/%s"):format(C("ltblue",ships.onresting_num),C("yellow",ships.onmission_num+ships.onwork_num),C("green",ships.available_num),ships.num);
-		else
-			obj.text = GARRISON_SHIPYARD_FOLLOWERS;
-		end
-	end
-end
+	local text,Table = {},name==nameF and typeListF or typeListS;
 
-local function charSummary(lst,c,v,t,a)
-	local cMissions,cWorking,cCollected = {},{},{};
-	local collected = {
-		followers = v.followers~=nil and #v.followers or 0,
-		ships     = v.ships~=nil     and #v.ships or 0,
-		champions = v.champions~=nil and #v.champions or 0,
-		troops    = v.troops~=nil    and #v.troops or 0
-	};
-	local n,a = 0,0;
-	for _,x in ipairs(lst)do
-		local l,label = unpack(x);
-		if type(v[l])=="table" then
-			for _,data in ipairs(v[l])do
-				if type(data)=="table" then
-					if data.id then -- new table
-						if data.status == 1 then
-							c[l].chilling=c[l].chilling+1;
-						elseif data.status == 2 then
-							c[l].working=c[l].working+1;
-						elseif data.status == 3 then
-							c[l].disabled=c[l].disabled+1;
-						elseif data.missionEnd>t then
-							c[l].onmission=c[l].onmission+1;
-						elseif data.missionEnd>0 then
-							c[l].aftermission=c[l].aftermission+1;
-						else
-							c[l].chilling=c[l].chilling+1;
-						end
-						if data.missionEnd>t and ((n==0) or (n~=0 and data.missionEnd<n)) then n=data.missionEnd; end
-						if data.missionEnd>a then a=data.missionEnd; end
-					end
+	local status = {};
+	for _, entry in ipairs(Table) do
+		if ns.profile[name]["showBroker_"..entry.type] then
+			if ns.profile[name].showAllInOne then
+				for i=1, 4 do
+					status[i] = (status[i] or 0)+(entry["status"..i.."_num"] or 0);
 				end
+				status[0] = (status[0] or 0)+(entry.follower_num or 0);
+			else
+				tinsert(text, ("%s/%s/%s/%s"):format(
+					C("ltblue",(entry.status4_num or 0)),
+					C("yellow",(entry.status2_num or 0)+(entry.status3_num or 0)),
+					C("green",(entry.status1_num or 0)),
+					(entry.follower_num or 0)
+				));
 			end
 		end
-		tinsert(cMissions, (c[l].aftermission==0 and "−" or C("green",c[l].aftermission)) .."/".. (c[l].onmission==0 and "−" or C("yellow",c[l].onmission)));
-		tinsert(cWorking,  (c[l].chilling==0 and "−" or C("green",c[l].chilling)) .."/".. (c[l].working==0 and "−" or C("yellow",c[l].working)));
-		tinsert(cCollected,C("cyan",collected[l]) .. "/" .. C("green",collected[l]-c[l].disabled) .. "/" .. C("yellow",c[l].disabled));
 	end
-	return cMissions, cWorking, cCollected,n,a;
+
+	if ns.profile[name].showAllInOne then
+		tinsert(text, ("%s/%s/%s/%s"):format(
+			C("ltblue",(status[4] or 0)),
+			C("yellow",(status[2] or 0)+(status[3] or 0)),
+			C("green",(status[1] or 0)),
+			(status[0] or 0)
+		));
+	end
+
+	-- fallback
+	if #text==0 then
+		if name==nameS then
+			tinsert(text,GARRISON_SHIPYARD_FOLLOWERS);
+		else
+			tinsert(text,GARRISON_FOLLOWERS);
+		end
+	end
+
+	(ns.LDB:GetDataObjectByName(ns.modules[name].ldbName) or {}).text = table.concat(text,", ");
 end
 
-local function createTooltip(tt, name)
+local function addEntries(tt,name,entriesList,statusIndex,statusLabel,Table)
+	for _,entryInfo in ns.pairsByKeys(entriesList) do
+		if entryInfo.statusIndex==statusIndex then
+			-- add status header
+			if not ttHasStatusHeader then
+				local entries = {statusLabel,C("ltblue",TYPE),C("ltblue",XP),C("ltblue",ABILITIES)};
+				if name==nameF then
+					tinsert(entries,4,C("ltblue",L["iLevel"]));
+				end
+				tt:AddSeparator(4,0,0,0,0);
+				tt:AddLine(unpack(entries));
+				tt:AddSeparator();
+				ttHasStatusHeader = true;
+			end
+
+			-- add expansion header
+			if not ttHasExpansionHeader then
+				tt:AddLine(ttInset1..C("gray",_G["EXPANSION_NAME"..Table.exp]));
+				tt:AddSeparator(1.1, 1,1,1, .4);
+				ttHasExpansionHeader = true;
+			end
+
+			-- followerID string
+			local id = "";
+			--if ns.profile[name].showFollowerID then
+			if true then
+				local fID = tonumber(entryInfo.garrFollowerID or entryInfo.followerID);
+				if fID then
+					id = " "..C("ltgray","(".. fID ..")");
+				end
+			end
+
+			-- abilities / combatSpells
+			local abilities,abilityIcons,traitIcons,combatSpellIcons = {},{},{},{};
+			for _,at in ipairs((C_Garrison.GetFollowerAbilities(entryInfo.followerID))) do
+				if at.icon then
+					tinsert(isTrait(at.icon) and traitIcons or abilityIcons,"|T"..at.icon..":14:14:0:0:64:64:4:56:4:56|t");
+				end
+			end
+			if #abilityIcons>0 then
+				tinsert(abilities,table.concat(abilityIcons," "));
+			end
+			if #traitIcons>0 then
+				tinsert(abilities,table.concat(traitIcons," "));
+			end
+			if Table.hasCombatSpells then
+				for _,cs in ipairs((C_Garrison.GetFollowerAutoCombatSpells(entryInfo.followerID,entryInfo.level)))do
+					if cs.icon then
+						tinsert(combatSpellIcons,"|T"..cs.icon..":14:14:0:0:64:64:4:56:4:56|t");
+					end
+				end
+				if #combatSpellIcons>0 then
+					tinsert(abilities,table.concat(combatSpellIcons," "));
+				end
+			end
+			abilities = table.concat(abilities," || ");
+
+			-- tooltip line
+			if name==nameF then
+				line = tt:AddLine(
+					ttInset2 .. C(entryInfo.classColor,entryInfo.name) .. id,
+					entryInfo.level.." ",
+					entryInfo.xpPercentStr or C("gray","100%"),
+					entryInfo.iLevel,
+					abilities
+				);
+			else
+				line = tt:AddLine(
+					ttInset2 .. C(entryInfo.classColor,entryInfo.name) .. id,
+					entryInfo.className.." ",
+					entryInfo.xpPercentStr or C("gray","100%"),
+					abilities,
+					entryInfo.durabilityIconStr
+				);
+			end
+
+			-- add color backdrop
+			if entryInfo.quality>1 then
+				local color = C(qualityColors[entryInfo.quality],"colortable");
+				tt.lines[line].cells[1]:SetBackdrop({bgFile=ns.media.."rowbg", tile=false, insets={ left=0, right=0, top=1, bottom=0 }})
+				tt.lines[line].cells[1]:SetBackdropColor(color[1],color[2],color[3],.5);
+			end
+			if ns.profile[name].bgColoredStatus then
+				local color = C(tooltipStatusColors[statusIndex] or "red","colortable");
+				tt.lines[line]:SetBackdrop({bgFile=ns.media.."rowbg", tile=false, insets={ left=0, right=0, top=1, bottom=0 }})
+				tt.lines[line]:SetBackdropColor(color[1],color[2],color[3],.21);
+			end
+		end
+	end
+end
+
+local clientShortcut
+do
+	local list = {"C","BC","WotLK","Cata","MoP","WoD","Legion","BfA","SL"};
+	function clientShortcut(Type)
+		local version = tonumber((Type:gsub("Type_(%d+)_%d+","%1")));
+		if version and list[version] then
+			return C("ltgray",list[version]);
+		end
+		return "";
+	end
+end
+
+local function createTooltip(tt,name,ttName)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
-	local colors,qualities,count = {"ltblue","yellow","yellow","green","red"},{"white","ff1eaa00","ff0070dd","ffa335ee","ffff8000","ffB3965D"},0
-	local statuscolors = {["onresting"]="ltblue",["onwork"]="orange",["onmission"]="yellow",["available"]="green",["disabled"]="red"};
-	local none=true;
 
 	if tt.lines~=nil then tt:Clear(); end
+
 	if name==nameS then
 		tt:AddHeader(C("dkyellow",GARRISON_SHIPYARD_FOLLOWERS));
 	elseif ns.client_version>7 then
@@ -241,267 +389,117 @@ local function createTooltip(tt, name)
 		tt:AddHeader(C("dkyellow",GARRISON_FOLLOWERS));
 	end
 
-	if (ns.profile[name].showChars) then
-		tt:AddSeparator(4,0,0,0,0)
+	if ns.profile[name].showChars then
+		tt:AddSeparator(4,0,0,0,0);
+
 		local l=tt:AddLine( C("ltblue",CHARACTER) ); -- 1
-		if(IsShiftKeyDown())then
-			tt:SetCell(l, 2, C("ltblue",L["Back from missions"]).."|n"..L["next"].." / "..SPELL_TARGET_TYPE12_DESC, nil, "RIGHT", 3);
+		local showHeaderInfo = ns.profile[name].showHeaderInfo;
+		if IsShiftKeyDown() then
+			tt:SetCell(l, 2, C("ltblue",L["Back from missions"])..(showHeaderInfo and "|n"..L["next"].." / "..SPELL_TARGET_TYPE12_DESC or ""), nil, "RIGHT", 3);
 		else
-			tt:SetCell(l, 2, C("ltblue",GARRISON_FOLLOWER_ON_MISSION) .."|n".. C("green",GOAL_COMPLETED) .." / ".. C("yellow",GARRISON_SHIPYARD_MSSION_INPROGRESS_TOOLTIP), nil, "RIGHT", 3);
+			tt:SetCell(l, 2, C("ltblue",GARRISON_FOLLOWER_ON_MISSION)..(showHeaderInfo and "|n".. C("green",GOAL_COMPLETED) .." / ".. C("yellow",GARRISON_SHIPYARD_MSSION_INPROGRESS_TOOLTIP) or ""), nil, "RIGHT", 3);
 		end
-		tt:SetCell(l, 5, C("ltblue",L["Without missions"])     .."|n".. C("green",L["Chilling"]) .." / ".. C("yellow",GARRISON_FOLLOWER_WORKING), nil, "RIGHT", 2);
-		tt:SetCell(l, 7, C("ltblue",GARRISON_FOLLOWERS) .. "|n" .. C("cyan",COLLECTED) .." / ".. C("green",CONTRIBUTION_ACTIVE) .." / ".. C("yellow",GARRISON_FOLLOWER_INACTIVE));
+		tt:SetCell(l, 5, C("ltblue",L["Without missions"])..(showHeaderInfo and "|n".. C("green",L["Chilling"]) .." / ".. C("yellow",GARRISON_FOLLOWER_WORKING) or ""), nil, "RIGHT", 2);
+		tt:SetCell(l, 7, C("ltblue",GARRISON_FOLLOWERS)..(showHeaderInfo and "|n" .. C("cyan",COLLECTED) .." / ".. C("green",CONTRIBUTION_ACTIVE) .." / ".. C("yellow",GARRISON_FOLLOWER_INACTIVE) or ""));
 
 		tt:AddSeparator();
-		local t=time();
-
-		for i=1, #Broker_Everything_CharacterDB.order do
-			local name_realm = Broker_Everything_CharacterDB.order[i];
-			local v = Broker_Everything_CharacterDB[name_realm];
-			local charName,realm=strsplit("-",name_realm,2);
-
-			local lst = {};
-			if name==nameF then
-				tinsert(lst,{"followers","FollowersAbbrev"});
-				if v.champions then
-					tinsert(lst,{"champions","ChampsAbbrev"});
+		local t = time();
+		for index, toonNameRealm, toonName, toonRealm, toonData, isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
+			-- available, onmission, working, exhausted, disabled, aftermission
+			local countStatus,collected,cMission,cWorking,cCollected,clients,show = {},{},{},{},{},{};
+			local nextMissionEnding,activeMission = 0,0;
+			for _,e in ipairs(name==nameF and typeListF or typeListS) do
+				local Type = e.type;
+				if ns.profile[name]["showSummary_"..Type] and toonData[name] and toonData[name][Type] then
+					local ExpansionFollowers = toonData[name][Type];
+					countStatus[Type],collected[Type] = {0,0,0,0,0,0},0;
+					for followerID, followerStatus in pairs(ExpansionFollowers)do
+						if followerStatus>10 then
+							if followerStatus>t and (nextMissionEnding==0 or followerStatus<nextMissionEnding) then
+								nextMissionEnding = followerStatus;
+							end
+							if followerStatus>activeMission then
+								activeMission = followerStatus;
+							end
+							followerStatus = followerStatus>t and 2 or 6;
+						end
+						countStatus[Type][followerStatus] = countStatus[Type][followerStatus] + 1;
+						collected[Type] = collected[Type] + 1;
+						show = true
+					end
+					tinsert(clients,    clientShortcut(Type));
+					tinsert(cMission,   (countStatus[Type][6]==0 and "−" or C("green",countStatus[Type][6])) .."/".. (countStatus[Type][2]==0 and "−" or C("yellow",countStatus[Type][2])) );
+					tinsert(cWorking,   (countStatus[Type][4]==0 and "−" or C("green",countStatus[Type][4])) .."/".. (countStatus[Type][3]==0 and "−" or C("yellow",countStatus[Type][3])) );
+					tinsert(cCollected, C("cyan",collected[Type]) .. "/" .. C("green",collected[Type]-countStatus[Type][5]) .. "/" .. C("yellow",countStatus[Type][5]) );
 				end
-			else
-				tinsert(lst,{"ships","ShipsAbbrev"});
 			end
+			if show then
+				local faction,str,l = toonData.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 
-			if (ns.player.name_realm~=name_realm) and ns.showThisChar(name,realm,v.faction) then
-				local faction = v.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..v.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-				local l=tt:AddLine(C(v.class,ns.scm(charName)) .. ns.showRealmName(name,realm) .. faction );
-
-				local n,a,cMissions,cWorking,cCollected = 0,0;
-				local c = {}
-				if name==nameF and (followers.num>0 or champions.num>0) then
-					c.followers={chilling=0,working=0,onmission=0,resting=0,disabled=0,aftermission=0};
-					c.ships={chilling=0,working=0,onmission=0,resting=0,disabled=0,aftermission=0};
-					c.champions={chilling=0,working=0,onmission=0,resting=0,disabled=0,aftermission=0};
-					c.troops={chilling=0,working=0,onmission=0,resting=0,disabled=0,aftermission=0};
-					cMissions, cWorking, cCollected,n,a = charSummary(lst,c,v,t);
-					if IsShiftKeyDown() then
-						tt:SetCell(l, 2, SecondsToTime(n-t) .. " / " .. SecondsToTime(a-t), nil, "RIGHT", 3);
-					else
-						tt:SetCell(l, 2, table.concat(cMissions, ", "), nil, "RIGHT", 3);
-					end
-					tt:SetCell(l, 5, table.concat(cWorking, ", "), nil, "RIGHT", 2);
-					tt:SetCell(l, 7, table.concat(cCollected, ", ") );
-
-				elseif name==nameS and ships.num>0 then
-					c.ships={chilling=0,working=0,onmission=0,resting=0,disabled=0,aftermission=0};
-					cMissions, cWorking, cCollected,n,a = charSummary(lst,c,v,t);
-					if IsShiftKeyDown() then
-						tt:SetCell(l, 2, SecondsToTime(n-t) .. " / " .. SecondsToTime(a-t), nil, "RIGHT", 3);
-					else
-						tt:SetCell(l, 2, table.concat(cMissions, ", "), nil, "RIGHT", 3);
-					end
-					tt:SetCell(l, 5, table.concat(cWorking, ", "), nil, "RIGHT", 2);
-					tt:SetCell(l, 7, table.concat(cCollected, ", ") );
+				if IsShiftKeyDown() then
+					str = SecondsToTime(nextMissionEnding-t) .. " / " .. SecondsToTime(activeMission-t);
+				else
+					str = table.concat(cMission,"|n");
 				end
 
-				if(name_realm==ns.player.name_realm)then
+				l = tt:AddLine(C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction );
+				tt:SetCell(l, 2, table.concat(clients,"|n"), nil, "CENTER");
+				tt:SetCell(l, 3, str, nil, "RIGHT", 2);
+				tt:SetCell(l, 5, table.concat(cWorking, "|n"), nil, "RIGHT", 2);
+				tt:SetCell(l, 7, table.concat(cCollected, "|n") );
+
+				if isCurrent then -- highlight current toon
 					tt:SetLineColor(l, 0.1, 0.3, 0.6);
 				end
 			end
 		end
 	end
 
-	local tableOrder={
-		"available",
-		"onmission",
-		"onwork",
-		"onresting",
-		"disabled",
-		"allinone"
-	};
-
-	local tableTitles = {
-		["onresting"] = C("ltblue",GARRISON_FOLLOWER_EXHAUSTED),
-		["onmission"] = C("yellow",GARRISON_FOLLOWER_ON_MISSION),
-		["onwork"]    = C("orange",GARRISON_FOLLOWER_WORKING),
-		["available"] = C("green",AVAILABLE),
-		["disabled"]  = C("red",ADDON_DISABLED),
-		["allinone"]  = false,
-	};
-
-	if name==nameF and ns.profile[name].hideWorking then
-		tableTitles["onwork"] = false;
-	end
-
-	if name==nameF and ns.profile[name].hideDisabled then
-		tableTitles["disabled"]=false;
-	end
-
-	if (ns.profile[name].bgColoredStatus) then
-		for i,v in pairs(tableTitles)do tableTitles[i]=false; end
-		tableTitles["allinone"]=C("ltblue",GARRISON_FOLLOWERS);
-	end
-
-	local title,subTitle,inset=true,true,"";
-	for _,n in ipairs(tableOrder) do
-		if (tableTitles[n]) then
-			local lst = {};
-			if name==nameF then
-				lst = {{"followers",GARRISON_FOLLOWERS}};
-				if garrLevels.Type_7_0>0 then
-					tinsert(lst,1,{"champions",FOLLOWERLIST_LABEL_CHAMPIONS});
-					tinsert(lst,2,{"troops",FOLLOWERLIST_LABEL_TROOPS});
-					inset="   ";
+	local followerList,troopList,tableList = {},{},{},{};
+	for i, Table in ipairs(name==nameF and typeListF or typeListS) do
+		if ns.profile[name]["showTooltip_"..Table.type] then
+			local follower,troop = updateFollowers(name,Table,true);
+			if follower then
+				tinsert(tableList,Table);
+				followerList[#tableList] = follower;
+				if troop and ns.profile[name]["showTooltip_"..Table.type.."t"] then
+					troopList[#tableList] = troop;
 				end
-			else
-				lst = {{"ships",GARRISON_SHIPYARD_FOLLOWERS}};
-			end
-			for _,x in ipairs(lst)do -- follower types
-				local Table;
-				if x[1]=="followers" and ns.profile[name].showFollowers then
-					Table = followers;
-				elseif x[1]=="champions" and ns.profile[name].showChampions then
-					Table = champions;
-				elseif x[1]=="troops" and ns.profile[name].showTroops then
-					Table = troops;
-				elseif x[1]=="ships" then
-					Table = ships;
-				end
-				if Table and (type(Table[n.."_num"])=="number") and (Table[n.."_num"]>0) then
-					none=false;
-					for i,v in ns.pairsByKeys(Table[n]) do
-						if	(v.status2=="disabled" and ns.profile[name].hideDisabled)
-							or
-							(v.status2=="onwork" and ns.profile[name].hideWorking) then
-							-- hide
-						else
-							if (title) then
-								tt:AddSeparator(4,0,0,0,0)
-								if name==nameF then
-									tt:AddLine(tableTitles[n],C("ltblue",LEVEL),C("ltblue",XP),C("ltblue",L["iLevel"]),C("ltblue",ABILITIES),C("ltblue",GARRISON_TRAITS));
-								else
-									tt:AddLine(tableTitles[n],C("ltblue",TYPE),C("ltblue",XP), --[[C("ltblue",L["iLevel"]),]] C("ltblue",ABILITIES));
-								end
-								tt:AddSeparator()
-								title=false;
-							end
-							if #lst>1 and subTitle then
-								tt:AddLine(C("ltgray",x[2]));
-								subTitle=false;
-							end
-							local class,_ = "red";
-							if (type(v["classAtlas"])=="string") then
-								_,class = strsplit("-",v["classAtlas"]);
-							end
-							if (strlen(v["name"])==0) then
-								v["name"] = "["..UNKNOWN.."]";
-							end
-							local a,t,l = "","";
-
-							if name==nameF then
-								if x[1]=="troops" then
-									for _,at in ipairs(v.AbilitiesAndTraits) do
-										if at~=nil then
-											a = a .. " |T"..at.icon..":14:14:0:0:64:64:4:56:4:56|t";
-										end
-									end
-									t={};
-									for i=1, v.maxDurability do
-										if i<=v.durability then
-											tinsert(t,"|T1384099:11:12:0:0:256:256:1:16:1:14|t"); --"GarrisonTroops-Health"
-										else
-											tinsert(t,"|T1384099:11:12:0:0:256:256:18:33:1:14|t"); --"GarrisonTroops-Health-Consume"
-										end
-									end
-									t = table.concat(t," ");
-								else
-									for _,at in ipairs(v.AbilitiesAndTraits) do
-										if at~=nil then
-											if type(at.icon)=="string" and (at.icon:find("Trade_") or at.icon:find("INV_Misc_Gem_01") or at.icon:find("Ability_HanzandFranz_ChestBump") or at.icon:find("INV_Misc_Pelt_Wolf_01") or at.icon:find("INV_Inscription_Tradeskill01")) then
-												-- wod version
-												t = t .. " |T"..at.icon..":14:14:0:0:64:64:4:56:4:56|t";
-											elseif at.icon==136240 -- Trade_Alchemy
-												or at.icon==136241 -- Trade_BlackSmithing
-												or at.icon==136242 -- Trade_BrewPoison
-												or at.icon==136243 -- Trade_Engineering
-												or at.icon==136244 -- Trade_Engraving
-												or at.icon==136245 -- Trade_Fishing
-												or at.icon==136246 -- Trade_Herbalism
-												or at.icon==136247 -- Trade_LeatherWorking
-												or at.icon==136248 -- Trade_Mining
-												or at.icon==136249 -- Trade_Tailoring
-												or at.icon==134071 -- INV_Misc_Gem_01
-												or at.icon==1037260 -- Ability_HanzandFranz_ChestBump
-												or at.icon==134366 -- INV_Misc_Pelt_Wolf_01
-												or at.icon==237171 then -- INV_Inscription_Tradeskill01
-												-- legion version
-												t = t .. " |T"..at.icon..":14:14:0:0:64:64:4:56:4:56|t";
-											else
-												a = a .. " |T"..(at.icon or ns.icon_fallback)..":14:14:0:0:64:64:4:56:4:56|t";
-											end
-										end
-									end
-								end
-								if v.levelXP~=0 then
-									l = tt:AddLine( inset..C(class,v.name), v.level.." ", ("%1.1f"):format(v.xp / v.levelXP * 100).."%", v.iLevel, a, t );
-								else
-									l = tt:AddLine( inset..C(class,v.name), v.level.." ", C("gray","100%"), v.iLevel, a, t );
-								end
-								if v.quality>1 then
-									local col = C(qualities[v.quality],"colortable");
-									tt.lines[l].cells[2]:SetBackdrop({bgFile="Interface\\AddOns\\"..addon.."\\media\\rowbg", tile=false, insets={ left=0, right=0, top=1, bottom=0 }})
-									tt.lines[l].cells[2]:SetBackdropColor(col[1],col[2],col[3],1);
-									if (ns.profile[name].bgColoredStatus) then
-										local col=C(statuscolors[v.status2] or "red","colortable");
-										tt.lines[l]:SetBackdrop({bgFile="Interface\\AddOns\\"..addon.."\\media\\rowbg", tile=false, insets={ left=0, right=0, top=1, bottom=0 }})
-										tt.lines[l]:SetBackdropColor(col[1],col[2],col[3],.37);
-									end
-								end
-							else
-								for _,at in ipairs(v.AbilitiesAndTraits) do
-									a = a .. " |T"..at.icon..":14:14:0:0:64:64:4:56:4:56|t";
-								end
-								if v.levelXP~=0 then
-									l = tt:AddLine( C(class,v.name), v.className.." ", ("%1.1f"):format(v.xp / v.levelXP * 100).."%", --[[v.iLevel,]] a );
-								else
-									l = tt:AddLine( C(class,v.name), v.className.." ", C("gray","100%"), --[[v.iLevel,]] a );
-								end
-								if v.quality>1 then
-									local col = C(qualities[v.quality],"colortable");
-									tt.lines[l].cells[1]:SetBackdrop({bgFile="Interface\\AddOns\\"..addon.."\\media\\rowbg", tile=false, insets={ left=0, right=0, top=1, bottom=0 }})
-									tt.lines[l].cells[1]:SetBackdropColor(col[1],col[2],col[3],1);
-									if (ns.profile[name].bgColoredStatus) then
-										local col=C(statuscolors[v.status2] or "red","colortable");
-										tt.lines[l]:SetBackdrop({bgFile="Interface\\AddOns\\"..addon.."\\media\\rowbg", tile=false, insets={ left=0, right=0, top=1, bottom=0 }})
-										tt.lines[l]:SetBackdropColor(col[1],col[2],col[3],.37);
-									end
-								end
-							end
-						end
-					end
-				end
-				subTitle=true;
 			end
 		end
-		title=true;
 	end
 
-	if none then
-		if name==nameF then
-			tt:AddLine(C("gray",L["No followers found..."]));
-		else
-			tt:AddLine(C("gray",L["No ships found..."]));
+	-- order: status, expansion, followers
+	ttInset,ttHasStatusHeader,ttHasExpansionHeader = "",false,false;
+	for _,statusIndex in ipairs({2,3,4,1,5})do
+		local statusLabel = tooltipStatusLabel[statusIndex];
+		if ns.profile[name]["showStatus"..statusIndex] then
+			ttHasStatusHeader = false;
+			for index,Table in ipairs(tableList) do -- loop tables (expansions)
+				ttHasExpansionHeader = false;
+				-- followers / ships
+				addEntries(tt,name,followerList[index],statusIndex,statusLabel,Table);
+				-- troops
+				if troopList[index] and ns.profile[name]["showTooltip_"..Table.type.."t"] then
+					addEntries(tt,name,troopList[index],statusIndex,statusLabel,Table);
+				end
+			end
 		end
 	end
 
-	if (ns.profile.GeneralOptions.showHints) then
+	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0);
+		tt:SetCell(tt:AddLine(),1,C("ltblue",L["MouseBtn"]).." || "..C("green",L["Activate specialization"]),nil,"LEFT",ttColumns);
 		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
 end
 
+
 -- module functions and variables --
 ------------------------------------
-moduleF = {
+moduleC = {
+	isHiddenModule = true,
 	events = {
 		"PLAYER_LOGIN",
 		"GARRISON_FOLLOWER_LIST_UPDATE",
@@ -510,142 +508,232 @@ moduleF = {
 		"GARRISON_FOLLOWER_REMOVED",
 	},
 	config_defaults = {
-		enabled = false,
-		showAllInOne = true,
-		showFollowersOnBroker = true,
-		showChampionsOnBroker = true,
-		showTroopsOnBroker = true,
-
-		bgColoredStatus = true,
-		hideDisabled=false,
-		hideWorking=false,
-		showChars = true,
-
-		showAllFactions=true,
-		showRealmNames=true,
-		showCharsFrom="2",
-
-		showFollowers = true,
-		showChampions = true,
-		showTroops = true
+		enabled = false, -- autoenabled by other modules
 	},
+	--clickOptionsRename = {},
+	--clickOptions = {}
+};
+
+moduleF = {
+	events = {"PLAYER_LOGIN"},
+	config_defaults = CopyTable(config_defaults),
 	clickOptionsRename = clickOptionsRename,
 	clickOptions = clickOptions
-}
+};
 
 moduleS = {
-	--icon_suffix = "",
-	events = {
-		"PLAYER_LOGIN",
-		"GARRISON_FOLLOWER_LIST_UPDATE",
-		"GARRISON_FOLLOWER_UPGRADED",
-		"GARRISON_FOLLOWER_XP_CHANGED",
-		"GARRISON_FOLLOWER_REMOVED",
-	},
-	config_defaults = {
-		enabled = false,
-		bgColoredStatus = true,
-		showChars = true,
-		showAllFactions = true
-	},
+	events = {"PLAYER_LOGIN"},
+	config_defaults = CopyTable(config_defaults),
 	clickOptionsRename = clickOptionsRename,
 	clickOptions = clickOptions
-}
+};
 
 ns.ClickOpts.addDefaults(moduleF,clickOptionsDefaults);
 ns.ClickOpts.addDefaults(moduleS,clickOptionsDefaults);
 
-function moduleF.options()
-	return {
-		broker = {
-			showAllInOne={ type="toggle", order=1, name=L["Show all in one"],       desc=L["Show all counts of followers, champions and troops as overall summary on broker button. You can disable single types with following toggles."]},
-			showFollowersOnBroker={ type="toggle", order=2, name=L["Show followers"],        desc=L["Show followers summary on broker button"]},
-			showChampionsOnBroker={ type="toggle", order=3, name=L["Show champions"],        desc=L["Show champions summary on broker button"]},
-			showTroopsOnBroker={ type="toggle", order=4, name=L["Show troops"],           desc=L["Show troops summary on broker button"]},
-		},
-		tooltip = {
-			bgColoredStatus={ type="toggle", order=1, name=L["Background colored row for status"], desc=L["Use background colored row for follower status instead to split in separate tables"] },
-			hideDisabled={ type="toggle", order=2, name=L["Hide disabled followers"],           desc=L["Hide disabled followers in tooltip"] },
-			hideWorking={ type="toggle", order=3, name=L["Hide working followers"],            desc=L["Hide working followers in tooltip"]},
-			showChars={ type="toggle", order=4, name=L["Show characters"],                   desc=L["Show a list of your characters with count of chilling, working and followers on missions in tooltip"] },
-			showAllFactions=5,
-			showRealmNames=6,
-			showCharsFrom=7,
-			showFollowers={ type="toggle", order=8, name=L["Show followers"],                    desc=L["Show followers in tooltip"]},
-			showChampions={ type="toggle", order=9, name=L["Show champions"],                    desc=L["Show champions in tooltip"]},
-			showTroops={ type="toggle", order=10, name=L["Show troops"],                       desc=L["Show troops in tooltip"]},
-		},
-		misc = nil,
-	},
-	{
-		bgColoredStatus=true,
-		hideDisabled=true,
-		hideWorking=true,
+local initOptions
+do
+	local optTooltip,optBroker = {},{};
+	local sharedOptTooltip = {
+		showChars={1,true},
+		showAllFactions=2,
+		showRealmNames=3,
+		showCharsFrom=4,
+		bgColoredStatus = { type="toggle", order=5, name=L["FollowersBgColorStatus"], desc=L["FollowersBgColorStatusDesc"] },
+		showHeaderInfo = { type="toggle", order=6, name=L["FollowersHeaderInfo"], desc=L["FollowersHeaderInfoDesc"]:format(C("cyan",COLLECTED) .." / ".. C("green",CONTRIBUTION_ACTIVE) .." / ".. C("yellow",GARRISON_FOLLOWER_INACTIVE)) },
+		statusHeader = { type="group", order=10, name=STATUS, args={} },
+		expansionHeader = { type="header", order = 20, name=EXPANSION_FILTER_TEXT },
 	}
-end
-
-function moduleS.options()
-	return {
-		broker = nil,
-		tooltip = {
-			bgColoredStatus={ type="toggle", order=1, name=L["Background colored row for status"], desc=L["Use background colored row for follower status instead to split in separate tables"] },
-			separator={ type="separator", order=2},
-			showChars={ type="toggle", order=3, name=L["Show characters"],          desc=L["Show a list of your characters with count of chilling, working and ships on missions in tooltip"] },
-			showAllFactions=4,
-			showRealmNames=5,
-			showCharsFrom=6
-
-		},
-		misc = nil,
-	},
-	{
-		bgColoredStatus=true
+	local sharedOptBroker = {
+		showAllInOne = { type="toggle", order=1, name=L["Show all in one"],       desc=L["FollowersAIODesc"]},
+		expansions = { type="header", order=20, name=EXPANSION_FILTER_TEXT },
 	}
-end
+	local hide = {
+		ShipsNew_broker_showAllInOne = true,
+		ShipsNew_broker_expansions = true
+	}
+	local replace = {
+		bgColoredStatus = {[nameF]=GARRISON_FOLLOWERS,[nameS]=GARRISON_SHIPYARD_FOLLOWERS}
+	}
 
--- function moduleF.init(self) end
--- function moduleS.init(self) end
+	local function CopyOptEntry(Entry)
+		if type(Entry)=="table" then
+			local entry = CopyTable(Entry);
+			if type(entry.name)=="string" and entry.name:match("%%s") then
+				entry.name = entry.name:format(L[modName])
+			end
+			if type(entry.desc)=="string" and entry.desc:match("%%s") then
+				entry.desc = entry.desc:format(L[modName])
+			end
+			return entry;
+		end
+		return Entry;
+	end
 
-function moduleF.onevent(self,event)
-	if (event=="BE_UPDATE_CFG") then
-		ns.ClickOpts.update(moduleF,ns.profile[nameF]);
-	elseif UnitLevel("player")>=GetMaxLevelForExpansionLevel(5) then
-		if (delayF==true) then
-			delayF = false;
-			C_Timer.After(4,moduleF.onevent);
-			return;
+	local function isSummaryEnabled(modName)
+		return not ns.profile[modName].showChars;
+	end
+
+	local function addTypeListOpt(modName,entry,c)
+		local expansionLabel = _G["EXPANSION_NAME"..entry.exp];
+		optTooltip[modName]["exp_"..entry.exp] = {
+			type = "group", order = c, inline = true, name = expansionLabel,
+			args = {
+				["showTooltip_"..entry.type]      = { type="toggle", order=1, name=entry.label, desc=L["Show %s in tooltip"]:format(entry.label)},
+				["showSummary_"..entry.type]      = { type="toggle", order=3, name=OVERVIEW,    desc=L["FollowersSummaryDesc"]:format(expansionLabel), width="double", disabled=function() return isSummaryEnabled(modName) end},
+			}
+		};
+		if entry.labelTroops then
+			optTooltip[modName]["exp_"..entry.exp].args["showTooltip_"..entry.type.."t"] = { type="toggle", order=2, name=TROOPS,      desc=L["Show troops in tooltip"], width="half"};
+		end
+		local bbLabel = string.format("%s (%s)",expansionLabel,entry.label);
+		optBroker[modName]["showBroker_"..entry.type] = { type="toggle", order=c, name=bbLabel, desc=L["Show %s in broker button"]:format(bbLabel) };
+	end
+
+	function initOptions()
+		for _, modName in ipairs({nameF,nameS})do
+			-- update config defaults
+			local m,t = moduleF,typeListF;
+			if modName==nameS then
+				m,t = moduleS,typeListS;
+			end
+			local cfgDef,state = m.config_defaults,true;
+			for _, e in ipairs(t)do -- typeListF / typeListS
+				cfgDef["showBroker_"..e.type] = state;
+				cfgDef["showTooltip_"..e.type] = state;
+				if e.labelTroops then
+					cfgDef["showTooltip_"..e.type.."t"] = state;
+				end
+				cfgDef["showSummary_"..e.type] = state;
+				-- only the first (current expansion) will be enabled by default
+				state = false;
+			end
+
+			-- copy shared options
+			optBroker[modName] = {};
+			for optKey,optEntry in pairs(sharedOptBroker)do
+				if not hide[modName.."_broker_"..optKey] then
+					optBroker[modName][optKey] = CopyOptEntry(optEntry);
+				end
+			end
+			optTooltip[modName] = {};
+			for optKey,optEntry in pairs(sharedOptTooltip)do
+				if not hide[modName.."_tooltip_"..optKey] then
+					optTooltip[modName][optKey] = CopyOptEntry(optEntry);
+					if replace[optKey] then
+						optTooltip[modName][optKey].desc = optTooltip[modName][optKey].desc:format(replace[optKey][modName]);
+					end
+				end
+			end
 		end
 
-		updateGarrLevels();
+		-- clean shared option tables
+		sharedOptBroker,sharedOptTooltip = nil,nil;
 
-		updateBroker(nameF);
+		-- add more options [status labels]
+		local c = 11;
+		for i,statusLabel in ipairs(tooltipStatusLabel)do
+			optTooltip[nameF].statusHeader.args["showStatus"..i] = { type="toggle", order=c, name=statusLabel, desc=L["FollowersStatusLabelDesc"]:format(statusLabel) };
+			optTooltip[nameS].statusHeader.args["showStatus"..i] = optTooltip[nameF].statusHeader.args["showStatus"..i];
+			c=c+1;
+		end
+
+		local c = 21;
+		for _,entry in ipairs(typeListF) do
+			addTypeListOpt(nameF,entry,c)
+			c=c+1;
+		end
+		c = 21;
+		for _,entry in ipairs(typeListS)do
+			addTypeListOpt(nameS,entry,c)
+			c=c+1;
+		end
+	end
+
+	function moduleF.options()
+		if initOptions then
+			initOptions();
+			initOptions=nil;
+		end
+		return {broker=optBroker[nameF],tooltip=optTooltip[nameF],misc=nil};
+	end
+
+	function moduleS.options()
+		if initOptions then
+			initOptions();
+			initOptions=nil;
+		end
+		return {broker=optBroker[nameS],tooltip=optTooltip[nameS],misc=nil};
 	end
 end
 
-function moduleS.onevent(self,event,arg1)
-	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
-		ns.ClickOpts.update(moduleS,ns.profile[nameS]);
-	elseif UnitLevel("player")>=GetMaxLevelForExpansionLevel(5) then
-		if (delayS==true) then
-			delayS = false;
-			C_Timer.After(4,moduleS.onevent);
+-- function module.init() end
+
+function moduleC.onevent(self,event,arg1,...)
+	if event=="BE_UPDATE_CFG" then
+		if arg1 and arg1:find("^ClickOpt") then
+			ns.ClickOpts.update(name);
 			return;
 		end
-
-		updateGarrLevels();
-
+	end
+	if moduleF.isEnabled then
+		if ns.toon[nameF]==nil then
+			ns.toon[nameF] = {};
+		end
+		for _,Table in pairs(typeListF)do
+			if ns.toon[nameF][Table.type]==nil then
+				ns.toon[nameF][Table.type] = {};
+			end
+			updateFollowers(nameF,Table);
+		end
+		updateBroker(nameF);
+	end
+	if moduleS.isEnabled then
+		if ns.toon[nameS]==nil then
+			ns.toon[nameS] = {};
+		end
+		for _,Table in pairs(typeListS)do
+			if ns.toon[nameS][Table.type]==nil then
+				ns.toon[nameS][Table.type] = {};
+			end
+			updateFollowers(nameS,Table);
+		end
 		updateBroker(nameS);
 	end
 end
 
--- function module.optionspanel(panel) end
+local function onevent(self,event,arg1,...)
+	if event=="BE_UPDATE_CFG" then
+		if arg1 and arg1:find("^ClickOpt") then
+			--ns.ClickOpts.update(name);
+			return
+		end
+		-- update broker on config changes
+		if self.eventframe==moduleF.eventframe then
+			if moduleF.isEnabled then
+				updateBroker(nameF);
+			end
+		else
+			if moduleS.isEnabled then
+				updateBroker(nameS);
+			end
+		end
+	elseif event=="PLAYER_LOGIN" and not moduleC.isEnabled then
+		ns.moduleInit(nameC,true);
+	end
+end
+
+moduleF.onevent = onevent;
+moduleS.onevent = onevent;
+
 -- function module.onmousewheel(self,direction) end
--- function module.ontooltip(self) end
+-- function module.optionspanel(panel) end
+-- function module.ontooltip(tt) end
 
 function moduleF.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	ttF = ns.acquireTooltip({ttNameF, ttColumnsF, "LEFT", "CENTER", "CENTER", "CENTER", "CENTER", "CENTER", "RIGHT"},{true},{self});
-	createTooltip(ttF, nameF)
+	createTooltip(ttF, nameF, ttNameF)
 end
 
 function moduleS.onenter(self)
@@ -654,13 +742,13 @@ function moduleS.onenter(self)
 	createTooltip(ttS, nameS)
 end
 
--- function moduleF.onleave(self) end
--- function moduleS.onleave(self) end
+-- function module.onleave(self) end
 -- function module.onclick(self,button) end
 -- function module.ondblclick(self,button) end
 
 
 -- final module registration --
 -------------------------------
+ns.modules[nameC] = moduleC;
 ns.modules[nameF] = moduleF;
 ns.modules[nameS] = moduleS;

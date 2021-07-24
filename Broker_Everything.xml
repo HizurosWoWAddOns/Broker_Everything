@@ -33,9 +33,7 @@
 	<Script file="modules/durability.lua"/>
 	<Script file="modules/emissaryquests.lua"/>
 	<Script file="modules/equipment.lua"/>
-	<!--
 	<Script file="modules/followers.lua"/>
-	-->
 	<Script file="modules/framenames.lua"/>
 	<Script file="modules/friends.lua"/>
 	<Script file="modules/gamemenu.lua"/>
