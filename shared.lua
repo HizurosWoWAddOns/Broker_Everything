@@ -1777,7 +1777,6 @@ do
 				},p);
 			end
 		elseif value.type=="group" then
-			ns.debugPrint("EasyMenu",modName,value.name);
 			local tooltip = {value.name, value.desc};
 			if type(tooltip[2])=="function" then
 				tooltip[2] = tooltip[2]();
