@@ -655,7 +655,9 @@ function ns.pairsToons(modName,opts)
 	for index, toonNameRealm in ipairs(Broker_Everything_CharacterDB.order) do
 		local name,realm = strsplit("-",toonNameRealm,2);
 		if ns.showThisChar(modName,realm,Broker_Everything_CharacterDB[toonNameRealm].faction) then
-			if opts.currentFirst==true and toonNameRealm==ns.player.name_realm then
+			if opts.currentHide==true and toonNameRealm==ns.player.name_realm then
+				-- ignore
+			elseif opts.currentFirst==true and toonNameRealm==ns.player.name_realm then
 				tinsert(t,1,index);
 			elseif not (opts.forceSameRealm==true and realm~=ns.realm) and not (opts.forceSameFaction==true and ns.faction~=Broker_Everything_CharacterDB[toonNameRealm].faction) then
 				tinsert(t,index);

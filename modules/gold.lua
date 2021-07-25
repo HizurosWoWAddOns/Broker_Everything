@@ -37,11 +37,13 @@ local function getProfit(Type,last)
 	local value = 0;
 	if Type and current_money then
 		ns.tablePath(ns.data,name,"Profit",Type,player);
-		local p,d=ns.data[name].Profit[Type][player],profit[Type] or {};
-		if not last then
-			value = current_money-p[d[1]];
-		elseif p[d[2]]~=false then
-			value = tonumber(p[d[2]]);
+		local p,d=ns.data[name].Profit[Type][player],profit[Type];
+		if d then
+			if not last then
+				value = current_money-p[d[1]];
+			elseif p[d[2]]~=false then
+				value = tonumber(p[d[2]]);
+			end
 		end
 	elseif login_money~=nil and current_money then -- session
 		value = current_money-login_money;
@@ -137,7 +139,7 @@ function createTooltip(tt,update)
 	tt:AddSeparator();
 
 	local lineCount=0;
-	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
+	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true,]] currentHide=true,forceSameRealm=true}) do
 		if toonData.gold then
 			local faction = toonData.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 			local line, column = tt:AddLine(
