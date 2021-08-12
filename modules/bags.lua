@@ -11,6 +11,7 @@ local name = "Bags" -- L["Bags"] L["ModDesc-Bags"]
 local ttName,ttColumns,tt,module,createTooltip = name.."TT",3;
 local IsMerchantOpen,G = false,{};
 local crap,bags,bagTypes,retry = {limit=3,sum=0,items={}},{sumFree=0,sumTotal=0,byTypeFree={},byTypeTotal={}},{};
+local LE_ITEM_CLASS_CONTAINER = LE_ITEM_CLASS_CONTAINER or Enum.ItemClass.Container;
 local qualityModeValues = {
 	["1"]=L["BagsQualityAll"],
 	["2"]=L["BagsQualityAll"].." + "..L["BagsQualityVendor"],
