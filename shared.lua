@@ -649,7 +649,7 @@ do
 end
 
 function ns.pairsToons(modName,opts)
-	-- opts = {currentFirst=<bool>,forceSameRealm=<bool>,forceSameFaction=<bool>}
+	-- opts = {currentFirst=<bool>,currentHide=<bool>,forceSameRealm=<bool>,forceSameFaction=<bool>}
 	-- TODO: add ns.profile options from modules here
 	local t = {};
 	for index, toonNameRealm in ipairs(Broker_Everything_CharacterDB.order) do

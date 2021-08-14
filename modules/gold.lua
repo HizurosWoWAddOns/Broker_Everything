@@ -139,7 +139,7 @@ function createTooltip(tt,update)
 	tt:AddSeparator();
 
 	local lineCount=0;
-	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true,]] currentHide=true,forceSameRealm=true}) do
+	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true,]] currentHide=true,--[[forceSameRealm=true]]}) do
 		if toonData.gold then
 			local faction = toonData.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 			local line, column = tt:AddLine(
