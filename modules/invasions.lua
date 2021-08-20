@@ -12,9 +12,11 @@ local name = "Invasions"; -- L["ModDesc-Invasions"]
 local ttName, ttColumns, tt, module = name.."TT", 3;
 local regionLabel,region,timeStamp = {L["North america / Brazil / Oceania"],L["Korea"],L["Europe / Russia"],L["Taiwan"],L["China"]};
 local events = {--- 1491375600000
-	--{ enabled=true, icon=nil, label=SPLASH_LEGION_PREPATCH_FEATURE1_TITLE.." ("..EXPANSION_NAME6..")", start1=1491337800, start3=1491375600, interval=66600, length=21600, achievement=11544, zoneOrder={641,634,630,650,634,650,641,630,634,641,650,630} },
-	{ enabled=true, icon=nil, label=SPLASH_LEGION_PREPATCH_FEATURE1_TITLE.." ("..EXPANSION_NAME6..")", start1=1491337800, start3=1491375600, interval=66600, length=21600, achievement=11544, zoneOrder=false },
-	{ enabled=true, icon=nil, label=SPLASH_BATTLEFORAZEROTH_8_1_FEATURE2_TITLE.." ("..EXPANSION_NAME7..")", start1=1544612400, start3=1544580000, interval=68400, length=25200, achievement=13283, zoneOrder={942,864,896,862,895,863} },
+	{ enabled=true, icon=nil, label=SPLASH_LEGION_PREPATCH_FEATURE1_TITLE.." ("..EXPANSION_NAME6..")", start1=1491337800, start3=1491375600, interval=66600, length=21600, achievement=11544, order=false },
+	{ enabled=true, icon=nil, label=SPLASH_BATTLEFORAZEROTH_8_1_FEATURE2_TITLE.." ("..EXPANSION_NAME7..")", start1=1544612400, start3=1544580000, interval=68400, length=25200, achievement=13283, order={942,864,896,862,895,863}, orderType="zone" },
+	--{ enabled=true, icon=nil, label=SPLASH_LEGION_PREPATCH_FEATURE1_TITLE.." ("..EXPANSION_NAME6..")", start1=1491337800, start3=1491375600, interval=66600, length=21600, achievement=11544, order={641,634,630,650,634,650,641,630,634,641,650,630}, orderType="zone" },
+	-- covenantID -- 1 kyrian, 2 venthyr, 3 nightfae, 4 necrolords
+	{ enabled=true, icon=nil, label=SPLASH_BATTLEFORAZEROTH_8_1_FEATURE2_TITLE.." ("..EXPANSION_NAME8..")", start1=1624863600, start3=1625036400, interval=302400, length=302400, achievement=15000, order={3,2,1,4,2,3,4,1}, orderType="covenant" },
 }
 
 do
@@ -26,6 +28,28 @@ do
 		region = GetCurrentRegion() or 1;
 	end
 end
+
+local zoneName = setmetatable({},{
+	__index = function(t,k)
+		local mapInfo = C_Map.GetMapInfo(k);
+		if mapInfo and mapInfo.name then
+			rawset(t,k,mapInfo.name);
+			return mapInfo.name;
+		end
+		return;
+	end
+});
+
+local covenantName = setmetatable({},{
+	__index = function(t,k)
+		local covData = C_Covenants.GetCovenantData(k);
+		if covData and covData.name then
+			rawset(t,k,covData.name);
+			return covData.name;
+		end
+		return;
+	end
+});
 
 
 -- register icon names and default files --
@@ -49,15 +73,8 @@ local function updateInvasionsList(noTimer)
 		ev.numStarts = floor( (currentTime-ev.start) / ev.interval );
 		ev.lastStart = ev.start + (ev.numStarts*ev.interval);
 		ev.lastStartEnds = ev.lastStart + ev.length;
-		if ev.zoneOrder and not ev.zoneNames then
-			ev.lastStartZone = (ev.numStarts % #ev.zoneOrder) + 1;
-			ev.zoneNames={};
-			for z=1, #ev.zoneOrder do
-				local mapInfo = C_Map.GetMapInfo(ev.zoneOrder[z]) or {};
-				if mapInfo and mapInfo.name then
-					ev.zoneNames[z] = mapInfo.name;
-				end
-			end
+		if ev.order and not ev.lastStartOrderIndex then
+			ev.lastStartOrderIndex = (ev.numStarts % #ev.order) + 1;
 		end
 		if ev.lastStartEnds >= currentTime then
 			nextUpdate = min(nextUpdate,ev.lastStartEnds-currentTime+1);
@@ -77,10 +94,14 @@ local function updateBroker()
 		if ns.profile[name]["event"..i.."bb"] then
 			if ev.lastStartEnds >= t then
 				seconds = ev.lastStartEnds-t;
-				if not ev.lastStartZone then
+				if not ev.lastStartOrderIndex then
 					tinsert(inv,C("green",MAP_UNDER_INVASION) .. " " .. SecondsToTime(seconds));
-				else
-					tinsert(inv,C("green",ev.zoneNames[ev.lastStartZone]) .. " " .. SecondsToTime(seconds));
+				elseif ev.orderType=="zone" then
+					local id = ev.order[ev.lastStartOrderIndex];
+					tinsert(inv,C("green",zoneName[id] or UNKNOWN) .. " " .. SecondsToTime(seconds));
+				elseif ev.orderType=="covenant" then
+					local id = ev.order[ev.lastStartOrderIndex];
+					tinsert(inv,C("green",covenantName[id] or UNKNOWN) .. " " .. SecondsToTime(seconds));
 				end
 			else
 				seconds = (ev.lastStart+ev.interval) - t;
@@ -100,7 +121,10 @@ end
 local function AddLine(tt,currentTime,timeStart,eventLength,zoneStr,timeStrType,timeColor,zoneColor)
 	local timeStr
 	if IsShiftKeyDown() or timeStrType==2 then
-		timeStr = date("%Y-%m-%d %H:%M",timeStart).." - "..date("%H:%M",timeStart+eventLength);
+		timeStr = date("%Y-%m-%d %H:%M",timeStart);
+		if eventLength then
+			timeStr = timeStr.." - "..date("%H:%M",timeStart+eventLength);
+		end
 	elseif timeStrType==1 then
 		timeStr = BRAWL_TOOLTIP_ENDS:format(SecondsToTime(timeStart+eventLength-currentTime));
 	else
@@ -116,36 +140,42 @@ local function createTooltip(tt)
 	local empty = true;
 
 	local currentTime,ev = time();
-	for i=1, #events do
+	for i=#events, 1, -1 do
 		ev = events[i];
 		if ns.profile[name]["event"..i.."tt"] then
-			local numNext,numZones,zoneIndex = ns.profile[name].numNext+1,ev.zoneNames and #ev.zoneNames or false;
+			local numNext,numOrder,orderIndex = ns.profile[name].numNext+1,ev.order and #ev.order or false;
 			tt:AddSeparator(4,0,0,0,0);
 			tt:SetCell(tt:AddLine(),1,C("ltblue",ev.label),nil,"LEFT",0);
 			tt:AddSeparator();
-			local nx,timeStart,timeColor,zoneColor,zoneStr,timeStrType = 2,ev.lastStart,"dkgreen","ltgreen",numZones and ev.zoneNames[ev.lastStartZone] or "",1;
+			local nameTable = (ev.orderType=="zone" and zoneName) or covenantName;
+			local nx,timeStart,timeColor,orderColor,orderStr,timeStrType = 2,ev.lastStart,"dkgreen","ltgreen",numOrder and nameTable[ev.order[ev.lastStartOrderIndex]] or "",1;
 			if ev.lastStartEnds < currentTime then
-				if numZones then
-					zoneIndex = (ev.lastStartZone+1) % numZones;
-					if zoneIndex==0 then
-						zoneIndex = numZones;
-					elseif zoneIndex>numZones then
-						zoneIndex = 1;
+				if numOrder then
+					orderIndex = (ev.lastStartOrderIndex+1) % numOrder;
+					if orderIndex==0 then
+						orderIndex = numOrder;
+					elseif orderIndex>numOrder then
+						orderIndex = 1;
 					end
 				end
-				nx,numNext,timeStart,timeColor,zoneColor,zoneStr,timeStrType = 3,numNext+1,timeStart+ev.interval,"dkyellow","ltyellow",numZones and ev.zoneNames[zoneIndex] or "",0;
+				nx,numNext,timeStart,timeColor,orderColor,orderStr,timeStrType = 3,numNext+1,timeStart+ev.interval,"dkyellow","ltyellow",numOrder and nameTable[ev.order[orderIndex]] or "",0;
 			end
-			AddLine(tt,currentTime,timeStart,ev.length,zoneStr,timeStrType,timeColor,zoneColor);
+			AddLine(tt,currentTime,timeStart,ev.length,orderStr,timeStrType,timeColor,orderColor);
 			for n=nx, numNext do
-				if numZones then
-					zoneIndex = (ev.numStarts+n) % numZones;
-					if zoneIndex==0 then
-						zoneIndex = numZones;
-					elseif zoneIndex>numZones then
-						zoneIndex = 1;
+				if numOrder then
+					orderIndex = (ev.numStarts+n) % numOrder;
+					if orderIndex==0 then
+						orderIndex = numOrder;
+					elseif orderIndex>numOrder then
+						orderIndex = 1;
 					end
 				end
-				AddLine(tt,currentTime,ev.lastStart + ((n-1)*ev.interval),ev.length,numZones and ev.zoneNames[zoneIndex] or "",2,"gray","ltgray");
+				local length = ev.length;
+				if ev.interval-ev.length<2 then
+					length=false;
+				end
+				ns.debugPrint(name,n,orderIndex);
+				AddLine(tt,currentTime,ev.lastStart + ((n-1)*ev.interval),length,numOrder and nameTable[ev.order[orderIndex]] or "",2,"gray","ltgray");
 			end
 			empty = false;
 		end
@@ -169,13 +199,13 @@ module = {
 	},
 	config_defaults = {
 		enabled = false,
-		event1bb = true, event1tt = true,
-		event2bb = true, event2tt = true,
+		-- event<index>bb = true, event<index>tt = true, -- filled by function
 		timerRegion = 0, -- 0 = automatically
 		numNext = 3,
 	},
 	clickOptionsRename = {},
 	clickOptions = {
+		["menu"] = "OptionMenu"
 	}
 };
 
@@ -200,9 +230,13 @@ function module.options()
 	for i=1, 5 do
 		tbl.misc.timerRegion.values[i] = L["RegionLabel"..i];
 	end
-	for i=1, #events do
-		tbl.broker["event"..i.."bb"] = { type="toggle", order=i, name=events[i].label, desc=L["InvasionsBBDesc"] };
-		tbl.tooltip["event"..i.."tt"] = { type="toggle", order=i, name=events[i].label, desc=L["InvasionsTTDesc"] };
+	local state = true;
+	for i=#events, 1, -1 do
+		tbl.broker["event"..i.."bb"] = { type="toggle", order=i, name=events[i].label, desc=L["InvasionsBBDesc"], width="double" };
+		tbl.tooltip["event"..i.."tt"] = { type="toggle", order=i, name=events[i].label, desc=L["InvasionsTTDesc"], width="double" };
+		module.config_defaults["event"..i.."bb"] = state;
+		module.config_defaults["event"..i.."tt"] = state;
+		state = false; -- only last expansion is enabled by default ;-)
 	end
 	return tbl;
 end
@@ -211,9 +245,10 @@ end
 
 function module.onevent(self,event,...)
 	if event=="BE_UPDATE_CFG" then
-		--if (...) and (...):find("^ClickOpt") then
-		--	ns.ClickOpts.update(name);
-		--end
+		if (...) and (...):find("^ClickOpt") then
+			ns.ClickOpts.update(name);
+			return;
+		end
 		if ns.eventPlayerEnteredWorld then
 			for i=1, #events do
 				events[i].start=nil;
@@ -222,15 +257,6 @@ function module.onevent(self,event,...)
 			updateBroker();
 		end
 	elseif event=="PLAYER_LOGIN" then
---@do-not-package@
-		ns.profileSilenceFIXME=true;
---@end-do-not-package@
-		if ns.profile[name].exp6tt then
-			for new,old in pairs({event1bb="exp6bb",event2bb="exp7bb",event1tt="exp6tt",event2tt="exp7tt"})do
-				ns.profile[name][new] = ns.profile[name][old];
-				ns.profile[name][old] = nil;
-			end
-		end
 		updateInvasionsList();
 		C_Timer.After(2,updateBroker);
 	end
