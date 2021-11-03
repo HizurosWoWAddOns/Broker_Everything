@@ -1113,15 +1113,6 @@ do
 		eventFrame:RegisterEvent("UPDATE_INVENTORY_DURABILITY");
 		eventFrame:RegisterEvent("GET_ITEM_INFO_RECEIVED");
 
-		if ns.client_version>2 then
-			eventFrame:RegisterEvent("ITEM_UPGRADE_MASTER_UPDATE");
-			if IsAddOnLoaded("Blizzard_ItemUpgradeUI") then
-				OnEvent(eventFrame,"ADDON_LOADED","Blizzard_ItemUpgradeUI");
-			else
-				eventFrame:RegisterEvent("ADDON_LOADED");
-			end
-		end
-
 		if ns.eventPlayerEnteredWorld then
 			-- module registered after PLAYER_ENTERING_WORLD
 			OnEvent(eventFrame,"PLAYER_EQUIPMENT_CHANGED");

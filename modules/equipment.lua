@@ -409,7 +409,7 @@ module = {
 
 if ns.client_version>=2 then
 	tinsert(module.events,"EQUIPMENT_SWAP_FINISHED");
-	tinsert(module.events,"ITEM_UPGRADE_MASTER_UPDATE");
+	--tinsert(module.events,"ITEM_UPGRADE_MASTER_UPDATE"); -- TODO: removed in 9.1.5
 	tinsert(module.events,"EQUIPMENT_SETS_CHANGED");
 end
 
