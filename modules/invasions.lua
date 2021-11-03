@@ -174,7 +174,6 @@ local function createTooltip(tt)
 				if ev.interval-ev.length<2 then
 					length=false;
 				end
-				ns.debugPrint(name,n,orderIndex);
 				AddLine(tt,currentTime,ev.lastStart + ((n-1)*ev.interval),length,numOrder and nameTable[ev.order[orderIndex]] or "",2,"gray","ltgray");
 			end
 			empty = false;
