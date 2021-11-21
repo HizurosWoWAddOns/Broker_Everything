@@ -844,12 +844,12 @@ do
 	ns.items = {byID=itemsByID,bySlot=itemsBySlot,bySpell=itemsBySpell,equip=equip,ammo=ammo};
 
 	local hasChanged,updateBags,IsEnabledBags,IsEnabledInv = {bags=false,inv=false,equip=false,ammo=false,items=false,spells=false,item={},itemNum=0},{};
-	local callbacks = {any={},inv={},bags={},item={},equip={},prepare={},toys={}};
+	local callbacks = {any={},inv={},bags={},item={},equip={},prepare={},toys={},ammo={}};
 	local eventFrame,inventoryDelayed = CreateFrame("Frame");
 
 	local function doCallbacks(...)
 		local tbl = ...;
-		if callbacks[tbl.."Num"]==0 then
+		if callbacks[tbl]==nil or callbacks[tbl.."Num"]==nil or callbacks[tbl.."Num"]==0 then
 			return; -- no callbacks registered
 		end
 		for modName,fnc in pairs(callbacks[tbl])do
