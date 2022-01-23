@@ -109,7 +109,7 @@ local function updateBroker()
 					end
 					str = CapColor(unpack(t));
 				end
-				tinsert(elems, str.."|T"..currencyInfo.iconFileID..":0|t");
+				tinsert(elems, str.."|T"..(currencyInfo.iconFileID or ns.icon_fallback)..":0|t");
 			end
 		end
 	end
@@ -405,7 +405,7 @@ function module.OptionMenu(parent)
 			if currencyInfo and currencyInfo.name then
 				pList = ns.EasyMenu:AddEntry({
 					arrow = true,
-					label = (C("dkyellow","%s %d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"],place,currencyInfo.iconFileID,C("ltblue",currencyInfo.name)),
+					label = (C("dkyellow","%s %d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"],place,(currencyInfo.iconFileID or ns.icon_fallback),C("ltblue",currencyInfo.name)),
 				});
 				ns.EasyMenu:AddEntry({ label = C("ltred",L["Remove the currency"]), func=function() setInTitle(place, false); end }, pList);
 				ns.EasyMenu:AddEntry({separator=true}, pList);
@@ -434,7 +434,7 @@ function module.OptionMenu(parent)
 					end
 					ns.EasyMenu:AddEntry({
 						label = nameStr,
-						icon = currencyInfo.iconFileID,
+						icon = currencyInfo.iconFileID or ns.icon_fallback,
 						disabled = disabled,
 						keepShown = false,
 						func = function() setInTitle(place,Currencies[i]); end
