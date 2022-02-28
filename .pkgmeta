@@ -19,7 +19,7 @@ externals:
 
     libs/LibQTip-1.0:
         url: https://repos.curseforge.com/wow/libqtip-1-0
-        #tag: latest
+        tag: latest
 
     libs/LibSharedMedia-3.0:
         url: https://repos.wowace.com/wow/libsharedmedia-3-0/trunk/LibSharedMedia-3.0
