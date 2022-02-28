@@ -59,7 +59,7 @@ function module.onupdate()
 		return
 	end
 
-	local F,O,P,A = nil,"?","","" -- Frame, Owner, Prepend, Append
+	local F,O,P,A,I,FD = nil,"?","","","","" -- Frame, Owner, Prepend, Append, ID, FrameDebugName
 	local ldbObject = ns.LDB:GetDataObjectByName(module.ldbName);
 	lastFrame,lastMod,lastCombatState=f,mod,combat;
 
@@ -80,6 +80,7 @@ function module.onupdate()
 			end
 
 			if F=="WorldFrame" then
+				-- Units
 				local guid,id,_ = UnitGUID("mouseover");
 				local uName = UnitName("mouseover");
 				if guid and uName then
@@ -89,6 +90,15 @@ function module.onupdate()
 					if ((ns.profile[name].unitid=="shift" and mod) or ns.profile[name].unitid=="always") and id~=nil then
 						P = P.. ", id:"..id;
 					end
+				end
+			end
+
+			if f.id then
+				I = "objectID: "+f.id;
+			elseif f.GetID then
+				local id = f:GetID();
+				if id and id~=0 then
+					I = "frameID: "+id;
 				end
 			end
 
@@ -125,6 +135,9 @@ function module.onupdate()
 
 		if O~=false and ((ns.profile[name].ownership=="shift" and mod) or ns.profile[name].ownership=="always") then
 			str = "["..O.."] "..str;
+			if I~="" then
+				str = str..", "..I;
+			end
 		end
 
 		ldbObject.text = str;
