@@ -13,6 +13,11 @@
 	<Script file="localizations/mx.lua" />
 	<Script file="localizations/ru.lua" />
 	<Script file="localizations/tw.lua" />
+	<!--@do-not-package@-->
+	<Script file="localizations/_en-workfile.lua"/>
+	<Script file="localizations/_en-imported.lua"/>
+	<Script file="localizations/_de-imported.lua"/>
+	<!--@end-do-not-package@-->
 	<!-- /localizations -->
 
 	<Script file="shared.lua" />
@@ -70,8 +75,30 @@
 	<Script file="modules/ammo_classic.lua"/>
 	<!-- /modules for classic -->
 
+	<!--@do-not-package@-->
+	<!--Script file="_modules/broker_everything.lua"/-->
+	<Script file="_modules/lookingfor.lua"/>
+	<Script file="_modules/battleforazeroth.lua"/>
+	<Script file="_modules/communities.lua"/>
+	<Script file="_modules/workorders.lua"/>
+	<Script file="_modules/pvp.lua"/>
+	<Script file="_modules/stats.lua"/>
+	<Script file="_modules/mythicplus.lua"/>
+	<Script file="_modules/shadowlands.lua"/>
+	<Script file="_modules/playedsound.lua"/>
+	<!--Script file="_modules/worldpvpareas.lua"/-->
+	<!--Script file="_modules/playerkills.lua"/-->
+	<!--Script file="_modules/quickjoin.lua"/-->
+	<Script file="_modules/talents_classic.lua"/>
+	<Script file="_modules/soulshards_classic.lua"/>
+	<!--@end-do-not-package@-->
+
 	<Script file="chatcommand.lua" />
 	<Script file="core.lua"/>
+
+	<!--@do-not-package@-->
+	<include file="infoframe.xml" />
+	<!--@enddo-not-package@-->
 
 	<Frame name="BE_SecureFrame" hidden="hidden" virtual="true">
 		<Layers>
