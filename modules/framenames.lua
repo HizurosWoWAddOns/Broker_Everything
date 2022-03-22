@@ -59,7 +59,7 @@ function module.onupdate()
 		return
 	end
 
-	local F,O,P,A,I,FD = nil,"?","","","","" -- Frame, Owner, Prepend, Append, ID, FrameDebugName
+	local F,O,P,A,I = nil,"?","","","" -- Frame, Owner, Prepend, Append, ID
 	local ldbObject = ns.LDB:GetDataObjectByName(module.ldbName);
 	lastFrame,lastMod,lastCombatState=f,mod,combat;
 
@@ -76,7 +76,7 @@ function module.onupdate()
 			F = f:GetName();
 
 			if F then
-				O = ownership(_G,F);
+				O = ownership(f:GetParent() or _G,F);
 			end
 
 			if F=="WorldFrame" then
@@ -94,11 +94,11 @@ function module.onupdate()
 			end
 
 			if f.id then
-				I = "objectID: "+f.id;
+				I = "objectID: "..f.id;
 			elseif f.GetID then
 				local id = f:GetID();
 				if id and id~=0 then
-					I = "frameID: "+id;
+					I = "frameID: "..id;
 				end
 			end
 
@@ -108,7 +108,8 @@ function module.onupdate()
 			end
 
 			if F == nil then
-				F = "<anonym>";
+				--F = "<anonym>";
+				F = f:GetDebugName();
 				local parent = f:GetParent();
 				if parent then
 					for i,v in pairs(parent)do
