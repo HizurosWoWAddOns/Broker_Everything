@@ -19,7 +19,9 @@ externals:
 
     libs/LibQTip-1.0:
         url: https://repos.curseforge.com/wow/libqtip-1-0
-        tag: latest
+        #tag: latest
+        ## current latest tag are too old.
+        commit: 4c6a3d882373fa0b52c6b71d09acc0b87ec1ae00
 
     libs/LibSharedMedia-3.0:
         url: https://repos.wowace.com/wow/libsharedmedia-3-0/trunk/LibSharedMedia-3.0
@@ -57,7 +59,8 @@ externals:
         url: https://repos.wowace.com/wow/ace3/trunk/AceDBOptions-3.0
         tag: latest
 
-enable-nolib-creation: yes
+enable-nolib-creation: no
+enable-toc-creation: yes
 
 ignore:
     - libs/LibStub/tests
