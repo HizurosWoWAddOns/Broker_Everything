@@ -94,7 +94,10 @@ local function updateBroker()
 end
 
 local function showQuest(self,questIndex)
-	securecall("QuestMapFrame_OpenToQuestDetails",select(8, C_QuestLog.GetTitleForLogIndex)(questIndex));
+	local questID = C_QuestLog.GetQuestIDForLogIndex(questIndex);
+	if questID then
+		securecall("QuestMapFrame_OpenToQuestDetails", questID);
+	end
 end
 
 local function showQuestURL(self,questId)
