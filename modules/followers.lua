@@ -556,7 +556,7 @@ do
 		bgColoredStatus = {[nameF]=GARRISON_FOLLOWERS,[nameS]=GARRISON_SHIPYARD_FOLLOWERS}
 	}
 
-	local function CopyOptEntry(Entry)
+	local function CopyOptEntry(modName,Entry)
 		if type(Entry)=="table" then
 			local entry = CopyTable(Entry);
 			if type(entry.name)=="string" and entry.name:match("%%s") then
@@ -613,13 +613,13 @@ do
 			optBroker[modName] = {};
 			for optKey,optEntry in pairs(sharedOptBroker)do
 				if not hide[modName.."_broker_"..optKey] then
-					optBroker[modName][optKey] = CopyOptEntry(optEntry);
+					optBroker[modName][optKey] = CopyOptEntry(modName,optEntry);
 				end
 			end
 			optTooltip[modName] = {};
 			for optKey,optEntry in pairs(sharedOptTooltip)do
 				if not hide[modName.."_tooltip_"..optKey] then
-					optTooltip[modName][optKey] = CopyOptEntry(optEntry);
+					optTooltip[modName][optKey] = CopyOptEntry(modName,optEntry);
 					if replace[optKey] then
 						optTooltip[modName][optKey].desc = optTooltip[modName][optKey].desc:format(replace[optKey][modName]);
 					end
