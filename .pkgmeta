@@ -65,4 +65,3 @@ enable-toc-creation: yes
 ignore:
     - libs/LibStub/tests
 
-license-output: LICENSE.txt
