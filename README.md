@@ -1,7 +1,7 @@
 # Description
 This addon is a collection of modules to display various informations ingame about the game, your character, friends, guild and many many more. :-)
 
-[![BE Screenshot1](./.github/media/br_00t.jpg)](./.github/media/br_00.jpg)  [![BE Screenshot2](./.github/media/br_01t.png)](./.github/media/br_01.png)  [![BE Screenshot3](./.github/media/br_02t.png)](./.github/media/br_02.png)
+[![BE Screenshot1](./.github/media/be_00t.jpg)](./.github/media/be_00.jpg)  [![BE Screenshot2](./.github/media/be_01t.png)](./.github/media/be_01.png)  [![BE Screenshot3](./.github/media/be_02t.png)](./.github/media/be_02.png)
 
 # Recommentation
 It is recommended to use this addon with a data broker display addon... A little list of possible addons:
