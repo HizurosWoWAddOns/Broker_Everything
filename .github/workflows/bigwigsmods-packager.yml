@@ -1,0 +1,21 @@
+name: WoW AddOn Packaging (by BigWigsMods/packager)
+on:
+  push:
+    tags:
+      - '**'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    env:
+      CF_API_KEY: ${{ secrets.CF_API_KEY }}
+      GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+      # setup under repo > settings > secrets
+
+    steps:
+      - name: Clone project
+        uses: actions/checkout@v2
+
+      - name: Package and release (retail)
+        uses: BigWigsMods/packager@v2
+

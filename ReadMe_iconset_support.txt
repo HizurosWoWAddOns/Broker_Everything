@@ -23,9 +23,3 @@ A little note about the icon files:
 greetings
 Hizuro
 
---------------------
-
-Info [2014-06-11]:
-	i've wrote a php script to collect the icon names from the modules.
-	i would try to run it any time i add new or remove icons.
-	the script creates the file example_iconset.lua.
