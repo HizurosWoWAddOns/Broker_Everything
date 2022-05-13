@@ -98,7 +98,7 @@
 
 	<!--@do-not-package@-->
 	<include file="infoframe.xml" />
-	<!--@enddo-not-package@-->
+	<!--@end-do-not-package@-->
 
 	<Frame name="BE_SecureFrame" hidden="hidden" virtual="true">
 		<Layers>
