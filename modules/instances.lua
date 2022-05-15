@@ -303,7 +303,9 @@ module2 = {
 	config_defaults = {
 		enabled = false,
 		invertExpansionOrder = true,
-		showID = false
+		showID = false,
+		showCharsFrom = true,
+		showAllFactions = true,
 	}
 }
 
@@ -311,7 +313,10 @@ function module1.options()
 	return {
 		broker = nil,
 		tooltip = {
-			invertExpansionOrder={ type="toggle", name=L["Invert expansion order"], desc=L["Invert order by exspansion in tooltip"] }
+			invertExpansionOrder={ type="toggle", order=1, width="double", name=L["Invert expansion order"], desc=L["Invert order by exspansion in tooltip"] },
+			tooltip2header = { type="header", order=2, name=L["Tooltip2"]},
+			showCharsFrom = 2,
+			showAllFactions = 3,
 		},
 		misc = nil,
 	}
@@ -321,7 +326,10 @@ function module2.options()
 	return {
 		broker = nil,
 		tooltip = {
-			invertExpansionOrder={ type="toggle", name=L["Invert expansion order"], desc=L["Invert order by exspansion in tooltip"] }
+			invertExpansionOrder={ type="toggle", order=1, width="double", name=L["Invert expansion order"], desc=L["Invert order by exspansion in tooltip"] },
+			tooltip2header = { type="header", order=2, name=L["Tooltip2"]},
+			showCharsFrom = 2,
+			showAllFactions = 3,
 		},
 		misc = nil,
 	}
