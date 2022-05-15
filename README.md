@@ -1,7 +1,14 @@
+![Build](https://github.com/hizuro/Broker_Everything/actions/workflows/bigwigsmods-packager.yml/badge.svg)
+![Tag](https://img.shields.io/github/v/tag/hizuro/Broker_Everything?style=flat-square)
+![Downloads](https://img.shields.io/github/downloads/hizuro/Broker_Everything/total?style=flat-square)
+![Downloads](https://img.shields.io/github/downloads/hizuro/Broker_Everything/latest/total?style=flat-square)
+&nbsp; &nbsp; &nbsp; &nbsp;
+[![Patreon](https://img.shields.io/badge/&zwj;-Patreon-gray?logo=patreon&color=red&style=flat-square)](https://www.patreon.com/bePatron?u=12558524)
+[![Paypal](https://img.shields.io/badge/&zwj;-Paypal-gray?logo=paypal&color=blue&style=flat-square)](https://paypal.me/hizuro)
+![Sponsors](https://img.shields.io/github/sponsors/hizuro?logo=github&style=flat-square)
+
 # Description
 This addon is a collection of modules to display various informations ingame about the game, your character, friends, guild and many many more. :-)
-
-[![BE Screenshot1](./.github/media/be_00t.jpg)](./.github/media/be_00.jpg)  [![BE Screenshot2](./.github/media/be_01t.png)](./.github/media/be_01.png)  [![BE Screenshot3](./.github/media/be_02t.png)](./.github/media/be_02.png)
 
 # Recommentation
 It is recommended to use this addon with a data broker display addon... A little list of possible addons:
@@ -49,7 +56,4 @@ Thanks to Hungtar for the original Broker_Everything and Ekaterina for futher de
 # My other projects
 * [On Curseforge](https://www.curseforge.com/members/hizuro_de/projects)
 * [On Github](https://github.com/hizuro?tab=repositories)
-
-# Donation
-[![Patreon](https://img.shields.io/badge/Patreon-gray?logo=patreon&amp;style=for-the-badge)](https://www.patreon.com/bePatron?u=12558524) [![Paypal](https://img.shields.io/badge/Paypal-gray?logo=paypal&amp;style=for-the-badge)](https://www.paypal.com/cgi-bin/webscr?return=https://paypal.me/hizuro)
 

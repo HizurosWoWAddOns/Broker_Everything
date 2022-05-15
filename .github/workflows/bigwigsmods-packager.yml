@@ -1,4 +1,5 @@
-name: WoW AddOn Packaging (by BigWigsMods/packager)
+name: build
+
 on:
   push:
     tags:
