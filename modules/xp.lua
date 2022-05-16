@@ -191,7 +191,7 @@ function createTooltip(tt)
 				end
 
 				toonData.level = toonData.level or 1;
-				local needToLevelup, percentCurrentXP, percentExhaustion, percentCurrentXPStr, percentExhaustionStr = GetExperience(toonData.level,toonData.xp.cur or 0,toonData.xp.max or xp2levelup[v.level],toonData.xp.rest or 0);
+				local needToLevelup, percentCurrentXP, percentExhaustion, percentCurrentXPStr, percentExhaustionStr = GetExperience(toonData.level,toonData.xp.cur or 0,toonData.xp.max or xp2levelup[toonData.level],toonData.xp.rest or 0);
 
 				local restState = "";
 				if percentExhaustion>0 then
