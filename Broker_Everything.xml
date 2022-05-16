@@ -2,21 +2,11 @@
 ..\..\FrameXML\UI.xsd">
 
 	<!-- localizations -->
-	<Script file="localizations/en.lua" />
-	<Script file="localizations/br.lua" />
-	<Script file="localizations/cn.lua" />
-	<Script file="localizations/de.lua" />
-	<Script file="localizations/es.lua" />
-	<Script file="localizations/fr.lua" />
-	<Script file="localizations/it.lua" />
-	<Script file="localizations/kr.lua" />
-	<Script file="localizations/mx.lua" />
-	<Script file="localizations/ru.lua" />
-	<Script file="localizations/tw.lua" />
+	<Script file="localizations.lua" />
 	<!--@do-not-package@-->
-	<Script file="localizations/_en-workfile.lua"/>
-	<Script file="localizations/_en-imported.lua"/>
-	<Script file="localizations/_de-imported.lua"/>
+	<Script file="localizations.imported-en.lua"/>
+	<Script file="localizations.imported-de.lua"/>
+	<Script file="localizations.workfile.lua"/>
 	<!--@end-do-not-package@-->
 	<!-- /localizations -->
 

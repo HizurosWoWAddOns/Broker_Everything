@@ -1,29 +1,21 @@
 
-local addon, ns = ...
+local L, addon, ns = {}, ...;
+
 -- ----------------------------------------------------------------- --
 -- Localization metatable function                                   --
 -- Instructions for Non-Ace3 method taken from Phanx at WowInterface --
 -- http://www.wowinterface.com/portal.php?&id=224&pageid=250         --
 -- ----------------------------------------------------------------- --
 
-local L = {};
---[[
-ns.L = setmetatable(L,{
-	__index = function(t,k)
-		local k=tostring(k);
-		rawset(t,k,k);
-		return k;
-	end
-});
---]]
+-- Do you want to help localize this addon?
+-- https://www.curseforge.com/wow/addons/@cf-project-name@/localization
 
-local debugMode = "@project-version@"=="@".."project-version".."@";
-ns.L = setmetatable({}, {
+ns.L = setmetatable(L,{
 	__newindex = function(t,k,v)
 		L[tostring(k)]=tostring(v);
 	end,
-	__index = function(t, k)
-		local k=tostring(k);
+	__index=function(t,k)
+		local v = tostring(k);
 --@do-not-package@
 		if debugMode then
 			if k=="nil" then
@@ -32,10 +24,10 @@ ns.L = setmetatable({}, {
 			return L[k] or "<"..k..">";
 		end
 --@end-do-not-package@
-		return L[k] or k;
+		rawset(t,k,v);
+		return v;
 	end
 });
-
 
 -- localization by Blizzard - step 1
 L["Achievements"] = ACHIEVEMENTS
@@ -143,6 +135,28 @@ L["WoWToken"] = ({
 
 L[addon.."_Shortcut"] = "BE";
 
--- last step: localization filled by curse packager
+-- last step: localization filled by BigWigsMods packager (source curseforge; see above if you want to help localize this addon)
+
 --@localization(locale="enUS", format="lua_additive_table", handle-subnamespaces="none", handle-unlocalized="ignore")@
 
+if LOCALE_deDE then
+--@localization(locale="deDE", format="lua_additive_table", handle-subnamespaces="none", handle-unlocalized="ignore")@
+elseif LOCALE_esES then
+--@localization(locale="esES", format="lua_additive_table", handle-subnamespaces="none", handle-unlocalized="ignore")@
+elseif LOCALE_esMX then
+--@localization(locale="esMX", format="lua_additive_table", handle-subnamespaces="none", handle-unlocalized="ignore")@
+elseif LOCALE_frFR then
+--@localization(locale="frFR", format="lua_additive_table", handle-subnamespaces="none", handle-unlocalized="ignore")@
+elseif LOCALE_itIT then
+--@localization(locale="itIT", format="lua_additive_table", handle-subnamespaces="none", handle-unlocalized="ignore")@
+elseif LOCALE_koKR then
+--@localization(locale="koKR", format="lua_additive_table", handle-subnamespaces="none", handle-unlocalized="ignore")@
+elseif LOCALE_ptBR or LOCALE_ptPT then
+--@localization(locale="ptBR", format="lua_additive_table", handle-subnamespaces="none", handle-unlocalized="ignore")@
+elseif LOCALE_ruRU then
+--@localization(locale="ruRU", format="lua_additive_table", handle-subnamespaces="none", handle-unlocalized="ignore")@
+elseif LOCALE_zhCN then
+--@localization(locale="zhCN", format="lua_additive_table", handle-subnamespaces="none", handle-unlocalized="ignore")@
+elseif LOCALE_zhTW then
+--@localization(locale="zhTW", format="lua_additive_table", handle-subnamespaces="none", handle-unlocalized="ignore")@
+end
