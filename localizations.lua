@@ -11,9 +11,6 @@ local L, addon, ns = {}, ...;
 -- https://www.curseforge.com/wow/addons/@cf-project-name@/localization
 
 ns.L = setmetatable(L,{
-	__newindex = function(t,k,v)
-		L[tostring(k)]=tostring(v);
-	end,
 	__index=function(t,k)
 		local v = tostring(k);
 --@do-not-package@
