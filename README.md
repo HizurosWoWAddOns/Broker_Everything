@@ -14,17 +14,12 @@ This addon is a collection of modules to display various informations ingame abo
 
 # Recommentation
 It is recommended to use this addon with a data broker display addon... A little list of possible addons:
-* panel-addons:
-  * [Bazooka](https://www.curseforge.com/wow/addons/bazooka)
-  * [ChocolateBar](https://www.curseforge.com/wow/addons/chocolatebar)
-  * [DockingStation](https://www.wowinterface.com/downloads/info11831-DockingStationDisplay.html)
-  * [NinjaPanel](https://www.curseforge.com/wow/addons/ninjapanel)
-  * [TitanPanel](https://www.curseforge.com/wow/addons/titan-panel)
-  * ~~FuBar~~ *(was a good old partner in classic times)*
-* single-button-addons:
-  * [Candy](https://www.curseforge.com/wow/addons/candy)
-  * [StatBlockCore](https://www.curseforge.com/wow/addons/stat-block-core)
-  * ~~[Fortress](https://www.wowace.com/addons/fortress/)~~ *(outdated/abandoned)*
+* panel-addons:\
+  [Bazooka](https://www.curseforge.com/wow/addons/bazooka), [ChocolateBar](https://www.curseforge.com/wow/addons/chocolatebar), [DockingStation](https://www.wowinterface.com/downloads/info11831-DockingStationDisplay.html), [NinjaPanel](https://www.curseforge.com/wow/addons/ninjapanel), [TitanPanel](https://www.curseforge.com/wow/addons/titan-panel)\
+  ~~FuBar~~ *(was a good old partner in classic times, R.i.P.)*
+* single-button-addons:\
+  [Candy](https://www.curseforge.com/wow/addons/candy), [StatBlockCore](https://www.curseforge.com/wow/addons/stat-block-core)\
+  ~~[Fortress](https://www.wowace.com/addons/fortress/)~~ *(outdated/abandoned/owner is missing)*
 
 # Broker (Modules)
 See [List of Modules](https://www.curseforge.com/wow/addons/broker-everything/pages/modules)
