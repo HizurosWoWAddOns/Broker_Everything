@@ -8,9 +8,9 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Speed"; -- SPEED L["ModDesc-Speed"]
-local ttName, ttColumns, tt, module = name.."TT", 2
+local ttName, ttColumns, tt, module = name.."TT", 3
 local riding_skills,licenses,bonus_spells,replace_unknown,trainer_faction,deprecated_licenses = {},{},{},{},{},{};
-
+local updateToonSkillLocked
 
 -- register icon names and default files --
 -------------------------------------------
@@ -23,6 +23,23 @@ local function updateTrainerName(data)
 	if data.lines[1] then
 		trainer_faction[data.trainer_index][6] = data.lines[1];
 	end
+end
+
+local function updateToonSkill(...)
+	if ns.toon[name]==nil then
+		ns.toon[name] = {skill=0};
+	elseif ns.toon[name].skill==nil then
+		ns.toon[name].skill = 0;
+	end
+	for i=1, #riding_skills do
+		if IsSpellKnown(riding_skills[i][1]) then
+			if ns.toon[name].skill<riding_skills[i][1] then
+				ns.toon[name].skill = riding_skills[i][1];
+			end
+			break;
+		end
+	end
+	updateToonSkillLocked = nil;
 end
 
 local function updateBroker()
@@ -111,22 +128,36 @@ local function createTooltip(tt)
 		if(learned==nil and IsSpellKnown(v[1]))then
 			learned = true;
 		end
-		if (learned==nil) then
+		local cell1color,cell2;
+
+		if learned==nil then
 			if(lvl>=v[2])then
-				l=tt:AddLine(C("yellow",Name), C("ltgray",L["Learnable"]));
+				cell1color = "yellow";
+				cell2 = C("ltgray",L["Learnable"]);
 				ttExtend = true;
 			elseif v.race==false then
 				local factionName = GetFactionInfoByID(v.faction);
-				l=tt:AddLine(C("red",Name), C("ltgray", L["Need excalted reputation:"].." "..factionName));
+				cell1color = "red";
+				cell2 = C("ltgray", L["Need excalted reputation:"].." "..factionName);
 			else
-				l=tt:AddLine(C("red",Name), C("ltgray", L["Need level"].." "..v[2]));
+				cell1color = "red";
+				cell2 = C("ltgray", L["Need level"].." "..v[2]);
 			end
 		elseif(learned==true)then
-			l=tt:AddLine(C("green",Name), _(v[3]));
+			cell1color = "green";
+			cell2 = _(v[3]);
 			learned=false;
 		elseif(learned==false)then
-			l=tt:AddLine(C("dkgreen",Name), C("gray",_(v[3])) );
+			cell1color = "dkgreen";
+			cell2 = C("gray",_(v[3]));
 		end
+
+		if cell1color and cell2 then
+			l = tt:AddLine();
+			tt:SetCell(l,1,C(cell1color,Name),nil,nil,2);
+			tt:SetCell(l,3,cell2);
+		end
+
 		if l and Link then
 			tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {link=Link,extend=ttExtend and "trainerfaction" or nil});
 			tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
@@ -142,84 +173,87 @@ local function createTooltip(tt)
 		tt:SetCell(tt:AddLine(),1,C("orange","You must be reach level 20 to learn riding."),nil,nil,0);
 	end
 
-	tt:AddSeparator(4,0,0,0,0);
-	tt:SetCell(tt:AddLine(),1,C("ltblue",L["Speed bonus"]),nil,nil,0);
-	tt:AddSeparator();
-	local Id,ChkActive,Type,TypeValue,CustomText,Speed,Special,count=1,2,3,4,5,6,7,0;
-	for i,spell in ipairs(bonus_spells)do
-		local id = nil;
-		if(spell[Type]=="race")then
-			if(spell[TypeValue]==ns.player.race:upper())then
+	if ns.profile[name].showBonus then
+		tt:AddSeparator(4,0,0,0,0);
+		tt:SetCell(tt:AddLine(),1,C("ltblue",L["SpeedBonus"]),nil,nil,0);
+		tt:AddSeparator();
+		local Id,ChkActive,Type,TypeValue,CustomText,Speed,Special,count=1,2,3,4,5,6,7,0;
+		for i,spell in ipairs(bonus_spells)do
+			local id = nil;
+			if(spell[Type]=="race")then
+				if(spell[TypeValue]==ns.player.race:upper())then
+					id = spell[Id];
+				end
+			elseif(spell[Type]=="class")then
+				if(spell[TypeValue]==ns.player.classId)then
+					id = spell[Id];
+				end
+			else
 				id = spell[Id];
 			end
-		elseif(spell[Type]=="class")then
-			if(spell[TypeValue]==ns.player.classId)then
-				id = spell[Id];
-			end
-		else
-			id = spell[Id];
-		end
 
-		if(id and IsSpellKnown(id))then
-			local active=false;
-			local custom = "";
-			local Name, rank, icon, castTime, minRange, maxRange = GetSpellInfo(spell[Id]);
-			local Link = GetSpellLink(spell[Id]);
+			if(id and IsSpellKnown(id))then
+				local active=false;
+				local custom = "";
+				local Name, rank, icon, castTime, minRange, maxRange = GetSpellInfo(spell[Id]);
+				local Link = GetSpellLink(spell[Id]);
 
-			if spell[CustomText]==true and rank then
-				rank = {strsplit(" ",rank)}; -- TODO: missing rank in bfa?
-				spell[CustomText] = rank[2] or rank[1];
-			end
+				if spell[CustomText]==true and rank then
+					rank = {strsplit(" ",rank)}; -- TODO: missing rank in bfa?
+					spell[CustomText] = rank[2] or rank[1];
+				end
 
-			if type(spell[CustomText])=="string" then
-				custom = " "..C("ltgray","("..spell[CustomText]..")");
-			end
+				if type(spell[CustomText])=="string" then
+					custom = " "..C("ltgray","("..spell[CustomText]..")");
+				end
 
-			if(spell[ChkActive])then
-				local start, duration, enabled = GetSpellCooldown(spell[Id]);
-				if(spell[Special])then
-					if(spell[Special][1]=="SPELL")then
-						local n = GetSpellInfo(spell[Special][2]);
-						for i=1, 10 do
-							if UnitDebuff("player",i)==n then -- BfA -- changed arg2 to numeric index only
-								active=true;
-								break;
+				if(spell[ChkActive])then
+					local start, duration, enabled = GetSpellCooldown(spell[Id]);
+					if(spell[Special])then
+						if(spell[Special][1]=="SPELL")then
+							local n = GetSpellInfo(spell[Special][2]);
+							for i=1, 10 do
+								if UnitDebuff("player",i)==n then -- BfA -- changed arg2 to numeric index only
+									active=true;
+									break;
+								end
+							end
+						elseif(spell[Special][1]=="TIME")then
+							local h = GetGameTime();
+							for i,v in ipairs(spell[Special])do
+								if(type(v)=="table" and h>=v[1] and h<=v[2])then
+									active=true;
+								end
 							end
 						end
-					elseif(spell[Special][1]=="TIME")then
-						local h = GetGameTime();
-						for i,v in ipairs(spell[Special])do
-							if(type(v)=="table" and h>=v[1] and h<=v[2])then
-								active=true;
-							end
-						end
+					elseif(enabled)then
+						active=true;
 					end
-				elseif(enabled)then
+				elseif(spell[Special])then
+					--- ?
+				else
 					active=true;
 				end
-			elseif(spell[Special])then
-				--- ?
-			else
-				active=true;
-			end
 
-			if(active)then
-				local l=tt:AddLine(C("ltyellow",Name .. custom), _(spell[Speed]));
-				if Link then
-					tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {link=Link});
-					tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
+				if(active)then
+					local l=tt:AddLine();
+					tt:SetCell(l,1,C("ltyellow",Name .. custom));
+					tt:SetCell(l,3,_(spell[Speed]));
+					if Link then
+						tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {link=Link});
+						tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
+					end
+					count=count+1;
 				end
-				count=count+1;
 			end
 		end
-	end
-	--- inventory items and enchants?
-	if(count==0)then
-		tt:SetCell(tt:AddLine(),1,L["No speed bonus found..."],nil,nil,0);
+		--- inventory items and enchants?
+		if(count==0)then
+			tt:SetCell(tt:AddLine(),1,L["No speed bonus found..."],nil,nil,0);
+		end
 	end
 
-
-	if ns.client_version>=3 and lvl>=20 then
+	if ns.profile[name].showLicenses and ns.client_version>=3 and lvl>=20 then
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",L["Flight licenses"]));
 		tt:AddSeparator();
@@ -257,7 +291,7 @@ local function createTooltip(tt)
 					Name = replace_unknown["s"..v[1]];
 				end
 			end
-			if(Name)then
+			if Name then
 				-- learned
 				local color1, color2, info = "green", "ltgray", " ";
 				if deprecated_licenses[v[1]] then
@@ -275,14 +309,45 @@ local function createTooltip(tt)
 					-- obsolete, higher version active
 					color1 = "dkgreen";
 				end
-				l=tt:AddLine(C(color1,Name),info==" " and info or C(color2,info));
-				if type(v[4])=="table" or link then
-					tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {link=link, info=v[4]});
-					tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
+				if not (ns.profile[name].showLicensesDeprecated and deprecated_licenses[v[1]]) then
+					l = tt:AddLine();
+					tt:SetCell(l,1, C(color1,Name), nil,nil,2);
+					tt:SetCell(l,3, info==" " and info or C(color2,info));
+					if type(v[4])=="table" or link then
+						tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {link=link, info=v[4]});
+						tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
+					end
 				end
 			end
 		end
 	end
+
+	if ns.profile[name].showChars then
+		local hasHeader = false;
+		local skillColor = {
+			[90265] = "dkgreen",
+			[34090] = "green",
+		};
+		for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true,]] currentHide=true,forceSameRealm=true}) do
+			if toonData[name] and toonData[name].skill then
+				if not hasHeader then
+					tt:AddSeparator(4,0,0,0,0);
+					tt:SetCell(tt:AddLine(),1,C("ltblue",L["Your other chars"]),nil,nil,0);
+					tt:AddSeparator();
+					hasHeader = true;
+				end
+				local skillName,color = TRADE_SKILLS_UNLEARNED_TAB,"orange";
+				if toonData[name].skill>0 then
+					skillName = GetSpellInfo(toonData[name].skill);
+					color = skillColor[toonData[name].skill] or "yellow";
+				end
+				local faction = toonData.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+				local line, column = tt:AddLine(C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction);
+				tt:SetCell(line,2, C(color,skillName), nil,"RIGHT", 0);
+			end
+		end
+	end
+
 	ns.roundupTooltip(tt);
 end
 
@@ -290,17 +355,42 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	events = {"PLAYER_LOGIN"},
+	events = {
+		"PLAYER_LOGIN",
+		"SKILL_LINES_CHANGED",
+	},
 	config_defaults = {
 		enabled = false,
+
+		-- broker
 		precision = 0,
+
+		-- tooltip
+		showBonus = true,
+		showLicenses = true,
+		showLicensesDeprecated = true,
+
+		-- chars
+		showChars = true,
+		showAllFactions = true,
+		showRealmNames = true,
+		showCharsFrom = "2",
+
 	}
 }
 
 function module.options()
 	return {
-		broker = nil,
-		tooltip = { precision={ type="range", name=L["Precision"], desc=L["Adjust the count of numbers behind the dot."], min = 0, max = 3, step=1 } },
+		broker = { precision={ type="range", name=L["Precision"], desc=L["Adjust the count of numbers behind the dot."], min = 0, max = 3, step=1 } },
+		tooltip = {
+			showBonus = { type="toggle", order=1, name=L["SpeedBonus"], desc=L["SpeedBonusDesc"], hidden=(ns.client_version>=3) },
+			showLicenses = { type="toggle", order=2, name=L["SpeedLicenses"], name=L["SpeedLicensesDesc"], hidden=(ns.client_version>=3) },
+			showLicensesDeprecated  = { type="toggle", order=2, name=L["SpeedLicensesDeprec"], name=L["SpeedLicensesDeprecDesc"], hidden=(ns.client_version>=3) },
+			showChars = 3,
+			showAllFactions=4,
+			showRealmNames=5,
+			showCharsFrom=6,
+		},
 		misc = nil,
 	}
 end
@@ -406,7 +496,7 @@ function module.init()
 	-- replace_unknown = { };
 end
 
-function module.onevent(self,event,msg)
+function module.onevent(self,event,...)
 	if event=="PLAYER_LOGIN" then
 		for i=1, #trainer_faction do
 			ns.ScanTT.query({
@@ -417,7 +507,12 @@ function module.onevent(self,event,msg)
 				["callback"] = updateTrainerName
 			});
 		end
+		updateToonSkillLocked = true;
+		updateToonSkill();
 		C_Timer.NewTicker(0.2,updateBroker);
+	elseif not updateToonSkillLocked then
+		updateToonSkillLocked = true; -- event trigger twice
+		C_Timer.After(0.2, updateToonSkill);
 	end
 end
 
