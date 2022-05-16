@@ -11,6 +11,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local nameC,nameF,nameS = "FollowersCore","Followers","Ships"; -- GARRISON_FOLLOWERS, GARRISON_SHIPYARD_FOLLOWERS L["ModDesc-Followers"] L["ModDesc-Ships"]
 local ttNameF, ttColumnsF, ttF, moduleF = nameF.."TT", 7;
 local ttNameS, ttColumnsS, ttS, moduleS = nameS.."TT" ,7;
+local moduleC
 local clickOptionsRename = {
 	["1_open_garrison_report"] = "garrreport",
 	["2_open_menu"] = "OptionMenu"
@@ -332,6 +333,7 @@ local function addEntries(tt,name,entriesList,statusIndex,statusLabel,Table)
 			abilities = table.concat(abilities," || ");
 
 			-- tooltip line
+			local line
 			if name==nameF then
 				line = tt:AddLine(
 					ttInset2 .. C(entryInfo.classColor,entryInfo.name) .. id,
@@ -381,9 +383,10 @@ local function createTooltip(tt,name,ttName)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
 	if tt.lines~=nil then tt:Clear(); end
-
+	local ttColumns = ttColumnsF;
 	if name==nameS then
 		tt:AddHeader(C("dkyellow",GARRISON_SHIPYARD_FOLLOWERS));
+		ttColumns = ttColumnsS;
 	elseif ns.client_version>7 then
 		tt:AddHeader(C("dkyellow",("%s, %s, %s"):format(GARRISON_FOLLOWERS,FOLLOWERLIST_LABEL_CHAMPIONS,FOLLOWERLIST_LABEL_TROOPS)));
 	else
@@ -471,7 +474,7 @@ local function createTooltip(tt,name,ttName)
 	end
 
 	-- order: status, expansion, followers
-	ttInset,ttHasStatusHeader,ttHasExpansionHeader = "",false,false;
+	ttHasStatusHeader,ttHasExpansionHeader = false,false;
 	for _,statusIndex in ipairs({2,3,4,1,5})do
 		local statusLabel = tooltipStatusLabel[statusIndex];
 		if ns.profile[name]["showStatus"..statusIndex] then
@@ -673,7 +676,12 @@ end
 function moduleC.onevent(self,event,arg1,...)
 	if event=="BE_UPDATE_CFG" then
 		if arg1 and arg1:find("^ClickOpt") then
-			ns.ClickOpts.update(name);
+			if moduleF.isEnabled then
+				ns.ClickOpts.update(nameF);
+			end
+			if moduleS.isEnabled then
+				ns.ClickOpts.update(nameS);
+			end
 			return;
 		end
 	end
