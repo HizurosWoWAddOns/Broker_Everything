@@ -355,6 +355,7 @@ ns.sharedOptions = {
 
 local sharedDefaults = {
 	shortNumbers = true,
+	showChars = true,
 	showAllFactions = true,
 	showRealmNames = true,
 	showCharsFrom = "2",
