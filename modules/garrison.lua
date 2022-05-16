@@ -312,10 +312,6 @@ module = {
 		showCacheForcast = true,
 		showCacheForcastInBroker = true,
 		showRealms = true,
-		showChars = true,
-		showAllFactions=true,
-		showRealmNames=true,
-		showCharsFrom="2"
 	},
 	clickOptionsRename = {
 		["garrreport"] = "1_open_garrison_report",

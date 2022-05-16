@@ -370,12 +370,6 @@ module = {
 		showLicenses = true,
 		showLicensesDeprecated = true,
 
-		-- chars
-		showChars = true,
-		showAllFactions = true,
-		showRealmNames = true,
-		showCharsFrom = "2",
-
 	}
 }
 
@@ -386,7 +380,7 @@ function module.options()
 			showBonus = { type="toggle", order=1, name=L["SpeedBonus"], desc=L["SpeedBonusDesc"], hidden=(ns.client_version>=3) },
 			showLicenses = { type="toggle", order=2, name=L["SpeedLicenses"], name=L["SpeedLicensesDesc"], hidden=(ns.client_version>=3) },
 			showLicensesDeprecated  = { type="toggle", order=2, name=L["SpeedLicensesDeprec"], name=L["SpeedLicensesDeprecDesc"], hidden=(ns.client_version>=3) },
-			showChars = 3,
+			showChars = {3,true},
 			showAllFactions=4,
 			showRealmNames=5,
 			showCharsFrom=6,

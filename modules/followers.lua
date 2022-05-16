@@ -105,11 +105,7 @@ local config_defaults = {
 	bgColoredStatus = false,
 
 	-- tooltip alt/twink options
-	showChars = true,
-	showAllFactions = true,
 	showAllInOne = false,
-	showRealmNames=true,
-	showCharsFrom="2",
 	showHeaderInfo = true,
 };
 

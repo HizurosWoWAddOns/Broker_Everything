@@ -217,10 +217,6 @@ module = {
 		showActive = true,
 		showReady = true,
 
-		showChars = true,
-		showAllFactions=true,
-		showRealmNames=true,
-		showCharsFrom="2",
 
 		showMissionType = true,
 		showMissionLevel = true,

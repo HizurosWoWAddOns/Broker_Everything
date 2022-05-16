@@ -239,10 +239,6 @@ module = {
 	config_defaults = {
 		enabled = false,
 		showQuestIDs = false,
-		showChars = true,
-		showAllFactions=true,
-		showRealmNames=true,
-		showCharsFrom="2"
 	},
 	clickOptionsRename = {
 		["questlog"] = "1_open_questlog",
