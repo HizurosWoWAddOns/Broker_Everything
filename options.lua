@@ -385,9 +385,6 @@ end
 local function optionWalker(modName,group,lst)
 	for k, v in pairs(lst)do
 		local tV,customModDesc = type(v);
-		if k=="showChars" then
-			ns.debug("opts",modName,k,tV,v,tV=="table" and #v or "?");
-		end
 		if tV=="table" and #v>0 then
 			-- short table {<order[number|bool]>, <customModDesc>}
 			customModDesc,v,tV = v[2],v[1],type(v[1]);
@@ -403,7 +400,6 @@ local function optionWalker(modName,group,lst)
 					if customModDesc==true then
 						customModDesc = modName;
 					end
-					ns.debug("opt",modName,k,shared.customDescFormat,customModDesc);
 					if shared.customDescFormat then
 						LStr = L[shared.customDescFormat:format(customModDesc)];
 						shared.customDescFormat = nil;

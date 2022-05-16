@@ -238,10 +238,6 @@ function module.init()
 	if (not ns.coexist.IsNotAlone()) and ns.profile[name].hideMinimapCalendar then
 		ns.hideFrames("GameTimeFrame",true);
 	end
-	if type(ns.profile[name].showEvents)=="number" then
-		ns.profile[name].showHolidayEvents = ns.profile[name].showEvents>0;
-		ns.profile[name].showEvents = nil;
-	end
 end
 
 function module.onevent(self,event,...)
