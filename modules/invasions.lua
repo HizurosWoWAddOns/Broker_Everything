@@ -16,7 +16,8 @@ local events = {--- 1491375600000
 	{ enabled=true, icon=nil, label=SPLASH_BATTLEFORAZEROTH_8_1_FEATURE2_TITLE.." ("..EXPANSION_NAME7..")", start1=1544612400, start3=1544580000, interval=68400, length=25200, achievement=13283, order={942,864,896,862,895,863}, orderType="zone" },
 	--{ enabled=true, icon=nil, label=SPLASH_LEGION_PREPATCH_FEATURE1_TITLE.." ("..EXPANSION_NAME6..")", start1=1491337800, start3=1491375600, interval=66600, length=21600, achievement=11544, order={641,634,630,650,634,650,641,630,634,641,650,630}, orderType="zone" },
 	-- covenantID -- 1 kyrian, 2 venthyr, 3 nightfae, 4 necrolords
-	{ enabled=true, icon=nil, label=SPLASH_BATTLEFORAZEROTH_8_1_FEATURE2_TITLE.." ("..EXPANSION_NAME8..")", start1=1624863600, start3=1625036400, interval=302400, length=302400, achievement=15000, order={3,2,1,4,2,3,4,1}, orderType="covenant" },
+	--{ enabled=true, icon=nil, label=SPLASH_BATTLEFORAZEROTH_8_1_FEATURE2_TITLE.." ("..EXPANSION_NAME8..")", start1=1624863600, start3=1625036400, interval=302400, length=302400, achievement=15000, order={3,2,1,4,2,3,4,1}, orderType="covenant" },
+	{ enabled=true, icon=nil, label=SPLASH_BATTLEFORAZEROTH_8_1_FEATURE2_TITLE.." ("..EXPANSION_NAME8..")", start1=1651590000, start3=1651647600, interval=302400, length=302400, achievement=15000, order={3,2,1,4,2,3,4,1}, orderType="covenant" },
 }
 
 do
