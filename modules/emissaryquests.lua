@@ -158,40 +158,12 @@ local function ceilTime(_time)
 	return ceil(_time/60)*60;
 end
 
-local function prepareBountyTables(init)
+local function updateData()
 	local day,Time = 86400,time();
 	local endsToday = ceilTime( Time+GetQuestResetTime() );
 	endings = {endsToday};
 	for i=1, 4 do
 		tinsert(endings,endsToday+(day*i));
-	end
-
-	if init then
-		-- check / create tables
-		if ns.data[name]==nil then
-			ns.data[name] = {};
-		end
-		if ns.data[name].bounties==nil then
-			ns.data[name].bounties = {};
-		end
-		if ns.toon[name]==nil then
-			ns.toon[name] = {}
-		end
-		if ns.toon[name].bounties==nil then
-			ns.toon[name].bounties = {};
-		end
-		-- remove older entries from tables
-		local _time = Time-day;
-		for k in pairs(ns.data[name].bounties)do
-			if k<_time then
-				ns.data[name].bounties[k] = nil;
-			end
-		end
-		for k in pairs(ns.toon[name].bounties)do
-			if k<_time then
-				ns.toon[name].bounties[k] = nil;
-			end
-		end
 	end
 
 	-- check / create entries in tables
@@ -203,27 +175,6 @@ local function prepareBountyTables(init)
 			ns.toon[name].bounties[endings[i]] = {}
 		end
 	end
-end
-
-local function updateData()
-	local day,Time = 86400,time();
-
-	prepareBountyTables();
-
-	--[[
-	/dump GetQuestBountyInfoForMapID(<zone>)
-	{
-		{
-			numObjectives = <int>,
-			questID = <int>,
-			icon = <int>,
-			factionID = <int> -- sometimes 0 and sometimes incorrect factionID
-		},
-		-- more bounties
-	},
-	<int>, -- location?
-	<int> -- locked?
-	--]]
 
 	for ending,data in pairs(ns.data[name].bounties) do
 		if data then
@@ -437,7 +388,7 @@ end
 ------------------------------------
 module = {
 	events = {
-		"PLAYER_LOGIN",
+		"VARIABLES_LOADED",
 		"QUEST_LOG_UPDATE"
 	},
 	config_defaults = {
@@ -488,8 +439,33 @@ end
 function module.onevent(self,event,arg1,...)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
-	elseif event=="PLAYER_LOGIN" then
-		prepareBountyTables(true);
+	elseif event=="VARIABLES_LOADED" then
+		local day,Time = 86400,time();
+		-- check / create tables
+		if ns.data[name]==nil then
+			ns.data[name] = {};
+		end
+		if ns.data[name].bounties==nil then
+			ns.data[name].bounties = {};
+		end
+		if ns.toon[name]==nil then
+			ns.toon[name] = {}
+		end
+		if ns.toon[name].bounties==nil then
+			ns.toon[name].bounties = {};
+		end
+		-- remove older entries from tables
+		local _time = Time-day;
+		for k in pairs(ns.data[name].bounties)do
+			if k<_time then
+				ns.data[name].bounties[k] = nil;
+			end
+		end
+		for k in pairs(ns.toon[name].bounties)do
+			if k<_time then
+				ns.toon[name].bounties[k] = nil;
+			end
+		end
 	elseif ns.eventPlayerEnteredWorld then
 		if not locked then
 			locked = true;
