@@ -207,11 +207,11 @@ local function createTooltip(tt)
 			ns.AddSpannedLine(tt,L["Equipment manager is not enabled"]);
 			ns.AddSpannedLine(tt,L["Enable it from the character info"]);
 		else
-			local numEquipSets = C_EquipmentSet.GetNumEquipmentSets()
-			if (numEquipSets>0) then
+			local equipSetIDs = C_EquipmentSet.GetEquipmentSetIDs() or {};
+			if #equipSetIDs>0 then
 				local eName, icon, setID, isEquipped, numMissing, _;
-				for i=0, numEquipSets do
-					eName, icon, setID, isEquipped, _, _, _, numMissing = C_EquipmentSet.GetEquipmentSetInfo(i);
+				for i=1, #equipSetIDs do
+					eName, icon, setID, isEquipped, _, _, _, numMissing = C_EquipmentSet.GetEquipmentSetInfo(equipSetIDs[i]);
 					if eName then
 						local color = (equipPending and equipPending==i and "orange") or (numMissing>0 and "red") or (isEquipped and "ltyellow") or false
 						local formatName = color~=false and C(color,eName) or eName;
