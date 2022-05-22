@@ -9,6 +9,8 @@
 ## OptionalDeps: LibStub, CallbackHandler-1.0, LibSharedMedia-3.0, LibDataBroker-1.1, LibDBIcon-1.0, LibQTip-1.0, LibColors-1.0, LibRealmInfo, LibTime-1.0, Ace3, LibDropDownMenu
 
 ## X-Curse-Project-ID: 28750
+## X-WoWI-ID: 18883
+## X-Wago-ID: nQN5r76B
 
 #@no-lib-strip@
 libs\LibStub\LibStub.lua
