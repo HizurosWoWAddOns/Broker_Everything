@@ -217,7 +217,7 @@ local function createTooltip(tt)
 					hasSets = true;
 				end
 			end
-			if hasSets then
+			if not hasSets then
 				ns.AddSpannedLine(tt, L["No equipment sets found"]);
 			elseif ns.profile.GeneralOptions.showHints then
 				tt:AddSeparator();
