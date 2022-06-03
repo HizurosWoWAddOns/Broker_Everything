@@ -28,19 +28,20 @@ externals:
         tag: latest
 
     libs/LibColors-1.0:
-        url: https://repos.curseforge.com/wow/libstringcoloring-1-0
+        url: https://github.com/HizurosWoWAddOns/LibColors-1.0.git
         tag: latest
 
     libs/LibTime-1.0:
-        url: https://repos.curseforge.com/wow/libtime-1-0
+        url: https://github.com/HizurosWoWAddOns/LibTime-1.0.git
         tag: latest
 
     libs/LibDropDownMenu:
-        url: https://repos.curseforge.com/wow/libdropdownmenu
+        url: https://github.com/HizurosWoWAddOns/LibDropDownMenu.git
         tag: latest
 
     libs/LibRealmInfo:
-        url: https://github.com/phanx-wow/LibRealmInfo.git
+        # url: https://github.com/phanx-wow/LibRealmInfo.git
+        url: https://github.com/janekjl/LibRealmInfo.git
         tag: latest
 
     libs/AceGUI-3.0:

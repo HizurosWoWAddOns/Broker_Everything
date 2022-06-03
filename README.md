@@ -1,12 +1,12 @@
 # Broker_Everything (WoW AddOn)
-![Build](https://github.com/hizuro/Broker_Everything/actions/workflows/bigwigsmods-packager.yml/badge.svg)
-![Tag](https://img.shields.io/github/v/tag/hizuro/Broker_Everything?style=flat-square)
-![Downloads](https://img.shields.io/github/downloads/hizuro/Broker_Everything/total?style=flat-square)
-![Downloads](https://img.shields.io/github/downloads/hizuro/Broker_Everything/latest/total?style=flat-square)
+![Build](https://github.com/HizurosWoWAddOns/Broker_Everything/actions/workflows/bigwigsmods-packager.yml/badge.svg)
+![Tag](https://img.shields.io/github/v/tag/HizurosWoWAddOns/Broker_Everything?style=flat-square)
+![Downloads](https://img.shields.io/github/downloads/HizurosWoWAddOns/Broker_Everything/total?style=flat-square)
+![Downloads](https://img.shields.io/github/downloads/HizurosWoWAddOns/Broker_Everything/latest/total?style=flat-square)
 &nbsp; &nbsp; &nbsp; &nbsp;
 [![Patreon](https://img.shields.io/badge/&zwj;-Patreon-gray?logo=patreon&color=red&style=flat-square)](https://www.patreon.com/bePatron?u=12558524)
 [![Paypal](https://img.shields.io/badge/&zwj;-Paypal-gray?logo=paypal&color=blue&style=flat-square)](https://paypal.me/hizuro)
-![Sponsors](https://img.shields.io/github/sponsors/hizuro?logo=github&style=flat-square)
+![Sponsors](https://img.shields.io/github/sponsors/HizurosWoWAddOns?logo=github&style=flat-square)
 
 ## Description
 This addon is a collection of modules to display various informations ingame about the game, your character, friends, guild and many many more. :-)
@@ -53,7 +53,7 @@ Thanks to Hungtar for the original Broker_Everything and Ekaterina for futher de
 
 ## My other projects
 * [On Curseforge](https://www.curseforge.com/members/hizuro_de/projects)
-* [On Github](https://github.com/hizuro?tab=repositories)
+* [On Github](https://github.com/HizurosWoWAddOns?tab=repositories)
 
 ## Disclaimer
 > World of Warcraft© and Blizzard Entertainment© are all trademarks or registered trademarks of Blizzard Entertainment in the United States and/or other countries. These terms and all related materials, logos, and images are copyright © Blizzard Entertainment.
