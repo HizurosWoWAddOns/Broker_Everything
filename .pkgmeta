@@ -65,4 +65,14 @@ enable-toc-creation: yes
 
 ignore:
     - libs/LibStub/tests
+    - libs/LibQTip-1.0/.pkgmeta
+    - libs/LibColors-1.0/.pkgmeta
+    - libs/LibColors-1.0/colors_fed_standard_595.lua
+    - libs/LibColors-1.0/colors_web.lua
+    - libs/LibColors-1.0/colors_x11.lua
+    - libs/LibColors-1.0/LibColors-1.0-all.xml
+    - libs/LibColors-1.0/LibColors-1.0-fed595.xml
+    - libs/LibColors-1.0/LibColors-1.0-web.xml
+    - libs/LibColors-1.0/LibColors-1.0-x11.xml
+    - libs/LibColors-1.0/LibColors-1.0.toc
 
