@@ -207,7 +207,7 @@ local function createTooltip(tt)
 		else
 			for eName, icon, setID, isEquipped, _, _, _, numMissing in pairsEquipmentSets() do
 				if eName then
-					local color = (equipPending and equipPending==i and "orange") or (numMissing>0 and "red") or (isEquipped and "ltyellow") or false
+					local color = (equipPending and equipPending==setID and "orange") or (numMissing>0 and "red") or (isEquipped and "ltyellow") or false
 					local formatName = color~=false and C(color,eName) or eName;
 
 					local line = ns.AddSpannedLine(tt, "|T"..(icon or ns.icon_fallback)..":0|t "..formatName);
