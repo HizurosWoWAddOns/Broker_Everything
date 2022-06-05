@@ -14,11 +14,12 @@ ns.L = setmetatable(L,{
 	__index=function(t,k)
 		local v = tostring(k);
 --@do-not-package@
-		if debugMode then
-			if k=="nil" then
-				ns.debug("localization","<FIXME:NilKey>",debugstack());
-			end
-			return L[k] or "<"..k..">";
+		local kType = type(k);
+		if kType~="string" then
+			ns.debug("localization","<FIXME:WrongKeyType>",kType,v,debugstack());
+		end
+		if "@project-version@" == "@".."project-version".."@" then
+			return "<"..k..">"; -- makes untranslated entries visible
 		end
 --@end-do-not-package@
 		rawset(t,k,v);
