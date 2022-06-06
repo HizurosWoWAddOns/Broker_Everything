@@ -110,7 +110,7 @@ local function createTalentTooltip(self,talent)
 			local str = NORMAL_FONT_COLOR_CODE..COSTS_LABEL..FONT_COLOR_CODE_CLOSE;
 
 			if (talent.researchCost and talent.researchCurrency) then
-				local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(talent.researchCurrency);
+				local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(talent.researchCurrency);
 				str = str.." "..BreakUpLargeNumbers(talent.researchCost).."|T"..currencyInfo.iconFileID..":0:0:2:0|t";
 			end
 			if (talent.researchGoldCost ~= 0) then

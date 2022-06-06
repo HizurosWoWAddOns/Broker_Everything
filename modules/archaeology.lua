@@ -129,7 +129,7 @@ local function updateRaces(firstUpdate)
 			t[raceTexture] = iconFormat2:format(t[raceTexture]);
 
 			if t[raceCurrencyId]~=0 then
-				local currencyInfo = ns.C_CurrencyInfo_GetCurrencyInfo(t[raceCurrencyId]);
+				local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(t[raceCurrencyId]);
 				t[raceCurrencyName] = currencyInfo.name;
 				iconFile = currencyInfo.iconFileID
 			end
