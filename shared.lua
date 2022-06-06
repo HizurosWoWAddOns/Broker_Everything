@@ -2321,16 +2321,6 @@ ns.C_QuestLog_GetQuestTagInfo = (C_QuestLog and C_QuestLog.GetQuestTagInfo) or f
 	};
 end
 
-ns.IsQuestWatched = IsQuestWatched or function(questLogIndex)
-	local info = C_QuestLog.GetInfo(questLogIndex);
-	return C_QuestLog.GetQuestWatchType(info.questID) ~= nil;
-end
-
-ns.GetQuestLogPushable = GetQuestLogPushable or function(questLogIndex)
-	local info = C_QuestLog.GetInfo(questLogIndex);
-	return C_QuestLog.IsPushableQuest(info.questID);
-end
-
 function ns.GetTalentTierLevel(tier)
 	if CLASS_TALENT_LEVELS then
 		return (CLASS_TALENT_LEVELS[ns.player.class] or CLASS_TALENT_LEVELS.DEFAULT)[tier];

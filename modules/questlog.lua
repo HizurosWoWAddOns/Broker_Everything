@@ -87,6 +87,16 @@ I[name] = {iconfile="Interface\\TARGETINGFRAME\\PortraitQuestBadge",coords={0.05
 
 -- some local functions --
 --------------------------
+local IsQuestWatched = IsQuestWatched or function(questLogIndex)
+	local info = C_QuestLog.GetInfo(questLogIndex);
+	return C_QuestLog.GetQuestWatchType(info.questID) ~= nil;
+end
+
+local GetQuestLogPushable = GetQuestLogPushable or function(questLogIndex)
+	local info = C_QuestLog.GetInfo(questLogIndex);
+	return C_QuestLog.IsPushableQuest(info.questID);
+end
+
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local fail, active, complete = numQuestStatus.fail, numQuestStatus.active, numQuestStatus.complete;
@@ -222,7 +232,7 @@ local function ttAddLine(obj)
 
 	if ns.profile[name].showQuestOptions then
 		if ns.client_version>=5 then
-			tt:SetCell(l,cell,ns.IsQuestWatched(obj[Index]) and UNTRACK_QUEST_ABBREV or TRACK_QUEST_ABBREV);
+			tt:SetCell(l,cell,IsQuestWatched(obj[Index]) and UNTRACK_QUEST_ABBREV or TRACK_QUEST_ABBREV);
 			tt:SetCellScript(l,cell,"OnMouseUp",trackQuest,obj[QuestId]);
 			cell=cell+1; -- [7]
 		end
@@ -232,7 +242,7 @@ local function ttAddLine(obj)
 		cell=cell+1; -- [8]
 
 		if IsInGroup() then
-			if GetNumGroupMembers()>1 and ns.GetQuestLogPushable(obj[Index]) then
+			if GetNumGroupMembers()>1 and GetQuestLogPushable(obj[Index]) then
 				tt:SetCell(l,cell,SHARE_QUEST_ABBREV);
 				tt:SetCellScript(l,cell,"OnMouseUp",pushQuest,obj[Index]);
 				cell=cell+1 -- [9]
