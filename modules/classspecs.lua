@@ -60,6 +60,15 @@ local function changeTalent(_, talent)
 	f(talent.id);
 end
 
+local function GetTalentTierLevel(tier)
+	if CLASS_TALENT_LEVELS then
+		return (CLASS_TALENT_LEVELS[ns.player.class] or CLASS_TALENT_LEVELS.DEFAULT)[tier];
+	elseif GetTalentTierInfo then
+		local tierAvailable, selectedTalent, tierUnlockLevel = GetTalentTierInfo(tier, 1, false, "player");
+		return tierUnlockLevel
+	end
+end
+
 local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName) or {};
 	local specName,txt,_ = L["No Spec!"],"";
@@ -204,7 +213,7 @@ function createTooltip(tt,update)
 		local level = UnitLevel("player");
 		for row=1, MAX_TALENT_TIERS do
 			local selected, isUnlocked = false,false;
-			local unlockLevel = ns.GetTalentTierLevel(row);
+			local unlockLevel = GetTalentTierLevel(row);
 			local l=tt:AddLine(C("ltyellow",unlockLevel));
 			for col=1, NUM_TALENT_COLUMNS do
 				local tmp = {GetTalentInfo(row,col,talentGroup)};

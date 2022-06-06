@@ -2321,15 +2321,6 @@ ns.C_QuestLog_GetQuestTagInfo = (C_QuestLog and C_QuestLog.GetQuestTagInfo) or f
 	};
 end
 
-function ns.GetTalentTierLevel(tier)
-	if CLASS_TALENT_LEVELS then
-		return (CLASS_TALENT_LEVELS[ns.player.class] or CLASS_TALENT_LEVELS.DEFAULT)[tier];
-	elseif GetTalentTierInfo then
-		local tierAvailable, selectedTalent, tierUnlockLevel = GetTalentTierInfo(tier, 1, false, "player");
-		return tierUnlockLevel
-	end
-end
-
 ns.C_BattleNet_GetFriendAccountInfo = (C_BattleNet and C_BattleNet.GetFriendAccountInfo) or function(friendIndex)
 	local accountInfo={gameAccountInfo={}};
 	accountInfo.bnetAccountID,
