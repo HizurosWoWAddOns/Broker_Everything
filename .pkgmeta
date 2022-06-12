@@ -60,6 +60,9 @@ externals:
         url: https://repos.wowace.com/wow/ace3/trunk/AceDBOptions-3.0
         tag: latest
 
+    libs/HizurosSharedTools:
+        url: https://github.com/HizurosWoWAddOns/.github
+
 enable-nolib-creation: no
 enable-toc-creation: yes
 
@@ -75,4 +78,6 @@ ignore:
     - libs/LibColors-1.0/LibColors-1.0-web.xml
     - libs/LibColors-1.0/LibColors-1.0-x11.xml
     - libs/LibColors-1.0/LibColors-1.0.toc
+    - libs/HizurosSharedTools/profile
+    - libs/HizurosSharedTools/README.md
 

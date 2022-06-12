@@ -338,8 +338,13 @@ local options = {
 					}
 				}
 			}
-		}
+		},
 		-- profiles = {}, -- created by AceDBOptions
+		credits = {
+			type = "group", order = 200,
+			name = L["Credits"],
+			args = {}
+		},
 	}
 }
 
@@ -651,6 +656,8 @@ function ns.RegisterOptions()
 
 	LibStub("AceConfig-3.0"):RegisterOptionsTable(addonLabel, options);
 	LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonLabel);
+
+	ns.AddCredits(); -- options.args.credits.args
 
 	local goldColor = ns.profile.GeneralOptions.goldColor;
 	if type(goldColor)~="string" then

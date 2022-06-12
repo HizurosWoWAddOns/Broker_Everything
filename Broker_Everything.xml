@@ -10,6 +10,7 @@
 	<!--@end-do-not-package@-->
 	<!-- /localizations -->
 
+	<Script file="libs/HizurosSharedTools/HizurosSharedTools.lua"/>
 	<Script file="shared.lua" />
 	<Script file="options.lua" />
 	<Script file="modules.lua" />
