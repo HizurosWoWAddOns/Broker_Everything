@@ -4,6 +4,9 @@
 -- ====================================== --
 local addon, ns = ...;
 local L,_ = ns.L;
+ns.debugMode = "@project-version@"=="@".."project-version".."@";
+LibStub("HizurosSharedTools").RegisterPrint(ns,addon,"BE");
+
 local UnitName,UnitSex,UnitClass,UnitFactionGroup=UnitName,UnitSex,UnitClass,UnitFactionGroup;
 local UnitRace,GetRealmName,GetLocale,UnitGUID=UnitRace,GetRealmName,GetLocale,UnitGUID;
 local InCombatLockdown,CreateFrame=InCombatLockdown,CreateFrame;
@@ -225,7 +228,7 @@ do
 			-- useless blacklisted cvars...
 				msg = L["CVarInCombat"]:format(cvar);
 			end
-			ns.print(ns.LC.color("ltorange",msg));
+			ns:print(ns.LC.color("ltorange",msg));
 		else
 			SetCVar(...)
 		end
@@ -2196,7 +2199,7 @@ end
 ns.C_QuestLog_GetInfo = (C_QuestLog and C_QuestLog.GetInfo) or function(questLogIndex)
 	local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, isHidden, isScaling  = GetQuestLogTitle(questLogIndex);
 	if type(suggestedGroup)=="string" then
-		ns.debugPrint("C_QuestLog_GetInfo","suggestedGroup =",suggestedGroup);
+		ns:debugPrint("C_QuestLog_GetInfo","suggestedGroup =",suggestedGroup);
 		suggestedGroup = tonumber(suggestedGroup) or 0; -- problem on bc classic client?
 	end
 	return {

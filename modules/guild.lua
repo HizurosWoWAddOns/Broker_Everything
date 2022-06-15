@@ -154,7 +154,7 @@ local function updateBroker()
 			end
 			-- levelup notification
 			if ns.profile[name].showMembersLevelUp and memberLevels[mGUID]~=nil and memberLevels[mGUID]~=mLevel then
-				ns.print( C(mClassFile,mName) .." ".. C("green",L["has reached Level %d."]:format(mLevel)) );
+				ns:print( C(mClassFile,mName) .." ".. C("green",L["has reached Level %d."]:format(mLevel)) );
 			end
 			memberLevels[mGUID] = mLevel;
 			-- for on/off notification
@@ -191,20 +191,20 @@ local function memberInviteOrWhisper(self,memberIndex)
 	local mFullName,_,_,_,_,_,_,_,mOnline,_,_,_,_,mIsMobile,_,_,mGUID = GetGuildRosterInfo(memberIndex);
 	if IsAltKeyDown() then
 		if mIsMobile then
-			ns.print(L["GuildErrorInviteMobile"]);
+			ns:print(L["GuildErrorInviteMobile"]);
 		elseif not mOnline then
-			ns.print(L["GuildErrorInviteOffline"]);
+			ns:print(L["GuildErrorInviteOffline"]);
 		elseif C_PartyInfo.InviteUnit then
 			C_PartyInfo.InviteUnit(mFullName);
 		elseif InviteUnit then
 			InviteUnit(mFullName);
 		else
-			ns.print(L["GuildErrorInviteMissingFunction"]);
+			ns:print(L["GuildErrorInviteMissingFunction"]);
 		end
 	elseif mOnline then
 		SetItemRef("player:"..mFullName, ("|Hplayer:%1$s|h[%1$s]|h"):format(mFullName), "LeftButton");
 	else
-		ns.print(L["GuildErrorWhisperOffline"]);
+		ns:print(L["GuildErrorWhisperOffline"]);
 	end
 end
 
@@ -998,7 +998,7 @@ function module.onevent(self,event,msg,...)
 				tinsert(txt,1,C("ltgray",LFG_LIST_GUILD_MEMBER)..CHAT_HEADER_SUFFIX..C(mClassFile,mName).." "..mobileIcon);
 				C_Timer.After(0.1,function()
 					-- should prevent display this line before blizzards message
-					ns.print(true,table.concat(txt," || "));
+					ns:print(true,table.concat(txt," || "));
 				end);
 			end
 		end

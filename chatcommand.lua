@@ -23,14 +23,14 @@ local commands = {
 	list        = {
 		desc = L["CmdStatusInfo"],
 		func = function()
-			ns.print(spacer, L["Modules"])
+			ns:print(spacer, L["Modules"])
 			for k, v in ns.pairsByKeys(ns.modules) do
 				if v and ns.profile[k] then
 					local c,s = "red",OFF;
 					if ns.profile[k].enabled==true then
 						c,s = "green",L["On"];
 					end
-					ns.print(spacer, (k==L[k] and "%s | %s" or "%s | %s - ( %s )"):format(C(c,s),C("ltyellow",k),L[k]))
+					ns:print(spacer, (k==L[k] and "%s | %s" or "%s | %s - ( %s )"):format(C(c,s),C("ltyellow",k),L[k]))
 				end
 			end
 		end,
@@ -52,9 +52,9 @@ local commands = {
 				ns.profile[arg].enabled = not ns.profile[arg].enabled;
 				if ns.profile[arg].enabled then
 					ns.moduleInit(arg);
-					ns.print(spacer,arg,ADDON_ENABLED);
+					ns:print(spacer,arg,ADDON_ENABLED);
 				else
-					ns.print(spacer,arg,ADDON_DISABLED,L["CmdNeedReload"]);
+					ns:print(spacer,arg,ADDON_DISABLED,L["CmdNeedReload"]);
 				end
 			end
 		end
@@ -64,15 +64,15 @@ local commands = {
 		func = function(cmd)
 			local num = C_EquipmentSet.GetNumEquipmentSets()
 			if cmd == nil then
-				ns.print(spacer,L["CmdEquipUsage"]);
-				ns.print(spacer,L["CmdEquipSets"]);
+				ns:print(spacer,L["CmdEquipUsage"]);
+				ns:print(spacer,L["CmdEquipSets"]);
 				if num>0 then
 					for i=0, num-1 do -- very rare in wow... equipment set index starts with 0 instead of 1
 						local eName, icon, setID, isEquipped, totalItems, equippedItems, inventoryItems, missingItems, ignoredSlots = C_EquipmentSet.GetEquipmentSetInfo(i);
-						ns.print(spacer,C((isEquipped and "yellow") or (missingItems>0 and "red") or "ltblue",eName),missingItems>0 and " - "..C("ltyellow",L["CmdEquipMiss"]:format(missingItems)) or nil);
+						ns:print(spacer,C((isEquipped and "yellow") or (missingItems>0 and "red") or "ltblue",eName),missingItems>0 and " - "..C("ltyellow",L["CmdEquipMiss"]:format(missingItems)) or nil);
 					end
 				else
-					ns.print(spacer,L["No sets found"]);
+					ns:print(spacer,L["No sets found"]);
 				end
 			else
 				local validEquipment
@@ -81,7 +81,7 @@ local commands = {
 					if cmd==eName then validEquipment = true end
 				end
 				if (not validEquipment) then
-					ns.print(spacer,L["CmdEquipInvalid"])
+					ns:print(spacer,L["CmdEquipInvalid"])
 				else
 					ns.toggleEquipment(cmd)
 				end
@@ -91,7 +91,7 @@ local commands = {
 	version = {
 		desc = L["CmdVersion"],
 		func = function()
-			ns.print(GAME_VERSION_LABEL,"@project-version@");
+			ns:print(GAME_VERSION_LABEL,"@project-version@");
 		end
 	}
 }
@@ -108,16 +108,16 @@ function ns.RegisterSlashCommand()
 		cmd = cmd:lower()
 
 		if cmd=="" then
-			ns.print(spacer, L["CmdUsage"])
+			ns:print(spacer, L["CmdUsage"])
 			for name,obj in ns.pairsByKeys(commands) do
 				if type(obj)=="string" and commands[obj] and commands[obj].desc then
 					obj = commands[obj];
 				end
 				if obj.desc then
-					ns.print(spacer, ("%s - %s"):format(C("yellow",name),obj.desc))
+					ns:print(spacer, ("%s - %s"):format(C("yellow",name),obj.desc))
 				end
 			end
-			ns.print(C("orange",L["CmdInfoOptional"]));
+			ns:print(C("orange",L["CmdInfoOptional"]));
 			return;
 		end
 
@@ -127,7 +127,7 @@ function ns.RegisterSlashCommand()
 
 		if commands[cmd]~=nil and type(commands[cmd].func)=="function" then
 			commands[cmd].func(arg);
-			ns.print(C("orange",L["CmdInfoOptional"]));
+			ns:print(C("orange",L["CmdInfoOptional"]));
 		end
 	end
 

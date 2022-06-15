@@ -43,7 +43,7 @@ I[name] = {iconfile=133633,coords={0.05,0.95,0.05,0.95}}; --IconName::Bags--
 --------------------------
 function crap.info()
 	if ns.profile[name].autoCrapSellingInfo and not crap.ERR_VENDOR_DOESNT_BUY and crap.sum>0 then
-		ns.print(L["Auto crap selling - Summary"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,crap.sum,{color="white"}));
+		ns:print(L["Auto crap selling - Summary"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,crap.sum,{color="white"}));
 	end
 end
 

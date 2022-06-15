@@ -213,7 +213,7 @@ end
 
 function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT","RIGHT"},{true},{self})
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT","RIGHT"},{true},{self});
 	createTooltip(tt);
 end
 

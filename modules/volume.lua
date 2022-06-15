@@ -94,7 +94,7 @@ do
 
 	function setSoundHardware(self,hardwareIndex,button)
 		if InCombatLockdown() then
-			ns.print("("..VOLUME..")",C("orange",L["Sorry, In combat lockdown."]));
+			ns:print("("..VOLUME..")",C("orange",L["Sorry, In combat lockdown."]));
 		else
 			hardware.selected = hardwareIndex;
 			SetCVar(cvar,tostring(hardwareIndex-1) or 0);

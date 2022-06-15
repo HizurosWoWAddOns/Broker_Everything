@@ -61,7 +61,7 @@ externals:
         tag: latest
 
     libs/HizurosSharedTools:
-        url: https://github.com/HizurosWoWAddOns/.github
+        url: https://github.com/HizurosWoWAddOns/HizurosSharedTools
 
 enable-nolib-creation: no
 enable-toc-creation: yes
@@ -78,6 +78,5 @@ ignore:
     - libs/LibColors-1.0/LibColors-1.0-web.xml
     - libs/LibColors-1.0/LibColors-1.0-x11.xml
     - libs/LibColors-1.0/LibColors-1.0.toc
-    - libs/HizurosSharedTools/profile
     - libs/HizurosSharedTools/README.md
 

@@ -218,7 +218,7 @@ local function updateCooldownAndRecipeLists(skillLineID,rebuildCooldowns) -- on 
 			local _,_,cooldown = GetSpellCooldown(recipeId);
 			--learnedRecipes[recipeId] = recipeInfo.learned
 			if recipeId==143011 then
-				ns.debug(name,recipeId,cooldown);
+				ns:debug(name,recipeId,cooldown);
 			end
 			if cooldown then
 				dataDB.recipeCooldowns[skillLineID][recipeId] = {isDayCooldown, charges, maxCharges};

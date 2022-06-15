@@ -250,7 +250,7 @@ local function createTooltip(tt)
 		if prof2 then
 			_,_,_,_,_,_,prof2SkillLine = GetProfessionInfo(prof2);
 		end
-		--ns.debugPrint(name,prof1SkillLine,prof2SkillLine)
+		--ns:debugPrint(name,prof1SkillLine,prof2SkillLine)
 
 		local none,miss=true,false;
 		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do

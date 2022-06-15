@@ -593,7 +593,7 @@ function module.init()
 		if not known[i] and not ns.isArchaeologyCurrency(i) then
 			local info = C_CurrencyInfo.GetCurrencyInfo(i);
 			if info and info.name and not (ignore[info.name] or info.name:find("zzzold") or info.name:find("Test")) then -- (and not info.isHeader)
-				--ns.debug(name,i,info.name);
+				--ns:debug(name,i,info.name);
 				tinsert(Currencies,i);
 			end
 		end
@@ -636,13 +636,13 @@ function module.onevent(self,event,arg1)
 		if covenantID==0 then
 			self:RegisterEvent("COVENANT_CHOSEN");
 		else
-			ns.debugPrint(name,"<insertShadowlandCurrencies("..covenantID..")>",event);
+			ns:debugPrint(name,"<insertShadowlandCurrencies("..covenantID..")>",event);
 			insertShadowlandCurrencies();
 		end
 	elseif event=="COVENANT_CHOSEN" then
 		-- update Covenant currencies
 		covenantID = C_Covenants.GetActiveCovenantID();
-		ns.debugPrint(name,"<insertShadowlandCurrencies("..covenantID..")>",event);
+		ns:debugPrint(name,"<insertShadowlandCurrencies("..covenantID..")>",event);
 		insertShadowlandCurrencies();
 	elseif event=="CHAT_MSG_CURRENCY" then -- detecting new currencies
 		local id = tonumber(arg1:match("currency:(%d*)"));

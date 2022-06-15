@@ -127,11 +127,11 @@ local function AutoRepairAll(costs)
 			RepairAllItems(true);
 			lastRepairs_add(costs,true,true);
 			if (chat) then
-				ns.print(L["Automatically repaired with guild money"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,costs,{color="white"}));
+				ns:print(L["Automatically repaired with guild money"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,costs,{color="white"}));
 			end
 			return true;
 		elseif (chat) then
-			ns.print(L["AutoRepair"],L["Your guild leadership denied the use of guild money for auto repair."],L["Try fallback to player money."]);
+			ns:print(L["AutoRepair"],L["Your guild leadership denied the use of guild money for auto repair."],L["Try fallback to player money."]);
 		end
 	end
 	if (costs < GetMoney()) then
@@ -139,7 +139,7 @@ local function AutoRepairAll(costs)
 		RepairAllItems();
 		lastRepairs_add(costs,nil,true);
 		if (chat) then
-			ns.print(L["Automatically repaired with player money"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,costs,{color="white"}));
+			ns:print(L["Automatically repaired with player money"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,costs,{color="white"}));
 		end
 		return nil;
 	end
@@ -376,7 +376,7 @@ function module.onevent(self,event,arg1)
 			merchant.costs=costs;
 			if (ns.profile[name].autorepair) then
 				if (AutoRepairAll(costs)==false) and (ns.profile[name].chatRepairInfo) then
-					ns.print(L["AutoRepair"], L["Automatically repair failed. Not enough money..."]);
+					ns:print(L["AutoRepair"], L["Automatically repair failed. Not enough money..."]);
 				end
 			end
 		end
@@ -385,13 +385,13 @@ function module.onevent(self,event,arg1)
 		if (event=="BE_EVENT_REPAIRALL_GUILD") then
 			lastRepairs_add(merchant.costs,true);
 			if (ns.profile[name].chatRepairInfo) then
-				ns.print(L["RepairAll"],L["by guild fund"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,merchant.costs,{color="white"}));
+				ns:print(L["RepairAll"],L["by guild fund"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,merchant.costs,{color="white"}));
 			end
 			merchant.costs=0;
 		elseif (event=="BE_EVENT_REPAIRALL_PLAYER") then
 			lastRepairs_add(merchant.costs);
 			if (ns.profile[name].chatRepairInfo) then
-				ns.print(L["RepairAll"],L["by player money"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,merchant.costs,{color="white"}));
+				ns:print(L["RepairAll"],L["by player money"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,merchant.costs,{color="white"}));
 			end
 			merchant.costs=0;
 		end
@@ -410,7 +410,7 @@ function module.onevent(self,event,arg1)
 				if (merchant.single>0) then -- single item repair mode, step 2
 					lastRepairs_add(merchant.single, nil, false);
 					if (ns.profile[name].chatRepairInfo) then
-						ns.print(L["SingleRepairSummary"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,merchant.single,{color="white"}));
+						ns:print(L["SingleRepairSummary"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,merchant.single,{color="white"}));
 					end
 				end
 				merchant = {repair=false,costs=0,diff=0,single=0};

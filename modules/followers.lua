@@ -130,7 +130,7 @@ local function isTrait(icon)
 		return true;
 	elseif type(icon)=="string" then
 		-- fallback for old icon path strings
-		ns.debug("follow.lua:isTrait","icon is a string");
+		ns:debug("follow.lua:isTrait","icon is a string");
 		for i=1, #traitIconStringPattern do
 			if icon:find(traitIconStringPattern) then
 				return true;

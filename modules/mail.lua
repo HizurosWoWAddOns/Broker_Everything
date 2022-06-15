@@ -257,7 +257,7 @@ local function SendMailHook(targetName)
 		if type(r)=="string" and r:len()>0 and type(ns.realms[r])=="string" then
 			targetName = tn.."-"..ns.realms[r];
 		else
-			ns.debug("Something goes wrong...","tn: "..type(tn),"r: "..type(r));
+			ns:debug("Something goes wrong...","tn: "..type(tn),"r: "..type(r));
 		end
 	else
 		targetName = targetName.."-"..ns.realm;

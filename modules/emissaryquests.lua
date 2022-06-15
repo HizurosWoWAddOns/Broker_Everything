@@ -225,12 +225,12 @@ local function updateData()
 							end
 --@do-not-package@
 						else
-							ns.debug("<ending~=endings[i]>",date("%d %H.%M.%S",ending),date("%d %H.%M.%S",endings[1]),date("%d %H.%M.%S",endings[2]),date("%d %H.%M.%S",endings[3]));
+							ns:debug("<ending~=endings[i]>",date("%d %H.%M.%S",ending),date("%d %H.%M.%S",endings[1]),date("%d %H.%M.%S",endings[2]),date("%d %H.%M.%S",endings[3]));
 --@end-do-not-package@
 						end
 --@do-not-package@
 					elseif factionID==nil then
-						ns.debug("<missing factionID>","<bountyQuestID>",bty.questID);
+						ns:debug("<missing factionID>","<bountyQuestID>",bty.questID);
 --@end-do-not-package@
 					end
 				end

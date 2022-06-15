@@ -12,7 +12,6 @@
 ## X-WoWI-ID: 18883
 ## X-Wago-ID: nQN5r76B
 
-#@no-lib-strip@
 libs\LibStub\LibStub.lua
 libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
 libs\AceDB-3.0\AceDB-3.0.xml
@@ -27,6 +26,6 @@ libs\LibColors-1.0\LibColors-1.0.xml
 libs\LibTime-1.0\LibTime-1.0.xml
 libs\LibDropDownMenu\LibDropDownMenu.xml
 libs\LibRealmInfo\LibRealmInfo.lua
-#@end-no-lib-strip@
+libs\HizurosSharedTools\HizurosSharedTools.lua
 
 Broker_Everything.xml

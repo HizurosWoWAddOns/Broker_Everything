@@ -81,7 +81,7 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 		end
 
 		if ns.profile.GeneralOptions.showAddOnLoaded or IsShiftKeyDown() then
-			ns.print(L["AddOnLoaded"]);
+			ns:print(L["AddOnLoaded"]);
 		end
 
 		ns.eventAddOnLoaded = true;
