@@ -301,7 +301,7 @@ local function createTooltip(tt)
 							faction = faction .. " |T132048:14:14:0:0|t"; -- add question mark for finished quest
 						end
 					end
-					if ns.profile[name].showID then
+					if ns.profile[name].showID and bounties[ns.player.faction] then
 						faction = faction .. C("gray"," ("..bounties[ns.player.faction]..")");
 					end
 					local l=tt:AddLine("  |T"..(bounties[ns.player.faction.."Icon"] or ns.icon_fallback)..":14:14:0:0:64:64:4:56:4:56|t "..C(color1,faction));
