@@ -127,7 +127,7 @@ local function UpdateStatus(event)
 	for i=1, #Broker_Everything_CharacterDB.order do
 		local toonName = Broker_Everything_CharacterDB.order[i];
 		if toonName and toonName~=ns.player.name_realm then
-			local toonMails = Broker_Everything_CharacterDB[toonName].mail;
+			local toonMails = Broker_Everything_CharacterDB[toonName].mail or {};
 			for _,key in pairs({"stored","new"}) do
 				local has,_oldest = toonHasMails(toonMails,key,counter);
 				if has then
@@ -155,7 +155,7 @@ local function AddStoredMailsLine(tt,toon)
 	local hasData,toonName,_time = false,{strsplit("-",toon,2)},time();
 	local faction,class = Broker_Everything_CharacterDB[toon].faction, Broker_Everything_CharacterDB[toon].class;
 	if Broker_Everything_CharacterDB[toon].mail and ns.showThisChar(name,toonName[2],faction) then
-		local toonMails = Broker_Everything_CharacterDB[toon].mail;
+		local toonMails = Broker_Everything_CharacterDB[toon].mail or {};
 		local counter,key,oldest,has={stored=0,new=0,returned=0};
 		for _,key in pairs({"stored","new"}) do
 			local has,_oldest = toonHasMails(toonMails,key,counter);
