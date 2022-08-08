@@ -871,12 +871,11 @@ do
 			end
 			itemsBySpell[info.spell][info.sharedSlot] = info.count;
 		end
-		if ns.client_version<2 then
+		if ns.ammo_classic then -- ns.ammo_classic declared in modules/ammo_classic.lua
 			if info.ammo then
 				ammo[info.sharedSlot] = true;
 				hasChanged.ammo = true;
 			end
-			-- souls?
 		end
 		if callbacks.item[info.id] then
 			hasChanged.item[info.id][info.sharedSlot] = true;
@@ -894,7 +893,7 @@ do
 			equip[sharedSlotIndex] = nil;
 			hasChanged.equip = true;
 		end
-		if ns.client_version<2 and ammo[sharedSlotIndex] then
+		if ns.ammo_classic and ammo[sharedSlotIndex] then
 			ammo[sharedSlotIndex] = nil;
 			hasChanged.ammo = true;
 		end
