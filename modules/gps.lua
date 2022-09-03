@@ -101,6 +101,16 @@ local function addToy(id)
 		local toyName, _, _, _, _, _, _, _, _, toyIcon = GetItemInfo(id);
 		local hasToy = PlayerHasToy(id);
 		local canUse =  C_ToyBox.IsToyUsable(id);
+		if _toyUsableBug[id] then
+			-- special problem; Sometimes C_ToyBox.IsToyUsable does not return correct state of some items
+			-- like the Broker Translocation Matrix (190237) on toons without needed reputation to purchase it.
+			-- But they can use it.
+			if canUse then
+				ns.data.IsToyUsable[id] = true;
+			elseif ns.data.IsToyUsable[id] then
+				canUse = true;
+			end
+		end
 		if toyName and hasToy and canUse then
 			local isHS, hsLoc = itemIsHearthstone(id);
 			foundToys[id] = {
@@ -493,6 +503,11 @@ local function init()
 		54452,64488,93672,142542,162973,163045,165669,165670,165802,166746,166747,168907,172179,184353,180290,182773,193588,190237,
 	};
 
+	-- on some toys C_ToyBox.IsToyUsable returns wrong state
+	_toyUsableBug = {
+		[190237] = true,
+	};
+
 	-- items with hearthstone spell
 	_hearthstones = {
 		[6948]=1, -- Hearthstone
@@ -524,6 +539,11 @@ local function init()
 
 	--_itemReplacementIds = {64488,28585,6948,44315,44314,37118,142542,142298};
 	_itemMustBeEquipped = {[32757]=1,[40585]=1,[142298]=1};
+
+	-- init ns.data
+	if ns.data.IsToyUsable==nil then
+		ns.data.IsToyUsable = {};
+	end
 
 	-- init ns.items
 	ns.items.Init("any");
