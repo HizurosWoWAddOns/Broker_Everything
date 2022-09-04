@@ -86,6 +86,9 @@ function module.onupdate()
 				if guid and uName then
 					O = false;
 					P,_,_,_,_,id = strsplit("-",guid);
+					if _G[P:upper()] then
+						P = _G[P:upper()];
+					end
 					F = uName or "?";
 					if ((ns.profile[name].unitid=="shift" and mod) or ns.profile[name].unitid=="always") and id~=nil then
 						P = P.. ", id:"..id;
