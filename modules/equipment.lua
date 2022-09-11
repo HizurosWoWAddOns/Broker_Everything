@@ -98,7 +98,7 @@ local function UpdateInventory()
 			obj.type = "inv";
 			ns.ScanTT.query(obj,true);
 			lst[d.slot] = obj;
-			if ns.client_version>=2 then
+			if ns.client_version>=6 then
 				obj.level = obj.level or 0;
 				if lst.iLevelMin==0 or obj.level<lst.iLevelMin then
 					lst.iLevelMin=obj.level;
@@ -234,7 +234,7 @@ local function createTooltip(tt)
 			C("ltblue",TRADESKILL_FILTER_SLOTS),
 			C("ltblue",NAME)
 		);
-		if ns.client_version>=2 then
+		if ns.client_version>=6 then
 			tt:SetCell(l,3,C("ltblue",LEVEL));
 		end
 
@@ -310,7 +310,7 @@ local function createTooltip(tt)
 						upgrades = " "..C(col,itemInfo.upgrades);
 					end
 
-					if ns.client_version>=2 and itemInfo.level then
+					if ns.client_version>=6 and itemInfo.level then
 						itemLevel = C(GetILevelColor(itemInfo.level),itemInfo.level);
 					else
 						itemLevel = "";
@@ -341,7 +341,7 @@ local function createTooltip(tt)
 			tt:SetCell(l,1,L["All slots are empty"],nil,nil,ttColumns);
 		end
 		tt:AddSeparator();
-		if ns.client_version>=3 then
+		if ns.client_version>=6 and GetAverageItemLevel then
 			local _, avgItemLevelEquipped = GetAverageItemLevel();
 			local l = tt:AddLine(nil,nil,C(GetILevelColor(avgItemLevelEquipped),"%.1f"):format(avgItemLevelEquipped));
 			tt:SetCell(l,1,C("ltblue",STAT_AVERAGE_ITEM_LEVEL),nil,nil,2);
@@ -401,7 +401,7 @@ module = {
 	}
 }
 
-if ns.client_version>=2 then
+if ns.client_version>=6 then
 	tinsert(module.events,"EQUIPMENT_SWAP_FINISHED");
 	--tinsert(module.events,"ITEM_UPGRADE_MASTER_UPDATE"); -- TODO: removed in 9.1.5
 	tinsert(module.events,"EQUIPMENT_SETS_CHANGED");
@@ -457,7 +457,7 @@ function module.init()
 	197 -- Tailoring
 	--]]
 
-	if ns.client_version<2 then -- classic
+	if ns.client_version<3 then -- classic
 		enchantSlots = {
 			[8]=true, [9]=true,[5]=true,[10]=true,[15]=true,[17]=true,[16]=true, -- enchanters
 		}

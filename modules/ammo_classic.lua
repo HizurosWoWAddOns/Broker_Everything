@@ -2,7 +2,7 @@
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
-if not (ns.client_version<4 and ns.player.class=="HUNTER") then return end
+if not (ns.client_version<5 and ns.player.class=="HUNTER") then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
 ns.ammo_classic = true;
 

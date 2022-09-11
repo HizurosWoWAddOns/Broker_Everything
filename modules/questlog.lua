@@ -385,7 +385,7 @@ module = {
 	}
 }
 
-if ns.client_version<3 then
+if ns.client_version<4 then
 	module.config_defaults.showQuestZone = false
 	module.config_defaults.showQuestTags = false
 	module.config_defaults.showQuestTagsShort = false
@@ -536,7 +536,7 @@ function module.onevent(self,event,msg)
 					tinsert(shortTags,C("dailyblue",frequencies[q.frequency][1]));
 				end
 				local mapId,mapName;
-				if ns.client_version>=3 then
+				if ns.client_version>=4 then
 					if not questZones[q.questID] and not WorldMapFrame:IsShown() then
 						mapId = GetQuestUiMapID(q.questID,true);
 						if mapId then

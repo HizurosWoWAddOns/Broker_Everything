@@ -377,9 +377,9 @@ function module.options()
 	return {
 		broker = { precision={ type="range", name=L["Precision"], desc=L["Adjust the count of numbers behind the dot."], min = 0, max = 3, step=1 } },
 		tooltip = {
-			showBonus = { type="toggle", order=1, name=L["SpeedBonus"], desc=L["SpeedBonusDesc"], hidden=(ns.client_version>=3) },
-			showLicenses = { type="toggle", order=2, name=L["SpeedLicenses"], name=L["SpeedLicensesDesc"], hidden=(ns.client_version>=3) },
-			showLicensesDeprecated  = { type="toggle", order=2, name=L["SpeedLicensesDeprec"], name=L["SpeedLicensesDeprecDesc"], hidden=(ns.client_version>=3) },
+			showBonus = { type="toggle", order=1, name=L["SpeedBonus"], desc=L["SpeedBonusDesc"], hidden=(ns.client_version>=5) },
+			showLicenses = { type="toggle", order=2, name=L["SpeedLicenses"], name=L["SpeedLicensesDesc"], hidden=(ns.client_version>=5) },
+			showLicensesDeprecated  = { type="toggle", order=2, name=L["SpeedLicensesDeprec"], name=L["SpeedLicensesDeprecDesc"], hidden=(ns.client_version>=5) },
 			showChars = {3,true},
 			showAllFactions=4,
 			showRealmNames=5,
@@ -390,7 +390,7 @@ function module.options()
 end
 
 function module.init()
-	if ns.client_version<2 then
+	if ns.client_version<4 then
 		local skills = {};
 		if ns.player.faction=="Alliance" then
 			tinsert(skills,{828,   40, 60, race="NightElf", faction=69}); -- NightElf

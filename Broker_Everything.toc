@@ -1,5 +1,5 @@
-## Interface: 90205
-## Interface-BCC: 20504
+## Interface: 90207
+## Interface-Wrath: 30400
 ## Interface-Classic: 11403
 ## Title: Broker: Everything
 ## Notes: A collection of modules to display various informations as Broker-buttons on Broker Display AddOns or minimap buttons.

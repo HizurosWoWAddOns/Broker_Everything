@@ -857,7 +857,7 @@ module = {
 	}
 }
 
-if ns.client_version<2 then
+if ns.client_version<5 then
 	module.config_defaults.showONotes = false
 	module.config_defaults.showONotesInTT2 = false
 	module.config_defaults.showProfessions = false

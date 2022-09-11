@@ -69,7 +69,6 @@
 	<!--@do-not-package@-->
 	<!--Script file="_modules/broker_everything.lua"/-->
 	<Script file="_modules/lookingfor.lua"/>
-	<Script file="_modules/battleforazeroth.lua"/>
 	<Script file="_modules/communities.lua"/>
 	<Script file="_modules/workorders.lua"/>
 	<Script file="_modules/pvp.lua"/>

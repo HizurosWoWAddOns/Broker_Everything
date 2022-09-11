@@ -415,7 +415,7 @@ function transportMenu(self,button,name)
 		end
 	end
 
-	if ns.client_version>=2 and foundToysNum>0 then
+	if ns.client_version>=6 and foundToysNum>0 then
 		-- toy title
 		if not ns.profile[name].shortMenu then
 			tt4:AddSeparator(4,0,0,0,0);
