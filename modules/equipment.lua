@@ -12,7 +12,7 @@ local ttName, ttColumns, tt, module, equipPending = name.."TT", 3;
 local objLink,objColor,objType,objId,objData,objName,objInfo,objTooltip=1,2,3,4,6,5,7,8;
 local itemEnchant,itemGem1,itemGem2,itemGem3,itemGem4=1,2,3,4,5;
 local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice=1,2,3,4,5,6,7,8,9,10,11;
-local slots = {"HEAD","NECK","SHOULDER","SHIRT","CHEST","WAIST","LEGS","FEET","WRIST","HANDS","FINGER0","FINGER1","TRINKET0","TRINKET1","BACK","MAINHAND","SECONDARYHAND","RANGED"};
+local slots = {"HEAD","NECK","SHOULDER","SHIRT","CHEST","TABARD","WAIST","LEGS","FEET","WRIST","HANDS","FINGER0","FINGER1","TRINKET0","TRINKET1","BACK","MAINHAND","SECONDARYHAND","RANGED"};
 local inventory,enchantSlots = {iLevelMin=0,iLevelMax=0},{}; -- (enchantSlots) -1 = [iLevel<600], 0 = both, 1 = [iLevel=>600]
 local warlords_crafted,tSetItems = {},{};
 local extendedItemInfos,isRegistered = {};
@@ -253,7 +253,11 @@ local function createTooltip(tt)
 		--ns:debugPrint(name,prof1SkillLine,prof2SkillLine)
 
 		local none,miss=true,false;
-		for _,i in ipairs({1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17}) do
+		local iSlots = {1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17};
+		if ns.profile[name].showTabard then
+			tinsert(iSlots,6,19);
+		end
+		for _,i in ipairs(iSlots) do
 			local obj = ns.items.bySlot[-(i/100)];
 			if obj and inventory[obj.slot] then
 				none=false;
@@ -385,6 +389,7 @@ module = {
 		showGreenText = true,
 		showUpgrades = true,
 		showShorterInfo = true,
+		showTabard = false,
 
 		ignoreMainHand = "2",
 		ignoreOffHand = "2"
@@ -421,12 +426,12 @@ end
 function module.options()
 	return {
 		broker = {
-			showCurrentSet={ type="toggle", order=1, name=L["Show current set"], desc=L["Display your current equipment set on broker button"], hidden=ns.IsClassicClient},
-			showItemLevel={ type="toggle", order=2, name=L["Show average item level"], desc=L["Display your average item level on broker button"], hidden=ns.IsClassicClient},
-			showShorterInfo={ type="toggle", order=3, name=L["Show shorter Info for 'Unknown set' and more"], desc=L["Display shorter Info on broker button. 'Set?' instead of 'Unknown set'. 'No sets' instead of 'No sets found'."], hidden=ns.IsClassicClient},
+			showCurrentSet={ type="toggle", order=1, name=L["CurrentSet"], desc=L["CurrentSetDesc"], hidden=ns.IsClassicClient},
+			showItemLevel={ type="toggle", order=2, name=L["AvItemLvl"], desc=L["AvItemLvlDesc"], hidden=ns.IsClassicClient},
+			showShorterInfo={ type="toggle", order=3, name=L["ShorterSetInfo"], desc=L["ShorterSetInfoDesc"], hidden=ns.IsClassicClient},
 		},
 		tooltip = {
-			showSets={ type="toggle", order=1, name=L["Show equipment sets"], desc=L["Display a list of your equipment sets"], hidden=ns.IsClassicClient},
+			showSets={ type="toggle", order=1, name=L["EquipSets"], desc=L["EquipSetsDesc"], hidden=ns.IsClassicClient},
 			showInventory={ type="toggle", order=2, name=L["Show inventory"], desc=L["Display a list of currently equipped items"]},
 			showEmptySlots={ type="toggle", order=3, name=L["Show emtpy slots"], desc=L["Display empty equipment slots"]},
 			showNotEnchanted={ type="toggle", order=4, name=L["Show 'not enchanted' mark"], desc=L["Display a red # on not enchanted/enchantable items"]},
@@ -436,6 +441,7 @@ function module.options()
 			showGreenText={ type="toggle", order=8, name=L["Show green text"], desc=L["Display green text line from item tooltip like titanforged"], hidden=ns.IsClassicClient},
 			showUpgrades={ type="toggle", order=9, name=L["Show upgrade info"], desc=L["Display upgrade info like 2/6"], hidden=ns.IsClassicClient},
 			fullyUpgraded={ type="toggle", order=10, name=L["Darker blue for fully upgraded"], desc=L["Display upgrade counter in darker blue on fully upgraded items"], hidden=ns.IsClassicClient},
+			showTabard={ type="toggle", order=11, name=L["ShowTabard"], desc=L["ShowTabardDesc"]},
 		},
 		misc = {
 			ignoreMainHand={ type="select", order=1, name=L["Ignore main hand"], desc=L["'Save set' should ignore main hand weapon"], values=ignoreWeapon, hidden=ns.IsClassicClient },
