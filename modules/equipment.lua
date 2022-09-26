@@ -12,7 +12,7 @@ local ttName, ttColumns, tt, module, equipPending = name.."TT", 3;
 local objLink,objColor,objType,objId,objData,objName,objInfo,objTooltip=1,2,3,4,6,5,7,8;
 local itemEnchant,itemGem1,itemGem2,itemGem3,itemGem4=1,2,3,4,5;
 local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice=1,2,3,4,5,6,7,8,9,10,11;
-local slots = {"HEAD","NECK","SHOULDER","SHIRT","CHEST","TABARD","WAIST","LEGS","FEET","WRIST","HANDS","FINGER0","FINGER1","TRINKET0","TRINKET1","BACK","MAINHAND","SECONDARYHAND","RANGED"};
+local slots = {"HEAD","NECK","SHOULDER","SHIRT","CHEST","WAIST","LEGS","FEET","WRIST","HANDS","FINGER0","FINGER1","TRINKET0","TRINKET1","BACK","MAINHAND","SECONDARYHAND","RANGED","TABARD"};
 local inventory,enchantSlots = {iLevelMin=0,iLevelMax=0},{}; -- (enchantSlots) -1 = [iLevel<600], 0 = both, 1 = [iLevel=>600]
 local warlords_crafted,tSetItems = {},{};
 local extendedItemInfos,isRegistered = {};
@@ -93,12 +93,12 @@ end
 local function UpdateInventory()
 	local lst,lvl={iLevelMin=0,iLevelMax=0};
 	for _, d in pairs(ns.items.bySlot)do
-		if d and d.bag==-1 and d.slot~=4 and d.slot~=19 then
+		if d and d.bag==-1 then
 			local obj,_ = CopyTable(d);
 			obj.type = "inv";
 			ns.ScanTT.query(obj,true);
 			lst[d.slot] = obj;
-			if ns.client_version>=6 then
+			if ns.client_version>=6 and d.slot~=4 and d.slot~=19 then
 				obj.level = obj.level or 0;
 				if lst.iLevelMin==0 or obj.level<lst.iLevelMin then
 					lst.iLevelMin=obj.level;
@@ -254,6 +254,9 @@ local function createTooltip(tt)
 
 		local none,miss=true,false;
 		local iSlots = {1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17};
+		if ns.profile[name].showShirt then
+			tinsert(iSlots,6,4);
+		end
 		if ns.profile[name].showTabard then
 			tinsert(iSlots,6,19);
 		end
@@ -324,6 +327,10 @@ local function createTooltip(tt)
 						tSetItem=C("yellow"," T"..tSetItems[obj.id]);
 					end
 
+					if i==19 or i==4 then
+						itemLevel = "";
+					end
+
 					local l = tt:AddLine(
 						C("ltyellow",_G[slots[i].."SLOT"]),
 						C("quality"..itemQuality,itemName) .. greenline .. tSetItem .. setName .. upgrades .. enchanted .. gems,
@@ -390,6 +397,7 @@ module = {
 		showUpgrades = true,
 		showShorterInfo = true,
 		showTabard = false,
+		showShirt = false,
 
 		ignoreMainHand = "2",
 		ignoreOffHand = "2"
@@ -442,6 +450,7 @@ function module.options()
 			showUpgrades={ type="toggle", order=9, name=L["Show upgrade info"], desc=L["Display upgrade info like 2/6"], hidden=ns.IsClassicClient},
 			fullyUpgraded={ type="toggle", order=10, name=L["Darker blue for fully upgraded"], desc=L["Display upgrade counter in darker blue on fully upgraded items"], hidden=ns.IsClassicClient},
 			showTabard={ type="toggle", order=11, name=L["ShowTabard"], desc=L["ShowTabardDesc"]},
+			showShirt={ type="toggle", order=12, name=L["ShowShirt"], desc=L["ShowShirtDesc"]},
 		},
 		misc = {
 			ignoreMainHand={ type="select", order=1, name=L["Ignore main hand"], desc=L["'Save set' should ignore main hand weapon"], values=ignoreWeapon, hidden=ns.IsClassicClient },
