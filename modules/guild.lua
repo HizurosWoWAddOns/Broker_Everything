@@ -491,6 +491,7 @@ end
 
 function ttScrollList(delta,tbl) -- executed by createTooltip and ttWheelHook
 	local scrollInfo,target,new = membScroll,"Members",false;
+	scrollInfo.numLines = ns.profile[name].numMembersScroll;
 	if tbl==applicants then
 		scrollInfo,target = applScroll,"Applicants";
 	end
@@ -835,6 +836,7 @@ module = {
 		showProfessions = true,	showProfessionsInTT2 = false,
 		showBattleTag = true,
 		showTableBackground = true,
+		numMembersScroll = 15,
 
 		-- misc
 		showApplicants = true,
@@ -900,6 +902,7 @@ function module.options()
 			--splitTables       = { type="toggle", order=30, name=L["Separate mobile app user"], desc=L["Display mobile chatter with own table in tooltip"] }, -- deprecated
 			showBattleTag     = { type="toggle", order=31, name=BATTLETAG, desc=L["Append the BattleTag of your friends to the character name"], hidden=ns.IsClassicClient },
 			showTableBackground={ type="toggle", order=32, name=L["GuildTableBg"], desc=L["GuildTableBgDesc"], hidden=ns.IsClassicClient },
+			numMembersScroll  = { type="range", order=33, name=L["NumMembersScroll"], desc=L["NumMembersScrollDesc"], min=15, max=80, step=1},
 		},
 		tooltip2 = {
 			name = L["Secondary tooltip options"],
