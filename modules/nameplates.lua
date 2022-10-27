@@ -175,26 +175,26 @@ function module.init()
 			{ txt=PLAYER_DIFFICULTY1,
 				colors=colors1,
 				onChange=UpdateNamePlateOptions,
-				type="group", cvar={NamePlateHorizontalScale=tostring(UNML.normalHorizontalScale),   NamePlateVerticalScale=tostring(UNML.normalVerticalScale)} -- 1, 1.4
+				type="group", cvar={NamePlateHorizontalScale="1",   NamePlateVerticalScale="1", NamePlateClassificationScale="1"} -- 1, 1.4
 			},
 			{ txt=VIDEO_OPTIONS_FAIR,
 				colors=colors1,
 				onChange=UpdateNamePlateOptions,
-				type="group", cvar={NamePlateHorizontalScale="1.18", NamePlateVerticalScale="1.9"}
+				type="group", cvar={NamePlateHorizontalScale="1.18", NamePlateVerticalScale="1.9", NamePlateClassificationScale="1.25"}
 			},
 			{ txt=LARGE,
 				colors=colors1,
 				onChange=UpdateNamePlateOptions,
-				type="group", cvar={NamePlateHorizontalScale=tostring(UNML.largeHorizontalScale), NamePlateVerticalScale=tostring(UNML.largeVerticalScale)} -- 1.4, 2.7
+				type="group", cvar={NamePlateHorizontalScale="1.4", NamePlateVerticalScale="2.7", NamePlateClassificationScale="1.25"} -- 1.4, 2.7
 			},
 			{ txt=L["Larger"], colors=colors1,
 				onChange=UpdateNamePlateOptions,
-				type="group", cvar={NamePlateHorizontalScale="1.9", NamePlateVerticalScale="3.8"}
+				type="group", cvar={NamePlateHorizontalScale="1.9", NamePlateVerticalScale="3.8", NamePlateClassificationScale="1.25"}
 			},
 			{ txt=L["Even larger"], colors=colors1,
 				row=2,
 				onChange=UpdateNamePlateOptions,
-				type="group", cvar={NamePlateHorizontalScale="2.6", NamePlateVerticalScale="5.2"}
+				type="group", cvar={NamePlateHorizontalScale="2.6", NamePlateVerticalScale="5.2", NamePlateClassificationScale="1.25"}
 			},
 		},
 		{
