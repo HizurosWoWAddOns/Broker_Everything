@@ -22,8 +22,8 @@ local function updateTracking()
 	local tActive = 0
 	local n = {}
 
-	for i = 1, GetNumTrackingTypes() do
-		local name, tex, active, category = GetTrackingInfo(i)
+	for i = 1, (C_Minimap and C_Minimap.GetNumTrackingTypes or GetNumTrackingTypes)() do
+		local name, tex, active, category = (C_Minimap and C_Minimap.GetTrackingInfo or GetTrackingInfo)(i)
 		if (active) then
 			tActive = tActive + 1
 			n[tActive] = {["Name"] = name, ["Texture"] = tex}
@@ -128,20 +128,20 @@ end
 function module.onclick(self,button)
 	if tt then tt:Hide(); end
 	local Name, texture, active, category, nested, Type = 1,2,3,4,5,6;
-	local list,count = {},GetNumTrackingTypes();
+	local list,count = {},(C_Minimap and C_Minimap.GetNumTrackingTypes or GetNumTrackingTypes)();
 	local _, class = UnitClass("player");
 
 	ns.EasyMenu:InitializeMenu();
 	ns.EasyMenu:AddEntry({label=L["Tracking options"], title=true});
-	ns.EasyMenu:AddEntry({label=MINIMAP_TRACKING_NONE, checked=MiniMapTrackingDropDown_IsNoTrackingActive, func=function() ClearAllTracking(); end });
+	ns.EasyMenu:AddEntry({label=MINIMAP_TRACKING_NONE, checked=MiniMapTrackingDropDown_IsNoTrackingActive, func=function() (C_Minimap and C_Minimap.ClearAllTracking or ClearAllTracking)(); end });
 	ns.EasyMenu:AddEntry({separator=true});
 
 	local numTracking,hunterHeader,townHeader = 0,false;
 	for id=1, count do
-		local tmp={GetTrackingInfo(id)};
+		local tmp={(C_Minimap and C_Minimap.GetTrackingInfo or GetTrackingInfo)(id)};
 		local Name, texture, active, category, nested = unpack(tmp);
 		if nested~=HUNTER_TRACKING and nested~=TOWNSFOLK then
-			local entry={label=Name, icon=texture, arg1=id, checked=MiniMapTrackingDropDownButton_IsActive, func=function() SetTracking(id,not select(3,GetTrackingInfo(id))); end };
+			local entry={label=Name, icon=texture, arg1=id, checked=MiniMapTrackingDropDownButton_IsActive, func=function() (C_Minimap and C_Minimap.SetTracking or SetTracking)(id,not select(3,(C_Minimap and C_Minimap.GetTrackingInfo or GetTrackingInfo)(id))); end };
 			if category=="spell" then
 				entry.tCoordLeft = 0.0625;
 				entry.tCoordRight = 0.9;
@@ -163,14 +163,14 @@ function module.onclick(self,button)
 				hunterHeader=true;
 			end
 
-			entry = {label=Name,icon=texture, arg1=id, checked=MiniMapTrackingDropDownButton_IsActive, func=function() SetTracking(id,not select(3,GetTrackingInfo(id))); end};
+			entry = {label=Name,icon=texture, arg1=id, checked=MiniMapTrackingDropDownButton_IsActive, func=function() (C_Minimap and C_Minimap.SetTracking or SetTracking)(id,not select(3,(C_Minimap and C_Minimap.GetTrackingInfo or GetTrackingInfo)(id))); end};
 		elseif nested == TOWNSFOLK then
 			if not townHeader then
 				ns.EasyMenu:AddEntry({separator=true});
 				ns.EasyMenu:AddEntry({label=TOWNSFOLK_TRACKING_TEXT, title=true});
 				townHeader=true
 			end
-			entry = {label=Name,icon=texture, arg1=id, checked=MiniMapTrackingDropDownButton_IsActive, func=function() SetTracking(id,not select(3,GetTrackingInfo(id))); end};
+			entry = {label=Name,icon=texture, arg1=id, checked=MiniMapTrackingDropDownButton_IsActive, func=function() (C_Minimap and C_Minimap.SetTracking or SetTracking)(id,not select(3,(C_Minimap and C_Minimap.GetTrackingInfo or GetTrackingInfo)(id))); end};
 		end
 		if entry then
 			if category=="spell" then
