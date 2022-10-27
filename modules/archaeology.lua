@@ -189,7 +189,7 @@ local function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	if tt.lines~=nil then tt:Clear(); end
 	local ts,l = C("gray",L["Not learned"]),tt:AddHeader(C("dkyellow",PROFESSIONS_ARCHAEOLOGY))
-	if tradeskill.maxSkill>0 then
+	if tradeskill.maxSkill and tradeskill.maxSkill>0 then
 		ts = tradeskill.skill.." / "..tradeskill.maxSkill;
 	end
 	tt:SetCell(l,ttColumns-2, ts, nil, "RIGHT", 3);
