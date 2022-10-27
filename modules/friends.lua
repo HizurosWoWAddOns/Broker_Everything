@@ -17,13 +17,85 @@ local URx, URy =  5, 27;
 local LRx, LRy =  5, 27;
 local off, on = strtrim(gsub(ERR_FRIEND_OFFLINE_S,"%%s","")), strtrim(gsub(ERR_FRIEND_ONLINE_SS,"\124Hplayer:%%s\124h%[%%s%]\124h",""));
 local gameIconPos = setmetatable({},{ __index = function(t,k) return format("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",DSw,DSh,ULx,ULy,LLx,LLy,URx,URy,LRx,LRy) end})
-local _BNet_GetClientTexture = BNet_GetClientTexture
+--local _BNet_GetClientTexture = BNet_GetClientTexture
+
+-- missing some entries on DF beta version of FrameXML\BNet.lua
+local BNET_CLIENT_WOW = BNET_CLIENT_WOW or  "WoW";
+local BNET_CLIENT_SC2 = BNET_CLIENT_SC2 or  "S2";
+local BNET_CLIENT_D3 = BNET_CLIENT_D3 or  "D3";
+local BNET_CLIENT_WTCG = BNET_CLIENT_WTCG or  "WTCG";
+local BNET_CLIENT_APP = BNET_CLIENT_APP or  "App";
+local BNET_CLIENT_HEROES = BNET_CLIENT_HEROES or  "Hero";
+local BNET_CLIENT_OVERWATCH = BNET_CLIENT_OVERWATCH or  "Pro";
+local BNET_CLIENT_CLNT = BNET_CLIENT_CLNT or  "CLNT";
+local BNET_CLIENT_SC = BNET_CLIENT_SC or  "S1";
+local BNET_CLIENT_DESTINY2 = BNET_CLIENT_DESTINY2 or  "DST2";
+local BNET_CLIENT_COD = BNET_CLIENT_COD or  "VIPR";
+local BNET_CLIENT_COD_MW = BNET_CLIENT_COD_MW or  "ODIN";
+local BNET_CLIENT_COD_MW2 = BNET_CLIENT_COD_MW2 or  "LAZR";
+local BNET_CLIENT_COD_BOCW = BNET_CLIENT_COD_BOCW or  "ZEUS";
+local BNET_CLIENT_WC3 = BNET_CLIENT_WC3 or  "W3";
+local BNET_CLIENT_ARCADE = BNET_CLIENT_ARCADE or  "RTRO";
+local BNET_CLIENT_CRASH4 = BNET_CLIENT_CRASH4 or  "WLBY";
+local BNET_CLIENT_D2 = BNET_CLIENT_D2 or  "OSI";
+local BNET_CLIENT_COD_VANGUARD = BNET_CLIENT_COD_VANGUARD or  "FORE";
+local BNET_CLIENT_DI = BNET_CLIENT_DI or  "ANBS";
+local BNET_CLIENT_ARCLIGHT = BNET_CLIENT_ARCLIGHT or  "GRY";
+
+local function _BNet_GetClientTexture(client)
+   if ( client == BNET_CLIENT_WOW ) then
+      return "Interface\\FriendsFrame\\Battlenet-WoWicon";
+   elseif ( client == BNET_CLIENT_SC2 ) then
+      return "Interface\\FriendsFrame\\Battlenet-Sc2icon";
+   elseif ( client == BNET_CLIENT_D3 ) then
+      return "Interface\\FriendsFrame\\Battlenet-D3icon";
+   elseif ( client == BNET_CLIENT_WTCG ) then
+      return "Interface\\FriendsFrame\\Battlenet-WTCGicon";
+   elseif ( client == BNET_CLIENT_HEROES ) then
+      return "Interface\\FriendsFrame\\Battlenet-HotSicon";
+   elseif ( client == BNET_CLIENT_OVERWATCH ) then
+      return "Interface\\FriendsFrame\\Battlenet-Overwatchicon";
+   elseif ( client == BNET_CLIENT_SC ) then
+      return "Interface\\FriendsFrame\\Battlenet-SCicon";
+   elseif ( client == BNET_CLIENT_DESTINY2 ) then
+      return "Interface\\FriendsFrame\\Battlenet-Destiny2icon";
+   elseif ( client == BNET_CLIENT_COD ) then
+      return "Interface\\FriendsFrame\\Battlenet-CallOfDutyBlackOps4icon";
+   elseif ( client == BNET_CLIENT_COD_MW ) then
+      return "Interface\\FriendsFrame\\Battlenet-CallOfDutyMWicon";
+   elseif ( client == BNET_CLIENT_COD_MW2 ) then
+      return "Interface\\FriendsFrame\\Battlenet-CallOfDutyMW2icon";
+   elseif ( client == BNET_CLIENT_COD_BOCW ) then
+      return "Interface\\FriendsFrame\\Battlenet-CallOfDutyBlackOpsColdWaricon";
+   elseif ( client == BNET_CLIENT_WC3 ) then
+      return "Interface\\FriendsFrame\\Battlenet-Warcraft3Reforged";
+   elseif ( client == BNET_CLIENT_ARCADE ) then
+      return "Interface\\FriendsFrame\\Battlenet-BlizzardArcadeCollectionicon";
+   elseif ( client == BNET_CLIENT_CRASH4 ) then
+      return "Interface\\FriendsFrame\\Battlenet-CrashBandicoot4icon";
+   elseif ( client == BNET_CLIENT_D2 ) then
+      return "Interface\\FriendsFrame\\Battlenet-DiabloIIResurrectedicon";
+   elseif ( client == BNET_CLIENT_COD_VANGUARD ) then
+      return "Interface\\FriendsFrame\\Battlenet-CallOfDutyVanguardicon";
+   elseif ( client == BNET_CLIENT_DI) then
+      return "Interface\\FriendsFrame\\Battlenet-DiabloImmortalicon";
+   elseif ( client == BNET_CLIENT_ARCLIGHT) then
+      return "Interface\\FriendsFrame\\Battlenet-WarcraftArclightRumbleicon";
+   else
+      return "Interface\\FriendsFrame\\Battlenet-Battleneticon";
+   end
+end
+
+-- /missing
+
 local gameShortcut = setmetatable({
 	[BNET_CLIENT_WTCG] = "HS",
 	[BNET_CLIENT_OVERWATCH] = "OW",
 	[BNET_CLIENT_HEROES] = "HotS",
+	[BNET_CLIENT_DI] = "ANBS",
 	["BSAp"] = "Mobile",
 },{ __index = function(t, k) return k end });
+
 local gameNames = setmetatable({
 	[BNET_CLIENT_APP]="Desktop App",
 	["BSAp"] = "Mobile App",
@@ -34,7 +106,9 @@ local gameNames = setmetatable({
 	[BNET_CLIENT_SC2]="Starcraft 2",
 	[BNET_CLIENT_WOW]="World of Warcraft",
 	[BNET_CLIENT_WTCG]="Hearthstone",
+	[BNET_CLIENT_DI]="Warcraft Arclight Rumble",
 },{ __index = function(t, k) return k end });
+
 
 
 -- register icon names and default files --
