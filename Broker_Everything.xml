@@ -153,12 +153,12 @@
 			</Layer>
 		</Layers>
 		<Frames>
-			<Checkbox parentKey="StatusToggle" inherits="">
+			<CheckButton parentKey="StatusToggle" inherits="">
 				<Size x="20" y="20" />
 				<Anchors>
 					<Anchor point="RIGHT" relativeKey="$parent.Status" relativePoint="LEFT" y="-5" />
 				</Anchors>
-			</Checkbox>
+			</CheckButton>
 		</Frames>
 	</Button>
 
