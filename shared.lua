@@ -944,8 +944,8 @@ do
 
 	local function scanBags()
 		for _,bagIndex in ipairs(updateBags) do
-			local numBagSlots = GetContainerNumSlots(bagIndex);
-			local numFreeSlots = GetContainerNumFreeSlots(bagIndex);
+			local numBagSlots = (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bagIndex);
+			local numFreeSlots = (C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(bagIndex);
 			if numBagSlots~=numFreeSlots then -- do not scan empty bag ;-)
 				--[[
 				local isSoul = false; -- currently could not test. have no warlock on classic realms.
@@ -958,12 +958,22 @@ do
 				--]]
 				for slotIndex=1, numBagSlots do
 					local sharedSlotIndex = bagIndex+(slotIndex/100);
-					local id = GetContainerItemID(bagIndex,slotIndex);
-					local _, count, _, _, _, _, link = GetContainerItemInfo(bagIndex,slotIndex);
+					local id = (C_Container and C_Container.GetContainerItemID or GetContainerItemID)(bagIndex,slotIndex);
+					local _, count, _, _, _, _, link = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(bagIndex,slotIndex);
+					local count,link
+					if C_Container and C_Container.GetContainerItemInfo then
+						local t = C_Container.GetContainerItemInfo(bagIndex,slotIndex);
+						if t then
+							count = t.stackCount;
+							link = t.hyperlink;
+						end
+					elseif GetContainerItemInfo then
+						_, count, _, _, _, _, link = GetContainerItemInfo(bagIndex,slotIndex);
+					end
 					if id then
 						local _, _, _, itemEquipLocation, _, itemClassID, itemSubClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
 						local itemSpellName,itemSpellID = GetItemSpell(link);
-						local d,dM = GetContainerItemDurability(bagIndex,slotIndex);
+						local d,dM = (C_Container and C_Container.GetContainerItemDurability or GetContainerItemDurability)(bagIndex,slotIndex);
 						local diffStr = table.concat({link,d or 0,dM or 0,count},"^");
 						local isEquipment = false;
 						if not (itemEquipLocation=="" or itemEquipLocation==(INVTYPE_TABARD or Enum.InventoryType.IndexTabardType) or itemEquipLocation==(INVTYPE_BODY or Enum.InventoryType.IndexBodyType)) then
@@ -1117,7 +1127,7 @@ end
 -- -------------------------------------------------------------- --
 do
 	local callback = {};
-	hooksecurefunc("UseContainerItem",function(bag,slot)
+	local function UseContainerItemHook(bag, slot)
 		if bag and slot then
 			local itemId = tonumber((GetContainerItemLink(bag,slot) or ""):match("Hitem:([0-9]+)"));
 			if itemId and callback[itemId] then
@@ -1126,7 +1136,12 @@ do
 				end
 			end
 		end
-	end);
+	end
+	if C_Container and C_Container.UseContainerItem then
+		hooksecurefunc(C_Container,"UseContainerItem",UseContainerItemHook);
+	elseif UseContainerItem then
+		hooksecurefunc("UseContainerItem",UseContainerItemHook);
+	end
 	ns.UseContainerItemHook = {
 		registerItemID = function(modName,itemId,callbackFunc,info)
 			if callback[itemId]==nil then
