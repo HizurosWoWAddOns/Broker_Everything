@@ -1171,7 +1171,11 @@ do
 		InstantModeScanTT[f](InstantModeScanTT,v);
 	end
 	-- remove scripts from tooltip... prevents taint log spamming.
-	for _,v in ipairs({"OnLoad","OnHide","OnTooltipAddMoney","OnTooltipSetDefaultAnchor","OnTooltipCleared"})do
+	local badScripts = {"OnLoad","OnHide","OnTooltipSetDefaultAnchor","OnTooltipCleared"};
+	if ns.client_version<=9 then
+		tinsert(badScripts,"OnTooltipAddMoney");
+	end
+	for _,v in ipairs(badScripts)do
 		QueueModeScanTT:SetScript(v,nil);
 		InstantModeScanTT:SetScript(v,nil);
 	end
