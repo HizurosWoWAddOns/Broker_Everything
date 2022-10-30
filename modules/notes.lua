@@ -63,7 +63,7 @@ end
 local function initEditor()
 	editor = BrokerEverythingNotesEditor;
 
-	editor.TitleText:SetText(("%s - %s"):format(L["Notes"],C("gray",addon)));
+	(editor.TitleText or editor.TitleContainer.TitleText):SetText(("%s - %s"):format(L["Notes"],C("gray",addon)));
 	editor.title.Instructions:SetText(L["Title (optional)"]);
 	editor.text.Instructions:SetText(L["Input your note here..."]);
 
