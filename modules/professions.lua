@@ -332,21 +332,41 @@ local function expansionSkillLines_OnEnter(self,skillId)
 
 	--	expansionSkillLines = {-- C_TradeSkillUI.GetTradeSkillLineInfoByID
 	--
+
 	if expansionSkillLines[skillId] then
-		for i=1, #expansionSkillLines[skillId] do
-			local skillLineDisplayName, skillLineRank, skillLineMaxRank, skillLineModifier, parentSkillLineID = C_TradeSkillUI.GetTradeSkillLineInfoByID(expansionSkillLines[skillId][i]);
-			if skillLineDisplayName then
+		if C_TradeSkillUI.GetProfessionInfoBySkillLineID then
+			for i=1, #expansionSkillLines[skillId] do
+				local skillInfo = C_TradeSkillUI.GetProfessionInfoBySkillLineID(expansionSkillLines[skillId][i]);
+				if skillInfo then
 				local color,text = "ltgray",L["Learnable"];
-				if skillLineRank and skillLineMaxRank and skillLineMaxRank~=0 then
-					local skillPercent = skillLineRank/skillLineMaxRank;
-					if skillPercent==1 then -- on max skill
-						color = "gray2","gray2";
-					else
-						color = "ffff"..string.format("%02x",255*skillPercent).."00";
+					if skillInfo.skillLevel and skillInfo.maxSkillLevel and skillInfo.maxSkillLevel~=0 then
+						local percentSkillLevel = skillInfo.skillLevel/skillInfo.maxSkillLevel;
+						if percentSkillLevel==1 then
+							color = "gray2","gray2";
+						else
+							color = "ffff"..string.format("%02x",255*percentSkillLevel).."00";
+						end
+						text = skillInfo.skillLevel..'/'..skillInfo.maxSkillLevel;
 					end
-					text = skillLineRank..'/'..skillLineMaxRank;
+					tt2:AddLine(C("ltyellow",skillInfo.professionName),C(color,text));
 				end
-				tt2:AddLine(C("ltyellow",skillLineDisplayName),C(color,text));
+			end
+		else
+			for i=1, #expansionSkillLines[skillId] do
+				local skillLineDisplayName, skillLineRank, skillLineMaxRank, skillLineModifier, parentSkillLineID = C_TradeSkillUI.GetTradeSkillLineInfoByID(expansionSkillLines[skillId][i]);
+				if skillLineDisplayName then
+					local color,text = "ltgray",L["Learnable"];
+					if skillLineRank and skillLineMaxRank and skillLineMaxRank~=0 then
+						local skillPercent = skillLineRank/skillLineMaxRank;
+						if skillPercent==1 then -- on max skill
+							color = "gray2","gray2";
+						else
+							color = "ffff"..string.format("%02x",255*skillPercent).."00";
+						end
+						text = skillLineRank..'/'..skillLineMaxRank;
+					end
+					tt2:AddLine(C("ltyellow",skillLineDisplayName),C(color,text));
+				end
 			end
 		end
 	end
@@ -356,7 +376,6 @@ end
 local function expansionSkillLines_OnLeave(self)
 	--
 end
-
 
 local function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
