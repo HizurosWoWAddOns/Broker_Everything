@@ -959,16 +959,10 @@ do
 				for slotIndex=1, numBagSlots do
 					local sharedSlotIndex = bagIndex+(slotIndex/100);
 					local id = (C_Container and C_Container.GetContainerItemID or GetContainerItemID)(bagIndex,slotIndex);
-					local _, count, _, _, _, _, link = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(bagIndex,slotIndex);
-					local count,link
-					if C_Container and C_Container.GetContainerItemInfo then
-						local t = C_Container.GetContainerItemInfo(bagIndex,slotIndex);
-						if t then
-							count = t.stackCount;
-							link = t.hyperlink;
-						end
-					elseif GetContainerItemInfo then
-						_, count, _, _, _, _, link = GetContainerItemInfo(bagIndex,slotIndex);
+					local itemInfo, count, _, _, _, _, link = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(bagIndex,slotIndex);
+					if not count and itemInfo then
+						count = itemInfo.stackCount;
+						link = itemInfo.hyperlink;
 					end
 					if id then
 						local _, _, _, itemEquipLocation, _, itemClassID, itemSubClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too

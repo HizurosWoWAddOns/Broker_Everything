@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Bags" -- L["Bags"] L["ModDesc-Bags"]
 local ttName,ttColumns,tt,module,createTooltip = name.."TT",3;
 local IsMerchantOpen,G = false,{};
-local crap,bags,bagTypes,retry = {limit=3,sum=0,items={}},{sumFree=0,sumTotal=0,byTypeFree={},byTypeTotal={}},{};
+local crap,bags,bagTypes,retry = {limit=2,sum=0,items={}},{sumFree=0,sumTotal=0,byTypeFree={},byTypeTotal={}},{};
 local LE_ITEM_CLASS_CONTAINER = LE_ITEM_CLASS_CONTAINER or Enum.ItemClass.Container;
 local qualityModeValues = {
 	["1"]=L["BagsQualityAll"],
@@ -72,11 +72,14 @@ end
 
 function crap.search()
 	for bag=0, NUM_BAG_SLOTS do
-		if GetContainerNumSlots(bag) ~= GetContainerNumFreeSlots(bag) then
-			for slot=1, GetContainerNumSlots(bag) do
+		if (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bag) ~= (C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(bag) then
+			for slot=1, (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bag) do
 				local link = GetContainerItemLink(bag,slot);
 				if link then
-					local _,count = GetContainerItemInfo(bag, slot);
+					local itemInfo,count = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(bag, slot);
+					if not count and itemInfo then
+						count = itemInfo.stackCount;
+					end
 					local _,_,quality,_,_,_,_,_,_,_,price = GetItemInfo(link);
 					if quality==0 and price>0 then
 						tinsert(crap.items,{bag,slot,price*count});
@@ -129,7 +132,10 @@ local function itemQuality()
 						failed = true;
 					end
 				end
-				local _,count = GetContainerItemInfo(item.bag,item.slot);
+				local itemInfo,count = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(item.bag,item.slot);
+				if not count and itemInfo then
+					count = itemInfo.stackCount;
+				end
 				itemQuality = itemQuality or 99; -- unknown quality [nil]
 				if count and itemPrice then
 					price[itemQuality] = price[itemQuality] + (itemPrice*count);
@@ -259,17 +265,23 @@ end
 
 -- Function to determine the total number of bag slots and the number of free bag slots.
 function updateBags()
-	local T,F = (GetContainerNumSlots(0) or 0),(GetContainerNumFreeSlots(0) or 0);
+	local T,F = ((C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(0) or 0),((C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(0) or 0);
 	if T==0 then -- api return invalid value
 		updateBagsRetry(.5,{"<retry>","<invalid api value>","GetContainerNumSlots(0) == 0"});
 		return;
 	end
 
 	local total,free = {["1:0"]=T},{["1:0"]=F};
+	local slotsFirst,slotsMax = 0,NUM_BAG_SLOTS;
+	if ns.client_version>=10 then
+		slotsFirst,slotsMax =  BACKPACK_CONTAINER,NUM_TOTAL_EQUIPPED_BAG_SLOTS;
+	end
 
-	for slotIndex=1,NUM_BAG_SLOTS do
-		local link = GetInventoryItemLink("player", slotIndex+19);
-		local itemIcon, itemClassID, itemSubClassID, _
+	for slotIndex=slotsFirst, slotsMax do
+		local itemIcon, itemClassID, itemSubClassID, _, link = 0, 1, 0;
+		if slotIndex>0 and (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(slotIndex)>0 then
+			link = GetInventoryItemLink("player", (C_Container and C_Container.ContainerIDToInventoryID or ContainerIDToInventoryID)(slotIndex));
+		end
 		if link then
 			_, _, _, _, _, _, _, _, _, itemIcon, _, itemClassID, itemSubClassID = GetItemInfo(link);
 			if not itemIcon then
@@ -278,7 +290,7 @@ function updateBags()
 			end
 		end
 		if itemIcon and itemClassID and itemSubClassID then
-			local t,f = (GetContainerNumSlots(slotIndex)),(GetContainerNumFreeSlots(slotIndex));
+			local t,f = ((C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(slotIndex)),((C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(slotIndex));
 			local bT = itemClassID..":"..itemSubClassID;
 			if not total[bT] then
 				total[bT], free[bT] = t,f;
