@@ -57,6 +57,10 @@ local function _GetFactionInfoByID(faction_id,paragonOnly)
 		data[factionID] = faction_id;
 	end
 
+	if data[Name]:find("%\r%\n") then
+		data[Name] = data[Name]:gsub("%\r%\n","");
+	end
+
 	if data[factionID]>0 then
 		if not paragonOnly then
 			-- faction standing text
