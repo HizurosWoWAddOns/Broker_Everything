@@ -82,7 +82,10 @@ local function _GetFactionInfoByID(faction_id,paragonOnly)
 					data[barMin], data[barMax], data[barValue] = 42000, 42999, 42999;
 				end
 			end
-			data[barPercent] = (data[barValue]-data[barMin])/(data[barMax]-data[barMin]);
+			data[barPercent] = 1;
+			if (data[barMax]-data[barMin])~=0 then
+				data[barPercent] = (data[barValue]-data[barMin])/(data[barMax]-data[barMin]);
+			end
 
 			-- session difference
 			data[sessionValue] = 0;
@@ -476,7 +479,7 @@ function createTooltip(tt)
 					bars[count]:Show();
 					bars[count].data = data;
 					bars[count].standing = data[standingID];
-					bars[count].percent = (_Value/_Max);
+					bars[count].percent = _Max==0 and 1 or (_Value/_Max);
 					bars[count].bodyguard = known_bodyguards[data[Name]] or false;
 					bars[count].friend = data[friendID]~=nil;
 				end
