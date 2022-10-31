@@ -67,7 +67,7 @@
 	<!-- /modules for classic -->
 
 	<!--@do-not-package@-->
-	<!--Script file="_modules/broker_everything.lua"/-->
+	<!--
 	<Script file="_modules/lookingfor.lua"/>
 	<Script file="_modules/communities.lua"/>
 	<Script file="_modules/workorders.lua"/>
@@ -75,12 +75,13 @@
 	<Script file="_modules/stats.lua"/>
 	<Script file="_modules/mythicplus.lua"/>
 	<Script file="_modules/shadowlands.lua"/>
-	<Script file="_modules/playedsound.lua"/>
+	<Script file="_modules/talents_classic.lua"/>
+	<Script file="_modules/soulshards_classic.lua"/>
+	-->
+	<!--Script file="_modules/broker_everything.lua"/-->
 	<!--Script file="_modules/worldpvpareas.lua"/-->
 	<!--Script file="_modules/playerkills.lua"/-->
 	<!--Script file="_modules/quickjoin.lua"/-->
-	<Script file="_modules/talents_classic.lua"/>
-	<Script file="_modules/soulshards_classic.lua"/>
 	<!--@end-do-not-package@-->
 
 	<Script file="chatcommand.lua" />
@@ -131,34 +132,6 @@
 				</Anchors>
 				<HighlightTexture alphamode="ADD" file="interface\friendsframe\ui-friendsframe-highlightbar-blue" />
 			</Button>
-		</Frames>
-	</Button>
-
-	<Button name="BEOptionsAddonButtonTemplate" virtual="true">
-		<Size x="0" y="40" />
-		<Anchors>
-			<Anchor point="LEFT"/>
-			<Anchor point="RIGHT"/>
-		</Anchors>
-		<Layers>
-			<Layer level="ARTWORK">
-				<FontString parentKey="Name" inherits="GameFontNormal">
-					<Anchors>
-						<Anchor point="LEFT" />
-					</Anchors>
-				</FontString>
-				<FontString parentKey="Status" inherits="GameFontNormalSmall">
-
-				</FontString>
-			</Layer>
-		</Layers>
-		<Frames>
-			<Checkbox parentKey="StatusToggle" inherits="">
-				<Size x="20" y="20" />
-				<Anchors>
-					<Anchor point="RIGHT" relativeKey="$parent.Status" relativePoint="LEFT" y="-5" />
-				</Anchors>
-			</Checkbox>
 		</Frames>
 	</Button>
 
