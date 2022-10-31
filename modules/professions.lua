@@ -133,8 +133,8 @@ local function updateTradeSkills()
 			chkExpiredCooldowns();
 			skillNameById[skillLine] = skillName;
 
-			-- register unlearned faction recipes // not working anymore. IsSpellKnown return false for known recipes
-			--[[
+			-- register unlearned faction recipes // ~~not working anymore. IsSpellKnown return false for known recipes~~ fixed in dragonflight.
+
 			for expansionIndex, recipes in pairs(faction_recipes) do
 				if tonumber(expansionIndex) and recipes[skillLine] then
 					for index,recipe in ipairs(recipes[skillLine]) do
@@ -147,7 +147,6 @@ local function updateTradeSkills()
 					end
 				end
 			end
-			--]]
 		else
 			professions[order] = false;
 		end
@@ -910,7 +909,7 @@ function module.onevent(self,event,arg1,...)
 	elseif event=="NEW_RECIPE_LEARNED" then
 		local id = tonumber(arg1)
 		if id  and toonDB.unlearnedRecipes[id] then
-			toonDB.unlearnedRecipes[arg1] = nil;
+			toonDB.unlearnedRecipes[id] = nil;
 		end
 	elseif event=="PLAYER_LOGIN" or ns.eventPlayerEnteredWorld then
 		if not toonDB then
