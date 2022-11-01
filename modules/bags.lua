@@ -265,22 +265,20 @@ end
 
 -- Function to determine the total number of bag slots and the number of free bag slots.
 function updateBags()
-	local T,F = ((C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(0) or 0),((C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(0) or 0);
-	if T==0 then -- api return invalid value
-		updateBagsRetry(.5,{"<retry>","<invalid api value>","GetContainerNumSlots(0) == 0"});
+	local backpackSlots = (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(0) or 0;
+	if backpackSlots==0 then -- api return invalid value
+		updateBagsRetry(.5,{"<retry>","<invalid api value>","zero backpack slots are invalid"});
 		return;
 	end
 
-	local total,free = {["1:0"]=T},{["1:0"]=F};
-	local slotsFirst,slotsMax = 0,NUM_BAG_SLOTS;
-	if ns.client_version>=10 then
-		slotsFirst,slotsMax =  BACKPACK_CONTAINER,NUM_TOTAL_EQUIPPED_BAG_SLOTS;
-	end
+	local backpackFreeSlots = (C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(0) or 0;
+	local totalSlots,freeSlots = {["1:0"]=backpackSlots},{["1:0"]=backpackFreeSlots};
+	local sum = {backpackSlots,backpackFreeSlots};
 
-	for slotIndex=slotsFirst, slotsMax do
+	for bagIndex=1, (NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS) do
 		local itemIcon, itemClassID, itemSubClassID, _, link = 0, 1, 0;
-		if slotIndex>0 and (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(slotIndex)>0 then
-			link = GetInventoryItemLink("player", (C_Container and C_Container.ContainerIDToInventoryID or ContainerIDToInventoryID)(slotIndex));
+		if bagIndex>0 and (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bagIndex)>0 then
+			link = GetInventoryItemLink("player", (C_Container and C_Container.ContainerIDToInventoryID or ContainerIDToInventoryID)(bagIndex));
 		end
 		if link then
 			_, _, _, _, _, _, _, _, _, itemIcon, _, itemClassID, itemSubClassID = GetItemInfo(link);
@@ -290,13 +288,14 @@ function updateBags()
 			end
 		end
 		if itemIcon and itemClassID and itemSubClassID then
-			local t,f = ((C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(slotIndex)),((C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(slotIndex));
+			local bagSlots = (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bagIndex);
+			local bagSlotsFree = (C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(bagIndex);
 			local bT = itemClassID..":"..itemSubClassID;
-			if not total[bT] then
-				total[bT], free[bT] = t,f;
+			if not totalSlots[bT] then
+				totalSlots[bT], freeSlots[bT] = bagSlots,bagSlotsFree;
 			else
-				total[bT] = total[bT]+t;
-				free[bT] = free[bT]+f;
+				totalSlots[bT] = totalSlots[bT]+bagSlots;
+				freeSlots[bT] = freeSlots[bT]+bagSlotsFree;
 			end
 			if not (bagTypes[bT] and bagTypes[bT].icon) then
 				local n = GetItemSubClassInfo(itemClassID,itemSubClassID);
@@ -304,11 +303,11 @@ function updateBags()
 			elseif bagTypes[bT].icon < itemIcon then
 				bagTypes[bT].icon = itemIcon;
 			end
-			T,F = T+t,F+f;
+			sum[1],sum[2] = sum[1]+bagSlots,sum[2]+bagSlotsFree;
 		end
 	end
 
-	bags = {sumFree=F,sumTotal=T,byTypeFree=free,byTypeTotal=total};
+	bags = {sumFree=sum[2],sumTotal=sum[1],byTypeFree=freeSlots,byTypeTotal=totalSlots};
 
 	retry = nil;
 	updateBroker();
