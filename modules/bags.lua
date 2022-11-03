@@ -74,7 +74,7 @@ function crap.search()
 	for bag=0, NUM_BAG_SLOTS do
 		if (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bag) ~= (C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(bag) then
 			for slot=1, (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bag) do
-				local link = GetContainerItemLink(bag,slot);
+				local link = (C_Container and C_Container.GetContainerItemLink or GetContainerItemLink)(bag,slot);
 				if link then
 					local itemInfo,count = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(bag, slot);
 					if not count and itemInfo then

@@ -1036,7 +1036,7 @@ do
 				local _, spell = GetItemSpell(info.link);
 				if spell then
 					for sharedSlot, info in pairs(itemsByID[...])do
-						local _, count, _, _, _, _, link, _, _ = GetContainerItemInfo(info.bag,info.slot);
+						local _, count, _, _, _, _, link, _, _ = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(info.bag,info.slot);
 						info.spell = spell;
 						itemsBySpell[spell][sharedSlot] = count;
 					end
@@ -1123,7 +1123,7 @@ do
 	local callback = {};
 	local function UseContainerItemHook(bag, slot)
 		if bag and slot then
-			local itemId = tonumber((GetContainerItemLink(bag,slot) or ""):match("Hitem:([0-9]+)"));
+			local itemId = tonumber(((C_Container and C_Container.GetContainerItemLink or GetContainerItemLink)(bag,slot) or ""):match("Hitem:([0-9]+)"));
 			if itemId and callback[itemId] then
 				for i,v in pairs(callback[itemId])do
 					if type(v[1])=="function" then v[1]("UseContainerItem",itemId,v[2]); end
@@ -1220,11 +1220,11 @@ do
 		end
 		if data._type=="bag" or data._type=="bags" then
 			if data.link==nil then
-				data.link = GetContainerItemLink(data.bag,data.slot);
+				data.link = (C_Container and C_Container.GetContainerItemLink or GetContainerItemLink)(data.bag,data.slot);
 			end
 			data.linkData = GetLinkData(data.link);
 			data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = GetItemInfo(data.link);
-			data.startTime, data.duration, data.isEnabled = GetContainerItemCooldown(data.bag,data.slot);
+			data.startTime, data.duration, data.isEnabled = (C_Container and C_Container.GetContainerItemCooldown or GetContainerItemCooldown)(data.bag,data.slot);
 			data.hasCooldown, data.repairCost = tt:SetBagItem(data.bag,data.slot);
 		elseif data._type=="inventory" or data._type=="inv" then
 			if data.link==nil then
