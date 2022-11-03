@@ -244,7 +244,7 @@ function createTooltip(tt, update)
 	end
 end
 
-local function BlizzardOptionsPanel_SetCVarSafeHook(cvar)
+local function SetCVarHook(cvar)
 	if cvars[cvar:lower()] then
 		updateBroker();
 	end
@@ -298,13 +298,13 @@ function module.volumeAdjust(self,button,modName,action)
 	end
 	if volume.master==cap then return; end
 	volume.master = new;
-	BlizzardOptionsPanel_SetCVarSafe("Sound_MasterVolume",volume.master);
+	SetCVar("Sound_MasterVolume",volume.master)
 	updateBroker();
 	createTooltip(tt,true);
 end
 
 function module.mute()
-	BlizzardOptionsPanel_SetCVarSafe("Sound_EnableAllSound",BlizzardOptionsPanel_GetCVarSafe("Sound_EnableAllSound")==0 and 1 or 0);
+	SetCVar("Sound_EnableAllSound",tonumber(GetCVar("Sound_EnableAllSound"))==0 and 1 or 0);
 	updateBroker();
 	createTooltip(tt,true);
 end
@@ -359,10 +359,10 @@ function module.onevent(self,event,arg1)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 	elseif event=="BE_UPDATE_CFG" or event=="PLAYER_LOGIN" or event=="SOUND_DEVICE_UPDATE" or (event=="CVAR_UPDATE" and cvars[arg1:lower()]) then
-		--[[if not self.hooked then
-			hooksecurefunc("BlizzardOptionsPanel_SetCVarSafe",BlizzardOptionsPanel_SetCVarSafeHook);
+		if not self.hooked then
+			hooksecurefunc("SetCVar",SetCVarHook);
 			self.hooked = true;
-		end --]]
+		end
 		updateBroker();
 	end
 end
