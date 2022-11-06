@@ -221,6 +221,7 @@ local function updateData()
 							if C_QuestLog.IsQuestFlaggedCompleted(bty.questID) then
 								ns.toon[name].bounties[ending][e] = true;
 							else -- if not flagged completed but 4/4 quests. player can travel to questgiver
+								ns.toon[name].bounties[ending] = ns.toon[name].bounties[ending] or {};
 								ns.toon[name].bounties[ending][e] = completed or -1;
 							end
 --@do-not-package@
