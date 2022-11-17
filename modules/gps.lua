@@ -32,7 +32,7 @@ local zoneDisplayValues = {
 	["5"] = ("%s (%s)"):format(L["Subzone"],ZONE),
 }
 local foundItems, foundToys, foundToysNum, teleports, portals, spells, hearthstoneLocation = {},{},0,{},{},{};
-local _classSpecialSpellIds,_teleportIds,_portalIds,_itemIds,_toyIds,_hearthstones,_itemMustBeEquipped,_itemFactions,_namelessToys = {},{},{},{},{},{},{},{},{};
+local _classSpecialSpellIds,_teleportIds,_portalIds,_itemIds,_toyIds,_hearthstones,_itemMustBeEquipped,_itemFactions,_namelessToys,_toyUsableBug = {},{},{},{},{},{},{},{},{},{};
 local sharedclickOptionsRename = {
 	["1_open_world_map"] = "worldmap",
 	["2_open_transport_menu"] = "transport",
