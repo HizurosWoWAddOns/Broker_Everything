@@ -49,7 +49,7 @@ I[name..'_100']  = {iconfile=icon.."100"}	--IconName::Volume_100--
 -- some local functions --
 --------------------------
 function updateBroker()
-	volume.master = tonumber(("%.2f"):format(GetCVar("Sound_MasterVolume")))
+	volume.master = tonumber(("%.2f"):format(GetCVar("Sound_MasterVolume") or 0))
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local suffix,color = "100","green"
 	if volume.master < .1 then
@@ -179,7 +179,7 @@ function createTooltip(tt, update)
 			tt:SetCell(l,1,strrep(" ",3 * v.inset)..C(color,label));
 
 			if v.percent~=nil then
-				v.pnow = tonumber(("%.2f"):format(GetCVar(v.percent)));
+				v.pnow = tonumber(("%.2f"):format(GetCVar(v.percent) or 0));
 
 				tt.lines[l].info = v;
 				tt.lines[l]:EnableMouseWheel(1)
