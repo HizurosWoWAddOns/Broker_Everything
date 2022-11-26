@@ -1162,7 +1162,7 @@ do
 	if (not wow10) then
 		QueueModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip",UIParent,"GameTooltipTemplate");
 		InstantModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip2",UIParent,"GameTooltipTemplate");
-		print("using legacy tooltip scanner")
+		--print("using legacy tooltip scanner")
 	end
 	
 	local _ITEM_LEVEL = ITEM_LEVEL:gsub("%%d","(%%d*)");
