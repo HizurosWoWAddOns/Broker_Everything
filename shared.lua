@@ -7,6 +7,8 @@ local L,_ = ns.L;
 ns.debugMode = "@project-version@"=="@".."project-version".."@";
 LibStub("HizurosSharedTools").RegisterPrint(ns,addon,"BE");
 
+local GameTooltip = GameTooltip
+local TooltipUtil_SurfaceArgs = TooltipUtil and TooltipUtil.SurfaceArgs
 local UnitName,UnitSex,UnitClass,UnitFactionGroup=UnitName,UnitSex,UnitClass,UnitFactionGroup;
 local UnitRace,GetRealmName,GetLocale,UnitGUID=UnitRace,GetRealmName,GetLocale,UnitGUID;
 local InCombatLockdown,CreateFrame=InCombatLockdown,CreateFrame;
@@ -1152,8 +1154,17 @@ end
 -- scanTooltip functions --
 -- --------------------- --
 do
-	local QueueModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip",UIParent,"GameTooltipTemplate");
-	local InstantModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip2",UIParent,"GameTooltipTemplate");
+	local toc_version = select(4, GetBuildInfo());
+	local wow10 = toc_version >= 100002;
+	local QueueModeScanTT = nil;
+	local InstantModeScanTT = nil;
+
+	if (not wow10) then
+		QueueModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip",UIParent,"GameTooltipTemplate");
+		InstantModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip2",UIParent,"GameTooltipTemplate");
+		print("using legacy tooltip scanner")
+	end
+	
 	local _ITEM_LEVEL = ITEM_LEVEL:gsub("%%d","(%%d*)");
 	local _UPGRADES = ITEM_UPGRADE_TOOLTIP_FORMAT:gsub(CHAT_HEADER_SUFFIX.."%%d/%%d","");
 	-- EMPTY_SOCKET_PRISMATIC and EMPTY_SOCKET_NO_COLOR are identical in some languages... Need only one of it.
@@ -1161,18 +1172,22 @@ do
 	if EMPTY_SOCKET_PRISMATIC~=EMPTY_SOCKET_NO_COLOR then
 		tinsert(EMPTY_SOCKETS,"NO_COLOR");
 	end
-	for f, v in pairs({SetScale=0.0001,SetAlpha=0,Hide=true,SetClampedToScreen=false,SetFrameStrata="BACKGROUND",ClearAllPoints=true})do
-		QueueModeScanTT[f](QueueModeScanTT,v);
-		InstantModeScanTT[f](InstantModeScanTT,v);
-	end
-	-- remove scripts from tooltip... prevents taint log spamming.
-	local badScripts = {"OnLoad","OnHide","OnTooltipSetDefaultAnchor","OnTooltipCleared"};
-	if ns.client_version<=9 then
-		tinsert(badScripts,"OnTooltipAddMoney");
-	end
-	for _,v in ipairs(badScripts)do
-		QueueModeScanTT:SetScript(v,nil);
-		InstantModeScanTT:SetScript(v,nil);
+
+	if (not wow10) then
+		for f, v in pairs({SetScale=0.0001,SetAlpha=0,Hide=true,SetClampedToScreen=false,SetFrameStrata="BACKGROUND",ClearAllPoints=true})do
+			QueueModeScanTT[f](QueueModeScanTT,v);
+			InstantModeScanTT[f](InstantModeScanTT,v);
+		end
+
+		-- remove scripts from tooltip... prevents taint log spamming.
+		local badScripts = {"OnLoad","OnHide","OnTooltipSetDefaultAnchor","OnTooltipCleared"};
+		if ns.client_version<=9 then
+			tinsert(badScripts,"OnTooltipAddMoney");
+		end
+		for _,v in ipairs(badScripts)do
+			QueueModeScanTT:SetScript(v,nil);
+			InstantModeScanTT:SetScript(v,nil);
+		end
 	end
 
 	ns.ScanTT = {};
@@ -1191,7 +1206,10 @@ do
 		return link;
 	end
 
+	-- when tooltipframe for scanning is not provided, using wow10 api to fetch tooltipdata
 	local function collect(tt,Data)
+		local tooltipData = nil;
+
 		local data,_;
 		if not Data then
 			if #queries==0 then
@@ -1199,7 +1217,9 @@ do
 					ticker:Cancel();
 					ticker=nil;
 				end
-				tt:Hide();
+				if (tt ~= nil) then
+					tt:Hide();
+				end
 				return;
 			end
 			data = queries[1];
@@ -1208,8 +1228,11 @@ do
 		end
 
 		local success,num,regions = false,0;
-		tt:SetOwner(UIParent,"ANCHOR_NONE");
-		tt:SetPoint("RIGHT",UIParent,"LEFT",0,0);
+
+		if (tt ~= nil) then
+			tt:SetOwner(UIParent,"ANCHOR_NONE");
+			tt:SetPoint("RIGHT",UIParent,"LEFT",0,0);
+		end
 
 		if not data._type then
 			data._type=data.type;
@@ -1219,6 +1242,8 @@ do
 		else
 			data.try=data.try+1;
 		end
+		
+		--print("scanning " .. data._type)
 		if data._type=="bag" or data._type=="bags" then
 			if data.link==nil then
 				data.link = (C_Container and C_Container.GetContainerItemLink or GetContainerItemLink)(data.bag,data.slot);
@@ -1226,13 +1251,23 @@ do
 			data.linkData = GetLinkData(data.link);
 			data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = GetItemInfo(data.link);
 			data.startTime, data.duration, data.isEnabled = (C_Container and C_Container.GetContainerItemCooldown or GetContainerItemCooldown)(data.bag,data.slot);
-			data.hasCooldown, data.repairCost = tt:SetBagItem(data.bag,data.slot);
+			if (tt ~= nil) then
+				data.hasCooldown, data.repairCost = tt:SetBagItem(data.bag,data.slot);
+			else
+				data.hasCooldown, data.repairCost = GameTooltip:SetBagItem(data.bag,data.slot);
+				tooltipData = C_TooltipInfo.GetBagItem(data.bag, data.slot)
+			end
 		elseif data._type=="inventory" or data._type=="inv" then
 			if data.link==nil then
 				data.link = GetInventoryItemLink("player",data.slot);
 			end
 			data.linkData = GetLinkData(data.link);
-			_,data.hasCooldown, data.repairCost = tt:SetInventoryItem("player", data.slot); -- repair costs
+			if (tt ~= nil) then
+				_,data.hasCooldown, data.repairCost = tt:SetInventoryItem("player", data.slot); -- repair costs
+			else
+				_,data.hasCooldown, data.repairCost = GameTooltip:SetInventoryItem("player", data.slot); -- repair costs
+				tooltipData = C_TooltipInfo.GetInventoryItem("player", data.slot);
+			end
 		elseif data._type=="unit" then
 			-- https://wow.gamepedia.com/API_UnitGUID
 			data._type = "link";
@@ -1254,26 +1289,55 @@ do
 
 		if data._type=="link" and data.link then
 			data.str = data.link;
-			tt:SetHyperlink(data.link);
+			if (tt ~= nil) then
+				tt:SetHyperlink(data.link);
+			else
+				tooltipData = C_TooltipInfo.GetHyperlink(hyperlink)
+			end			
 		end
 
 		try = try + 1;
 		if try>8 then try=0; end
 
-		tt:Show();
-
-		regions = {tt:GetRegions()};
-
 		data.lines={};
-		for _,v in ipairs(regions) do
-			if (v~=nil) and (v:GetObjectType()=="FontString")then
-				local str = (v:GetText() or ""):trim();
-				if str:len()>0 then
-					tinsert(data.lines,str);
+
+		-- scanning code wow < 10
+		if (tt ~= nil) then
+			tt:Show();
+
+			regions = {tt:GetRegions()};
+			for _,v in ipairs(regions) do
+				if (v~=nil) and (v:GetObjectType()=="FontString")then
+					local str = (v:GetText() or ""):trim();
+					if str:len()>0 then
+						tinsert(data.lines,str);
+						--print(data.lines,str)
+					end
 				end
 			end
 		end
 
+		-- scanning code wow 10.0.2
+		if (tt == nil and tooltipData ~= nil) then
+			-- The SurfaceArgs calls are required to assign values to the 'leftText' fields seen below.
+			TooltipUtil_SurfaceArgs(tooltipData);
+			for _, line in ipairs(tooltipData.lines) do
+				TooltipUtil_SurfaceArgs(line);
+			end
+			for i=2, min(#tooltipData.lines,20) do
+				local line = tooltipData.lines[i];
+				if (not line) then
+					break;
+				end
+				local str = (line.leftText or ""):trim();
+				if str:len()>0 then
+					tinsert(data.lines,line.leftText);
+					--print(data.lines,str);
+				end
+			end
+		end
+
+		-- filter data
 		if data._type=="inventory" or data._type=="inv" or data._type=="bag" or data._type=="bags" then
 			for i=2, min(#data.lines,20) do
 				local lvl = tonumber(data.lines[i]:match(_ITEM_LEVEL));
@@ -1306,7 +1370,10 @@ do
 			end
 		end
 
-		tt:Hide();
+		if (tt ~= nil) then
+			tt:Hide();
+		end
+
 
 		if Data then
 			return data;
