@@ -1324,7 +1324,7 @@ do
 			for _, line in ipairs(tooltipData.lines) do
 				TooltipUtil_SurfaceArgs(line);
 			end
-			for i=2, min(#tooltipData.lines,20) do
+			for i=1, min(#tooltipData.lines,20) do
 				local line = tooltipData.lines[i];
 				if (not line) then
 					break;
