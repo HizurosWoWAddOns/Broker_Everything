@@ -56,7 +56,7 @@ function crap.sell()
 		local I=numItems-(i-1);
 		local bag,slot,price = unpack(crap.items[I]);
 		sum = sum + price;
-		UseContainerItem(bag, slot);
+		(C_Container.UseContainerItem or UseContainerItem)(bag, slot);
 		tremove(crap.items,I);
 	end
 	crap.sum = crap.sum + sum;
