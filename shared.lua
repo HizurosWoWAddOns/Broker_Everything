@@ -1254,8 +1254,9 @@ do
 			if (tt ~= nil) then
 				data.hasCooldown, data.repairCost = tt:SetBagItem(data.bag,data.slot);
 			else
-				data.hasCooldown, data.repairCost = GameTooltip:SetBagItem(data.bag,data.slot);
-				tooltipData = C_TooltipInfo.GetBagItem(data.bag, data.slot)
+				tooltipData = C_TooltipInfo.GetBagItem(data.bag, data.slot);				
+				TooltipUtil_SurfaceArgs(tooltipData);
+				data.repairCost = tooltipData.repairCost;
 			end
 		elseif data._type=="inventory" or data._type=="inv" then
 			if data.link==nil then
@@ -1265,8 +1266,9 @@ do
 			if (tt ~= nil) then
 				_,data.hasCooldown, data.repairCost = tt:SetInventoryItem("player", data.slot); -- repair costs
 			else
-				_,data.hasCooldown, data.repairCost = GameTooltip:SetInventoryItem("player", data.slot); -- repair costs
 				tooltipData = C_TooltipInfo.GetInventoryItem("player", data.slot);
+				TooltipUtil_SurfaceArgs(tooltipData);
+				data.repairCost = tooltipData.repairCost;
 			end
 		elseif data._type=="unit" then
 			-- https://wow.gamepedia.com/API_UnitGUID
@@ -1293,6 +1295,7 @@ do
 				tt:SetHyperlink(data.link);
 			else
 				tooltipData = C_TooltipInfo.GetHyperlink(hyperlink)
+				TooltipUtil_SurfaceArgs(tooltipData);
 			end			
 		end
 
@@ -1320,7 +1323,6 @@ do
 		-- scanning code wow 10.0.2
 		if (tt == nil and tooltipData ~= nil) then
 			-- The SurfaceArgs calls are required to assign values to the 'leftText' fields seen below.
-			TooltipUtil_SurfaceArgs(tooltipData);
 			for _, line in ipairs(tooltipData.lines) do
 				TooltipUtil_SurfaceArgs(line);
 			end
