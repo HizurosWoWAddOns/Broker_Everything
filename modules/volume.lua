@@ -98,7 +98,7 @@ do
 		else
 			hardware.selected = hardwareIndex;
 			SetCVar(cvar,tostring(hardwareIndex-1) or 0);
-			AudioOptionsFrame_AudioRestart();
+			Sound_GameSystem_RestartSoundSystem();
 			createTooltip(tt,true);
 		end
 	end
