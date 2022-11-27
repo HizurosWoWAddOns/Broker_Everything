@@ -913,7 +913,6 @@ do
 			local id = tonumber((GetInventoryItemID("player",slotIndex)));
 			if id then
 				local link = GetInventoryItemLink("player",slotIndex);
-				local d,dM = GetInventoryItemDurability(slotIndex);
 				local diffStr = table.concat({link,d or 0,dM or 0},"^");
 				addItem({
 					bag=-1,
@@ -921,8 +920,6 @@ do
 					sharedSlot=sharedSlotIndex,
 					id=id,
 					link=link,
-					durability = d or 0,
-					durabilityMax = dM or 0,
 					diff=diffStr,
 					equip=true
 				},"inv");
@@ -968,7 +965,6 @@ do
 					if id then
 						local _, _, _, itemEquipLocation, _, itemClassID, itemSubClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
 						local itemSpellName,itemSpellID = GetItemSpell(link);
-						local d,dM = (C_Container and C_Container.GetContainerItemDurability or GetContainerItemDurability)(bagIndex,slotIndex);
 						local diffStr = table.concat({link,d or 0,dM or 0,count},"^");
 						local isEquipment = false;
 						if not (itemEquipLocation=="" or itemEquipLocation==(INVTYPE_TABARD or Enum.InventoryType.IndexTabardType) or itemEquipLocation==(INVTYPE_BODY or Enum.InventoryType.IndexBodyType)) then
@@ -982,8 +978,6 @@ do
 							sharedSlot=sharedSlotIndex,
 							id=id,
 							link=link,
-							durability = d or 0,
-							durabilityMax = dM or 0,
 							diff=diffStr,
 							equip=isEquipment,
 							ammo=itemClassID==LE_ITEM_CLASS_PROJECTILE
