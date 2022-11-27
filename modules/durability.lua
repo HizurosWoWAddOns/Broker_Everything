@@ -76,19 +76,46 @@ local function nsItems2Callback()
 	for sharedSlot in pairs(ns.items.equip)do
 		local tbl = sharedSlot<0 and "inv" or "bags";
 		local obj = ns.items.bySlot[sharedSlot];
-		if obj and obj.equip and obj.durabilityMax>0 then
+		local durability, durabilityMax = 0,0;
+		if obj and obj.equip then
+			local d,dM;
+			if tbl=="inv" then
+				d,dM = GetInventoryItemDurability(obj.slot);
+			else
+				d,dM = (C_Container and C_Container.GetContainerItemDurability or GetContainerItemDurability)(obj.bag,obj.slot);
+			end
+			durability, durabilityMax = d or 0, dM or 0;
+		end
+		if obj and obj.equip and durabilityMax>0 then
 			durabilitySum.count = durabilitySum.count+1;
-			durabilitySum.current = durabilitySum.current + obj.durability;
-			durabilitySum.max = durabilitySum.max + obj.durabilityMax;
+			durabilitySum.current = durabilitySum.current + durability;
+			durabilitySum.max = durabilitySum.max + durabilityMax;
 
-			local percentage = obj.durability/obj.durabilityMax;
+			local percentage = durability/durabilityMax;
 			if percentage<1 then
 				if tbl=="inv" and percentage<lowest[1] then
 					lowest = {percentage,obj.slot};
 				end
-				local data = {type=tbl=="bags" and "bag" or "inventory",slot=obj.slot,bag=obj.bag};
-				ns.ScanTT.query(data,true);
-				repairCost[tbl] = repairCost[tbl] + (tonumber(data.repairCost) or 0);
+				local itemRepairCost = 0;
+				if C_TooltipInfo then -- api changed since dragonflight
+					local hasItem
+					if tbl=="inv" then
+						hasItem = C_TooltipInfo.GetInventoryItem("player",obj.slot);
+					else
+						hasItem = C_TooltipInfo.GetBagItem(obj.bag,obj.slot);
+					end
+					if hasItem then
+						TooltipUtil.SurfaceArgs(hasItem);
+						if hasItem.repairCost then
+							itemRepairCost = hasItem.repairCost;
+						end
+					end
+				else -- prev api and classic; need tooltip to get item repair costs
+					local data = {type=tbl=="bags" and "bag" or "inventory",slot=obj.slot,bag=obj.bag};
+					ns.ScanTT.query(data,true);
+					itemRepairCost = tonumber(data.repairCost) or 0;
+				end
+				repairCost[tbl] = repairCost[tbl] + itemRepairCost;
 			end
 		end
 	end
