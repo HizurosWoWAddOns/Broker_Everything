@@ -50,7 +50,7 @@ local function GetExperience(level,currentXP,maxXP,exhaustion)
 		percentExhaustion = (currentXP+exhaustion)/maxXP;
 	end
 	-- <needToLevelup>, <percentCurrentXP>, <percentExhaustion>, <percentCurrentXPStr>, <percentExhaustionStr>
-	return maxXP-currentXP, percentCurrentXP, percentExhaustion, ("%1.2f%%"):format(percentCurrentXP*100), (">%1.2f%%"):format(percentExhaustion*100);
+	return maxXP-currentXP, percentCurrentXP, percentExhaustion, ("%1.2f%%"):format(percentCurrentXP*100) or UNKNOWN, (">%1.2f%%"):format(percentExhaustion*100);
 end
 
 local function deleteCharacterXP(self,name_realm)
@@ -84,7 +84,10 @@ local function updateBroker()
 	elseif ns.profile[name].display == "3" then
 		text = ns.FormatLargeNumber(name,needToLevelup);
 	elseif ns.profile[name].display == "4" then
-		text = percentCurrentXPStr.." ("..percentExhaustionStr..")";
+		text = percentCurrentXPStr;
+		if percentExhaustionStr then
+			text = text .. " ("..percentExhaustionStr..")";
+		end
 	elseif ns.profile[name].display == "5" then
 		if percentExhaustion>1 then
 			percentExhaustion = 1;
@@ -165,7 +168,9 @@ function createTooltip(tt)
 		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE),"",C("white",("%s/%s"):format(ns.FormatLargeNumber(name,data.cur,true),ns.FormatLargeNumber(name,data.max,true))));
 		tt:AddLine(C("ltyellow",POWER_TYPE_EXPERIENCE.." ("..STATUS_TEXT_PERCENT..")"), "",percentCurrentXPStr);
 		tt:AddLine(C("ltyellow",GARRISON_FOLLOWER_XP_STRING),"",C("white",ns.FormatLargeNumber(name,data.max-data.cur,true)));
-		tt:AddLine(C("ltyellow",TUTORIAL_TITLE26),"",C("cyan",percentExhaustionStr));
+		if percentExhaustionStr then
+			tt:AddLine(C("ltyellow",TUTORIAL_TITLE26),"",C("cyan",percentExhaustionStr));
+		end
 	end
 
 	if ns.profile[name].showMyOtherChars then
