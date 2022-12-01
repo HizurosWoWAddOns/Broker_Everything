@@ -104,7 +104,7 @@ local function nsItems2Callback()
 					else
 						hasItem = C_TooltipInfo.GetBagItem(obj.bag,obj.slot);
 					end
-					if hasItem then
+					if type(hasItem)=="table" and hasItem.args then
 						TooltipUtil.SurfaceArgs(hasItem);
 						if hasItem.repairCost then
 							itemRepairCost = hasItem.repairCost;
