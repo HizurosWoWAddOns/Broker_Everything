@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Reputation"; -- REPUTATION L["ModDesc-Reputation"]
 local ttName, ttColumns, tt, module,createTooltip,updateBroker = name.."TT", 6;
 local Name,description,standingID,barMin,barMax,barValue,atWarWith,canToggleAtWar,isHeader,isCollapsed,hasRep,isWatched,isChild,factionID,hasBonusRepGain,canBeLFGBonus=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- index list for GetFactionInfo
-local barPercent,sessionValue,factionStandingText,friendID,isParagon,hideSession,rewardMin,rewardMax,rewardValue,rewardQuestID,rewardPercent,hasRewardPending,rewardsFinished,rewardSessionValue=30,31,32,33,34,35,36,37,38,39,40,41,42,43,44;
+local barPercent,sessionValue,factionStandingText,friendID,isParagon,hideSession,rewardMin,rewardMax,rewardValue,rewardQuestID,rewardPercent,hasRewardPending,rewardsFinished,rewardSessionValue,isMajor=30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45;
 
 local tinsert,tconcat,ipairs,pairs,unpack=tinsert,table.concat,ipairs,pairs,unpack;
 local CTimerAfter,IsFactionParagon,GetFactionParagonInfo = C_Timer.After
@@ -19,7 +19,7 @@ local ExpandFactionHeader,CollapseFactionHeader,GetWatchedFactionInfo = ExpandFa
 local GetNumFactions,GetFactionInfo,GetFactionInfoByID = GetNumFactions,GetFactionInfo,GetFactionInfoByID;
 
 local bars,factions,session,spacer,initReputationListTicker = {},{},{},"    ";
-local allinone = {faction=85000,friend=43000,bodyguard=31000};
+local allinone = {faction=85000,friend=43000,bodyguard=31000,major=false};
 local bodyguards,known_bodyguards = {193,207,216,218,219},{};
 local round,collapsedL1,collapsedL2,paragonQuestIDs = false,{},{},{};
 local idStr = C("gray"," (%d)");
@@ -30,6 +30,14 @@ local formats = {
 	["Number"]      = "1234/3000",
 	["NumberNeed"]  = "321 need",
 };
+local MAJOR_FACTION_RENOWN_LEVEL = MAJOR_FACTION_RENOWN_LEVEL_TOAST:gsub("%%d","%%s");
+local majorFaction2Currency = {
+	-- dragonflight major factions
+	[2503] = 2002,
+	[2507] = 2021,
+	[2510] = 2088,
+	[2511] = 2087,
+}
 
 
 -- register icon names and default files --
@@ -40,13 +48,16 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\Achievement_Reputati
 -- some local functions --
 --------------------------
 if C_Reputation then
-	IsFactionParagon,GetFactionParagonInfo = C_Reputation.GetFactionParagonInfo,C_Reputation.IsFactionParagon
+	IsFactionParagon,IsMajorFaction,GetFactionParagonInfo = C_Reputation.IsFactionParagon, C_Reputation.IsMajorFaction, C_Reputation.GetFactionParagonInfo;
 else
 	function IsFactionParagon()
 		return false;
 	end
 	function GetFactionParagonInfo()
 		return;
+	end
+	function IsMajorFaction()
+		return false;
 	end
 end
 
@@ -57,34 +68,65 @@ local function _GetFactionInfoByID(faction_id,paragonOnly)
 		data[factionID] = faction_id;
 	end
 
-	if data[Name]:find("%\r%\n") then
-		data[Name] = data[Name]:gsub("%\r%\n","");
+	if data[Name]:find("%-%\r%\n") then
+		data[Name] = data[Name]:gsub("%-%\r%\n","");
 	end
 
 	if data[factionID]>0 then
 		if not paragonOnly then
-			-- faction standing text
-			data[factionStandingText] = _G["FACTION_STANDING_LABEL"..data[standingID]];
 
-			-- IsFriend
-			if GetFriendshipReputation then
-				local _friendID,friendRep,friendMaxRep,friendName,friendText,friendTexture,friendTextLevel,friendThreshold,nextFriendThreshold = GetFriendshipReputation(data[factionID]);
-				if _friendID~=nil then
-					data[friendID] = _friendID;
-					data[factionStandingText] = friendTextLevel;
-					if nextFriendThreshold then
-						data[barMin], data[barMax], data[barValue] = friendThreshold, nextFriendThreshold, friendRep;
-					else
-						data[barMin], data[barMax], data[barValue] = 0, 1, 1;
-						data[hideSession] = true
-					end
-				elseif data[standingID]==8 then
-					data[barMin], data[barMax], data[barValue] = 42000, 42999, 42999;
+			-- major faction (dragonflight)
+			local majorFactionInfo
+			data[isMajor] = IsMajorFaction(data[factionID]);
+			if data[isMajor] then
+				majorFactionInfo = C_MajorFactions.GetMajorFactionData(data[factionID]);
+			end
+			if majorFactionInfo~=nil then
+				data[factionID] = majorFactionInfo.factionID or data[factionID];
+				-- majorFaction2Currency
+				local renownMax,currencyID,currencyInfo = "",majorFaction2Currency[data[factionID]];
+				if currencyID then
+					currencyInfo = C_CurrencyInfo.GetCurrencyInfo(currencyID);
+				end
+				if currencyInfo then
+					renownMax = "/"..currencyInfo.maxQuantity;
+				end
+				data[factionStandingText] = MAJOR_FACTION_RENOWN_LEVEL:format(majorFactionInfo.renownLevel..renownMax);
+				data[standingID] = majorFactionInfo.renownLevel;
+				if majorFactionInfo.renownLevelThreshold==nil then
+					data[barMin], data[barMax], data[barValue], data[barPercent], data[hideSession] = 0,2500,2500,1,true;
+				else
+					data[barMin], data[barMax], data[barValue] = 0, majorFactionInfo.renownLevelThreshold, majorFactionInfo.renownReputationEarned;
+					data[barPercent] = data[barValue]/data[barMax];
 				end
 			end
-			data[barPercent] = 1;
-			if (data[barMax]-data[barMin])~=0 then
-				data[barPercent] = (data[barValue]-data[barMin])/(data[barMax]-data[barMin]);
+
+			-- friendships
+			local friendInfo
+			if C_GossipInfo and C_GossipInfo.GetFriendshipReputation then
+				friendInfo = C_GossipInfo.GetFriendshipReputation(data[factionID]);
+			end
+			if friendInfo~=nil and friendInfo.friendshipFactionID~=0 then
+				data[factionID] = friendInfo.friendshipFactionID;
+				data[factionStandingText] = friendInfo.reaction;
+				if friendInfo.nextThreshold==nil then
+					data[barMin], data[barMax], data[barValue], data[barPercent], data[hideSession] = 0,1,1,1,true;
+				else
+					data[barMin], data[barMax], data[barValue] = friendInfo.reactionThreshold,friendInfo.nextThreshold,friendInfo.standing;
+					data[barPercent] = data[barValue]/data[barMax];
+				end
+			end
+
+			if data[factionStandingText]==nil then
+				data[factionStandingText] = _G["FACTION_STANDING_LABEL"..data[standingID]];
+				if data[standingID]==8 then
+					data[barMin], data[barMax], data[barValue] = 42000, 42999, 42999;
+					data[hideSession] = true;
+				end
+			end
+
+			if data[barPercent]==nil then
+				data[barPercent] = (data[barMax]-data[barMin])>0 and (data[barValue]-data[barMin])/(data[barMax]-data[barMin]) or 1;
 			end
 
 			-- session difference
@@ -99,7 +141,7 @@ local function _GetFactionInfoByID(faction_id,paragonOnly)
 
 		-- IsParagon
 		data[isParagon] = IsFactionParagon(data[factionID]);
-		if data[factionID] and data[isParagon] then
+		if data[isParagon] then
 			local _value, _threshold, _rewardQuestID, _hasPending = C_Reputation.GetFactionParagonInfo(data[factionID]);
 			if _value~=nil then
 				C_Reputation.RequestFactionParagonPreloadRewardData(data[factionID]);
@@ -206,7 +248,9 @@ function updateBroker()
 		end
 
 		local _Min,_Max,_Value,_Percent
-		if data[isParagon] then
+		if data[isMajor] then
+			_Min,_Max,_Value,_Percent = data[barMin],data[barMax],data[barMax],data[barPercent]*100;
+		elseif data[isParagon] then
 			_Min,_Max,_Value,_Percent = data[rewardMin],data[rewardMax],data[rewardValue],data[rewardPercent]*100;
 		else
 			_Min,_Max,_Value,_Percent = 0,data[barMax]-data[barMin],data[barValue]-data[barMin],data[barPercent]*100;
@@ -283,7 +327,7 @@ local function updateBars()
 					v.BarAIO_bodyguard:SetTexCoord(0, 916/1024 * totalPercent, 0, 1);
 					v.BarAIO_bodyguard:SetWidth((bgWidth * totalPercent)+0.1);
 					v.BarAIO_bodyguard:Show();
-				elseif(v.friend)then
+				elseif(v.friend or v.major)then
 					local totalPercent = v.data[barMax]==1 and 1 or (v.data[barValue] / allinone.friend);
 					v.BarAIO_friend:SetTexCoord(0, 870/1024 * totalPercent, 0, 1);
 					v.BarAIO_friend:SetWidth((bgWidth * totalPercent)+0.1);
@@ -320,6 +364,11 @@ local function factionTooltipOnEnter(self,data)
 	local _Min,_Max,_Value,_Percent = 0,data[barMax]-data[barMin],data[barValue]-data[barMin];
 	local __value,__max,need = _Value, _Max, _Max-_Value;
 	local fstr = "%s/%s (%1.1f%%)";
+	local valueStr = "";
+
+	if not ((data[isMajor] and __value==2500) or (data[isFriend] and __value==8400) or __value==999) then
+		valueStr = fstr:format(__value,__max,data[barPercent]*100);
+	end
 
 	GameTooltip:SetOwner(self,"ANCHOR_NONE");
 	GameTooltip:SetPoint(ns.GetTipAnchor(self,"horizontal",tt));
@@ -417,10 +466,10 @@ function createTooltip(tt)
 
 				if(ns.profile[name].standingText)then
 					local id = "";
-					if ns.profile[name].showID then
+					if ns.profile[name].showID and not data[isMajor] then
 						id = idStr:format(data[standingID]);
 					end
-					tt:SetCell(l,2,data[factionStandingText]..id);
+					tt:SetCell(l,2,(data[factionStandingText] or "?")..id);
 				end
 
 				if(mode=="Percent")then
@@ -478,17 +527,27 @@ function createTooltip(tt)
 					bars[count]:SetAlpha(0.6);
 					bars[count]:Show();
 					bars[count].data = data;
-					bars[count].standing = data[standingID];
+					bars[count].standing = (data[isMajor] and data[standingID]>8 and 8) or data[standingID];
 					bars[count].percent = _Max==0 and 1 or (_Value/_Max);
 					bars[count].bodyguard = known_bodyguards[data[Name]] or false;
 					bars[count].friend = data[friendID]~=nil;
+					bars[count].major = data[isMajor];
 				end
 
 				local darker = 0.72;
 				if(ns.profile[name].bgBars=="single")then
-					local color = FACTION_BAR_COLORS[ (bars[count].friend and 5) or data[standingID] ];
-					bars[count].BarSingle:SetVertexColor(color.r*darker,color.g*darker,color.b*darker,1);
-					bars[count].BarSingle:Show();
+					local s = data[standingID];
+					if bars[count].friend then
+						s = 5;
+					elseif data[isMajor] then
+						s = data[standingID]<=8 and data[standingID] or 8;
+					end
+
+					local color = FACTION_BAR_COLORS[ s ];
+					if color then
+						bars[count].BarSingle:SetVertexColor(color.r*darker,color.g*darker,color.b*darker,1);
+						bars[count].BarSingle:Show();
+					end
 				end
 
 			end
