@@ -110,17 +110,25 @@ do
 	ns.client_version = tonumber(v1.."."..v2..v3..build);
 end
 
+function ns.IsRetailClient()
+	return WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
+end
+
 function ns.IsClassicClient() -- for AceOptions
 	return not WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
 end
 
-function ns.IsBCClassicClient()
-	return WOW_PROJECT_ID==WOW_PROJECT_BURNING_CRUSADE_CLASSIC;
+function ns.IsClassicEraClient()
+	return WOW_PROJECT_ID==WOW_PROJECT_CLASSIC;
 end
 
-function ns.IsNotClassicClient() -- for AceOptions
-	return WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
+function ns.IsClassicWotlkClient()
+	return WOW_PROJECT_ID==WOW_PROJECT_WRATH_CLASSIC;
 end
+
+--function ns.IsNotClassicClient() -- for AceOptions
+--	return WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
+--end
 
 
   ---------------------------------------
