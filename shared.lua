@@ -1128,8 +1128,10 @@ do
 		if bag and slot then
 			local itemId = tonumber(((C_Container and C_Container.GetContainerItemLink or GetContainerItemLink)(bag,slot) or ""):match("Hitem:([0-9]+)"));
 			if itemId and callback[itemId] then
-				for i,v in pairs(callback[itemId])do
-					if type(v[1])=="function" then v[1]("UseContainerItem",itemId,v[2]); end
+				for _,entry in pairs(callback[itemId])do
+					if type(entry.callback)=="function" then
+						entry.callback(bag,slot,itemId,entry.info);
+					end
 				end
 			end
 		end
@@ -1144,7 +1146,7 @@ do
 			if callback[itemId]==nil then
 				callback[itemId] = {};
 			end
-			callback[itemId][modName] = {callbackFunc,info};
+			callback[itemId][modName] = {callback=callbackFunc,info=info};
 		end
 	};
 end
