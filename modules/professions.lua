@@ -697,7 +697,7 @@ function module.options()
 			showLegionFactionRecipes={ type="toggle", order=1, name=L["EmissaryVendorRecipes"].." ("..EXPANSION_NAME6..")", desc=L["EmissaryVendorRecipesDesc"], width="full" },
 			showBfAFactionRecipes={ type="toggle", order=2, name=L["EmissaryVendorRecipes"].." ("..EXPANSION_NAME7..")", desc=L["EmissaryVendorRecipesDesc"], width="full" },
 			showShadowFactionRecipes={ type="toggle", order=3, name=L["EmissaryVendorRecipes"].." ("..EXPANSION_NAME8..")", desc=L["EmissaryVendorRecipesDesc"], width="full" },
-			showDragonFlightFactionRecipes = { type="toggle", order=4, name=L["EmissaryVendorRecipes"].." ("..EXPANSION_NAME9..")", desc=L["EmissaryVendorRecipesDesc"], width="full" },
+			showDFFactionRecipes = { type="toggle", order=4, name=L["EmissaryVendorRecipes"].." ("..EXPANSION_NAME9..")", desc=L["EmissaryVendorRecipesDesc"], width="full" },
 			showCooldowns={ type="toggle", order=10, name=L["Show cooldowns"], desc=L["Show/Hide profession cooldowns from all characters."] },
 			showAllFactions=11,
 			showRealmNames=12,
