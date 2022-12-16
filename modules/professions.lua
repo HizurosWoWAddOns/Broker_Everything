@@ -487,7 +487,7 @@ local function createTooltip(tt)
 		};
 		for i=1, #showFactionRecipes do
 			local e = showFactionRecipes[i];
-			if ns.toon.level==GetMaxLevelForExpansionLevel(e[2]) and ns.profile[name]["show"..e[1].."FactionRecipes"]) then
+			if ns.toon.level==GetMaxLevelForExpansionLevel(e[2]) and ns.profile[name]["show"..e[1].."FactionRecipes"] then
 				if not showFactionRecipesHeader then
 					tt:AddSeparator(4,0,0,0,0);
 					tt:AddLine(C("ltblue",L["Recipes from faction vendors by expansion"]));
