@@ -82,7 +82,7 @@ function crap.search()
 					end
 					local _,_,quality,_,_,_,_,_,_,_,price = GetItemInfo(link);
 					local itemId = tonumber((link:match("item:(%d+)")));
-					if ((quality==0 and price>0) or (itemId and ns.profile[name].AutoCrapSellingBloodCards and (itemId=>113340 or itemId<=113354)) then
+					if (quality==0 and price>0) or ( itemId and ns.profile[name].AutoCrapSellingBloodCards and (itemId>=113340 or itemId<=113354) ) then
 						tinsert(crap.items,{bag,slot,price*count});
 					end
 				end
