@@ -81,7 +81,8 @@ function crap.search()
 						count = itemInfo.stackCount;
 					end
 					local _,_,quality,_,_,_,_,_,_,_,price = GetItemInfo(link);
-					if quality==0 and price>0 then
+					local itemId = tonumber((link:match("item:(%d+)")));
+					if ((quality==0 and price>0) or (itemId and ns.profile[name].AutoCrapSellingBloodCards and (itemId=>113340 or itemId<=113354)) then
 						tinsert(crap.items,{bag,slot,price*count});
 					end
 				end
@@ -336,6 +337,7 @@ module = {
 
 		autoCrapSelling = false,
 		autoCrapSellingInfo = true,
+		autoCrapSellingBloodCards = true,
 
 		-- "showBagTypeBB-1:1" -- filled by function
 	},
@@ -349,7 +351,7 @@ module = {
 	}
 }
 
-if ns.client_version<2 then
+if ns.client_version<4 then
 	module.config_defaults.autoCrapSelling = false;
 	module.config_defaults.autoCrapSellingInfo = false;
 end
@@ -378,6 +380,7 @@ function module.options()
 			header={ type="header", order=4, name=L["Crap selling options"], hidden=ns.IsClassicClient },
 			autoCrapSelling={ type="toggle", order=5, name=L["Enable auto crap selling"], desc=L["Enable automatically crap selling on opening a mergant frame"], hidden=ns.IsClassicClient },
 			autoCrapSellingInfo={ type="toggle", order=6, name=L["Summary of earned gold in chat"], desc=L["Post summary of earned gold in chat window"], hidden=ns.IsClassicClient },
+			autoCrapSellingBloodCards={ type="toggle", order=7, name=L["AutoCrapSellingBloodCards"], desc=L["AutoCrapSellingBloodCardsDesc"]}
 		},
 	};
 
