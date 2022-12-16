@@ -66,9 +66,9 @@ local cdResetTypes = {
 	end
 }
 
-local function OnLearnRecipe(itemId,info) -- info {<expansionIndex>,<index>}
-	local recipeItemID = faction_recipes[ info[1] ][ info[2] ][ faction_recipes.itemId ];
-	if recipeItemID==itemId then
+local function OnLearnRecipe(bag,slot,itemId,info) -- info {<expansionIndex>,<index>}
+	local recipeItemID = faction_recipes[ info.exp ][ info.index ][ faction_recipes.itemId ];
+	if recipeItemID and recipeItemID==itemId then
 		toonDB.unlearnedRecipes[recipeItemID]=nil;
 	end
 end
@@ -108,6 +108,37 @@ local function chkCooldownSpells(skillId,icon)
 	end
 end
 
+do
+	local alreadyShown,ticker = {}
+	local function UpdateFactionRecipes(self)
+		local skillLine,pInfo = nil,ProfessionsFrame.GetProfessionInfo(); -- too slow
+		if pInfo then skillLine = pInfo.parentProfessionID or false end
+		if not skillLine then return end
+		ticker:Cancel();
+		if not (skillLine and alreadyShown[skillLine]==nil) then return end
+		local count,known,unknown = 0,0,0;
+		for expansionIndex, recipes in pairs(faction_recipes) do
+			if tonumber(expansionIndex) and recipes[skillLine] then
+				for index,recipe in ipairs(recipes[skillLine]) do
+					if recipe[faction_recipes.spellId]>0 then
+						local info = C_TradeSkillUI.GetRecipeInfo(recipe[faction_recipes.spellId]);
+						if info and info.learned==true then
+							toonDB.unlearnedRecipes[recipe[faction_recipes.itemId] ] = nil;
+							known=known+1;
+						else
+							toonDB.unlearnedRecipes[recipe[faction_recipes.itemId] ] = true;
+							ns.UseContainerItemHook.registerItemID(name,recipe[faction_recipes.itemId],OnLearnRecipe,{exp=expansionIndex,index=index});
+							unknown=unknown+1;
+						end
+					end
+				end
+			end
+		end
+		alreadyShown[skillLine] = true;
+	end
+	ProfessionsFrame:HookScript("OnShow",function() ticker = C_Timer.NewTicker(.2,UpdateFactionRecipes); end);
+end
+
 local function updateTradeSkills()
 	wipe(professions)
 
@@ -132,21 +163,6 @@ local function updateTradeSkills()
 			chkCooldownSpells(skillLine,texture);
 			chkExpiredCooldowns();
 			skillNameById[skillLine] = skillName;
-
-			-- register unlearned faction recipes // ~~not working anymore. IsSpellKnown return false for known recipes~~ fixed in dragonflight.
-
-			for expansionIndex, recipes in pairs(faction_recipes) do
-				if tonumber(expansionIndex) and recipes[skillLine] then
-					for index,recipe in ipairs(recipes[skillLine]) do
-						if IsSpellKnown(recipe[faction_recipes.spellId]) then
-							toonDB.unlearnedRecipes[recipe[faction_recipes.itemId] ] = nil;
-						else
-							toonDB.unlearnedRecipes[recipe[faction_recipes.itemId] ] = true;
-							ns.UseContainerItemHook.registerItemID(name,recipe[faction_recipes.itemId],OnLearnRecipe,{expansionIndex,index});
-						end
-					end
-				end
-			end
 		else
 			professions[order] = false;
 		end
@@ -179,7 +195,7 @@ local function updateTradeSkills()
 	end
 end
 
-
+--[=[ - TradeSkillFrame does not exists in dragonflight; new functon coming soon.
 local function updateCooldownAndRecipeLists(skillLineID,rebuildCooldowns) -- on hooked TradeSkillFrame:RefreshTitle()
 	local factionRecipeIDs = {};
 	-- create recipe spellId list
@@ -228,7 +244,7 @@ local function updateCooldownAndRecipeLists(skillLineID,rebuildCooldowns) -- on 
 		--]]
 	end
 end
-
+--]=]
 ---------------------------
 
 local function updateBroker()
@@ -259,10 +275,11 @@ local function CreateTooltip2(self, content)
 	if content=="skill-list" then
 		--
 	elseif content=="faction-recipes" then
-		tt2:AddLine(C("ltblue",L["Recipes from faction vendors"].." ("..skillNameById[tsId]..")"),C("ltblue",REPUTATION),C("ltblue",L["Buyable"]));
+		tt2:AddLine(C("ltblue",L["Recipes from faction vendors"].." ("..skillNameById[tsId]..")"),C("ltblue",QUEST_TOOLTIP_REQUIREMENTS:gsub(HEADER_COLON:trim(),"")),C("ltblue",L["Buyable"]));
 		tt2:AddSeparator();
 
 		local factionID,factionName,currentStanding,standingID,_ = 0;
+		local c = C("ltgray"," [%d]");
 		for _, recipeData in ipairs(recipes) do
 			local factionId, standing, itemId, spellId, recipeRank = unpack(recipeData);
 			if skillNameById[tsId] then
@@ -270,14 +287,34 @@ local function CreateTooltip2(self, content)
 				if Name then
 					-- faction header
 					if factionID~=recipeData[1] then
-						factionName,_,currentStanding = GetFactionInfoByID(factionId);
-						tt2:AddLine(C("ltgray",factionName),C("ltgray",_G["FACTION_STANDING_LABEL"..currentStanding]));
 						factionID = factionId;
+						factionName,_,currentStanding = GetFactionInfoByID(factionID);
+						local currentStandingStr = "Error";
+						if factions[factionID].isMajor then
+							local info = C_MajorFactions.GetMajorFactionData(factionID)
+							if info then
+								currentStandingStr = MAJOR_FACTION_RENOWN_LEVEL_TOAST:format(info.renownLevel);
+								currentStanding = info.renownLevel;
+							end
+						else
+							local friendInfo = C_GossipInfo.GetFriendshipReputation(factionID);
+							if friendInfo and friendInfo.friendshipFactionID~=0 then
+								currentStandingStr = friendInfo.reaction..c:format(currentStanding-(friendStandingVisDiff[factionID] or 0));
+							else
+								currentStandingStr = _G["FACTION_STANDING_LABEL"..currentStanding];
+							end
+						end
+						tt2:AddLine(C("ltgray",factionName:gsub("%-%\r%\n","")),C("ltgray",currentStandingStr));
 					end
 					-- recipe
-					local color,faction,buyable = "red",_G["FACTION_STANDING_LABEL"..standing],NO;
-					if toonDB.unlearnedRecipes[itemId] and IsSpellKnown(spellId) then
-						toonDB.unlearnedRecipes[itemId]	= nil;
+					local color,buyable = "red",NO;
+					local standingText = ""
+					if factions[factionID].isMajor then
+						standingText = MAJOR_FACTION_RENOWN_LEVEL_TOAST:format(standing);
+					elseif friendStandingLabel[factionID] then
+						standingText = friendStandingLabel[factionID][standing]..c:format(standing-(friendStandingVisDiff[factionID] or 0));
+					else
+						standingText = _G["FACTION_STANDING_LABEL"..standing];
 					end
 					if toonDB.unlearnedRecipes[itemId]==nil then
 						color,buyable = "ltgreen",ALREADY_LEARNED;
@@ -288,7 +325,7 @@ local function CreateTooltip2(self, content)
 					if recipeRank then
 						stars = " "..("|Tinterface\\common\\reputationstar:12:12:0:0:32:32:2:14:2:14|t"):rep(recipeRank);
 					end
-					tt2:AddLine("    "..C("ltyellow",Name)..stars,C(color,faction),C(color,buyable));
+					tt2:AddLine("    "..C("ltyellow",Name)..stars,C(color,standingText),C(color,buyable));
 				end
 			end
 		end
@@ -309,6 +346,18 @@ local function AddFactionRecipeLines(tt,expansion,recipesByProfession)
 				if not factions[recipe[1]] then -- fill factions table
 					factions[recipe[1]] = {};
 					factions[recipe[1]].name,_,factions[recipe[1]].standing = GetFactionInfoByID(recipe[1]);
+					if C_Reputation.IsMajorFaction(recipe[1]) then
+						local info = C_MajorFactions.GetMajorFactionData(recipe[1])
+						if info then
+							factions[recipe[1]].isMajor = true;
+							factions[recipe[1]].standing = info.renownLevel;
+							factions[recipe[1]].standingText = MAJOR_FACTION_RENOWN_LEVEL_TOAST:format(info.renownLevel);
+						end
+					elseif factions[recipe[1]].standing then
+						factions[recipe[1]].standingText = _G["FACTION_STANDING_LABEL"..factions[recipe[1]].standing];
+					else
+						factions[recipe[1]].standingText = "Error";
+					end
 				end
 				if toonDB.unlearnedRecipes[recipe[3]]==nil then
 					count[1] = count[1]+1; -- learned
@@ -433,22 +482,20 @@ local function createTooltip(tt)
 		end
 
 		-- link to second tooltip
-		local showLegion = ns.profile[name].showLegionFactionRecipes and ns.toon.level>=GetMaxLevelForExpansionLevel(5);
-		local showBfA = ns.profile[name].showBfAFactionRecipes and ns.toon.level>=GetMaxLevelForExpansionLevel(6);
-		local showShadow = ns.profile[name].showShadowFactionRecipes and ns.toon.level>=GetMaxLevelForExpansionLevel(7);
-		if showLegion or showBfA then
-			tt:AddSeparator(4,0,0,0,0);
-			tt:AddLine(C("ltblue",L["Recipes from faction vendors by expansion"]));
-			tt:AddSeparator();
-			-- AddFactionRecipeLines(tt, <ExpansionIndex>, <List of recipes of the expansion>)
-			if showLegion then
-				AddFactionRecipeLines(tt,6,faction_recipes[6]);
-			end
-			if showBfA then
-				AddFactionRecipeLines(tt,7,faction_recipes[7]);
-			end
-			if showShadow then
-				AddFactionRecipeLines(tt,8,faction_recipes[8]);
+		local showFactionRecipesHeader,showFactionRecipes = false,{
+			{"Legion",6,false},{"BFA",7,false},{"Shadow",8,false},{"DF",9,false},
+		};
+		for i=1, #showFactionRecipes do
+			local e = showFactionRecipes[i];
+			if ns.toon.level==GetMaxLevelForExpansionLevel(e[2]) and ns.profile[name]["show"..e[1].."FactionRecipes"]) then
+				if not showFactionRecipesHeader then
+					tt:AddSeparator(4,0,0,0,0);
+					tt:AddLine(C("ltblue",L["Recipes from faction vendors by expansion"]));
+					tt:AddSeparator();
+					showFactionRecipesHeader = true;
+				end
+				-- AddFactionRecipeLines(tt, <ExpansionIndex>, <List of recipes of the expansion>)
+				AddFactionRecipeLines(tt,e[2],faction_recipes[e[2]]);
 			end
 		end
 	else
@@ -553,9 +600,10 @@ module = {
 		enabled = true,
 		showCooldowns = true,
 		showDigSiteStatus = true,
-		showLegionFactionRecipes = true,
-		showBfAFactionRecipes = true,
-		showShadowFactionRecipes = true,
+		showLegionFactionRecipes = false,
+		showBfAFactionRecipes = false,
+		showShadowFactionRecipes = false,
+		showDFFactionRecipes = true,
 		inTitle = {},
 		showAllFactions=true,
 		showRealmNames=true,
@@ -649,6 +697,7 @@ function module.options()
 			showLegionFactionRecipes={ type="toggle", order=1, name=L["EmissaryVendorRecipes"].." ("..EXPANSION_NAME6..")", desc=L["EmissaryVendorRecipesDesc"], width="full" },
 			showBfAFactionRecipes={ type="toggle", order=2, name=L["EmissaryVendorRecipes"].." ("..EXPANSION_NAME7..")", desc=L["EmissaryVendorRecipesDesc"], width="full" },
 			showShadowFactionRecipes={ type="toggle", order=3, name=L["EmissaryVendorRecipes"].." ("..EXPANSION_NAME8..")", desc=L["EmissaryVendorRecipesDesc"], width="full" },
+			showDragonFlightFactionRecipes = { type="toggle", order=4, name=L["EmissaryVendorRecipes"].." ("..EXPANSION_NAME9..")", desc=L["EmissaryVendorRecipesDesc"], width="full" },
 			showCooldowns={ type="toggle", order=10, name=L["Show cooldowns"], desc=L["Show/Hide profession cooldowns from all characters."] },
 			showAllFactions=11,
 			showRealmNames=12,
@@ -770,9 +819,109 @@ function module.init()
 			},
 			-- Cooking
 			[185] = {
-				{ 2413, 7, 182668, 308403},
+				{2413, 7, 182668, 308403},
 			},
 	}
+
+	-- [<tradeSkillId>] = { {<factionId>, <standingId>, <itemId>, <spellId>[, <recipeStars>]}, ... }
+	faction_recipes[9] = {
+			-- Alchemy
+			[171] = {
+				{2503, 13, 191547, 370677},{2503, 22, 191588, 370725},
+				{2510, 11, 191656, 370676},
+				{2544,  5, 191590, 370729},{2544,  6, 191586, 370723},{2544,  6, 191593, 370732},{2544,  6, 191594, 370733},{2544,  6, 194286, 376536},
+				{2550,  6, 191579, 370708},
+			},
+			-- Blacksmithing
+			[164] = {
+				{2503, 13, 194477, 367594},{2503, 13, 194478, 367589},{2503, 13, 194480, 367588},{2503, 18, 194497, 371367},{2503, 18, 194499, 371369},{2503, 22, 198713, 377281},
+				{2510, 14, 194479, 367590},{2510, 14, 194482, 367592},{2510, 19, 194495, 371365},{2510, 19, 194498, 371368},{2510, 19, 194500, 371371},
+				{2544,  5, 194493, 371349},{2544,  6, 194506, 371682},
+			},
+			-- Enchanting
+			[333] = {
+				-- C_TradeSkillUI.GetRecipeRequirements(389419)
+				{2503,  8, 199813, 389419},{2503,  8, 199814, 389479},
+				{2510, 11, 199817, 389405},{2510, 11, 199818, 389484},
+				{2544,  6, 199802, 389513},{2544,  6, 199803, 389525},{2544,  6, 199804, 389508},
+				{2511, 10, 199815, 389404},{2511, 10, 199816, 389416},
+			},
+			-- Engineering
+			[202] = {
+				{2507,  9, 198781, 382343},{2507,  9, 198784, 382322},{2507, 15, 198782, 382339},{2507, 15, 198783, 382340},{2507, 15, 198901, 383582},{2507, 19, 198788, 383593},{2507, 21, 198785, 382332},{2507, 21, 198909, 383565},
+				{2510, 11, 199246, 382344},{2510, 19, 199244, 382341},{2510, 19, 199245, 382342},
+				{2544,  4, 199290, 382404},{2544,  5, 199242, 382338},{2544,  5, 199243, 382337},{2544,  5, 199289, 382403},{2544,  6, 199285, 382399},{2544,  6, 199286, 382400},{2544,  6, 199295, 384313},{2544,  7, 199240, 382335},
+			},
+			-- Inscription
+			[773] = {
+				{2503, 15, 198902, 383583},{2503, 22, 198937, 383591},
+				{2510, 15, 198892, 383575},{2510, 23, 198941, 383590},{2510, 28, 198912, 383569},
+				{2544,  4, 200599, 390847},{2544,  4, 200600, 390848},{2544,  4, 200601, 390849},{2544,  4, 200602, 390850},{2544,  4, 200603, 390851},{2544,  4, 200604, 390852},{2544,  4, 200605, 390853},{2544,  6, 198943, 383550},{2544,  6, 198947, 383552},
+				{2550,  7, 198895, 383578},
+				{2511, 13, 198894, 383577},{2511, 25, 198940, 383588},
+			},
+			-- Jewelcrafting
+			[755] = {
+				{2507,  9, 194605, 374446},{2507,  9, 194606, 374447},{2507,  9, 194613, 374456},{2507,  9, 194614, 374457},{2507, 13, 194632, 374486},{2507, 13, 194635, 374493},{2507, 15, 194661, 374540},
+				{2544,  6, 194662, 374542},
+				{2511, 10, 194602, 374443},{2511, 10, 194603, 374444},{2511, 10, 194610, 374453},{2511, 10, 194611, 374454},{2511, 15, 194633, 374488},{2511, 15, 194634, 374490},{2511, 18, 194660, 374538},{2511, 18, 194663, 374543},{2511, 10, 194726, 377804},
+			},
+			-- Leatherworking
+			[165] = {
+				{2503, 13, 193870, 375157},{2503, 13, 193878, 375153},{2503, 18, 198457, 375194},{2503, 18, 198462, 375195},{2503, 18, 198463, 375196},{2503, 18, 198464, 375190},{2503, 22, 197982, 381849},
+				{2544,  7, 198618, 381547},
+				{2550,  7, 201733, 375161},
+				{2511, 15, 193875, 375144},{2511, 15, 193876, 375146},{2511, 23, 194311, 375172},{2511, 29, 197981, 381848},{2511, 18, 198458, 375192},{2511, 18, 198459, 375189},{2511, 18, 198461, 375193},{2511, 18, 198465, 375191},
+
+			},
+			-- Tailoring
+			[197] = {
+				{2507, 15, 194289, 376548},{2507, 15, 194291, 376552},{2507, 15, 194294, 376531},{2507, 15, 194295, 376532},{2507, 17, 194268, 376570},{2507, 17, 194281, 376568},{2507, 19, 194285, 376529},{2507, 21, 194283, 376565},
+				{2510, 14, 194279, 376501},{2510, 14, 194280, 376505},{2510, 19, 194288, 376544},{2510, 19, 194290, 376550},{2510, 19, 194292, 376554},{2510, 23, 194287, 376561},{2510, 28, 194282, 376567},
+				{2544,  6, 194286, 376536},{2544,  6, 194293, 376534},
+				{2550,  6, 194265, 376541},{2550,  7, 194261, 376539},
+			},
+			-- Cooking
+			[185] = {
+				{2507, 13, 198101, 381373},
+				{2511, 15, 198102, 381375},
+			},
+	}
+
+	friendStandingLabel = {}
+	friendStandingVisDiff = { -- visual difference to internal standing level
+		[2544] = 2,
+		[2550] = 3,
+	}
+	if LOCALE_deDE then
+		friendStandingLabel[2544] = {nil,nil,"Neutral","Bevorzugt","Respektiert","Geschätzt","Hochverehrt"}
+		friendStandingLabel[2550] = {nil,nil,nil,"Leer","Niedrig","Mittel","Hoch","Maximum"}
+	elseif LOCALE_esES or LOCALE_esMX then
+		friendStandingLabel[2544] = {nil,nil,"Neutral","Preferido","Respetado","Valorado","Estimado"}
+		friendStandingLabel[2550] = {nil,nil,nil,"Vacío","Bajo","Medio","Alto","Máximo"}
+	elseif LOCALE_frFR then
+		friendStandingLabel[2544] = {nil,nil,"Indifférence","Bienveillance","Respect","Estime","Admiration"}
+		friendStandingLabel[2550] = {nil,nil,nil,"Vide","Faible","Moyenne","Élevée","Maximum"}
+	elseif LOCALE_itIT then
+		friendStandingLabel[2544] = {nil,nil,"Neutrale","Preferito","Rispettato","Apprezzato","Stimato"}
+		friendStandingLabel[2550] = {nil,nil,nil,"Vuota","Bassa","Media","Alta","Massima"}
+	elseif LOCALE_ptBR or LOCALE_ptPT then
+		friendStandingLabel[2544] = {nil,nil,"Neutro","Preferido","Prezado","Valioso","Estimado"}
+		friendStandingLabel[2550] = {nil,nil,nil,"Vazio","Baixo","Médio","Alto","Máximo"}
+	elseif LOCALE_ruRU then
+		friendStandingLabel[2544] = {nil,nil,"Равнодушие","Симпатия","Расположение","Признание","Почитание"}
+		friendStandingLabel[2550] = {nil,nil,nil,"Пусто","Низкий","Средний","Высокий","Максимальный"}
+	elseif LOCALE_koKR then
+		friendStandingLabel[2544] = {nil,nil,"중립","선호함","존중","소중함","존경함"}
+		friendStandingLabel[2550] = {nil,nil,nil,"없음","낮음","보통","높음","최대"}
+	elseif LOCALE_zhCN or LOCALE_zhTW then
+		friendStandingLabel[2544] = {nil,nil,"中立","偏爱","尊重","重视","崇尚"}
+		friendStandingLabel[2550] = {nil,nil,nil,"空","低","中","高","最大"}
+	else
+		friendStandingLabel[2544] = {nil,nil,"Neutral","Preferred","Respected","Valued","Esteemed"}
+		friendStandingLabel[2550] = {nil,nil,nil,"Empty","Low","Medium","High","Maximum"}
+	end
+
 
 	cdSpells = {
 		-- [<skillLine|tradeSkillId>] = { {<spellID|recipeID>,<Cd Group>,<Cd type>}, ... }
@@ -885,27 +1034,6 @@ function module.onevent(self,event,arg1,...)
 		if toonDB.cooldown_locks==nil then
 			toonDB.cooldown_locks = {};
 		end
-		--[[
-		if ns.data[name]==nil then
-			ns.data[name]={};
-		end
-		dataDB = ns.data[name];
-		if dataDB.recipeCooldownsBuild==nil or dataDB.recipeCooldownsBuild~=ns.client_version then
-			dataDB.recipeCooldownsBuild = ns.client_version;
-			dataDB.recipeCooldowns = {};
-		end
-		--]]
-		self:RegisterEvent("ADDON_LOADED");
-	elseif event=="ADDON_LOADED" and arg1=="Blizzard_TradeSkillUI" then
-		self:UnregisterEvent("ADDON_LOADED");
-		hooksecurefunc(TradeSkillFrame,"RefreshTitle",function()
-			C_Timer.After(.2,function()
-				local skillLineID, skillLineDisplayName, skillLineRank, skillLineMaxRank, skillLineModifier, parentSkillLineID, parentSkillLineDisplayName = C_TradeSkillUI.GetTradeSkillLine();
-				if parentSkillLineID or skillLineID then
-					updateCooldownAndRecipeLists(parentSkillLineID or skillLineID);
-				end
-			end);
-		end);
 	elseif event=="NEW_RECIPE_LEARNED" then
 		local id = tonumber(arg1)
 		if id  and toonDB.unlearnedRecipes[id] then
