@@ -8,23 +8,23 @@ ns.debugMode = "@project-version@"=="@".."project-version".."@";
 LibStub("HizurosSharedTools").RegisterPrint(ns,addon,"BE");
 
 local UnitName,UnitSex,UnitClass,UnitFactionGroup=UnitName,UnitSex,UnitClass,UnitFactionGroup;
-local UnitRace,GetRealmName,GetLocale,UnitGUID=UnitRace,GetRealmName,GetLocale,UnitGUID;
-local InCombatLockdown,CreateFrame=InCombatLockdown,CreateFrame;
+local UnitRace,GetRealmName,GetLocale=UnitRace,GetRealmName,GetLocale;
+local InCombatLockdown,CreateFrame,SecondsToTime=InCombatLockdown,CreateFrame,SecondsToTime;
 local GetScreenHeight,GetMouseFocus,GetAddOnInfo=GetScreenHeight,GetMouseFocus,GetAddOnInfo;
-local GetAddOnEnableState,GetSpellInfo,IsAltKeyDown=GetAddOnEnableState,GetSpellInfo,IsAltKeyDown;
+local GetAddOnEnableState,IsAltKeyDown=GetAddOnEnableState,IsAltKeyDown;
 local IsShiftKeyDown,IsControlKeyDown,GetItemInfo=IsShiftKeyDown,IsControlKeyDown,GetItemInfo;
-local GetContainerItemCooldown,GetContainerItemLink=GetContainerItemCooldown,GetContainerItemLink;
-local GetInventoryItemDurability,GetInventoryItemBroken=GetInventoryItemDurability,GetInventoryItemBroken;
-local GetInventoryItemLink,GetInventoryItemID,GetContainerNumSlots=GetInventoryItemLink,GetInventoryItemID,GetContainerNumSlots;
-local GetContainerItemID,GetContainerItemInfo,SecondsToTime=GetContainerItemID,GetContainerItemInfo,SecondsToTime;
-local GetContainerItemDurability,IsEquippableItem,CopyTable=GetContainerItemDurability,IsEquippableItem,CopyTable;
+local GetInventoryItemLink,GetInventoryItemID=GetInventoryItemLink,GetInventoryItemID;
 local setmetatable,tonumber,rawget,rawset,tinsert=setmetatable,tonumber,rawget,rawset,tinsert;
-local tremove,tostring,type,print,unpack,assert=tremove,tostring,type,print,unpack,assert;
+local CopyTable,tremove,tostring,type,unpack,assert=CopyTable,tremove,tostring,type,unpack,assert;
 local securecall,ipairs,pairs,tconcat,tsort=securecall,ipairs,pairs,table.concat,table.sort;
 local time,wipe,mod,hooksecurefunc,strsplit=time,wipe,mod,hooksecurefunc,strsplit;
 
+-- no longer in retail but in classic client
+local GetContainerNumSlots,GetContainerItemCooldown,GetContainerItemLink,GetContainerItemID,GetContainerItemInfo,GetContainerNumFreeSlots=GetContainerNumSlots,GetContainerItemCooldown,GetContainerItemLink,GetContainerItemID,GetContainerItemInfo,GetContainerNumFreeSlots;
+
 -- could be deprecated in future.
 local GetCVar,SetCVar = C_CVar and C_CVar.GetCVar or GetCVar,C_CVar and C_CVar.SetCVar or SetCVar
+
 
   -------------
 --- Libraries ---
@@ -106,8 +106,8 @@ end
   -----------------------
 do
 	local version,build = GetBuildInfo();
-	local v1,v2,v3 = strsplit(".",version);
-	ns.client_version = tonumber(v1.."."..v2..v3..build);
+	local v1,v2,v3 = strsplit(".",version or "0.0.0");
+	ns.client_version = tonumber(v1.."."..v2..v3..build) or 0;
 end
 
 function ns.IsRetailClient()
@@ -146,12 +146,15 @@ ns.player.name_realm_short = ns.player.name.."-"..ns.realm_short;
 _, ns.player.class,ns.player.classId = UnitClass("player");
 ns.player.faction,ns.player.factionL  = UnitFactionGroup("player");
 L[ns.player.faction] = ns.player.factionL;
-ns.player.classLocale = ns.player.female and _G.LOCALIZED_CLASS_NAMES_FEMALE[ns.player.class] or _G.LOCALIZED_CLASS_NAMES_MALE[ns.player.class];
+ns.player.classLocale = ns.player.female and _G["LOCALIZED_CLASS_NAMES_FEMALE"][ns.player.class] or _G["LOCALIZED_CLASS_NAMES_MALE"][ns.player.class];
 ns.player.raceLocale,ns.player.race,ns.player.raceIndex = UnitRace("player");
 ns.LC.colorset("suffix",ns.LC.colorset[ns.player.class:lower()]);
 ns.realms = {};
 do
+	local initFinished = false;
 	local function Init()
+		if initFinished then return end
+		initFinished = true;
 		local _,_,_,_,_,_,_,_,ids = ns.LRI:GetRealmInfo(ns.realm,ns.region);
 		if type(ids)=="table" then
 			for i=1, #ids do
@@ -172,7 +175,7 @@ do
 	end
 	setmetatable(ns.realms,{
 		__index = function(t,k)
-			if Init then Init(); Init=nil; end
+			Init();
 			return rawget(t,k) or false;
 		end
 	});
@@ -330,7 +333,7 @@ function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
 	local tooltip = ns.LQT:Acquire(unpack(ttData)); openTooltip = tooltip;
 
 	tooltip.parent,tooltip.mode,tooltip.scripts = ttParent,ttMode,ttScripts;
-	tooltip.mode[1] = tooltip.mode[1]==true or (modifier~="NONE" and ns.tooltipChkOnShowModifier(modifier,false))
+	tooltip.mode[1] = tooltip.mode[1]==true or (modifier~="NONE" and ns.tooltipChkOnShowModifier(modifier))
 	if hiddenMouseOver==nil then
 		hiddenMouseOver = CreateFrame("Frame",addon.."TooltipHideShowFix2",UIParent);
 		hiddenMouseOver:SetFrameStrata("BACKGROUND");
@@ -357,8 +360,9 @@ function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
 	tooltip:SetScript("OnUpdate",hideOnUpdate);
 	tooltip:SetScript("OnLeave",hideOnLeave);
 
-	if _G.TipTac and _G.TipTac.AddModifiedTip then
-		_G.TipTac:AddModifiedTip(tooltip, true); -- Tiptac Support for LibQTip Tooltips
+	local TipTac = _G["TipTac"]
+	if TipTac and TipTac.AddModifiedTip then
+		TipTac:AddModifiedTip(tooltip, true); -- Tiptac Support for LibQTip Tooltips
 	elseif AddOnSkins and AddOnSkins.SkinTooltip then
 		AddOnSkins:SkinTooltip(tooltip); -- AddOnSkins support
 	end
@@ -477,7 +481,7 @@ end
 --- sometimes it is better to let other addons the control about something ---
   --------------------------------------------------------------------------
 do
-	local found,list = false,{
+	local found,list = nil,{
 		-- ["<addon name>"] = "<msg>",
 		["Carbonite"]			= "CoExistUnsave",
 		["DejaMinimap"]			= "CoExistUnsave",
@@ -713,7 +717,7 @@ function ns.strWrap(text, limit, insetCount, insetChr, insetLastChr)
 		inset = (insetChr or " "):rep(insetCount-(insetLastChr or ""):len())..(insetLastChr or "");
 	end
 	for str in text:gmatch("([^ \n]+)") do
-		local tmp2 = (tmp.." "..str):trim();
+		local tmp2 = strtrim(tmp.." "..str);
 		if tmp2:len()>=limit then
 			tinsert(result,tmp);
 			tmp = str:trim();
@@ -818,15 +822,15 @@ do
 
 	local hasChanged,updateBags,IsEnabledBags,IsEnabledInv = {bags=false,inv=false,equip=false,ammo=false,items=false,spells=false,item={},itemNum=0},{};
 	local callbacks = {any={},inv={},bags={},item={},equip={},prepare={},toys={},ammo={}};
+	local cbCounter = {any=0,inv=0,bags=0,item=0,equip=0,prepare=0,toys=0,ammo=0};
 	local eventFrame,inventoryDelayed = CreateFrame("Frame");
 
-	local function doCallbacks(...)
-		local tbl = ...;
-		if callbacks[tbl]==nil or callbacks[tbl.."Num"]==nil or callbacks[tbl.."Num"]==0 then
+	local function doCallbacks(tbl,...)
+		if callbacks[tbl]==nil or cbCounter[tbl]==0 then
 			return; -- no callbacks registered
 		end
 		for modName,fnc in pairs(callbacks[tbl])do
-			fnc(...);
+			fnc(tbl,...);
 		end
 	end
 
@@ -915,10 +919,10 @@ do
 
 	local scanInventory
 	function scanInventory()
-		local retry,removeItems = false,false;
+		local retry = false;
 		for slotIndex=1, 19 do
 			local sharedSlotIndex = -(slotIndex/100);
-			local id = tonumber((GetInventoryItemID("player",slotIndex)));
+			local id,link = tonumber((GetInventoryItemID("player",slotIndex))),nil;
 			if id then
 				local link = GetInventoryItemLink("player",slotIndex);
 				local diffStr = table.concat({link,d or 0,dM or 0},"^");
@@ -931,7 +935,7 @@ do
 					diff=diffStr,
 					equip=true
 				},"inv");
-				if link:find("%[%]") then
+				if link and link:find("%[%]") then
 					retry = true; -- Query heirloom item info looks like unstable. too often return invalid item links
 				end
 			elseif itemsBySlot[sharedSlotIndex] then
@@ -970,7 +974,7 @@ do
 						count = itemInfo.stackCount;
 						link = itemInfo.hyperlink;
 					end
-					if id then
+					if id and link then
 						local _, _, _, itemEquipLocation, _, itemClassID, itemSubClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
 						local itemSpellName,itemSpellID = GetItemSpell(link);
 						local diffStr = table.concat({link,d or 0,dM or 0,count},"^");
@@ -1028,7 +1032,7 @@ do
 			tinsert(updateBags,...);
 		elseif event=="BAG_UPDATE_DELAYED" and #updateBags>0 then
 			if firstBagUpdateDelay then
-				firstBagUpdateDelay = nil;
+				firstBagUpdateDelay = false;
 				tinsert(updateBags,1,0); -- BAG_UPDATE does not fire argument1 = 0 (for backpack) on login
 			end
 			scanBags();
@@ -1039,7 +1043,7 @@ do
 				local _, spell = GetItemSpell(info.link);
 				if spell then
 					for sharedSlot, info in pairs(itemsByID[...])do
-						local _, count, _, _, _, _, link, _, _ = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(info.bag,info.slot);
+						local _, count, _, _, _, _, _, _, _ = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(info.bag,info.slot);
 						info.spell = spell;
 						itemsBySpell[spell][sharedSlot] = count;
 					end
@@ -1113,7 +1117,7 @@ do
 		else
 			callbacks[mode][modName] = func;
 		end
-		callbacks[mode.."Num"] = (callbacks[mode.."Num"] or 0) + 1;
+		cbCounter[mode] = cbCounter[mode] + 1;
 		ns.items.Init(mode);
 	end
 end
@@ -1188,7 +1192,7 @@ do
 	local function GetLinkData(link)
 		if not link then return end
 		local _,_,_,link = link:match("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
-		link = {strsplit(HEADER_COLON,link or "")};
+		link = {strsplit(_G["HEADER_COLON"],link or "")};
 		for i=1, #link do
 			link[i] = tonumber(link[i]) or 0;
 		end
@@ -1211,7 +1215,7 @@ do
 			data = Data;
 		end
 
-		local success,num,regions = false,0;
+		local success,num,regions = false,0,nil;
 		tt:SetOwner(UIParent,"ANCHOR_NONE");
 		tt:SetPoint("RIGHT",UIParent,"LEFT",0,0);
 
@@ -1250,10 +1254,14 @@ do
 			end
 		elseif data._type=="item" then
 			data._type="link";
-			data.link=data.link or "item:"..data.id;
+			if not data.link then
+				data.link = "item:"..data.id;
+			end
 		elseif data._type=="quest" then
 			data._type="link";
-			data.link=data.link or "quest:"..data.id..HEADER_COLON..(data.level or 0);
+			if not data.link then
+				data.link = "quest:"..data.id.._G["HEADER_COLON"]..(data.level or 0);
+			end
 		end
 
 		if data._type=="link" and data.link then
@@ -1271,7 +1279,7 @@ do
 		data.lines={};
 		for _,v in ipairs(regions) do
 			if (v~=nil) and (v:GetObjectType()=="FontString")then
-				local str = (v:GetText() or ""):trim();
+				local str = strtrim(v:GetText() or "");
 				if str:len()>0 then
 					tinsert(data.lines,str);
 				end
@@ -1407,7 +1415,7 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 	end
 
 	if gold>0 then
-		local str = ns.FormatLargeNumber(modName,gold,opts.inTooltip);
+		local str = tostring(ns.FormatLargeNumber(modName,gold,opts.inTooltip) or "white");
 		tinsert(t, (colors and ns.LC.color(colors[3],str) or str) .. (opts.coins and tex:format("Gold") or "") );
 		if hideMoney==4 then
 			stop = true;
@@ -1415,7 +1423,7 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 	end
 
 	if showSilver and (not stop) then
-		local str = gold>0 and zz:format(silver) or silver;
+		local str = tostring(gold>0 and zz:format(silver) or silver);
 		tinsert(t, (colors and ns.LC.color(colors[2],str) or str) .. (opts.coins and tex:format("Silver") or "") );
 		if hideMoney==4 then
 			stop = true;
@@ -1423,7 +1431,7 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 	end
 
 	if showCopper and (not stop) then
-		local str = (silver>0 or gold>0) and zz:format(copper) or copper;
+		local str = tostring((silver>0 or gold>0) and zz:format(copper) or copper);
 		tinsert(t, (colors and ns.LC.color(colors[1],str) or str) .. (opts.coins and tex:format("Copper") or "") );
 	end
 
@@ -1499,13 +1507,16 @@ do
 
 	local beTypeFunc = {
 		bool = function(d)
+			local chk,fnc = nil,nil;
 			if (d.beModName) then
-				function d.checked() return (ns.profile[d.beModName][d.beKeyName]) end;
-				function d.func() ns.profile[d.beModName][d.beKeyName] = not ns.profile[d.beModName][d.beKeyName]; end;
+				function chk() return (ns.profile[d.beModName][d.beKeyName]) end;
+				function fnc() ns.profile[d.beModName][d.beKeyName] = not ns.profile[d.beModName][d.beKeyName]; end;
 			else
-				function d.checked() return (ns.profile.GeneralOptions[d.beKeyName]) end;
-				function d.func() ns.profile.GeneralOptions[d.beKeyName] = not ns.profile.GeneralOptions[d.beKeyName]; end;
+				function chk() return (ns.profile.GeneralOptions[d.beKeyName]) end;
+				function fnc() ns.profile.GeneralOptions[d.beKeyName] = not ns.profile.GeneralOptions[d.beKeyName]; end;
 			end
+			d.checked = chk;
+			d.func = fnc;
 		end,
 		slider = function(...)
 		end,
@@ -1549,7 +1560,7 @@ do
 			tinsert(a, n);
 		end
 		tsort(a);
-		local i,_ = 0;
+		local i,_ = 0,nil;
 		local function iter()
 			i = i + 1
 			if a[i] == nil then
@@ -1844,7 +1855,7 @@ do
 		end
 
 		if openTooltip then
-			ns.hideTooltip(openTooltip,openTooltip.key,true,false,true);
+			ns.hideTooltip(openTooltip);
 		end
 
 		self:AddEntry({separator=true});
@@ -1915,7 +1926,7 @@ do
 
 		-- click(plan)A = combine modifier if pressed with named button (left,right)
 		-- click(panl)B = combine modifier if pressed with left or right mouse button without expliced check.
-		local clickA,clickB,action,actName="","";
+		local clickA,clickB,action,actName="","",nil,nil;
 
 		-- check modifier
 		if (IsAltKeyDown()) then		clickA=clickA.."ALT";   clickB=clickB.."ALT"; end
