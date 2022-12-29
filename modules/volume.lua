@@ -13,6 +13,7 @@ local updateBrokerButton,getSoundHardware,setSoundHardware
 local icon = "Interface\\AddOns\\"..addon.."\\media\\volume_"
 local VIDEO_VOLUME_TITLE = L["Video Volume"];
 local volume,cvars,updateBroker,vol = {},{};
+local GetCVar,SetCVar = GetCVar or C_CVar.GetCVar, SetCVar or C_CVar.SetCVar;
 
 if not ENABLE_DSP_EFFECTS then
 	if LOCALE_deDE then
@@ -298,13 +299,13 @@ function module.volumeAdjust(self,button,modName,action)
 	end
 	if volume.master==cap then return; end
 	volume.master = new;
-	SetCVar("Sound_MasterVolume",volume.master)
+	SetCVar("Sound_MasterVolume",tostring(volume.master));
 	updateBroker();
 	createTooltip(tt,true);
 end
 
 function module.mute()
-	SetCVar("Sound_EnableAllSound",tonumber(GetCVar("Sound_EnableAllSound"))==0 and 1 or 0);
+	SetCVar("Sound_EnableAllSound",GetCVar("Sound_EnableAllSound")=="0" and "1" or "0");
 	updateBroker();
 	createTooltip(tt,true);
 end

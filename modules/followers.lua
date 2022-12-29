@@ -164,7 +164,7 @@ local function updateFollowers(name,Table,forTooltip)
 		Table["status"..i.."_num"] = 0;
 	end
 
-	local follower,troop,data,entryInfo,_ = {},{},C_Garrison.GetFollowers(Enum.GarrisonFollowerType["Follower"..Table.type]) or {};
+	local follower,troop,data,entryInfo,_ = {},{},C_Garrison.GetFollowers(Enum.GarrisonFollowerType["Follower"..Table.type]) or {},nil,nil;
 
 	for i=1, #data do
 		entryInfo = data[i];
@@ -326,24 +326,23 @@ local function addEntries(tt,name,entriesList,statusIndex,statusLabel,Table)
 					tinsert(abilities,table.concat(combatSpellIcons," "));
 				end
 			end
-			abilities = table.concat(abilities," || ");
 
 			-- tooltip line
-			local line
+			local abilitiesStr,line = table.concat(abilities," || ");
 			if name==nameF then
 				line = tt:AddLine(
 					ttInset2 .. C(entryInfo.classColor,entryInfo.name) .. id,
 					entryInfo.level.." ",
 					entryInfo.xpPercentStr or C("gray","100%"),
 					entryInfo.iLevel,
-					abilities
+					abilitiesStr
 				);
 			else
 				line = tt:AddLine(
 					ttInset2 .. C(entryInfo.classColor,entryInfo.name) .. id,
 					entryInfo.className.." ",
 					entryInfo.xpPercentStr or C("gray","100%"),
-					abilities,
+					abilitiesStr,
 					entryInfo.durabilityIconStr
 				);
 			end
@@ -455,7 +454,7 @@ local function createTooltip(tt,name,ttName)
 		end
 	end
 
-	local followerList,troopList,tableList = {},{},{},{};
+	local followerList,troopList,tableList = {},{},{};
 	for i, Table in ipairs(name==nameF and typeListF or typeListS) do
 		if ns.profile[name]["showTooltip_"..Table.type] then
 			local follower,troop = updateFollowers(name,Table,true);

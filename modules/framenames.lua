@@ -8,8 +8,8 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Framenames" -- L["Framenames"] L["ModDesc-Framenames"]
-local ttName,ldbObject,module = name.."TT"
-local lastFrame,lastMod,lastCombatState,ticker = false,false,false;
+local ttName,ldbObject,module = name.."TT";
+local lastFrame,lastMod,lastCombatState,ticker = nil,nil,nil;
 
 
 -- register icon names and default files --

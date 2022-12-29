@@ -104,7 +104,7 @@ function module.ontooltip(tt)
 			C("ltyellow",date("%Y-%m-%d %H:%M",price.last))
 		);
 		if(ns.profile[name].diff and price.diff)then
-			local diff=0;
+			local diff="";
 			if(price.diff<0)then
 				diff = "- "..ns.GetCoinColorOrTextureString(name,-price.diff,{hideMoney=4,inTooltip=true});
 			else

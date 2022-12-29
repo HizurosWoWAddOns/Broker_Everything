@@ -260,14 +260,14 @@ function createTooltip(tt,update)
 
 				-- session earn/loss
 				if ns.profile[name].showSession and currencySession[currencyId] then
-					local color,num = false,currencyInfo.quantity-currencySession[currencyId];
+					local color,num,prefix = nil,currencyInfo.quantity-currencySession[currencyId],"";
 					if num>0 then
-						color,num = "ltgreen","+"..num;
+						color,prefix = "ltgreen","+";
 					elseif num<0 then
 						color = "ltred";
 					end
 					if color and num then
-						tt:SetCell(l,3,C(color,num));
+						tt:SetCell(l,3,C(color,prefix..num));
 					end
 				end
 				tt:SetLineScript(l, "OnEnter", tooltip2Show, currencyId);
@@ -293,7 +293,7 @@ end
 
 local function AceOptOnBroker(info,value)
 	local place=tonumber((info[#info]:gsub("currenciesInTitle","")));
-	if value~=nil then
+	if value~=nil and place then
 		local _,id = strsplit(":",value);
 		if validateID(id) then
 			ns.profile[name].currenciesInTitle[place] = id;
@@ -515,7 +515,7 @@ function module.init()
 			break;
 		end
 	end
-	local KY,NL,NF,VE,NX = 1,4,3,2;
+	local KY,NL,NF,VE,NX = 1,4,3,2,0;
 	CovenantCurrencies = {
 		-- general sl currencies??
 		--[1769] = NX, -- Questerfahrung (Standard, versteckt)
@@ -641,7 +641,7 @@ function module.init()
 	local skillName,skillLine,_={};
 	for i,index in ipairs({GetProfessions()}) do
 		if index then
-			skillName, _, _, _, _, _, skillLine = GetProfessionInfo(index);
+			_, _, _, _, _, _, skillLine = GetProfessionInfo(index);
 		end
 		if skillLine then
 			if skillLine2DfCurrency[skillLine] then
@@ -683,7 +683,7 @@ end
 
 local insertShadowlandCurrencies
 do
-	local insertAfter,hasInsertedCovenant = false,false;
+	local insertAfter,hasInsertedCovenant = nil,false;
 	local function InsertCurrency(id)
 		if not insertAfter then
 			for i=1, #Currencies do

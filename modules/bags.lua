@@ -312,7 +312,7 @@ function updateBags()
 
 	retry = nil;
 	updateBroker();
-	createTooltip(tt,true);
+	createTooltip(tt);
 end
 
 

@@ -175,14 +175,14 @@ local function updateItems()
 end
 
 local function position(name)
-	local p, f, pf = ns.profile[name].precision or 0, ns.profile[name].coordsFormat or "%s, %s";
+	local p, f = ns.profile[name].precision or 0, ns.profile[name].coordsFormat or "%s, %s";
 	local x, y = 0,0;
 	local mapID = C_Map.GetBestMapForUnit("player");
 	if mapID then
-		local obj = C_Map.GetPlayerMapPosition(C_Map.GetBestMapForUnit("player"),"player");
-		if obj and obj.GetXY then
-			x,y = obj:GetXY();
-		end
+		posObject = C_Map.GetPlayerMapPosition(mapID,"player");
+	end
+	if posObject and posObject.GetXY then
+		x,y = posObject:GetXY();
 	end
 	if not x or (x==0 and y==0) then
 		local pX = p==0 and "−" or "−."..strrep("−",p);
@@ -332,10 +332,9 @@ local function tpmAddObject(tt,p,l,c,v,t,name)
 		tt:SetCellScript(l,c,"OnEnter",tpmOnEnter, {p,v,t});
 		return l,c;
 	else
-		local info,doUpdate = "";
+		local info = "";
 		if v.mustBeEquipped==true and v.equipped==false then
 			info = " "..C("orange","(click to equip)");
-			doUpdate=true
 		end
 		l = tt:AddLine(iStr16:format(v.icon)..(v.name2 or v.name)..info, "1","2","3");
 		tt:SetLineScript(l,"OnEnter",tpmOnEnter,{p,v,t});
@@ -477,7 +476,11 @@ local function updater()
 	end
 end
 
+local initFinished = false;
 local function init()
+	if initFinished then return end
+	initFinished = true;
+	
 	-- spells
 	_classSpecialSpellIds = {50977,18960,556,126892,147420,193753};
 	_teleportIds = {3561,3562,3563,3565,3566,3567,32271,32272,33690,35715,49358,49359,53140,88342,88344,120145,132621,132627,176248,176242,193759,224869,281403,281404,344587};
@@ -628,17 +631,9 @@ function module3.options()
 	}
 end
 
-function module1.init()
-	if init then init() init=nil end
-end
-
-function module2.init()
-	if init then init() init=nil end
-end
-
-function module3.init()
-	if init then init() init=nil end
-end
+module1.init = init;
+module2.init = init;
+module3.init = init
 
 local eventActive = false;
 local function onevent(name,self,event,arg1,...)

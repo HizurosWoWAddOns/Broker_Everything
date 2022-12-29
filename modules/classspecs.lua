@@ -90,7 +90,7 @@ local function updateBroker()
 		local slotMinLevel = C_SpecializationInfo.GetPvpTalentSlotUnlockLevel(slotIndex);
 		if slotMinLevel and slotMinLevel<=lvl then
 			local slotInfo = C_SpecializationInfo.GetPvpTalentSlotInfo(slotIndex);
-			if slotInfo.enabled and slotInfo.selectedTalentID==nil then
+			if slotInfo and slotInfo.enabled and slotInfo.selectedTalentID==nil then
 				unspentPvP = unspentPvP+1;
 			end
 		end
@@ -212,7 +212,7 @@ function createTooltip(tt,update)
 		--local tierLevels = CLASS_TALENT_LEVELS[ns.player.class] or CLASS_TALENT_LEVELS.DEFAULT
 		local level = UnitLevel("player");
 		for row=1, MAX_TALENT_TIERS do
-			local selected, isUnlocked = false,false;
+			local selected, isUnlocked = nil,false;
 			local unlockLevel = GetTalentTierLevel(row);
 			local l=tt:AddLine(C("ltyellow",unlockLevel));
 			for col=1, NUM_TALENT_COLUMNS do

@@ -42,7 +42,7 @@ local hideEmissaryQuests = {
 	-- bfa 8.2.5
 	[56120]=true, [56119]=true
 }
-local Level, Title, Header, Color, Status, Type, ShortType, QuestId, Index, IsHidden, Text = 1,2,3,4,5,6,7,8,9,10,11,12;
+local Level, Title, Header, Color, Status, Type, ShortType, QuestId, Index, IsHidden, Text = 1,2,3,4,5,6,7,8,9,10,11;
 local frequencies = {
 	[LE_QUEST_FREQUENCY_DAILY or Enum.QuestFrequency.Daily] = {"*",DAILY},
 	[LE_QUEST_FREQUENCY_WEEKLY or Enum.QuestFrequency.Weekly] = {"**",WEEKLY},
@@ -89,12 +89,16 @@ I[name] = {iconfile="Interface\\TARGETINGFRAME\\PortraitQuestBadge",coords={0.05
 --------------------------
 local IsQuestWatched = IsQuestWatched or function(questLogIndex)
 	local info = C_QuestLog.GetInfo(questLogIndex);
-	return C_QuestLog.GetQuestWatchType(info.questID) ~= nil;
+	if info then
+		return C_QuestLog.GetQuestWatchType(info.questID) ~= nil;
+	end
 end
 
 local GetQuestLogPushable = GetQuestLogPushable or function(questLogIndex)
 	local info = C_QuestLog.GetInfo(questLogIndex);
-	return C_QuestLog.IsPushableQuest(info.questID);
+	if info then
+		return C_QuestLog.IsPushableQuest(info.questID);
+	end
 end
 
 local function updateBroker()

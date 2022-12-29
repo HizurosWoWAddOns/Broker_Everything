@@ -68,7 +68,7 @@ local commands = {
 				ns:print(spacer,L["CmdEquipSets"]);
 				if num>0 then
 					for i=0, num-1 do -- very rare in wow... equipment set index starts with 0 instead of 1
-						local eName, icon, setID, isEquipped, totalItems, equippedItems, inventoryItems, missingItems, ignoredSlots = C_EquipmentSet.GetEquipmentSetInfo(i);
+						local eName, _, _, isEquipped, _, _, _, missingItems = C_EquipmentSet.GetEquipmentSetInfo(i);
 						ns:print(spacer,C((isEquipped and "yellow") or (missingItems>0 and "red") or "ltblue",eName),missingItems>0 and " - "..C("ltyellow",L["CmdEquipMiss"]:format(missingItems)) or nil);
 					end
 				else
@@ -77,7 +77,7 @@ local commands = {
 			else
 				local validEquipment
 				for i=1, C_EquipmentSet.GetNumEquipmentSets() do
-					local eName, _, _, isEquipped, _, _, _, _ = C_EquipmentSet.GetEquipmentSetInfo(i)
+					local eName, _, _, _, _, _, _, _ = C_EquipmentSet.GetEquipmentSetInfo(i)
 					if cmd==eName then validEquipment = true end
 				end
 				if (not validEquipment) then

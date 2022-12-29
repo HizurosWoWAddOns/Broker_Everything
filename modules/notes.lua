@@ -196,7 +196,7 @@ ns.ClickOpts.addDefaults(module,{
 });
 
 function module.newNote()
-	note_edit({},nil,"LeftButton");
+	note_edit({},nil);
 end
 
 function module.options()

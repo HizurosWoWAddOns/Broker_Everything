@@ -64,7 +64,7 @@ local function GetApplicants()
 			return (C_ClubFinder.ReturnClubApplicantList(guildClubId) or {});
 		end
 	end
-	return false;
+	return {};
 end
 
 local function updateTradeSkills()
@@ -163,7 +163,7 @@ local function updateBroker()
 
 		if ns.profile[name].showApplicantsBroker and C_ClubFinder and C_ClubFinder.ReturnClubApplicantList then
 			local applicants = GetApplicants();
-			if applicants and #applicants>0 then
+			if #applicants>0 then
 				tinsert(txt, C("orange",#applicants));
 			end
 		end
@@ -239,7 +239,7 @@ local function createTooltip3(parent,sel)
 	if sel=="info" then
 		GameTooltip:SetText(GUILD_INFORMATION);
 		GameTooltip:AddLine(" ");
-		local info = (GetGuildInfoText() or ""):trim();
+		local info = strtrim(GetGuildInfoText() or "");
 		if info=="" then
 			info = EMPTY;
 		else
@@ -625,7 +625,7 @@ local function createTooltip(tt,update)
 	local sep=false;
 	if (ns.profile[name].showMOTD) then
 		local l = tt:AddLine(C("ltblue",MOTD_COLON));
-		local motd,color = (GetGuildRosterMOTD() or ""):trim(),"ltgreen";
+		local motd,color = strtrim(GetGuildRosterMOTD() or ""),"ltgreen";
 		if motd=="" then
 			motd,color = EMPTY,"gray"
 		elseif ns.profile.GeneralOptions.scm then
@@ -675,7 +675,7 @@ local function createTooltip(tt,update)
 	-- applicants
 	if ns.profile[name].showApplicants and C_ClubFinder and C_ClubFinder.ReturnClubApplicantList then
 		applicants = GetApplicants();
-		if applicants and #applicants>0 then
+		if #applicants>0 then
 			local line,column = tt:AddLine(
 				C("orange",LEVEL),
 				C("orange",L["Applicant"]),
@@ -933,7 +933,7 @@ function module.onevent(self,event,msg,...)
 	if event=="BE_UPDATE_CFG" and msg and msg:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 	elseif event=="BE_UPDATE_CFG" and msg=="showTableBackground" then
-		local hide = false;
+		local hide = nil;
 		if not ns.profile[name].showTableBackground then
 			hide = {0,0,0,0};
 		end

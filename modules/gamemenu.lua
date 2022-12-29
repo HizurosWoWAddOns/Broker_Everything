@@ -9,13 +9,11 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Game Menu"; -- MAINMENU_BUTTON L["ModDesc-Game Menu"]
 local ttName,tt,module = name.."TT"
-local last_click = 0
 local iconCoords = "16:16:0:-1:64:64:4:56:4:56" --"16:16:0:-1:64:64:3:58:3:58"
 local link = "|T%s:%s|t %s"
 local link_disabled = "|T%s:%s:66:66:66|t "..C("gray", "%s")
-local gmticket = {}
+local gmticket,ClassIconCoords = {},{};
 local customTitle = MAINMENU_BUTTON
-local ClassIconCoords=5,0;
 local IsBlizzCon = IsBlizzCon or function() return false; end -- Legion Fix
 local menu = {};
 
@@ -321,7 +319,7 @@ function module.init()
 		{name=UIOPTIONS_MENU,		iconName="UiOpts",			func=function() securecall("InterfaceOptionsFrame_Show") end,		},
 		{name=MACROS,				iconName="Macros",			func=function() securecall("ShowMacroFrame") end,		},
 		{name=MAC_OPTIONS,			iconName="MacOpts",			func=function() securecall("ShowUIPanel", MacOptionsFrame) end,		 view=IsMacClient()==true},
-		{name=ADDONS,				iconName="Addons",			view=( (IsAddOnLoaded("OptionHouse")) or (IsAddOnLoaded("ACP")) or (IsAddOnLoaded("Ampere")) or (IsAddOnLoaded("stAddonManager")) or (_G.AddonList) ),
+		{name=ADDONS,				iconName="Addons",			view=( (IsAddOnLoaded("OptionHouse")) or (IsAddOnLoaded("ACP")) or (IsAddOnLoaded("Ampere")) or (IsAddOnLoaded("stAddonManager")) or (_G["AddonList"]) ),
 		func=function()
 			if (IsAddOnLoaded("OptionHouse")) then
 				OptionHouse:Open(1);
@@ -331,7 +329,7 @@ function module.init()
 				InterfaceOptionsFrame_OpenToCategory("Ampere");
 			elseif (IsAddOnLoaded("stAddonManager")) then
 				stAddonManager:LoadWindow()
-			elseif (_G.AddonList) then
+			elseif (_G["AddonList"]) then
 				AddonList:Show();
 			end
 		end},

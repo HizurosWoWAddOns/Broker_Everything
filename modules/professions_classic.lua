@@ -215,7 +215,7 @@ local function createTooltip(tt)
 			else
 				local skillPercent = skill/maxSkill;
 				if skillPercent==1 then
-					color2 = "gray2","gray2";
+					color2 = "gray2";
 				else
 					color2 = "ffff"..string.format("%02x",255*skillPercent).."00";
 				end

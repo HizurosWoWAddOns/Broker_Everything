@@ -21,7 +21,7 @@ local fps     = {cur=0,min=-5,max=0,his={},curStr="",minStr="",maxStr=""};
 local memory  = {cur=0,min=0,max=0,his={},list={},curStr="",minStr="",maxStr="",brokerStr="",numAddOns=0,loadedAddOns=0};
 local netStatTimeout,memoryTimeout,enabled,module,isHooked,memUpdateLock=1,2,{};
 local version, build, buildDate, interfaceVersion, memUpdateLocked = GetBuildInfo();
-local addonpanels,ticker = {};
+local addonpanels,updateAllTicker = {};
 local addonpanels_select = {["none"]=L["None (disable right click)"]};
 local clickOptionsRename = {
 	["options"] = "2_optionpanel",
@@ -66,7 +66,7 @@ I[name_traf] = {iconfile="Interface\\Addons\\"..addon.."\\media\\memory"}; --Ico
 -- some local functions --
 --------------------------
 local function checkAddonManager()
-	addonpanels["Blizzard's Addons Panel"] = function(chk) if (chk) then return (_G.AddonList); end if (_G.AddonList:IsShown()) then _G.AddonList:Hide(); else _G.AddonList:Show(); end end;
+	addonpanels["Blizzard's Addons Panel"] = function(chk) if (chk) then local AddonList = _G["AddonList"]; return (AddonList); end if (AddonList:IsShown()) then AddonList:Hide(); else AddonList:Show(); end end;
 	addonpanels_select["Blizzard's Addons Panel"] = "Blizzard's Addons Panel";
 	addonpanels["ACP"] = function(chk) if (chk) then return (IsAddOnLoaded("ACP")); end ACP:ToggleUI() end
 	addonpanels["Ampere"] = function(chk) if (chk) then return (IsAddOnLoaded("Ampere")); end InterfaceOptionsFrame_OpenToCategory("Ampere"); InterfaceOptionsFrame_OpenToCategory("Ampere"); end
@@ -120,7 +120,7 @@ local function formatBytes(bytes, precision)
 end
 
 local function fpsStr(k)
-	local num = fps[k];
+	local num = tostring(fps[k]);
 	if ns.profile[name_fps].fillCharacter~="0none" then
 		local chr = {
 			["1zero"] = "0",
@@ -147,7 +147,7 @@ local function memoryStr(t,k)
 end
 
 local function updateFPS()
-	fps.cur = floor(GetFramerate());
+	fps.cur = floor(GetFramerate() or 0);
 	if fps.min<-1 then
 		fps.min=fps.min+1;
 	elseif fps.min==-1 then
@@ -202,7 +202,7 @@ end
 
 local function setMemoryTimeout()
 	local interval={};
-	memoryTimeout = false;
+	memoryTimeout = 0;
 	if enabled.mem_sys then
 		tinsert(interval,ns.profile[name_sys].updateInterval);
 	end
@@ -233,7 +233,7 @@ local function updateMemory()
 		local Name = GetAddOnInfo(i);
 		local IsLoaded = IsAddOnLoaded(Name);
 
-		local group = false;
+		local group = nil;
 		for pat,gName in pairs(addonGroups)do
 			if Name:find(pat) then
 				group = gName;
@@ -568,7 +568,10 @@ local function updateAll()
 end
 
 local function init()
-	C_Timer.NewTicker(2,updateAll);
+	if updateAllTicker then
+		return;
+	end
+	updateAllTicker = C_Timer.NewTicker(2,updateAll);
 end
 
 -- module variables for registration --
@@ -760,7 +763,7 @@ end
 
 function module_sys.init()
 	enabled.sys_mod = true;
-	if init then init() init=nil end
+	init()
 	enabled.fps_sys = (ns.profile[name_sys].showFpsOnBroker or ns.profile[name_sys].showFpsInTooltip);
 	enabled.lat_sys = (ns.profile[name_sys].showWorldOnBroker or ns.profile[name_sys].showHomeOnBroker or ns.profile[name_sys].showLatencyInTooltip);
 	enabled.mem_sys = (ns.profile[name_sys].showMemoryUsageOnBroker or ns.profile[name_sys].showAddOnsCountOnBroker or ns.profile[name_sys].showMemoryUsageInTooltip);
@@ -769,22 +772,22 @@ end
 
 function module_fps.init()
 	enabled.fps_mod=true;
-	if init then init() init=nil end
+	init()
 end
 
 function module_lat.init()
 	enabled.lat_mod=true;
-	if init then init() init=nil end
+	init()
 end
 
 function module_mem.init()
 	enabled.mem_mod=true;
-	if init then init() init=nil end
+	init()
 end
 
 function module_traf.init()
 	enabled.traf_mod=true;
-	if init then init() init=nil end
+	init()
 end
 
 function module_sys.onevent(self,event,msg)

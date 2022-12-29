@@ -11,9 +11,7 @@ local time,date,tinsert,tconcat=time,date,tinsert,table.concat;
 local name = "Gold"; -- BONUS_ROLL_REWARD_MONEY L["ModDesc-Gold"]
 local ttName, tt, createTooltip, module = name.."TT";
 local login_money = nil;
-local next_try = false;
 local current_money = 0
-local faction = UnitFactionGroup("Player")
 local player = ns.player.name_realm;
 local profit,ttLines = {},{
 	{"showProfitSession",L["Session"]},
@@ -121,7 +119,7 @@ function createTooltip(tt,update)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
 	local sAR,sAF = ns.profile[name].showCharsFrom=="4",ns.profile[name].showAllFactions==true;
-	local totalGold,diff_money = {Alliance=0,Horde=0,Neutral=0};
+	local totalGold = {Alliance=0,Horde=0,Neutral=0};
 	totalGold[ns.player.faction] = current_money;
 
 	if tt.lines~=nil then tt:Clear(); end
@@ -142,7 +140,7 @@ function createTooltip(tt,update)
 	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true,]] currentHide=true,--[[forceSameRealm=true]]}) do
 		if toonData.gold then
 			local faction = toonData.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
-			local line, column = tt:AddLine(
+			local line = tt:AddLine(
 				C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction,
 				ns.GetCoinColorOrTextureString(name,toonData.gold,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT})
 			);
@@ -151,7 +149,7 @@ function createTooltip(tt,update)
 
 			totalGold[toonData.faction] = totalGold[toonData.faction] + toonData.gold;
 
-			line, column = nil, nil;
+			line = nil;
 			lineCount=lineCount+1;
 		end
 	end

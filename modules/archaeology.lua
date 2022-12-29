@@ -266,7 +266,6 @@ module = {
 		inTitle = {},
 		continentOrder=true,
 		infoMaxFragments=true,
-		infoMaxFragments=true,
 	},
 	clickOptionsRename = {
 		["archaeology"] = "1_open_archaeology_frame",

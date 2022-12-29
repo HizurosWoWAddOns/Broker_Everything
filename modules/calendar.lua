@@ -127,7 +127,6 @@ end
 local function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
-	local _=function(y,m,d) return y*10000+m*100+d; end
 	if (ns.tooltipChkOnShowModifier(false)) then tt:Hide(); return; end
 
 	if tt.lines~=nil then tt:Clear(); end
@@ -151,8 +150,10 @@ local function createTooltip(tt)
 			for _, event in ipairs(events[value.type])do
 				if value.type=="COMMUNITY_EVENT" and club~=event.clubID then
 					local clubInfo = C_Club.GetClubInfo(event.clubID);
-					tt:SetCell(tt:AddLine(),1,C("ltgray",clubInfo.name),nil,"LEFT",0);
-					club = event.clubID;
+					if clubInfo then
+						tt:SetCell(tt:AddLine(),1,C("ltgray",clubInfo.name),nil,"LEFT",0);
+						club = event.clubID;
+					end
 				end
 				local todayOrTomorrow = (event.isToday and IS_TODAY) or (event.isTomorrow and IS_TOMORROW) or "";
 				local l = tt:AddLine(inset..C("ltblue",event.title),todayOrTomorrow..event.startTime.string,"");
@@ -164,7 +165,6 @@ local function createTooltip(tt)
 	end
 
 	if ns.profile[name].showHolidayEvents and #events.HOLIDAY>0 then
-		local separator = false;
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("dkyellow",EVENTS_LABEL),C("ltblue",L["Starts"]),"",C("ltblue",L["Ends"]));
 		tt:AddSeparator();

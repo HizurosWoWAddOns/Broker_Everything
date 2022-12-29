@@ -148,15 +148,15 @@ local function updateBroker()
 	if not (tonumber(numOnlineBNFriends) and tonumber(friendsOnline)) then return end
 
 	if ns.profile[name].splitFriendsBroker then
-		local friends = friendsOnline;
-		local bnfriends = numOnlineBNFriends;
+		local friends = tostring(friendsOnline);
+		local bnfriends = tostring(numOnlineBNFriends);
 		if ns.profile[name].showTotalCount then
 			friends = friends.."/"..numFriends;
 			bnfriends = bnfriends.."/"..numBNFriends;
 		end
 		dataobj.text = friends .." ".. C(BNConnected() and "ltblue" or "red",bnfriends);
 	else
-		local txt = numOnlineBNFriends + friendsOnline;
+		local txt = tostring(numOnlineBNFriends + friendsOnline);
 		if ns.profile[name].showTotalCount then
 			txt = txt .."/".. (numBNFriends + numFriends);
 		end
@@ -334,7 +334,7 @@ local function createTooltip(tt)
 				local fi = ns.C_BattleNet_GetFriendAccountInfo(i);
 				if nt and fi and fi.gameAccountInfo.isOnline then
 					for I=1, nt do
-						local ti =  C_BattleNet_GetFriendGameAccountInfo(i,I);
+						local ti =  C_BattleNet_GetFriendGameAccountInfo(i,I) or {};
 						local bcIcon = fi.customMessage~="" and "|Tinterface\\chatframe\\ui-chatinput-focusicon:0|t" or "";
 						local cl = ti.clientProgram;
 						local mobileApp =  cl~="BSAp" or (cl=="BSAp" and ns.profile[name].showMobileApp); -- filter mobile app
@@ -487,8 +487,8 @@ local function createTooltip(tt)
 								client = ti.clientProgram,
 								realm = ti.realmName,
 								area = ti.clientProgram~="App" and (ti.areaName or ti.richPresence) or false,
-								notes = (fi.note or ""):trim(),
-								broadcast = (fi.customMessage or ""):trim(),
+								notes = strtrim(fi.note or ""),
+								broadcast = strtrim(fi.customMessage or ""),
 								broadcastTime = fi.customMessageTime or false,
 							};
 							if ti.factionName then

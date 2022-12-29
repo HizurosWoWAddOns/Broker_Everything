@@ -7,8 +7,8 @@ local C, L, I = ns.LC.color, ns.L, ns.I;
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name,_ = "Durability"; -- DURABILITY L["ModDesc-Durability"]
-local ttName,tt,module = name.."TT";
+local name = "Durability"; -- DURABILITY L["ModDesc-Durability"]
+local ttName,tt,module,_ = name.."TT";
 local last_repairs = {};
 local merchant,currentDurability = {repair=false,costs=0,diff=0,single=0},{0, 0, 0, 100, 100, false};
 local discount = {[5]=0.95,[6]=0.9,[7]=0.85,[8]=0.8};
@@ -127,7 +127,7 @@ local function nsItems2Callback()
 
 	local total = repairCost.bags+repairCost.inv;
 	if merchant.repair then
-		total = GetRepairAllCost();
+		total = GetRepairAllCost() or 0;
 	end
 
 	currentDurability = {total, repairCost.inv, repairCost.bags, avPercentage*100, lowest[1]*100, lowest[2]};

@@ -549,14 +549,17 @@ function createTooltip(tt)
 				tt:AddSeparator();
 				local count,sum=0,0;
 				for i,v in ipairs(ap_items_found)do
-					local l;
+					local color,l = "quality7";
+					if v.quality then
+						color = "quality"..v.quality;
+					end
 					if v.artifact_power==-1 then
 						l=tt:AddLine();
-						tt:SetCell(l,1,"|T".. v.icon .. ":0|t ".. C("quality"..v.quality or 7,v.name),nil,nil,2);
+						tt:SetCell(l,1,"|T".. v.icon .. ":0|t ".. C(color,v.name),nil,nil,2);
 						tt:SetCell(l,3," ");
 					elseif v.artifact_power>0 then
 						l=tt:AddLine();
-						tt:SetCell(l,1,"|T".. v.icon .. ":0|t ".. C("quality"..v.quality or 7,v.name),nil,nil,2);
+						tt:SetCell(l,1,"|T".. v.icon .. ":0|t ".. C(color,v.name),nil,nil,2);
 						tt:SetCell(l,3,C("ltyellow",v.count .." x " .. ns.FormatLargeNumber(name,v.artifact_power,true)));
 						sum = sum + (v.count*v.artifact_power);
 					end

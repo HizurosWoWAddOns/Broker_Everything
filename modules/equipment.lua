@@ -91,7 +91,7 @@ local function UpdateInvSlotTooltip(data)
 end
 
 local function UpdateInventory()
-	local lst,lvl={iLevelMin=0,iLevelMax=0};
+	local lst={iLevelMin=0,iLevelMax=0};
 	for _, d in pairs(ns.items.bySlot)do
 		if d and d.bag==-1 then
 			local obj,_ = CopyTable(d);
@@ -121,7 +121,7 @@ local function GetILevelColor(il)
 
 	if (il==inventory.iLevelMax) then return colors[1]; end
 
-	local diff,q = inventory.iLevelMax-inventory.iLevelMin;
+	local diff = inventory.iLevelMax-inventory.iLevelMin;
 	if (diff<=6) then
 		if (il==inventory.iLevelMin) then return colors[3]; end
 	else
@@ -317,24 +317,19 @@ local function createTooltip(tt)
 						upgrades = " "..C(col,itemInfo.upgrades);
 					end
 
-					if ns.client_version>=6 and itemInfo.level then
-						itemLevel = C(GetILevelColor(itemInfo.level),itemInfo.level);
-					else
-						itemLevel = "";
+					local itemLevelStr = "";
+					if (ns.client_version>=6 and itemInfo.level) and not (i==19 or i==4) then
+						itemLevelStr = C(GetILevelColor(itemInfo.level),itemInfo.level);
 					end
 
 					if ns.profile[name].showTSet and tSetItems[obj.id] then
 						tSetItem=C("yellow"," T"..tSetItems[obj.id]);
 					end
 
-					if i==19 or i==4 then
-						itemLevel = "";
-					end
-
 					local l = tt:AddLine(
 						C("ltyellow",_G[slots[i].."SLOT"]),
 						C("quality"..itemQuality,itemName) .. greenline .. tSetItem .. setName .. upgrades .. enchanted .. gems,
-						itemLevel
+						itemLevelStr
 					);
 
 					tt:SetLineScript(l,"OnEnter",InventoryTooltipShow, obj.slot);
@@ -492,7 +487,7 @@ function module.init()
 		};
 	elseif ns.client_version<9 then -- bfa
 		enchantSlots = {
-			[9]=true,[6]={[202]=true},[9]={[333]=true},[10]=true,[11]=true,[12]=true,[15]=true,[16]=true -- enchanters
+			[6]={[202]=true},[9]={[333]=true},[10]=true,[11]=true,[12]=true,[15]=true,[16]=true -- enchanters
 		};
 	else-- if ns.client_version<10 then -- sl
 		-- idea: [<invSlot>] = true | { [<tradeSkillID>]=true, ... }

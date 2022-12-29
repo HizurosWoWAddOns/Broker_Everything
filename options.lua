@@ -159,14 +159,14 @@ local function opt(info,value,...)
 	-- section = GeneralOptions or module names
 	local key,section,isModEnable = info[#info],info[#info-2],(info[#info-1]=="modEnable");
 	if #info>=5 then
-		local modOptDepth = false;
+		local modOptDepth = nil;
 		for i=#info, 1, -1 do
 			if info[i]=="modOptions" then
 				modOptDepth = i+1;
 				break;
 			end
 		end
-		if modOptDepth~=false then
+		if modOptDepth~=nil then
 			section = info[modOptDepth];
 		end
 	end

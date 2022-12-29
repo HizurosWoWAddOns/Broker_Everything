@@ -431,8 +431,9 @@ function module.onevent(self,event,arg1,...)
 				end
 
 				local _,_,_,_,fID = C_Garrison.GetFollowerInfoForBuilding(buildings[i].plotID);
+				fID = tonumber(fID);
 				if (fID) then
-					buildings[i].follower = C_Garrison.GetFollowerInfo(tonumber(fID));
+					buildings[i].follower = C_Garrison.GetFollowerInfo(fID);
 					if buildings[i].follower then
 						buildings[i].follower.class = strsub(buildings[i].follower.classAtlas,23);
 						--(isBuilding or canActivate or not owned);
@@ -505,7 +506,7 @@ function module.onevent(self,event,arg1,...)
 							if (numCriteria>0) then
 								for ai=1, numCriteria do
 									local criteriaString, criteriaType, completed, quantity, reqQuantity, charName, flags, assetID, quantityString = GetAchievementCriteriaInfo(aid, ai);
-									if (not completed) and (bit.band(flags, EVALUATION_TREE_FLAG_PROGRESS_BAR)==EVALUATION_TREE_FLAG_PROGRESS_BAR) then
+									if (not completed) and flags and (bit.band(flags, EVALUATION_TREE_FLAG_PROGRESS_BAR)==EVALUATION_TREE_FLAG_PROGRESS_BAR) then
 										tinsert(need,quantityString);
 									end
 								end

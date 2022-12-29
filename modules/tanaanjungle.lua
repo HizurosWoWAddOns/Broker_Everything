@@ -134,7 +134,7 @@ local function listQuests(TT,questlog,completed,numCompleted)
 		TT:AddSeparator();
 		for id,qType in pairs(ids)do
 			if qType==i then
-				local color,state = false,false;
+				local color,state = nil,nil;
 				if completed[id]~=nil and completed[id]>dailiesReset then
 					color,state = "green",GOAL_COMPLETED;
 				elseif questlog[id]==true then
