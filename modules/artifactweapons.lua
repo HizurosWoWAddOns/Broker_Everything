@@ -351,7 +351,7 @@ local function createTooltip2(parent,artifactID)
 		tt:AddSeparator();
 		if #item.relic>0 then
 			for i,v in ipairs(item.relic) do
-				local ilvl={};
+				local ilvl,ilvlStr={},"";
 				if (tonumber(v.level) or 0)>0 and ns.profile[name].showRelicItemLevel then
 					tinsert(ilvl,v.level);
 				end
@@ -359,11 +359,9 @@ local function createTooltip2(parent,artifactID)
 					tinsert(ilvl,"+"..v.increase);
 				end
 				if #ilvl>0 then
-					ilvl = " "..C("gray2","("..table.concat(ilvl,"/")..")");
-				else
-					ilvl="";
+					ilvlStr = " "..C("gray2","("..table.concat(ilvl,"/")..")");
 				end
-				local n = (v.color and C(v.color,v.name)..ilvl) or (v.locked and C("red", LOCKED)) or C("ltgray",EMPTY);
+				local n = (v.color and C(v.color,v.name)..ilvlStr) or (v.locked and C("red", LOCKED)) or C("ltgray",EMPTY);
 				local icon = v.locked and "|TInterface\\LFGFrame\\UI-LFG-ICON-LOCK:14:14:0:0:32:32:0:25:0:25|t " or "|T"..(v.icon or ns.icon_fallback)..":0|t ";
 				local _type = v.type or UNKNOWN;
 				local label = _G["RELIC_SLOT_TYPE_" .. _type:upper()] .. " " .. RELICSLOT;
@@ -495,7 +493,7 @@ function createTooltip(tt)
 				tt:AddSeparator();
 				if #ns.toon[name][itemID].relic>0 then
 					for i,v in ipairs(ns.toon[name][itemID].relic) do
-						local ilvl={};
+						local ilvl,ilvlStr={},"";
 						if (tonumber(v.level) or 0)>0 and ns.profile[name].showRelicItemLevel then
 							tinsert(ilvl,v.level);
 						end
@@ -503,11 +501,9 @@ function createTooltip(tt)
 							tinsert(ilvl,"+"..v.increase);
 						end
 						if #ilvl>0 then
-							ilvl = " "..C("gray2","("..table.concat(ilvl,"/")..")");
-						else
-							ilvl="";
+							ilvlStr = " "..C("gray2","("..table.concat(ilvl,"/")..")");
 						end
-						local n = (v.color and C(v.color,v.name)..ilvl) or (v.locked and C("red", LOCKED)) or C("ltgray",EMPTY);
+						local n = (v.color and C(v.color,v.name)..ilvlStr) or (v.locked and C("red", LOCKED)) or C("ltgray",EMPTY);
 						local icon = v.locked and "|TInterface\\LFGFrame\\UI-LFG-ICON-LOCK:14:14:0:0:32:32:0:25:0:25|t " or "|T"..(v.icon or ns.icon_fallback)..":0|t ";
 						local label = (v.type and _G["RELIC_SLOT_TYPE_" .. v.type:upper()] or UNKNOWN) .. " " .. RELICSLOT;
 						local l=tt:AddLine(C("white",i..". ")..C("ltgreen",label));
