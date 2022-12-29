@@ -73,12 +73,10 @@ local function updateBroker()
 	end
 
 	local diff = now-session.total;
+	local bPlus = ns.profile[name].showPointsSess and diff>0;
 	if ns.profile[name].showPoints then
-		if ns.profile[name].showPointsSess and diff>0 then
-			now=now.." +"..diff;
-		end
-		tinsert(txt,C("dkyellow",now));
-	elseif ns.profile[name].showPointsSess and diff>0 then
+		tinsert(txt,C("dkyellow",bPlus and now.." +"..diff or now));
+	elseif bPlus then
 		tinsert(txt,C("dkyellow","+"..diff));
 	end
 
@@ -86,7 +84,6 @@ local function updateBroker()
 end
 
 local function resetSessionCounter()
-	local id, points, _
 	wipe(session);
 	session.total = GetTotalAchievementPoints();
 	local categories = listCategories();
@@ -126,8 +123,7 @@ local function createTooltip(tt)
 
 	local now = GetTotalAchievementPoints();
 	local diff = now-session.total;
-	now = C("dkyellow",now) .. (diff>0 and C("ltgreen"," +"..diff) or "");
-	tt:SetCell(l,2,now,nil,"RIGHT",0);
+	tt:SetCell(l,2,C("dkyellow",now) .. (diff>0 and C("ltgreen"," +"..diff) or ""),nil,"RIGHT",0);
 	count=0;
 
 	if(ns.profile[name].showLatest)then
@@ -166,12 +162,12 @@ local function createTooltip(tt)
 			tt:AddLine(C("ltblue",L["Watch list"]));
 			tt:AddSeparator();
 			for i=1, #ids do
-				local id, Name, points, completed, month, day, year, description, flags, icon, rewardText, isGuild, wasEarnedByMe, earnedBy = GetAchievementInfo(ids[i]);
+				local id, Name, _, completed, _, _, _, description = GetAchievementInfo(ids[i]);
 				local l = tt:AddLine(C("ltyellow",ns.strCut(Name,56)));
 				local num = GetAchievementNumCriteria(id);
 				local plainCriteria = {};
 				for i=1, num do
-					local criteriaString, criteriaType, criteriaCompleted, quantity, reqQuantity, charName, _flags, assetID, quantityString = GetAchievementCriteriaInfo(id, i);
+					local criteriaString, _, criteriaCompleted, quantity, reqQuantity, _, flags, _, quantityString = GetAchievementCriteriaInfo(id, i);
 					if ( bit.band(_flags, EVALUATION_TREE_FLAG_PROGRESS_BAR) == EVALUATION_TREE_FLAG_PROGRESS_BAR ) then
 						local color          = (ns.profile[name].showProgressBars) and "white" or "ltgray";
 						local colorCompleted = (not ns.profile[name].showProgressBars) and "ltgreen" or "green";
