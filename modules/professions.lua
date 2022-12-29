@@ -12,7 +12,7 @@ local name = "Professions"; -- TRADE_SKILLS L["ModDesc-Professions"]
 local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module = name.."TT",name.."TT2",2,3;
 local professions,cdSpells,skillNameById,toonDB,locked = {},{},{};
 local faction_recipes,PATTERN_SKILL_RANK_UP = {factionId=1,standing=2,itemId=3,spellId=4,rank=5};
-local expansionSkillLines
+local expansionSkillLines,friendStandingLabel
 do
 	local arg1pattern, arg2pattern = "'%%s'","%%d";
 	if LOCALE_deDE then
@@ -275,7 +275,11 @@ local function CreateTooltip2(self, content)
 	if content=="skill-list" then
 		--
 	elseif content=="faction-recipes" then
-		tt2:AddLine(C("ltblue",L["Recipes from faction vendors"].." ("..skillNameById[tsId]..")"),C("ltblue",QUEST_TOOLTIP_REQUIREMENTS:gsub(HEADER_COLON:trim(),"")),C("ltblue",L["Buyable"]));
+		tt2:AddLine(
+			C("ltblue",L["Recipes from faction vendors"].." ("..skillNameById[tsId]..")"),
+			C("ltblue",QUEST_TOOLTIP_REQUIREMENTS:gsub(HEADER_COLON:trim(),"")),
+			C("ltblue",L["Buyable"])
+		);
 		tt2:AddSeparator();
 
 		local factionID,factionName,currentStanding,standingID,_ = 0;
@@ -299,7 +303,9 @@ local function CreateTooltip2(self, content)
 						else
 							local friendInfo = C_GossipInfo.GetFriendshipReputation(factionID);
 							if friendInfo and friendInfo.friendshipFactionID~=0 then
-								currentStandingStr = friendInfo.reaction..c:format(currentStanding-(friendStandingVisDiff[factionID] or 0));
+								local ranks = C_GossipInfo.GetFriendshipReputationRanks(factionID);
+								currentStandingStr = friendInfo.reaction..c:format(ranks.currentLevel);
+								currentStanding = ranks.currentLevel;
 							else
 								currentStandingStr = _G["FACTION_STANDING_LABEL"..currentStanding];
 							end
@@ -312,7 +318,7 @@ local function CreateTooltip2(self, content)
 					if factions[factionID].isMajor then
 						standingText = MAJOR_FACTION_RENOWN_LEVEL_TOAST:format(standing);
 					elseif friendStandingLabel[factionID] then
-						standingText = friendStandingLabel[factionID][standing]..c:format(standing-(friendStandingVisDiff[factionID] or 0));
+						standingText = friendStandingLabel[factionID][standing]..c:format(standing);
 					else
 						standingText = _G["FACTION_STANDING_LABEL"..standing];
 					end
@@ -329,6 +335,8 @@ local function CreateTooltip2(self, content)
 				end
 			end
 		end
+
+		tt2:SetCell(tt2:AddLine(),1,C("orange",ns.strWrap(L["ProfessionFactionRecipeInfo"],80)),nil,nil,3);
 	end
 
 	ns.roundupTooltip(tt2, true);
@@ -402,7 +410,7 @@ local function expansionSkillLines_OnEnter(self,skillId)
 				if skillInfo.skillLevel and skillInfo.maxSkillLevel and skillInfo.maxSkillLevel~=0 then
 					local percentSkillLevel = skillInfo.skillLevel/skillInfo.maxSkillLevel;
 					if percentSkillLevel==1 then
-						color = "gray2","gray2";
+						color = "gray2";
 					else
 						color = "ffff"..string.format("%02x",255*percentSkillLevel).."00";
 					end
@@ -419,7 +427,7 @@ local function expansionSkillLines_OnEnter(self,skillId)
 				if skillLineRank and skillLineMaxRank and skillLineMaxRank~=0 then
 					local skillPercent = skillLineRank/skillLineMaxRank;
 					if skillPercent==1 then -- on max skill
-						color = "gray2","gray2";
+						color = "gray2";
 					else
 						color = "ffff"..string.format("%02x",255*skillPercent).."00";
 					end
@@ -454,7 +462,7 @@ local function createTooltip(tt)
 				else
 					local skillPercent = v.numSkill/v.maxSkill;
 					if skillPercent==1 then -- on max skill
-						color2 = "gray2","gray2";
+						color2 = "gray2";
 					else
 						color2 = "ffff"..string.format("%02x",255*skillPercent).."00";
 					end
@@ -829,35 +837,35 @@ function module.init()
 			[171] = {
 				{2503, 13, 191547, 370677},{2503, 22, 191588, 370725},
 				{2510, 11, 191656, 370676},
-				{2544,  5, 191590, 370729},{2544,  6, 191586, 370723},{2544,  6, 191593, 370732},{2544,  6, 191594, 370733},{2544,  6, 194286, 376536},
-				{2550,  6, 191579, 370708},
+				{2544,  3, 191590, 370729},{2544,  4, 191586, 370723},{2544,  4, 191593, 370732},{2544,  4, 191594, 370733},{2544,  4, 194286, 376536},
+				{2550,  3, 191579, 370708},
 			},
 			-- Blacksmithing
 			[164] = {
 				{2503, 13, 194477, 367594},{2503, 13, 194478, 367589},{2503, 13, 194480, 367588},{2503, 18, 194497, 371367},{2503, 18, 194499, 371369},{2503, 22, 198713, 377281},
 				{2510, 14, 194479, 367590},{2510, 14, 194482, 367592},{2510, 19, 194495, 371365},{2510, 19, 194498, 371368},{2510, 19, 194500, 371371},
-				{2544,  5, 194493, 371349},{2544,  6, 194506, 371682},
+				{2544,  3, 194493, 371349},{2544,  4, 194506, 371682},
 			},
 			-- Enchanting
 			[333] = {
 				-- C_TradeSkillUI.GetRecipeRequirements(389419)
 				{2503,  8, 199813, 389419},{2503,  8, 199814, 389479},
 				{2510, 11, 199817, 389405},{2510, 11, 199818, 389484},
-				{2544,  6, 199802, 389513},{2544,  6, 199803, 389525},{2544,  6, 199804, 389508},
+				{2544,  4, 199802, 389513},{2544,  4, 199803, 389525},{2544,  4, 199804, 389508},
 				{2511, 10, 199815, 389404},{2511, 10, 199816, 389416},
 			},
 			-- Engineering
 			[202] = {
 				{2507,  9, 198781, 382343},{2507,  9, 198784, 382322},{2507, 15, 198782, 382339},{2507, 15, 198783, 382340},{2507, 15, 198901, 383582},{2507, 19, 198788, 383593},{2507, 21, 198785, 382332},{2507, 21, 198909, 383565},
 				{2510, 11, 199246, 382344},{2510, 19, 199244, 382341},{2510, 19, 199245, 382342},
-				{2544,  4, 199290, 382404},{2544,  5, 199242, 382338},{2544,  5, 199243, 382337},{2544,  5, 199289, 382403},{2544,  6, 199285, 382399},{2544,  6, 199286, 382400},{2544,  6, 199295, 384313},{2544,  7, 199240, 382335},
+				{2544,  2, 199290, 382404},{2544,  3, 199242, 382338},{2544,  3, 199243, 382337},{2544,  3, 199289, 382403},{2544,  4, 199285, 382399},{2544,  4, 199286, 382400},{2544,  4, 199295, 384313},{2544,  5, 199240, 382335},
 			},
 			-- Inscription
 			[773] = {
 				{2503, 15, 198902, 383583},{2503, 22, 198937, 383591},
 				{2510, 15, 198892, 383575},{2510, 23, 198941, 383590},{2510, 28, 198912, 383569},
-				{2544,  4, 200599, 390847},{2544,  4, 200600, 390848},{2544,  4, 200601, 390849},{2544,  4, 200602, 390850},{2544,  4, 200603, 390851},{2544,  4, 200604, 390852},{2544,  4, 200605, 390853},{2544,  6, 198943, 383550},{2544,  6, 198947, 383552},
-				{2550,  7, 198895, 383578},
+				{2544,  2, 200599, 390847},{2544,  2, 200600, 390848},{2544,  2, 200601, 390849},{2544,  2, 200602, 390850},{2544,  2, 200603, 390851},{2544,  2, 200604, 390852},{2544,  2, 200605, 390853},{2544,  2, 198943, 383550},{2544,  2, 198947, 383552},
+				{2550,  4, 198895, 383578},
 				{2511, 13, 198894, 383577},{2511, 25, 198940, 383588},
 			},
 			-- Jewelcrafting
@@ -869,8 +877,8 @@ function module.init()
 			-- Leatherworking
 			[165] = {
 				{2503, 13, 193870, 375157},{2503, 13, 193878, 375153},{2503, 18, 198457, 375194},{2503, 18, 198462, 375195},{2503, 18, 198463, 375196},{2503, 18, 198464, 375190},{2503, 22, 197982, 381849},
-				{2544,  7, 198618, 381547},
-				{2550,  7, 201733, 375161},
+				{2544,  5, 198618, 381547},
+				{2550,  4, 201733, 375161},
 				{2511, 15, 193875, 375144},{2511, 15, 193876, 375146},{2511, 23, 194311, 375172},{2511, 29, 197981, 381848},{2511, 18, 198458, 375192},{2511, 18, 198459, 375189},{2511, 18, 198461, 375193},{2511, 18, 198465, 375191},
 
 			},
@@ -878,8 +886,8 @@ function module.init()
 			[197] = {
 				{2507, 15, 194289, 376548},{2507, 15, 194291, 376552},{2507, 15, 194294, 376531},{2507, 15, 194295, 376532},{2507, 17, 194268, 376570},{2507, 17, 194281, 376568},{2507, 19, 194285, 376529},{2507, 21, 194283, 376565},
 				{2510, 14, 194279, 376501},{2510, 14, 194280, 376505},{2510, 19, 194288, 376544},{2510, 19, 194290, 376550},{2510, 19, 194292, 376554},{2510, 23, 194287, 376561},{2510, 28, 194282, 376567},
-				{2544,  6, 194286, 376536},{2544,  6, 194293, 376534},
-				{2550,  6, 194265, 376541},{2550,  7, 194261, 376539},
+				{2544,  4, 194286, 376536},{2544,  4, 194293, 376534},
+				{2550,  3, 194265, 376541},{2550,  4, 194261, 376539},
 			},
 			-- Cooking
 			[185] = {
@@ -889,37 +897,33 @@ function module.init()
 	}
 
 	friendStandingLabel = {}
-	friendStandingVisDiff = { -- visual difference to internal standing level
-		[2544] = 2,
-		[2550] = 3,
-	}
 	if LOCALE_deDE then
-		friendStandingLabel[2544] = {nil,nil,"Neutral","Bevorzugt","Respektiert","Geschätzt","Hochverehrt"}
-		friendStandingLabel[2550] = {nil,nil,nil,"Leer","Niedrig","Mittel","Hoch","Maximum"}
+		friendStandingLabel[2544] = {"Neutral","Bevorzugt","Respektiert","Geschätzt","Hochverehrt"}
+		friendStandingLabel[2550] = {"Leer","Niedrig","Mittel","Hoch","Maximum"}
 	elseif LOCALE_esES or LOCALE_esMX then
-		friendStandingLabel[2544] = {nil,nil,"Neutral","Preferido","Respetado","Valorado","Estimado"}
-		friendStandingLabel[2550] = {nil,nil,nil,"Vacío","Bajo","Medio","Alto","Máximo"}
+		friendStandingLabel[2544] = {"Neutral","Preferido","Respetado","Valorado","Estimado"}
+		friendStandingLabel[2550] = {"Vacío","Bajo","Medio","Alto","Máximo"}
 	elseif LOCALE_frFR then
-		friendStandingLabel[2544] = {nil,nil,"Indifférence","Bienveillance","Respect","Estime","Admiration"}
-		friendStandingLabel[2550] = {nil,nil,nil,"Vide","Faible","Moyenne","Élevée","Maximum"}
+		friendStandingLabel[2544] = {"Indifférence","Bienveillance","Respect","Estime","Admiration"}
+		friendStandingLabel[2550] = {"Vide","Faible","Moyenne","Élevée","Maximum"}
 	elseif LOCALE_itIT then
-		friendStandingLabel[2544] = {nil,nil,"Neutrale","Preferito","Rispettato","Apprezzato","Stimato"}
-		friendStandingLabel[2550] = {nil,nil,nil,"Vuota","Bassa","Media","Alta","Massima"}
+		friendStandingLabel[2544] = {"Neutrale","Preferito","Rispettato","Apprezzato","Stimato"}
+		friendStandingLabel[2550] = {"Vuota","Bassa","Media","Alta","Massima"}
 	elseif LOCALE_ptBR or LOCALE_ptPT then
-		friendStandingLabel[2544] = {nil,nil,"Neutro","Preferido","Prezado","Valioso","Estimado"}
-		friendStandingLabel[2550] = {nil,nil,nil,"Vazio","Baixo","Médio","Alto","Máximo"}
+		friendStandingLabel[2544] = {"Neutro","Preferido","Prezado","Valioso","Estimado"}
+		friendStandingLabel[2550] = {"Vazio","Baixo","Médio","Alto","Máximo"}
 	elseif LOCALE_ruRU then
-		friendStandingLabel[2544] = {nil,nil,"Равнодушие","Симпатия","Расположение","Признание","Почитание"}
-		friendStandingLabel[2550] = {nil,nil,nil,"Пусто","Низкий","Средний","Высокий","Максимальный"}
+		friendStandingLabel[2544] = {"Равнодушие","Симпатия","Расположение","Признание","Почитание"}
+		friendStandingLabel[2550] = {"Пусто","Низкий","Средний","Высокий","Максимальный"}
 	elseif LOCALE_koKR then
-		friendStandingLabel[2544] = {nil,nil,"중립","선호함","존중","소중함","존경함"}
-		friendStandingLabel[2550] = {nil,nil,nil,"없음","낮음","보통","높음","최대"}
+		friendStandingLabel[2544] = {"중립","선호함","존중","소중함","존경함"}
+		friendStandingLabel[2550] = {"없음","낮음","보통","높음","최대"}
 	elseif LOCALE_zhCN or LOCALE_zhTW then
-		friendStandingLabel[2544] = {nil,nil,"中立","偏爱","尊重","重视","崇尚"}
-		friendStandingLabel[2550] = {nil,nil,nil,"空","低","中","高","最大"}
+		friendStandingLabel[2544] = {"中立","偏爱","尊重","重视","崇尚"}
+		friendStandingLabel[2550] = {"空","低","中","高","最大"}
 	else
-		friendStandingLabel[2544] = {nil,nil,"Neutral","Preferred","Respected","Valued","Esteemed"}
-		friendStandingLabel[2550] = {nil,nil,nil,"Empty","Low","Medium","High","Maximum"}
+		friendStandingLabel[2544] = {"Neutral","Preferred","Respected","Valued","Esteemed"}
+		friendStandingLabel[2550] = {"Empty","Low","Medium","High","Maximum"}
 	end
 
 
