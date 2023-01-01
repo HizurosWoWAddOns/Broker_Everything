@@ -36,6 +36,17 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\Achievement_Reputati
 
 -- some local functions --
 --------------------------
+local GetRGB = NORMAL_FONT_COLOR.GetRGB;
+if not GetRGB then
+	ns:debug("GetRGB not found...")
+	function GetRGB(t)
+		if tonumber(t.r) then
+			return t.r,t.g,t.b;
+		end
+		return unpack(t);
+	end
+end
+
 local C_Reputation_GetFactionInfo,C_Reputation_GetFactionInfoByID
 do
 	-- faction to currency; for missing renown max level value from major faction info function
@@ -325,19 +336,20 @@ local function updateBars(index)
 			local color;
 			if info.type=="paragon" then
 				color = ITEM_QUALITY_COLORS[4];
-				color.GetRGB = NORMAL_FONT_COLOR.GetRGB; -- missing function
 			elseif info.type=="friend" then
 				color = FACTION_BAR_COLORS[5];
 			elseif info.type=="major" then
 				color = ITEM_QUALITY_COLORS[3];--FRIENDS_BNET_BACKGROUND_COLOR;
-				color.GetRGB = NORMAL_FONT_COLOR.GetRGB; -- missing function
 			else
 				color = FACTION_BAR_COLORS[ info.standingID ] or FACTION_BAR_COLORS[ 8 ];
+			end
+			if not color.GetRGB then
+				color.GetRGB = GetRGB;
 			end
 			if color then
 				local r,g,b = color:GetRGB();
 				bar.BarSingle:SetVertexColor(r,g,b,.82);
-				bar.Bg:SetVertexColor(r,g,b,.6);
+				bar.Bg:SetVertexColor(r,g,b,.46);
 			end
 			bar.BarSingle:Show();
 			-- hide other textures
