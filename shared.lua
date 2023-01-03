@@ -988,13 +988,15 @@ do
 			local id = tonumber((GetInventoryItemID("player",slotIndex)));
 			if id then
 				local link = GetInventoryItemLink("player",slotIndex);
+				-- back again; need durability for detect changes to trigger update of durability module broker display
+				local durability, durabilityMax = GetInventoryItemDurability(slotIndex);
 				addItem({
 					bag=-1,
 					slot=slotIndex,
 					sharedSlot=sharedSlotIndex,
 					id=id,
 					link=link,
-					diff=link,
+					diff=table.concat({link,durability,durabilityMax},"^"),
 					equip=true
 				},"inv");
 				if link and link:find("%[%]") then
