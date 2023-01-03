@@ -9,6 +9,11 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Bags" -- L["Bags"] L["ModDesc-Bags"]
 local ttName,ttColumns,tt,module,createTooltip = name.."TT",3;
+
+local GetContainerNumSlots,GetContainerNumFreeSlots = GetContainerNumSlots,GetContainerNumFreeSlots;
+local GetContainerItemLink,GetContainerItemInfo = GetContainerItemLink,GetContainerItemInfo;
+local UseContainerItem,ContainerIDToInventoryID = UseContainerItem,ContainerIDToInventoryID;
+
 local IsMerchantOpen,G = false,{};
 local crap,bags,bagTypes,retry = {limit=2,sum=0,items={}},{sumFree=0,sumTotal=0,byTypeFree={},byTypeTotal={}},{};
 local LE_ITEM_CLASS_CONTAINER = LE_ITEM_CLASS_CONTAINER or Enum.ItemClass.Container;
@@ -70,10 +75,33 @@ function crap.sell()
 	C_Timer.After(0.314159,crap.sell);
 end
 
+local checkSellThisItemList = {
+	--{ optKey="<string>", item=<number>|range={<number>,<number>}, do="sell|hold" }
+	{optKey="autoCrapSellingBloodCards", range={113340, 113354}, todo="sell"}
+}
+
+local function checkSellThisItem(itemId)
+	if not itemId then return "hold" end
+	for _,entry in ipairs(checkSellThisItemList) do
+		local optValue = ns.profile[name][entry.optKey];
+		local isThisItem = false;
+		if (entry.range and (itemId>=entry.range[1] and itemId<=entry.range[2]))
+			or (entry.item and entry.item==itemId) then
+			isThisItem = true;
+		end
+		if optValue==true and isThisItem==true then
+			return entry.todo;
+		end
+	end
+	return "hold";
+end
+
 function crap.search()
 	for bag=0, NUM_BAG_SLOTS do
-		if (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bag) ~= (C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(bag) then
-			for slot=1, (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bag) do
+		local numSlots = (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bag);
+		local numFreeSlots = (C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(bag);
+		if numSlots ~= numFreeSlots then
+			for slot=1, numSlots do
 				local link = (C_Container and C_Container.GetContainerItemLink or GetContainerItemLink)(bag,slot);
 				if link then
 					local itemInfo,count = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(bag, slot);
@@ -82,7 +110,7 @@ function crap.search()
 					end
 					local _,_,quality,_,_,_,_,_,_,_,price = GetItemInfo(link);
 					local itemId = tonumber((link:match("item:(%d+)")));
-					if (quality==0 and price>0) or ( itemId and ns.profile[name].autoCrapSellingBloodCards and itemId>=113340 and itemId<=113354 ) then
+					if (quality==0 and price>0) or (itemId and checkSellThisItem(itemId)=="sell") then
 						tinsert(crap.items,{bag,slot,price*count});
 					end
 				end

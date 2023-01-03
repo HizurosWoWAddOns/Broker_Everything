@@ -6,11 +6,13 @@ if not (ns.client_version<5 and ns.player.class=="HUNTER") then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
 ns.ammo_classic = true;
 
+
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Ammo"; -- INVTYPE_AMMO L["ModDesc-Ammo"]
 local ttName, ttColumns, tt, module, createTooltip = name.."TT", 2;
 local ammo = {sum=false,inUse=0,itemInfo={}};
+
 
 -- register icon names and default files --
 -------------------------------------------
