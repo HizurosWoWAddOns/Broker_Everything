@@ -125,7 +125,7 @@ end
 
 local function updateBagTypes()
 	bagTypes[LE_ITEM_CLASS_CONTAINER..":0"] = {name=L["Bags"],icon=133633};
-	for i=1, 10 do
+	for i=1, 11 do
 		local n = GetItemSubClassInfo(LE_ITEM_CLASS_CONTAINER,i);
 		bagTypes[LE_ITEM_CLASS_CONTAINER..HEADER_COLON..i] = {name=n,icon=0};
 	end
@@ -416,7 +416,7 @@ function module.options()
 	for key, value in pairs(bagTypes) do
 		if key~="1:0" and value.name then
 			options.broker["showBagTypeBB-"..key] = { type="toggle", order=4, name=value.name };
-			module.config_defaults["showBagTypeBB-"..key] = key=="11:3" or key=="1:1";
+			module.config_defaults["showBagTypeBB-"..key] = key=="11:3" or key=="1:1" or key=="1:11";
 		end
 	end
 
