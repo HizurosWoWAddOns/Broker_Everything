@@ -2,7 +2,7 @@
 local addon, ns = ...
 local addonLabel = addon;
 local C, L, I = ns.LC.color, ns.L, ns.I;
-local setmetatable,type,rawget,rawset,tostring=setmetatable,type,rawget,rawset,tostring;
+local setmetatable,type,rawget,tostring=setmetatable,type,rawget,tostring;
 local ipairs,pairs,wipe,strsplit,tremove=ipairs,pairs,wipe,strsplit,tremove;
 
 local dbDefaults,db = {
@@ -30,7 +30,6 @@ local dbDefaults,db = {
 ns.showCharsFrom_Values = { -- used in xp.lua to display current mode in tooltip
 	["1"] = ns.realm,
 	["2"] = L["Connected realms"],
-	--["3"] = L["Same battlegroup"], -- deprecated
 	["4"] = L["All realms"]
 };
 
@@ -42,47 +41,43 @@ local goldHideValues = {
 	["4"]=L["ShowHighestOnly"]
 };
 
-
-local nsProfileMT = {
-	__newindex = function(t,k,v)
-		local s = rawget(t,"section");
-		if s and db and db.profile[s] then
-			db.profile[s][k] = v;
+local nsProfileMT
 --@do-not-package@
-		elseif ns.profileSilenceFIXME then
-			ns.profileSilenceFIXME=false;
-		else
-			ns:debug("Options","<FIXME:nsProfileMT:MissingSection>",tostring(s),tostring(k));
---@end-do-not-package@
-		end
-	end,
-	__index = function(t,k)
-		local s = rawget(t,"section");
-		if s and db and db.profile[s] then
-			local v = db.profile[s][k];
-			if v~=nil then
-				return v;
---@do-not-package@
+do
+	nsProfileMT = {
+		__newindex = function(t,k,v)
+			local s = rawget(t,"section");
+			if s and db and db.profile[s] then
+				db.profile[s][k] = v;
 			elseif ns.profileSilenceFIXME then
 				ns.profileSilenceFIXME=false;
 			else
-				ns:debug("Options","<FIXME:nsProfileMT:NilValue>",tostring(s),tostring(k));
---@end-do-not-package@
+				ns:debug("Options","<FIXME:nsProfileMT:MissingSection>",tostring(s),tostring(k));
 			end
---@do-not-package@
-		elseif ns.profileSilenceFIXME then
-			ns.profileSilenceFIXME=false;
-		else
-			ns:debug("Options","<FIXME:nsProfileMT:MissingSectionOrDB>",tostring(s),tostring(k));
---@end-do-not-package@
+		end,
+		__index = function(t,k)
+			local s = rawget(t,"section");
+			if s and db and db.profile[s] then
+				local v = db.profile[s][k];
+				if v~=nil then
+					return v;
+				elseif ns.profileSilenceFIXME then
+					ns.profileSilenceFIXME=false;
+				else
+					ns:debug("Options","<FIXME:nsProfileMT:NilValue>",tostring(s),tostring(k));
+				end
+			elseif ns.profileSilenceFIXME then
+				ns.profileSilenceFIXME=false;
+			else
+				ns:debug("Options","<FIXME:nsProfileMT:MissingSectionOrDB>",tostring(s),tostring(k));
+			end
 		end
-	end
-};
+	};
 
---@do-not-package@
-ns.profileSilenceFIXME = false;
+	ns.profileSilenceFIXME = false;
+	ns.profile = {GeneralOptions=setmetatable({section="GeneralOptions"},nsProfileMT)};
+end
 --@end-do-not-package@
-ns.profile = {GeneralOptions=setmetatable({section="GeneralOptions"},nsProfileMT)};
 
 -- some values tables and functions
 local ttModifierValues = {NONE = L["ModKeyDefault"]};
@@ -124,11 +119,7 @@ local function getIconSets()
 	return t
 end
 
-local function noReload()
-	return false;
-end
-
-local function toggleAllModules(info,modName)
+local function toggleAllModules(info)
 	local state = info[#info];
 	if not (state=="enable" or state=="disable" or state=="default") then
 		return;
@@ -467,7 +458,9 @@ function ns.Options_RegisterModule(modName)
 	local mod,modOptions = ns.modules[modName],{};
 
 	-- defaults
-	ns.profile[modName] = setmetatable({section=modName},nsProfileMT);
+	if nsProfileMT then -- namespace profile metatable for debugging; not present in normal release versions. ;-)
+		ns.profile[modName] = setmetatable({section=modName},nsProfileMT);
+	end
 --@do-not-package@
 	if not mod.config_defaults then
 		ns:debug("Options","<FIXME:MissingModConfigDefault>",modName);
@@ -583,7 +576,7 @@ local function buildCharDataOptions()
 	end
 end
 
-function options.args.chars.func(info,button,a,b) -- function for buttons 'Up', 'Down' and 'Delete' for single character and 'Delete all'
+function options.args.chars.func(info) -- function for buttons 'Up', 'Down' and 'Delete' for single character and 'Delete all'
 	local key,char = info[#info],info[#info-1];
 	if key=="up" or key=="down" then
 		local cur
@@ -601,7 +594,6 @@ function options.args.chars.func(info,button,a,b) -- function for buttons 'Up', 
 		buildCharDataOptions();
 	elseif key=="del" then -- delete single character
 		Broker_Everything_CharacterDB[char] = nil;
-		local place
 		for i,v in ipairs(Broker_Everything_CharacterDB.order)do
 			if char==v then
 				tremove(Broker_Everything_CharacterDB.order,i);
@@ -620,31 +612,12 @@ function ns.RegisterOptions()
 		Broker_Everything_AceDB = {};
 	end
 
-	local AceDBfixCurrent = 1;
-	if not ns.data.AceDBfix then
-		ns.data.AceDBfix = 0;
-	end
-
-	if ns.data.AceDBfix<AceDBfixCurrent and type(Broker_Everything_AceDB.profiles)=="table" then
-		for pName,pData in pairs(Broker_Everything_AceDB.profiles)do
-			if type(pData)=="table" then
-				for mName,mData in pairs(pData)do
-					if type(mData)=="table" then
-						for oKey,oValue in pairs(mData)do
-							if ns.data.AceDBfix<1 and oKey=="showCharsFrom" and type(oValue)=="number" then
-								mData[oKey] = tostring(oValue);
-							end
-						end
-					end
-				end
-			end
-		end
-		ns.data.AceDBfix=AceDBfixCurrent;
-	end
-
 	buildCharDataOptions();
 
 	db = LibStub("AceDB-3.0"):New("Broker_Everything_AceDB",dbDefaults,true);
+	if not nsProfileMT then
+		ns.profile = db.profile;
+	end
 
 	options.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(db);
 	options.args.profiles.order=-1;
@@ -657,10 +630,6 @@ function ns.RegisterOptions()
 	local goldColor = ns.profile.GeneralOptions.goldColor;
 	if type(goldColor)~="string" then
 		ns.profile.GeneralOptions.goldColor = goldColor and "color" or "white";
-	end
-	if db.profile["Broken Isles Invasions"]~=nil then
-		db.profile["Invasions"] = db.profile["Broken Isles Invasions"];
-		db.profile["Broken Isles Invasions"]=nil;
 	end
 end
 

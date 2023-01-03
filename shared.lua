@@ -7,17 +7,23 @@ local L,_ = ns.L;
 ns.debugMode = "@project-version@"=="@".."project-version".."@";
 LibStub("HizurosSharedTools").RegisterPrint(ns,addon,"BE");
 
+-- Lua API 5.1 functions
+local setmetatable,tonumber,rawget,rawset,tinsert=setmetatable,tonumber,rawget,rawset,tinsert;
+local tremove,tostring,type,unpack,assert=tremove,tostring,type,unpack,assert;
+local securecall,ipairs,pairs,tconcat,tsort=securecall,ipairs,pairs,table.concat,table.sort;
+local time,wipe,mod,hooksecurefunc,strsplit=time,wipe,mod,hooksecurefunc,strsplit;
+
+-- WoW Lua API functions
 local UnitName,UnitSex,UnitClass,UnitFactionGroup=UnitName,UnitSex,UnitClass,UnitFactionGroup;
 local UnitRace,GetRealmName,GetLocale=UnitRace,GetRealmName,GetLocale;
-local InCombatLockdown,CreateFrame,SecondsToTime=InCombatLockdown,CreateFrame,SecondsToTime;
+local InCombatLockdown,CreateFrame=InCombatLockdown,CreateFrame;
 local GetScreenHeight,GetMouseFocus,GetAddOnInfo=GetScreenHeight,GetMouseFocus,GetAddOnInfo;
 local GetAddOnEnableState,IsAltKeyDown=GetAddOnEnableState,IsAltKeyDown;
 local IsShiftKeyDown,IsControlKeyDown,GetItemInfo=IsShiftKeyDown,IsControlKeyDown,GetItemInfo;
 local GetInventoryItemLink,GetInventoryItemID=GetInventoryItemLink,GetInventoryItemID;
-local setmetatable,tonumber,rawget,rawset,tinsert=setmetatable,tonumber,rawget,rawset,tinsert;
-local CopyTable,tremove,tostring,type,unpack,assert=CopyTable,tremove,tostring,type,unpack,assert;
-local securecall,ipairs,pairs,tconcat,tsort=securecall,ipairs,pairs,table.concat,table.sort;
-local time,wipe,mod,hooksecurefunc,strsplit=time,wipe,mod,hooksecurefunc,strsplit;
+
+-- WoW API functions defined in lua files
+local CopyTable,SecondsToTime = CopyTable,SecondsToTime;
 
 -- no longer in retail but in classic client
 local GetContainerNumSlots,GetContainerItemCooldown,GetContainerItemLink,GetContainerItemID,GetContainerItemInfo,GetContainerNumFreeSlots=GetContainerNumSlots,GetContainerItemCooldown,GetContainerItemLink,GetContainerItemID,GetContainerItemInfo,GetContainerNumFreeSlots;
@@ -110,32 +116,41 @@ do
 	ns.client_version = tonumber(v1.."."..v2..v3..build) or 0;
 end
 
+---@return boolean
 function ns.IsRetailClient()
 	return WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
 end
 
+---@return boolean
 function ns.IsClassicClient() -- for AceOptions
 	return not WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
 end
 
+---@return boolean
 function ns.IsClassicEraClient()
 	return WOW_PROJECT_ID==WOW_PROJECT_CLASSIC;
 end
 
+---@return boolean
 function ns.IsClassicWotlkClient()
 	return WOW_PROJECT_ID==WOW_PROJECT_WRATH_CLASSIC;
 end
 
---function ns.IsNotClassicClient() -- for AceOptions
---	return WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
---end
+---@return boolean
+function ns.IsNotClassicClient() -- for AceOptions
+	return WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
+end
 
 
   ---------------------------------------
 --- player and twinks dependent data    ---
   ---------------------------------------
+---@param name string
+---@return string name
 function ns.stripRealm(name)
-	return name:gsub(" ",""):gsub("%-","");
+	name = name:gsub(" ","");
+	name = name:gsub("%-","");
+	return name;
 end
 ns.player = {
 	name = UnitName("player"),
@@ -181,20 +196,22 @@ do
 	});
 end
 
-function ns.realmCheckOrAppend(str)
-	if type(str)=="string" and not str:find("-") then
-		return str.."-"..ns.realm_short;
+---@param name string
+---@return string name
+function ns.realmCheckOrAppend(name)
+	if not name:find("-") then
+		name = name.."-"..ns.realm_short;
 	end
-	return str;
+	return name;
 end
 
+---@param modName string module name
+---@param realm string realm name
+---@param faction string faction name
+---@return boolean
 function ns.showThisChar(modName,realm,faction)
 	if not ns.profile[modName].showAllFactions and ns.player.faction~=faction then
 		return false;
-	end
-	local from = ns.profile[modName].showCharsFrom;
-	if from=="3" then -- migration from deprecated value "3"
-		ns.profile[modName].showCharsFrom = "2";
 	end
 	if ns.profile[modName].showCharsFrom=="1" and realm~=ns.realm then -- same realm
 		return false;
@@ -204,9 +221,13 @@ function ns.showThisChar(modName,realm,faction)
 	return true;
 end
 
-function ns.showRealmName(mod,name,color,prepDash)
+---@param modName string module name
+---@param name string player name
+---@param color string color name or color code
+---@param prepDash boolean prepend dash
+function ns.showRealmName(modName,name,color,prepDash)
 	if not (ns.realm_short==name or ns.realm==name) then
-		if ns.profile[mod].showRealmNames then
+		if ns.profile[modName].showRealmNames then
 			if type(name)=="string" and name:len()>0 then
 				local _,_name = ns.LRI:GetRealmInfo(name,ns.region);
 				if _name then
@@ -250,13 +271,20 @@ end
   ---------------------------------------
 --- Helpful function for extra tooltips ---
   ---------------------------------------
-local brokerDragHooks, openTooltip, hiddenMouseOver, currentBroker = {};
+local brokerDragHooks, openTooltip, hiddenMouseOver = {};
 
+---@param frame frame
+---@param direction string
+---@param parentTT frame
+---@return string point
+---@return frame|string
+---@return string relativePoint
+---@return number x
+---@return number y
 function ns.GetTipAnchor(frame, direction, parentTT)
-	if not frame then return end
 	local f,u,i,H,h,v,V = {frame:GetCenter()},{},0;
 	if f[1]==nil or ns.ui.center[1]==nil then
-		return "LEFT";
+		return "LEFT", frame, "LEFT", 0, 0;
 	end
 	h = (f[1]>ns.ui.center[1] and "RIGHT") or "LEFT";
 	v = (f[2]>ns.ui.center[2] and "TOP") or "BOTTOM";
@@ -321,6 +349,10 @@ local function hookDragStart(self)
 	end
 end
 
+---@param ttData table
+---@param ttMode table
+---@param ttParent table
+---@param ttScripts table
 function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
 	if openTooltip and openTooltip.key~=ttData[1] and openTooltip.parent and not (ttParent[1]==openTooltip or (ttParent[3] and ttParent[3]==openTooltip)) then
 		ns.hideTooltip(openTooltip);
@@ -371,7 +403,6 @@ function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
 	tooltip:SetPoint(ns.GetTipAnchor(unpack(ttParent)));
 
 	if type(ttParent[1])=="table" and ttParent[1]:GetObjectType()=="Button" then
-		currentBroker = ttParent;
 		if not brokerDragHooks[ttParent[1]] then
 			-- close tooltips if broker button fire OnDragStart
 			ttParent[1]:HookScript("OnDragStart",hookDragStart);
@@ -382,6 +413,8 @@ function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
 	return tooltip;
 end
 
+---@param tooltip frame|LibQTipTooltip
+---@param ignoreMaxTooltipHeight boolean
 function ns.roundupTooltip(tooltip,ignoreMaxTooltipHeight)
 	if not tooltip then return end
 	if not ignoreMaxTooltipHeight then
@@ -391,6 +424,7 @@ function ns.roundupTooltip(tooltip,ignoreMaxTooltipHeight)
 	tooltip:Show();
 end
 
+---@param tooltip frame|LibQTipTooltip
 function ns.hideTooltip(tooltip)
 	if type(tooltip)~="table" then return; end
 	if type(tooltip.secureButtons)=="table" then
@@ -417,24 +451,18 @@ function ns.hideTooltip(tooltip)
 	tooltip.mode = nil;
 	tooltip.scripts = nil;
 	ns.LQT:Release(tooltip);
-	return;
 end
 
 ----------------------------------------
 
-function ns.RegisterMouseWheel(self,func)
-	self:EnableMouseWheel(1);
-	self:SetScript("OnMouseWheel", func);
+---@param tooltip frame|LibQTipTooltip
+---@param func function
+function ns.RegisterMouseWheel(tooltip,func)
+	tooltip:EnableMouseWheel(1);
+	tooltip:SetScript("OnMouseWheel", func);
 end
 
 -- L["ModKey" .. ns.tooltipModifiers.<key>.l]
---@do-not-package@
---[[
-L["ModKeyS"] L["ModKeyLS"] L["ModKeyRS"]
-L["ModKeyA"] L["ModKeyRA"] L["ModKeyLA"]
-L["ModKeyC"] L["ModKeyLC"] L["ModKeyRC"]
---]]
---@end-do-not-package@
 ns.tooltipModifiers = {
 	SHIFT      = {l="S",  f="Shift"},
 	LEFTSHIFT  = {l="LS", f="LeftShift"},
@@ -447,6 +475,8 @@ ns.tooltipModifiers = {
 	RIGHTCTRL  = {l="RC", f="RightControl"}
 }
 
+---@param bool boolean
+---@return boolean|string
 function ns.tooltipChkOnShowModifier(bool)
 	local modifier = ns.profile.GeneralOptions.ttModifierKey1;
 	if (modifier~="NONE") then
@@ -460,19 +490,17 @@ function ns.tooltipChkOnShowModifier(bool)
 	return false;
 end
 
-function ns.AddSpannedLine(tt,content,cells,align,font)
-	local cells,l = cells or {},tt:AddLine();
-	tt:SetCell(l,cells.start or 1,content,font,align,cells.count or 0);
-	return l;
-end
-
-function ns.getBorderPositions(f)
-	local us = UIParent:GetEffectiveScale();
-	local uw,uh = UIParent:GetWidth(), UIParent:GetHeight();
-	local fx,fy = f:GetCenter();
-	local fw,fh = f:GetWidth()/2, f:GetHeight()/2;
-	-- LEFT, RIGHT, TOP, BOTTOM
-	return fx-fw, uw-(fx+fw), uh-(fy+fh),fy-fh;
+---@param tooltip frame|LibQTipTooltip
+---@param content string
+---@param cells table
+---@param align string
+---@param font string
+---@return number line
+function ns.AddSpannedLine(tooltip,content,cells,align,font)
+	local line = tooltip:AddLine();
+	cells = cells or {};
+	tooltip:SetCell(line,cells.start or 1,content,font,align,cells.count or 0);
+	return line;
 end
 
 
@@ -528,6 +556,8 @@ end
   ---------------------------------------
 --- suffix colour function              ---
   ---------------------------------------
+---@param str string
+---@return string
 function ns.suffixColour(str)
 	if (ns.profile.GeneralOptions.suffixColour) then
 		str = ns.LC.color("suffix",str);
@@ -548,6 +578,13 @@ do
 			return v
 		end,
 		__call = function(t,a)
+			if ns.profile==nil then
+--@do-not-package@
+				ns:debug("<nsI.__call>",debugstack());
+--@end-do-not-package@
+				return {};
+			end
+
 			local iconset
 			if a==true then
 				if ns.profile.GeneralOptions.iconset~="NONE" then
@@ -586,8 +623,11 @@ end
 
 
 -- ------------------------------ --
--- missing real found function    --
+-- missing real round function    --
 -- ------------------------------ --
+---@param num number
+---@param precision? number
+---@return number
 function ns.round(num,precision)
 	return tonumber(("%."..(tonumber(precision) or 0).."f"):format(num or 0)) or 0;
 end
@@ -601,6 +641,8 @@ do
 	local function invert(a,b)
 		return a>b;
 	end
+	---@param t table
+	---@param f? function|true
 	function ns.pairsByKeys(t, f)
 		local a = {}
 		for n in pairs(t) do
@@ -615,8 +657,6 @@ do
 			i = i + 1
 			if a[i] == nil then
 				return nil
-			else
-				return a[i], t[a[i]]
 			end
 			return a[i], t[a[i]]
 		end
@@ -624,6 +664,9 @@ do
 	end
 end
 
+---@param modName string module name
+---@param opts table
+---@return function iterationFunction
 function ns.pairsToons(modName,opts)
 	-- opts = {currentFirst=<bool>,currentHide=<bool>,forceSameRealm=<bool>,forceSameFaction=<bool>}
 	-- TODO: add ns.profile options from modules here
@@ -659,7 +702,9 @@ end
 -- ------------------------------------------------------------ --
 -- Function to check/create a table structure by given path
 -- ------------------------------------------------------------ --
-
+---@param tbl table
+---@param a string
+---@param ... string
 function ns.tablePath(tbl,a,...)
 	if type(a)~="string" then return end
 	if type(tbl[a])~="table" then tbl[a]={}; end
@@ -675,6 +720,10 @@ do
 	local floatformat,sizes = "%0.1f",{
 		18,15,12,9,6,3 -- Qi Qa T B M K (Qi Qa Tr Bi Mi Th?)
 	};
+	---@param modName string module name
+	---@param value number|string
+	---@param tooltip frame|LibQTipTooltip
+	---@return number|string
 	function ns.FormatLargeNumber(modName,value,tooltip)
 		local shortNumbers,doShortcut = false, not (tooltip and IsShiftKeyDown());
 		if type(modName)=="boolean" then
@@ -701,6 +750,12 @@ end
 -- --------------------- --
 -- Some string  function --
 -- --------------------- --
+---@param text string
+---@param limit number
+---@param insetCount? number
+---@param insetChr? string
+---@param insetLastChr? string
+---@return string
 function ns.strWrap(text, limit, insetCount, insetChr, insetLastChr)
 	if not text then return ""; end
 	if text:match("\n") or text:match("%|n") then
@@ -720,7 +775,7 @@ function ns.strWrap(text, limit, insetCount, insetChr, insetLastChr)
 		local tmp2 = strtrim(tmp.." "..str);
 		if tmp2:len()>=limit then
 			tinsert(result,tmp);
-			tmp = str:trim();
+			tmp = strtrim(str);
 		else
 			tmp = tmp2;
 		end
@@ -731,11 +786,19 @@ function ns.strWrap(text, limit, insetCount, insetChr, insetLastChr)
 	return tconcat(result,"|n"..inset)
 end
 
+---@param str string
+---@param limit number
+---@return string
 function ns.strCut(str,limit)
 	if str:len()>limit-3 then str = strsub(str,1,limit-3).."..." end
 	return str
 end
 
+---@param str string
+---@param pat string
+---@param count number
+---@param append boolean
+---@return string
 function ns.strFill(str,pat,count,append)
 	local l = (count or 1) - str:len();
 	if l<=0 then return str; end
@@ -768,7 +831,7 @@ end
 --		}
 -- ----------------------------------------
 do
-	local sbf_hooks,sbfObject,sbf,_sbf = false,{};
+	local sbfObject,sbf = {};
 	function ns.secureButton(self,obj)
 		if self==nil or InCombatLockdown() then
 			return;
@@ -829,7 +892,7 @@ do
 		if callbacks[tbl]==nil or cbCounter[tbl]==0 then
 			return; -- no callbacks registered
 		end
-		for modName,fnc in pairs(callbacks[tbl])do
+		for _,fnc in pairs(callbacks[tbl])do
 			fnc(tbl,...);
 		end
 	end
@@ -884,7 +947,7 @@ do
 			end
 			itemsBySpell[info.spell][info.sharedSlot] = info.count;
 		end
-		if ns.ammo_classic then -- ns.ammo_classic declared in modules/ammo_classic.lua
+		if ns.ammo_classic then -- ns.ammo_classic defined in modules/ammo_classic.lua
 			if info.ammo then
 				ammo[info.sharedSlot] = true;
 				hasChanged.ammo = true;
@@ -922,17 +985,16 @@ do
 		local retry = false;
 		for slotIndex=1, 19 do
 			local sharedSlotIndex = -(slotIndex/100);
-			local id,link = tonumber((GetInventoryItemID("player",slotIndex))),nil;
+			local id = tonumber((GetInventoryItemID("player",slotIndex)));
 			if id then
 				local link = GetInventoryItemLink("player",slotIndex);
-				local diffStr = table.concat({link,d or 0,dM or 0},"^");
 				addItem({
 					bag=-1,
 					slot=slotIndex,
 					sharedSlot=sharedSlotIndex,
 					id=id,
 					link=link,
-					diff=diffStr,
+					diff=link,
 					equip=true
 				},"inv");
 				if link and link:find("%[%]") then
@@ -975,14 +1037,14 @@ do
 						link = itemInfo.hyperlink;
 					end
 					if id and link then
-						local _, _, _, itemEquipLocation, _, itemClassID, itemSubClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
-						local itemSpellName,itemSpellID = GetItemSpell(link);
-						local diffStr = table.concat({link,d or 0,dM or 0,count},"^");
+						local _, _, _, itemEquipLocation, _, itemClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
+						local _,itemSpellID = GetItemSpell(link);
+						local diffStr = table.concat({link,count},"^");
 						local isEquipment = false;
 						if not (itemEquipLocation=="" or itemEquipLocation==(INVTYPE_TABARD or Enum.InventoryType.IndexTabardType) or itemEquipLocation==(INVTYPE_BODY or Enum.InventoryType.IndexBodyType)) then
 							isEquipment = true; -- ignore shirts and tabards
 						end
-						local changed = addItem({
+						addItem({
 							bag=bagIndex,
 							slot=slotIndex,
 							spell=itemSpellID,
@@ -1012,10 +1074,6 @@ do
 		callbackHandler();
 	end
 
-	local function afterItemUpgrade()
-		-- TODO: get item id, or inv slot or bag slot for faster update
-	end
-
 	local firstBagUpdateDelay,inventoryEvents = true,{
 		PLAYER_LOGIN = true,
 		PLAYER_EQUIPMENT_CHANGED = true,
@@ -1024,11 +1082,7 @@ do
 	};
 
 	local function OnEvent(self,event,...)
-		if event=="ADDON_LOADED" and (...)=="Blizzard_ItemUpgradeUI" then
-			ItemUpgradeFrameUpgradeButton:HookScript("OnClick",afterItemUpgrade);
-			--hooksecurefunc(_G,"ItemUpgradeFrame_UpgradeClick",afterItemUpgrade);
-			eventFrame:UnregisterEvent(event);
-		elseif event=="BAG_UPDATE" and tonumber(...) and ... <= NUM_BAG_SLOTS then
+		if event=="BAG_UPDATE" and tonumber(...) and ... <= NUM_BAG_SLOTS then
 			tinsert(updateBags,...);
 		elseif event=="BAG_UPDATE_DELAYED" and #updateBags>0 then
 			if firstBagUpdateDelay then
@@ -1215,7 +1269,6 @@ do
 			data = Data;
 		end
 
-		local success,num,regions = false,0,nil;
 		tt:SetOwner(UIParent,"ANCHOR_NONE");
 		tt:SetPoint("RIGHT",UIParent,"LEFT",0,0);
 
@@ -1274,7 +1327,7 @@ do
 
 		tt:Show();
 
-		regions = {tt:GetRegions()};
+		local regions = {tt:GetRegions()};
 
 		data.lines={};
 		for _,v in ipairs(regions) do
@@ -1483,9 +1536,10 @@ end
 -- ---------------- --
 do
 	local LDDM = LibStub("LibDropDownMenu");
-	ns.EasyMenu = LDDM.Create_DropDownMenu(addon.."_LibDropDownMenu",UIParent);
-	ns.EasyMenu.menu, ns.EasyMenu.controlGroups,ns.EasyMenu.IsPrevSeparator = {},{},false;
-	local grpOrder,pat = {"broker","tooltip","misc","ClickOpts"},"%06d%s";
+	local EasyMenu = LDDM.Create_DropDownMenu(addon.."_LibDropDownMenu",UIParent);
+	ns.EasyMenu = EasyMenu;
+	EasyMenu.menu, EasyMenu.controlGroups,EasyMenu.IsPrevSeparator = {},{},false;
+	local grpOrder = {"broker","tooltip","misc","ClickOpts"};
 
 	local cvarTypeFunc = {
 		bool = function(D)
@@ -1521,10 +1575,10 @@ do
 		slider = function(...)
 		end,
 		num = function(D)
-			if (D.cvarKey) then
+			--[[if (D.cvarKey) then
 			elseif type(D.cvars)=="table" then
 
-			end
+			end]]
 		end,
 		str = function(...)
 		end
@@ -1577,39 +1631,42 @@ do
 		CloseMenus();
 	end
 
-	function ns.EasyMenu:AddEntry(D,P)
+	---@param Data table
+	---@param Parent? frame
+	---@return frame|nil Parent
+	function EasyMenu:AddEntry(Data,Parent)
 		local entry= {};
 
-		if (type(D)=="table") and (#D>0) then -- numeric table = multible entries
+		if (type(Data)=="table") and (#Data>0) then -- numeric table = multible entries
 			self.IsPrevSeparator = false;
-			for i,v in ipairs(D) do
-				self:AddEntry(v,P);
+			for _,childEntry in ipairs(Data) do
+				self:AddEntry(childEntry,Parent);
 			end
 			return;
 
-		elseif (D.childs) then -- child elements
+		elseif (Data.childs) then -- child elements
 			self.IsPrevSeparator = false;
-			local parent = self:AddEntry({ label=D.label, arrow=true, disabled=D.disabled },P);
-			for i,v in ipairs(D.childs) do
+			local parent = self:AddEntry({ label=Data.label, arrow=true, disabled=Data.disabled },Parent);
+			for _,v in ipairs(Data.childs) do
 				self:AddEntry(v,parent);
 			end
 			return;
 
-		elseif (D.groupName) and (D.optionGroup) then -- similar to childs but with group control
+		elseif (Data.groupName) and (Data.optionGroup) then -- similar to childs but with group control
 			self.IsPrevSeparator = false;
-			if (self.controlGroups[D.groupName]==nil) then
-				self.controlGroups[D.groupName] = {};
+			if (self.controlGroups[Data.groupName]==nil) then
+				self.controlGroups[Data.groupName] = {};
 			else
-				wipe(self.controlGroups[D.groupName])
+				wipe(self.controlGroups[Data.groupName])
 			end
-			local parent = self:AddEntry({ label=D.label, arrow=true, disabled=D.disabled },P);
-			parent.controlGroup=self.controlGroups[D.groupName];
-			for i,v in ipairs(D.optionGroup) do
-				tinsert(self.controlGroups[D.groupName],self:AddEntry(v,parent));
+			local parent = self:AddEntry({ label=Data.label, arrow=true, disabled=Data.disabled },Parent);
+			parent.controlGroup=self.controlGroups[Data.groupName];
+			for _,v in ipairs(Data.optionGroup) do
+				tinsert(self.controlGroups[Data.groupName],self:AddEntry(v,parent));
 			end
 			return;
 
-		elseif (D.separator) then -- separator line (decoration)
+		elseif (Data.separator) then -- separator line (decoration)
 			if self.IsPrevSeparator then
 				return;
 			end
@@ -1619,28 +1676,28 @@ do
 
 		else
 			self.IsPrevSeparator = false;
-			entry.isTitle          = D.title     or false;
-			entry.hasArrow         = D.arrow     or false;
-			entry.disabled         = D.disabled  or false;
-			entry.notClickable     = not not D.noclick;
-			entry.isNotRadio       = not D.radio;
+			entry.isTitle          = Data.title     or false;
+			entry.hasArrow         = Data.arrow     or false;
+			entry.disabled         = Data.disabled  or false;
+			entry.notClickable     = not not Data.noclick;
+			entry.isNotRadio       = not Data.radio;
 			entry.keepShownOnClick = true;
 			entry.noClickSound     = true;
 
-			if (D.keepShown==false) then
+			if (Data.keepShown==false) then
 				entry.keepShownOnClick = false;
 			end
 
-			if (D.cvarType) and (D.cvar) and (type(D.cvarType)=="string") and (cvarTypeFunc[D.cvarType]) then
-				cvarTypeFunc[D.cvarType](D);
+			if (Data.cvarType) and (Data.cvar) and (type(Data.cvarType)=="string") and (cvarTypeFunc[Data.cvarType]) then
+				cvarTypeFunc[Data.cvarType](Data);
 			end
 
-			if (D.beType) and (D.beKeyName) and (type(D.beType)=="string") and (beTypeFunc[D.beType]) then
-				beTypeFunc[D.beType](D);
+			if (Data.beType) and (Data.beKeyName) and (type(Data.beType)=="string") and (beTypeFunc[Data.beType]) then
+				beTypeFunc[Data.beType](Data);
 			end
 
-			if (D.checked~=nil) then
-				entry.checked = D.checked;
+			if (Data.checked~=nil) then
+				entry.checked = Data.checked;
 				if (entry.keepShownOnClick==nil) then
 					entry.keepShownOnClick = false;
 				end
@@ -1648,65 +1705,68 @@ do
 				entry.notCheckable = true;
 			end
 
-			entry.text = D.label or "";
+			entry.text = Data.label or "";
 
-			if (D.colorName) then
-				entry.colorCode = "|c"..ns.LC.color(D.colorName);
-			elseif (D.colorCode) then
+			if (Data.colorName) then
+				entry.colorCode = "|c"..ns.LC.color(Data.colorName);
+			elseif (Data.colorCode) then
 				entry.colorCode = entry.colorCode;
 			end
 
-			if (D.tooltip) and (type(D.tooltip)=="table") then
-				entry.tooltipTitle = ns.LC.color("dkyellow",D.tooltip[1]);
-				if type(D.tooltip[2])=="string" and D.tooltip[2]~="" then
-					entry.tooltipText = ns.LC.color("white",D.tooltip[2]);
+			if (Data.tooltip) and (type(Data.tooltip)=="table") then
+				entry.tooltipTitle = ns.LC.color("dkyellow",Data.tooltip[1]);
+				if type(Data.tooltip[2])=="string" and Data.tooltip[2]~="" then
+					entry.tooltipText = ns.LC.color("white",Data.tooltip[2]);
 				end
 				entry.tooltipOnButton=1;
 			end
 
-			if (D.icon) then
+			if (Data.icon) then
 				entry.text = entry.text .. "    ";
-				entry.icon = D.icon;
+				entry.icon = Data.icon;
 				entry.tCoordLeft, entry.tCoordRight = 0.05,0.95;
 				entry.tCoordTop, entry.tCoordBottom = 0.05,0.95;
 			end
 
-			if (D.func) then
-				entry.arg1 = D.arg1;
-				entry.arg2 = D.arg2;
+			if (Data.func) then
+				entry.arg1 = Data.arg1;
+				entry.arg2 = Data.arg2;
 				function entry.func(...)
-					D.func(...)
-					if (type(D.event)=="function") then
-						D.event();
+					Data.func(...)
+					if (type(Data.event)=="function") then
+						Data.event();
 					end
-					if (P) and (not entry.keepShownOnClick) then
+					if (Parent) and (not entry.keepShownOnClick) then
 						LibCloseDropDownMenus();
 					end
 				end;
 			end
 
-			if (not D.title) and (not D.disabled) and (not D.arrow) and (not D.checked) and (not D.func) then
+			if (not Data.title) and (not Data.disabled) and (not Data.arrow) and (not Data.checked) and (not Data.func) then
 				entry.disabled = true;
 			end
 		end
 
-		if (P) and (type(P)=="table") then
-			if (not P.menuList) then P.menuList = {}; end
-			tinsert(P.menuList, entry);
-			return P.menuList[#P.menuList];
+		if (Parent) and (type(Parent)=="table") then
+			if (not Parent.menuList) then Parent.menuList = {}; end
+			tinsert(Parent.menuList, entry);
+			return Parent.menuList[#Parent.menuList];
 		else
 			tinsert(self.menu, entry);
 			return self.menu[#self.menu];
 		end
-		return false;
 	end
 
-	function ns.EasyMenu:AddConfigEntry(modName,key,value,P)
+	---@param modName string module name
+	---@param key string
+	---@param value table
+	---@param Parent? table
+	function EasyMenu:AddConfigEntry(modName,key,value,Parent)
 		if value.type=="separator" then
-			self:AddEntry({ separator=true },P);
+			self:AddEntry({ separator=true },Parent);
 		elseif value.type=="header" then
-			self:AddEntry({ separator=true },P);
-			self:AddEntry({ label=value.name, title=true },P);
+			self:AddEntry({ separator=true },Parent);
+			self:AddEntry({ label=value.name, title=true },Parent);
 		elseif value.type=="toggle" then
 			local tooltip = nil;
 			if value.desc then
@@ -1732,7 +1792,7 @@ do
 					end
 				end,
 				tooltip = tooltip,
-			},P);
+			},Parent);
 		elseif value.type=="select" then
 			local tooltip = {value.name, value.desc};
 			if type(tooltip[2])=="function" then
@@ -1742,7 +1802,7 @@ do
 				label = value.name,
 				tooltip = tooltip,
 				arrow = true
-			},P);
+			},Parent);
 			local values = value.values;
 			if type(values)=="function" then
 				values = values({modName,"",key});
@@ -1766,21 +1826,23 @@ do
 			if type(tooltip[2])=="function" then
 				tooltip[2] = tooltip[2]();
 			end
-			local p = self:AddEntry({
+			local parent = self:AddEntry({
 				label = value.name,
 				tooltip = tooltip,
 				arrow = true,
-			},P);
+			},Parent);
 			for _key, _value in pairsByAceOptions(value.args) do
-				self:AddConfigEntry(modName,_key,_value,p);
+				self:AddConfigEntry(modName,_key,_value,parent);
 			end
 		elseif value.type=="range" then
 			-- coming soon
 		end
 	end
 
-	function ns.EasyMenu:AddConfig(modName,noTitle)
-		local noFirstSep,options,separator = true,ns.getModOptionTable(modName);
+	---@param modName string module name
+	---@param noTitle? boolean
+	function EasyMenu:AddConfig(modName,noTitle)
+		local options,separator = ns.getModOptionTable(modName);
 		if noTitle==nil then
 			noTitle = false;
 		elseif noTitle==true then
@@ -1834,26 +1896,23 @@ do
 		end
 	end
 
-	function ns.EasyMenu:Refresh(level)
+	---@param level number
+	function EasyMenu:Refresh(level)
+		-- local self = ns.EasyMenu
 		if level then
 			LDDM.UIDropDownMenu_Refresh(self,nil,level);
 		end
 		LDDM.UIDropDownMenu_RefreshAll(self);
 	end
 
-	function ns.EasyMenu:InitializeMenu()
+	function EasyMenu:InitializeMenu()
 		wipe(self.menu);
 	end
 
-	function ns.EasyMenu:ShowMenu(parent, parentX, parentY, initializeFunction)
-		local anchor, x, y = "cursor"
-
-		if (parent) then
-			anchor = parent;
-			x = parentX or 0;
-			y = parentY or 0;
-		end
-
+	---@param parent? frame|string
+	---@param parentX? number
+	---@param parentY? number
+	function EasyMenu:ShowMenu(parent, parentX, parentY)
 		if openTooltip then
 			ns.hideTooltip(openTooltip);
 		end
@@ -1861,7 +1920,7 @@ do
 		self:AddEntry({separator=true});
 		self:AddEntry({label=L["Close menu"], func=LibCloseDropDownMenus});
 
-		LDDM.EasyMenu(self.menu, self,anchor, x, y, "MENU");
+		LDDM.EasyMenu(self.menu, self, parent or "cursor", parentX or 0, parentY or 0, "MENU");
 	end
 end
 
@@ -1869,6 +1928,13 @@ end
 -- ----------------------- --
 -- DurationOrExpireDate    --
 -- ----------------------- --
+---@param timeLeft number
+---@param lastTime number
+---@param durationTitle string
+---@param expireTitle string
+---@return string|osdate
+---@return string
+---@return string
 function ns.DurationOrExpireDate(timeLeft,lastTime,durationTitle,expireTitle)
 	local mod = "shift";
 	timeLeft = timeLeft or 0;
@@ -2200,6 +2266,11 @@ end
 -- text bar
 -- ----------------
 -- num, {<max>,<cur>[,<rest>]},{<max>,<cur>[,<rest>]}
+---@param num number
+---@param values table
+---@param colors table
+---@param Char string
+---@return string
 function ns.textBar(num,values,colors,Char)
 	local iMax,iMin,iRest = 1,2,3;
 	values[iRest] = (values[iRest] and values[iRest]>0) and values[iRest] or 0;
@@ -2294,3 +2365,4 @@ ns.C_BattleNet_GetFriendAccountInfo = (C_BattleNet and C_BattleNet.GetFriendAcco
 	= BNGetFriendInfo(friendIndex)
 	return accountInfo;
 end
+

@@ -8,10 +8,9 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "XP" -- XP L["ModDesc-XP"]
-local ttName, ttName2, ttColumns, tt, tt2, module, createTooltip,init  = name.."TT", name.."TT2", 3;
-local data = {};
+local ttName, ttColumns, tt, module, createTooltip  = name.."TT", 3;
+local data,xp2levelup = {};
 local sessionStartLevel = UnitLevel("player");
-local slots,heirloomXP,xp2levelup = {[1]=HEADSLOT, [3]=SHOULDERSLOT, [5]=CHESTSLOT, [7]=LEGSSLOT, [15]=BACKSLOT, [11]=FINGER0SLOT, [12]=FINGER1SLOT};
 local textbarSigns = {"=","-","#","||","/","\\","+",">","•","⁄"};
 
 
@@ -22,22 +21,6 @@ I[name] = {iconfile="interface\\icons\\ability_dualwield",coords={0.05,0.95,0.05
 
 -- some local functions --
 --------------------------
-local function CalcRestedXP(data)
-	-- https://wow.gamepedia.com/Rest
-	local p5 = data.max*0.05;
-	local p5perHours = 32; -- 32 hours for 5 percent rested xp earning outside from inn and cities
-	if data.isRested then
-		p5perHours = 8; -- inn and cities
-	end
-	local restedXpPerSec = p5 / (p5perHours * 3600);
-	local offlineRested = math.floor((time()-data.offlineTime) * restedXpPerSec);
-	local maxRested = p5*30;
-	if offlineRested>=maxRested then
-		offlineRested = maxRested; -- rested xp limit
-	end
-	data.offlineRested = offlineRested;
-end
-
 local function GetExperience(level,currentXP,maxXP,exhaustion)
 	if level>=MAX_PLAYER_LEVEL then return 0,0,-1; end
 	local xpOverLevelup,percentCurrentXP,percentExhaustion = (currentXP+exhaustion)-maxXP,currentXP/maxXP,0;
@@ -56,14 +39,6 @@ end
 local function deleteCharacterXP(self,name_realm)
 	Broker_Everything_CharacterDB[name_realm].xp = nil;
 	createTooltip(tt);
-end
-
-local function showThisChar(name_realm,data)
-	if name_realm==ns.player.name_realm or data.xp==nil or (ns.profile[name].showNonMaxLevelOnly and data.level==MAX_PLAYER_LEVEL) then
-		return false;
-	end
-	local _,realm = strsplit("-",name_realm,2);
-	return ns.showThisChar(name,realm,data.faction);
 end
 
 local function updateBroker()
@@ -95,59 +70,6 @@ local function updateBroker()
 		text = ns.textBar(ns.profile[name].textBarCharCount,{1,percentCurrentXP or 1,ns.round(percentExhaustion-percentCurrentXP)},{"gray2","violet","ltblue"},ns.profile[name].textBarCharacter);
 	end
 	(module.obj or ns.LDB:GetDataObjectByName(module.ldbName) or {}).text = text;
-end
-
-local function createTooltip2(parentLine,name_realm) -- DEPRECATED
-	local toon = Broker_Everything_CharacterDB[name_realm];
-
-	local lst,sum = {},0;
-	for slotId,slotName in ns.pairsByKeys(slots) do
-		local maxLevel,xpPercent,_ = 0,0;
-		if toon.xp.bonus[slotId] then
-			if tonumber(toon.xp.bonus[slotId]) then
-				local itemId=toon.xp.bonus[slotId];
-				_, _, _, _, _, _, _, _, _, maxLevel = C_Heirloom.GetHeirloomInfo(itemId);
-				if not maxLevel then
-					C_Timer.After(0.1,function()
-						createTooltip2(parentLine,name_realm); -- sometimes blizzard api return nil; retry it
-					end);
-				end
-				xpPercent = heirloomXP[itemId];
-			elseif type(toon.xp.bonus[slotId])=="table" then
-				-- deprecated type
-				maxLevel,xpPercent = toon.xp.bonus[slotId].maxLevel,toon.xp.bonus[slotId].percent;
-			end
-			sum = sum + xpPercent;
-		end
-		local row = {C("ltyellow",slotName)};
-		if maxLevel and maxLevel>0 then
-			tinsert(row,maxLevel);
-		end
-		tinsert(row,
-			(toon.xp.bonus[slotId]==nil and C("ltgray",L["Not equipped"]))
-				or (maxLevel and toon.level>maxLevel and C("red",L["Level too high"]))
-				or (xpPercent>0 and xpPercent.."%")
-				or ""
-		);
-		tinsert(lst,row);
-	end
-
-	tt2 = ns.acquireTooltip({ttName2.."_"..name_realm, 3, "LEFT", "RIGHT", "RIGHT"},{true},{parentLine,"horizontal",tt});
-	tt2:Clear();
-	tt2:AddLine(C("ltblue",L["XP bonus"]),C("ltblue",L["max Level"]),C("ltblue",L["XP bonus"]));
-	tt2:AddSeparator(1);
-	for i,row in ipairs(lst) do
-		if #row==3 then
-			tt2:AddLine(unpack(row));
-		else
-			local l=tt2:AddLine(row[1]);
-			tt2:SetCell(l,2,row[2],nil,"RIGHT",0);
-		end
-	end
-	tt2:AddSeparator();
-	tt2:AddLine(C("ltblue",ACHIEVEMENT_SUMMARY_CATEGORY),"",C(sum>0 and "green" or "gray",sum.."%"));
-
-	ns.roundupTooltip(tt2);
 end
 
 function createTooltip(tt)
@@ -183,8 +105,6 @@ function createTooltip(tt)
 
 		for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
 			if toonData.xp~=nil and not isCurrent and not (ns.profile[name].showNonMaxLevelOnly and toonData.level==MAX_PLAYER_LEVEL) then
-				local Name,Realm,_ = strsplit("-",toonNameRealm,2);
-
 				if type(toonRealm)=="string" and toonRealm:len()>0 then
 					local _,_realm = ns.LRI:GetRealmInfo(toonRealm,ns.region);
 					if _realm then toonRealm = _realm; end
@@ -196,7 +116,7 @@ function createTooltip(tt)
 				end
 
 				toonData.level = toonData.level or 1;
-				local needToLevelup, percentCurrentXP, percentExhaustion, percentCurrentXPStr, percentExhaustionStr = GetExperience(toonData.level,toonData.xp.cur or 0,toonData.xp.max or xp2levelup[toonData.level],toonData.xp.rest or 0);
+				local _, _, percentExhaustion, percentCurrentXPStr, percentExhaustionStr = GetExperience(toonData.level,toonData.xp.cur or 0,toonData.xp.max or xp2levelup[toonData.level],toonData.xp.rest or 0);
 
 				local restState = "";
 				if percentExhaustion>0 then
@@ -209,7 +129,6 @@ function createTooltip(tt)
 					("%s/%s"):format(ns.FormatLargeNumber(name,toonData.xp.cur,true),ns.FormatLargeNumber(name,toonData.xp.max,true))
 				);
 				tt:SetLineScript(l,"OnMouseUp",deleteCharacterXP, toonNameRealm);
-				--tt:SetLineScript(l,"OnEnter",createTooltip2,toonNameRealm);
 				count = count + 1;
 			end
 		end
