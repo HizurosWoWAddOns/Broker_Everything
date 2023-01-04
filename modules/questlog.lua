@@ -483,10 +483,10 @@ function module.onevent(self,event,msg)
 		end
 
 		for index=1, numEntries do
-			local q = ns.C_QuestLog_GetInfo(index);
+			local q = ns.C_QuestLog_GetInfo(index) or {};
 			if q.isHeader==true then
 				header = q.title;
-			elseif header and not hideQuestsAnytime[q.questID] then
+			elseif header and q.questID and not hideQuestsAnytime[q.questID] then
 				local tagInfo = ns.C_QuestLog_GetQuestTagInfo(q.questID);
 				q.text,q.objectives = GetQuestLogQuestText(index);
 
