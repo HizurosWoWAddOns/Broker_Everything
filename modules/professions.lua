@@ -66,8 +66,8 @@ local cdResetTypes = {
 	end
 }
 
-local function OnLearnRecipe(bag,slot,itemId,info) -- info {<expansionIndex>,<index>}
-	local recipeItemID = faction_recipes[ info.exp ][ info.index ][ faction_recipes.itemId ];
+local function OnLearnRecipe(bag,slot,itemId,info) -- info {exp=<expansionIndex>,index=<index>,professionID=<professionID>}
+	local recipeItemID = faction_recipes[ info.exp ][ info.professionID ][ info.index ][ faction_recipes.itemId ];
 	if recipeItemID and recipeItemID==itemId then
 		toonDB.unlearnedRecipes[recipeItemID]=nil;
 	end
@@ -127,7 +127,7 @@ do
 							known=known+1;
 						else
 							toonDB.unlearnedRecipes[recipe[faction_recipes.itemId] ] = true;
-							ns.UseContainerItemHook.registerItemID(name,recipe[faction_recipes.itemId],OnLearnRecipe,{exp=expansionIndex,index=index});
+							ns.UseContainerItemHook.registerItemID(name,recipe[faction_recipes.itemId],OnLearnRecipe,{exp=expansionIndex,index=index, professionID = skillLine});
 							unknown=unknown+1;
 						end
 					end
