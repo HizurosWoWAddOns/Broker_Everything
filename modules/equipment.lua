@@ -98,6 +98,7 @@ local function UpdateInventory()
 			obj.type = "inv";
 			ns.ScanTT.query(obj,true);
 			lst[d.slot] = obj;
+			-- calc min/max item level
 			if ns.client_version>=6 and d.slot~=4 and d.slot~=19 then
 				obj.level = obj.level or 0;
 				if lst.iLevelMin==0 or obj.level<lst.iLevelMin then
@@ -105,6 +106,29 @@ local function UpdateInventory()
 				end
 				if obj.level>lst.iLevelMax then
 					lst.iLevelMax=obj.level;
+				end
+			end
+			-- get sockets and gems of eqiupment
+			local stats = GetItemStats(obj.link);
+			local numGems,_ = 0;
+			lst.gems = false;
+			if stats then
+				-- get number of available sockets across socket types
+				-- "RED","YELLOW","META","HYDRAULIC","BLUE","PRISMATIC","COGWHEEL"
+				for label,num in pairs(stats) do
+					if label:find("EMPTY_SOCKET_") then
+						numGems = numGems + num;
+					end
+				end
+			end
+			if numGems>0 then
+				obj.gems = {};
+				for i=1, numGems do
+					_, obj.gems[i] = GetItemGem(obj.link, i);
+					if not obj.gems[i] then
+						obj.gems[i] = false;
+						obj.empty_gem = true;
+					end
 				end
 			end
 		end

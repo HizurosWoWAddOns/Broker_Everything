@@ -1220,11 +1220,6 @@ do
 	local InstantModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip2",UIParent,"GameTooltipTemplate");
 	local _ITEM_LEVEL = ITEM_LEVEL:gsub("%%d","(%%d*)");
 	local _UPGRADES = ITEM_UPGRADE_TOOLTIP_FORMAT:gsub(CHAT_HEADER_SUFFIX.."%%d/%%d","");
-	-- EMPTY_SOCKET_PRISMATIC and EMPTY_SOCKET_NO_COLOR are identical in some languages... Need only one of it.
-	local EMPTY_SOCKETS = {"RED","YELLOW","META","HYDRAULIC","BLUE","PRISMATIC","COGWHEEL"};
-	if EMPTY_SOCKET_PRISMATIC~=EMPTY_SOCKET_NO_COLOR then
-		tinsert(EMPTY_SOCKETS,"NO_COLOR");
-	end
 	for f, v in pairs({SetScale=0.0001,SetAlpha=0,Hide=true,SetClampedToScreen=false,SetFrameStrata="BACKGROUND",ClearAllPoints=true})do
 		QueueModeScanTT[f](QueueModeScanTT,v);
 		InstantModeScanTT[f](InstantModeScanTT,v);
@@ -1350,25 +1345,6 @@ do
 					_,data.upgrades = strsplit(" ",data.lines[i]);
 				elseif i>4 and data.setname==nil and data.lines[i]:find("%(%d*/%d*%)$") then
 					data.setname = strsplit("(",data.lines[i]);
-				else
-					local socketCount,inLines = 0,{};
-					-- detect sockets in tooltip
-					for n=1, #EMPTY_SOCKETS do
-						if data.lines[i]==_G["EMPTY_SOCKET_"..EMPTY_SOCKETS[n]] then
-							socketCount=socketCount+1;
-							tinsert(inLines,i);
-						end
-					end
-					-- check sockets
-					if socketCount>0 then
-						data.gems = {};
-						for i=2, 5 do
-							data.gems[i-1]=data.linkData[i];
-							if data.linkData[i]==0 then
-								data.empty_gem=true;
-							end
-						end
-					end
 				end
 			end
 		end
