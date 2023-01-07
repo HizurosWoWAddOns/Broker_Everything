@@ -168,7 +168,7 @@ local function createTooltip(tt)
 				local plainCriteria = {};
 				for i=1, num do
 					local criteriaString, _, criteriaCompleted, quantity, reqQuantity, _, flags, _, quantityString = GetAchievementCriteriaInfo(id, i);
-					if ( bit.band(_flags, EVALUATION_TREE_FLAG_PROGRESS_BAR) == EVALUATION_TREE_FLAG_PROGRESS_BAR ) then
+					if ( flags and bit.band(flags, EVALUATION_TREE_FLAG_PROGRESS_BAR) == EVALUATION_TREE_FLAG_PROGRESS_BAR ) then
 						local color          = (ns.profile[name].showProgressBars) and "white" or "ltgray";
 						local colorCompleted = (not ns.profile[name].showProgressBars) and "ltgreen" or "green";
 						local l=tt:AddLine("  " .. C(criteriaCompleted and colorCompleted or color,ns.strWrap(description,limit,2)),quantityString);
