@@ -504,7 +504,7 @@ local function init()
 		18984,18986,30542,30544,43824,48933,87215,95567,95568,95589,95590,112059,129929,132517,136849,140324,151016,151652,168807,168808,169297,169298,172924,198156,
 
 		-- hearth stones
-		54452,64488,93672,142542,162973,163045,165669,165670,165802,166746,166747,168907,172179,184353,180290,182773,193588,190237,
+		54452,64488,93672,142542,162973,163045,165669,165670,165802,166746,166747,168907,172179,184353,180290,182773,190237,193588,200630,
 	};
 
 	-- on some toys C_ToyBox.IsToyUsable returns wrong state
@@ -537,8 +537,9 @@ local function init()
 		[184353]=1, -- Toy - Kyrian Hearthstone
 		[180290]=1, -- Toy - Night Fae Hearthstone
 		[182773]=1, -- Toy - Necrolord Hearthstone
-		[193588]=1, -- Toy - Timewalker's Hearthstone
 		[190237]=1, -- Toy - Broker Translocation Matrix
+		[193588]=1, -- Toy - Timewalker's Hearthstone
+		[200630]=1, -- Toy - Ohn'ir Windsage's Hearthstone
 	};
 
 	--_itemReplacementIds = {64488,28585,6948,44315,44314,37118,142542,142298};
