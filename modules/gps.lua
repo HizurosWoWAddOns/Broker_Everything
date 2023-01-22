@@ -175,7 +175,7 @@ local function updateItems()
 end
 
 local function position(name)
-	local p, f = ns.profile[name].precision or 0, ns.profile[name].coordsFormat or "%s, %s";
+	local p, f, posObject = ns.profile[name].precision or 0, ns.profile[name].coordsFormat or "%s, %s";
 	local x, y = 0,0;
 	local mapID = C_Map.GetBestMapForUnit("player");
 	if mapID then
