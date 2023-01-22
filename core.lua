@@ -34,7 +34,7 @@ function ns.resetConfigs()
 end
 
 Broker_Everything:SetScript("OnEvent", function (self, event, ...)
-	if event == "VARIABLES_LOADED" then
+	if event == "ADDON_LOADED" and addon==... then
 		-- character cache
 		local baseData={"name","class","faction","race"};
 		if Broker_Everything_CharacterDB==nil then
@@ -119,7 +119,7 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 	end
 end)
 
-Broker_Everything:RegisterEvent("VARIABLES_LOADED");
+Broker_Everything:RegisterEvent("ADDON_LOADED");
 Broker_Everything:RegisterEvent("PLAYER_LOGIN");
 Broker_Everything:RegisterEvent("PLAYER_LEVEL_UP");
 Broker_Everything:RegisterEvent("DISPLAY_SIZE_CHANGED");
