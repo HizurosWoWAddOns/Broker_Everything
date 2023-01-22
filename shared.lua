@@ -1080,7 +1080,8 @@ do
 		PLAYER_LOGIN = true,
 		PLAYER_EQUIPMENT_CHANGED = true,
 		UPDATE_INVENTORY_DURABILITY = true,
-		ITEM_UPGRADE_MASTER_UPDATE = true
+		ITEM_UPGRADE_MASTER_UPDATE = true,
+		MERCHANT_CLOSED = true
 	};
 
 	local function OnEvent(self,event,...)
@@ -1142,6 +1143,7 @@ do
 		eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
 		eventFrame:RegisterEvent("UPDATE_INVENTORY_DURABILITY");
 		eventFrame:RegisterEvent("GET_ITEM_INFO_RECEIVED");
+		eventFrame:RegisterEvent("MERCHANT_CLOSED");
 
 		if ns.eventPlayerEnteredWorld then
 			-- module registered after PLAYER_ENTERING_WORLD
