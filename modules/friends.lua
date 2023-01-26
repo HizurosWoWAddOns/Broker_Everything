@@ -200,7 +200,7 @@ local function createTooltip2(self,data)
 		tt2:SetCell(tt2:AddLine(C(color1,ZONE)),2,data.area,nil,"RIGHT",0);
 	end
 	-- notes
-	if ns.profile[name].showNotesTT2 and data.notes:trim():len()>0 then
+	if ns.profile[name].showNotesTT2 and data.notes and data.notes:trim():len()>0 then
 		tt2:AddSeparator(4,0,0,0,0);
 		tt2:SetCell(tt2:AddLine(),1,C(color1,COMMUNITIES_ROSTER_COLUMN_TITLE_NOTE),nil,nil,0);
 		tt2:AddSeparator();
