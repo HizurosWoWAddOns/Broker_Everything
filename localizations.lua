@@ -96,24 +96,26 @@ L["Realm"] = FRIENDS_LIST_REALM:gsub(HEADER_COLON,""):gsub("：",""):trim(); -- 
 -- localization by Blizzard - step 3 (by events)
 local byItemId = {
 	-- [<itemId>] = "<english name>",
+	[113340] = "Blood Card"
 };
 
-function ns.LocalizationsOnEvent(event,...) -- executed by core.lua > Broker_Everything:SetScript("OnEvent"...
-	if event=="VARIABLES_LOADED" then
+local frame = CreateFrame("Frame");
+frame:SetScript("OnEvent",function(_,event,id)
+	if event=="PLAYER_LOGIN" then
 		local name;
-		for id, key in pairs(byItemId) do
-			name = GetItemInfo(id);
+		for ID, key in pairs(byItemId) do
+			name = GetItemInfo(ID);
 			if name then
 				L[key] = name;
 			end
 		end
-	elseif event=="GET_ITEM_INFO_RECEIVED" then
-		local id = ...;
-		if byItemId[id] then
-			L[byItemId[id]] = GetItemInfo(id);
-		end
+	elseif event=="GET_ITEM_INFO_RECEIVED" and byItemId[id] then
+		L[byItemId[id]] = GetItemInfo(id);
+		ns:debug("2",id,byItemId[id],L[byItemId[id]]);
 	end
-end
+end);
+frame:RegisterEvent("PLAYER_LOGIN");
+frame:RegisterEvent("GET_ITEM_INFO_RECEIVED");
 
 -- localization by ;) - step 3
 local locale = GetLocale();
