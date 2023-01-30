@@ -935,19 +935,25 @@ do
 		if itemsByID[info.id]==nil then
 			itemsByID[info.id] = {};
 		end
+		-- add item info to ByID and BySlot tables
 		itemsByID[info.id][info.sharedSlot] = info;
 		itemsBySlot[info.sharedSlot] = info;
+		-- add to extra table for equipment; inventory and bags. Needed for durability summary calculation.
 		if info.equip then
 			equip[info.sharedSlot] = true;
 			hasChanged.equip = true;
 		end
-		if info.spell then
+		-- item has 'Use:' effect spell
+		local _,itemSpellID = GetItemSpell(info.link);
+		if itemSpellID then
+			info.spell = itemSpellID;
 			if itemsBySpell[info.spell] == nil then
 				itemsBySpell[info.spell] = {};
 			end
 			itemsBySpell[info.spell][info.sharedSlot] = info.count;
 		end
-		if ns.ammo_classic then -- ns.ammo_classic defined in modules/ammo_classic.lua
+		-- ns.ammo_classic defined in modules/ammo_classic.lua
+		if ns.ammo_classic then
 			if info.ammo then
 				ammo[info.sharedSlot] = true;
 				hasChanged.ammo = true;
@@ -1020,6 +1026,8 @@ do
 		for _,bagIndex in ipairs(updateBags) do
 			local numBagSlots = (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bagIndex);
 			local numFreeSlots = (C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(bagIndex);
+			local IndexTabardType =  INVTYPE_TABARD or Enum.InventoryType.IndexTabardType;
+			local IndexBodyType =  INVTYPE_BODY or Enum.InventoryType.IndexBodyType;
 			if numBagSlots~=numFreeSlots then -- do not scan empty bag ;-)
 				--[[
 				local isSoul = false; -- currently could not test. have no warlock on classic realms.
@@ -1040,21 +1048,19 @@ do
 					end
 					if id and link then
 						local _, _, _, itemEquipLocation, _, itemClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
-						local _,itemSpellID = GetItemSpell(link);
-						local diffStr = table.concat({link,count},"^");
+						local durability, durabilityMax = C_Container.GetContainerItemDurability(bagIndex,slotIndex)
 						local isEquipment = false;
-						if not (itemEquipLocation=="" or itemEquipLocation==(INVTYPE_TABARD or Enum.InventoryType.IndexTabardType) or itemEquipLocation==(INVTYPE_BODY or Enum.InventoryType.IndexBodyType)) then
+						if not (itemEquipLocation=="" or itemEquipLocation==IndexTabardType or itemEquipLocation==IndexBodyType) then
 							isEquipment = true; -- ignore shirts and tabards
 						end
 						addItem({
 							bag=bagIndex,
 							slot=slotIndex,
-							spell=itemSpellID,
 							count=count,
 							sharedSlot=sharedSlotIndex,
 							id=id,
 							link=link,
-							diff=diffStr,
+							diff=table.concat({link,count,durability, durabilityMax},"^"),
 							equip=isEquipment,
 							ammo=itemClassID==LE_ITEM_CLASS_PROJECTILE
 						},"bags");
