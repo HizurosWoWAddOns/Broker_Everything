@@ -48,7 +48,7 @@ I[name] = {iconfile=133633,coords={0.05,0.95,0.05,0.95}}; --IconName::Bags--
 --------------------------
 function crap.info()
 	if ns.profile[name].autoCrapSellingInfo and not crap.ERR_VENDOR_DOESNT_BUY and crap.sum>0 then
-		ns:print(L["Auto crap selling - Summary"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,crap.sum,{color="white"}));
+		ns:print(L["CrapSellingSummary"]..HEADER_COLON,ns.GetCoinColorOrTextureString(name,crap.sum,{color="white"}));
 	end
 end
 
@@ -77,26 +77,44 @@ end
 
 local checkSellThisItemList = {
 	--{ optKey="<string>", item=<number>|range={<number>,<number>}, do="sell|hold" }
-	{optKey="autoCrapSellingBloodCards", range={113340, 113354}, todo="sell"}
+	{optKey="autoCrapSellingBloodCards", itemIdRange={113340, 113354}, todo="sell"},
+	{optKey="autoCrapSellingWeapons", itemClass=2, itemSubClassAll=true, todo="hold", msg="CrapSellingWeaponsHold"},
+	{optKey="autoCrapSellingArmor", itemClass=4, itemSubClassRange={1,6}, todo="hold", msg="CrapSellingArmorHold"},
 }
+crap.holdMessages = {};
 
-local function checkSellThisItem(itemId)
-	if not itemId then return "hold" end
+local function inRange(number,range)
+	return number>=range[1] and number<=range[2];
+end
+
+local function checkSellThisItem(itemId,link,classID,subClassID,isTrash)
 	for _,entry in ipairs(checkSellThisItemList) do
 		local optValue = ns.profile[name][entry.optKey];
-		local isThisItem = false;
-		if (entry.range and (itemId>=entry.range[1] and itemId<=entry.range[2]))
-			or (entry.item and entry.item==itemId) then
-			isThisItem = true;
+		local itemMatchList = false;
+		if (entry.itemIdRange and inRange(itemId,entry.itemIdRange)) -- by itemId range
+		or (entry.itemIdList and tContains(entry.itemIdList,itemId)) -- by itemId list
+		or (entry.itemClass==classID and entry.itemSubClassAll)
+		or (entry.itemClass==classID and entry.itemSubClass==subClassID)
+		or (entry.itemClass==classID and entry.itemSubClassRange and inRange(subClassID,entry.itemSubClassRange))
+		or (entry.item and entry.item==itemId) -- by single itemID
+		then
+			itemMatchList = true;
 		end
-		if optValue==true and isThisItem==true then
+		if optValue==true and itemMatchList==true then
+			if entry.todo=="hold" and entry.msg then
+				if crap.holdMessages[entry.msg]==nil then
+					crap.holdMessages[entry.msg] = {};
+				end
+				tinsert(crap.holdMessages[entry.msg],link);
+			end
 			return entry.todo;
 		end
 	end
-	return "hold";
+	return isTrash and "sell";
 end
 
 function crap.search()
+	wipe(crap.holdMessages);
 	for bag=0, NUM_BAG_SLOTS do
 		local numSlots = (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bag);
 		local numFreeSlots = (C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(bag);
@@ -108,12 +126,21 @@ function crap.search()
 					if not count and itemInfo then
 						count = itemInfo.stackCount;
 					end
-					local _,_,quality,_,_,_,_,_,_,_,price = GetItemInfo(link);
+					local _,_,quality,_,_,_,_,_,_,_,price,classID,subClassID = GetItemInfo(link);
 					local itemId = tonumber((link:match("item:(%d+)")));
-					if (quality==0 and price>0) or (itemId and checkSellThisItem(itemId)=="sell") then
+					if itemId and checkSellThisItem(itemId,link,classID,subClassID,quality==0 and price>0)=="sell" then
 						tinsert(crap.items,{bag,slot,price*count});
 					end
 				end
+			end
+		end
+	end
+	if select("#",crap.holdMessages)>0 then
+		for msg, items in pairs(crap.holdMessages) do
+			if #items>2 then
+				ns:print(L["CrapSelling"],"",L[msg],items[1],LFG_LIST_AND_MORE:format(#items-1));
+			else
+				ns:print(L["CrapSelling"],"",L[msg],table.concat(items,", "));
 			end
 		end
 	end
@@ -365,7 +392,9 @@ module = {
 
 		autoCrapSelling = false,
 		autoCrapSellingInfo = true,
-		autoCrapSellingBloodCards = true,
+		autoCrapSellingBloodCards = false,
+		autoCrapSellingWeapons = true,
+		autoCrapSellingArmor = true,
 
 		-- "showBagTypeBB-1:1" -- filled by function
 	},
@@ -405,10 +434,20 @@ function module.options()
 			critLowFree={ type="range", order=1, name=L["Critical low free slots"],         desc=L["Select the maximum free slot count to coloring in red."], min=1, max=50, step=1 },
 			warnLowFree={ type="range", order=2, name=L["Warn low free slots"],             desc=L["Select the maximum free slot count to coloring in yellow."], min=2, max=100, step=1 },
 			shortNumbers=3,
-			header={ type="header", order=4, name=L["Crap selling options"], hidden=ns.IsClassicClient },
-			autoCrapSelling={ type="toggle", order=5, name=L["Enable auto crap selling"], desc=L["Enable automatically crap selling on opening a mergant frame"], hidden=ns.IsClassicClient },
-			autoCrapSellingInfo={ type="toggle", order=6, name=L["Summary of earned gold in chat"], desc=L["Post summary of earned gold in chat window"], hidden=ns.IsClassicClient },
-			autoCrapSellingBloodCards={ type="toggle", order=7, name=L["AutoCrapSellingBloodCards"], desc=L["AutoCrapSellingBloodCardsDesc"]}
+			autoCrapSelling = {
+				type = "group", order=4, hidden=ns.IsClassicClient,
+				name = C("ltblue",L["CrapSellingOpts"]),
+				args = {
+					autoCrapSelling={ type="toggle", order=1, name=L["CrapSellingEnable"], desc=L["CrapSellingEnableDesc"] },
+					autoCrapSellingInfo={ type="toggle", order=2, name=L["CrapSellingChatInfo"], desc=L["CrapSellingChatInfoDesc"] },
+					include = { type="header", order=10, name=L["Include"] },
+					autoCrapSellingBloodCards={ type="toggle", order=11, name=function() return L["Blood Card"] end, desc=L["CrapSellingBloodCardsDesc"]},
+					exclude = { type="header", order=60, name=CHAT_BAN },
+					autoCrapSellingWeapons={ type="toggle",order=61,name=AUCTION_CATEGORY_WEAPONS,desc=L["CrapSellingWeaponsDesc"] },
+					autoCrapSellingArmor={ type="toggle",order=62,name=AUCTION_CATEGORY_ARMOR,desc=L["CrapSellingArmorDesc"] }
+				}
+			}
+
 		},
 	};
 
