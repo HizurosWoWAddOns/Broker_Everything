@@ -173,7 +173,7 @@ local function opt(info,value,...)
 			end
 		elseif key=="minimap" then
 			db.profile[section][key].hide = not value;
-			ns.toggleMinimapButton(section);
+			ns.updateMinimapButton(section);
 		else
 			if ... then value={value,...}; end -- color table
 			db.profile[section][key]=value;
