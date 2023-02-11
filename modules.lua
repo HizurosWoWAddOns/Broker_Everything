@@ -21,18 +21,13 @@ function ns.modulePLQueueInit()
 	ns.modulePLQueueInit = nil;
 end
 
-function ns.toggleMinimapButton(modName,setValue)
+function ns.updateMinimapButton(modName)
 	local mod = ns.modules[modName];
 	local cfg = ns.profile[modName];
 
 	-- check config
 	if type(cfg.minimap)~="table" then
 		cfg.minimap = {hide=true};
-	end
-
-	if setValue~=nil then
-		-- change config if setValue not nil
-		cfg.minimap.hide = not setValue;
 	end
 
 	if ns.LDBI:IsRegistered(mod.ldbName) then
@@ -116,7 +111,7 @@ local function moduleInit(name, force)
 			-- is possible that
 			if mod.obj then
 				-- register minimap button
-				ns.toggleMinimapButton(name);
+				ns.updateMinimapButton(name);
 			end
 		end
 
