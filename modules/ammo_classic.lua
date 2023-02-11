@@ -65,7 +65,10 @@ local function updateAmmo()
 	local sum,itemInfo,_ = 0,{};
 	for sharedSlot in pairs(ns.items.ammo) do
 		local item = ns.items.bySlot[sharedSlot];
-		local _, count = GetContainerItemInfo(item.bag,item.slot);
+		local info, count = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(item.bag,item.slot);
+		if info and count==nil then
+			count = info.stackCount;
+		end
 		if not itemInfo[item.id] then
 			itemInfo[item.id] = {count=count};
 			itemInfo[item.id].name,_,itemInfo[item.id].quality,_,_,_,_,_,_,itemInfo[item.id].icon = GetItemInfo(item.id);

@@ -1048,7 +1048,7 @@ do
 					end
 					if id and link then
 						local _, _, _, itemEquipLocation, _, itemClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
-						local durability, durabilityMax = C_Container.GetContainerItemDurability(bagIndex,slotIndex)
+						local durability, durabilityMax = (C_Container and C_Container.GetContainerItemDurability or GetContainerItemDurability)(bagIndex,slotIndex)
 						local isEquipment = false;
 						if not (itemEquipLocation=="" or itemEquipLocation==IndexTabardType or itemEquipLocation==IndexBodyType) then
 							isEquipment = true; -- ignore shirts and tabards
