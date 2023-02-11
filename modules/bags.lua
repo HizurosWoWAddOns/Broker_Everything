@@ -87,7 +87,7 @@ local function inRange(number,range)
 	return number>=range[1] and number<=range[2];
 end
 
-local function checkSellThisItem(itemId,link,classID,subClassID,isTrash)
+local function checkSellThisItem(itemId,link,classID,subClassID,quality)
 	for _,entry in ipairs(checkSellThisItemList) do
 		local optValue = ns.profile[name][entry.optKey];
 		local itemMatchList = false;
@@ -101,6 +101,9 @@ local function checkSellThisItem(itemId,link,classID,subClassID,isTrash)
 			itemMatchList = true;
 		end
 		if optValue==true and itemMatchList==true then
+			if entry.todo=="hold" and entry.quality~=0 then
+				return; -- is not crap; ignore
+			end
 			if entry.todo=="hold" and entry.msg then
 				if crap.holdMessages[entry.msg]==nil then
 					crap.holdMessages[entry.msg] = {};
@@ -110,7 +113,7 @@ local function checkSellThisItem(itemId,link,classID,subClassID,isTrash)
 			return entry.todo;
 		end
 	end
-	return isTrash and "sell";
+	return quality==0 and "sell";
 end
 
 function crap.search()
@@ -120,15 +123,17 @@ function crap.search()
 		local numFreeSlots = (C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(bag);
 		if numSlots ~= numFreeSlots then
 			for slot=1, numSlots do
-				local link = (C_Container and C_Container.GetContainerItemLink or GetContainerItemLink)(bag,slot);
+				local link,itemId,itemInfo,count,quality,price,classID,subClassID,_ = (C_Container and C_Container.GetContainerItemLink or GetContainerItemLink)(bag,slot);
 				if link then
-					local itemInfo,count = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(bag, slot);
+					itemId = tonumber((link:match("item:(%d+)")));
+				end
+				if link and itemId then
+					itemInfo,count = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(bag, slot);
 					if not count and itemInfo then
 						count = itemInfo.stackCount;
 					end
-					local _,_,quality,_,_,_,_,_,_,_,price,classID,subClassID = GetItemInfo(link);
-					local itemId = tonumber((link:match("item:(%d+)")));
-					if itemId and checkSellThisItem(itemId,link,classID,subClassID,quality==0 and price>0)=="sell" then
+					_,_,quality,_,_,_,_,_,_,_,price,classID,subClassID = GetItemInfo(link);
+					if price>0 and itemId and checkSellThisItem(itemId,link,classID,subClassID,quality)=="sell" then
 						tinsert(crap.items,{bag,slot,price*count});
 					end
 				end
