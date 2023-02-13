@@ -358,6 +358,12 @@ function module.onevent(self,event,msg)
 		elseif (not HasNewMail()) then
 			alertLocked=false;
 		end
+		if event=="MAIL_SHOW" and ns.IsRetailClient() and not self.MailFrameOnHideHooked then
+			_G.MailFrame:HookScript("OnHide",function()
+				UpdateStatus("MAIL_CLOSED")
+			end);
+			self.MailFrameOnHideHooked = true;
+		end
 		UpdateStatus(event);
 	end
 end
