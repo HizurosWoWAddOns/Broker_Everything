@@ -29,7 +29,7 @@ local function updateBroker()
 		icon = itemInfo.icon
 		text = C( (itemInfo.count<=10 and "red") or (itemInfo.count<=25 and "orange") or (itemInfo.count<=50 and "yellow") or "green",itemInfo.count)
 		if ns.profile[name].showNameBroker then
-			text = text .. " " .. C("quality"..itemInfo.quality,itemInfo.name);
+			text = text .. " " .. C("quality"..(itemInfo.quality or 1),itemInfo.name);
 		end
 	else
 		icon,text = 133581,C("gray",L["No ammo attached"]);

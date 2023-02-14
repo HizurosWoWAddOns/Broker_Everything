@@ -887,6 +887,7 @@ do
 	local callbacks = {any={},inv={},bags={},item={},equip={},prepare={},toys={},ammo={}};
 	local cbCounter = {any=0,inv=0,bags=0,item=0,equip=0,prepare=0,toys=0,ammo=0};
 	local eventFrame,inventoryDelayed = CreateFrame("Frame");
+	local LE_ITEM_CLASS_PROJECTILE = LE_ITEM_CLASS_PROJECTILE or Enum.ItemType.Projectile or 6;
 
 	local function doCallbacks(tbl,...)
 		if callbacks[tbl]==nil or cbCounter[tbl]==0 then
@@ -1040,13 +1041,13 @@ do
 				--]]
 				for slotIndex=1, numBagSlots do
 					local sharedSlotIndex = bagIndex+(slotIndex/100);
-					local id = (C_Container and C_Container.GetContainerItemID or GetContainerItemID)(bagIndex,slotIndex);
-					local itemInfo, count, _, _, _, _, link = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(bagIndex,slotIndex);
-					if not count and itemInfo then
+					local itemInfo, count, _, _, _, _, link, _, _, id = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(bagIndex,slotIndex);
+					if not count and type(itemInfo)=="table" then
 						count = itemInfo.stackCount;
 						link = itemInfo.hyperlink;
+						id = tonumber((link:match("item:(%d+)")));
 					end
-					if id and link then
+					if link then
 						local _, _, _, itemEquipLocation, _, itemClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
 						local durability, durabilityMax = (C_Container and C_Container.GetContainerItemDurability or GetContainerItemDurability)(bagIndex,slotIndex)
 						local isEquipment = false;
@@ -1062,7 +1063,7 @@ do
 							link=link,
 							diff=table.concat({link,count,durability, durabilityMax},"^"),
 							equip=isEquipment,
-							ammo=itemClassID==LE_ITEM_CLASS_PROJECTILE
+							ammo=(itemClassID==LE_ITEM_CLASS_PROJECTILE)
 						},"bags");
 					elseif itemsBySlot[sharedSlotIndex] then
 						removeItem(sharedSlotIndex,"bags");
