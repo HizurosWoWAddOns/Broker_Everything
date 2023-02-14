@@ -1,8 +1,8 @@
 
 -- saved variables
 Broker_Everything_CharacterDB = {}; -- per character data
-Broker_Everything_DataDB = {}; -- global data
-Broker_Everything_AceDB = {}; -- new config data table controlled by AceDB
+Broker_Everything_DataDB = {forcePrefix=true}; -- global data
+Broker_Everything_AceDB = {}; -- config data table controlled by AceDB
 
 -- some usefull namespace to locals
 local addon, ns = ...;
@@ -16,20 +16,22 @@ local UnitLevel,UnitFactionGroup=UnitLevel,UnitFactionGroup;
 local Broker_Everything = CreateFrame("Frame");
 
 function ns.resetAllSavedVariables()
-	wipe(Broker_Everything_DataDB);
-	wipe(Broker_Everything_CharacterDB);
-	wipe(Broker_Everything_AceDB);
+	Broker_Everything_DataDB=nil
+	Broker_Everything_CharacterDB=nil
+	Broker_Everything_AceDB=nil
+	Broker_Everything_DataDB.forcePrefix=true
 	C_UI.Reload();
 end
 
 function ns.resetCollectedData()
-	wipe(Broker_Everything_DataDB);
-	wipe(Broker_Everything_CharacterDB);
+	Broker_Everything_DataDB=nil
+	Broker_Everything_CharacterDB=nil
 	C_UI.Reload();
 end
 
 function ns.resetConfigs()
-	wipe(Broker_Everything_AceDB);
+	Broker_Everything_AceDB=nil
+	Broker_Everything_DataDB.forcePrefix=true
 	C_UI.Reload();
 end
 
@@ -37,16 +39,14 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 	if event == "ADDON_LOADED" and addon==... then
 		-- character cache
 		local baseData={"name","class","faction","race"};
-		if Broker_Everything_CharacterDB==nil then
-			Broker_Everything_CharacterDB={order={}};
-		elseif Broker_Everything_CharacterDB.order==nil then
+		if Broker_Everything_CharacterDB.order==nil then
 			Broker_Everything_CharacterDB.order={};
 		end
 		local names = {};
 		for i=1, #Broker_Everything_CharacterDB.order do
 			names[Broker_Everything_CharacterDB.order[i]]=1;
 		end
-		for name,v in pairs(Broker_Everything_CharacterDB)do
+		for name in pairs(Broker_Everything_CharacterDB)do
 			if name~="order" and not names[name] then
 				Broker_Everything_CharacterDB[name] = nil;
 			end
@@ -55,7 +55,7 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 			tinsert(Broker_Everything_CharacterDB.order,ns.player.name_realm);
 			Broker_Everything_CharacterDB[ns.player.name_realm] = {orderId=#Broker_Everything_CharacterDB.order};
 		end
-		for i,v in ipairs(baseData)do
+		for _,v in ipairs(baseData)do
 			if(ns.player[v] and Broker_Everything_CharacterDB[ns.player.name_realm][v]~=ns.player[v])then
 				Broker_Everything_CharacterDB[ns.player.name_realm][v] = ns.player[v];
 			end
@@ -64,8 +64,8 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 		ns.toon = Broker_Everything_CharacterDB[ns.player.name_realm];
 
 		-- data cache
-		if Broker_Everything_DataDB==nil then
-			Broker_Everything_DataDB = {realms={}};
+		if Broker_Everything_DataDB.realms==nil then
+			Broker_Everything_DataDB.realms = {};
 		end
 		ns.data = Broker_Everything_DataDB;
 
@@ -111,7 +111,6 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 	elseif event=="NEUTRAL_FACTION_SELECT_RESULT" then
 		ns.player.faction, ns.player.factionL  = UnitFactionGroup("player");
 		L[ns.player.faction] = ns.player.factionL;
-
 		ns.toon.faction = ns.player.faction;
 	end
 end)
