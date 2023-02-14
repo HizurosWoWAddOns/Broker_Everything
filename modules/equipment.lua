@@ -274,7 +274,6 @@ local function createTooltip(tt)
 		if prof2 then
 			_,_,_,_,_,_,prof2SkillLine = GetProfessionInfo(prof2);
 		end
-		--ns:debugPrint(name,prof1SkillLine,prof2SkillLine)
 
 		local none,miss=true,false;
 		local iSlots = {1,2,3,15,5,9,10,6,7,8,11,12,13,14,16,17};

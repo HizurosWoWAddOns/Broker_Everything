@@ -535,8 +535,6 @@ function module.onevent(self,event,arg1,...)
 		end
 	elseif event=="NEW_RECIPE_LEARNED" and type(arg1)=="number" then
 		ns.toon[name].learnedRecipes[arg1] = true;
-	elseif event=="CHAT_MSG_SKILL" then
-		ns:debug(event,arg1,...);
 	elseif event=="PLAYER_LOGIN" or ns.eventPlayerEnteredWorld then
 		if ns.toon[name]==nil then
 			ns.toon[name]={};

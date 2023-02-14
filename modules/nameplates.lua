@@ -21,7 +21,6 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\nameplates"}; --Icon
 -- some local functions --
 --------------------------
 local function toggleCVar(self,v)
-	ns:debug(name,"<toggleCVar>",v.type,v.cvar,v.state);
 	if v.type=="single" then
 		ns.SetCVar(v.cvar, v.state and 0 or 1, v.cvar);
 	elseif v.type=="group" then

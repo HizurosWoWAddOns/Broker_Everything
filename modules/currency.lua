@@ -452,7 +452,6 @@ function module.OptionMenu(parent)
 			if Currencies[i]=="HIDDEN_CURRENCIES" and not ns.profile[name].showHidden then
 				break;
 			elseif validateID(Currencies[i]) then
-				ns:debugPrint(i,Currencies[i],tostring(pList2));
 				--isHidden = Currencies[i]=="HIDDEN_CURRENCIES";
 				local currencyId,currencyInfo,profInfo = GetCurrency(Currencies[i]);
 				if currencyId and currencyInfo and currencyInfo.name then
@@ -674,7 +673,6 @@ function module.init()
 		if not known[i] and not ns.isArchaeologyCurrency(i) then
 			local info = C_CurrencyInfo.GetCurrencyInfo(i);
 			if info and info.name and not (ignore[info.name] or info.name:find("zzold") or info.name:find("Test") or info.name:find("Prototype") or info.name:find("Scoreboard")) then -- (and not info.isHeader)
-				--ns:debug(name,i,info.name);
 				tinsert(Currencies,i);
 			end
 		end

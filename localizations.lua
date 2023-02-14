@@ -111,7 +111,6 @@ frame:SetScript("OnEvent",function(_,event,id)
 		end
 	elseif event=="GET_ITEM_INFO_RECEIVED" and byItemId[id] then
 		L[byItemId[id]] = GetItemInfo(id);
-		ns:debug("2",id,byItemId[id],L[byItemId[id]]);
 	end
 end);
 frame:RegisterEvent("PLAYER_LOGIN");

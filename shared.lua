@@ -579,9 +579,6 @@ do
 		end,
 		__call = function(t,a)
 			if ns.profile==nil then
---@do-not-package@
-				ns:debug("<nsI.__call>",debugstack());
---@end-do-not-package@
 				return {};
 			end
 
@@ -2285,7 +2282,6 @@ end
 ns.C_QuestLog_GetInfo = (C_QuestLog and C_QuestLog.GetInfo) or function(questLogIndex)
 	local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, isHidden, isScaling  = GetQuestLogTitle(questLogIndex);
 	if type(suggestedGroup)=="string" then
-		ns:debugPrint("C_QuestLog_GetInfo","suggestedGroup =",suggestedGroup);
 		suggestedGroup = tonumber(suggestedGroup) or 0; -- problem on bc classic client?
 	end
 	return {

@@ -38,7 +38,6 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\Achievement_Reputati
 --------------------------
 local GetRGB = NORMAL_FONT_COLOR.GetRGB;
 if not GetRGB then
-	ns:debug("GetRGB not found...")
 	function GetRGB(t)
 		if tonumber(t.r) then
 			return t.r,t.g,t.b;

@@ -396,7 +396,6 @@ local function expansionSkillLines_OnEnter(self,skillId)
 	end
 
 	if not expansionSkillLines[skillId] then
-		--ns:debugPrint(skillId);
 		return
 	end
 
