@@ -199,8 +199,8 @@ local function createTooltip(tt)
 				local Link = GetSpellLink(spell[Id]);
 
 				if spell[CustomText]==true and rank then
-					rank = {strsplit(" ",rank)}; -- TODO: missing rank in bfa?
-					spell[CustomText] = rank[2] or rank[1];
+					local ranks = {strsplit(" ",rank)}; -- TODO: missing rank in bfa?
+					spell[CustomText] = ranks[2] or ranks[1];
 				end
 
 				if type(spell[CustomText])=="string" then
@@ -378,8 +378,8 @@ function module.options()
 		broker = { precision={ type="range", name=L["Precision"], desc=L["Adjust the count of numbers behind the dot."], min = 0, max = 3, step=1 } },
 		tooltip = {
 			showBonus = { type="toggle", order=1, name=L["SpeedBonus"], desc=L["SpeedBonusDesc"], hidden=(ns.client_version>=5) },
-			showLicenses = { type="toggle", order=2, name=L["SpeedLicenses"], name=L["SpeedLicensesDesc"], hidden=(ns.client_version>=5) },
-			showLicensesDeprecated  = { type="toggle", order=2, name=L["SpeedLicensesDeprec"], name=L["SpeedLicensesDeprecDesc"], hidden=(ns.client_version>=5) },
+			showLicenses = { type="toggle", order=2, name=L["SpeedLicenses"], desc=L["SpeedLicensesDesc"], hidden=(ns.client_version>=5) },
+			showLicensesDeprecated  = { type="toggle", order=2, name=L["SpeedLicensesDeprec"], desc=L["SpeedLicensesDeprecDesc"], hidden=(ns.client_version>=5) },
 			showChars = {3,true},
 			showAllFactions=4,
 			showRealmNames=5,
