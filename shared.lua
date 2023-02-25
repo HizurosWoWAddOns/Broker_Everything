@@ -1042,9 +1042,11 @@ do
 					if not count and type(itemInfo)=="table" then
 						count = itemInfo.stackCount;
 						link = itemInfo.hyperlink;
+					end
+					if link and not id then
 						id = tonumber((link:match("item:(%d+)"))) or -1;
 					end
-					if link then
+					if link and id then
 						local _, _, _, itemEquipLocation, _, itemClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
 						local durability, durabilityMax = (C_Container and C_Container.GetContainerItemDurability or GetContainerItemDurability)(bagIndex,slotIndex)
 						local isEquipment = false;
