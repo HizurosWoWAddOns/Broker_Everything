@@ -19,6 +19,10 @@ I[name] = {iconfile="Interface\\Icons\\Ability_Rogue_Sprint",coords={0.05,0.95,0
 
 -- some local functions --
 --------------------------
+local UnitInVehicle = UnitInVehicle or function()
+	return false;
+end
+
 local function updateTrainerName(data)
 	if data.lines[1] then
 		trainer_faction[data.trainer_index][6] = data.lines[1];
@@ -42,13 +46,77 @@ local function updateToonSkill(...)
 	updateToonSkillLocked = nil;
 end
 
-local function updateBroker()
-	local unit = "player";
-	if UnitInVehicle and UnitInVehicle("player") then
-		unit = "vehicle";
+local CalcSpeed = {
+	x=0,y=0,t=0,s=0
+};
+local worldMapByMapID = setmetatable({},{__index=function(t,k)
+	if not tonumber(k) then
+		return false; -- invalid key
 	end
-	local currentSpeed = GetUnitSpeed( unit );
-	local str = ("%."..ns.profile[name].precision.."f"):format(currentSpeed / 7 * 100 ) .. "%";
+	local limit,mapID,mapInfo = 6,k,C_Map.GetMapInfo(k) or 0;
+	if not mapInfo then
+		return;
+	end
+	while type(mapInfo)=="table" and limit>=0 do
+		if mapInfo.mapType < 3 then
+			rawset(t,k,mapID)
+			return mapID;
+		end
+		mapID = mapInfo.parentMapID;
+		mapInfo = C_Map.GetMapInfo(mapID);
+		limit = limit - 1;
+	end
+	return false;
+end})
+
+function CalcSpeed:Update()
+	-- Get mapID and positionInfo
+	local mapID = worldMapByMapID[C_Map.GetBestMapForUnit("player") or 0];
+	if not (mapID and mapID>0) then return end
+	local posInfo = C_Map.GetPlayerMapPosition(mapID,"player");
+	if not posInfo then
+		return
+	end
+
+	-- Get delta time
+	local time,dt = GetTime();
+	dt,self.t = time-self.t,time;
+
+	-- Calculate speed
+	local w,h,x,y,dx,dy = C_Map.GetMapWorldSize(mapID);
+	x,y = (posInfo.x * w), (posInfo.y * h);
+	local dx,dy = x-self.x,y-self.y;
+	self.x,self.y = x,y;
+	self.s = math.sqrt(dx*dx + dy*dy) / dt;
+
+	if C_UnitAuras then
+		local tspeed = 60
+		-- C_UnitAuras.IsPlayerAuraActive(<spellID>) would be better but not exist
+		local thrill = not not C_UnitAuras.GetPlayerAuraBySpellID(377234);
+		local as,ad,mb = 0,3.5,35;
+		if thrill and time < as + mb then
+			local p,b = (time-as) / ad;
+			b = tspeed + (1-p) * mb;
+			if self.s < b then
+				self.s = b
+			end
+		end
+
+		if (self.s < tspeed and thrill) or (self.s > tspeed and not thrill) then
+			self.s = tspeed
+		end
+	end
+end
+
+local function updateBroker()
+	local speed = 0
+	if ns.IsRetailClient() then
+		CalcSpeed:Update();
+		speed = CalcSpeed.s;
+	else
+		speed = GetUnitSpeed( UnitInVehicle("player") and "vehicle" or "player" ) or 0;
+	end
+	local str = ("%."..ns.profile[name].precision.."f"):format(speed / 7 * 100 ) .. "%";
 	local l = 4 + (ns.profile[name].precision>0 and ns.profile[name].precision+1 or 0) - str:len();
 	ns.LDB:GetDataObjectByName(module.ldbName).text = strrep(" ",l)..str;
 end
@@ -373,6 +441,10 @@ module = {
 	}
 }
 
+if ns.IsRetailClient() then
+	tinsert(module.events,"UNIT_SPELLCAST_SUCCEEDED");
+end
+
 function module.options()
 	return {
 		broker = { precision={ type="range", name=L["Precision"], desc=L["Adjust the count of numbers behind the dot."], min = 0, max = 3, step=1 } },
@@ -504,6 +576,11 @@ function module.onevent(self,event,...)
 		updateToonSkillLocked = true;
 		updateToonSkill();
 		C_Timer.NewTicker(0.2,updateBroker);
+	elseif event=="UNIT_SPELLCAST_SUCCEEDED" then
+		if (...)==372610 then
+			CalcSpeed.as = GetTime();
+		end
+		return;
 	elseif not updateToonSkillLocked then
 		updateToonSkillLocked = true; -- event trigger twice
 		C_Timer.After(0.2, updateToonSkill);
