@@ -54,17 +54,20 @@ local function updateMissions()
 	ns.toon.missions = {}; -- wipe
 	counter={completed=0,inprogress=0,available=0};
 	for e=1, #expansions do
-		local exp = expansions[e];
+		local exp,followerType = expansions[e],false;
 		if exp.type then
+			followerType = Enum.GarrisonFollowerType["FollowerType_"..(exp.type=="6_2" and "6_0_Boat" or exp.type.."_GarrisonFollower")]
+		end
+		if followerType then
 			exp.level = exp.levelFnc(Enum.GarrisonType["Type_"..exp.type]) or 0;
 			missions[exp.typeStr] = {inprogress={},available={},completed={}};
 			local m=missions[exp.typeStr];
-			local tmp = C_Garrison.GetInProgressMissions(Enum.GarrisonFollowerType["FollowerType_"..exp.type]) or {};
+			local tmp = C_Garrison.GetInProgressMissions(followerType) or {};
 			for i=1, #tmp do
 				tinsert(m[tmp[i].missionEndTime-t>0 and "inprogress" or "completed"],tmp[i]);
 				tinsert(ns.toon.missions,tmp[i].missionEndTime);
 			end
-			m.available = C_Garrison.GetAvailableMissions(Enum.GarrisonFollowerType["FollowerType_"..exp.type]) or {};
+			m.available = C_Garrison.GetAvailableMissions(followerType) or {};
 			for i=1, #m.available do
 				local info = C_Garrison.GetMissionDeploymentInfo(m.available[i].missionID);
 				m.available[i].isExhausting = info.isExhausting;
