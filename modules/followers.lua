@@ -315,8 +315,12 @@ local function addEntries(tt,name,entriesList,statusIndex,statusLabel,Table)
 			if #traitIcons>0 then
 				tinsert(abilities,table.concat(traitIcons," "));
 			end
+			local combatSpells = false
 			if Table.hasCombatSpells then
-				for _,cs in ipairs((C_Garrison.GetFollowerAutoCombatSpells(entryInfo.followerID,entryInfo.level)))do
+				combatSpells = C_Garrison.GetFollowerAutoCombatSpells(entryInfo.followerID,entryInfo.level);
+			end
+			if combatSpells then
+				for _,cs in ipairs()do
 					if cs.icon then
 						tinsert(combatSpellIcons,"|T"..cs.icon..":14:14:0:0:64:64:4:56:4:56|t");
 					end
