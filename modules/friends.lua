@@ -236,7 +236,7 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 				InviteUnit(data.fullName);
 			end
 		else
-			ChatFrame_SendTell(data.fullName);
+			ChatFrame_SendTell(data.fullName:gsub(" ",""));
 		end
 	elseif data.type=="battlenet" then
 		-- battlenet whisper
