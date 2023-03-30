@@ -13,6 +13,7 @@ local ttName, ttColumns,ttColumns_default,ttColumnsMin, tt, module = name.."TT",
 local missions,started,counter = {},{},{};
 local qualities = {"white","ff1eaa00","ff0070dd","ffa335ee","red"};
 local garrLevel,syLevel,ohLevel = 0,0,0;
+local updateMissionsLocked = false;
 local expansions = {
 	-- { <expansionIndex>, <internalTypeString>, <localizedLabel>, <garrison-/follower-type>, <garrisonLevelFunction> }
 	{index=5, typeStr="followers",     label=GARRISON_FOLLOWERS,           type="6_0", levelFnc=C_Garrison.GetGarrisonInfo},
@@ -77,6 +78,7 @@ local function updateMissions()
 			counter.available=counter.available+#m.available;
 		end
 	end
+	updateMissionsLocked = false
 	updateBroker();
 end
 
@@ -284,7 +286,8 @@ function module.onevent(self,event,arg1)
 		if ns.toon.missions==nil then
 			ns.toon.missions={};
 		end
-	elseif ns.eventPlayerEnteredWorld then
+	elseif ns.eventPlayerEnteredWorld and not updateMissionsLocked then
+		updateMissionsLocked = true
 		C_Timer.After(0.314159,updateMissions);
 	end
 end
