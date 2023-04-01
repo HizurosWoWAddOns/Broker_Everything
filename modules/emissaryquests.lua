@@ -459,11 +459,9 @@ function module.onevent(self,event,arg1,...)
 				ns.toon[name].bounties[k] = nil;
 			end
 		end
-	elseif ns.eventPlayerEnteredWorld then
-		if not locked then
-			locked = true;
-			C_Timer.After(0.314159,updateData);
-		end
+	elseif ns.eventPlayerEnteredWorld and not locked then
+		locked = true;
+		C_Timer.After(0.314159,updateData);
 	end
 end
 

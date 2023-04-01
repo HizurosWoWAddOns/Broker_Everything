@@ -16,7 +16,7 @@ local spellName,spellLocaleName,spellIcon,spellId = 1,2,3,4;
 local professions,db,locked,cdSpells,poisons = {};
 local Faction = UnitFactionGroup("player")=="Alliance" and 1 or 2;
 local profs = {data={},name2Id={},spellId2skillId={},generated=false};
-local ts,skillsMax = {},{};
+local ts,skillsMax,triggerLock = {},{},false;
 local cd_groups = { -- %s cooldown group
 	"Transmutation",	-- L["Transmutation cooldown group"]
 	"Jewels",			-- L["Jewels cooldown group"]
@@ -521,11 +521,85 @@ function module.init()
 	profs.build();
 end
 
+local function OnEventUpdateMail()
+	if (not profs.generated) then
+		profs.build();
+	end
+
+	local numSkills,lastHeader = GetNumSkillLines();
+	local SECONDARY_SKILLS = SECONDARY_SKILLS:gsub(HEADER_COLON,"");
+	local tmp,short = {},{};
+	local n = 1;
+	for skillIndex=1, numSkills do
+		local skillName, header, isExpanded, skillRank, numTempPoints, skillModifier, skillMaxRank, isAbandonable, stepCost, rankCost, minLevel, skillCostType = GetSkillLineInfo(skillIndex);
+		if skillName then
+			local _profs = profs; -- for debugging
+			if header then
+				lastHeader = skillName;
+			elseif (lastHeader==TRADE_SKILLS or lastHeader==SECONDARY_SKILLS) and profs.name2Id[skillName] then
+				skillRank = skillRank + numTempPoints;
+				local d = {skillName,nil,skillRank,skillMaxRank,0,nil,nil,skillModifier,nil,nil,nil,nil,nil};
+
+				d.spellId = profs.name2Id[skillName];
+				d[icon] = profs.data[d.spellId][spellIcon];
+				d.skillId = profs.spellId2skillId[d.spellId];
+				knownSpellIDs[d.spellId] = true;
+
+				if d.spellId==2575 then
+					d.spellId = 2656; -- replace mining with smelting to open skillframe window
+				elseif d.spellId == 7620 or d.spellId == 2842 or d.spellId == 1804 then
+					-- hide some progessions in profession menu to prevent error message
+					d[disabled] = true;
+				end
+
+				d.nameEnglish = L[skillName];
+
+				if lastHeader==TRADE_SKILLS then
+					short[n] = {d[skillLine],skillName,d[icon],d[skill],d[maxSkill],d.skillId,d.spellId};
+				end
+
+				tmp[n] = d or false;
+				n = n + 1;
+			end
+		end
+	end
+	if #tmp>0 then
+		professions = tmp;
+	end
+
+	db.hasCooldowns = false;
+
+	local nCooldowns = 0;
+	for i,v in pairs(db.cooldowns) do
+		if (type(v)=="table") and (v.timeLeft) and (v.timeLeft-(time()-v.lastUpdate)<=0) then
+			db.cooldowns[i]=nil;
+		else
+			nCooldowns=nCooldowns+1;
+			db.hasCooldowns=true;
+		end
+	end
+
+	if (short[1]) and (short[1][1]) and (type(cdSpells[short[1][1]])=="table") then
+		checkCooldownSpells(unpack(short[1]));
+	end
+	if (short[2]) and (short[2][1]) and (type(cdSpells[short[2][1]])=="table") then
+		checkCooldownSpells(unpack(short[2]));
+	end
+	updateBroker();
+	triggerLock = false
+end
+
 function module.onevent(self,event,arg1,...)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 		return;
 	elseif event=="VARIABLES_LOADED" then
+		if ns.toon[name]==nil then
+			ns.toon[name]={};
+		end
+		if ns.toon[name].learnedRecipes==nil then
+			ns.toon[name].learnedRecipes = {};
+		end
 --@do-not-package@
 		ns.profileSilenceFIXME=true;
 --@end-do-not-package@
@@ -535,79 +609,9 @@ function module.onevent(self,event,arg1,...)
 		end
 	elseif event=="NEW_RECIPE_LEARNED" and type(arg1)=="number" then
 		ns.toon[name].learnedRecipes[arg1] = true;
-	elseif event=="PLAYER_LOGIN" or ns.eventPlayerEnteredWorld then
-		if ns.toon[name]==nil then
-			ns.toon[name]={};
-		end
-		if ns.toon[name].learnedRecipes==nil then
-			ns.toon[name].learnedRecipes = {};
-		end
-
-		if (not profs.generated) then
-			profs.build();
-		end
-
-		local numSkills,lastHeader = GetNumSkillLines();
-		local SECONDARY_SKILLS = SECONDARY_SKILLS:gsub(HEADER_COLON,"");
-		local tmp,short = {},{};
-		local knownSpellIDs = {};
-		local n = 1;
-		for skillIndex=1, numSkills do
-			local skillName, header, isExpanded, skillRank, numTempPoints, skillModifier, skillMaxRank, isAbandonable, stepCost, rankCost, minLevel, skillCostType = GetSkillLineInfo(skillIndex);
-			if skillName then
-				local _profs = profs; -- for debugging
-				if header then
-					lastHeader = skillName;
-				elseif (lastHeader==TRADE_SKILLS or lastHeader==SECONDARY_SKILLS) and profs.name2Id[skillName] then
-					skillRank = skillRank + numTempPoints;
-					local d = {skillName,nil,skillRank,skillMaxRank,0,nil,nil,skillModifier,nil,nil,nil,nil,nil};
-
-					d.spellId = profs.name2Id[skillName];
-					d[icon] = profs.data[d.spellId][spellIcon];
-					d.skillId = profs.spellId2skillId[d.spellId];
-					knownSpellIDs[d.spellId] = true;
-
-					if d.spellId==2575 then
-						d.spellId = 2656; -- replace mining with smelting to open skillframe window
-					elseif d.spellId == 7620 or d.spellId == 2842 or d.spellId == 1804 then
-						 -- hide some progessions in profession menu to prevent error message
-						d[disabled] = true;
-					end
-
-					d.nameEnglish = L[skillName];
-
-					if lastHeader==TRADE_SKILLS then
-						short[n] = {d[skillLine],skillName,d[icon],d[skill],d[maxSkill],d.skillId,d.spellId};
-					end
-
-					tmp[n] = d or false;
-					n = n + 1;
-				end
-			end
-		end
-		if #tmp>0 then
-			professions = tmp;
-		end
-
-		db.hasCooldowns = false;
-
-		local nCooldowns = 0;
-		for i,v in pairs(db.cooldowns) do
-			if (type(v)=="table") and (v.timeLeft) and (v.timeLeft-(time()-v.lastUpdate)<=0) then
-				db.cooldowns[i]=nil;
-			else
-				nCooldowns=nCooldowns+1;
-				db.hasCooldowns=true;
-			end
-		end
-
-		if (short[1]) and (short[1][1]) and (type(cdSpells[short[1][1]])=="table") then
-			checkCooldownSpells(unpack(short[1]));
-		end
-		if (short[2]) and (short[2][1]) and (type(cdSpells[short[2][1]])=="table") then
-			checkCooldownSpells(unpack(short[2]));
-		end
-		updateBroker();
+	elseif (event=="PLAYER_LOGIN" or ns.eventPlayerEnteredWorld) and not triggerLock then
+		triggerLock = true
+		C_Timer.After(0.15, OnEventUpdateMail)
 	end
 end
 

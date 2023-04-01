@@ -12,6 +12,7 @@ local ttName, ttColumns, tt, module, createTooltip  = name.."TT", 3;
 local data,xp2levelup = {};
 local sessionStartLevel = UnitLevel("player");
 local textbarSigns = {"=","-","#","||","/","\\","+",">","•","⁄"};
+local triggerLocked = false;
 
 
 -- register icon names and default files --
@@ -267,37 +268,41 @@ function module.init()
 	end
 end
 
+local function OnEventUpdateXP()
+	local level = UnitLevel("player");
+	if MAX_PLAYER_LEVEL==level then
+		data = {
+			cur=1,
+			max=1,
+			rest=0,
+			logoutTime=0,
+			isResting=false,
+			bonus={}
+		};
+	else
+		data = {
+			cur = UnitXP("player") or 0,
+			max = UnitXPMax("player") or 0,
+			rest = GetXPExhaustion() or 0,
+			logoutTime=0,
+			isResting=false,
+			bonus = {}
+		}
+	end
+	ns.toon.xp = data;
+	updateBroker();
+	triggerLocked = false
+end
+
 function module.onevent(self,event,msg)
 	if event=="BE_UPDATE_CFG" and msg and msg:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 	elseif event=="PLAYER_LOGOUT" then
 		ns.toon.xp.logoutTime = time();
 		ns.toon.xp.isResting = IsResting();
-	elseif ns.eventPlayerEnteredWorld and not (event=="UNIT_INVENTORY_CHANGED" and msg~="player") then
-		local level = UnitLevel("player");
-		if MAX_PLAYER_LEVEL==level then
-			data = {
-				cur=1,
-				max=1,
-				rest=0,
-				logoutTime=0,
-				isResting=false,
-				bonus={}
-			};
-		else
-			data = {
-				cur = UnitXP("player") or 0,
-				max = UnitXPMax("player") or 0,
-				rest = GetXPExhaustion() or 0,
-				logoutTime=0,
-				isResting=false,
-				bonus = {}
-			}
-		end
-
-		ns.toon.xp = data;
-
-		updateBroker();
+	elseif ns.eventPlayerEnteredWorld and not (event=="UNIT_INVENTORY_CHANGED" and msg~="player") and not triggerLocked then
+		triggerLocked = true
+		C_Timer.After(0.314159,OnEventUpdateXP);
 	end
 end
 

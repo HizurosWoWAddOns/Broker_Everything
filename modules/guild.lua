@@ -23,6 +23,7 @@ local applScroll = {step=0,stepWidth=3,numLines=5,lines={},lineCols={},slider=fa
 local membScroll = {step=0,stepWidth=5,numLines=15,lines={},lineCols={},slider=false,regionColor={1,.82,0,.11}};
 local tradeSkillLock,tradeSkillsUpdateDelay,chatNotificationEnabled,frame = false,0;
 local icon_arrow_right = "|T"..ns.icon_arrow_right..":0|t";
+local triggerLockTradeSkill,triggerLockRequestUpdate = false,false
 local CanViewOfficerNote = CanViewOfficerNote or C_GuildInfo.CanViewOfficerNote;
 local BACKDROP_SLIDER_8_8 = BACKDROP_SLIDER_8_8 or { -- classic
 	bgFile = "Interface\\Buttons\\UI-SliderBar-Background",
@@ -46,15 +47,16 @@ local function CanUpdateApplicants()
 	return (IsGuildLeader() or C_GuildInfo.IsGuildOfficer()) and C_ClubFinder.IsEnabled();
 end
 
-local function RequestGuildRosterUpdate(canRequest)
-	if canRequest then
-		if GuildRoster then
-			GuildRoster(); -- for classic // trigger GUILD_ROSTER_UPDATE
-		else
-			C_GuildInfo.GuildRoster(); -- trigger GUILD_ROSTER_UPDATE
-			RequestGuildChallengeInfo(); -- trigger GUILD_CHALLENGE_UPDATED
-		end
+local function RequestGuildRosterUpdate()
+	if triggerLockRequestUpdate then return end
+	triggerLockRequestUpdate = true
+	if GuildRoster then
+		GuildRoster(); -- for classic // trigger GUILD_ROSTER_UPDATE
+	else
+		C_GuildInfo.GuildRoster(); -- trigger GUILD_ROSTER_UPDATE
+		RequestGuildChallengeInfo(); -- trigger GUILD_CHALLENGE_UPDATED
 	end
+	C_Timer.After(0.1,function() triggerLockRequestUpdate = false end)
 end
 
 local function GetApplicants()
@@ -959,14 +961,11 @@ function module.onevent(self,event,msg,...)
 				end
 			end
 		end
-		RequestGuildRosterUpdate(true);
-	elseif event=="GUILD_TRADESKILL_UPDATE" then
-		local t = time();
-		if tradeSkillsUpdateDelay+15>=t then
-			return;  -- do not update trade skills under 15sec again
-		end
-		tradeSkillsUpdateDelay = t;
-		updateTradeSkills();
+		RequestGuildRosterUpdate();
+	elseif event=="GUILD_TRADESKILL_UPDATE" and not triggerLockTradeSkill then
+		-- will be triggered 30 times and more in one second
+		triggerLockTradeSkill = true
+		C_Timer.After(0.15,function() updateTradeSkills(); triggerLockTradeSkill=false end)
 	elseif event=="CHAT_MSG_SYSTEM" and (ns.profile[name].showMembersNotes or ns.profile[name].showMembersOffNotes) then
 		-- update online status; GUILD_ROSTER_UPDATE/GetGuildRosterInfo trigger too slow real updates
 		local state,member = "online",msg:gsub("[\124:%[%]]","#"):match(pattern_FRIEND_ONLINE);
@@ -1021,7 +1020,7 @@ function module.onevent(self,event,msg,...)
 		end
 
 		if event=="GUILD_ROSTER_UPDATE" and msg==true then
-			RequestGuildRosterUpdate(true);
+			RequestGuildRosterUpdate();
 			return;
 		end
 

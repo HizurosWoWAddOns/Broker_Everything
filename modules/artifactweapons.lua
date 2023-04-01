@@ -18,6 +18,7 @@ local artifactKnowledgeMultiplier_cap, artifactLocked = 55;
 local updateItemStateTry,updateItemState=0;
 local artifactKnowledgeMultiplier = {}
 local AP_MATCH_STRINGS,FISHING_AP_MATCH_STRINGS;
+local triggerLocked = false
 ns.artifactpower_items = {};
 ns.artifactrelikts = {};
 
@@ -789,6 +790,12 @@ function module.init()
 	end
 end
 
+local function UpdateNumArtifact()
+	obtained = C_ArtifactUI.GetNumObtainedArtifacts() or 0;
+	updateBroker();
+	triggerLocked = false
+end
+
 function module.onevent(self,event,arg1,...)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
@@ -816,10 +823,10 @@ function module.onevent(self,event,arg1,...)
 			module:onevent("BE_DUMMY_EVENT");
 		end);
 	end
-	if ns.eventPlayerEnteredWorld then
-		--if event=="ARTIFACT_XP_UPDATE" or event=="ARTIFACT_MAX_RANKS_UPDATE" or event=="ARTIFACT_UPDATE" then
-		obtained = C_ArtifactUI.GetNumObtainedArtifacts() or 0;
-		updateBroker();
+	if ns.eventPlayerEnteredWorld and not triggerLocked then
+		triggerLocked = true
+			--if event=="ARTIFACT_XP_UPDATE" or event=="ARTIFACT_MAX_RANKS_UPDATE" or event=="ARTIFACT_UPDATE" then
+		C_Timer.After(.15,UpdateNumArtifact)
 	end
 end
 
