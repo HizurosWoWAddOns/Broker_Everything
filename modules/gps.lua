@@ -76,7 +76,7 @@ I[name3] = {iconfile=134269,coords={0.05,0.95,0.05,0.95}}				--IconName::ZoneTex
 local function setSpell(tb,id)
 	if IsSpellKnown(id) then
 		local sName, _, icon, _, _, _, _, _, _ = GetSpellInfo(id);
-		table.insert(tb,{id=id,icon=icon,name=sName,name2=sName});
+		table.insert(tb,{type="spell",id=id,icon=icon,name=sName,name2=sName});
 	end
 end
 
@@ -100,7 +100,7 @@ local function addToy(id)
 	if not foundToys[id] and PlayerHasToy then
 		local toyName, _, _, _, _, _, _, _, _, toyIcon = GetItemInfo(id);
 		local hasToy = PlayerHasToy(id);
-		local canUse =  C_ToyBox.IsToyUsable(id);
+		local canUse = C_ToyBox.IsToyUsable(id);
 		if _toyUsableBug[id] then
 			-- special problem; Sometimes C_ToyBox.IsToyUsable does not return correct state of some items
 			-- like the Broker Translocation Matrix (190237) on toons without needed reputation to purchase it.
@@ -114,6 +114,7 @@ local function addToy(id)
 		if toyName and hasToy and canUse then
 			local isHS, hsLoc = itemIsHearthstone(id);
 			foundToys[id] = {
+				type="item",
 				id=id,
 				icon=toyIcon,
 				name=toyName,
@@ -132,7 +133,7 @@ end
 
 local function addToyOnCallback(toyID,toyIcon,toyName)
 	local isHS, hsLoc = itemIsHearthstone(toyID);
-	foundToys[toyID] = { id=toyID, icon=toyIcon, name=toyName, name2=isHS and toyName..hsLoc or toyName };
+	foundToys[toyID] = { type="item", id=toyID, icon=toyIcon, name=toyName, name2=isHS and toyName..hsLoc or toyName };
 	foundToysNum = foundToysNum + 1;
 	if _namelessToys[toyID] then
 		_namelessToys[toyID] = nil;
@@ -150,7 +151,7 @@ local function updateItems()
 		if ns.items.byID[id] then
 			for sharedSlot,item in pairs(ns.items.byID[id]) do
 				local isHS,hsLoc = itemIsHearthstone(id);
-				local obj = {id=id};
+				local obj = {type="item", id=id, sharedSlot=sharedSlot};
 				obj.name, _, _, _, _, _, _, _, _, obj.icon = GetItemInfo(item.link);
 				if obj.name then
 					obj.name2 = isHS and obj.name..hsLoc or obj.name;
@@ -290,24 +291,23 @@ local function createTooltip3(_,data)
 end
 
 local transportMenu
-local function updateTPM()
+--[[local function updateTPM()
 	if tt4Params then
 		--C_Timer.After(0.2,function() transportMenu(unpack(tt4Params)) end);
 		transportMenu(unpack(tt4Params));
 	end
-end
+end]]
 
 -- tooltip as transport menu
-local function tpmOnEnter(self,info)
-	local parent, v, t = unpack(info);
-	local data = {
-		attributes={type=t,[t]=v.name},
-		tooltip={parent=tt4,type=t,id=v.id},
+local function tpmOnEnter(self,data)
+	local object = {
+		attributes={type=data.type,[data.type]=data.name},
+		tooltip={parent=tt4,type=data.type,id=data.id},
 		OnEnter=createTooltip3,
 		OnLeave=GameTooltip_Hide,
 		--OnClick=updateTPM
 	};
-	ns.secureButton(self,data);
+	ns.secureButton(self,object);
 end
 
 local function transportMenuOnHide()
@@ -320,25 +320,48 @@ local function transportMenuDoUpdate()
 	end
 end
 
-local function tpmAddObject(tt,p,l,c,v,t,name)
-	if ns.profile[name].shortMenu then
-		if c<ttColumns4 and l~=nil then
-			c=c+1;
-		else
-			c=1;
-			l=tt:AddLine();
+local function tpmAddObject(tt,parent,name,line,column,data)
+	local start, duration, enabled;
+	if data.type=="spell" then
+		start, duration, enabled = GetSpellCooldown(data.id);
+	elseif data.type=="item" then
+		local bagIndex, slotIndex
+		if data.sharedSlot then
+			bagIndex, slotIndex = ns.items.GetBagSlot(data.sharedSlot);
 		end
-		tt:SetCell(l, c, iStr32:format(v.icon), nil, nil, 1);
-		tt:SetCellScript(l,c,"OnEnter",tpmOnEnter, {p,v,t});
-		return l,c;
-	else
-		local info = "";
-		if v.mustBeEquipped==true and v.equipped==false then
-			info = " "..C("orange","(click to equip)");
+		if bagIndex and slotIndex then
+			start, duration, enabled = C_Container.GetContainerItemCooldown(bagIndex, slotIndex)
+		elseif bagIndex==false and slotIndex then
+			start, duration, enabled = GetInventoryItemCooldown("player", slotIndex)
 		end
-		l = tt:AddLine(iStr16:format(v.icon)..(v.name2 or v.name)..info, "1","2","3");
-		tt:SetLineScript(l,"OnEnter",tpmOnEnter,{p,v,t});
+		if not (start and duration and enabled) then
+			start, duration, enabled = GetItemCooldown(data.id)
+		end
+		if start and duration then
+			if enabled==0 then
+				data.cooldown = duration;
+			elseif start>0 and duration>0 then
+				data.cooldown = start + duration - GetTime()
+			end
+		end
 	end
+	if ns.profile[name].shortMenu then
+		if column<ttColumns4 and line~=nil then
+			column = column+1;
+		else
+			column = 1;
+			line = tt:AddLine();
+		end
+		tt:SetCell(line, column, iStr32:format(data.icon), nil, nil, 1);
+		tt:SetCellScript(line,column,"OnEnter",tpmOnEnter,data);
+		return line,column;
+	end
+	local info = "";
+	if data.mustBeEquipped==true and data.equipped==false then
+		info = " "..C("orange","(click to equip)");
+	end
+	line = tt:AddLine(iStr16:format(data.icon)..(data.name2 or data.name)..info, "1","2","3");
+	tt:SetLineScript(line,"OnEnter",tpmOnEnter,data);
 end
 
 function transportMenu(self,button,name)
@@ -357,8 +380,7 @@ function transportMenu(self,button,name)
 		tt4Params = {self,button,name};
 	end
 
-	local pts,ipts,tls,itls = {},{},{},{}
-	local line, column,cellcount = nil,nil,5
+	local line, column, counter = nil,ttColumns4,0
 
 	tt4:Clear()
 
@@ -366,9 +388,6 @@ function transportMenu(self,button,name)
 	if not ns.profile[name].shortMenu then
 		tt4:AddHeader(C("dkyellow","Choose your transport"))
 	end
-
-	local counter = 0
-	local l,c=nil,ttColumns4;
 
 	if #teleports>0 or #portals>0 or #spells>0 then
 		-- class title
@@ -378,22 +397,21 @@ function transportMenu(self,button,name)
 			tt4:AddSeparator()
 		end
 		-- class spells
-		local t = "spell";
 		if ns.player.class=="MAGE" then
-			for i,v in ns.pairsByKeys(teleports) do
-				l,c = tpmAddObject(tt4,self,l,c,v,t,name);
+			for _,data in ns.pairsByKeys(teleports) do
+				line,column = tpmAddObject(tt4,self,name,line,column,data);
 				counter = counter+1;
 			end
 			if not ns.profile[name].shortMenu then
 				tt4:AddSeparator()
 			end
-			for i,v in ns.pairsByKeys(portals) do
-				l,c = tpmAddObject(tt4,self,l,c,v,t,name);
+			for _,data in ns.pairsByKeys(portals) do
+				line,column = tpmAddObject(tt4,self,name,line,column,data);
 				counter = counter+1;
 			end
 		else
-			for i,v in ns.pairsByKeys(spells) do
-				l,c = tpmAddObject(tt4,self,l,c,v,t,name);
+			for _,data in ns.pairsByKeys(spells) do
+				line,column = tpmAddObject(tt4,self,name,line,column,data);
 				counter = counter+1;
 			end
 		end
@@ -408,8 +426,8 @@ function transportMenu(self,button,name)
 			tt4:AddSeparator();
 		end
 		-- items
-		for i,v in ns.pairsByKeys(foundItems) do
-			l,c = tpmAddObject(tt4,self,l,c,v,t,name);
+		for _,data in ns.pairsByKeys(foundItems) do
+			line,column = tpmAddObject(tt4,self,name,line,column,data);
 			counter = counter + 1
 		end
 	end
@@ -422,8 +440,8 @@ function transportMenu(self,button,name)
 			tt4:AddSeparator();
 		end
 		-- toys
-		for id,toy in pairs(foundToys) do
-			l,c = tpmAddObject(tt4,self,l,c,toy,t,name);
+		for _,data in pairs(foundToys) do
+			line,column = tpmAddObject(tt4,self,name,line,column,data);
 			counter = counter + 1;
 		end
 	end
