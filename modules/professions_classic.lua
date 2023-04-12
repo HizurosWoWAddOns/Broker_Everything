@@ -3,7 +3,7 @@
 ----------------------------------
 local addon, ns = ...;
 local C,L,I = ns.LC.color,ns.L,ns.I;
-if ns.client_version>4 then return end
+if ns.IsRetailClient() then return end
 
 
 -- module own local variables and local cached functions --
@@ -11,12 +11,12 @@ if ns.client_version>4 then return end
 local name = "Professions"; -- TRADE_SKILLS L["ModDesc-Professions"]
 local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module = name.."TT",name.."TT2",2,3;
 local nameLocale, icon, skill, maxSkill, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset, fullNameLocale = 1,2,3,4,5,6,7,8,9,10,11; -- GetProfessionInfo
-local nameEnglish,spellId,skillId,disabled = 11, 12, 13, 14; -- custom after GetProfessionInfo
+local spellId,skillId,disabled = 11, 12, 13; -- custom after GetProfessionInfo
 local spellName,spellLocaleName,spellIcon,spellId = 1,2,3,4;
 local professions,db,locked,cdSpells,poisons = {};
+local skillName2Info = {}
 local Faction = UnitFactionGroup("player")=="Alliance" and 1 or 2;
-local profs = {data={},name2Id={},spellId2skillId={},generated=false};
-local ts,skillsMax,triggerLock = {},{},false;
+local skillsMax,triggerLock = {},false;
 local cd_groups = { -- %s cooldown group
 	"Transmutation",	-- L["Transmutation cooldown group"]
 	"Jewels",			-- L["Jewels cooldown group"]
@@ -69,7 +69,7 @@ local function updateBroker()
 	for i=1, 4 do
 		local v = ns.profile[name].inTitle[i];
 		if v and professions[v] and professions[v][icon] and professions[v][skill] and professions[v][maxSkill] then
-			local Skill,modifier,color = professions[v][skill],"","gray2";
+			local modifier,color = "","gray2";
 			if true then
 				if professions[v][skill]~=professions[v][maxSkill] then
 					color = "ffff"..string.format("%02x",255*(professions[v][skill]/professions[v][maxSkill])).."00";
@@ -94,103 +94,6 @@ local function Title_Set(place,obj)
 	updateBroker();
 end
 
-local function GetTimeLeft(a,b)
-	return floor(a-(time()-b));
-end
-
-function profs.build()
-	local t = {
-		[1804] = {"Lockpicking"}, [2018] = {"Blacksmithing",164}, [2108] = {"Leatherworking",165}, [2259] = {"Alchemy",171},     [2550] = {"Cooking"},         [2575] = {"Mining"},
-		[2656] = {"Smelting"},    [2366] = {"Herbalism"},         [3273] = {"First Aid"},          [3908] = {"Tailoring",197},   [4036] = {"Engineering",202}, [7411] = {"Enchanting",333},
-		[7620] = {"Fishing"},     [8613] = {"Skinning"},          [2842] = {"Poisons"},
-	};
-	if ns.client_version>=2 then
-		t[25229] = {"Jewelcrafting",755};
-	end
-	for spellId, spellData in pairs(t) do
-		local spellLocaleName,_,spellIcon = GetSpellInfo(spellId);
-		if (spellLocaleName) then
-			profs.data[spellId]   = {spellData[1],spellLocaleName,spellIcon,spellId};
-			L[spellData[1]] = spellLocaleName; -- localization
-			L[spellLocaleName] = spellData[1]; -- localization backwards
-			profs.name2Id[spellData[1]] = spellId;
-			profs.name2Id[L[spellData[1]]] = spellId;
-			profs.spellId2skillId[spellId] = spellData[2];
-			profs.generated=true;
-		end
-	end
-end
-
-local function CreateTooltip2(self, content)
-	local content,expansion,tsId,recipes,factions = unpack(content);
-	tt2 = ns.acquireTooltip({ttName2, ttColumns2, "LEFT","RIGHT","CENTER"},{true,true},{self, "horizontal", tt});
-
-	if content=="skilled" then
-		--
-	elseif content=="faction-recipes" then
-		tt2:AddLine(C("ltblue",L["Recipes from faction vendors"].." ("..ts[tsId]..")"),C("ltblue",REPUTATION),C("ltblue",L["Buyable"]));
-		tt2:AddSeparator();
-
-		local factionID,factionName,factionId,standingID,_ = 0;
-		for _, recipeData in ipairs(recipes) do
-			local factionId, standingId, itemId, recipeId, recipeStars = unpack(recipeData);
-			if ts[tsId] then
-				local Name = GetSpellInfo(recipeId);
-				if Name then
-					-- faction header
-					if factionID~=recipeData[1] then
-						factionName,_,standingID = GetFactionInfoByID(factionId);
-						tt2:AddLine(C("ltgray",factionName),C("ltgray",_G["FACTION_STANDING_LABEL"..standingID]));
-						factionID = factionId;
-					end
-					-- recipe
-					local color,faction,buyable = "red",_G["FACTION_STANDING_LABEL"..standingId],NO;
-					if ns.toon[name].learnedRecipes[recipeId]==true then
-						color,buyable = "ltgreen",ALREADY_LEARNED;
-					elseif standingID>=standingId then
-						color,buyable = "green",YES;
-					end
-					local stars = "";
-					if recipeStars then
-						stars = " "..("|Tinterface\\common\\reputationstar:12:12:0:0:32:32:2:14:2:14|t"):rep(recipeStars);
-					end
-					tt2:AddLine("    "..C("ltyellow",Name)..stars,C(color,faction),C(color,buyable));
-				end
-			end
-		end
-	end
-
-	ns.roundupTooltip(tt2, true);
-end
-
-local function AddFactionRecipeLines(tt,expansion,recipesByProfession)
-	local legende,faction,trade_skill,factionName,factionId,standingID,_ = false,0,0;
-	tt:AddLine(C("gray",_G["EXPANSION_NAME"..expansion]));
-	local tskills = {};
-	local factions = {};
-	for tsId, recipes in pairs(recipesByProfession)do
-		if ts[tsId] then
-			local count = {0,0,0}; -- <learned>,<buyable>,<total>
-			for _,recipe in ipairs(recipes) do
-				if not factions[recipe[1]] then
-					factions[recipe[1]] = {};
-					factions[recipe[1]].name,_,factions[recipe[1]].standing = GetFactionInfoByID(recipe[1]);
-				end
-				if ns.toon[name].learnedRecipes[recipe[4]] then
-					count[1] = count[1]+1; -- learned
-				end
-				if recipe[2]==factions[recipe[1]].standing then
-					count[2] = count[2]+1; -- buyable
-				end
-				count[3] = count[3]+1; -- total
-			end
-			local l=tt:AddLine("    "..C(count[1]==count[3] and "gray2" or "ltyellow",L[ts[tsId]]));
-			tt:SetCell(l,2,("%d/%d"):format(count[1],count[3]));
-			tt:SetLineScript(l,"OnEnter",CreateTooltip2,{"faction-recipes",expansion,tsId,recipes,factions});
-		end
-	end
-end
-
 local function toggleTradeSkillWindow(self,data)
 	securecall("CastSpellByName",data);
 end
@@ -202,7 +105,6 @@ local function createTooltip(tt)
 
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",TRADE_SKILLS));
-	local legende = false;
 
 	tt:AddLine(C("ltblue",NAME),C("ltblue",SKILL),C("ltblue",ABILITIES));
 	tt:AddSeparator();
@@ -240,16 +142,13 @@ local function createTooltip(tt)
 			if not v[disabled] and ns.profile[name].ttOnClick then
 				tt:SetLineScript(l,"OnMouseUp",toggleTradeSkillWindow,v[nameLocale]);
 			end
-			if v[7] and v.nameEnglish then
-				ts[v[7]] = v.nameEnglish;
-			end
 		end
 	else
 		tt:AddLine(C("gray",L["No professions learned..."]));
 	end
 
 	if (ns.profile[name].showCooldowns) then
-		local lst,lst = {},{};
+		local lst = {};
 		local sep,cd1=false,0;
 		local _, durationHeader = ns.DurationOrExpireDate(0,false,"Duration","Expire date");
 		if (db.hasCooldowns) then
@@ -307,36 +206,12 @@ local function createTooltip(tt)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0)
-		local l,c = tt:AddLine()
+		tt:AddLine()
 		local _,_,mod = ns.DurationOrExpireDate();
 		ns.AddSpannedLine(tt,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]));
 		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);
-end
-
-local cdX = {};
-local function updateTradeSkill(_,recipes)
-
-	if _==true and type(recipes)=="table" then
-		--local info = {};
-		-- recipes buyable from faction vendors
-		local fvr = {};
-		for _,v in ipairs(recipes) do
-			fvr[v[4]] = true;
-		end
-		-- spell cooldowns
-		local recipeIDs = C_TradeSkillUI.GetAllRecipeIDs();
-		local recipeInfo = {};
-		for idx = 1, #recipeIDs do
-			local recipeID = recipeIDs[idx];
-			C_TradeSkillUI.GetRecipeInfo(recipeID, recipeInfo);
-			if fvr[recipeID] and recipeInfo and recipeInfo.learned then
-				ns.toon[name].learnedRecipes[recipeID] = true;
-			end
-			local cooldown, isDayCooldown, charges, maxCharges = C_TradeSkillUI.GetRecipeCooldown(recipeID);
-		end
-	end
 end
 
 local function checkCooldownSpells(_skillLine,_nameLoc,_icon,_skill,_maxSkill,_skillId,_spellId)
@@ -485,20 +360,67 @@ function module.init()
 		[171] = { -- Alchemy
 			-- classic
 			{11479,1,2},{11480,1,2},{17559,1,2},{17560,1,2},{17561,1,2},{17562,1,2},{17563,1,2},{17564,1,2},{17565,1,2},{17566,1,2},
+			-- bc
+			{28566,1,2},{28567,1,2},{28568,1,2},{28569,1,2},{28580,1,2},{28581,1,2},{28582,1,2},{28583,1,2},{28584,1,2},{28585,1,2},
+			-- wotlk
+			{52776,1,2},{52780,1,2},{53771,1,2},{53773,1,2},{53774,1,2},{53775,1,2},{53777,1,2},{53779,1,2},{53781,1,2},{53782,1,2},{53783,1,2},{53784,1,2},{54020,1,2},
+			-- cata
+			{60893,0,1}, -- Alchemy Research // 3 days QuestResetTime?
+			{66658,1,2},{66659,1,2},{66660,1,2},{66662,1,2},{66663,1,2},{66664,1,2},{78866,1,2},{80243,0,2},{80244,1,2},
+			-- wod
+			{114780,1,2},{114783,0,2},{156587,0,2},{168042,0,2},{175880,0,2},
 		},
 		[333] = { -- Enchanting
+			-- cata
+			{116499,0,2},
+			-- wod
+			{169092,0,2},{177043,0,2},{178241,0,2},
+		},
+		[755] = { -- Jewelcrafting
+			-- bc
+			{47280,0,2},
+			-- wotlk
+			{62242,0,2},
+			-- cata
+			{73478,0,2},
+			-- mop
+			{131593,2,2},{131695,2,2},{131690,2,2},{131686,2,2},{131691,2,2},{131688,2,2},{140050,0,2},
+			-- wod
+			{170700,0,2},{170832,0,2},{176087,0,2},
 		},
 		[197] = { -- Tailoring
-			{75141,0,1},{75142,0,1},{75144,0,1},{75145,0,1},{75146,0,1},{125557,0,2},{143011,0,2},
+			-- cata
+			{75141,0,1},{75142,0,1},{75144,0,1},{75145,0,1},{75146,0,1},
+			-- mop
+			{125557,0,2},{143011,0,2},
+			-- wod
+			{168835,0,2},{169669,0,2},{176058,0,2},
+		},
+		[773] = { -- Inscription
+			-- wotlk
+			{61288,0,2},{61177,0,2},{89244,0,2},{86654,0,2},
+			-- mop
+			{112996,0,2},
+			-- wod
+			{169081,0,2},{177045,0,2},{178240,0,2},
 		},
 		[164] = { -- Blacksmithing
+			-- cata
 			{138646,0,2},{143255,0,2},
+			-- wod
+			{171690,0,2},{171718,0,2},{176090,0,2},
 		},
 		[165] = { -- Leatherworking
+			-- cata
 			{140040,3,2},{140041,3,2},{142976,0,2},
+			-- wod
+			{171391,0,2},{171713,0,2},{176089,0,2},
 		},
 		[202] = { -- Engineering
+			-- cata
 			{139176,0,2},
+			-- wod
+			{169080,0,2},{177054,0,2},{178242,0,2},
 		}
 	};
 	skillsMax = {
@@ -518,32 +440,61 @@ function module.init()
 	if (db.cooldown_locks==nil) then
 		db.cooldown_locks = {};
 	end
-	profs.build();
+
+	-- collect localized profession names
+	local t = {
+		-- main
+		2259,171, -- Alchemy
+		2018,164, -- Blacksmithing
+		2108,165, -- Leatherworking
+		3273,129, -- First Aid
+		3908,197, -- Tailoring
+		4036,202, -- Engineering
+		7411,333, -- Enchanting
+		25229,755, -- Jewelcrafting
+
+		-- main/collecting
+		2575,186, -- Mining
+		9134,182, -- Herbalism
+		8613,393, -- Skinning
+
+		-- secondary
+		7620,356, -- Fishing
+		2550,185, -- Cooking
+
+		-- misc
+		--2656,0,   -- Smelting
+		2842,0,   -- Poisons, rouge
+		1804,0,   -- Lockpicking, rouge
+	}
+	for i=1, #t, 2 do
+		local Name,_,Icon = GetSpellInfo(t[i])
+		if Name then
+			skillName2Info[Name] = {spellId=t[i],icon=Icon,skillId=t[i+1]}
+		end
+	end
 end
 
-local function OnEventUpdateMail()
-	if (not profs.generated) then
-		profs.build();
-	end
-
+local function OnEventUpdate()
 	local numSkills,lastHeader = GetNumSkillLines();
 	local SECONDARY_SKILLS = SECONDARY_SKILLS:gsub(HEADER_COLON,"");
 	local tmp,short = {},{};
 	local n = 1;
 	for skillIndex=1, numSkills do
-		local skillName, header, isExpanded, skillRank, numTempPoints, skillModifier, skillMaxRank, isAbandonable, stepCost, rankCost, minLevel, skillCostType = GetSkillLineInfo(skillIndex);
+		local skillName, header, _, skillRank, numTempPoints, skillModifier, skillMaxRank = GetSkillLineInfo(skillIndex);
 		if skillName then
-			local _profs = profs; -- for debugging
 			if header then
 				lastHeader = skillName;
-			elseif (lastHeader==TRADE_SKILLS or lastHeader==SECONDARY_SKILLS) and profs.name2Id[skillName] then
+			elseif (lastHeader==TRADE_SKILLS or lastHeader==SECONDARY_SKILLS) and skillName2Info[skillName] then
 				skillRank = skillRank + numTempPoints;
 				local d = {skillName,nil,skillRank,skillMaxRank,0,nil,nil,skillModifier,nil,nil,nil,nil,nil};
 
-				d.spellId = profs.name2Id[skillName];
-				d[icon] = profs.data[d.spellId][spellIcon];
-				d.skillId = profs.spellId2skillId[d.spellId];
-				knownSpellIDs[d.spellId] = true;
+				local skillInfo = skillName2Info[skillName];
+				if skillInfo then
+					d.spellId = skillInfo.spellId
+					d[icon] = skillInfo.icon
+					d.skillId = skillInfo.skillId
+				end
 
 				if d.spellId==2575 then
 					d.spellId = 2656; -- replace mining with smelting to open skillframe window
@@ -551,8 +502,6 @@ local function OnEventUpdateMail()
 					-- hide some progessions in profession menu to prevent error message
 					d[disabled] = true;
 				end
-
-				d.nameEnglish = L[skillName];
 
 				if lastHeader==TRADE_SKILLS then
 					short[n] = {d[skillLine],skillName,d[icon],d[skill],d[maxSkill],d.skillId,d.spellId};
@@ -569,9 +518,9 @@ local function OnEventUpdateMail()
 
 	db.hasCooldowns = false;
 
-	local nCooldowns = 0;
+	local nCooldowns,t = 0,time();
 	for i,v in pairs(db.cooldowns) do
-		if (type(v)=="table") and (v.timeLeft) and (v.timeLeft-(time()-v.lastUpdate)<=0) then
+		if (type(v)=="table") and (v.timeLeft) and (v.timeLeft-(t-v.lastUpdate)<=0) then
 			db.cooldowns[i]=nil;
 		else
 			nCooldowns=nCooldowns+1;
@@ -611,7 +560,7 @@ function module.onevent(self,event,arg1,...)
 		ns.toon[name].learnedRecipes[arg1] = true;
 	elseif (event=="PLAYER_LOGIN" or ns.eventPlayerEnteredWorld) and not triggerLock then
 		triggerLock = true
-		C_Timer.After(0.15, OnEventUpdateMail)
+		C_Timer.After(0.15, OnEventUpdate)
 	end
 end
 
