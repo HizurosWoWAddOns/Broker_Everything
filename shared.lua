@@ -1184,6 +1184,15 @@ do
 		cbCounter[mode] = cbCounter[mode] + 1;
 		ns.items.Init(mode);
 	end
+
+	function ns.items.GetBagSlot(sharedSlotIndex)
+		if sharedSlotIndex<0 then
+			return false, sharedSlotIndex*100
+		end
+		local bagIndex,slotIndex = floor(sharedSlotIndex);
+		slotIndex = (sharedSlotIndex-bagIndex)*100
+		return bagIndex,slotIndex;
+	end
 end
 
 
