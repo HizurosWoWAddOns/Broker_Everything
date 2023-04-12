@@ -18,7 +18,7 @@ externals:
         tag: latest
 
     libs/LibQTip-1.0:
-        url: https://repos.curseforge.com/wow/libqtip-1-0
+        url: https://github.com/Torhal/LibQTip-1.0.git
         tag: latest
 
     libs/LibSharedMedia-3.0:
