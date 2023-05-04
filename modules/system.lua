@@ -20,9 +20,9 @@ local traffic = {inCur=0,inMin=99999,inMax=0,outCur=0,outMin=99999,outMax=0,inCu
 local fps     = {cur=0,min=-5,max=0,his={},curStr="",minStr="",maxStr=""};
 local memory  = {cur=0,min=0,max=0,his={},list={},curStr="",minStr="",maxStr="",brokerStr="",numAddOns=0,loadedAddOns=0};
 local netStatTimeout,memoryTimeout,enabled,module,isHooked,memUpdateLock=1,2,{};
-local UpdateAddOnMemoryUsage = UpdateAddOnMemoryUsage
-local version, build, buildDate, interfaceVersion, memUpdateLocked = GetBuildInfo();
-local addonpanels,updateAllTicker = {};
+local _UpdateAddOnMemoryUsage = UpdateAddOnMemoryUsage
+local version, build, buildDate, interfaceVersion = GetBuildInfo();
+local addonpanels,updateAllTicker,memUpdateLocked = {};
 local addonpanels_select = {["none"]=L["None (disable right click)"]};
 local clickOptionsRename = {
 	["options"] = "2_optionpanel",
@@ -454,7 +454,7 @@ local function updateAll()
 	-- update memmory usage
 	if not InCombatLockdown() and memoryTimeout~=false and ((enabled.mem_sys and ns.profile[name_sys].updateInterval>0) or (enabled.mem_mod and ns.profile[name_mem].updateInterval>0)) then
 		if memoryTimeout<=0 then
-			UpdateAddOnMemoryUsage();
+			_UpdateAddOnMemoryUsage();
 			C_Timer.After(0.1,updateMemory)
 		else
 			memoryTimeout=memoryTimeout-1;
