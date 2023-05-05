@@ -597,7 +597,7 @@ function module.init()
 	local A = faction=="Alliance";
 	-- "prog:[kw]:%d:%d" k=knowledge, w=workorders, 1. integer = expansion index, 2. integer = progession index from GetProfessions
 	Currencies = {
-		"EXPANSION_NAME9",2118,2003,2122,2045,2134,2011,2105,"prof:k:9:1","prof:k:9:2","prof:w:9:1","prof:w:9:2",
+		"EXPANSION_NAME9",2245,2118,2003,2122,2045,2134,2011,2105,"prof:k:9:1","prof:k:9:2","prof:w:9:1","prof:w:9:2",
 		"DUNGEON_AND_RAID",1166,
 		"PLAYER_V_PLAYER",2123,391,1792,1586,1602,
 		"MISCELLANEOUS",402,81,515,1388,1401,1379,2032,
