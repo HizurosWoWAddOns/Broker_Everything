@@ -293,7 +293,7 @@ end
 
 local function AceOptOnBroker(info,value)
 	local place=tonumber((info[#info]:gsub("currenciesInTitle","")));
-	if value~=nil and place then
+	if type(value)=="string" and place then
 		local _,id = strsplit(":",value);
 		if validateID(id) then
 			ns.profile[name].currenciesInTitle[place] = id;
