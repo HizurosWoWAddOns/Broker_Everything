@@ -1236,7 +1236,7 @@ do
 	local QueueModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip",UIParent,"GameTooltipTemplate");
 	local InstantModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip2",UIParent,"GameTooltipTemplate");
 	local _ITEM_LEVEL = ITEM_LEVEL:gsub("%%d","(%%d*)");
-	local _UPGRADES = ITEM_UPGRADE_TOOLTIP_FORMAT:gsub(CHAT_HEADER_SUFFIX.."%%d/%%d","");
+	local _UPGRADES = "^" .. ITEM_UPGRADE_TOOLTIP_FORMAT:gsub("%%d", "[^%%d]*(%%d+)") -- local _UPGRADES = ITEM_UPGRADE_TOOLTIP_FORMAT:gsub(CHAT_HEADER_SUFFIX.."%%d/%%d","");
 	for f, v in pairs({SetScale=0.0001,SetAlpha=0,Hide=true,SetClampedToScreen=false,SetFrameStrata="BACKGROUND",ClearAllPoints=true})do
 		QueueModeScanTT[f](QueueModeScanTT,v);
 		InstantModeScanTT[f](InstantModeScanTT,v);
@@ -1359,7 +1359,7 @@ do
 				if lvl then
 					data.level=lvl;
 				elseif data.lines[i]:find(_UPGRADES) then
-					_,data.upgrades = strsplit(" ",data.lines[i]);
+					data.upgrades = select(1, data.lines[i]:match(S_UPGRADE_LEVEL)):gsub("^%s+", "") .. select(2, data.lines[i]:match(S_UPGRADE_LEVEL)) .. "/" .. select(4, data.lines[i]:match(S_UPGRADE_LEVEL)) --_,data.upgrades = strsplit(" ",data.lines[i]);
 				elseif i>4 and data.setname==nil and data.lines[i]:find("%(%d*/%d*%)$") then
 					data.setname = strsplit("(",data.lines[i]);
 				end
