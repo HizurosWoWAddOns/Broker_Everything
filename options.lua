@@ -637,3 +637,13 @@ function ns.ToggleBlizzOptionPanel()
 	InterfaceOptionsFrame_OpenToCategory(addon);
 	InterfaceOptionsFrame_OpenToCategory(addon);
 end
+
+if AddonCompartmentFrame then
+	AddonCompartmentFrame:RegisterAddon({
+		icon = 892831,
+		text = addon,
+		notCheckable = true,
+		func = ns.ToggleBlizzOptionPanel
+	 })
+end
+
