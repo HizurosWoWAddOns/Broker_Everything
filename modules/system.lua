@@ -20,9 +20,9 @@ local traffic = {inCur=0,inMin=99999,inMax=0,outCur=0,outMin=99999,outMax=0,inCu
 local fps     = {cur=0,min=-5,max=0,his={},curStr="",minStr="",maxStr=""};
 local memory  = {cur=0,min=0,max=0,his={},list={},curStr="",minStr="",maxStr="",brokerStr="",numAddOns=0,loadedAddOns=0};
 local netStatTimeout,memoryTimeout,enabled,module,isHooked,memUpdateLock=1,2,{};
-local _UpdateAddOnMemoryUsage = UpdateAddOnMemoryUsage
 local version, build, buildDate, interfaceVersion = GetBuildInfo();
 local addonpanels,updateAllTicker,memUpdateLocked = {};
+local triggerUpdateToken = {};
 local addonpanels_select = {["none"]=L["None (disable right click)"]};
 local clickOptionsRename = {
 	["options"] = "2_optionpanel",
@@ -219,7 +219,7 @@ local function resetMemUpdateLock()
 	memUpdateLocked = false;
 end
 
-local function updateMemory()
+local function updateMemory(updateToken)
 	-- against too often triggered UpdateAddOnMemoryUsage.
 	if memUpdateLocked then return end
 	memUpdateLocked = true;
@@ -227,6 +227,9 @@ local function updateMemory()
 	--
 	setMemoryTimeout();
 	if not (enabled.sys_mod or enabled.mem_mod) then return end
+	if updateToken==triggerUpdateToken then
+		UpdateAddOnMemoryUsage();
+	end
 	local num=GetNumAddOns();
 	local lst,grps,sum,numLoadedAddOns = {},{},0,0;
 	memory.numAddOns=0;
@@ -454,8 +457,13 @@ local function updateAll()
 	-- update memmory usage
 	if not InCombatLockdown() and memoryTimeout~=false and ((enabled.mem_sys and ns.profile[name_sys].updateInterval>0) or (enabled.mem_mod and ns.profile[name_mem].updateInterval>0)) then
 		if memoryTimeout<=0 then
-			_UpdateAddOnMemoryUsage();
-			C_Timer.After(0.1,updateMemory)
+			-- for debugging
+			-- try to get the list of addons in lua errors like 'script ran too long' :-/
+			local activeAddOns,numActiveAddOns,numAddOns = {},0,GetNumAddOns();
+			for i=1, numAddOns do local n=GetAddOnInfo(i); if IsAddOnLoaded(n) then tinsert(activeAddOns,n) end end
+			numActiveAddOns,activeAddOns = #activeAddOns,table.concat(activeAddOns,",");
+
+			updateMemory(triggerUpdateToken);
 		else
 			memoryTimeout=memoryTimeout-1;
 		end
