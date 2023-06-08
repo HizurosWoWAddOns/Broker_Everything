@@ -661,6 +661,15 @@ do
 	end
 end
 
+function ns.table2string(tbl)
+	local tmp={};
+	for k,v in ns.pairsByKeys(tbl) do
+		tinsert(tmp,"["..k.."]="..tostring(v));
+	end
+	return "{"..table.concat(tmp,", ").."}";
+end
+
+
 ---@param modName string module name
 ---@param opts table
 ---@return function iterationFunction
