@@ -1030,59 +1030,62 @@ do
 	end
 
 	local function scanBags()
-		for _,bagIndex in ipairs(updateBags) do
-			local numBagSlots = (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bagIndex);
-			local numFreeSlots = (C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(bagIndex);
-			local IndexTabardType =  INVTYPE_TABARD or Enum.InventoryType.IndexTabardType;
-			local IndexBodyType =  INVTYPE_BODY or Enum.InventoryType.IndexBodyType;
-			if numBagSlots~=numFreeSlots then -- do not scan empty bag ;-)
-				--[[
-				local isSoul = false; -- currently could not test. have no warlock on classic realms.
-				if ns.client_version<2 then
-					local _, _, _, _, _, itemClassID, itemSubClassID = GetItemInfoInstant(GetInventoryItemLink("player", bagIndex+19));
-					if itemSubClassID==1 then -- soul pouch
-						isSoul = true;
-					end
-				end
-				--]]
-				for slotIndex=1, numBagSlots do
-					local sharedSlotIndex = bagIndex+(slotIndex/100);
-					local itemInfo, count, _, _, _, _, link, _, _, id = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(bagIndex,slotIndex);
-					if not count and type(itemInfo)=="table" then
-						count = itemInfo.stackCount;
-						link = itemInfo.hyperlink;
-					end
-					if link and not id then
-						id = tonumber((link:match("item:(%d+)"))) or -1;
-					end
-					if link and id then
-						local _, _, _, itemEquipLocation, _, itemClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
-						local durability, durabilityMax = (C_Container and C_Container.GetContainerItemDurability or GetContainerItemDurability)(bagIndex,slotIndex)
-						local isEquipment = false;
-						if not (itemEquipLocation=="" or itemEquipLocation==IndexTabardType or itemEquipLocation==IndexBodyType) then
-							isEquipment = true; -- ignore shirts and tabards
+		for bagIndex,bool in pairs(updateBags) do
+			bagIndex=tonumber(bagIndex)
+			if bagIndex and bool==true then
+				local numBagSlots = (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bagIndex);
+				local numFreeSlots = (C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(bagIndex);
+				local IndexTabardType =  INVTYPE_TABARD or Enum.InventoryType.IndexTabardType;
+				local IndexBodyType =  INVTYPE_BODY or Enum.InventoryType.IndexBodyType;
+				if numBagSlots~=numFreeSlots then -- do not scan empty bag ;-)
+					--[[
+					local isSoul = false; -- currently could not test. have no warlock on classic realms.
+					if ns.client_version<2 then
+						local _, _, _, _, _, itemClassID, itemSubClassID = GetItemInfoInstant(GetInventoryItemLink("player", bagIndex+19));
+						if itemSubClassID==1 then -- soul pouch
+							isSoul = true;
 						end
-						addItem({
-							bag=bagIndex,
-							slot=slotIndex,
-							count=count,
-							sharedSlot=sharedSlotIndex,
-							id=id,
-							link=link,
-							diff=table.concat({link,count,durability, durabilityMax},"^"),
-							equip=isEquipment,
-							ammo=(itemClassID==LE_ITEM_CLASS_PROJECTILE)
-						},"bags");
-					elseif itemsBySlot[sharedSlotIndex] then
-						removeItem(sharedSlotIndex,"bags");
 					end
-				end
-			else
-				-- bag is empty but previosly it had items
-				for slotIndex=1, numBagSlots do
-					local sharedSlotIndex = bagIndex+(slotIndex/100);
-					if itemsBySlot[sharedSlotIndex] then
-						removeItem(sharedSlotIndex,"bags");
+					--]]
+					for slotIndex=1, numBagSlots do
+						local sharedSlotIndex = bagIndex+(slotIndex/100);
+						local itemInfo, count, _, _, _, _, link, _, _, id = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(bagIndex,slotIndex);
+						if not count and type(itemInfo)=="table" then
+							count = itemInfo.stackCount;
+							link = itemInfo.hyperlink;
+						end
+						if link and not id then
+							id = tonumber((link:match("item:(%d+)"))) or -1;
+						end
+						if link and id then
+							local _, _, _, itemEquipLocation, _, itemClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
+							local durability, durabilityMax = (C_Container and C_Container.GetContainerItemDurability or GetContainerItemDurability)(bagIndex,slotIndex)
+							local isEquipment = false;
+							if not (itemEquipLocation=="" or itemEquipLocation==IndexTabardType or itemEquipLocation==IndexBodyType) then
+								isEquipment = true; -- ignore shirts and tabards
+							end
+							addItem({
+								bag=bagIndex,
+								slot=slotIndex,
+								count=count,
+								sharedSlot=sharedSlotIndex,
+								id=id,
+								link=link,
+								diff=table.concat({link,count,durability, durabilityMax},"^"),
+								equip=isEquipment,
+								ammo=(itemClassID==LE_ITEM_CLASS_PROJECTILE)
+							},"bags");
+						elseif itemsBySlot[sharedSlotIndex] then
+							removeItem(sharedSlotIndex,"bags");
+						end
+					end
+				else
+					-- bag is empty but previosly it had items
+					for slotIndex=1, numBagSlots do
+						local sharedSlotIndex = bagIndex+(slotIndex/100);
+						if itemsBySlot[sharedSlotIndex] then
+							removeItem(sharedSlotIndex,"bags");
+						end
 					end
 				end
 			end
@@ -1101,11 +1104,11 @@ do
 
 	local function OnEvent(self,event,...)
 		if event=="BAG_UPDATE" and tonumber(...) and ... <= NUM_BAG_SLOTS then
-			tinsert(updateBags,...);
+			updateBags[tostring(...)] = true
 		elseif event=="BAG_UPDATE_DELAYED" and #updateBags>0 then
 			if firstBagUpdateDelay then
 				firstBagUpdateDelay = false;
-				tinsert(updateBags,1,0); -- BAG_UPDATE does not fire argument1 = 0 (for backpack) on login
+				updateBags["0"] = true; -- BAG_UPDATE does not fire argument1 = 0 (for backpack) on login
 			end
 			scanBags();
 		elseif event=="GET_ITEM_INFO_RECEIVED" and (...)~=nil then
@@ -1145,7 +1148,7 @@ do
 
 		if ns.eventPlayerEnteredWorld then
 			-- module registered after PLAYER_ENTERING_WORLD
-			updateBags = {0,1,2,3,4};
+			updateBags = {["0"]=true,["1"]=true,["2"]=true,["3"]=true,["4"]=true};
 			OnEvent(eventFrame,"BAG_UPDATE_DELAYED");
 		end
 	end
