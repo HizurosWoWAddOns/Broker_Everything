@@ -567,12 +567,14 @@ function ttScrollList(delta,tbl) -- executed by createTooltip and ttWheelHook
 	end
 
 	-- update scroll region
-	scrollInfo.region:SetParent(tt);
-	scrollInfo.region:SetPoint("TOPLEFT",tt.lines[ scrollInfo.lines[1]-2 ],-4,2);
-	scrollInfo.region:SetPoint("BOTTOMRIGHT",tt.lines[ scrollInfo.lines[#scrollInfo.lines] ],4,-2);
-	scrollInfo.region:SetFrameLevel(tt:GetFrameLevel()+1);
-	scrollInfo.region:Show();
-	scrollInfo.region.hidden = nil;
+	if scrollInfo.lines and #scrollInfo.lines>0 then
+		scrollInfo.region:SetParent(tt);
+		scrollInfo.region:SetPoint("TOPLEFT",tt.lines[ scrollInfo.lines[1]-2 ],-4,2);
+		scrollInfo.region:SetPoint("BOTTOMRIGHT",tt.lines[ scrollInfo.lines[#scrollInfo.lines] ],4,-2);
+		scrollInfo.region:SetFrameLevel(tt:GetFrameLevel()+1);
+		scrollInfo.region:Show();
+		scrollInfo.region.hidden = nil;
+	end
 
 	if new and maxSteps>1 then
 		-- update slider
