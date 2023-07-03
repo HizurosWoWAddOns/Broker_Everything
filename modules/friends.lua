@@ -23,6 +23,7 @@ local gameIconPos = setmetatable({},{ __index = function(t,k) return format("%s:
 local BNET_CLIENT_WOW = BNET_CLIENT_WOW or  "WoW";
 local BNET_CLIENT_SC2 = BNET_CLIENT_SC2 or  "S2";
 local BNET_CLIENT_D3 = BNET_CLIENT_D3 or  "D3";
+local BNET_CLIENT_D4 = BNET_CLIENT_D4 or  "Fen";
 local BNET_CLIENT_WTCG = BNET_CLIENT_WTCG or  "WTCG";
 local BNET_CLIENT_APP = BNET_CLIENT_APP or  "App";
 local BNET_CLIENT_HEROES = BNET_CLIENT_HEROES or  "Hero";
@@ -49,6 +50,9 @@ local function _BNet_GetClientTexture(client)
       return "Interface\\FriendsFrame\\Battlenet-Sc2icon";
    elseif ( client == BNET_CLIENT_D3 ) then
       return "Interface\\FriendsFrame\\Battlenet-D3icon";
+   elseif ( client == BNET_CLIENT_D4 ) then
+      --return "Interface\\FriendsFrame\\Battlenet-D4icon"; -- missing icon in client data
+      return "Interface\\AddOns\\Broker_Everything\\media\\Battlenet-D4icon.tga";
    elseif ( client == BNET_CLIENT_WTCG ) then
       return "Interface\\FriendsFrame\\Battlenet-WTCGicon";
    elseif ( client == BNET_CLIENT_HEROES ) then
@@ -94,12 +98,14 @@ local gameShortcut = setmetatable({
 	[BNET_CLIENT_HEROES] = "HotS",
 	[BNET_CLIENT_DI] = "ANBS",
 	["BSAp"] = "Mobile",
+	["Fen"] = "D4",
 },{ __index = function(t, k) return k end });
 
 local gameNames = setmetatable({
 	[BNET_CLIENT_APP]="Desktop App",
 	["BSAp"] = "Mobile App",
 	[BNET_CLIENT_D3]="Diablo 3",
+	[BNET_CLIENT_D4]="Diablo 4",
 	[BNET_CLIENT_DESTINY2]="Destiny 2",
 	[BNET_CLIENT_HEROES]="Heroes of the Storm",
 	[BNET_CLIENT_OVERWATCH]="Overwatch",
