@@ -12,6 +12,7 @@ local ttName,ttColumns, tt, module = name.."TT", 2;
 local countries,month_short = {},{};
 local played,initialized,clock_diff = false,false;
 local _dateFormatValues = nil
+local IsPlayedTimeRequested = false
 
 
 -- register icon names and default files --
@@ -114,7 +115,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	events = {"TIME_PLAYED_MSG"},
+	events = {},
 	onupdate_interval = 1,
 	timeout = 30,
 	config_defaults = {
@@ -171,7 +172,6 @@ function module.switchHoursMode()
 	ns.profile[name].format24 = not ns.profile[name].format24;
 end
 
-
 function module.options()
 	return {
 		broker = {
@@ -195,8 +195,11 @@ end
 function module.onevent(self,event,...)
 	if event=="BE_UPDATE_CFG" then
 		ns.ClickOpts.update(name);
-	elseif event=="TIME_PLAYED_MSG" then
-		played = true
+	end
+	if not IsPlayedTimeRequested then
+		ns:debug(name,"showPlayed")
+		ns.LT.RequestPlayedTime()
+		IsPlayedTimeRequested = true
 	end
 end
 
@@ -209,13 +212,7 @@ end
 
 -- function module.optionspanel(panel) end
 -- function module.onmousewheel(self,direction) end
-
-function module.ontimeout(self)
-	if played==false then
-		--RequestTimePlayed()
-	end
-end
-
+-- function module.ontimeout(self)end
 -- function module.ontooltip(tt) end
 
 function module.onenter(self)
