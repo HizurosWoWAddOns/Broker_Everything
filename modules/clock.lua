@@ -9,8 +9,6 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Clock"; -- TIMEMANAGER_TITLE L["ModDesc-Clock"]
 local ttName,ttColumns, tt, module = name.."TT", 2;
-local countries,month_short = {},{};
-local played,initialized,clock_diff = false,false;
 local _dateFormatValues = nil
 local IsPlayedTimeRequested = false
 
@@ -23,7 +21,6 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\clock"}; --IconName:
 -- some local functions --
 --------------------------
 local function date(dateStr)
-	local m = tonumber(_G.date("%m"));
 	local M = _G["MONTH_".._G.date("%B"):upper()];
 	if dateStr:find("_mm_") then
 		dateStr = gsub(dateStr,"_mm_",M);
@@ -38,7 +35,6 @@ local function createTooltip(tt,update)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local h24 = ns.profile[name].format24;
 	local dSec = ns.profile[name].showSeconds;
-	local pT,pL,pS = ns.LT.GetPlayedTime();
 
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",TIMEMANAGER_TITLE));
@@ -49,19 +45,23 @@ local function createTooltip(tt,update)
 	end
 	tt:AddLine(C("ltyellow",L["TimeLocal"]),	C("white",ns.LT.GetTimeString("LocalTime",h24,dSec)));
 	tt:AddLine(C("ltyellow",L["TimeRealm"]),	C("white",ns.LT.GetTimeString("GameTime",h24,dSec)));
-	tt:AddLine(C("ltyellow",L["TimeUTC"]),		C("white",ns.LT.GetTimeString("UTCTime",h24,dSec)));
-
+	if ns.profile[name].showUTC then
+		tt:AddLine(C("ltyellow",L["TimeUTC"]),		C("white",ns.LT.GetTimeString("UTCTime",h24,dSec)));
+	end
 	--tt:AddSeparator(3,0,0,0,0);
 	--tt:AddLine(C("ltblue",L["Additional time zones"]));
 	--tt:AddSeparator();
 	--tt:AddLine(C("gray","coming soon"));
 
-	tt:AddSeparator(3,0,0,0,0);
-	tt:AddLine(C("ltblue",L["Playtime"]));
-	tt:AddSeparator();
-	tt:AddLine(C("ltyellow",TOTAL),C(pT and "white" or "gray",pT and SecondsToTime(pT) or "requested..."));
-	tt:AddLine(C("ltyellow",LEVEL),C(pL and "white" or "gray",pL and SecondsToTime(pL) or "requested..."));
-	tt:AddLine(C("ltyellow",L["Session"]),C("white",SecondsToTime(pS)));
+	if ns.profile[name].showPlayed then
+		local pT,pL,pS = ns.LT.GetPlayedTime();
+		tt:AddSeparator(3,0,0,0,0);
+		tt:AddLine(C("ltblue",L["Playtime"]));
+		tt:AddSeparator();
+		tt:AddLine(C("ltyellow",TOTAL),C(pT and "white" or "gray",pT and SecondsToTime(pT) or "requested..."));
+		tt:AddLine(C("ltyellow",LEVEL),C(pL and "white" or "gray",pL and SecondsToTime(pL) or "requested..."));
+		tt:AddLine(C("ltyellow",L["Session"]),C("white",SecondsToTime(pS)));
+	end
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(3,0,0,0,0)
@@ -126,6 +126,8 @@ module = {
 		timeRealm = false,
 		showSeconds = false,
 		showDate = true,
+		showPlayed = true,
+		showUTC = true,
 		dateFormat = "%Y-%m-%d"
 	},
 	clickOptionsRename = {
@@ -181,6 +183,8 @@ function module.options()
 		},
 		tooltip = {
 			showDate={ type="toggle", order=1, name=L["Show date"], desc=L["Display date in tooltip"] },
+			showUTC={ type="toggle", order=2, name=L["ClockUTC"], desc=L["ClockUTCDesc"]},
+			showPlayed={ type="toggle", order=3, name=L["ClockPlayedTime"], desc=L["ClockPlayedTimeDesc"]},
 		},
 		misc = {
 			format24={ type="toggle", order=1, name=TIMEMANAGER_24HOURMODE, desc=L["Switch between time format 24 hours and 12 hours with AM/PM"] },
@@ -196,7 +200,7 @@ function module.onevent(self,event,...)
 	if event=="BE_UPDATE_CFG" then
 		ns.ClickOpts.update(name);
 	end
-	if not IsPlayedTimeRequested then
+	if ns.profile[name].showPlayed and not IsPlayedTimeRequested then
 		ns:debug(name,"showPlayed")
 		ns.LT.RequestPlayedTime()
 		IsPlayedTimeRequested = true
