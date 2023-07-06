@@ -937,7 +937,7 @@ do
 
 	local function addItem(info,scanner)
 		if itemsBySlot[info.sharedSlot] and itemsBySlot[info.sharedSlot].diff==info.diff then
-			return false; -- item has not changed; must be added again.
+			return false; -- item has not changed; must not be added again.
 		end
 		if itemsByID[info.id]==nil then
 			itemsByID[info.id] = {};
@@ -1094,7 +1094,7 @@ do
 		callbackHandler();
 	end
 
-	local firstBagUpdateDelay,inventoryEvents = true,{
+	local inventoryEvents = {
 		PLAYER_LOGIN = true,
 		PLAYER_EQUIPMENT_CHANGED = true,
 		UPDATE_INVENTORY_DURABILITY = true,
@@ -1103,13 +1103,12 @@ do
 	};
 
 	local function OnEvent(self,event,...)
-		if event=="BAG_UPDATE" and tonumber(...) and ... <= NUM_BAG_SLOTS then
+		if event=="BAG_UPDATE" and tonumber(...) and (...)<=NUM_BAG_SLOTS then
 			updateBags[tostring(...)] = true
-		elseif event=="BAG_UPDATE_DELAYED" and #updateBags>0 then
-			if firstBagUpdateDelay then
-				firstBagUpdateDelay = false;
-				updateBags["0"] = true; -- BAG_UPDATE does not fire argument1 = 0 (for backpack) on login
-			end
+		elseif event=="BAG_UPDATE_DELAYED" and table.getn(updateBags)>0 then
+			scanBags();
+		elseif event=="PLAYER_LOGIN" then
+			updateBags["0"] = true; -- BAG_UPDATE fired with 1-12 as bag index (argument) before PLAYER_LOGIN; bag index 0 is missing
 			scanBags();
 		elseif event=="GET_ITEM_INFO_RECEIVED" and (...)~=nil then
 			local id = ...;
@@ -1158,6 +1157,7 @@ do
 		IsEnabledInv = true;
 
 		-- inventory events
+		eventFrame:RegisterEvent("PLAYER_LOGIN")
 		eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
 		eventFrame:RegisterEvent("UPDATE_INVENTORY_DURABILITY");
 		eventFrame:RegisterEvent("GET_ITEM_INFO_RECEIVED");
