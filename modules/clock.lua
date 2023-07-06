@@ -201,7 +201,6 @@ function module.onevent(self,event,...)
 		ns.ClickOpts.update(name);
 	end
 	if ns.profile[name].showPlayed and not IsPlayedTimeRequested then
-		ns:debug(name,"showPlayed")
 		ns.LT.RequestPlayedTime()
 		IsPlayedTimeRequested = true
 	end

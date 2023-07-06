@@ -1771,22 +1771,30 @@ do
 	---@param key string
 	---@param value table
 	---@param Parent? table
-	function EasyMenu:AddConfigEntry(modName,key,value,Parent)
+	function EasyMenu:AddConfigEntry(modName,info,key,value,Parent)
+		local info = CopyTable(info)
+		local value_name = value.name
+		if value_name and type(value_name)=="function" then
+			value_name = value_name({key});
+		end
+
 		if value.type=="separator" then
 			self:AddEntry({ separator=true },Parent);
 		elseif value.type=="header" then
 			self:AddEntry({ separator=true },Parent);
-			self:AddEntry({ label=value.name, title=true },Parent);
+			self:AddEntry({ label=value_name, title=true },Parent);
+		elseif value.type=="toggle" and not value_name then
+			ns:debug("<EasyMenu>","<AddConfigEntry>","[missing name]",key);
 		elseif value.type=="toggle" then
 			local tooltip = nil;
 			if value.desc then
-				tooltip = {value.name, value.desc};
+				tooltip = {value_name, value.desc};
 				if type(tooltip[2])=="function" then
 					tooltip[2] = tooltip[2]();
 				end
 			end
 			self:AddEntry({
-				label = value.name:gsub("|n"," "),
+				label = value_name:gsub("|n"," "),
 				checked = function()
 					if key=="minimap" then
 						return not ns.profile[modName][key].hide;
@@ -1804,12 +1812,12 @@ do
 				tooltip = tooltip,
 			},Parent);
 		elseif value.type=="select" then
-			local tooltip = {value.name, value.desc};
+			local tooltip = {value_name, value.desc};
 			if type(tooltip[2])=="function" then
 				tooltip[2] = tooltip[2]();
 			end
 			local p = self:AddEntry({
-				label = value.name,
+				label = value_name,
 				tooltip = tooltip,
 				arrow = true
 			},Parent);
@@ -1837,12 +1845,13 @@ do
 				tooltip[2] = tooltip[2]();
 			end
 			local parent = self:AddEntry({
-				label = value.name,
+				label = value_name,
 				tooltip = tooltip,
 				arrow = true,
 			},Parent);
 			for _key, _value in pairsByAceOptions(value.args) do
-				self:AddConfigEntry(modName,_key,_value,parent);
+				tinsert(info,_key)
+				self:AddConfigEntry(modName,info,_key,_value,parent);
 			end
 		elseif value.type=="range" then
 			-- coming soon
@@ -1885,19 +1894,20 @@ do
 
 					-- sort group table
 					for key, value in pairsByAceOptions(optGrp.args)do
+						local info = {key}
 						local hide = (value.hidden==true) or (value.disabled==true) or false;
 						if not hide and type(value.hidden)=="function" then
-							hide = value.hidden({key},"EasyMenu");
+							hide = value.hidden(info,"EasyMenu");
 							if hide==true or hide=="EasyMenu" then
 								hide = true;
 							end
 						end
 						if not hide and type(value.disabled)=="function" then
-							hide = value.disabled({key});
+							hide = value.disabled(info);
 						end
 
 						if not hide then
-							self:AddConfigEntry(modName,key,value);
+							self:AddConfigEntry(modName,info,key,value);
 						end
 					end
 
