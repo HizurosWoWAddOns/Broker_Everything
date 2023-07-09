@@ -320,7 +320,7 @@ local function addEntries(tt,name,entriesList,statusIndex,statusLabel,Table)
 				combatSpells = C_Garrison.GetFollowerAutoCombatSpells(entryInfo.followerID,entryInfo.level);
 			end
 			if combatSpells then
-				for _,cs in ipairs()do
+				for _,cs in ipairs(combatSpells) do
 					if cs.icon then
 						tinsert(combatSpellIcons,"|T"..cs.icon..":14:14:0:0:64:64:4:56:4:56|t");
 					end
