@@ -108,6 +108,7 @@ local function chkCooldownSpells(skillId,icon)
 	end
 end
 
+local UpdateFactionRecipesHook
 do
 	local alreadyShown,ticker = {}
 	local function UpdateFactionRecipes(self)
@@ -136,7 +137,15 @@ do
 		end
 		alreadyShown[skillLine] = true;
 	end
-	ProfessionsFrame:HookScript("OnShow",function() ticker = C_Timer.NewTicker(.2,UpdateFactionRecipes); end);
+	function UpdateFactionRecipesHook()
+		ProfessionsFrame:HookScript("OnShow",function() ticker = C_Timer.NewTicker(.2,UpdateFactionRecipes); end);
+	end
+	if ProfessionsFrame then
+		-- client 10.1; ProfessionsFrame loaded early
+		-- client 10.1.5; AddOn Blizzard_Professions loading on demand
+		UpdateFactionRecipesHook()
+		UpdateFactionRecipesHook=nil;
+	end
 end
 
 local function updateTradeSkills()
@@ -994,6 +1003,14 @@ function module.onevent(self,event,arg1,...)
 		if toonDB.cooldown_locks==nil then
 			toonDB.cooldown_locks = {};
 		end
+	elseif event=="ADDON_LOADED" then
+		if arg1=="Blizzard_Professions" then
+			if UpdateFactionRecipesHook then
+				UpdateFactionRecipesHook();
+				UpdateFactionRecipesHook=nil;
+			end
+			self:UnregisterEvent("ADDON_LOADED")
+		end
 	elseif event=="NEW_RECIPE_LEARNED" then
 		local id = tonumber(arg1)
 		if id  and toonDB.unlearnedRecipes[id] then
@@ -1018,6 +1035,10 @@ function module.onevent(self,event,arg1,...)
 		updateTradeSkills();
 		updateBroker();
 	end
+end
+
+if not ProfessionsFrame then
+	tinsert(module.events,"ADDON_LOADED");
 end
 
 -- function module.optionspanel(panel) end
