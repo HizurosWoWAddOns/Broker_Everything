@@ -202,7 +202,8 @@ local function ttAddLine(obj)
 
 	if (type(obj[QuestId])=="number") and (IsInGroup()) then
 		for i=1, GetNumSubgroupMembers() do -- GetNumSubgroupMembers
-			if C_QuestLog.IsUnitOnQuest("party"..i,obj[QuestId]) then
+			if (IsUnitOnQuest and IsUnitOnQuest(obj[Index],"party"..i)) -- classic
+			or (C_QuestLog and C_QuestLog.IsUnitOnQuest and C_QuestLog.IsUnitOnQuest("party"..i,obj[QuestId])) then -- retail
 				tinsert(GroupQuest,C(select(2,UnitClass("party"..i)),UnitName("party"..i)));
 			end
 		end
