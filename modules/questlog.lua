@@ -12,8 +12,20 @@ local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module,createTooltip = name.."T
 local quests,numQuestStatus,sum,url,tt2created,requested
 local urls = {
 	WoWHead = function(id)
-		local lang = {deDE="de",esES="es",esMX="es",frFR="fr",ptBR="pt"}
-		return ("http://%s.wowhead.com/quest=%d"):format(lang[GetLocale()] or "www",id)
+		local url,lc,bv = {"https://www.wowhead.com"},(GetLocale()),GetBuildInfo()
+		local lang = {deDE="de",esES="es",esMX="es",frFR="fr",ptBR="pt",ptPT="pt",itIT="it",ruRU="ru",koKR="ko",zhCN="cn",zhTW="cn"};
+		if bv:match("^1") then
+			tinsert(url,"classic")
+		elseif bv:match("^3") then
+			tinsert(url,"wotlk");
+		--elseif bv:match("^4") then
+		--	tinsert(tar,"cata")
+		end
+		if lc and lang[lc] then
+			tinsert(url,lang[lc]);
+		end
+		tinsert(url,"quest="..id);
+		return table.concat(url,"/");
 	end,
 	Buffed = function(id)
 		local url = {deDE="http://wowdata.buffed.de/?q=%d",ruRU="http://wowdata.buffed.ru/?q=%d"}
