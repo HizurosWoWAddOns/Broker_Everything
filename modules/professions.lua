@@ -1009,7 +1009,9 @@ function module.onevent(self,event,arg1,...)
 				UpdateFactionRecipesHook();
 				UpdateFactionRecipesHook=nil;
 			end
-			self:UnregisterEvent("ADDON_LOADED")
+			--self:UnregisterEvent("ADDON_LOADED")
+			-- Should not cause errors in another addons but TSM has a problem.
+			-- The event frames should not be then same!?!
 		end
 	elseif event=="NEW_RECIPE_LEARNED" then
 		local id = tonumber(arg1)
