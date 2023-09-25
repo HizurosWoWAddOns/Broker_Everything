@@ -217,28 +217,39 @@ function createTooltip(tt,update)
 			local l=tt:AddLine(C("ltyellow",unlockLevel));
 			for col=1, NUM_TALENT_COLUMNS do
 				local tmp = {GetTalentInfo(row,col,talentGroup)};
-				if ns.profile[name].showTalentsShort then
-					if tmp[Available] then
-						isUnlocked = true;
+				if #tmp>0 then
+					if not tmp[Icon] then
+						tmp[Icon] = ns.icon_fallback;
 					end
-					if tmp[Selected]==true then
-						selected = tmp;
-						break;
+					if not tmp[Name] then
+						tmp[Name] = UNKNOWN
+					end
+					ns:debug("GetTalentInfo",unpack(tmp));
+					if ns.profile[name].showTalentsShort then
+						if tmp[Available] then
+							isUnlocked = true;
+						end
+						if tmp[Selected]==true then
+							selected = tmp;
+							break;
+						end
+					else
+						local c,color = col+1,(tmp[Selected] and "ltyellow") or (level>=unlockLevel and "gray") or "dkred";
+						tt:SetCell(l,c,str:format(tmp[Icon],C(color,tmp[Name])),nil,"LEFT");
+						local info = {
+							type=level>=unlockLevel and "talent" or "spell",
+							spellId=tmp[spellId],
+							args={tmp[Id],false,talentGroup},
+							extraLine=level<unlockLevel and C("red",L["TalentLocked"]) or nil
+						};
+						tt:SetCellScript(l,c,"OnEnter",infoTooltipShow, info);
+						tt:SetCellScript(l,c,"OnLeave",GameTooltip_Hide);
+						if not tmp[Selected] and level>=unlockLevel then
+							tt:SetCellScript(l,c,"OnMouseUp",changeTalent, {id=tmp[Id]});
+						end
 					end
 				else
-					local c,color = col+1,(tmp[Selected] and "ltyellow") or (level>=unlockLevel and "gray") or "dkred";
-					tt:SetCell(l,c,str:format(tmp[Icon],C(color,tmp[Name])),nil,"LEFT");
-					local info = {
-						type=level>=unlockLevel and "talent" or "spell",
-						spellId=tmp[spellId],
-						args={tmp[Id],false,talentGroup},
-						extraLine=level<unlockLevel and C("red",L["TalentLocked"]) or nil
-					};
-					tt:SetCellScript(l,c,"OnEnter",infoTooltipShow, info);
-					tt:SetCellScript(l,c,"OnLeave",GameTooltip_Hide);
-					if not tmp[Selected] and level>=unlockLevel then
-						tt:SetCellScript(l,c,"OnMouseUp",changeTalent, {id=tmp[Id]});
-					end
+					ns:debug("GetTalentInfo","return nil")
 				end
 			end
 			if ns.profile[name].showTalentsShort then
