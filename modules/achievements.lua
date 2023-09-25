@@ -155,8 +155,12 @@ local function createTooltip(tt)
 	end
 
 	if(ns.profile[name].showWatchlist)then
-		local limit = 48; -- 52
-		local ids = {GetTrackedAchievements()};
+		local limit,ids = 48,{}; -- 52
+		if GetTrackedAchievements then
+			ids = {GetTrackedAchievements()};
+		elseif C_ContentTracking and C_ContentTracking.GetTrackedIDs then
+			ids = C_ContentTracking.GetTrackedIDs(Enum.ContentTrackingType.Achievement)
+		end
 		if(#ids>0)then
 			tt:AddSeparator(4,0,0,0,0);
 			tt:AddLine(C("ltblue",L["Watch list"]));
