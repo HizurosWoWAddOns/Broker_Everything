@@ -356,7 +356,12 @@ function module.onevent(self,event,msg)
 		elseif (not HasNewMail()) then
 			alertLocked=false;
 		end
-		if event=="MAIL_SHOW" and ns.IsRetailClient() and not self.MailFrameOnHideHooked then
+		if event=="MAIL_SHOW" and PlayerInteractionFrameManagerMixin and not self.MailFrameOnHideHooked then
+			--@do-not-package@
+			-- on retail clients blizzard had replaced several events by PLAYER_INTERACTION_MANAGER_FRAME_HIDE
+			-- https://wowpedia.fandom.com/wiki/PLAYER_INTERACTION_MANAGER_FRAME_HIDE
+			-- currently MAIL_SHOW works as expected a hooked script OnHide is enough.
+			--@end-do-not-package@
 			_G.MailFrame:HookScript("OnHide",function()
 				UpdateStatus("MAIL_CLOSED")
 			end);
