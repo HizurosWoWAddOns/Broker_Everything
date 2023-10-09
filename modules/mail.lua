@@ -12,7 +12,7 @@ local ttName, tooltip, tt, module = name.."TT"
 local alertLocked,onUpdateLocked,hookOn = false,false,false;
 local storedMailLineFaction = "%s%s |TInterface\\PVPFrame\\PVP-Currency-%s:16:16:0:-1:16:16:0:16:0:16|t";
 local storedMailLineNeutral = "%s%s";
-local icons = {}
+local icons,toonsDB = {}
 
 
 -- register icon names and default files --
@@ -25,11 +25,11 @@ I[name..'_stored'] = {iconfile="interface\\icons\\inv_letter_03",coords={0.05,0.
 -- some local functions --
 --------------------------
 local function clearAllStoredMails()
-	for i=1, #Broker_Everything_CharacterDB.order do
-		local toonName = Broker_Everything_CharacterDB.order[i];
+	for i=1, #toonsDB.order do
+		local toonName = toonsDB.order[i];
 		if toonName and toonName~=ns.player.name_realm then
-			ns.tablePath(Broker_Everything_CharacterDB,toonName,"mail");
-			Broker_Everything_CharacterDB[toonName].mail = {new={},stored={}};
+			ns.tablePath(toonsDB,toonName,"mail");
+			toonsDB[toonName].mail = {new={},stored={}};
 		end
 	end
 	module.onevent({},"BE_DUMMY_EVENT");
@@ -124,10 +124,13 @@ local function UpdateStatus(event)
 	end
 
 	local mailStored,counter,_time,oldest = false,{stored=0,new=0,returned=0},time();
-	for i=1, #Broker_Everything_CharacterDB.order do
-		local toonName = Broker_Everything_CharacterDB.order[i];
+	if not toonsDB then
+		toonsDB = Broker_Everything_CharacterDB;
+	end
+	for i=1, #toonsDB.order do
+		local toonName = toonsDB.order[i];
 		if toonName and toonName~=ns.player.name_realm then
-			local toonMails = Broker_Everything_CharacterDB[toonName].mail or {};
+			local toonMails = toonsDB[toonName].mail or {};
 			for _,key in pairs({"stored","new"}) do
 				local has,_oldest = toonHasMails(toonMails,key,counter);
 				if has then
@@ -153,9 +156,9 @@ end
 
 local function AddStoredMailsLine(tt,toon)
 	local hasData,toonName,_time = false,{strsplit("-",toon,2)},time();
-	local faction,class = Broker_Everything_CharacterDB[toon].faction, Broker_Everything_CharacterDB[toon].class;
-	if Broker_Everything_CharacterDB[toon].mail and ns.showThisChar(name,toonName[2],faction) then
-		local toonMails = Broker_Everything_CharacterDB[toon].mail or {};
+	local faction,class = toonsDB[toon].faction, toonsDB[toon].class;
+	if toonsDB[toon].mail and ns.showThisChar(name,toonName[2],faction) then
+		local toonMails = toonsDB[toon].mail or {};
 		local counter,key,oldest,has={stored=0,new=0,returned=0};
 		for _,key in pairs({"stored","new"}) do
 			local has,_oldest = toonHasMails(toonMails,key,counter);
@@ -228,9 +231,9 @@ local function createTooltip(tt)
 			hasData=true;
 		end
 
-		for i=1, #Broker_Everything_CharacterDB.order do
-			if Broker_Everything_CharacterDB.order[i]~=ns.player.name_realm then
-				if AddStoredMailsLine(tt,Broker_Everything_CharacterDB.order[i]) then
+		for i=1, #toonsDB.order do
+			if toonsDB.order[i]~=ns.player.name_realm then
+				if AddStoredMailsLine(tt,toonsDB.order[i]) then
 					hasData = true;
 				end
 			end
@@ -260,11 +263,11 @@ local function SendMailHook(targetName)
 	else
 		targetName = targetName.."-"..ns.realm;
 	end
-	if Broker_Everything_CharacterDB[targetName] then
-		if Broker_Everything_CharacterDB[targetName].mail==nil then
-			Broker_Everything_CharacterDB[targetName].mail = { new={}, stored={} };
+	if toonsDB[targetName] then
+		if toonsDB[targetName].mail==nil then
+			toonsDB[targetName].mail = { new={}, stored={} };
 		end
-		tinsert(Broker_Everything_CharacterDB[targetName].mail.new,ns.player.name..";"..t);
+		tinsert(toonsDB[targetName].mail.new,ns.player.name..";"..t);
 	end
 end
 
@@ -329,7 +332,8 @@ function module.init()
 	end
 end
 
-function module.onevent(self,event,msg)
+function module.onevent(self,event,...)
+	local msg = ...
 	if event=="BE_UPDATE_CFG" and msg and msg:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 	elseif event=="BE_UPDATE_CFG" then
@@ -338,13 +342,16 @@ function module.onevent(self,event,msg)
 		end
 	elseif event=="PLAYER_LOGIN" then
 		hooksecurefunc("SendMail",SendMailHook);
-		for i=1, #Broker_Everything_CharacterDB.order do
-			local toonName = Broker_Everything_CharacterDB.order[i];
+		if not toonsDB then
+			toonsDB = Broker_Everything_CharacterDB;
+		end
+		for i=1, #toonsDB.order do
+			local toonName = toonsDB.order[i];
 			if toonName then
-				ns.tablePath(Broker_Everything_CharacterDB,toonName,"mail","new");
-				ns.tablePath(Broker_Everything_CharacterDB,toonName,"mail","store");
-				if Broker_Everything_CharacterDB[toonName].mail.count~=nil then -- deprecated counter
-					Broker_Everything_CharacterDB[toonName].mail.count=nil;
+				ns.tablePath(toonsDB,toonName,"mail","new");
+				ns.tablePath(toonsDB,toonName,"mail","store");
+				if toonsDB[toonName].mail.count~=nil then -- deprecated counter
+					toonsDB[toonName].mail.count=nil;
 				end
 			end
 		end

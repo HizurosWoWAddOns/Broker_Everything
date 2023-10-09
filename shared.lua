@@ -4,8 +4,6 @@
 -- ====================================== --
 local addon, ns = ...;
 local L,_ = ns.L;
-ns.debugMode = "@project-version@"=="@".."project-version".."@";
-LibStub("HizurosSharedTools").RegisterPrint(ns,addon,"BE");
 
 -- Lua API 5.1 functions
 local setmetatable,tonumber,rawget,rawset,tinsert=setmetatable,tonumber,rawget,rawset,tinsert;
@@ -31,6 +29,12 @@ local GetContainerNumSlots,GetContainerItemCooldown,GetContainerItemLink,GetCont
 -- could be deprecated in future.
 local GetCVar,SetCVar = C_CVar and C_CVar.GetCVar or GetCVar,C_CVar and C_CVar.SetCVar or SetCVar
 
+-- Foreign addon functions
+local LibStub = _G.LibStub
+
+-- Init shared lib and debug mode
+ns.debugMode = "@project-version@"=="@".."project-version".."@";
+LibStub("HizurosSharedTools").RegisterPrint(ns,addon,"BE");
 
   -------------
 --- Libraries ---
