@@ -898,6 +898,8 @@ do
 	local cbCounter = {any=0,inv=0,bags=0,item=0,equip=0,prepare=0,toys=0,ammo=0};
 	local eventFrame,inventoryDelayed = CreateFrame("Frame");
 	local LE_ITEM_CLASS_PROJECTILE = LE_ITEM_CLASS_PROJECTILE or Enum.ItemClass.Projectile or 6;
+	local LR_ITEM_CLASS_WEAPON = LR_ITEM_CLASS_WEAPON or Enum.ItemClass.Weapon or 2;
+	local LE_ITEM_WEAPON_THROWN = LE_ITEM_WEAPON_THROWN or 16;
 
 	local function doCallbacks(tbl,...)
 		if callbacks[tbl]==nil or cbCounter[tbl]==0 then
@@ -940,7 +942,7 @@ do
 	end
 
 	local function addItem(info,scanner)
-		if itemsBySlot[info.sharedSlot] and itemsBySlot[info.sharedSlot].diff==info.diff then
+		if itemsBySlot[info.sharedSlot] and itemsBySlot[info.sharedSlot].diff==info.diff and info.ammo==0 then
 			return false; -- item has not changed; must not be added again.
 		end
 		if itemsByID[info.id]==nil then
@@ -964,11 +966,9 @@ do
 			itemsBySpell[info.spell][info.sharedSlot] = info.count;
 		end
 		-- ns.ammo_classic defined in modules/ammo_classic.lua
-		if ns.ammo_classic then
-			if info.ammo then
-				ammo[info.sharedSlot] = true;
-				hasChanged.ammo = true;
-			end
+		if ns.ammo_classic and info.ammo~=0 then
+			ammo[info.sharedSlot] = true;
+			hasChanged.ammo = true;
 		end
 		if callbacks.item[info.id] then
 			hasChanged.item[info.id][info.sharedSlot] = true;
@@ -1006,6 +1006,7 @@ do
 			if id then
 				local link = GetInventoryItemLink("player",slotIndex);
 				-- back again; need durability for detect changes to trigger update of durability module broker display
+				local _, _, _, _, _, itemClassID, itemSubClassID = GetItemInfoInstant(link);
 				local durability, durabilityMax = GetInventoryItemDurability(slotIndex);
 				addItem({
 					bag=-1,
@@ -1014,7 +1015,8 @@ do
 					id=id,
 					link=link,
 					diff=table.concat({link,durability,durabilityMax},"^"),
-					equip=true
+					equip=true,
+					ammo=(itemClassID==LR_ITEM_CLASS_WEAPON and itemSubClassID==LE_ITEM_WEAPON_THROWN and 2) or 0
 				},"inv");
 				if link and link:find("%[%]") then
 					retry = true; -- Query heirloom item info looks like unstable. too often return invalid item links
@@ -1062,7 +1064,7 @@ do
 							id = tonumber((link:match("item:(%d+)"))) or -1;
 						end
 						if link and id then
-							local _, _, _, itemEquipLocation, _, itemClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
+							local _, _, _, itemEquipLocation, _, itemClassID, itemSubClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
 							local durability, durabilityMax = (C_Container and C_Container.GetContainerItemDurability or GetContainerItemDurability)(bagIndex,slotIndex)
 							local isEquipment = false;
 							if not (itemEquipLocation=="" or itemEquipLocation==IndexTabardType or itemEquipLocation==IndexBodyType) then
@@ -1077,7 +1079,7 @@ do
 								link=link,
 								diff=table.concat({link,count,durability, durabilityMax},"^"),
 								equip=isEquipment,
-								ammo=(itemClassID==LE_ITEM_CLASS_PROJECTILE)
+								ammo=(itemClassID==LE_ITEM_CLASS_PROJECTILE and 1) or (itemClassID==LR_ITEM_CLASS_WEAPON and itemSubClassID==LE_ITEM_WEAPON_THROWN and 2) or 0
 							},"bags");
 						elseif itemsBySlot[sharedSlotIndex] then
 							removeItem(sharedSlotIndex,"bags");
@@ -1102,14 +1104,23 @@ do
 		PLAYER_LOGIN = true,
 		PLAYER_EQUIPMENT_CHANGED = true,
 		UPDATE_INVENTORY_DURABILITY = true,
+		UNIT_INVENTORY_CHANGED = true,
 		ITEM_UPGRADE_MASTER_UPDATE = true,
 		MERCHANT_CLOSED = true
 	};
 
+	local function tableLength(t)
+		local c,_ = 0;
+		for _ in pairs(t) do
+			c=c+1;
+		end
+		return c;
+	end
+
 	local function OnEvent(self,event,...)
 		if event=="BAG_UPDATE" and tonumber(...) and (...)<=NUM_BAG_SLOTS then
 			updateBags[tostring(...)] = true
-		elseif event=="BAG_UPDATE_DELAYED" and table.getn(updateBags)>0 then
+		elseif event=="BAG_UPDATE_DELAYED" and tableLength(updateBags)>0 then
 			scanBags();
 		elseif event=="PLAYER_LOGIN" then
 			updateBags["0"] = true; -- BAG_UPDATE fired with 1-12 as bag index (argument) before PLAYER_LOGIN; bag index 0 is missing
@@ -1135,6 +1146,9 @@ do
 				end
 			end
 		elseif inventoryEvents[event] and not inventoryDelayed then
+			if event=="UNIT_INVENTORY_CHANGED" and (...)~="player" then
+				return;
+			end
 			inventoryDelayed = true;
 			C_Timer.After(0.5,scanInventory);
 		end
@@ -1166,6 +1180,9 @@ do
 		eventFrame:RegisterEvent("UPDATE_INVENTORY_DURABILITY");
 		eventFrame:RegisterEvent("GET_ITEM_INFO_RECEIVED");
 		eventFrame:RegisterEvent("MERCHANT_CLOSED");
+		if ns.ammo_classic then
+			eventFrame:RegisterEvent("UNIT_INVENTORY_CHANGED");
+		end
 
 		if ns.eventPlayerEnteredWorld then
 			-- module registered after PLAYER_ENTERING_WORLD
