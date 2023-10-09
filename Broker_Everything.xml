@@ -267,7 +267,9 @@
 				self.text.Left:Hide()
 				self.text.Middle:Hide()
 				self.text.Right:Hide()
-				tinsert(UISpecialFrames, self:GetName())
+				hooksecurefunc(_G,"CloseWindows",function()
+					self:Hide();
+				end);
 			</OnLoad>
 		</Scripts>
 	</Frame>

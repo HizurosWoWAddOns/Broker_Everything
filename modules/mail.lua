@@ -12,7 +12,7 @@ local ttName, tooltip, tt, module = name.."TT"
 local alertLocked,onUpdateLocked,hookOn = false,false,false;
 local storedMailLineFaction = "%s%s |TInterface\\PVPFrame\\PVP-Currency-%s:16:16:0:-1:16:16:0:16:0:16|t";
 local storedMailLineNeutral = "%s%s";
-local icons,toonsDB = {}
+local icons = {}
 
 
 -- register icon names and default files --
@@ -25,11 +25,11 @@ I[name..'_stored'] = {iconfile="interface\\icons\\inv_letter_03",coords={0.05,0.
 -- some local functions --
 --------------------------
 local function clearAllStoredMails()
-	for i=1, #toonsDB.order do
-		local toonName = toonsDB.order[i];
+	for i=1, #ns.ns.toonsDB.order do
+		local toonName = ns.ns.toonsDB.order[i];
 		if toonName and toonName~=ns.player.name_realm then
-			ns.tablePath(toonsDB,toonName,"mail");
-			toonsDB[toonName].mail = {new={},stored={}};
+			ns.tablePath(ns.toonsDB,toonName,"mail");
+			ns.toonsDB[toonName].mail = {new={},stored={}};
 		end
 	end
 	module.onevent({},"BE_DUMMY_EVENT");
@@ -124,13 +124,10 @@ local function UpdateStatus(event)
 	end
 
 	local mailStored,counter,_time,oldest = false,{stored=0,new=0,returned=0},time();
-	if not toonsDB then
-		toonsDB = Broker_Everything_CharacterDB;
-	end
-	for i=1, #toonsDB.order do
-		local toonName = toonsDB.order[i];
+	for i=1, #ns.toonsDB.order do
+		local toonName = ns.toonsDB.order[i];
 		if toonName and toonName~=ns.player.name_realm then
-			local toonMails = toonsDB[toonName].mail or {};
+			local toonMails = ns.toonsDB[toonName].mail or {};
 			for _,key in pairs({"stored","new"}) do
 				local has,_oldest = toonHasMails(toonMails,key,counter);
 				if has then
@@ -156,9 +153,9 @@ end
 
 local function AddStoredMailsLine(tt,toon)
 	local hasData,toonName,_time = false,{strsplit("-",toon,2)},time();
-	local faction,class = toonsDB[toon].faction, toonsDB[toon].class;
-	if toonsDB[toon].mail and ns.showThisChar(name,toonName[2],faction) then
-		local toonMails = toonsDB[toon].mail or {};
+	local faction,class = ns.toonsDB[toon].faction, ns.toonsDB[toon].class;
+	if ns.toonsDB[toon].mail and ns.showThisChar(name,toonName[2],faction) then
+		local toonMails = ns.toonsDB[toon].mail or {};
 		local counter,key,oldest,has={stored=0,new=0,returned=0};
 		for _,key in pairs({"stored","new"}) do
 			local has,_oldest = toonHasMails(toonMails,key,counter);
@@ -231,9 +228,9 @@ local function createTooltip(tt)
 			hasData=true;
 		end
 
-		for i=1, #toonsDB.order do
-			if toonsDB.order[i]~=ns.player.name_realm then
-				if AddStoredMailsLine(tt,toonsDB.order[i]) then
+		for i=1, #ns.toonsDB.order do
+			if ns.toonsDB.order[i]~=ns.player.name_realm then
+				if AddStoredMailsLine(tt,ns.toonsDB.order[i]) then
 					hasData = true;
 				end
 			end
@@ -263,11 +260,11 @@ local function SendMailHook(targetName)
 	else
 		targetName = targetName.."-"..ns.realm;
 	end
-	if toonsDB[targetName] then
-		if toonsDB[targetName].mail==nil then
-			toonsDB[targetName].mail = { new={}, stored={} };
+	if ns.toonsDB[targetName] then
+		if ns.toonsDB[targetName].mail==nil then
+			ns.toonsDB[targetName].mail = { new={}, stored={} };
 		end
-		tinsert(toonsDB[targetName].mail.new,ns.player.name..";"..t);
+		tinsert(ns.toonsDB[targetName].mail.new,ns.player.name..";"..t);
 	end
 end
 
@@ -342,16 +339,13 @@ function module.onevent(self,event,...)
 		end
 	elseif event=="PLAYER_LOGIN" then
 		hooksecurefunc("SendMail",SendMailHook);
-		if not toonsDB then
-			toonsDB = Broker_Everything_CharacterDB;
-		end
-		for i=1, #toonsDB.order do
-			local toonName = toonsDB.order[i];
+		for i=1, #ns.toonsDB.order do
+			local toonName = ns.toonsDB.order[i];
 			if toonName then
-				ns.tablePath(toonsDB,toonName,"mail","new");
-				ns.tablePath(toonsDB,toonName,"mail","store");
-				if toonsDB[toonName].mail.count~=nil then -- deprecated counter
-					toonsDB[toonName].mail.count=nil;
+				ns.tablePath(ns.toonsDB,toonName,"mail","new");
+				ns.tablePath(ns.toonsDB,toonName,"mail","store");
+				if ns.toonsDB[toonName].mail.count~=nil then -- deprecated counter
+					ns.toonsDB[toonName].mail.count=nil;
 				end
 			end
 		end

@@ -53,17 +53,17 @@ end
 
 function module.onevent(self,event,msg)
 	if event=="PLAYER_LOGIN" then
-		if Broker_Everything_DataDB[name]==nil then
-			Broker_Everything_DataDB[name] = {};
+		if ns.data[name]==nil then
+			ns.data[name] = {};
 		end
-		if(#Broker_Everything_DataDB[name]>0 and Broker_Everything_DataDB[name][1].last<time()-(60*30))then
-			wipe(Broker_Everything_DataDB[name]);
+		if(#ns.data[name]>0 and ns.data[name][1].last<time()-(60*30))then
+			wipe(ns.data[name]);
 		end
 		C_WowTokenPublic.UpdateMarketPrice();
 	elseif event=="TOKEN_MARKET_PRICE_UPDATED" then
-		if(#Broker_Everything_DataDB[name]==0 or (#Broker_Everything_DataDB[name]>0 and Broker_Everything_DataDB[name][1].money~=price.money))then
-			tinsert(Broker_Everything_DataDB[name],1,{money=price.money,last=price.last});
-			if(#Broker_Everything_DataDB[name]==7)then tremove(Broker_Everything_DataDB[name],7); end
+		if(#ns.data[name]==0 or (#ns.data[name]>0 and ns.data[name][1].money~=price.money))then
+			tinsert(ns.data[name],1,{money=price.money,last=price.last});
+			if(#ns.data[name]==7)then tremove(ns.data[name],7); end
 		end
 
 		local current = C_WowTokenPublic.GetCurrentMarketPrice();
@@ -115,10 +115,10 @@ function module.ontooltip(tt)
 				diff
 			);
 		end
-		if(ns.profile[name].history and #Broker_Everything_DataDB[name]>1)then
+		if(ns.profile[name].history and #ns.data[name]>1)then
 			tt:AddLine(" ");
 			tt:AddLine(C("ltblue",L["Price history (last 5 changes)"]));
-			for i,v in ipairs(Broker_Everything_DataDB[name])do
+			for i,v in ipairs(ns.data[name])do
 				if(i>1 and v.money>0)then
 					tt:AddDoubleLine(date("%Y-%m-%d %H:%M",v.last),ns.GetCoinColorOrTextureString(name,v.money,{hideMoney=4,inTooltip=true}));
 				end

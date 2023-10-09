@@ -248,8 +248,6 @@ function createTooltip(tt,update)
 							tt:SetCellScript(l,c,"OnMouseUp",changeTalent, {id=tmp[Id]});
 						end
 					end
-				else
-					ns:debug("GetTalentInfo","return nil")
 				end
 			end
 			if ns.profile[name].showTalentsShort then

@@ -39,35 +39,36 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 	if event == "ADDON_LOADED" and addon==... then
 		-- character cache
 		local baseData={"name","class","faction","race"};
-		if Broker_Everything_CharacterDB.order==nil then
-			Broker_Everything_CharacterDB.order={};
+		ns.toonsDB = Broker_Everything_CharacterDB;
+		if ns.toonsDB.order==nil then
+			ns.toonsDB.order={};
 		end
 		local names = {};
-		for i=1, #Broker_Everything_CharacterDB.order do
-			names[Broker_Everything_CharacterDB.order[i]]=1;
+		for i=1, #ns.toonsDB.order do
+			names[ns.toonsDB.order[i]]=1;
 		end
-		for name in pairs(Broker_Everything_CharacterDB)do
+		for name in pairs(ns.toonsDB)do
 			if name~="order" and not names[name] then
-				Broker_Everything_CharacterDB[name] = nil;
+				ns.toonsDB[name] = nil;
 			end
 		end
-		if(not Broker_Everything_CharacterDB[ns.player.name_realm])then
-			tinsert(Broker_Everything_CharacterDB.order,ns.player.name_realm);
-			Broker_Everything_CharacterDB[ns.player.name_realm] = {orderId=#Broker_Everything_CharacterDB.order};
+		if(not ns.toonsDB[ns.player.name_realm])then
+			tinsert(ns.toonsDB.order,ns.player.name_realm);
+			ns.toonsDB[ns.player.name_realm] = {orderId=#ns.toonsDB.order};
 		end
 		for _,v in ipairs(baseData)do
-			if(ns.player[v] and Broker_Everything_CharacterDB[ns.player.name_realm][v]~=ns.player[v])then
-				Broker_Everything_CharacterDB[ns.player.name_realm][v] = ns.player[v];
+			if(ns.player[v] and ns.toonsDB[ns.player.name_realm][v]~=ns.player[v])then
+				ns.toonsDB[ns.player.name_realm][v] = ns.player[v];
 			end
 		end
-		Broker_Everything_CharacterDB[ns.player.name_realm].level = UnitLevel("player");
-		ns.toon = Broker_Everything_CharacterDB[ns.player.name_realm];
+		ns.toonsDB[ns.player.name_realm].level = UnitLevel("player");
+		ns.toon = ns.toonsDB[ns.player.name_realm];
 
 		-- data cache
-		if Broker_Everything_DataDB.realms==nil then
-			Broker_Everything_DataDB.realms = {};
+		ns.data = Broker_Everything_DataDB
+		if ns.data.realms==nil then
+			ns.data.realms = {};
 		end
-		ns.data = Broker_Everything_DataDB;
 
 		-- init ace option panel
 		ns.RegisterOptions()
