@@ -2,7 +2,8 @@
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
-if not (ns.client_version<5 and ns.player.class=="HUNTER") then return end
+local classes = {HUNTER=true,ROGUE=true,WARRIOR=true,--[[WARLOCK=true]]};
+if not (ns.client_version<5 and classes[ns.player.class]) then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
 ns.ammo_classic = true;
 
@@ -12,6 +13,7 @@ ns.ammo_classic = true;
 local name = "Ammo"; -- INVTYPE_AMMO L["ModDesc-Ammo"]
 local ttName, ttColumns, tt, module, createTooltip = name.."TT", 2;
 local ammo = {sum=false,inUse=0,itemInfo={}};
+local thrown = {sum=false,inUse=0,itemInfo={}};
 
 
 -- register icon names and default files --
@@ -22,14 +24,19 @@ I[name] = {iconfile=133581,coords={0.05,0.95,0.05,0.95}}; --IconName::Talents--
 -- some local functions --
 --------------------------
 local function updateBroker()
-	if not ammo.sum then return end
+	if not (ammo.sum or thrown.sum) then return end
 	local obj,icon,text = ns.LDB:GetDataObjectByName(module.ldbName) or {};
+	local itemInfoInUse = false;
 	if ammo.inUse and ammo.itemInfo[ammo.inUse] then
-		local itemInfo = ammo.itemInfo[ammo.inUse];
-		icon = itemInfo.icon
-		text = C( (itemInfo.count<=10 and "red") or (itemInfo.count<=25 and "orange") or (itemInfo.count<=50 and "yellow") or "green",itemInfo.count)
+		itemInfoInUse = ammo.itemInfo[ammo.inUse];
+	elseif thrown.inUse and thrown.itemInfo[thrown.inUse] then
+		itemInfoInUse = thrown.itemInfo[thrown.inUse];
+	end
+	if itemInfoInUse then
+		icon = itemInfoInUse.icon
+		text = C( (itemInfoInUse.count<=10 and "red") or (itemInfoInUse.count<=25 and "orange") or (itemInfoInUse.count<=50 and "yellow") or "green",itemInfoInUse.count)
 		if ns.profile[name].showNameBroker then
-			text = text .. " " .. C("quality"..(itemInfo.quality or 1),itemInfo.name);
+			text = text .. " " .. C("quality"..(itemInfoInUse.quality or 1),itemInfoInUse.name);
 		end
 	else
 		icon,text = 133581,C("gray",L["No ammo attached"]);
@@ -37,22 +44,31 @@ local function updateBroker()
 	obj.icon,obj.text = icon,text;
 end
 
-local function sortAmmo(a,b)
+local function sortItems(a,b)
 	return a.name>b.name;
 end
 
 function createTooltip(tt,update)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	if tt.lines~=nil then tt:Clear(); end
-	tt:SetCell(tt:AddLine(),1,C("dkyellow",INVTYPE_AMMO),tt:GetHeaderFont(),"LEFT",0);
+	tt:SetCell(tt:AddLine(),1,C("dkyellow",INVTYPE_AMMO.." / "..INVTYPE_THROWN),tt:GetHeaderFont(),"LEFT",0);
 	tt:AddSeparator(1);
-	if ammo.sum==0 then
-		tt:SetCell(tt:AddLine(),1,C("ltgray",L["No ammo found..."]),nil,nil,0);
-	else
-		table.sort(ammo.itemInfo,sortAmmo);
+	if ammo.sum>0 then
+		tt:AddLine(C("ltgray",INVTYPE_AMMO))
+		table.sort(ammo.itemInfo,sortItems);
 		for id,itemInfo in pairs(ammo.itemInfo) do
-			tt:AddLine("|T"..itemInfo.icon..":0|t "..C("quality"..itemInfo.quality,itemInfo.name)..(ammo.inUse==id and " "..C("green","("..CONTRIBUTION_ACTIVE..")") or ""),C("white",itemInfo.count));
+			tt:AddLine("    |T"..itemInfo.icon..":0|t "..C("quality"..itemInfo.quality,itemInfo.name)..(ammo.inUse==id and " "..C("green","("..CONTRIBUTION_ACTIVE..")") or ""),C("white",itemInfo.count));
 		end
+	end
+	if thrown.sum>0 then
+		tt:AddLine(C("ltgray",INVTYPE_THROWN))
+		table.sort(thrown.itemInfo,sortItems);
+		for id,itemInfo in pairs(thrown.itemInfo)do
+			tt:AddLine("    |T"..itemInfo.icon..":0|t "..C("quality"..itemInfo.quality,itemInfo.name)..(thrown.inUse==id and " "..C("green","("..CONTRIBUTION_ACTIVE..")") or ""),C("white",itemInfo.count));
+		end
+	end
+	if ammo.sum==0 and thrown.sum==0 then
+		tt:SetCell(tt:AddLine(),1,C("ltgray",L["No ammo or throwing weapon found..."]),nil,nil,0);
 	end
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddSeparator(4,0,0,0,0);
@@ -61,25 +77,42 @@ function createTooltip(tt,update)
 	ns.roundupTooltip(tt);
 end
 
-local function updateAmmo()
-	local sum,itemInfo,_ = 0,{};
+local function updateItems()
+	local sum,items,s,_ = {a=0,t=0},{a={},t={}},"a";
 	for sharedSlot in pairs(ns.items.ammo) do
-		local item = ns.items.bySlot[sharedSlot];
-		local info, count = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(item.bag,item.slot);
-		if info and count==nil then
-			count = info.stackCount;
-		end
-		if not itemInfo[item.id] then
-			itemInfo[item.id] = {count=count};
-			itemInfo[item.id].name,_,itemInfo[item.id].quality,_,_,_,_,_,_,itemInfo[item.id].icon = GetItemInfo(item.id);
+		local item,count = ns.items.bySlot[sharedSlot],-1;
+		if sharedSlot<0 then
+			-- inventory
+			count = GetInventoryItemCount("player",18);
 		else
-			itemInfo[item.id].count = itemInfo[item.id].count + count;
+			-- container
+			local info = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(item.bag,item.slot);
+			if info then
+				count = info.stackCount;
+			end
 		end
-		sum = sum + count;
+		if item.ammo==2 then
+			s="t"
+		end
+		if count>0 then
+			if not items[s][item.id] then
+				items[s][item.id] = {count=count};
+				items[s][item.id].name,_,items[s][item.id].quality,_,_,_,_,_,_,items[s][item.id].icon = GetItemInfo(item.id);
+			else
+				items[s][item.id].count = items[s][item.id].count + count;
+			end
+			sum[s] = sum[s] + count;
+		else
+			ns:debugPrint("Ammo",sharedSlot,count);
+		end
 	end
 	ammo.inUse = GetInventoryItemID("player",0);
-	ammo.sum = sum;
-	ammo.itemInfo = itemInfo;
+	ammo.sum = sum.a;
+	ammo.itemInfo = items.a;
+
+	thrown.inUse = GetInventoryItemID("player",18);
+	thrown.sum = sum.t;
+	thrown.itemInfo = items.t;
 
 	updateBroker();
 	createTooltip(tt,true);
@@ -114,7 +147,7 @@ function module.options()
 end
 
 function module.init()
-	ns.items.RegisterCallback(name,updateAmmo,"bags");
+	ns.items.RegisterCallback(name,updateItems,"ammo");
 end
 
 --[[
@@ -131,7 +164,7 @@ function module.onevent(self,event,arg1,...)
 			ns.ClickOpts.update(name);
 		end
 	elseif event=="UNIT_RANGEDDAMAGE" then
-		updateAmmo();
+		updateItems();
 		return;
 	end
 	updateBroker();
@@ -143,7 +176,7 @@ end
 
 function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip({ttName, ttColumns, "CENTER", "CENTER", "CENTER", "CENTER"},{true},{self});
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT", "CENTER", "CENTER"},{true},{self});
 	createTooltip(tt);
 end
 
