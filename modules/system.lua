@@ -21,6 +21,7 @@ local fps     = {cur=0,min=-5,max=0,his={},curStr="",minStr="",maxStr=""};
 local memory  = {cur=0,min=0,max=0,his={},list={},curStr="",minStr="",maxStr="",brokerStr="",numAddOns=0,loadedAddOns=0};
 local netStatTimeout,memoryTimeout,enabled,module,isHooked,memUpdateLock=1,2,{};
 local version, build, buildDate, interfaceVersion = GetBuildInfo();
+local UpdateAddOnMemoryUsage = UpdateAddOnMemoryUsage;
 local addonpanels,updateAllTicker,memUpdateLocked = {};
 local triggerUpdateToken = {};
 local addonpanels_select = {["none"]=L["None (disable right click)"]};
@@ -658,8 +659,36 @@ ns.ClickOpts.addDefaults(module_mem,clickOptionsDefaults);
 module_sys.addonpanel = addonpanel;
 module_mem.addonpanel = addonpanel;
 
+local function addUpdateInterval(opt,addSeparator,order)
+	if addSeparator then
+		opt['updateIntervalSeparator'] = { type="separator", order=order };
+		order=order+1;
+	end
+
+	opt['updateInterval'] = { type="select", order=order, name=L["SystemUpdateInterval"], desc=L["SystemUpdateIntervalDesc"],
+		values = {
+			[0] = DISABLE,
+			[30] = L["All 30 seconds"],
+			[60] = L["One time per minute"],
+			[300] = L["All 5 minutes"],
+			[600] = L["All 10 minutes"],
+			[1200] = L["All 20 minutes"],
+			[2400] = L["All 40 minutes"],
+			[3600] = L["One time per hour"]
+		}
+	};
+
+	opt['updateIntervalDesc']={ type="description", order=8, name="|n"..table.concat({
+			C("orange",L["SystemUpdateIntervalDescLong1"]),
+			C("white", L["SystemUpdateIntervalDescLong2"]),
+			C("yellow",L["SystemUpdateIntervalDescLong3"])
+		},"|n|n"), fontSize="medium"
+	}
+
+end
+
 function module_sys.options()
-	return {
+	local opt = {
 		broker = {
 			showInboundOnBroker  = { type="toggle", order=1, name=L["Inbound traffic"],  desc=L["Display inbound traffic on broker"] },
 			showOutboundOnBroker = { type="toggle", order=2, name=L["Outbound traffic"], desc=L["Display outbound traffic on broker"] },
@@ -684,21 +713,10 @@ function module_sys.options()
 			showClientInfoInTooltip  = { type="toggle", order=5, name=L["Client info"], desc=L["Display client info in tooltip"] },
 			numDisplayAddOns         = { type="range",  order=6, name=ADDONS, desc=L["Select the maximum number of addons to display, otherwise drag to 'All'."], step = 1, min = 0, max = 100},
 		},
-		misc = {
-			updateInterval={ type="select", order=1, name=L["Update interval"], desc=L["Change the update interval or disable it."], width="double",
-				values = {
-					[0] = DISABLE,
-					[30] = L["All 30 seconds"],
-					[60] = L["One time per minute"],
-					[300] = L["All 5 minutes"],
-					[600] = L["All 10 minutes"],
-					[1200] = L["All 20 minutes"],
-					[2400] = L["All 40 minutes"],
-					[3600] = L["One time per hour"]
-				}
-			},
-		},
+		misc = {},
 	}
+	addUpdateInterval(opt.misc,false,1);
+	return opt;
 end
 
 function module_lat.options()
@@ -713,7 +731,7 @@ function module_lat.options()
 end
 
 function module_mem.options()
-	return {
+	local opt = {
 		tooltip = {
 			mem_max_addons={ type="range", name=L["Number of addons"], desc=L["Select the maximum number of addons to display, otherwise drag to '0' to display all."], step = 1, min = 0, max = 100}
 		},
@@ -722,28 +740,10 @@ function module_mem.options()
 			addonpanel={ type="select", order=1, name=L["Addon panel"], desc=L["Choose your addon panel that opens if you rightclick on memory broker or disable the right click option."], values=addonpanels_select, width="double" },
 			separator={ type="separator", order=2,  },
 			header={ type="header", name=L["Memory usage"], order=3 },
-			separator2={ type="separator", order=5 },
-			updateInterval={ type="select", order=6, name=L["Update interval"], desc=L["Change the update interval or disable it."],
-				values = {
-					[0] = DISABLE,
-					[30] = L["All 30 seconds"],
-					[60] = L["One time per minute"],
-					[300] = L["All 5 minutes"],
-					[600] = L["All 10 minutes"],
-					[1200] = L["All 20 minutes"],
-					[2400] = L["All 40 minutes"],
-					[3600] = L["One time per hour"]
-				}
-			},
-			desc={ type="description", order=8, name="|n"..table.concat({
-					C("orange",L["Any update of the addon memory usage can cause results in fps drops and 'Script ran too long' error messages!"]),
-					C("white",L["The necessary time to collect memory usage of all addons depends on CPU speed, CPU usage, the number of running addons and more."]),
-					C("yellow",L["If you have more than one addon to display memory usage it is recommended to disable the update interval of this addon."])
-				},"|n|n"), fontSize="medium"
-			},
-			--true, -- header "Misc options"
 		},
 	}
+	addUpdateInterval(opt.misc,true,5)
+	return opt;
 end
 
 function module_fps.options()
