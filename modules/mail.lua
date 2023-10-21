@@ -19,6 +19,7 @@ local icons = {}
 -------------------------------------------
 I[name] = {iconfile="interface\\icons\\inv_letter_15",coords={0.05,0.95,0.05,0.95}}					--IconName::Mail--
 I[name..'_new'] = {iconfile="interface\\icons\\inv_letter_"..(ns.client_version<2 and 16 or 18),coords={0.05,0.95,0.05,0.95}}			--IconName::Mail_new--
+I[name..'_in_delivery'] = {iconfile="interface\\icons\\INV_Misc_PocketWatch_01",coords={0.05,0.95,0.05,0.95}}	--IconName:Mail_in_delivery
 I[name..'_stored'] = {iconfile="interface\\icons\\inv_letter_03",coords={0.05,0.95,0.05,0.95}}		--IconName::Mail_stored--
 
 
@@ -36,14 +37,14 @@ local function clearAllStoredMails()
 end
 
 local function toonHasMails(toonMails,key,counter)
-	local has,t,sender,oldest,returns = false,time();
+	local has,t,oldest,returns,_ = false,time();
 	local mails = toonMails[key];
 	if mails and #mails>0 then
 		for i=1, #mails do
 			if type(mails[i])=="table" then
-				sender,returns = mails[i].sender,mails[i].returns;
+				returns = mails[i].returns;
 			else
-				sender,returns = strsplit(";",mails[i]);
+				_,returns = strsplit(";",mails[i]);
 			end
 			returns = tonumber(returns);
 			if returns then
@@ -71,9 +72,7 @@ local function UpdateStatus(event)
 		ns.toon.mail = { new={}, stored={} };
 	end
 
-	local mailNew, _time = HasNewMail(), time();
-	local sender,daysLeft,dt,ht,_;
-	local returns,mailState,next1,next2,next3,tmp = (99*86400),0;
+	local _time,_ = time();
 
 	if (_G.MailFrame:IsShown()) or (event=="MAIL_CLOSED") then
 		ns.toon.mail.num, ns.toon.mail.total = GetInboxNumItems();
@@ -123,7 +122,7 @@ local function UpdateStatus(event)
 		end
 	end
 
-	local mailStored,counter,_time,oldest = false,{stored=0,new=0,returned=0},time();
+	local mailStored,counter,oldest = false,{stored=0,new=0,returned=0};
 	for i=1, #ns.toonsDB.order do
 		local toonName = ns.toonsDB.order[i];
 		if toonName and toonName~=ns.player.name_realm then
@@ -140,12 +139,16 @@ local function UpdateStatus(event)
 		end
 	end
 
-	local icon,text,obj = I(name), L["No Mail"],ns.LDB:GetDataObjectByName(module.ldbName);
+	local icon,text,obj = I(name), L["MailNone"],ns.LDB:GetDataObjectByName(module.ldbName);
 
 	if #ns.toon.mail.new>0 then
-		icon, text = I(name.."_new"), C("green",L["New mail"]);
+		if HasNewMail() then
+			icon, text = I(name.."_new"), C("green",L["MailNew"]);
+		else
+			icon, text = I(name..'_in_delivery'), C("dkyellow",L["MailInDelivery"])
+		end
 	elseif mailStored then
-		icon, text = I(name.."_stored"), C("yellow",L["Stored mails"]);
+		icon, text = I(name.."_stored"), C("yellow",L["MailStored"]);
 	end
 
 	obj.iconCoords,obj.icon,obj.text = icon.coords or {0,1,0,1},icon.iconfile,text;
@@ -249,7 +252,7 @@ local function createTooltip(tt)
 end
 
 local function SendMailHook(targetName)
-	if debugstack():find("?") and type(targetName)~="string" then return end -- ignore double executed function
+	if tostring(debugstack()):find("?") and type(targetName)~="string" then return end -- ignore double executed function
 
 	local t = time()+30*86400;
 	if targetName:find("-") then
