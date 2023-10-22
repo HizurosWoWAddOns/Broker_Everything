@@ -237,7 +237,7 @@ end
 
 local function updateBodyguards()
 	-- collect locale names of bodyguards
-	if UnitLevel("player")>=GetMaxLevelForExpansionLevel(6) and C_Garrison.GetGarrisonInfo(Enum.GarrisonType.Type_6_0) then
+	if UnitLevel("player")>=GetMaxLevelForExpansionLevel(6) and C_Garrison.GetGarrisonInfo(Enum.GarrisonType.Type_6_0_Garrison) then
 		for follower in pairs(bodyguards) do
 			if type(follower)=="number" then
 				local followerInfo = C_Garrison.GetFollowerInfo(follower);

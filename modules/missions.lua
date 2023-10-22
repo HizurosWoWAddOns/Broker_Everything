@@ -60,7 +60,7 @@ local function updateMissions()
 			followerType = Enum.GarrisonFollowerType["FollowerType_"..(exp.type=="6_2" and "6_0_Boat" or exp.type.."_GarrisonFollower")]
 		end
 		if followerType then
-			exp.level = exp.levelFnc(Enum.GarrisonType["Type_"..exp.type]) or 0;
+			exp.level = exp.levelFnc(Enum.GarrisonType["Type_"..exp.type.."_Garrison"]) or 0;
 			missions[exp.typeStr] = {inprogress={},available={},completed={}};
 			local m=missions[exp.typeStr];
 			local tmp = C_Garrison.GetInProgressMissions(followerType) or {};

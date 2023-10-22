@@ -30,14 +30,14 @@ local COMPANIONS = COVENANT_MISSIONS_FOLLOWERS;
 local ttInset1,ttInset2,ttHasStatusHeader,ttHasExpansionHeader = "  ","    ",false,false;
 
 local typeListF = {
-	{type="Type_9_0",exp=8,label=COMPANIONS,hasCombatSpells=true},
-	{type="Type_8_0",exp=7,label=CHAMPIONS,labelTroops=TROOPS},
-	{type="Type_7_0",exp=6,label=CHAMPIONS,labelTroops=TROOPS},
-	{type="Type_6_0",exp=5,label=FOLLOWERS},
+	{type="Type_9_0_Garrison",exp=8,label=COMPANIONS,hasCombatSpells=true},
+	{type="Type_8_0_Garrison",exp=7,label=CHAMPIONS,labelTroops=TROOPS},
+	{type="Type_7_0_Garrison",exp=6,label=CHAMPIONS,labelTroops=TROOPS},
+	{type="Type_6_0_Garrison",exp=5,label=FOLLOWERS},
 };
 
 local typeListS = {
-	{type="Type_6_2",exp=5,label=SHIPS},
+	{type="Type_6_0_Boat",exp=5,label=SHIPS},
 };
 
 local status2index = {
