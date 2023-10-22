@@ -31,7 +31,7 @@ TalentUnavailableReasons[GarrisonTalentAvailability.UnavailableRequiresPrerequis
 
 local ClassTalents = {
 	-- legion
-	[Enum.GarrisonType.Type_7_0_Garrison] = {
+	[LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0] = {
 		-- 18 hours instant world quest
 		InstantWQ = {
 			-- [<talentId>] = {<classId>,<itemId>}
@@ -160,13 +160,13 @@ local function createTooltip(tt)
 
 	tt:AddSeparator(4,0,0,0,0);
 
-	local ohLevel = C_Garrison.GetGarrisonInfo(Enum.GarrisonType.Type_7_0_Garrison) or 0;
+	local ohLevel = C_Garrison.GetGarrisonInfo(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0) or 0;
 	if ohLevel>0 then
 		now = time();
 
 		-- create order hall talent tree
 		local garrTalentTreeID = 0
-		local treeIDs = C_Garrison.GetTalentTreeIDsByClassID(Enum.GarrisonType.Type_7_0_Garrison, select(3, UnitClass("player")));
+		local treeIDs = C_Garrison.GetTalentTreeIDsByClassID(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0, select(3, UnitClass("player")));
 		if (treeIDs and #treeIDs > 0) then
 			garrTalentTreeID = treeIDs[1];
 		end
@@ -228,9 +228,9 @@ local function createTooltip(tt)
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",L["Shipments"]));
 		tt:AddSeparator();
-		local buildings = C_Garrison.GetBuildings(Enum.GarrisonType.Type_7_0_Garrison);
-		local followerShipments = C_Garrison.GetFollowerShipments(Enum.GarrisonType.Type_7_0_Garrison);
-		local looseShipments = C_Garrison.GetLooseShipments(Enum.GarrisonType.Type_7_0_Garrison);
+		local buildings = C_Garrison.GetBuildings(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0);
+		local followerShipments = C_Garrison.GetFollowerShipments(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0);
+		local looseShipments = C_Garrison.GetLooseShipments(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0);
 		if (#looseShipments+#followerShipments+#buildings)>0 then
 			if #buildings>0 then
 				tt:AddLine(C("gray","Buildings"));
@@ -299,7 +299,7 @@ function module.onevent(self,event,arg1,...)
 		ns.ClickOpts.update(name);
 	end
 	if event=="PLAYER_LOGIN" then
-		local InstantWQ = GetClassTalentTreeInfoByType(Enum.GarrisonType.Type_7_0_Garrison,"InstantWQ");
+		local InstantWQ = GetClassTalentTreeInfoByType(LE_GARRISON_TYPE_7_0 or Enum.GarrisonType.Type_7_0,"InstantWQ");
 		if InstantWQ and InstantWQ.reagentItem then
 			GetItemInfo(InstantWQ.reagentItem);
 		end
