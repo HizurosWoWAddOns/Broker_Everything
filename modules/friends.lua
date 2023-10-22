@@ -9,113 +9,54 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Friends"; -- FRIENDS L["ModDesc-Friends"]
 local ttName,ttName2,ttColumns,tt,tt2,module = name.."TT",name.."TT2",8;
-local unknownGameError = false;
-local DSw, DSh =  0,  0;
-local ULx, ULy =  0,  0;
-local LLx, LLy = 32, 32;
-local URx, URy =  5, 27;
-local LRx, LRy =  5, 27;
-local off, on = strtrim(gsub(ERR_FRIEND_OFFLINE_S,"%%s","")), strtrim(gsub(ERR_FRIEND_ONLINE_SS,"\124Hplayer:%%s\124h%[%%s%]\124h",""));
-local gameIconPos = setmetatable({},{ __index = function(t,k) return format("%s:%s:%s:%s:%s:%s:%s:%s:%s:%s",DSw,DSh,ULx,ULy,LLx,LLy,URx,URy,LRx,LRy) end})
---local _BNet_GetClientTexture = BNet_GetClientTexture
 
--- missing some entries on DF beta version of FrameXML\BNet.lua
-local BNET_CLIENT_WOW = BNET_CLIENT_WOW or  "WoW";
-local BNET_CLIENT_SC2 = BNET_CLIENT_SC2 or  "S2";
-local BNET_CLIENT_D3 = BNET_CLIENT_D3 or  "D3";
-local BNET_CLIENT_D4 = BNET_CLIENT_D4 or  "Fen";
-local BNET_CLIENT_WTCG = BNET_CLIENT_WTCG or  "WTCG";
-local BNET_CLIENT_APP = BNET_CLIENT_APP or  "App";
-local BNET_CLIENT_HEROES = BNET_CLIENT_HEROES or  "Hero";
-local BNET_CLIENT_OVERWATCH = BNET_CLIENT_OVERWATCH or  "Pro";
-local BNET_CLIENT_CLNT = BNET_CLIENT_CLNT or  "CLNT";
-local BNET_CLIENT_SC = BNET_CLIENT_SC or  "S1";
-local BNET_CLIENT_DESTINY2 = BNET_CLIENT_DESTINY2 or  "DST2";
-local BNET_CLIENT_COD = BNET_CLIENT_COD or  "VIPR";
-local BNET_CLIENT_COD_MW = BNET_CLIENT_COD_MW or  "ODIN";
-local BNET_CLIENT_COD_MW2 = BNET_CLIENT_COD_MW2 or  "LAZR";
-local BNET_CLIENT_COD_BOCW = BNET_CLIENT_COD_BOCW or  "ZEUS";
-local BNET_CLIENT_WC3 = BNET_CLIENT_WC3 or  "W3";
-local BNET_CLIENT_ARCADE = BNET_CLIENT_ARCADE or  "RTRO";
-local BNET_CLIENT_CRASH4 = BNET_CLIENT_CRASH4 or  "WLBY";
-local BNET_CLIENT_D2 = BNET_CLIENT_D2 or  "OSI";
-local BNET_CLIENT_COD_VANGUARD = BNET_CLIENT_COD_VANGUARD or  "FORE";
-local BNET_CLIENT_DI = BNET_CLIENT_DI or  "ANBS";
-local BNET_CLIENT_ARCLIGHT = BNET_CLIENT_ARCLIGHT or  "GRY";
+local D4icon = "Interface/AddOns/Broker_Everything/media/Battlenet-D4icon.tga";
+local GetClientInfo = setmetatable({
+	-- Blizzard
+	ANBS = {icon=4557783, short="DI",      long="Diablo Immortal"},
+	App  = {icon=796351,  short="Desktop", long="Desktop App"},
+	BSAp = {icon=796351,  short="Mobile",  long="Mobile App"},
+	CLNT = {icon=796351,  short=nil,       long=nil},
+	D3   = {icon=536090,  short="D3",      long="Diablo 3"},
+	Fen  = {icon=D4icon,  short="D4",      long="Diablo 4"},
+	GRY  = {icon=4553312, short="Arclight",long="Warcraft Arclight Rumble"},
+	Hero = {icon=1087463, short="HotS",    long="Heroes of the Storm"},
+	OSI  = {icon=4034244, short="D2",      long="Diablo II Resurrected"},
+	Pro  = {icon=1313858, short="OW",      long="Overwatch"},
+	RTRO = {icon=4034242, short="Arcade",  long="Blizzard Arcade Collection"},
+	S1   = {icon=1669008, short="SC1",     long="Starcraft"},
+	S2   = {icon=374211,  short="SC2",     long="Starcraft 2"},
+	W3   = {icon=3257659, short="WC3",     long="Warcraft 3 Reforged"},
+	WoW  = {icon=374212,  short="WoW",     long="World of Warcraft"},
+	WTCG = {icon=374211,  short="HS",      long="Hearthstone"},
 
-local function _BNet_GetClientTexture(client)
-   if ( client == BNET_CLIENT_WOW ) then
-      return "Interface\\FriendsFrame\\Battlenet-WoWicon";
-   elseif ( client == BNET_CLIENT_SC2 ) then
-      return "Interface\\FriendsFrame\\Battlenet-Sc2icon";
-   elseif ( client == BNET_CLIENT_D3 ) then
-      return "Interface\\FriendsFrame\\Battlenet-D3icon";
-   elseif ( client == BNET_CLIENT_D4 ) then
-      --return "Interface\\FriendsFrame\\Battlenet-D4icon"; -- missing icon in client data
-      return "Interface\\AddOns\\Broker_Everything\\media\\Battlenet-D4icon.tga";
-   elseif ( client == BNET_CLIENT_WTCG ) then
-      return "Interface\\FriendsFrame\\Battlenet-WTCGicon";
-   elseif ( client == BNET_CLIENT_HEROES ) then
-      return "Interface\\FriendsFrame\\Battlenet-HotSicon";
-   elseif ( client == BNET_CLIENT_OVERWATCH ) then
-      return "Interface\\FriendsFrame\\Battlenet-Overwatchicon";
-   elseif ( client == BNET_CLIENT_SC ) then
-      return "Interface\\FriendsFrame\\Battlenet-SCicon";
-   elseif ( client == BNET_CLIENT_DESTINY2 ) then
-      return "Interface\\FriendsFrame\\Battlenet-Destiny2icon";
-   elseif ( client == BNET_CLIENT_COD ) then
-      return "Interface\\FriendsFrame\\Battlenet-CallOfDutyBlackOps4icon";
-   elseif ( client == BNET_CLIENT_COD_MW ) then
-      return "Interface\\FriendsFrame\\Battlenet-CallOfDutyMWicon";
-   elseif ( client == BNET_CLIENT_COD_MW2 ) then
-      return "Interface\\FriendsFrame\\Battlenet-CallOfDutyMW2icon";
-   elseif ( client == BNET_CLIENT_COD_BOCW ) then
-      return "Interface\\FriendsFrame\\Battlenet-CallOfDutyBlackOpsColdWaricon";
-   elseif ( client == BNET_CLIENT_WC3 ) then
-      return "Interface\\FriendsFrame\\Battlenet-Warcraft3Reforged";
-   elseif ( client == BNET_CLIENT_ARCADE ) then
-      return "Interface\\FriendsFrame\\Battlenet-BlizzardArcadeCollectionicon";
-   elseif ( client == BNET_CLIENT_CRASH4 ) then
-      return "Interface\\FriendsFrame\\Battlenet-CrashBandicoot4icon";
-   elseif ( client == BNET_CLIENT_D2 ) then
-      return "Interface\\FriendsFrame\\Battlenet-DiabloIIResurrectedicon";
-   elseif ( client == BNET_CLIENT_COD_VANGUARD ) then
-      return "Interface\\FriendsFrame\\Battlenet-CallOfDutyVanguardicon";
-   elseif ( client == BNET_CLIENT_DI) then
-      return "Interface\\FriendsFrame\\Battlenet-DiabloImmortalicon";
-   elseif ( client == BNET_CLIENT_ARCLIGHT) then
-      return "Interface\\FriendsFrame\\Battlenet-WarcraftArclightRumbleicon";
-   else
-      return "Interface\\FriendsFrame\\Battlenet-Battleneticon";
-   end
-end
+	-- Activision
+	WLBY = {icon=4034243, short="CB4",     long="Crash Bandicoot 4"},
+	DST2 = {icon=1711629, short="DST2",    long="Destiny 2"},
+	VIPR = {icon=2204215, short="BO4",     long="Call Of Duty: Black Ops 4"},
+	FORE = {icon=4256535, short="CoDV",    long="Call Of Duty: Vanguard"},
+	LAZR = {icon=3581732, short="MW2",     long="Call Of Duty: Modern Warfare 2"},
+	ODIN = {icon=3257658, short="MW",      long="Call Of Duty: Modern Warfare"},
+	ZEUS = {icon=3920823, short="BOCW",    long="Call Of Duty: Black Ops Cold War"},
 
--- /missing
-
-local gameShortcut = setmetatable({
-	[BNET_CLIENT_WTCG] = "HS",
-	[BNET_CLIENT_OVERWATCH] = "OW",
-	[BNET_CLIENT_HEROES] = "HotS",
-	[BNET_CLIENT_DI] = "ANBS",
-	["BSAp"] = "Mobile",
-	["Fen"] = "D4",
-},{ __index = function(t, k) return k end });
-
-local gameNames = setmetatable({
-	[BNET_CLIENT_APP]="Desktop App",
-	["BSAp"] = "Mobile App",
-	[BNET_CLIENT_D3]="Diablo 3",
-	[BNET_CLIENT_D4]="Diablo 4",
-	[BNET_CLIENT_DESTINY2]="Destiny 2",
-	[BNET_CLIENT_HEROES]="Heroes of the Storm",
-	[BNET_CLIENT_OVERWATCH]="Overwatch",
-	[BNET_CLIENT_SC2]="Starcraft 2",
-	[BNET_CLIENT_WOW]="World of Warcraft",
-	[BNET_CLIENT_WTCG]="Hearthstone",
-	[BNET_CLIENT_DI]="Warcraft Arclight Rumble",
-},{ __index = function(t, k) return k end });
-
-
+},{
+	__call = function(t,name)
+		local v = rawget(t,name)
+		if not v then
+			v = {icon=134400,short=name,long=name}
+			rawset(t,k,v)
+		elseif not (v.icon and v.short and v.long and v.iconStr) then
+			v.icon = v.icon or 134400;
+			v.short = v.short or name;
+			v.long = v.long or name;
+			v.iconStr = "|T"..v.icon..":0:0:0:0:32:32:5:27:5:27|t";
+		end
+		if not v.type then
+			v.type = v.icon==796351 and "App" or GAME;
+		end
+		return v;
+	end
+})
 
 -- register icon names and default files --
 -------------------------------------------
@@ -124,16 +65,6 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\friends"}; --IconNam
 
 -- some local functions --
 --------------------------
-local function BNet_GetClientTexture(game,tt2)
-	if ns.profile[name].showGame=="2" and not tt2 then
-		return gameShortcut[game]
-	else
-		local icon = _BNet_GetClientTexture(game)
-		return format("|T%s:%s|t",icon,gameIconPos[game])
-	end
-	return "";
-end
-
 local function _status(afk,dnd)
 	if ns.profile[name].showStatus=="1" then
 		return ("|T%s:0|t"):format(_G["FRIENDS_TEXTURE_"  .. ((afk==true and "AFK") or (dnd==true and "DND") or "ONLINE")]);
@@ -189,9 +120,10 @@ local function createTooltip2(self,data)
 	tt2:AddSeparator();
 	-- game
 	if ns.profile[name].showGameTT2 then
-		tt2:SetCell(tt2:AddLine(C(color1,data.client=="App" and L["Program"] or GAME)),2,gameNames[data.client] .." ".. BNet_GetClientTexture(data.client,true),nil,"RIGHT",0);
+		local info = GetClientInfo(data.client);
+		tt2:SetCell(tt2:AddLine(C(color1,info.type)),2,info.long .." ".. info.iconStr,nil,"RIGHT",0);
 	end
-	if data.client==BNET_CLIENT_WOW then
+	if data.client=="WoW" then
 		-- realm
 		if (data.realm) then
 			tt2:SetCell(tt2:AddLine(C(color1,L["Realm"])),2,ns.scm(data.realm),nil,"RIGHT",0);
@@ -319,6 +251,7 @@ local function createTooltip(tt)
 						if duplicates and mobileApp and desktopApp then
 							local isBNColor=false;
 							visible[fi.bnetAccountID] = true
+							local clientInfo = GetClientInfo(ti.clientProgram);
 							local l = tt:AddLine();
 
 							-- wow logout is buggy. sometimes level==0 and reamid==0. player is logout out but displayed as playing wow
@@ -401,7 +334,7 @@ local function createTooltip(tt)
 
 							-- game icon or text
 							if ns.profile[name].showGame~="0" then
-								tt:SetCell(l,4,C("white", BNet_GetClientTexture(ti.clientProgram) ));	-- 4
+								tt:SetCell(l,4, ns.profile[name].showGame=="2" and C("white",clientInfo.short) or clientInfo.iconStr );	-- 4
 							end
 
 							-- zone or current screen
@@ -409,7 +342,7 @@ local function createTooltip(tt)
 								if ti.clientProgram=="WoW" and ti.areaName and ti.areaName:match("^"..GARRISON_LOCATION_TOOLTIP) and ti.areaName~=GARRISON_LOCATION_TOOLTIP then
 									ti.areaName = GARRISON_LOCATION_TOOLTIP;
 								end
-								local zoneStr = (ti.areaName and ti.areaName~="" and ti.areaName) or --[[(ti.richPresence and ti.richPresence~="" and ti.richPresence) or]] (ti.clientProgram and ti.clientProgram~="" and gameNames[ti.clientProgram]) or UNKNOWN;
+								local zoneStr = (ti.areaName and ti.areaName~="" and ti.areaName) or (ti.clientProgram and ti.clientProgram~="" and clientInfo.long) or UNKNOWN;
 								tt:SetCell(l,5,C("white",zoneStr),nil,nil, ti.clientProgram=="WoW" and 1 or 3);			-- 5,6,7
 							end
 
@@ -491,8 +424,7 @@ local function createTooltip(tt)
 		if friendsOnline==0 then
 			tt:SetCell(tt:AddLine(),1,"    "..C("gray",L["Currently no friends online..."]),nil,"LEFT",0);
 		else
-			local charName,level,class,area,connected,status,note,cName,cRealm,cGame=1,2,3,4,5,6,7,18,19,20; -- GetFriendInfo
-			local l,c,s,n,_;
+			local clientInfo,_ = GetClientInfo("WoW")
 			for i=1, numFriends do
 				local v = C_FriendList.GetFriendInfoByIndex(i);
 				v.fullName = v.name;
@@ -502,12 +434,11 @@ local function createTooltip(tt)
 					v.realm = ns.realm;
 					v.fullName = v.fullName .."-".. ns.realm;
 				end
-				v.client = BNET_CLIENT_WOW;
+				v.client = "WoW";
 				if visible[v.name..v.realm..v.area] then
 					-- filter duplicates...
 				elseif v.name and v.connected then
 					visible[v.name..v.realm..v.area] = true;
-
 					local l = tt:AddLine("","","","","","","","");
 					tt:SetCell(l,2,C("white",v.level));
 
@@ -532,7 +463,7 @@ local function createTooltip(tt)
 
 					-- client icon or text
 					if ns.profile[name].showGame~="0" then
-						tt:SetCell(l,4,C("white",BNet_GetClientTexture(v.client)));
+						tt:SetCell(l,4,clientInfo.iconStr);
 					end
 					-- zone
 					if ns.profile[name].showZone then
