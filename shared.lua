@@ -2337,6 +2337,7 @@ end
 -- -------------------------------
 
 ns.C_QuestLog_GetInfo = (C_QuestLog and C_QuestLog.GetInfo) or function(questLogIndex)
+	-- 10/22/2003: Not present in Classic and Classic Era
 	local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, isHidden, isScaling  = GetQuestLogTitle(questLogIndex);
 	if type(suggestedGroup)=="string" then
 		suggestedGroup = tonumber(suggestedGroup) or 0; -- problem on bc classic client?
@@ -2368,6 +2369,7 @@ ns.C_QuestLog_GetInfo = (C_QuestLog and C_QuestLog.GetInfo) or function(questLog
 end
 
 ns.C_QuestLog_GetQuestTagInfo = (C_QuestLog and C_QuestLog.GetQuestTagInfo) or function(questID)
+	-- 10/22/2003: Not present in Classic and Classic Era
 	local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(questID);
 	return {
 		tagID = tagID,
@@ -2379,30 +2381,3 @@ ns.C_QuestLog_GetQuestTagInfo = (C_QuestLog and C_QuestLog.GetQuestTagInfo) or f
 		tradeskillLineIndex = tradeskillLineIndex
 	};
 end
-
-ns.C_BattleNet_GetFriendAccountInfo = (C_BattleNet and C_BattleNet.GetFriendAccountInfo) or function(friendIndex)
-	local accountInfo={gameAccountInfo={}};
-	accountInfo.bnetAccountID,
-	accountInfo.accountName,
-	accountInfo.battleTag,
-	accountInfo.isBattleTagFriend,
-	accountInfo.gameAccountInfo.characterName,
-	accountInfo.gameAccountInfo.gameAccountID,
-	accountInfo.gameAccountInfo.clientProgram,
-	accountInfo.gameAccountInfo.isOnline,
-	accountInfo.lastOnlineTime,
-	accountInfo.isAFK,
-	accountInfo.isDND,
-	accountInfo.customMessage,
-	accountInfo.note,
-	accountInfo.isFriend,
-	accountInfo.customMessageTime,
-	accountInfo.gameAccountInfo.wowProjectID,
-	accountInfo.rafLinkType,
-	accountInfo.gameAccountInfo.canSummon,
-	accountInfo.isFavorite,
-	accountInfo.gameAccountInfo.isWowMobile
-	= BNGetFriendInfo(friendIndex)
-	return accountInfo;
-end
-

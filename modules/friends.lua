@@ -263,36 +263,6 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 	end
 end
 
-local C_BattleNet_GetFriendNumGameAccounts = (C_BattleNet and C_BattleNet.GetFriendNumGameAccounts) or BNGetNumFriendGameAccounts;
-
-local C_BattleNet_GetFriendGameAccountInfo = (C_BattleNet and C_BattleNet.GetFriendGameAccountInfo) or function(friendIndex, accountIndex)
-	local gameAccountInfo,_ = {};
-	gameAccountInfo.hasFocus, -- 1
-	gameAccountInfo.characterName, -- 2
-	gameAccountInfo.clientProgram, -- 3
-	gameAccountInfo.realmName, -- 4
-	gameAccountInfo.realmID, -- 5
-	gameAccountInfo.factionName, -- 6
-	gameAccountInfo.raceName, -- 7
-	gameAccountInfo.className, -- 8
-	_, -- 9
-	gameAccountInfo.areaName, -- 10
-	gameAccountInfo.characterLevel, -- 11
-	gameAccountInfo.richPresence, -- 12
-	_, --accountInfo.customMessage, -- 13
-	_, --accountInfo.customMessageTime, -- 14
-	gameAccountInfo.isOnline, -- 15
-	gameAccountInfo.gameAccountID, -- 16
-	_, --accountInfo.bnetAccountID, -- 17
-	gameAccountInfo.isGameAFK, -- 18
-	gameAccountInfo.isGameBusy, -- 19
-	gameAccountInfo.playerGuid, -- 20
-	gameAccountInfo.wowProjectID, -- 21
-	gameAccountInfo.isWowMobile -- 22
-	= BNGetFriendGameAccountInfo(friendIndex, accountIndex)
-	return gameAccountInfo
-end
-
 local function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
@@ -300,7 +270,7 @@ local function createTooltip(tt)
 	local numFriends = C_FriendList.GetNumFriends();
 	local friendsOnline = C_FriendList.GetNumOnlineFriends();
 
-	local numBNFriends, numOnlineBNFriends = BNGetNumFriends();
+	local numBNFriends = BNGetNumFriends();
 	if tt.lines~=nil then tt:Clear(); end
 	tt:SetCell(tt:AddLine(),1,C("dkyellow",L[name]),tt:GetHeaderFont(),"LEFT",0);
 
@@ -336,11 +306,11 @@ local function createTooltip(tt)
 		else
 			-- RealId	Status Character	Level	Zone	Game	Realm	Notes
 			for i=1, numBNFriends do
-				local nt = C_BattleNet_GetFriendNumGameAccounts(i);
-				local fi = ns.C_BattleNet_GetFriendAccountInfo(i);
+				local nt = C_BattleNet.GetFriendNumGameAccounts(i);
+				local fi = C_BattleNet.GetFriendAccountInfo(i);
 				if nt and fi and fi.gameAccountInfo.isOnline then
 					for I=1, nt do
-						local ti =  C_BattleNet_GetFriendGameAccountInfo(i,I) or {};
+						local ti =  C_BattleNet.GetFriendGameAccountInfo(i,I) or {};
 						local bcIcon = fi.customMessage~="" and "|Tinterface\\chatframe\\ui-chatinput-focusicon:0|t" or "";
 						local cl = ti.clientProgram;
 						local mobileApp =  cl~="BSAp" or (cl=="BSAp" and ns.profile[name].showMobileApp); -- filter mobile app
