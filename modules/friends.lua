@@ -44,7 +44,8 @@ local GetClientInfo = setmetatable({
 		local v = rawget(t,name)
 		if not v then
 			v = {icon=134400,short=name,long=name}
-			rawset(t,k,v)
+			ns.print("Game name '"..name.."' not known. Please report the addon author.");
+			rawset(t,name,v)
 		elseif not (v.icon and v.short and v.long and v.iconStr) then
 			v.icon = v.icon or 134400;
 			v.short = v.short or name;
