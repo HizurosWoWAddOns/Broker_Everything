@@ -11,21 +11,32 @@ if not ns.IsRetailClient() then return end
 local name = "Professions"; -- TRADE_SKILLS L["ModDesc-Professions"]
 local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module = name.."TT",name.."TT2",2,3;
 local professions,cdSpells,skillNameById,toonDB,locked = {},{},{};
-local faction_recipes,PATTERN_SKILL_RANK_UP = {factionId=1,standing=2,itemId=3,spellId=4,rank=5};
-local expansionSkillLines,friendStandingLabel
-do
-	local arg1pattern, arg2pattern = "'%%s'","%%d";
-	if LOCALE_deDE then
-		arg1pattern, arg2pattern = "%%1%$s","%%2%$d"
-	end
-	PATTERN_SKILL_RANK_UP = ERR_SKILL_UP_SI:gsub(arg1pattern, "(.+)"):gsub(arg2pattern, "(%%d+)")
-end
-local maxInTitle = 1;
+local faction_recipes,friendStandingLabel = {factionId=1,standing=2,itemId=3,spellId=4,rank=5};
+local maxInTitle,triggerLock = 1,false;
 local cd_groups = { -- %s cooldown group
 	"Transmutation",	-- L["Transmutation cooldown group"]
 	"Jewels",			-- L["Jewels cooldown group"]
 	"Leather"			-- L["Leather cooldown group"]
 }
+local expansion2Index = {};
+do
+	for e=0, 10 do
+		if _G["EXPANSION_NAME"..e] then
+			expansion2Index[_G["EXPANSION_NAME"..e]] = e;
+		end
+	end
+end
+local expansionSkillLines = {}
+do
+	local list = C_TradeSkillUI.GetAllProfessionTradeSkillLines();
+	for i=1, #list do
+		local info = C_TradeSkillUI.GetProfessionInfoBySkillLineID(list[i]);
+		if info.parentProfessionID then
+			expansionSkillLines[info.parentProfessionID] = expansionSkillLines[info.parentProfessionID] or {};
+			tinsert(expansionSkillLines[info.parentProfessionID],{skillLineID=list[i],expansionName=info.expansionName,expansionIndex=expansion2Index[info.expansionName]});
+		end
+	end
+end
 
 
 -- register icon names and default files --
@@ -35,6 +46,10 @@ I[name] = {iconfile="Interface\\Icons\\INV_Misc_Book_09.png",coords={0.05,0.95,0
 
 -- some local functions --
 --------------------------
+local function unlockTriggerLock()
+	triggerLock = false;
+end
+
 local function cdReset(id,more)
 	local cd = 0;
 	more.days = more.days or 0;
@@ -357,8 +372,7 @@ local function CreateTooltip2(self, content)
 end
 
 local function AddFactionRecipeLines(tt,expansion,recipesByProfession)
-	local faction,trade_skill,factionName,factionId,standingID,_ = 0,0;
-	local factions,tskills = {},{};
+	local factions,_ = {};
 
 	tt:AddLine(C("gray",_G["EXPANSION_NAME"..expansion]));
 	for skillId, recipes in pairs(recipesByProfession) do
@@ -397,18 +411,6 @@ local function AddFactionRecipeLines(tt,expansion,recipesByProfession)
 end
 
 local function expansionSkillLines_OnEnter(self,skillId)
-	if not expansionSkillLines then
-		expansionSkillLines = {}
-		local list = C_TradeSkillUI.GetAllProfessionTradeSkillLines();
-		for i=1, #list do
-			local info = C_TradeSkillUI.GetProfessionInfoBySkillLineID(list[i]);
-			if info.parentProfessionID then
-				expansionSkillLines[info.parentProfessionID] = expansionSkillLines[info.parentProfessionID] or {};
-				tinsert(expansionSkillLines[info.parentProfessionID],list[i]);
-			end
-		end
-	end
-
 	if not expansionSkillLines[skillId] then
 		return
 	end
@@ -417,7 +419,7 @@ local function expansionSkillLines_OnEnter(self,skillId)
 
 	if C_TradeSkillUI.GetProfessionInfoBySkillLineID then
 		for i=1, #expansionSkillLines[skillId] do
-			local skillInfo = C_TradeSkillUI.GetProfessionInfoBySkillLineID(expansionSkillLines[skillId][i]);
+			local skillInfo = C_TradeSkillUI.GetProfessionInfoBySkillLineID(expansionSkillLines[skillId][i].skillLineID);
 			if skillInfo then
 				local color,text = "ltgray",L["Learnable"];
 				if skillInfo.skillLevel and skillInfo.maxSkillLevel and skillInfo.maxSkillLevel~=0 then
@@ -453,9 +455,7 @@ local function expansionSkillLines_OnEnter(self,skillId)
 	ns.roundupTooltip(tt2, true);
 end
 
-local function expansionSkillLines_OnLeave(self)
-	--
-end
+-- local function expansionSkillLines_OnLeave(self) end
 
 local function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
@@ -508,7 +508,7 @@ local function createTooltip(tt)
 		};
 		for i=1, #showFactionRecipes do
 			local e = showFactionRecipes[i];
-			if ns.toon.level==GetMaxLevelForExpansionLevel(e[2]) and ns.profile[name]["show"..e[1].."FactionRecipes"] then
+			if ns.toon.level>=GetMaxLevelForExpansionLevel(e[2]-1) and ns.profile[name]["show"..e[1].."FactionRecipes"] then
 				if not showFactionRecipesHeader then
 					tt:AddSeparator(4,0,0,0,0);
 					tt:AddLine(C("ltblue",L["Recipes from faction vendors by expansion"]));
@@ -584,7 +584,7 @@ local function createTooltip(tt)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(4,0,0,0,0)
-		local l,c = tt:AddLine()
+		tt:AddLine()
 		local _,_,mod = ns.DurationOrExpireDate();
 		ns.AddSpannedLine(tt,C("copper",L["Hold "..mod]).." || "..C("green",L["Show expire date instead of duration"]));
 		ns.ClickOpts.ttAddHints(tt,name);
@@ -896,6 +896,66 @@ function module.init()
 		friendStandingLabel[2550] = {"Empty","Low","Medium","High","Maximum"}
 	end
 
+	local profKnowledge = {}
+	profKnowledge[9] = {
+		-- "<c[currency]>:<currencyId>" | "<i[item]>:<itemId>:<knowledgeCount>"
+		-- Alchemy
+		[171] = {
+			"c:2024", "i:193891:1", "i:193897:1", "i:194697:1", "i:198519:1000", "i:198599:3", "i:198608:3", "i:198663:3", "i:198685:3", "i:198697:3", "i:198710:3", "i:198712:3", "i:198963:1", "i:198964:1",
+			"i:200974:10", "i:201003:3", "i:201270:10", "i:201281:10", "i:201706:5",
+		},
+		-- Blacksmithing
+		[164] = {
+			"c:2023", "i:192130:1", "i:192131:1", "i:192132:1", "i:198454:1", "i:198518:1000", "i:198606:3", "i:198791:3", "i:198965:1", "i:198966:1", "i:200972:10", "i:201004:3", "i:201005:3", "i:201006:3",
+			"i:201007:3", "i:201008:3", "i:201009:3", "i:201010:3", "i:201011:3", "i:201268:10", "i:201279:10", "i:201708:5",
+			},
+		-- Enchanting
+		[333] = {
+			"c:2030", "i:193900:1", "i:193901:1", "i:194702:1", "i:198520:1000", "i:198610:3", "i:198675:3", "i:198689:3", "i:198694:3", "i:198798:3", "i:198799:3", "i:198800:3", "i:198967:1", "i:198968:1",
+			"i:200976:10", "i:201012:3", "i:201013:3", "i:201272:10", "i:201283:10", "i:201356:3", "i:201357:3", "i:201358:3", "i:201359:3", "i:201709:5",
+		},
+		-- Engineering
+		[202] = {
+			"c:2027", "i:193902:1", "i:193903:1", "i:198510:1", "i:198521:1000", "i:198611:2", "i:198789:3", "i:198969:1", "i:198970:1", "i:200977:10", "i:201014:3", "i:201273:10", "i:201284:10", "i:201710:5",
+		},
+		-- Inscription
+		[773] = {
+			"c:2028", "i:193904:1", "i:193905:1", "i:194699:1", "i:198523:1000", "i:198607:3", "i:198659:3", "i:198669:3", "i:198686:3", "i:198693:3", "i:198703:3", "i:198704:3", "i:198971:1", "i:198972:1",
+			"i:200973:10", "i:201015:3", "i:201269:10", "i:201280:10", "i:201711:5",
+		},
+		-- Jewelcrafting
+		[755] = {
+			"c:2029", "i:193907:1", "i:193909:1", "i:194703:1", "i:198524:1000", "i:198612:3", "i:198656:3", "i:198657:3", "i:198660:3", "i:198664:3", "i:198670:3", "i:198682:3", "i:198687:3", "i:198973:1",
+			"i:198974:1", "i:200978:10", "i:201016:3", "i:201017:3", "i:201274:10", "i:201285:10", "i:201712:5",
+		},
+		-- Leatherworking
+		[165] = {
+			"c:2025", "i:193910:1", "i:193913:1", "i:194700:1", "i:198525:1000", "i:198613:3", "i:198658:3", "i:198667:3", "i:198683:3", "i:198690:3", "i:198696:3", "i:198711:3", "i:198975:1", "i:198976:1",
+			"i:200979:10", "i:201018:3", "i:201275:10", "i:201286:10", "i:201713:5",
+		},
+		-- Tailoring
+		[197] = {
+			"c:2026", "i:193898:1", "i:193899:1", "i:194698:1", "i:198528:1000", "i:198609:3", "i:198662:3", "i:198680:3", "i:198684:3", "i:198692:3", "i:198699:3", "i:198702:3", "i:198977:1", "i:198978:1",
+			"i:200975:10", "i:201019:5", "i:201020:3", "i:201271:10", "i:201282:10", "i:201715:5",
+		},
+		-- Mining
+		[186] = {
+			"c:2035", "i:194039:1", "i:194062:1", "i:194063:1", "i:194064:1", "i:194078:1", "i:194079:1", "i:194708:1", "i:198526:1000", "i:199122:3", "i:200981:15", "i:201277:15", "i:201288:15", "i:201300:1",
+			"i:201301:3", "i:201700:5", "i:201716:10", "i:202011:1",
+		},
+		-- Herbalism
+		[182] = {
+			"c:2034", "i:194054:1", "i:194055:1", "i:194061:1", "i:194081:1", "i:194704:1", "i:198522:1000", "i:199115:3", "i:200677:1", "i:200678:3", "i:200980:15", "i:201023:1", "i:201276:15", "i:201287:15",
+			"i:201705:5", "i:201717:10", "i:202014:1",
+		},
+		-- skinning
+		[393] = {
+			"i:194040:1", "i:194066:1", "i:194067:1", "i:194068:1", "i:194076:1", "i:194077:1", "i:198527:1000", "i:198837:1", "i:198841:2", "i:199128:3", "i:200982:15", "i:201023:1", "i:201278:15", "i:201289:15",
+			"i:201714:5", "i:201718:10", "i:202016:1",
+		},
+		-- Cooking
+		-- [] = ,
+	}
 
 	cdSpells = {
 		-- [<skillLine|tradeSkillId>] = { {<spellID|recipeID>,<Cd Group>,<Cd type>}, ... }
@@ -1024,6 +1084,10 @@ function module.onevent(self,event,arg1,...)
 			toonDB.unlearnedRecipes[id] = nil;
 		end
 	elseif event=="PLAYER_LOGIN" or ns.eventPlayerEnteredWorld then
+		if triggerLock then
+			return
+		end
+		triggerLock = true;
 		if not toonDB then
 			if ns.toon[name]==nil then
 				ns.toon[name]={};
@@ -1041,6 +1105,7 @@ function module.onevent(self,event,arg1,...)
 		end
 		updateTradeSkills();
 		updateBroker();
+		C_Timer.After(0.314,unlockTriggerLock)
 	end
 end
 
