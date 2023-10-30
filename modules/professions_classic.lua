@@ -451,6 +451,7 @@ function module.init()
 		3908,197, -- Tailoring
 		4036,202, -- Engineering
 		7411,333, -- Enchanting
+		45357,773, -- Inscription
 		25229,755, -- Jewelcrafting
 
 		-- main/collecting
