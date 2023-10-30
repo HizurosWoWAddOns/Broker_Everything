@@ -15,6 +15,7 @@ local spellId,skillId,disabled = 11, 12, 13; -- custom after GetProfessionInfo
 local spellName,spellLocaleName,spellIcon,spellId = 1,2,3,4;
 local professions,db,locked,cdSpells,poisons = {};
 local skillName2Info = {}
+local maxInTitle = 1;
 local Faction = UnitFactionGroup("player")=="Alliance" and 1 or 2;
 local skillsMax,triggerLock = {},false;
 local cd_groups = { -- %s cooldown group
@@ -66,7 +67,7 @@ I[name] = {iconfile="Interface\\Icons\\INV_Misc_Book_09.png",coords={0.05,0.95,0
 local function updateBroker()
 	local inTitle = {};
 
-	for i=1, 4 do
+	for i=1, maxInTitle do
 		local v = ns.profile[name].inTitle[i];
 		if v and professions[v] and professions[v][icon] and professions[v][skill] and professions[v][maxSkill] then
 			local modifier,color = "","gray2";
@@ -311,7 +312,7 @@ function module.OptionMenu(self,button,modName,actName)
 			numLearned = numLearned+1;
 		end
 	end
-	for I=1, 3 do
+	for I=1, maxInTitle do
 		local d,e,p = ns.profile[name].inTitle;
 		if (d[I]) and (professions[d[I]]) then
 			e=professions[d[I]];
@@ -515,6 +516,7 @@ local function OnEventUpdate()
 	end
 	if #tmp>0 then
 		professions = tmp;
+		maxInTitle = #tmp;
 	end
 
 	db.hasCooldowns = false;
