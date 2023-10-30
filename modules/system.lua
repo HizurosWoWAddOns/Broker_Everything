@@ -21,7 +21,7 @@ local fps     = {cur=0,min=-5,max=0,his={},curStr="",minStr="",maxStr=""};
 local memory  = {cur=0,min=0,max=0,his={},list={},curStr="",minStr="",maxStr="",brokerStr="",numAddOns=0,loadedAddOns=0};
 local netStatTimeout,memoryTimeout,enabled,module,isHooked,memUpdateLock=1,2,{};
 local version, build, buildDate, interfaceVersion = GetBuildInfo();
-local UpdateAddOnMemoryUsage = UpdateAddOnMemoryUsage;
+--local UpdateAddOnMemoryUsage = UpdateAddOnMemoryUsage;
 local addonpanels,updateAllTicker,memUpdateLocked = {};
 local triggerUpdateToken = {};
 local addonpanels_select = {["none"]=L["None (disable right click)"]};
@@ -229,7 +229,8 @@ local function updateMemory(updateToken)
 	setMemoryTimeout();
 	if not (enabled.sys_mod or enabled.mem_mod) then return end
 	if updateToken==triggerUpdateToken then
-		UpdateAddOnMemoryUsage();
+		securecall("UpdateAddOnMemoryUsage")
+		--UpdateAddOnMemoryUsage();
 	end
 	local num=GetNumAddOns();
 	local lst,grps,sum,numLoadedAddOns = {},{},0,0;
