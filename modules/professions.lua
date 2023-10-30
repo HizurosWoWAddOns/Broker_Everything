@@ -20,6 +20,7 @@ do
 	end
 	PATTERN_SKILL_RANK_UP = ERR_SKILL_UP_SI:gsub(arg1pattern, "(.+)"):gsub(arg2pattern, "(%%d+)")
 end
+local maxInTitle = 1;
 local cd_groups = { -- %s cooldown group
 	"Transmutation",	-- L["Transmutation cooldown group"]
 	"Jewels",			-- L["Jewels cooldown group"]
@@ -150,7 +151,7 @@ end
 
 local function updateTradeSkills()
 	wipe(professions)
-
+	local maxInTitleTmp = 0;
 	local lst = {GetProfessions()}; -- prof1, prof2, arch, fish, cook
 	for order,index in pairs(lst) do
 		local skillName, texture, rank, maxRank, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset, skillLineName
@@ -172,6 +173,7 @@ local function updateTradeSkills()
 			chkCooldownSpells(skillLine,texture);
 			chkExpiredCooldowns();
 			skillNameById[skillLine] = skillName;
+			maxInTitleTmp=maxInTitleTmp+1;
 		else
 			professions[order] = false;
 		end
@@ -200,8 +202,11 @@ local function updateTradeSkills()
 				maxSkill = maxSkill,
 				disabled = t[3]
 			});
+			maxInTitleTmp=maxInTitleTmp+1;
 		end
 	end
+
+	maxInTitle = maxInTitleTmp;
 end
 
 --[=[ - TradeSkillFrame does not exists in dragonflight; new functon coming soon.
@@ -259,7 +264,7 @@ end
 local function updateBroker()
 	local inTitle = {};
 
-	for place=1, 4 do
+	for place=1, maxInTitle do
 		local profIndex = ns.profile[name].inTitle[place];
 		if profIndex and professions[profIndex] and professions[profIndex].skillIcon and professions[profIndex].numSkill and professions[profIndex].maxSkill then
 			local modifier,color = "","gray2";
@@ -675,7 +680,7 @@ function module.OptionMenu(self,button,modName,actName)
 			numLearned = numLearned+1;
 		end
 	end
-	for I=1, 3 do
+	for I=1, maxInTitle do
 		local d,e,p = ns.profile[name].inTitle;
 		if (d[I]) and (professions[d[I]]) then
 			e=professions[d[I]];
