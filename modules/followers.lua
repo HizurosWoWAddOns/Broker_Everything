@@ -143,7 +143,7 @@ end
 local function updateFollowers(name,Table,forTooltip)
 	-- get garrison/shipyard level
 	local garrLevel,name = false,nameF;
-	if Table.type=="Type_6_2" then
+	if Table.type=="Type_6_0_Boat" then
 		Table.garrLevel = (C_Garrison.GetOwnedBuildingInfoAbbrev(98) or 0) - 204;
 		name = nameS;
 	else
