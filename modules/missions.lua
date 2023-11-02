@@ -14,14 +14,18 @@ local missions,started,counter = {},{},{};
 local qualities = {"white","ff1eaa00","ff0070dd","ffa335ee","red"};
 local garrLevel,syLevel,ohLevel = 0,0,0;
 local updateMissionsLocked = false;
-local expansions = {
-	-- { <expansionIndex>, <internalTypeString>, <localizedLabel>, <garrison-/follower-type>, <garrisonLevelFunction> }
-	{index=5, typeStr="followers",     label=GARRISON_FOLLOWERS,           type="6_0", levelFnc=C_Garrison.GetGarrisonInfo},
-	{index=5, typeStr="ships",         label=GARRISON_SHIPYARD_FOLLOWERS,  type="6_2", levelFnc=function() return (C_Garrison.GetOwnedBuildingInfoAbbrev(98) or 204)-204; end},
-	{index=6, typeStr="champions",     label=FOLLOWERLIST_LABEL_CHAMPIONS, type="7_0", levelFnc=C_Garrison.GetGarrisonInfo},
-	{index=7, typeStr="champions_bfa", label=FOLLOWERLIST_LABEL_CHAMPIONS, type="8_0", levelFnc=C_Garrison.GetGarrisonInfo},
-	{index=8, typeStr="champions_sl",  label=FOLLOWERLIST_LABEL_CHAMPIONS, type="9_0", levelFnc=C_Garrison.GetGarrisonInfo},
-};
+local expansions
+do
+	local g,b = "_Garrison","_Boat"
+	expansions = {
+		-- { <expansionIndex>, <internalTypeString>, <localizedLabel>, <garrison-/follower-type>, <garrisonLevelFunction> }
+		{index=5, typeStr="followers",     label=GARRISON_FOLLOWERS,           type="6_0"..g, levelFnc=C_Garrison.GetGarrisonInfo},
+		{index=5, typeStr="ships",         label=GARRISON_SHIPYARD_FOLLOWERS,  type="6_0"..b, levelFnc=function() return (C_Garrison.GetOwnedBuildingInfoAbbrev(98) or 204)-204; end},
+		{index=6, typeStr="champions",     label=FOLLOWERLIST_LABEL_CHAMPIONS, type="7_0"..g, levelFnc=C_Garrison.GetGarrisonInfo},
+		{index=7, typeStr="champions_bfa", label=FOLLOWERLIST_LABEL_CHAMPIONS, type="8_0"..g, levelFnc=C_Garrison.GetGarrisonInfo},
+		{index=8, typeStr="champions_sl",  label=FOLLOWERLIST_LABEL_CHAMPIONS, type="9_0"..g, levelFnc=C_Garrison.GetGarrisonInfo},
+	};
+end
 
 
 -- register icon names and default files --
@@ -57,7 +61,7 @@ local function updateMissions()
 	for e=1, #expansions do
 		local exp,followerType = expansions[e],false;
 		if exp.type then
-			followerType = Enum.GarrisonFollowerType["FollowerType_"..(exp.type=="6_2" and "6_0_Boat" or exp.type.."_GarrisonFollower")]
+			followerType = Enum.GarrisonFollowerType["FollowerType_"..(exp.type~="6_0_Boat" and "Follower" or "")]
 		end
 		if followerType then
 			exp.level = exp.levelFnc(Enum.GarrisonType["Type_"..exp.type.."_Garrison"]) or 0;
