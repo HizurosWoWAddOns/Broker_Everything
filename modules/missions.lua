@@ -59,12 +59,12 @@ local function updateMissions()
 	ns.toon.missions = {}; -- wipe
 	counter={completed=0,inprogress=0,available=0};
 	for e=1, #expansions do
-		local exp,followerType = expansions[e],false;
+		local exp,followerType = expansions[e],nil;
 		if exp.type then
 			followerType = Enum.GarrisonFollowerType["FollowerType_"..(exp.type~="6_0_Boat" and "Follower" or "")]
 		end
 		if followerType then
-			exp.level = exp.levelFnc(Enum.GarrisonType["Type_"..exp.type.."_Garrison"]) or 0;
+			exp.level = exp.levelFnc(Enum.GarrisonType["Type_"..exp.type]) or 0;
 			missions[exp.typeStr] = {inprogress={},available={},completed={}};
 			local m=missions[exp.typeStr];
 			local tmp = C_Garrison.GetInProgressMissions(followerType) or {};
