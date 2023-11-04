@@ -560,6 +560,7 @@ local function init()
 		[193588]=1, -- Toy - Timewalker's Hearthstone
 		[200630]=1, -- Toy - Ohn'ir Windsage's Hearthstone
 		[209035]=1, -- Toy - Hearthstone of the Flame
+		[208704]=1, -- Toy - Deepdweller's Earthen Hearthstone
 	};
 
 	--_itemReplacementIds = {64488,28585,6948,44315,44314,37118,142542,142298};
