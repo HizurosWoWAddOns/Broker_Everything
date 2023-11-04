@@ -61,7 +61,7 @@ local function updateMissions()
 	for e=1, #expansions do
 		local exp,followerType = expansions[e],nil;
 		if exp.type then
-			followerType = Enum.GarrisonFollowerType["FollowerType_"..(exp.type~="6_0_Boat" and "Follower" or "")]
+			followerType = Enum.GarrisonFollowerType["FollowerType_"..(exp.type~="6_0_Boat" and exp.type.."Follower" or exp.type)]
 		end
 		if followerType then
 			exp.level = exp.levelFnc(Enum.GarrisonType["Type_"..exp.type]) or 0;
