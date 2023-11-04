@@ -22,6 +22,7 @@ local memory  = {cur=0,min=0,max=0,his={},list={},curStr="",minStr="",maxStr="",
 local netStatTimeout,memoryTimeout,enabled,module,isHooked,memUpdateLock=1,2,{};
 local version, build, buildDate, interfaceVersion = GetBuildInfo();
 --local UpdateAddOnMemoryUsage = UpdateAddOnMemoryUsage;
+local IsAddOnLoaded = IsAddOnLoaded or C_AddOns.IsAddOnLoaded -- Patch 10.2
 local addonpanels,updateAllTicker,memUpdateLocked = {};
 local triggerUpdateToken = {};
 local addonpanels_select = {["none"]=L["None (disable right click)"]};

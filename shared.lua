@@ -12,10 +12,11 @@ local securecall,ipairs,pairs,tconcat,tsort=securecall,ipairs,pairs,table.concat
 local time,wipe,mod,hooksecurefunc,strsplit=time,wipe,mod,hooksecurefunc,strsplit;
 
 -- WoW Lua API functions
+local C_AddOns = C_AddOns or {}
 local UnitName,UnitSex,UnitClass,UnitFactionGroup=UnitName,UnitSex,UnitClass,UnitFactionGroup;
 local UnitRace,GetRealmName,GetLocale=UnitRace,GetRealmName,GetLocale;
 local InCombatLockdown,CreateFrame=InCombatLockdown,CreateFrame;
-local GetScreenHeight,GetMouseFocus,GetAddOnInfo=GetScreenHeight,GetMouseFocus,GetAddOnInfo;
+local GetScreenHeight,GetMouseFocus,GetAddOnInfo=GetScreenHeight,GetMouseFocus,GetAddOnInfo or C_AddOns.GetAddOnInfo;
 local GetAddOnEnableState,IsAltKeyDown=GetAddOnEnableState,IsAltKeyDown;
 local IsShiftKeyDown,IsControlKeyDown,GetItemInfo=IsShiftKeyDown,IsControlKeyDown,GetItemInfo;
 local GetInventoryItemLink,GetInventoryItemID=GetInventoryItemLink,GetInventoryItemID;
@@ -530,7 +531,7 @@ do
 	local function search()
 		found = {};
 		for name in pairs(list) do
-			if (GetAddOnInfo(name)) and (GetAddOnEnableState(ns.player.name,name)==2) then
+			if (GetAddOnInfo(name)) and ((GetAddOnEnableState and GetAddOnEnableState(ns.player.name,name)==2) or (C_AddOns.GetAddOnEnableState and C_AddOns.GetAddOnEnableState(name,ns.player.name)==2) ) then -- TODO: check after patch 10.2
 				tinsert(found,name);
 			end
 		end

@@ -16,6 +16,7 @@ local gmticket,ClassIconCoords = {},{};
 local customTitle = MAINMENU_BUTTON
 local IsBlizzCon = IsBlizzCon or function() return false; end -- Legion Fix
 local menu = {};
+local IsAddOnLoaded = IsAddOnLoaded or C_AddOns.IsAddOnLoaded;
 
 
 -- register icon names and default files --
