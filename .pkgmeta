@@ -26,20 +26,20 @@ externals:
         tag: latest
 
     libs/LibColors-1.0:
-        url: https://github.com/HizurosWoWAddOns/LibColors-1.0.git
+        url: https://github.com/HizurosWoWAddOns/LibColors-1.0
         tag: latest
 
     libs/LibTime-1.0:
-        url: https://github.com/HizurosWoWAddOns/LibTime-1.0.git
+        url: https://github.com/HizurosWoWAddOns/LibTime-1.0
         tag: latest
 
     libs/LibDropDownMenu:
-        url: https://github.com/HizurosWoWAddOns/LibDropDownMenu.git
+        url: https://github.com/HizurosWoWAddOns/LibDropDownMenu
         tag: latest
 
     libs/LibRealmInfo:
-        # url: https://github.com/phanx-wow/LibRealmInfo.git
-        url: https://github.com/janekjl/LibRealmInfo.git
+        # url: https://github.com/phanx-wow/LibRealmInfo
+        url: https://github.com/janekjl/LibRealmInfo
         tag: latest
 
     libs/AceGUI-3.0:
@@ -60,14 +60,6 @@ externals:
 
     libs/HizurosSharedTools:
         url: https://github.com/HizurosWoWAddOns/HizurosSharedTools
-
-# missing externals on addon page
-required-dependencies:
-    - libstringcoloring-1-0
-    - libtime-1-0
-    - libdropdownmenu
-    - libqtip-1-0
-    - librealminfo
 
 enable-nolib-creation: no
 enable-toc-creation: yes
