@@ -265,7 +265,7 @@ local function createTooltip(tt)
 								ti.realmInfo = {};
 								local areaName,realmName,_ = ti.richPresence:match("^(.*) %- (.*)$");
 								_, ti.realmInfo.Name, _, _, ti.realmInfo.Locale, _, ti.realmInfo.Region, ti.realmInfo.Timezone = ns.LRI:GetRealmInfoByID(ti.realmID);
-								if not ti.realmInfo.Name and realmName then
+								if not ti.realmInfo.Name and realmName and strlen(realmName)>0 then
 									-- get missing realmInfo via realmName from richPresence
 									_, ti.realmInfo.Name, _, _, ti.realmInfo.Locale, _, ti.realmInfo.Region, ti.realmInfo.Timezone = ns.LRI:GetRealmInfo(realmName,ns.region);
 								end
@@ -282,8 +282,10 @@ local function createTooltip(tt)
 								if WOW_PROJECT_ID ~= ti.wowProjectID then
 									-- add project name to realmName
 									ti.realmName = ti.realmName .. " |cffffee00("..L["WoWProjectId"..ti.wowProjectID]..")|r";
-									-- replace areaName
-									ti.areaName = areaName;
+									if areaName and strlen(areaName)>0 then
+										-- replace areaName
+										ti.areaName = areaName;
+									end
 								end
 							end
 
