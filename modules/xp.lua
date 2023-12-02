@@ -14,6 +14,13 @@ local sessionStartLevel = UnitLevel("player");
 local textbarSigns = {"=","-","#","||","/","\\","+",">","•","⁄"};
 local triggerLocked = false;
 
+local MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL -- missing changes by blizzard for bc and wotlk
+if MAX_PLAYER_LEVEL==60 and WOW_PROJECT_ID==WOW_PROJECT_BURNING_CRUSADE_CLASSIC then
+	MAX_PLAYER_LEVEL=70;
+elseif MAX_PLAYER_LEVEL==60 and WOW_PROJECT_ID==WOW_PROJECT_WRATH_CLASSIC then
+	MAX_PLAYER_LEVEL=80;
+end
+
 
 -- register icon names and default files --
 -------------------------------------------
