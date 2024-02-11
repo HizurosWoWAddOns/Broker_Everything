@@ -1715,6 +1715,7 @@ do
 			entry.isNotRadio       = not Data.radio;
 			entry.keepShownOnClick = true;
 			entry.noClickSound     = true;
+			entry.showNewLabel     = Data.new or false;
 
 			if (Data.keepShown==false) then
 				entry.keepShownOnClick = false;
@@ -1808,6 +1809,7 @@ do
 		if value_name and type(value_name)=="function" then
 			value_name = value_name({key});
 		end
+		local new_features = ns.modules[modName].new_features and ns.modules[modName].new_features[key];
 
 		if value.type=="separator" then
 			self:AddEntry({ separator=true },Parent);
@@ -1819,6 +1821,7 @@ do
 		elseif value.type=="toggle" then
 			self:AddEntry({
 				label = value_name:gsub("|n"," "),
+				new = new_features,
 				checked = function()
 					if key=="minimap" then
 						return not ns.profile[modName][key].hide;
@@ -1894,6 +1897,7 @@ do
 		elseif value.type=="group" then
 			local parent = self:AddEntry({
 				label = value_name,
+				new = new_features,
 				tooltip = setTooltip(value_name,value.desc),
 				arrow = true,
 			},Parent);
