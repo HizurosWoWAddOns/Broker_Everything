@@ -1817,13 +1817,6 @@ do
 		elseif value.type=="toggle" and not value_name then
 			ns:debug("<EasyMenu>","<AddConfigEntry>","[missing name]",key);
 		elseif value.type=="toggle" then
-			local tooltip = nil;
-			if value.desc then
-				tooltip = {value_name, value.desc};
-				if type(tooltip[2])=="function" then
-					tooltip[2] = tooltip[2]();
-				end
-			end
 			self:AddEntry({
 				label = value_name:gsub("|n"," "),
 				checked = function()
@@ -1843,10 +1836,6 @@ do
 				tooltip = setTooltip(value_name,value.desc),
 			},Parent);
 		elseif value.type=="select" then
-			local tooltip = {value_name, value.desc};
-			if type(tooltip[2])=="function" then
-				tooltip[2] = tooltip[2]();
-			end
 			local p = self:AddEntry({
 				label = value_name,
 				tooltip = setTooltip(value_name,value.desc),
