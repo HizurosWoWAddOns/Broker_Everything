@@ -1859,6 +1859,38 @@ do
 					end
 				},p);
 			end
+		elseif value.type=="color" then
+			local cur = ns.profile[modName][key]
+			local p = self:AddEntry({
+				label = value_name,
+				new = new_features,
+				hasOpacity = value.hasAlpha,
+				hasColorSwatch = true,
+				r = cur[1],
+				g = cur[2],
+				b = cur[3],
+				opacity = cur[4] or 1,
+				swatchFunc = function()
+					local r,g,b = ColorPickerFrame:GetColorRGB()
+					local colorTable = {r,g,b};
+					if value.hasAlpha then
+						colorTable[4] = ColorPickerFrame:GetColorAlpha()
+					end
+					ns.option({modName,"",key},colorTable)
+				end,
+				cancelFunc = function()
+					local colorTable = {
+						ColorPickerFrame.previousValues.r,
+						ColorPickerFrame.previousValues.g,
+						ColorPickerFrame.previousValues.b,
+					}
+					if value.hasAlpha then
+						colorTable[4] = ColorPickerFrame.previousValues.a;
+					end
+					ns.option({modName,"",key},colorTable)
+				end,
+				tooltip = setTooltip(value_name,value.desc)
+			},Parent);
 		elseif value.type=="group" then
 			local parent = self:AddEntry({
 				label = value_name,
