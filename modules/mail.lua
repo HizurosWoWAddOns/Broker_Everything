@@ -26,12 +26,9 @@ I[name..'_stored'] = {iconfile="interface\\icons\\inv_letter_03",coords={0.05,0.
 -- some local functions --
 --------------------------
 local function clearAllStoredMails()
-	for i=1, #ns.ns.toonsDB.order do
-		local toonName = ns.ns.toonsDB.order[i];
-		if toonName and toonName~=ns.player.name_realm then
-			ns.tablePath(ns.toonsDB,toonName,"mail");
-			ns.toonsDB[toonName].mail = {new={},stored={}};
-		end
+	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentHide=true, --[[currentFirst=true, forceSameRealm=true]]}) do
+		ns.tablePath(ns.toonsDB,toonName,"mail");
+		ns.toonsDB[toonName].mail = {new={},stored={}};
 	end
 	module.onevent({},"BE_DUMMY_EVENT");
 end
@@ -314,7 +311,10 @@ function module.options()
 		misc = {
 			playsound={ type="toggle", order=1, name=L["Play sound on new mail"], desc=L["Enable to play a sound on receiving a new mail message. Default is off"], width="full" },
 			hideMinimapMail={ type="toggle", order=2, name=L["Hide minimap mail icon"], desc=L["Hide minimap mail icon"], width="full", disabled=ns.coexist.IsNotAlone },
-			hideMinimapMailInfo = { type="description", order=3, name=ns.coexist.optionInfo, fontSize="medium", hidden=ns.coexist.IsNotAlone }
+			hideMinimapMailInfo = { type="description", order=3, name=ns.coexist.optionInfo, fontSize="medium", hidden=ns.coexist.IsNotAlone },
+			header = { type="header", order =4, name=L["MailStoredOption"] },
+			resetStoredDesc = { type ="description", fontSize="medium", order= 5, name = L["MailStoredResetDesc"] },
+			resetStored = { type = "execute", order = 6, name = RESET, func = clearAllStoredMails }
 		},
 	},
 	{
