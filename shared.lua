@@ -1788,7 +1788,16 @@ do
 			return self.menu[#self.menu];
 		end
 	end
-
+	local function setTooltip(name,desc)
+		local tooltip = nil;
+		if desc then
+			tooltip = {name, desc};
+			if type(tooltip[2])=="function" then
+				tooltip[2] = tooltip[2]();
+			end
+		end
+		return tooltip
+	end
 	---@param modName string module name
 	---@param key string
 	---@param value table
@@ -1831,7 +1840,7 @@ do
 						ns.option(info,not ns.profile[modName][key]);
 					end
 				end,
-				tooltip = tooltip,
+				tooltip = setTooltip(value_name,value.desc),
 			},Parent);
 		elseif value.type=="select" then
 			local tooltip = {value_name, value.desc};
@@ -1840,7 +1849,7 @@ do
 			end
 			local p = self:AddEntry({
 				label = value_name,
-				tooltip = tooltip,
+				tooltip = setTooltip(value_name,value.desc),
 				arrow = true
 			},Parent);
 			local values = value.values;
@@ -1862,13 +1871,9 @@ do
 				},p);
 			end
 		elseif value.type=="group" then
-			local tooltip = {value.name, value.desc};
-			if type(tooltip[2])=="function" then
-				tooltip[2] = tooltip[2]();
-			end
 			local parent = self:AddEntry({
 				label = value_name,
-				tooltip = tooltip,
+				tooltip = setTooltip(value_name,value.desc),
 				arrow = true,
 			},Parent);
 			for _key, _value in pairsByAceOptions(value.args) do
