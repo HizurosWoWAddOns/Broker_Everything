@@ -83,9 +83,9 @@ local function createTooltip(tt)
 	tt:AddSeparator()
 
 	for i, v in ipairs(menu) do
-		local hide = false
-		if type(v.hide)=="function" then
-			hide = v.hide();
+		local hide = v.hide;
+		if type(hide)=="function" then
+			hide = hide();
 		end
 		if (v.taint and not ns.profile[name].showTaintingEntries) or hide then
 			-- nothing // hide the entry
@@ -176,6 +176,13 @@ local function createTooltip(tt)
 	ns.roundupTooltip(tt);
 end
 
+local function OpenCollectionsJournalPanel(index)
+	if not CollectionsJournal then
+		LoadAddOn("Blizzard_Collections")
+	end
+	ShowUIPanel(CollectionsJournal);
+	securecall("CollectionsJournal_SetTab", CollectionsJournal, index)
+end
 
 -- module functions and variables --
 ------------------------------------
@@ -306,18 +313,19 @@ function module.init()
 		{name=PLAYER_V_PLAYER,		iconName="LFDungeon",		func=function() securecall("PVEFrame_ToggleFrame","PVPUIFrame"); end, disabled=not canLFD, hide=ns.IsClassicClient},
 		{name=CHALLENGES,			iconName="Challenges",		func=function() securecall("PVEFrame_ToggleFrame","ChallengesFrame"); end, disabled=not canLFD, hide=ns.IsClassicClient},
 
-		{name=MOUNTS,				iconName="Mounts",			func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 1) end,		taint=true, hide=ns.IsClassicClient},
-		{name=PET_JOURNAL,			iconName="Pets",			func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 2) end,		taint=true, hide=ns.IsClassicClient},
-		{name=TOY_BOX,				iconName="ToyBox",			func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 3) end,		taint=true, hide=ns.IsClassicClient},
-		{name=HEIRLOOMS,			iconName="Heirlooms",		func=function() if not CollectionsJournal then LoadAddOn("Blizzard_Collections") end ShowUIPanel(CollectionsJournal); securecall("CollectionsJournal_SetTab", CollectionsJournal, 4) end,		taint=true, hide=ns.IsClassicClient},
+		{name=MOUNTS,				iconName="Mounts",			func=function() OpenCollectionsJournalPanel(1) end, taint=true, hide=ns.IsClassicClient},
+		{name=PET_JOURNAL,			iconName="Pets",			func=function() OpenCollectionsJournalPanel(2) end, taint=true, hide=ns.IsClassicClient},
+		{name=TOY_BOX,				iconName="ToyBox",			func=function() OpenCollectionsJournalPanel(3) end, taint=true, hide=ns.IsClassicClient},
+		{name=HEIRLOOMS,			iconName="Heirlooms",		func=function() OpenCollectionsJournalPanel(4) end, taint=true, hide=ns.IsClassicClient},
 
-		{name=ENCOUNTER_JOURNAL,	iconName="EJ",				func=function() securecall("ToggleEncounterJournal") end,														iconCoords="", hide=ns.IsClassicClient},
-		{name=BLIZZARD_STORE,		iconName="Store",			click='StoreMicroButton',															disabled=IsTrialAccount(), taint=true, hide=ns.IsClassicClient},
+		{name=ENCOUNTER_JOURNAL,	iconName="EJ",				func=function() securecall("ToggleEncounterJournal") end, iconCoords="", hide=ns.IsClassicClient},
+		{name=BLIZZARD_STORE,		iconName="Store",			click='StoreMicroButton', disabled=IsTrialAccount(), taint=true, hide=ns.IsClassicClient},
 		{sep=true}, -- section 2
 		{name=GAMEMENU_HELP,		iconName="Help",			func=function() securecall("ToggleHelpFrame") end,		},
-		{name=SYSTEMOPTIONS_MENU,	iconName="SysOpts",			func=function() securecall("VideoOptionsFrame_Toggle") end,		},
-		{name=KEY_BINDINGS,			iconName="KeyBinds",		func=function() securecall("KeyBindingFrame_LoadUI") securecall("ShowUIPanel", KeyBindingFrame) end,		taint=true},
+		--{name=SYSTEMOPTIONS_MENU,	iconName="SysOpts",			func=function() securecall("VideoOptionsFrame_Toggle") end,		},
 		{name=UIOPTIONS_MENU,		iconName="UiOpts",			func=function() securecall("InterfaceOptionsFrame_Show") end,		},
+		{name=KEY_BINDINGS,			iconName="KeyBinds",		func=function() securecall("KeyBindingFrame_LoadUI") securecall("ShowUIPanel", KeyBindingFrame) end,		taint=true},
+		--{name=UIOPTIONS_MENU,		iconName="UiOpts",			func=function() securecall("InterfaceOptionsFrame_Show") end,		},
 		{name=MACROS,				iconName="Macros",			func=function() securecall("ShowMacroFrame") end,		},
 		{name=MAC_OPTIONS,			iconName="MacOpts",			func=function() securecall("ShowUIPanel", MacOptionsFrame) end,		 view=IsMacClient()==true},
 		{name=ADDONS,				iconName="Addons",			view=( (IsAddOnLoaded("OptionHouse")) or (IsAddOnLoaded("ACP")) or (IsAddOnLoaded("Ampere")) or (IsAddOnLoaded("stAddonManager")) or (_G["AddonList"]) ),
