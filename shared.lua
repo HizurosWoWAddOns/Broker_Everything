@@ -128,7 +128,7 @@ end
 
 ---@return boolean
 function ns.IsClassicClient() -- for AceOptions
-	return not WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
+	return not (WOW_PROJECT_ID==WOW_PROJECT_MAINLINE);
 end
 
 ---@return boolean
