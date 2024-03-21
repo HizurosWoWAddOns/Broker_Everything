@@ -1129,8 +1129,7 @@ do
 		elseif event=="GET_ITEM_INFO_RECEIVED" and (...)~=nil then
 			local id = ...;
 			if itemsByID[id] then
-				local info = itemsByID[id];
-				local _, spell = GetItemSpell(info.link);
+				local _, spell = GetItemSpell(id);
 				if spell then
 					for sharedSlot, info in pairs(itemsByID[...])do
 						local _, count, _, _, _, _, _, _, _ = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(info.bag,info.slot);
