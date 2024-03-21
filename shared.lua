@@ -958,7 +958,7 @@ do
 			hasChanged.equip = true;
 		end
 		-- item has 'Use:' effect spell
-		local _,itemSpellID = GetItemSpell(info.link);
+		local _,itemSpellID = (C_Item and C_Item.GetItemSpell or GetItemSpell)(info.link);
 		if itemSpellID then
 			info.spell = itemSpellID;
 			if itemsBySpell[info.spell] == nil then
@@ -1129,11 +1129,11 @@ do
 		elseif event=="GET_ITEM_INFO_RECEIVED" and (...)~=nil then
 			local id = ...;
 			if itemsByID[id] then
-				local _, spell = GetItemSpell(id);
+				local _, spell = (C_Item and C_Item.GetItemSpell or GetItemSpell)(id); -- test if item has a spell
 				if spell then
 					for sharedSlot, info in pairs(itemsByID[...])do
 						local _, count, _, _, _, _, _, _, _ = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(info.bag,info.slot);
-						info.spell = spell;
+						_, info.spell = (C_Item and C_Item.GetItemSpell or GetItemSpell)(info.link); -- multiple items with same id could have different spells by itemLink.
 						itemsBySpell[spell][sharedSlot] = count;
 					end
 				end
