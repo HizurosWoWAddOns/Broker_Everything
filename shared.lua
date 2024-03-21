@@ -1134,7 +1134,12 @@ do
 					for sharedSlot, info in pairs(itemsByID[...])do
 						local _, count, _, _, _, _, _, _, _ = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(info.bag,info.slot);
 						_, info.spell = (C_Item and C_Item.GetItemSpell or GetItemSpell)(info.link); -- multiple items with same id could have different spells by itemLink.
-						itemsBySpell[spell][sharedSlot] = count;
+						if info.spell then
+							if not itemsBySpell[info.spell] then
+								itemsBySpell[info.spell] = {};
+							end
+							itemsBySpell[info.spell][sharedSlot] = count;
+						end
 					end
 				end
 			elseif callbacks.toys[id] and PlayerHasToy then
