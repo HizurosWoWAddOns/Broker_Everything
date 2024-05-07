@@ -21,8 +21,26 @@ local calendarTypes = {
 	{type="COMMUNITY_EVENT",    label=L["CalendarCommunityEvents"],    cfg="showCommunityEvents"},
 };
 local inviteStatusString = {};
-for i,v in ipairs(CALENDAR_INVITESTATUS_INFO)do
-	tinsert(inviteStatusString,v.color:WrapTextInColorCode(v.name));
+if CALENDAR_INVITESTATUS_INFO then
+	for i,v in ipairs(CALENDAR_INVITESTATUS_INFO)do
+		tinsert(inviteStatusString,v.color:WrapTextInColorCode(v.name));
+	end
+else -- needed for cata classic
+	local colors={
+		--["UNKNOWN"]={"NORMAL","UNKNOWN"},
+		{"NORMAL","INVITED"}, -- invited 0
+		{"GREEN","ACCEPTED"}, -- available 1
+		{"RED","DECLINE"}, -- decline 2
+		{"GREEN","CONFIRMED"}, -- confirmed 3
+		{"RED","OUT"}, -- out 4
+		{"ORANGE","STANDBY"}, -- standby 5
+		{"GREEN","SIGNEDUP"}, -- signedup 6
+		{"GRAY","NOT_SIGNEDUP"}, -- notsignedup 7
+		{"ORANGE","TENTATIVE"}, -- tentative 8
+	}
+	for i,v in ipairs(colors)do
+		tinsert(inviteStatusString,_G[v[1].."_FONT_COLOR"]:WrapTextInColorCode( _G["CALENDAR_INVITESTATUS_"..v[2]] or UNKNOWN ) );
+	end
 end
 local IS_TODAY = C("green","("..COMMUNITIES_CHAT_FRAME_TODAY_NOTIFICATION..") ");
 local IS_TOMORROW = C("dkyellow","("..L["Tomorrow"]..") ");
