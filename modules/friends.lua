@@ -486,8 +486,8 @@ local function createTooltip(tt)
 						tt:SetCell(l,7,"|TInterface\\PVPFrame\\PVP-Currency-"..ns.player.faction..":16:16:0:-1:32:32:2:30:2:30|t");
 					end
 					-- notes
-					if ns.profile[name].showNotes then
-						tt:SetCell(l,8,C("white",ns.scm(v[note] or "")));
+					if ns.profile[name].showNotes and type(v.notes)=="string" and v.notes:len()>0 then
+						tt:SetCell(l,8,C("white",ns.scm(v.notes or "")));
 					end
 
 					v.type = "realm";
