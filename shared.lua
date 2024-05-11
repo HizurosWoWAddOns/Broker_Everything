@@ -1663,6 +1663,16 @@ do
 	end
 
 	local function LibCloseDropDownMenus()
+		for l=1, UIDROPDOWNMENU_MAXLEVELS, 1 do
+			local list = _G["LibDropDownMenu_List"..l];
+			if list and list:IsVisible() then
+				for c,child in pairs({list:GetChildren()}) do
+					if child and child.NewFeature and child.NewFeature:IsShown() then
+						child.NewFeature:Hide()
+					end
+				end
+			end
+		end
 		LDDM.CloseDropDownMenus();
 		CloseMenus();
 	end
