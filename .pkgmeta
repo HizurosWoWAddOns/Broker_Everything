@@ -39,7 +39,8 @@ externals:
 
     libs/LibRealmInfo:
         # url: https://github.com/phanx-wow/LibRealmInfo
-        url: https://github.com/janekjl/LibRealmInfo
+        # url: https://github.com/janekjl/LibRealmInfo
+        url: https://github.com/HizurosWoWAddOns/LibRealmInfo
         tag: latest
 
     libs/AceGUI-3.0:
