@@ -17,6 +17,7 @@ local customTitle = MAINMENU_BUTTON
 local IsBlizzCon = IsBlizzCon or function() return false; end -- Legion Fix
 local menu = {};
 local IsAddOnLoaded = IsAddOnLoaded or C_AddOns.IsAddOnLoaded;
+local LoadAddOn = LoadAddOn or C_AddOns.LoadAddOn;
 
 
 -- register icon names and default files --
