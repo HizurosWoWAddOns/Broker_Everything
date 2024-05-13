@@ -23,6 +23,12 @@ local netStatTimeout,memoryTimeout,enabled,module,isHooked,memUpdateLock=1,2,{};
 local version, build, buildDate, interfaceVersion = GetBuildInfo();
 --local UpdateAddOnMemoryUsage = UpdateAddOnMemoryUsage;
 local IsAddOnLoaded = IsAddOnLoaded or C_AddOns.IsAddOnLoaded -- Patch 10.2
+local GetNumAddOns = GetNumAddOns or C_AddOns.GetNumAddOns;
+local GetAddOnInfo = GetAddOnInfo or C_AddOns.GetAddOnInfo;
+local GetAddOnEnableState = GetAddOnEnableState or C_AddOns.GetAddOnEnableState;
+local LoadAddOn = LoadAddOn or C_AddOns.LoadAddOn;
+--local UpdateAddOnMemoryUsage = UpdateAddOnMemoryUsage or C_AddOns.UpdateAddOnMemoryUsage;
+local GetAddOnMemoryUsage = GetAddOnMemoryUsage or C_AddOns.GetAddOnMemoryUsage;
 local addonpanels,updateAllTicker,memUpdateLocked = {};
 local triggerUpdateToken = {};
 local addonpanels_select = {["none"]=L["None (disable right click)"]};
@@ -223,15 +229,21 @@ end
 
 local function updateMemory(updateToken)
 	-- against too often triggered UpdateAddOnMemoryUsage.
-	if memUpdateLocked then return end
+	if (IsInInstance() and enabled.sys_mod and ns.profile[name_sys].updateIntervalNotInInstance)
+	or (IsInInstance() and enabled.mem_mod and ns.profile[name_mem].updateIntervalNotInInstance)
+	or memUpdateLocked then return end
+
 	memUpdateLocked = true;
 	C_Timer.After(25, resetMemUpdateLock);
 	--
 	setMemoryTimeout();
 	if not (enabled.sys_mod or enabled.mem_mod) then return end
 	if updateToken==triggerUpdateToken then
-		securecall("UpdateAddOnMemoryUsage")
-		--UpdateAddOnMemoryUsage();
+		if UpdateAddOnMemoryUsage then
+			securecall("UpdateAddOnMemoryUsage")
+		elseif C_AddOns.UpdateAddOnMemoryUsage then
+			securecall("C_AddOns.UpdateAddOnMemoryUsage");
+		end
 	end
 	local num=GetNumAddOns();
 	local lst,grps,sum,numLoadedAddOns = {},{},0,0;
@@ -337,18 +349,22 @@ local function createTooltip(tt, name, ttName, update)
 			tt:AddSeparator(4,0,0,0,0);
 			tt:SetCell(tt:AddLine(),1,C("ltblue",L["AddOns and memory"]),nil,nil,0);
 			tt:AddSeparator();
-			tt:AddLine(C("ltyellow",L["Loaded AddOns"]..HEADER_COLON), memory.loadedAddOns.."/"..memory.numAddOns);
-			tt:AddLine(C("ltyellow",L["Memory usage"]..HEADER_COLON), memory.curStr);
+			if IsInInstance() and ns.profile[name].updateIntervalNotInInstance then
+				tt:SetCell(tt:AddLine(),1,C("orange",L["SystemUpdateInInstancesInfo"]),nil,nil,ttColumnsSys)
+			else
+				tt:AddLine(C("ltyellow",L["Loaded AddOns"]..HEADER_COLON), memory.loadedAddOns.."/"..memory.numAddOns);
+				tt:AddLine(C("ltyellow",L["Memory usage"]..HEADER_COLON), memory.curStr);
 
-			local num = _G.min(#memory.list,ns.profile[name].numDisplayAddOns);
-			if num==0 then num=_G.min(#memory.list,1000); end
-			table.sort(memory.list,function(a,b) return a.cur>b.cur; end);
+				local num = _G.min(#memory.list,ns.profile[name].numDisplayAddOns);
+				if num==0 then num=_G.min(#memory.list,1000); end
+				table.sort(memory.list,function(a,b) return a.cur>b.cur; end);
 
-			tt:AddSeparator(4,0,0,0,0);
-			tt:SetCell(tt:AddLine(),1,C("ltblue",L[#memory.list==num and "Loaded AddOns" or "Top %d AddOns in memory usage"]:format(num)),nil,nil,ttColumnsSys);
-			tt:AddSeparator();
-			for i=1, num do
-				tt:AddLine(C("ltyellow",memory.list[i].name),memory.list[i].curStr);
+				tt:AddSeparator(4,0,0,0,0);
+				tt:SetCell(tt:AddLine(),1,C("ltblue",L[#memory.list==num and "Loaded AddOns" or "Top %d AddOns in memory usage"]:format(num)),nil,nil,ttColumnsSys);
+				tt:AddSeparator();
+				for i=1, num do
+					tt:AddLine(C("ltyellow",memory.list[i].name),memory.list[i].curStr);
+				end
 			end
 			allHidden=false;
 		end
@@ -614,6 +630,7 @@ module_sys = {
 		-- misc
 		addonpanel = "none",
 		updateInterval = 300,
+		updateIntervalNotInInstance = false,
 	},
 	clickOptions = clickOptions
 };
@@ -642,6 +659,7 @@ module_mem = {
 		mem_max_addons = -1,
 		addonpanel = "none",
 		updateInterval = 300,
+		updateIntervalNotInInstance = false,
 	},
 	clickOptions = clickOptions
 }
@@ -661,13 +679,17 @@ ns.ClickOpts.addDefaults(module_mem,clickOptionsDefaults);
 module_sys.addonpanel = addonpanel;
 module_mem.addonpanel = addonpanel;
 
-local function addUpdateInterval(opt,addSeparator,order)
-	if addSeparator then
-		opt['updateIntervalSeparator'] = { type="separator", order=order };
-		order=order+1;
+local function addUpdateInterval(opt,addHeader,order)
+	if type(addHeader)=="number" then
+		if addHeader==2 then
+			opt["updateIntervalSeparator0"]={ type="separator", order=order };
+		end
+		opt["header"]={ type="header", name=L["Memory usage"], order=order+1 };
+		opt['updateIntervalSeparator1'] = { type="separator", order=order+2 };
+		order=order+3;
 	end
 
-	opt['updateInterval'] = { type="select", order=order, name=L["SystemUpdateInterval"], desc=L["SystemUpdateIntervalDesc"],
+	opt['updateInterval'] = { type="select", order=order+3, name=L["SystemUpdateInterval"], desc=L["SystemUpdateIntervalDesc"],
 		values = {
 			[0] = DISABLE,
 			[30] = L["All 30 seconds"],
@@ -680,13 +702,20 @@ local function addUpdateInterval(opt,addSeparator,order)
 		}
 	};
 
-	opt['updateIntervalDesc']={ type="description", order=8, name="|n"..table.concat({
+	opt['updateIntervalDesc']={ type="description", order=order+4, name="|n"..table.concat({
 			C("orange",L["SystemUpdateIntervalDescLong1"]),
 			C("white", L["SystemUpdateIntervalDescLong2"]),
 			C("yellow",L["SystemUpdateIntervalDescLong3"])
 		},"|n|n"), fontSize="medium"
 	}
 
+	opt['updateIntervalNotInInstance'] = {
+		type = "toggle", order=order+5,
+		name = L["SystemUpdateInInstances"],
+		desc = L["SystemUpdateInInstancesDesc1"].."|n|n"..C("ltgreen",L["SystemUpdateInInstancesDesc2"])
+	}
+
+	return order+6
 end
 
 function module_sys.options()
@@ -717,7 +746,7 @@ function module_sys.options()
 		},
 		misc = {},
 	}
-	addUpdateInterval(opt.misc,false,1);
+	addUpdateInterval(opt.misc,1,1);
 	return opt;
 end
 
@@ -740,11 +769,9 @@ function module_mem.options()
 		misc = {
 			shortNumbers=0,
 			addonpanel={ type="select", order=1, name=L["Addon panel"], desc=L["Choose your addon panel that opens if you rightclick on memory broker or disable the right click option."], values=addonpanels_select, width="double" },
-			separator={ type="separator", order=2,  },
-			header={ type="header", name=L["Memory usage"], order=3 },
 		},
 	}
-	addUpdateInterval(opt.misc,true,5)
+	addUpdateInterval(opt.misc,2,10)
 	return opt;
 end
 
