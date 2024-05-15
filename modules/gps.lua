@@ -522,7 +522,7 @@ local function init()
 		18984,18986,30542,30544,43824,48933,87215,95567,95568,95589,95590,110560,112059,129929,132517,136849,140192,140324,151016,151652,168807,168808,169297,169298,172924,198156,211788,
 
 		-- hearth stones
-		54452,64488,93672,142542,162973,163045,165669,165670,165802,166746,166747,168907,172179,184353,180290,182773,183716,190196,190237,193588,200630,212337
+		54452,64488,93672,142542,162973,163045,165669,165670,165802,166746,166747,168862,168907,172179,184353,180290,182773,183716,184871,188952,190196,190237,193588,200630,206195,208704,209035,212337
 	};
 
 	-- on some toys C_ToyBox.IsToyUsable returns wrong state
@@ -550,18 +550,22 @@ local function init()
 		[165802]=1, -- Toy - Noble Gardener's Hearthstone
 		[166746]=1, -- Toy - Fire Eater's Hearthstone
 		[166747]=1, -- Toy - Brewfest Reveler's Hearthstone
+		[168862]=1, -- Toy - G.E.A.R. Tracking Beacon
 		[168907]=1, -- Toy - Holographic Digitalization Hearthstone
 		[172179]=1, -- Toy - Eternal Traveler's Hearthstone
 		[184353]=1, -- Toy - Kyrian Hearthstone
 		[180290]=1, -- Toy - Night Fae Hearthstone
 		[182773]=1, -- Toy - Necrolord Hearthstone
 		[183716]=1, -- Toy - Venthyr Sinstone
+		[184871]=1, -- Toy - Dark Portal
+		[188952]=1, -- Toy - Dominated Hearthstone
 		[190196]=1, -- Toy - Enlightened Hearthstone
 		[190237]=1, -- Toy - Broker Translocation Matrix
 		[193588]=1, -- Toy - Timewalker's Hearthstone
 		[200630]=1, -- Toy - Ohn'ir Windsage's Hearthstone
-		[209035]=1, -- Toy - Hearthstone of the Flame
+		[206195]=1, -- Toy - Path of the Naaru
 		[208704]=1, -- Toy - Deepdweller's Earthen Hearthstone
+		[209035]=1, -- Toy - Hearthstone of the Flame
 		[212337]=1, -- Toy - Stone of the Hearth
 	};
 
