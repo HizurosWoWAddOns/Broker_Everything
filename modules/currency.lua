@@ -197,9 +197,16 @@ function createTooltip(tt,update)
 		tt:AddSeparator()
 	end
 
-	local parentIsCollapsed,hiddenSection,empty = false,false,nil;
+	local parentIsCollapsed,hiddenSection,empty,IsMoPRemix,headerMoPRemix = false,false,nil,false,false;
+	if C_UnitAuras then
+		IsMoPRemix = not not C_UnitAuras.GetPlayerAuraBySpellID(424143);
+	end
 	for i=1, #Currencies do
-		if Currencies[i]=="HIDDEN_CURRENCIES" and not ns.profile[name].showHidden then
+		if IsMoPRemix and not headerMoPRemix then
+			if Currencies[i]=="EXPANSION_NAME5" then
+				headerMoPRemix = true;
+			end
+		elseif Currencies[i]=="HIDDEN_CURRENCIES" and not ns.profile[name].showHidden then
 			break;
 		elseif not validateID(Currencies[i]) then
 			if Currencies[i]=="HIDDEN_CURRENCIES" then
@@ -595,7 +602,7 @@ function module.init()
 		[1838] = VE, -- Die Gräfin
 	};
 	local A = faction=="Alliance";
-	-- "prog:[kw]:%d:%d" k=knowledge, w=workorders, 1. integer = expansion index, 2. integer = progession index from GetProfessions
+	-- "prog:[kw]:%d:%d" k=knowledge, w=workorders, 1. integer = expansion index, 2. integer = profession index from GetProfessions
 	Currencies = {
 		"EXPANSION_NAME9",2806,2807,2809,2812,2777,2709,2708,2707,2706,2650,2651,2594,2245,2118,2003,2122,2045,2011,2134,2105,"prof:k:9:1","prof:k:9:2","prof:w:9:1","prof:w:9:2",
 		"DUNGEON_AND_RAID",1166,
@@ -604,7 +611,7 @@ function module.init()
 		"EXPANSION_NAME8",2009,1979,1931,1904,1906,1977,1822,1813,1810,1828,1767,1885,1877,1883,1889,1808,1802,1891,1754,1820,1728,1816,1191,
 		"EXPANSION_NAME7",1803,1755,1719,1721,1718,A and 1717 or 1716,1299,1560,1580,1587,1710,1565,1553,
 		"EXPANSION_NAME6",1149,1533,1342,1275,1226,1220,1273,1155,1508,1314,1154,1268,
-		"EXPANSION_NAME5",823,824,1101,994,1129,944,980,910,1020,1008,1017,999,
+		"EXPANSION_NAME5",2778,823,824,1101,994,1129,944,980,910,1020,1008,1017,999,
 		"EXPANSION_NAME4",697,738,776,752,777,789,
 		"EXPANSION_NAME3",416,615,614,361,
 		"EXPANSION_NAME2",241,61,
