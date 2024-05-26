@@ -636,8 +636,8 @@ function module.options()
 			},
 			showZone={ type="toggle", order=8, name=ZONE, desc=L["Display zone in tooltip"] },
 			showNotes={ type="toggle", order=9, name=L["Notes"], desc=L["Display notes in tooltip"] },
-			showMobileApp={ type="toggle", order=9, name=L["Show MobileApp"], desc=L["Display Battle.Net-Friends on MobileApp in tooltip"] },
-			showDesktopApp={ type="toggle", order=9, name=L["Show DesktopApp"], desc=L["Display Battle.Net-Friends on DesktopApp in tooltip"] },
+			showMobileApp={ type="toggle", order=10, name=L["Show MobileApp"], desc=L["Display Battle.Net-Friends on MobileApp in tooltip"] },
+			showDesktopApp={ type="toggle", order=11, name=L["Show DesktopApp"], desc=L["Display Battle.Net-Friends on DesktopApp in tooltip"] },
 		},
 		tooltip2 = {
 			name=L["Second tooltip options"],
