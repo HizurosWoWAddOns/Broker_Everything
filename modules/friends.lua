@@ -174,6 +174,14 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 			elseif InviteUnit then
 				InviteUnit(data.fullName);
 			end
+		elseif IsShiftKeyDown() then
+			if data.client=="WoW" then
+				local name = data.name;
+				if ns.realm~=data.realm then
+					name = name.."-"..ns.realm;
+				end
+				_G["ChatFrame1EditBox"]:Insert(name)
+			end
 		else
 			ChatFrame_SendTell(data.fullName:gsub(" ",""));
 		end
@@ -182,6 +190,14 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 		if IsAltKeyDown() then
 			if data.client=="WoW" then
 				BNInviteFriend(data.toonID);
+			end
+		elseif IsShiftKeyDown() then
+			if data.client=="WoW" then
+				local name = data.name;
+				if ns.realm~=data.realm then
+					name = name.."-"..ns.realm;
+				end
+				_G["ChatFrame1EditBox"]:Insert(name)
 			end
 		else
 			local func,name = "BNet",data.account; -- account name
@@ -507,7 +523,11 @@ local function createTooltip(tt)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(3,0,0,0,0);
-		tt:SetCell(tt:AddLine(),1,C("ltblue",L["MouseBtn"]).." || "..C("green",WHISPER) .." - ".. C("ltblue",L["ModKeyA"].."+"..L["MouseBtn"]).." || "..C("green",TRAVEL_PASS_INVITE),nil,nil,columns);
+		tt:SetCell(tt:AddLine(),1,
+			C("ltblue",L["MouseBtn"]).." = "..C("green",WHISPER) .." || "..
+			C("ltblue",L["ModKeyA"].."+"..L["MouseBtn"]).." = "..C("green",TRAVEL_PASS_INVITE) .. " || "..
+			C("ltblue",L["ModKeyS"].."+"..L["MouseBtn"]).." = "..C("green",L["FriendCopyIntoChatInput"]
+		),nil,nil,columns);
 		ns.ClickOpts.ttAddHints(tt,name,nil,2);
 	end
 
