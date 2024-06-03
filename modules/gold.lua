@@ -90,17 +90,17 @@ function updateProfit()
 		time({year=T.year,month=T.month,day=1,hour=0,min=0,sec=0})-1
 	};
 
-	ns.tablePath(ns.toonsDB,me,name,"profit");
+	ns.tablePath(ns.toon,me,name,"profit");
 	for k,v in pairs(profit) do
-		if not ns.toonsDB[me][name].profit[k] then
-			ns.toonsDB[me][name].profit[k] = {}
+		if not ns.toon[name].profit[k] then
+			ns.toon[name].profit[k] = {}
 		end
-		local p = ns.toonsDB[me][name].profit[k];
-			if  p[v[1]]==nil then
-			p[v[1]] = current_money; -- today value is nil; add current_money
+		local p = ns.toon[name].profit[k];
+		if p[v[1]]==nil then
+			p[v[1]] = current_money - ns.toon[name].money;
 		end
-		if  p[v[2]]==nil then
-			p[v[2]] = 0;
+		if p[v[2]]==nil then
+			p[v[2]] = "0";
 		elseif type(p[v[2]])=="number" then
 			p[v[2]] = tostring(current_money-p[v[2]]); -- string is fixed value; today/this week/this month is number and will be a string on change to yesterday/last week/last month
 		end
@@ -352,12 +352,10 @@ function module.OptionMenu(self,button,modName)
 end
 
 function module.init()
-	--if ns.toon.gold then
-	--end
-	if ns.toon[name]==nil then
-		ns.toon[name] = {money = ns.toon.gold} -- new
-		ns.toon.gold = nil;
+	if not ns.toon[name] then
+		ns.toon[name] = {}
 	end
+	migrateData()
 end
 
 function module.onevent(self,event,arg1)
@@ -372,7 +370,6 @@ function module.onevent(self,event,arg1)
 				updateProfit();
 				updateBroker();
 			end);
-			migrateData()
 		elseif ns.eventPlayerEnteredWorld then
 			updateBroker();
 		end
