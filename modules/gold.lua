@@ -9,8 +9,9 @@ local time,date,tinsert,tconcat=time,date,tinsert,table.concat;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Gold"; -- BONUS_ROLL_REWARD_MONEY L["ModDesc-Gold"]
-local ttName, tt, createTooltip, module = name.."TT";
+local ttName, ttName2, tt, tt2, createTooltip, module = name.."TT", name.."TT2";
 local current_money,login_money,profit = 0,nil,{};
+local listTopProfit = {};
 local me = ns.player.name_realm;
 local ttLines = {
 	{"showProfitSession",L["Session"],"session"},
@@ -52,6 +53,41 @@ local function migrateData()
 	ns.data[name].Profit = nil;
 end
 
+local function listProfitOnEnter(self,data)
+	local ttl = ttLines[data.index];
+	local num = ns.profile[name].numProfitTop;
+
+	tt2 = ns.acquireTooltip(
+		{ttName2,2,"LEFT","RIGHT","RIGHT"},
+		{true,true},
+		{self,"horizontal",tt}
+	);
+	if tt2.lines~=nil then tt2:Clear(); end
+
+	tt2:AddHeader(L["GoldProfitTopHeader"]:format(num), C("dkyellow",ttl[2]));
+	tt2:AddSeparator();
+	local key = ttl[3]..(ttl[4] and "Last" or "");
+	local rText = C("orange",L["Experimental"]);
+	for _,d in ipairs({"up","down"})do
+		local h,direction=true,d=="up";
+		if listTopProfit[key][d] then
+			local c = 1;
+			for Value,Toons in ns.pairsByKeys(listTopProfit[key][d],true)do -- Type > Up/Down > Value > [Toons]
+				if h then
+					tt2:AddLine(C("ltgray",direction and L["GoldProfits"] or L["GoldLosses"]), rText)
+					rText = ""
+					h=false;
+				end
+				tt2:AddLine(table.concat(Toons,"|n"),C(direction and "green" or "red",ns.GetCoinColorOrTextureString(name,Value,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT})));
+				c=c+1;
+				if c>num then break; end
+			end
+		end
+	end
+
+	ns.roundupTooltip(tt2);
+end
+
 local function getProfit(Table)
 	local t = {};
 	if not last and login_money~=nil and current_money then
@@ -66,11 +102,26 @@ end
 
 local function getProfitAll()
 	local values = {};
+	wipe(listTopProfit)
 	for i, toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true, currentHide=true, forceSameRealm=true]]}) do
 		if toonData[name].profit then
 			local val = getProfit(toonData[name].profit);
-			for Type,Value in pairs(val)do
+			for Type,Value in pairs(val) do
 				values[Type] = (values[Type] or 0) + Value;
+				if not listTopProfit[Type] then
+					listTopProfit[Type] = {up={},down={}}
+				end
+				if Value>0 then
+					if not listTopProfit[Type].up[Value] then
+						listTopProfit[Type].up[Value] = {}
+					end
+					tinsert(listTopProfit[Type].up[Value],toonNameRealm)
+				elseif Value<0 then
+					if not listTopProfit[Type].down[Value] then
+						listTopProfit[Type].down[Value] = {}
+					end
+					tinsert(listTopProfit[Type].down[Value],toonNameRealm)
+				end
 			end
 		end
 	end
@@ -143,7 +194,7 @@ end
 
 local function ttAddProfit(all)
 	tt:AddSeparator(4,0,0,0,0);
-	local l=tt:AddLine(C("ltyellow","Profit / Loss"));
+	local l=tt:AddLine(C("ltyellow",L["GoldProfits"]));
 	if all then
 		tt:SetCell(l,2,C("gray",L["All Chars"]).." "..C("orange","Experimental"))
 	end
@@ -166,7 +217,11 @@ local function ttAddProfit(all)
 				color,icon,Value = "ltred","|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t",0-Value;
 			end
 			if color then
-				tt:AddLine(C(color,v[2]), icon .. ns.GetCoinColorOrTextureString(name,Value,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
+				local l = tt:AddLine(C(color,v[2]), icon .. ns.GetCoinColorOrTextureString(name,Value,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
+				if i>1 and all then
+					tt:SetCell(l,3,C("dkyellow",">"))
+					tt:SetLineScript(l,"OnEnter",listProfitOnEnter,{index=i,all=all});
+				end
 			end
 		end
 	end
@@ -274,6 +329,8 @@ module = {
 		showProfitDailyAll = true,
 		showProfitWeeklyAll = true,
 		showProfitMonthlyAll = true,
+		showProfitTop = true,
+		numProfitTop = 3,
 		showProfitEmpty = true,
 		goldHideBB = "0",
 		goldHideTT = "0",
@@ -283,6 +340,8 @@ module = {
 		showProfitWeeklyAll = true,
 		showProfitMonthlyAll = true,
 		showProfitEmpty = true,
+		showProfitTop = true,
+		numProfitTop = true,
 	},
 	clickOptionsRename = {
 		["1_open_tokenframe"] = "currency",
@@ -321,18 +380,20 @@ function module.options()
 
 			profit = {
 				type = "group", order=6, inline = true,
-				name = L["GoldProfit"],
+				name = L["GoldProfits"],
 				args = {
 					showProfitEmpty = { type="toggle", order=1, name=L["GoldProfitEmpty"], desc=L["GoldProfitEmptyDesc"]},
-					profitHeader1 = { type="header", order=10, name=L["GoldProfit"] },
-					showProfitSession = { type="toggle", order=11, name=L["GoldProfitSession"], desc=L["GoldProfitSession"]},
+					profitHeader1 = { type="header", order=10, name=L["GoldProfitThis"] },
+					showProfitSession = { type="toggle", order=11, name=L["GoldProfitSession"], desc=L["GoldProfitSessionDesc"]},
 					showProfitDaily   = { type="toggle", order=12, name=L["GoldProfitDaily"],   desc=L["GoldProfitDailyDesc"] },
 					showProfitWeekly  = { type="toggle", order=13, name=L["GoldProfitWeekly"],  desc=L["GoldProfitWeeklyDesc"] },
 					showProfitMonthly = { type="toggle", order=14, name=L["GoldProfitMonthly"], desc=L["GoldProfitMonthlyDesc"] },
 					profitHeader2 = { type="header", order=20, name=L["GoldProfitAll"] },
-					showProfitDailyAll   = { type="toggle", order=22, name=L["GoldProfitDailyAll"],   desc=L["GoldProfitDailyAllDesc"] },
-					showProfitWeeklyAll  = { type="toggle", order=23, name=L["GoldProfitWeeklyAll"],  desc=L["GoldProfitWeeklyAllDesc"] },
-					showProfitMonthlyAll = { type="toggle", order=24, name=L["GoldProfitMonthlyAll"], desc=L["GoldProfitMonthlyAllDesc"] },
+					showProfitDailyAll   = { type="toggle", order=22, name=L["GoldProfitDaily"],   desc=L["GoldProfitDailyAllDesc"] },
+					showProfitWeeklyAll  = { type="toggle", order=23, name=L["GoldProfitWeekly"],  desc=L["GoldProfitWeeklyAllDesc"] },
+					showProfitMonthlyAll = { type="toggle", order=24, name=L["GoldProfitMonthly"], desc=L["GoldProfitMonthlyAllDesc"] },
+					showProfitTop = { type = "toggle", order=25, name=L["GoldProfitTop"], desc=L["GoldProfitTopDesc"]},
+					numProfitTop = { type = "range", order=26, name=L["GoldProfitTopNum"], desc=L["GoldProfitTopNumDesc"], min=2, max=20, step=1},
 				},
 			},
 		},
@@ -382,7 +443,7 @@ end
 
 function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip({ttName, 2, "LEFT", "RIGHT"},{false},{self})
+	tt = ns.acquireTooltip({ttName, 3, "LEFT", "RIGHT","RIGHT"},{false},{self})
 	createTooltip(tt);
 end
 
