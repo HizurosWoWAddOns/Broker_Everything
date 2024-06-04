@@ -223,7 +223,12 @@ end
 module = {
 	events = {
 		"PLAYER_LOGIN",
-		"BAG_UPDATE_DELAYED"
+		"BAG_UPDATE_DELAYED",
+		"TRANSMOG_COLLECTION_SOURCE_ADDED",
+		"TRANSMOG_COLLECTION_SOURCE_REMOVED",
+		"TRANSMOG_COLLECTION_UPDATED",
+		"TRANSMOG_COSMETIC_COLLECTION_SOURCE_ADDED",
+		"TRANSMOG_SOURCE_COLLECTABILITY_UPDATE",
 	},
 	config_defaults = {
 		enabled = false,
@@ -275,7 +280,7 @@ function module.onevent(self,event,...)
 		if not session then
 			resetSessionCounter();
 		end
-		updateBroker();
+		C_Timer.After(0.314,updateBroker);
 	end
 end
 
