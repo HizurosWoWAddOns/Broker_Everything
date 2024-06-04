@@ -248,12 +248,12 @@ function module.options()
 	return {
 		broker = nil,
 		tooltip = {
-			showBosses={ type="toggle", order=1, name=L["Show world bosses"],          desc=L["Display list of world boss IDs in tooltip"] },
-			showDungeons={ type="toggle", order=2, name=L["Show dungeons"],              desc=L["Display list of dungeon IDs in tooltip"] },
-			showSzenarios={ type="toggle", order=3, name=L["Show szenarios"],             desc=L["Display list of szenario IDs in tooltip"] },
-			showRaidsLFR={ type="toggle", order=4, name=L["Show lfr"],                   desc=L["Display list of lfr IDs in tooltip"] },
+			showBosses={ type="toggle", order=1, name=L["Show world bosses"],         desc=L["Display list of world boss IDs in tooltip"], hidden=not GetNumSavedWorldBosses},
+			showDungeons={ type="toggle", order=2, name=L["Show dungeons"],           desc=L["Display list of dungeon IDs in tooltip"] },
+			showSzenarios={ type="toggle", order=3, name=L["Show szenarios"],         desc=L["Display list of szenario IDs in tooltip"] },
+			showRaidsLFR={ type="toggle", order=4, name=L["Show lfr"],                desc=L["Display list of lfr IDs in tooltip"] },
 			showRaids={ type="toggle", order=5, name=L["Show raids"],                 desc=L["Display list of raid IDs in tooltip"] },
-			showEvents={ type="toggle", order=6, name=L["Show events"],                desc=L["Display list of event IDs in tooltip"] },
+			showEvents={ type="toggle", order=6, name=L["Show events"],               desc=L["Display list of event IDs in tooltip"] },
 			separator={type="separator", order=7,},
 			showExpiredEntries={ type="toggle", order=9, name=L["Show expired entries"],         desc=L["Display expired entries in tooltip"] },
 		},
