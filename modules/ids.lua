@@ -80,7 +80,7 @@ local function createTooltip(tt)
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",L[name]));
 
-	if ns.profile[name].showBosses then
+	if ns.profile[name].showBosses and GetNumSavedWorldBosses then
 		tt:AddSeparator(3,0,0,0,0)
 		tt:AddLine(C("ltblue",L["World bosses"]),"","",C("ltblue",L[title]))
 		tt:AddSeparator()
