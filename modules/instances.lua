@@ -160,7 +160,9 @@ function createTooltip(tt,name,mode)
 
 	-- create instance list
 	local exp_start, exp_stop, exp_direction = 1, (NUM_LE_EXPANSION_LEVELS+1), 1;
-	if ns.profile[name].invertExpansionOrder then
+	if ns.IsMoPRemix then
+		exp_start, exp_stop = 4,4;
+	elseif ns.profile[name].invertExpansionOrder then
 		exp_start, exp_stop, exp_direction = (NUM_LE_EXPANSION_LEVELS+1), 1, -1;
 	end
 	for i=exp_start, exp_stop, exp_direction do
