@@ -70,6 +70,10 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 			ns.data.realms = {};
 		end
 
+		if C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID(424143) then
+			ns.IsMoPRemix = true;
+		end
+
 		-- init ace option panel
 		ns.RegisterOptions()
 
@@ -99,10 +103,6 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 		ns.updateIcons(true);
 
 		ns.eventPlayerEnteredWorld=true;
-
-		if C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID(424143) then
-			ns.IsMoPRemix = true;
-		end
 	elseif event=="PLAYER_LEVEL_UP" then
 		local lvl = UnitLevel("player");
 		if lvl~=ns.toon.level then
