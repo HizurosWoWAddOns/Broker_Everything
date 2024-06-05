@@ -23,6 +23,7 @@ local headers = {
 local countCorrectionList = {
 	[1822] = 1, -- Renown; currency value 1 count lower than display for players
 }
+local CurrenciesReplace = {}
 
 
 -- register icon names and default files --
@@ -110,6 +111,12 @@ local function GetCurrency(currencyId)
 			local info = C_CurrencyInfo.GetCurrencyInfo(profIconReplace[currencyId]);
 			currencyInfo.iconFileID = info.iconFileID;
 		end
+		local replace = CurrenciesReplace[currencyId];
+		if replace then
+			for k,v in pairs(replace) do
+				currencyInfo[k] = v;
+			end
+		end
 	end
 	return currencyId,currencyInfo,{str=currencyIdStr,tbl=profExpTbl,exp=profExpansion,index=profIndex};
 end
@@ -196,6 +203,7 @@ function createTooltip(tt,update)
 		local c,l = 3,tt:AddLine(C("ltblue",COMMUNITIES_SETTINGS_NAME_LABEL));
 		tt:AddSeparator()
 	end
+	local empty,hiddenSection,parentIsCollapsed = false,false,false;
 
 	for i=1, #Currencies do
 		if Currencies[i]=="HIDDEN_CURRENCIES" and not ns.profile[name].showHidden then
@@ -598,13 +606,24 @@ function module.init()
 	if ns.IsMoPRemix then
 		Currencies = {
 			--"EXPANSION_NAME4",697,738,776,752,777,789,
-			"DUNGEON_AND_RAID",1166,
-			"PLAYER_V_PLAYER",2123,391,1792,1586,1602,
-			"MISCELLANEOUS",2778,2588,2032,1401,1388,1379,515,402,81,
+			--"DUNGEON_AND_RAID",1166,
+			--"PLAYER_V_PLAYER",2123,391,1792,1586,1602,
+			"MISCELLANEOUS",2778,2853,2854,2855,2856,2857,2858,2859,2860,3001, --,2588,2032,1401,1388,1379,515,402,81,
 			--"EXPANSION_NAME3",416,615,614,361,
 			--"EXPANSION_NAME2",241,61,
 			--"EXPANSION_NAME1",1704,
 		};
+		CurrenciesReplace = {
+			[2853]={iconFileID=3622223,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - ".."Primary Stat",}, -- primary
+			[2854]={iconFileID=3622225,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..ITEM_MOD_STAMINA_SHORT,}, -- stamina
+			[2855]={iconFileID=3622219,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..ITEM_MOD_CRIT_RATING_SHORT,}, -- crit
+			[2856]={iconFileID=3622220,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_HASTE,}, -- haste
+			[2857]={iconFileID=3622221,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_LIFESTEAL,}, -- leech
+			[2858]={iconFileID=3622222,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_MASTERY,}, -- mastery
+			[2859]={iconFileID=3622224,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_MOVEMENT_SPEED,}, -- speed
+			[2860]={iconFileID=3622226,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_VERSATILITY,}, -- versa
+			[3001]={iconFileID=4549266,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - ".."XP Bonus" ,}, -- exp gain
+		}
 	else
 		Currencies = {
 			"EXPANSION_NAME9",2806,2807,2809,2812,2777,2709,2708,2707,2706,2650,2651,2594,2245,2118,2003,2122,2045,2011,2134,2105,"prof:k:9:1","prof:k:9:2","prof:w:9:1","prof:w:9:2",
