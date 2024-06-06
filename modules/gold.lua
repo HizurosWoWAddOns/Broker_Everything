@@ -39,8 +39,10 @@ local function migrateData()
 		for Player, Values in pairs(Players) do
 			if ns.toonsDB[Player] then
 				ns.tablePath(ns.toonsDB,Player,name,"profit",Type);
-				ns.toonsDB[Player][name].profit[Type] = Values;
 				for Date, Money in pairs(Values)do
+					if Date~=profit[Type][1] then
+						Money = tostring(Money or 0);
+					end
 					ns.toonsDB[Player][name].profit[Type][Date] = Money or 0;
 				end
 				if ns.toonsDB[Player].gold then
@@ -104,7 +106,7 @@ local function getProfitAll()
 	local values = {};
 	wipe(listTopProfit)
 	for i, toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true, currentHide=true, forceSameRealm=true]]}) do
-		if toonData[name].profit then
+		if toonData[name] and toonData[name].profit then
 			local val = getProfit(toonData[name].profit);
 			for Type,Value in pairs(val) do
 				values[Type] = (values[Type] or 0) + Value;
@@ -179,8 +181,8 @@ local function updateBroker()
 	if ns.profile[name].showCharGold then
 		tinsert(broker,ns.GetCoinColorOrTextureString(name,current_money,{hideMoney=ns.profile[name].goldHideBB}));
 	end
-	if ns.profile[name].showProfitSessionBroker and login_money then
-		local p = getProfit(ns.toonsDB[me].profit);
+	if ns.profile[name].showProfitSessionBroker and login_money and ns.toon[name] and ns.toon[name].profit then
+		local p = getProfit(ns.toon[name].profit);
 		if p~=0 then
 			local sign = (p>0 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (p<0 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
 			tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,p,{hideMoney=ns.profile[name].goldHideBB}));
@@ -259,7 +261,7 @@ function createTooltip(tt,update)
 			end
 			toonData.gold = nil;
 		end
-		if toonData[name].money then
+		if toonData[name] and toonData[name].money then
 			local faction = toonData.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 			local line = tt:AddLine(
 				C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction,
@@ -413,6 +415,7 @@ function module.OptionMenu(self,button,modName)
 end
 
 function module.init()
+	module.lockFirstUpdate = true
 	if not ns.toon[name] then
 		ns.toon[name] = {}
 	end
@@ -430,8 +433,9 @@ function module.onevent(self,event,arg1)
 			C_Timer.After(0.5,function()
 				updateProfit();
 				updateBroker();
+				module.lockFirstUpdate = false;
 			end);
-		elseif ns.eventPlayerEnteredWorld then
+		elseif ns.eventPlayerEnteredWorld and not module.lockFirstUpdate then
 			updateBroker();
 		end
 	end
