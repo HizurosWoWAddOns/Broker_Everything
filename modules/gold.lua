@@ -39,7 +39,7 @@ local function migrateData()
 		for Player, Values in pairs(Players) do
 			if ns.toonsDB[Player] then
 				ns.tablePath(ns.toonsDB,Player,name,"profit",Type);
-				ns.toonsDB[Player][name].profit = Values;
+				ns.toonsDB[Player][name].profit[Type] = Values;
 				if ns.toonsDB[Player].gold then
 					ns.toonsDB[Player][name].money = ns.toonsDB[Player].gold;
 					ns.toonsDB[Player].gold = nil
@@ -86,13 +86,15 @@ local function listProfitOnEnter(self,data)
 end
 
 local function getProfit(Table)
-	local t = {};
+	local t = {session=0,daily=0,weekly=0,monthly=0,dailyLast=0,weeklyLast=0,monthlyLast=0};
 	if not last and login_money~=nil and current_money then
 		t.session = current_money-login_money;
 	end
 	for _,Type in ipairs({"daily","weekly","monthly"}) do
-		t[Type] = Table[Type][profit[Type][1]] or 0;
-		t[Type.."Last"] = tonumber(Table[Type][profit[Type][2]]) or 0;
+		if type(Table[Type])=="table" then
+			t[Type] = Table[Type][profit[Type][1]] or 0;
+			t[Type.."Last"] = tonumber(Table[Type][profit[Type][2]]) or 0;
+		end
 	end
 	return t;
 end
@@ -138,7 +140,7 @@ function updateProfit()
 		time({year=T.year,month=T.month,day=1,hour=0,min=0,sec=0})-1
 	};
 
-	ns.tablePath(ns.toon,me,name,"profit");
+	ns.tablePath(ns.toon,name,"profit");
 	for k,v in pairs(profit) do
 		if not ns.toon[name].profit[k] then
 			ns.toon[name].profit[k] = {}
@@ -158,6 +160,12 @@ function updateProfit()
 			if c>5 then
 				p[x] = nil; -- remove older entries
 			end
+		end
+	end
+	local validKey={session=true,daily=true,weekly=true,monthly=true,dailyLast=true,weeklyLast=true,monthlyLast=true}
+	for k in pairs(ns.toon[name].profit) do
+		if not validKey[k] then
+			ns.toon[name].profit[k]=nil;
 		end
 	end
 	C_Timer.After(today-time()+1,updateProfit); -- next update
