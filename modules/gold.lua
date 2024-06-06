@@ -178,9 +178,9 @@ local function updateBroker()
 	end
 	if ns.profile[name].showProfitSessionBroker and login_money and ns.toon[name] and ns.toon[name].profit then
 		local p = getProfit(ns.toon[name].profit);
-		if p~=0 then
-			local sign = (p>0 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (p<0 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
-			tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,p,{hideMoney=ns.profile[name].goldHideBB}));
+		if p.session~=0 then
+			local sign = (p.session>0 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (p.session<0 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
+			tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,p.session,{hideMoney=ns.profile[name].goldHideBB}));
 		end
 	end
 	if #broker==0 then
