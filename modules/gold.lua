@@ -39,12 +39,7 @@ local function migrateData()
 		for Player, Values in pairs(Players) do
 			if ns.toonsDB[Player] then
 				ns.tablePath(ns.toonsDB,Player,name,"profit",Type);
-				for Date, Money in pairs(Values)do
-					if Date~=profit[Type][1] then
-						Money = tostring(Money or 0);
-					end
-					ns.toonsDB[Player][name].profit[Type][Date] = Money or 0;
-				end
+				ns.toonsDB[Player][name].profit = Values;
 				if ns.toonsDB[Player].gold then
 					ns.toonsDB[Player][name].money = ns.toonsDB[Player].gold;
 					ns.toonsDB[Player].gold = nil
