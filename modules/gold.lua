@@ -173,7 +173,7 @@ end
 
 local function deleteCharacterGoldData(self,name_realm,button)
 	if button == "RightButton" then
-		Broker_Everything_CharacterDB[name_realm].gold = nil;
+		Broker_Everything_CharacterDB[name_realm][name] = nil;
 		tt:Clear();
 		createTooltip(tt,true);
 	end
