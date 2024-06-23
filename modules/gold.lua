@@ -10,7 +10,7 @@ local time,date,tinsert,tconcat=time,date,tinsert,table.concat;
 -----------------------------------------------------------
 local name = "Gold"; -- BONUS_ROLL_REWARD_MONEY L["ModDesc-Gold"]
 local ttName, ttName2, tt, tt2, createTooltip, module = name.."TT", name.."TT2";
-local current_money,login_money,profit = 0,nil,{};
+local login_money,profit = nil,{};
 local listTopProfit = {};
 local me = ns.player.name_realm;
 local ttLines = {
@@ -69,11 +69,14 @@ local function listProfitOnEnter(self,data)
 		local h,direction=true,d=="up";
 		if listTopProfit[key][d] then
 			local c = 1;
-			for Value,Toons in ns.pairsByKeys(listTopProfit[key][d],true)do -- Type > Up/Down > Value > [Toons]
+			for Value,Toons in ns.pairsByKeys(listTopProfit[key][d],direction)do -- Type > Up/Down > Value > [Toons]
 				if h then
 					tt2:AddLine(C("ltgray",direction and L["GoldProfits"] or L["GoldLosses"]), rText)
 					rText = ""
 					h=false;
+				end
+				if not direction then
+					Value = -Value;
 				end
 				tt2:AddLine(table.concat(Toons,"|n"),C(direction and "green" or "red",ns.GetCoinColorOrTextureString(name,Value,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT})));
 				c=c+1;
@@ -264,7 +267,7 @@ local function ttAddProfit(all)
 			elseif Value>0 then
 				color,icon = "ltgreen","|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t";
 			elseif Value<0 then
-				color,icon,Value = "ltred","|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t",0-Value;
+				color,icon,Value = "ltred","|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t",-Value;
 			end
 			if color then
 				local l = tt:AddLine(C(color,v[2]), icon .. ns.GetCoinColorOrTextureString(name,Value,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
@@ -300,15 +303,6 @@ function createTooltip(tt,update)
 
 	local lineCount=0;
 	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true,]] currentHide=true,--[[forceSameRealm=true]]}) do
-		if toonData.gold then
-			-- little migration. TODO: remove later this year.
-			if not toonData[name] then
-				toonData[name] = {money = toonData.gold}
-			else
-				toonData[name].money = toonData.gold;
-			end
-			toonData.gold = nil;
-		end
 		if toonData[name] and toonData[name].money then
 			local faction = toonData.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 			local line = tt:AddLine(
@@ -360,7 +354,6 @@ end
 module = {
 	events = {
 		"PLAYER_LOGIN",
-		"PLAYER_LOGOUT",
 		"PLAYER_MONEY",
 		"PLAYER_TRADE_MONEY",
 		"TRADE_MONEY_CHANGED",
