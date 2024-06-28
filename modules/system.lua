@@ -597,7 +597,9 @@ end
 -- module variables for registration --
 ---------------------------------------
 module_sys = {
-	events = {},
+	events = {
+		"PLAYER_LOGIN",
+	},
 	config_defaults = {
 		enabled = true,
 		-- broker button options
@@ -630,7 +632,9 @@ module_sys = {
 
 module_fps = {
 	icon_suffix = "_blue",
-	events = {},
+	events = {
+		"PLAYER_LOGIN",
+	},
 	config_defaults = {
 		enabled = false,
 		fillCharacter = "0none"
@@ -638,7 +642,9 @@ module_fps = {
 };
 
 module_lat = {
-	events = {},
+	events = {
+		"PLAYER_LOGIN",
+	},
 	config_defaults = {
 		enabled = false,
 		showHome = true,
@@ -647,6 +653,9 @@ module_lat = {
 };
 
 module_mem = {
+	events = {
+		"PLAYER_LOGIN",
+	},
 	config_defaults = {
 		enabled = false,
 		mem_max_addons = -1,
@@ -658,7 +667,9 @@ module_mem = {
 }
 
 module_traf = {
-	events = {},
+	events = {
+		"PLAYER_LOGIN",
+	},
 	config_defaults = {
 		enabled = false,
 		showInbound = true,
@@ -793,7 +804,6 @@ end
 
 function module_sys.init()
 	enabled.sys_mod = true;
-	init()
 	enabled.fps_sys = (ns.profile[name_sys].showFpsOnBroker or ns.profile[name_sys].showFpsInTooltip);
 	enabled.lat_sys = (ns.profile[name_sys].showWorldOnBroker or ns.profile[name_sys].showHomeOnBroker or ns.profile[name_sys].showLatencyInTooltip);
 	enabled.mem_sys = (ns.profile[name_sys].showMemoryUsageOnBroker or ns.profile[name_sys].showAddOnsCountOnBroker or ns.profile[name_sys].showMemoryUsageInTooltip);
@@ -802,55 +812,57 @@ end
 
 function module_fps.init()
 	enabled.fps_mod=true;
-	init()
 end
 
 function module_lat.init()
 	enabled.lat_mod=true;
-	init()
 end
 
 function module_mem.init()
 	enabled.mem_mod=true;
-	init()
 end
 
 function module_traf.init()
 	enabled.traf_mod=true;
-	init()
 end
 
 function module_sys.onevent(self,event,msg)
 	if event=="BE_UPDATE_CFG" then
-		enabled.fps_sys = (ns.profile[name_sys].showFpsOnBroker or ns.profile[name_sys].showFpsInTooltip);
-		enabled.lat_sys = (ns.profile[name_sys].showWorldOnBroker or ns.profile[name_sys].showHomeOnBroker or ns.profile[name_sys].showLatencyInTooltip);
-		enabled.mem_sys = (ns.profile[name_sys].showMemoryUsageOnBroker or ns.profile[name_sys].showAddOnsCountOnBroker or ns.profile[name_sys].showMemoryUsageInTooltip);
-		enabled.traf_sys = (ns.profile[name_sys].showInboundOnBroker or ns.profile[name_sys].showOutboundOnBroker or ns.profile[name_sys].showTrafficInTooltip);
 		ns.ClickOpts.update(name_sys);
+	elseif event=="PLAYER_LOGIN" then
+		init();
 	end
 end
 
 function module_mem.onevent(self,event,msg)
 	if event=="BE_UPDATE_CFG" then
 		ns.ClickOpts.update(name_mem);
+	elseif event=="PLAYER_LOGIN" then
+		init();
 	end
 end
 
 function module_fps.onevent(self,event,msg)
 	if event=="BE_UPDATE_CFG" then
 		ns.ClickOpts.update(name_fps);
+	elseif event=="PLAYER_LOGIN" then
+		init();
 	end
 end
 
 function module_lat.onevent(self,event,msg)
 	if event=="BE_UPDATE_CFG" then
 		ns.ClickOpts.update(name_lat);
+	elseif event=="PLAYER_LOGIN" then
+		init();
 	end
 end
 
 function module_traf.onevent(self,event,msg)
 	if event=="BE_UPDATE_CFG" then
 		ns.ClickOpts.update(name_traf);
+	elseif event=="PLAYER_LOGIN" then
+		init();
 	end
 end
 
