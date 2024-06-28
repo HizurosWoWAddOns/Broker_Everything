@@ -86,7 +86,8 @@ local function updateItems()
 			count = GetInventoryItemCount("player",18);
 		else
 			-- container
-			local info = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(item.bag,item.slot);
+			--local info = --[[ns.deprecated.]]C_Container.GetContainerItemInfo(item.bag,item.slot);
+			local info = --[[ns.deprecated.]]C_Container.GetContainerItemInfo(item.bag,item.slot)
 			if info then
 				count = info.stackCount;
 			end
@@ -97,7 +98,7 @@ local function updateItems()
 		if count>0 then
 			if not items[s][item.id] then
 				items[s][item.id] = {count=count};
-				items[s][item.id].name,_,items[s][item.id].quality,_,_,_,_,_,_,items[s][item.id].icon = GetItemInfo(item.id);
+				items[s][item.id].name,_,items[s][item.id].quality,_,_,_,_,_,_,items[s][item.id].icon = --[[ns.deprecated.]]C_Item.GetItemInfo(item.id);
 			else
 				items[s][item.id].count = items[s][item.id].count + count;
 			end

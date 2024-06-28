@@ -56,11 +56,12 @@ local foreignFactions = Alliance and {
 };
 
 local factionName = setmetatable({},{__index=function(t,k)
-	local v = GetFactionInfoByID(k);
-	if v then
-		rawset(t,k,v);
+	---local v = GetFactionInfoByID(k);
+	local info = ns.deprecated.C_Reputation.GetFactionDataByID(k)
+	if info and info.name then
+		rawset(t,k,info.name);
 	end
-	return v or k;
+	return info.name or k;
 end});
 
 L[name] = BOUNTY_BOARD_LOCKED_TITLE;
@@ -277,7 +278,9 @@ local function createTooltip(tt)
 				if bounties and bounties.totalQuests then
 					local faction = UNKNOWN;
 					if bounties[ns.player.faction] then
-						faction = GetFactionInfoByID(bounties[ns.player.faction]);
+						--faction = GetFactionInfoByID(bounties[ns.player.faction]);
+						local info = ns.deprecated.C_Reputation.GetFactionDataByID(bounties[ns.player.faction])
+						faction = info.name;
 					else
 						missing = true;
 					end

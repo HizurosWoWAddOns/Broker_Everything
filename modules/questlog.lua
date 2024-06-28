@@ -18,8 +18,8 @@ local urls = {
 			tinsert(url,"classic")
 		elseif bv:match("^3%.") then
 			tinsert(url,"wotlk");
-		--elseif bv:match("^4%.") then
-		--	tinsert(tar,"cata")
+		elseif bv:match("^4%.") then
+			tinsert(tar,"cata")
 		end
 		if lc and lang[lc] then
 			tinsert(url,lang[lc]);
@@ -56,20 +56,22 @@ local hideEmissaryQuests = {
 }
 local Level, Title, Header, Color, Status, Type, ShortType, QuestId, Index, IsHidden, Text = 1,2,3,4,5,6,7,8,9,10,11;
 local frequencies = {
-	[LE_QUEST_FREQUENCY_DAILY or Enum.QuestFrequency.Daily] = {"*",DAILY},
-	[LE_QUEST_FREQUENCY_WEEKLY or Enum.QuestFrequency.Weekly] = {"**",WEEKLY},
+	[Enum.QuestFrequency.Daily] = {"*",DAILY},
+	[Enum.QuestFrequency.Weekly] = {"**",WEEKLY},
 };
-local MATCH_DUNGEON_DIFFICULTY = DUNGEON_DIFFICULTY.." '(.*)'";
-local difficulties = {
-	[PLAYER_DIFFICULTY1] = {"N"},
-	[PLAYER_DIFFICULTY2] = {"HC"},
-	[PLAYER_DIFFICULTY3] = {"RB"},
-	[PLAYER_DIFFICULTY4] = {"FL"},
-	[PLAYER_DIFFICULTY5] = {"CM"},
-	[PLAYER_DIFFICULTY6] = {"M"},
-	[PLAYER_DIFFICULTY_TIMEWALKER] = {"TW"}
-}
-local _PLAYER_DIFFICULTY6="'"..PLAYER_DIFFICULTY6.."'";
+local questTags = {
+	[Enum.QuestTag.Group]     = {short=L["QuestTagGRP"],  long=GROUP},
+	[Enum.QuestTag.PvP]       = {short=L["QuestTagPVP"],  long=PVP,color="violet"},
+	[Enum.QuestTag.Dungeon]   = {short=L["QuestTagND"],   long=LFG_TYPE_DUNGEON},
+	[Enum.QuestTag.Heroic]    = {short=L["QuestTagHD"],   long=LFG_TYPE_HEROIC_DUNGEON},
+	[Enum.QuestTag.Raid]      = {short=L["QuestTagR"],    long=LFG_TYPE_RAID},
+	[Enum.QuestTag.Raid10]    = {short=L["QuestTagR"]..10,long=LFG_TYPE_RAID.." (10)"},
+	[Enum.QuestTag.Raid25]    = {short=L["QuestTagR"]..25,long=LFG_TYPE_RAID.." (25)"},
+	[Enum.QuestTag.Scenario]  = {short=L["QuestTagS"],    long=TRACKER_HEADER_SCENARIO},
+	[Enum.QuestTag.Account]   = {short=L["QuestTagACC"],  long=ITEM_BIND_TO_ACCOUNT},
+	[Enum.QuestTag.Legendary] = {short=L["QuestTagLEG"],  long=TRACKER_HEADER_CAMPAIGN_QUESTS,color="orange"},
+};
+
 local questZones = {};
 
 StaticPopupDialogs["BE_URL_DIALOG"] = {
@@ -132,7 +134,15 @@ local function showQuestURL(self,questId)
 end
 
 local function pushQuest(self,questIndex)
-	QuestLogPushQuest(questIndex);
+	if SelectQuestLogEntry then -- classic ?
+		SelectQuestLogEntry(questIndex)
+		QuestLogPushQuest();
+	else
+		if WOW_PROJECT_ID~=WOW_PROJECT_MAINLINE then
+			ns:debug(name,"QuestLogPushQuest","SelectQuestLogEntry not found...")
+		end
+		QuestLogPushQuest(questIndex);
+	end
 end
 
 local function deleteQuest(self,questId)
@@ -467,8 +477,7 @@ function module.onevent(self,event,msg)
 	end
 	if event=="PLAYER_LOGIN" or event=="QUEST_LOG_UPDATE" then
 		local numEntries, numQuests = (GetNumQuestLogEntries or C_QuestLog.GetNumQuestLogEntries)();
-		local header, status, isBounty, _ = false;
-		local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, isHidden, isScaling = 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16; -- GetQuestLogTitle(index)
+		local header, _ = false;
 		sum,quests,numQuestStatus = numQuests,{},{fail=0,complete=0,active=0};
 
 		-- list trade skills
@@ -496,62 +505,73 @@ function module.onevent(self,event,msg)
 		end
 
 		for index=1, numEntries do
-			local q = ns.C_QuestLog_GetInfo(index) or {};
+			local q = ns.deprecated.C_QuestLog.GetInfo(index) or {};
 			if q.isHeader==true then
 				header = q.title;
 			elseif header and q.questID and not hideQuestsAnytime[q.questID] then
-				local tagInfo = ns.C_QuestLog_GetQuestTagInfo(q.questID);
 				q.text,q.objectives = GetQuestLogQuestText(index);
 
-				-- second way to check quest is completed. GetQuestLogTitle argument 6 aren't longer secure enough.
-				local numObjectives = GetNumQuestLeaderBoards(index);
+				local numObjectives = GetNumQuestLeaderBoards(index) or 0;
 				local fin = true;
-				if tonumber(numObjectives) then
-					for objectiveIndex = 1, numObjectives do
-						local text, objectiveType, finished = GetQuestLogLeaderBoard(objectiveIndex, index);
-						if (not finished) and fin then
-							fin=false;
-						end
+				for objectiveIndex = 1, numObjectives do
+					local text, objectiveType, finished = GetQuestLogLeaderBoard(objectiveIndex, index);
+					if (not finished) and fin then
+						fin=false;
+						break;
 					end
 				end
 
-				local tags,shortTags,long = {},{};
+				-- main quest tags (long and short) like instance types and more
+				local tagInfo = ns.deprecated.C_QuestLog.GetQuestTagInfo(q.questID);
+				local tags,shortTags = {},{};
 				if tagInfo then
-					if tagInfo.tagName==GROUP and type(q.suggestedGroup)=="number" and q.suggestedGroup>0 then
-						tagInfo.tagName = tagInfo.tagName.."["..q.suggestedGroup.."]";
+					local long
+					if tagInfo.tagName==GROUP then
+						local numMembers,numMembersShort = "","";
+						if q.suggestedGroup>0 then
+							numMembers = "["..q.suggestedGroup.."]";
+							numMembersShort = q.suggestedGroup;
+						end
+						tinsert(tags,tagInfo.tagName..numMembers);
+						tinsert(shortTags,L["QuestTagGRP"]..numMembersShort);
 					elseif tagInfo.tagName==PLAYER_DIFFICULTY2 or tagInfo.tagName==PLAYER_DIFFICULTY6 then
-						tagInfo.tagName = LFG_TYPE_DUNGEON.." ("..tagInfo.tagName..")";
-					end
-					if ns.questTags[tagInfo.tagID] then
+						tinsert(tags,LFG_TYPE_DUNGEON.." ("..tagInfo.tagName..")");
+						if tagInfo.tagName==PLAYER_DIFFICULTY6 then -- mythic dungeon
+							tinsert(shortTags,L["QuestTagMD"])
+						elseif tagInfo.tagName==PLAYER_DIFFICULTY2 then -- heroic dungeon
+							tinsert(shortTags,L["QuestTagHD"])
+						else
+							tinsert(shortTags,L["QuestTagND"]) -- normal dungeon
+						end
+					elseif questTags[tagInfo.tagID] then
 						if tagInfo.tagName and tagInfo.tagName~="" then
 							tinsert(tags,tagInfo.tagName);
 							long=true;
 						end
-						if type(ns.questTags[tagInfo.tagID])=="table" then
-							if not long then
-								tinsert(tags,C(ns.questTagsLong[tagInfo.tagID][2],ns.questTagsLong[tagInfo.tagID][1]));
-							end
-							tinsert(shortTags,C(ns.questTags[tagInfo.tagID][2],ns.questTags[tagInfo.tagID][1]));
-						else
-							if not long then
-								tinsert(tags,ns.questTagsLong[tagInfo.tagID]);
-							end
-							tinsert(shortTags,C("dailyblue",ns.questTags[tagInfo.tagID]));
+						if not long then
+							tinsert(tags,C(questTags[tagInfo.tagID].color,questTags[tagInfo.tagID].long));
 						end
+						tinsert(shortTags,C(questTags[tagInfo.tagID].color or "dailyblue",questTags[tagInfo.tagID].short));
 					end
 				end
-				if tradeskills[header] then
+
+				-- more tags not returned by C_QuestLog.GetInfo. missing but important for some players.
+				if tradeskills[header] then -- tradeskill quests
 					tinsert(tags,TRADE_SKILLS);
 					tinsert(tags,header);
-					tinsert(shortTags,C(ns.questTags.TRADE_SKILLS[2],ns.questTags.TRADE_SKILLS[1]));
-				elseif q.text:find(TRACKER_HEADER_WORLD_QUESTS) then
+					tinsert(shortTags,C("green",L["QuestTagTS"]));
+				elseif q.text:find(TRACKER_HEADER_WORLD_QUESTS) then -- world quests
 					tinsert(tags,TRACKER_HEADER_WORLD_QUESTS);
-					tinsert(shortTags,C(ns.questTags.WORLD_QUESTS[2],ns.questTags.WORLD_QUESTS[1]));
+					tinsert(shortTags,C("yellow",L["QuestTagWQ"]));
 				end
+
+				-- repeatable quests
 				if q.frequency and frequencies[q.frequency] then
 					tinsert(tags,frequencies[q.frequency][2]);
 					tinsert(shortTags,C("dailyblue",frequencies[q.frequency][1]));
 				end
+
+				-- quest zone
 				local mapId,mapName;
 				if ns.client_version>=4 then
 					if not questZones[q.questID] and not WorldMapFrame:IsShown() then
@@ -565,18 +585,15 @@ function module.onevent(self,event,msg)
 						questZones[q.questID] = {mapId=mapId,mapName=mapName};
 					end
 				end
-				if #tags==0 then
-					tinsert(tags," ");
-				end
 
-				status = (q.isComplete==-1 and "fail") or ((q.isComplete==1 or fin) and "complete") or "active";
+				local status = (q.isComplete==-1 and "fail") or ((q.isComplete==1 or fin) and "complete") or "active";
 				table.insert(quests,{
 					q.level,
 					q.title,
 					header,GetQuestDifficultyColor(q.level),
 					status,
-					table.concat(tags,", "),
-					table.concat(shortTags," "),
+					#tags==0 and " " or table.concat(tags,", "),
+					#shortTags==0 and " " or table.concat(shortTags," "),
 					q.questID,
 					index,
 					q.isHidden,

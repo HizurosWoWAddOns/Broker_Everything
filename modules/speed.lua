@@ -151,16 +151,16 @@ local function tooltipOnEnter(self,data)
 		for i=1, #trainer_faction do
 			local v = trainer_faction[i];
 			if faction~=v[1] then
-				local fname,_,fstanding,fmin,fmax,fval = GetFactionInfoByID(v[1]);
-				if fname then
+				local fInfo = ns.deprecated.C_Reputation.GetFactionDataByID(v[1]);
+				if fInfo.name then
 					if faction then
 						GameTooltip:AddLine(" ");
 					end
-					local standing = _G["FACTION_STANDING_LABEL"..fstanding];
-					if fstanding<8 then
-						standing = ttFactionLine:format(standing,((fval-fmin)/(fmax-fmin))*100);
+					local standing = _G["FACTION_STANDING_LABEL"..fInfo.reaction];
+					if fInfo.reaction<8 then
+						standing = ttFactionLine:format(standing,((fInfo.currentStanding-fInfo.currentReactionThreshold)/(fInfo.nextReactionThreshold-fInfo.currentReactionThreshold))*100);
 					end
-					GameTooltip:AddDoubleLine(C("gray",fname), C("gray",standing) );
+					GameTooltip:AddDoubleLine(C("gray",fInfo.name), C("gray",standing) );
 					faction = v[1];
 				end
 			end
@@ -191,7 +191,7 @@ local function createTooltip(tt)
 	tt:AddSeparator();
 	local learned = nil;
 	for i,v in ipairs(riding_skills) do
-		local Name, rank, icon, castTime, minRange, maxRange, spellId = GetSpellInfo(v[1]);
+		local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(v[1])
 		local l,Link,ttExtend = nil,"spell:"..v[1];
 		if(learned==nil and IsSpellKnown(v[1]))then
 			learned = true;
@@ -204,9 +204,9 @@ local function createTooltip(tt)
 				cell2 = C("ltgray",L["Learnable"]);
 				ttExtend = true;
 			elseif v.race==false then
-				local factionName = GetFactionInfoByID(v.faction);
+				local factionInfo = ns.deprecated.C_Reputation.GetFactionDataByID(v.faction)
 				cell1color = "red";
-				cell2 = C("ltgray", L["Need excalted reputation:"].." "..factionName);
+				cell2 = C("ltgray", L["Need excalted reputation:"].." "..factionInfo.name);
 			else
 				cell1color = "red";
 				cell2 = C("ltgray", L["Need level"].." "..v[2]);
@@ -222,7 +222,7 @@ local function createTooltip(tt)
 
 		if cell1color and cell2 then
 			l = tt:AddLine();
-			tt:SetCell(l,1,C(cell1color,Name),nil,nil,2);
+			tt:SetCell(l,1,C(cell1color,spellInfo.name),nil,nil,2);
 			tt:SetCell(l,3,cell2);
 		end
 
@@ -263,11 +263,11 @@ local function createTooltip(tt)
 			if(id and IsSpellKnown(id))then
 				local active=false;
 				local custom = "";
-				local Name, rank, icon, castTime, minRange, maxRange = GetSpellInfo(spell[Id]);
-				local Link = GetSpellLink(spell[Id]);
+				local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(spell[Id])
+				local Link = ns.deprecated.C_Spell.GetSpellLink(spell[Id]);
 
-				if spell[CustomText]==true and rank then
-					local ranks = {strsplit(" ",rank)}; -- TODO: missing rank in bfa?
+				if spell[CustomText]==true and spellInfo.rank then
+					local ranks = {strsplit(" ",spellInfo.rank)}; -- TODO: missing rank in bfa?
 					spell[CustomText] = ranks[2] or ranks[1];
 				end
 
@@ -276,12 +276,13 @@ local function createTooltip(tt)
 				end
 
 				if(spell[ChkActive])then
-					local start, duration, enabled = GetSpellCooldown(spell[Id]);
+					local start, duration, enabled = ns.deprecated.C_Spell.GetSpellCooldown(spell[Id]);
 					if(spell[Special])then
 						if(spell[Special][1]=="SPELL")then
-							local n = GetSpellInfo(spell[Special][2]);
+							local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(spell[Special][2])
 							for i=1, 10 do
-								if UnitDebuff("player",i)==n then -- BfA -- changed arg2 to numeric index only
+								local res = --[[ns.deprecated.]]C_UnitAuras.GetDebuffDataByIndex("player", i)
+								if res and res.name==spellInfo.name then -- BfA -- changed arg2 to numeric index only
 									active=true;
 									break;
 								end
@@ -305,7 +306,7 @@ local function createTooltip(tt)
 
 				if(active)then
 					local l=tt:AddLine();
-					tt:SetCell(l,1,C("ltyellow",Name .. custom));
+					tt:SetCell(l,1,C("ltyellow",spellInfo.name .. custom));
 					tt:SetCell(l,3,_(spell[Speed]));
 					if Link then
 						tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {link=Link});
@@ -348,10 +349,11 @@ local function createTooltip(tt)
 					end
 				end
 			else
-				link = GetSpellLink(v[1]);
+				link = ns.deprecated.C_Spell.GetSpellLink(v[1]);
 				if link then
-					Name, rank, icon, castTime, minRange, maxRange = GetSpellInfo(v[1]);
 					ready = IsSpellKnown(v[1]);
+					local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(v[1])
+					Name = spellInfo.name;
 				elseif type(replace_unknown["s"..v[1]])=="table" then
 					v = replace_unknown["s"..v[1]];
 					Name = v[1];
@@ -406,7 +408,8 @@ local function createTooltip(tt)
 				end
 				local skillName,color = TRADE_SKILLS_UNLEARNED_TAB,"orange";
 				if toonData[name].skill>0 then
-					skillName = GetSpellInfo(toonData[name].skill);
+					local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(toonData[name].skill)
+					skillName = spellInfo.name;
 					color = skillColor[toonData[name].skill] or "yellow";
 				end
 				local faction = toonData.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";

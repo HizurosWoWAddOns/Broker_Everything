@@ -16,16 +16,13 @@ local C_AddOns = C_AddOns or {}
 local UnitName,UnitSex,UnitClass,UnitFactionGroup=UnitName,UnitSex,UnitClass,UnitFactionGroup;
 local UnitRace,GetRealmName,GetLocale=UnitRace,GetRealmName,GetLocale;
 local InCombatLockdown,CreateFrame=InCombatLockdown,CreateFrame;
-local GetScreenHeight,GetMouseFocus,GetAddOnInfo=GetScreenHeight,GetMouseFocus,GetAddOnInfo or C_AddOns.GetAddOnInfo;
-local GetAddOnEnableState,IsAltKeyDown=GetAddOnEnableState,IsAltKeyDown;
-local IsShiftKeyDown,IsControlKeyDown,GetItemInfo=IsShiftKeyDown,IsControlKeyDown,GetItemInfo;
+local GetScreenHeight,GetMouseFocus=GetScreenHeight,GetMouseFocus;
+local IsAltKeyDown=IsAltKeyDown;
+local IsShiftKeyDown,IsControlKeyDown=IsShiftKeyDown,IsControlKeyDown
 local GetInventoryItemLink,GetInventoryItemID=GetInventoryItemLink,GetInventoryItemID;
 
 -- WoW API functions defined in lua files
 local CopyTable,SecondsToTime = CopyTable,SecondsToTime;
-
--- no longer in retail but in classic client
-local GetContainerNumSlots,GetContainerItemCooldown,GetContainerItemLink,GetContainerItemID,GetContainerItemInfo,GetContainerNumFreeSlots=GetContainerNumSlots,GetContainerItemCooldown,GetContainerItemLink,GetContainerItemID,GetContainerItemInfo,GetContainerNumFreeSlots;
 
 -- could be deprecated in future.
 local GetCVar,SetCVar = C_CVar and C_CVar.GetCVar or GetCVar,C_CVar and C_CVar.SetCVar or SetCVar
@@ -36,6 +33,7 @@ local LibStub = _G.LibStub
 -- Init shared lib and debug mode
 ns.debugMode = "@project-version@"=="@".."project-version".."@";
 LibStub("HizurosSharedTools").RegisterPrint(ns,addon,"BE");
+
 
   -------------
 --- Libraries ---
@@ -531,7 +529,7 @@ do
 	local function search()
 		found = {};
 		for name in pairs(list) do
-			if (GetAddOnInfo(name)) and ((GetAddOnEnableState and GetAddOnEnableState(ns.player.name,name)==2) or (C_AddOns.GetAddOnEnableState and C_AddOns.GetAddOnEnableState(name,ns.player.name)==2) ) then -- TODO: check after patch 10.2
+			if C_AddOns.GetAddOnInfo(name) and C_AddOns.GetAddOnEnableState(name,ns.player.name)==2 then
 				tinsert(found,name);
 			end
 		end
@@ -652,6 +650,8 @@ do
 		end
 		if f==true then
 			f = invert;
+		elseif type(f)~="function" then
+			f = nil;
 		end
 		tsort(a, f)
 		local i = 0      -- iterator variable
@@ -680,7 +680,6 @@ end
 ---@return function iterationFunction
 function ns.pairsToons(modName,opts)
 	-- opts = {currentFirst=<bool>,currentHide=<bool>,forceSameRealm=<bool>,forceSameFaction=<bool>}
-	-- TODO: add ns.profile options from modules here
 	local t = {};
 	for index, toonNameRealm in ipairs(ns.toonsDB.order) do
 		local name,realm = strsplit("-",toonNameRealm,2);
@@ -865,7 +864,7 @@ do
 			sbf:HookScript("OnClick",function(_,button) if type(sbfObject.OnClick)=="function" then sbfObject.OnClick(self,button,sbfObject); end end);
 			sbf:HookScript("OnEnter",function() if type(sbfObject.OnEnter)=="function" then sbfObject.OnEnter(self,sbfObject); end end);
 			sbf:HookScript("OnLeave",function() if type(sbfObject.OnLeave)=="function" then sbfObject.OnLeave(self,sbfObject); end end);
-			sbf:RegisterForClicks("AnyUp","AnyDown"); -- TODO: testing
+			sbf:RegisterForClicks("AnyUp","AnyDown");
 		end
 
 		sbf:SetParent(self);
@@ -958,7 +957,7 @@ do
 			hasChanged.equip = true;
 		end
 		-- item has 'Use:' effect spell
-		local _,itemSpellID = (C_Item and C_Item.GetItemSpell or GetItemSpell)(info.link);
+		local _,itemSpellID = ns.deprecated.C_Item.GetItemSpell(info.link);
 		if itemSpellID then
 			info.spell = itemSpellID;
 			if itemsBySpell[info.spell] == nil then
@@ -1007,7 +1006,7 @@ do
 			if id then
 				local link = GetInventoryItemLink("player",slotIndex);
 				-- back again; need durability for detect changes to trigger update of durability module broker display
-				local _, _, _, _, _, itemClassID, itemSubClassID = GetItemInfoInstant(link);
+				local _, _, _, _, _, itemClassID, itemSubClassID = ns.deprecated.C_Item.GetItemInfoInstant(link);
 				local durability, durabilityMax = GetInventoryItemDurability(slotIndex);
 				addItem({
 					bag=-1,
@@ -1040,15 +1039,15 @@ do
 		for bagIndex,bool in pairs(updateBags) do
 			bagIndex=tonumber(bagIndex)
 			if bagIndex and bool==true then
-				local numBagSlots = (C_Container and C_Container.GetContainerNumSlots or GetContainerNumSlots)(bagIndex);
-				local numFreeSlots = (C_Container and C_Container.GetContainerNumFreeSlots or GetContainerNumFreeSlots)(bagIndex);
+				local numBagSlots = --[[ns.deprecated.]]C_Container.GetContainerNumSlots(bagIndex);
+				local numFreeSlots = --[[ns.deprecated.]]C_Container.GetContainerNumFreeSlots(bagIndex);
 				local IndexTabardType =  INVTYPE_TABARD or Enum.InventoryType.IndexTabardType;
 				local IndexBodyType =  INVTYPE_BODY or Enum.InventoryType.IndexBodyType;
 				if numBagSlots~=numFreeSlots then -- do not scan empty bag ;-)
 					--[[
 					local isSoul = false; -- currently could not test. have no warlock on classic realms.
 					if ns.client_version<2 then
-						local _, _, _, _, _, itemClassID, itemSubClassID = GetItemInfoInstant(GetInventoryItemLink("player", bagIndex+19));
+						local _, _, _, _, _, itemClassID, itemSubClassID = ns.deprecated.C_Item.GetItemInfoInstant(GetInventoryItemLink("player", bagIndex+19));
 						if itemSubClassID==1 then -- soul pouch
 							isSoul = true;
 						end
@@ -1056,7 +1055,7 @@ do
 					--]]
 					for slotIndex=1, numBagSlots do
 						local sharedSlotIndex = bagIndex+(slotIndex/100);
-						local itemInfo, count, _, _, _, _, link, _, _, id = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(bagIndex,slotIndex);
+						local itemInfo, count, _, _, _, _, link, _, _, id = --[[ns.deprecated.]]C_Container.GetContainerItemInfo(bagIndex,slotIndex);
 						if not count and type(itemInfo)=="table" then
 							count = itemInfo.stackCount;
 							link = itemInfo.hyperlink;
@@ -1065,8 +1064,8 @@ do
 							id = tonumber((link:match("item:(%d+)"))) or -1;
 						end
 						if link and id then
-							local _, _, _, itemEquipLocation, _, itemClassID, itemSubClassID = GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
-							local durability, durabilityMax = (C_Container and C_Container.GetContainerItemDurability or GetContainerItemDurability)(bagIndex,slotIndex)
+							local _, _, _, itemEquipLocation, _, itemClassID, itemSubClassID = ns.deprecated.C_Item.GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
+							local durability, durabilityMax = ns.deprecated.C_Container.GetContainerItemDurability(bagIndex,slotIndex)
 							local isEquipment = false;
 							if not (itemEquipLocation=="" or itemEquipLocation==IndexTabardType or itemEquipLocation==IndexBodyType) then
 								isEquipment = true; -- ignore shirts and tabards
@@ -1129,11 +1128,11 @@ do
 		elseif event=="GET_ITEM_INFO_RECEIVED" and (...)~=nil then
 			local id = ...;
 			if itemsByID[id] then
-				local _, spell = (C_Item and C_Item.GetItemSpell or GetItemSpell)(id); -- test if item has a spell
+				local _, spell = ns.deprecated.C_Item.GetItemSpell(id); -- test if item has a spell
 				if spell then
 					for sharedSlot, info in pairs(itemsByID[...])do
-						local _, count, _, _, _, _, _, _, _ = (C_Container and C_Container.GetContainerItemInfo or GetContainerItemInfo)(info.bag,info.slot);
-						_, info.spell = (C_Item and C_Item.GetItemSpell or GetItemSpell)(info.link); -- multiple items with same id could have different spells by itemLink.
+						local _, count, _, _, _, _, _, _, _ = --[[ns.deprecated.]]C_Container.GetContainerItemInfo(info.bag,info.slot);
+						_, info.spell = ns.deprecated.C_Item.GetItemSpell(info.link); -- multiple items with same id could have different spells by itemLink.
 						if info.spell then
 							if not itemsBySpell[info.spell] then
 								itemsBySpell[info.spell] = {};
@@ -1143,7 +1142,7 @@ do
 					end
 				end
 			elseif callbacks.toys[id] and PlayerHasToy then
-				local toyName, _, _, _, _, _, _, _, _, toyIcon = GetItemInfo(id);
+				local toyName, _, _, _, _, _, _, _, _, toyIcon = --[[ns.deprecated.]]C_Item.GetItemInfo(id);
 				local hasToy = PlayerHasToy(id);
 				local canUse = C_ToyBox.IsToyUsable(id);
 				if toyName and hasToy and canUse then
@@ -1241,7 +1240,7 @@ do
 	local callback = {};
 	local function UseContainerItemHook(bag, slot)
 		if bag and slot then
-			local itemId = tonumber(((C_Container and C_Container.GetContainerItemLink or GetContainerItemLink)(bag,slot) or ""):match("Hitem:([0-9]+)"));
+			local itemId = tonumber((C_Container.GetContainerItemLink(bag,slot) or ""):match("Hitem:([0-9]+)"));
 			if itemId and callback[itemId] then
 				for _,entry in pairs(callback[itemId])do
 					if type(entry.callback)=="function" then
@@ -1251,11 +1250,7 @@ do
 			end
 		end
 	end
-	if C_Container and C_Container.UseContainerItem then
-		hooksecurefunc(C_Container,"UseContainerItem",UseContainerItemHook);
-	elseif UseContainerItem then
-		hooksecurefunc("UseContainerItem",UseContainerItemHook);
-	end
+	hooksecurefunc(C_Container,"UseContainerItem",UseContainerItemHook);
 	ns.UseContainerItemHook = {
 		registerItemID = function(modName,itemId,callbackFunc,info)
 			if callback[itemId]==nil then
@@ -1335,11 +1330,11 @@ do
 		end
 		if data._type=="bag" or data._type=="bags" then
 			if data.link==nil then
-				data.link = (C_Container and C_Container.GetContainerItemLink or GetContainerItemLink)(data.bag,data.slot);
+				data.link = --[[ns.deprecated.]]C_Container.GetContainerItemLink(data.bag,data.slot);
 			end
 			data.linkData = GetLinkData(data.link);
-			data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = GetItemInfo(data.link);
-			data.startTime, data.duration, data.isEnabled = (C_Container and C_Container.GetContainerItemCooldown or GetContainerItemCooldown)(data.bag,data.slot);
+			data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = --[[ns.deprecated.]]C_Item.GetItemInfo(data.link);
+			data.startTime, data.duration, data.isEnabled = C_Container.GetContainerItemCooldown(data.bag,data.slot);
 			data.hasCooldown, data.repairCost = tt:SetBagItem(data.bag,data.slot);
 		elseif data._type=="inventory" or data._type=="inv" then
 			if data.link==nil then
@@ -1348,7 +1343,7 @@ do
 			data.linkData = GetLinkData(data.link);
 			_,data.hasCooldown, data.repairCost = tt:SetInventoryItem("player", data.slot); -- repair costs
 		elseif data._type=="unit" then
-			-- https://wow.gamepedia.com/API_UnitGUID
+			-- https://warcraft.wiki.gg/API_UnitGUID
 			data._type = "link";
 			if data.unit=="Creature" or data.unit=="Pet" or data.unit=="GameObject" or data.unit=="Vehicle" then
 				-- unit:<Creature|Pet|GameObject|Vehicle>-0-<server>-<instance>-<zone>-<id>-<spawn>
@@ -2365,54 +2360,3 @@ function ns.textBar(num,values,colors,Char)
 		.. (tonextlvl>0 and ns.LC.color(colors[iMax] or "white",Char:rep(tonextlvl)) or "");
 end
 
-
-
--- -------------------------------
--- Retail / Classic / BC Classic compatibility
--- -------------------------------
-
-ns.C_QuestLog_GetInfo = (C_QuestLog and C_QuestLog.GetInfo) or function(questLogIndex)
-	-- 10/22/2003: Not present in Classic and Classic Era
-	local title, level, suggestedGroup, isHeader, isCollapsed, isComplete, frequency, questID, startEvent, displayQuestID, isOnMap, hasLocalPOI, isTask, isStory, isHidden, isScaling  = GetQuestLogTitle(questLogIndex);
-	if type(suggestedGroup)=="string" then
-		suggestedGroup = tonumber(suggestedGroup) or 0; -- problem on bc classic client?
-	end
-	return {
-		campaignID = 0, -- dummy
-		difficultyLevel = 0, -- dummy
-		frequency = frequency,
-		hasLocalPOI = hasLocalPOI,
-		isAutoComplete = false, -- dummy
-		isBounty = false, -- dummy
-		isCollapsed = isCollapsed,
-		isComplete = isComplete, -- missing in C_QuestLog.GetInfo ?
-		isHeader = isHeader,
-		isHidden = isHidden,
-		isOnMap = isOnMap,
-		isScaling = isScaling,
-		isStory = isStory,
-		isTask = isTask,
-		level = level,
-		overridesSortOrder = false, -- dummy
-		questID = questID,
-		questLogIndex = questLogIndex,
-		readyForTranslation = false, -- dummy
-		startEvent = startEvent,
-		suggestedGroup = suggestedGroup,
-		title = title,
-	};
-end
-
-ns.C_QuestLog_GetQuestTagInfo = (C_QuestLog and C_QuestLog.GetQuestTagInfo) or function(questID)
-	-- 10/22/2003: Not present in Classic and Classic Era
-	local tagID, tagName, worldQuestType, rarity, isElite, tradeskillLineIndex = GetQuestTagInfo(questID);
-	return {
-		tagID = tagID,
-		tagName = tagName,
-		-- not found in returned table from C_QuestLog.GetQuestTagInfo
-		worldQuestType = worldQuestType,
-		rarity = rarity,
-		isElite = isElite,
-		tradeskillLineIndex = tradeskillLineIndex
-	};
-end

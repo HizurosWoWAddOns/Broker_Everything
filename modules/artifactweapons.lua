@@ -73,7 +73,7 @@ function updateItemState()
 			local item = CopyTable(itemInfo);
 			item.type = "bag";
 			ns.ScanTT.query(item,true);
-			item.name, _, _, _, _, _, _, _, _, item.icon = GetItemInfo(item.link);
+			item.name, _, _, _, _, _, _, _, _, item.icon = --[[ns.deprecated.]]C_Item.GetItemInfo(item.link);
 			local knowledge = item.linkData[#item.linkData-3];
 			if knowledge then
 				if klvls[knowledge]==nil then klvls[knowledge]={}; end
@@ -182,7 +182,7 @@ local function updateCharacterDB(equipped)
 				local icon,itemname,color,linktype,itemid,data,_=ns.icon_fallback;
 				if v.relicLink then
 					_,_,color,linktype,itemid,data,itemname = v.relicLink:find("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
-					icon = GetItemIcon(itemid);
+					icon = ns.deprecated.C_Item.GetItemIcon(itemid);
 				end
 				local affected = {C_ArtifactUI.GetPowersAffectedByRelic(i)};
 				for I,A in ipairs(affected) do
@@ -283,9 +283,9 @@ local function itemTooltipShow(self,info)
 				if str and str==" " then
 					local text = "";
 					for i=2, #info.affected do
-						local spell = GetSpellInfo(info.affected[i]);
-						if spell then
-							text = text .. RELIC_TOOLTIP_RANK_INCREASE:format(1,spell) .. "\n";
+						local spell = ns.deprecated.C_Spell.GetSpellInfo(info.affected[i]);
+						if spell and spell.name then
+							text = text .. RELIC_TOOLTIP_RANK_INCREASE:format(1,spell.name) .. "\n";
 						end
 					end
 					regions[r]:SetText(text.." ");
@@ -304,7 +304,7 @@ local function createTooltip2(parent,artifactID)
 	ttAlt = tt;
 
 	tt:Clear();
-	l=tt:AddHeader("|T"..(GetItemIcon(artifactID) or ns.icon_fallback)..":0|t "..C("ltyellow",item.name));
+	l=tt:AddHeader("|T"..(ns.deprecated.C_Item.GetItemIcon(artifactID) or ns.icon_fallback)..":0|t "..C("ltyellow",item.name));
 	--tt:SetCell(l,3,C("gray","(class spec?)"));
 
 	tt:AddSeparator();
@@ -398,7 +398,7 @@ end
 
 local function addAltArtifactLine(tt,c,id)
 	local l=tt:AddLine(C("ltyellow",c..". "..L["Artifact weapon"]));
-	tt:SetCell(l,3,"|T"..(GetItemIcon(id) or ns.icon_fallback)..":0|t "..C("ltyellow",ns.toon[name][id].name));
+	tt:SetCell(l,3,"|T"..(ns.deprecated.C_Spell.GetSpellIcon(id) or ns.icon_fallback)..":0|t "..C("ltyellow",ns.toon[name][id].name));
 	tt:SetLineScript(l, "OnEnter", createTooltip2, id);
 	tt:SetLineScript(l, "OnLeave");
 end

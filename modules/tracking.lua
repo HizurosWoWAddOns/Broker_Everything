@@ -22,8 +22,8 @@ local function updateTracking()
 	local tActive = 0
 	local n = {}
 
-	for i = 1, (C_Minimap and C_Minimap.GetNumTrackingTypes or GetNumTrackingTypes)() do
-		local name, tex, active, category = (C_Minimap and C_Minimap.GetTrackingInfo or GetTrackingInfo)(i)
+	for i = 1, --[[ns.deprecated.]]C_Minimap.GetNumTrackingTypes() do
+		local name, tex, active, category = --[[ns.deprecated.]]C_Minimap.GetTrackingInfo(i)
 		if (active) then
 			tActive = tActive + 1
 			n[tActive] = {["Name"] = name, ["Texture"] = tex}
@@ -131,11 +131,11 @@ do
 	local SetTracking = C_Minimap and C_Minimap.SetTracking or SetTracking;
 	local GetTrackingInfo = C_Minimap and C_Minimap.GetTrackingInfo or GetTrackingInfo;
 	function trackingMenuOnClick(button)
-		SetTracking(button.arg1,not select(3,GetTrackingInfo(button.arg1)));
+		SetTracking(button.arg1,not select(3,C_Minimap.GetTrackingInfo(button.arg1)));
 	end
 	if not trackingIsActive then
 		trackingIsActive = trackingIsActive or function(button)
-			local name, texture, active, category = GetTrackingInfo(button.arg1);
+			local name, texture, active, category = C_Minimap.GetTrackingInfo(button.arg1);
 			return active;
 		end
 	end
@@ -144,17 +144,17 @@ end
 function module.onclick(self,button)
 	if tt then tt:Hide(); end
 	local Name, texture, active, category, nested, Type = 1,2,3,4,5,6;
-	local list,count = {},(C_Minimap and C_Minimap.GetNumTrackingTypes or GetNumTrackingTypes)();
+	local list,count = {},--[[ns.deprecated.]]C_Minimap.GetNumTrackingTypes();
 	local _, class = UnitClass("player");
 
 	ns.EasyMenu:InitializeMenu();
 	ns.EasyMenu:AddEntry({label=L["Tracking options"], title=true});
-	ns.EasyMenu:AddEntry({label=MINIMAP_TRACKING_NONE, checked=MiniMapTrackingDropDown_IsNoTrackingActive, func=function() (C_Minimap and C_Minimap.ClearAllTracking or ClearAllTracking)(); end });
+	ns.EasyMenu:AddEntry({label=MINIMAP_TRACKING_NONE, checked=MiniMapTrackingDropDown_IsNoTrackingActive, func=--[[ns.deprecated.]]C_Minimap.ClearAllTracking });
 	ns.EasyMenu:AddEntry({separator=true});
 
 	local numTracking,hunterHeader,townHeader = 0,false;
 	for id=1, count do
-		local tmp={(C_Minimap and C_Minimap.GetTrackingInfo or GetTrackingInfo)(id)};
+		local tmp={--[[ns.deprecated.]]C_Minimap.GetTrackingInfo(id)};
 		local Name, texture, active, category, nested = unpack(tmp);
 		if nested~=HUNTER_TRACKING and nested~=TOWNSFOLK then
 			local entry={label=Name, icon=texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};

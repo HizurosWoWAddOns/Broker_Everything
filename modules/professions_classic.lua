@@ -39,7 +39,7 @@ end
 
 local cdResetTypes = {
 	function(id) -- get duration directly from GetSpellCooldown :: blizzard didn't update return values after reload.
-		local start, stop = GetSpellCooldown(id);
+		local start, stop = ns.deprecated.C_Spell.GetSpellCooldown(id);
 		return stop - (GetTime()-start), time();
 	end,
 	function(id) -- use GetSpellCooldown to test and use GetQuestResetTime as duration time
@@ -102,7 +102,7 @@ end
 local function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local iconnameLocale = "|T%s:12:12:0:0:64:64:2:62:4:62|t %s";
-	local function item_icon(name,icon) return select(10,GetItemInfo(name)) or icon or ns.icon_fallback; end
+	local function item_icon(name,icon) return select(10,C_Item.GetItemInfo(name)) or icon or ns.icon_fallback; end
 
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",TRADE_SKILLS));
@@ -220,10 +220,14 @@ local function checkCooldownSpells(_skillLine,_nameLoc,_icon,_skill,_maxSkill,_s
 		local cooldown,idOrGroup,timeLeft,lastUpdate,_name
 		local spellId, cdGroup, cdType = 1,2,3;
 		for _,cd in pairs(cdSpells[_skillLine]) do
-			cooldown = GetSpellCooldown(cd[spellId]);
+			cooldown = C_Spell.GetSpellCooldown(cd[spellId]);
 			if cooldown and cooldown>0 then
 				idOrGroup = (cd[cdGroup]>0) and "cd.group."..cd[cdGroup] or cd[spellId];
-				_name = (cd[cdGroup]>0) and cd_groups[cdGroup].." cooldown group" or select(1,GetSpellInfo(cd[spellId]));
+				_name = (cd[cdGroup]>0) and cd_groups[cdGroup].." cooldown group" or false;
+				if not _name then
+					local info = ns.deprecated.C_Spell.GetSpellInfo(cd[spellId]);
+					_name = info.name;
+				end
 				timeLeft,lastUpdate = cdResetTypes[cd[cdType]](cd[spellId]);
 
 				if (db.cooldowns[idOrGroup] and (timeLeft~=false) and floor(db.cooldowns[idOrGroup].timeLeft)~=floor(timeLeft)) or (not db.cooldowns[idOrGroup]) then
@@ -470,9 +474,9 @@ function module.init()
 		1804,0,   -- Lockpicking, rouge
 	}
 	for i=1, #t, 2 do
-		local Name,_,Icon = GetSpellInfo(t[i])
-		if Name then
-			skillName2Info[Name] = {spellId=t[i],icon=Icon,skillId=t[i+1]}
+		local info = ns.deprecated.C_Spell.GetSpellInfo(t[i])
+		if info.name then
+			skillName2Info[info.name] = {spellId=t[i],icon=info.iconID,skillId=t[i+1]}
 		end
 	end
 end

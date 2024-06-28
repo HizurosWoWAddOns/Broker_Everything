@@ -65,7 +65,10 @@ end
 
 local cdResetTypes = {
 	function(id) -- get duration directly from GetSpellCooldown :: blizzard didn't update return values after reload.
-		local start, stop = GetSpellCooldown(id);
+		local start, stop = ns.deprecated.C_Spell.GetSpellCooldown(id);
+		if type(start)=="table" then
+			start, stop = start.startTime, start.duration;
+		end
 		return stop - (GetTime()-start), time();
 	end,
 	function(id) -- use GetSpellCooldown to test and use GetQuestResetTime as duration time
@@ -109,10 +112,17 @@ local function chkCooldownSpells(skillId,icon)
 		local cooldown,idOrGroup,timeLeft,lastUpdate,_name
 		local spellId, cdGroup, cdType = 1,2,3;
 		for _,cd in pairs(cdSpells[skillId]) do
-			cooldown = GetSpellCooldown(cd[spellId]);
+			cooldown = ns.deprecated.C_Spell.GetSpellCooldown(cd[spellId]);
+			if type(cooldown)=="table" then
+				cooldown = cooldown.duration;
+			end
 			if cooldown and cooldown>0 then
 				idOrGroup = (cd[cdGroup]>0) and "cd.group."..cd[cdGroup] or cd[spellId];
-				_name = (cd[cdGroup]>0) and cd_groups[cdGroup].." cooldown group" or select(1,GetSpellInfo(cd[spellId]));
+				_name = (cd[cdGroup]>0) and cd_groups[cdGroup].." cooldown group" or false;
+				if not _name then
+					-- TODO: check classic clients after patch
+					_name = ns.deprecated.C_Spell.GetSpellInfo(cd[spellId]).name;
+				end
 				timeLeft,lastUpdate = cdResetTypes[cd[cdType]](cd[spellId]);
 
 				if (toonDB.cooldowns[idOrGroup] and (timeLeft~=false) and floor(toonDB.cooldowns[idOrGroup].timeLeft)~=floor(timeLeft)) or (not toonDB.cooldowns[idOrGroup]) then
@@ -174,22 +184,41 @@ local function updateTradeSkills()
 			skillName, texture, rank, maxRank, numSpells, spelloffset, skillLine, rankModifier, specializationIndex, specializationOffset, skillLineName = GetProfessionInfo(index);
 		end
 		if skillName then
-			local _, spellId = GetSpellBookItemInfo(1 + spelloffset, BOOKTYPE_PROFESSION);
-			professions[order] = {
-				skillName = skillName,
-				skillNameFull = skillLineName,
-				skillIcon = texture,
-				skillId = skillLine,
-				spellId = spellId,
-				numSkill = rank or 0,
-				maxSkill = maxRank or 0,
-				skillModifier = rankModifier or 0,
-			};
+			if C_SpellBook and C_SpellBook.GetSpellBookItemInfo then
+				local info = C_SpellBook and C_SpellBook.GetSpellBookItemInfo(1 + spelloffset, Enum.SpellBookSpellBank.Player);
+				professions[order] = {
+					skillName = info.name,
+					skillNameFull = info.name,
+					skillIcon = info.iconID,
+					skillId = info.skillLineIndex,
+					spellId = info.spellId,
+					numSkill = rank or 0,
+					maxSkill = maxRank or 0,
+					skillModifier = rankModifier or 0,
+				}
+				chkCooldownSpells(info.skillLineIndex,info.iconID);
+				chkExpiredCooldowns();
+				skillNameById[info.skillLineIndex] = info.name;
+				maxInTitleTmp=maxInTitleTmp+1;
+			else
+				local _, spellId = GetSpellBookItemInfo(1 + spelloffset, BOOKTYPE_PROFESSION);
+				professions[order] = {
+					skillName = skillName,
+					skillNameFull = skillLineName,
+					skillIcon = texture,
+					skillId = skillLine,
+					spellId = spellId,
+					numSkill = rank or 0,
+					maxSkill = maxRank or 0,
+					skillModifier = rankModifier or 0,
+				};
+			end
 			chkCooldownSpells(skillLine,texture);
 			chkExpiredCooldowns();
 			skillNameById[skillLine] = skillName;
 			maxInTitleTmp=maxInTitleTmp+1;
-		else
+		end
+		if not professions[order] then
 			professions[order] = false;
 		end
 	end
@@ -197,7 +226,7 @@ local function updateTradeSkills()
 	-- class skills
 	for spellId,t in pairs({[1804]={"ROGUE",0,true},[53428]={"DEATHKNIGHT",1,false}})do
 		if ns.player.class==t[1] then
-			local spellName,_,icon = GetSpellInfo(spellId);
+			local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(spellId)
 			local skill,maxSkill = 0,0;
 			if IsSpellKnown(spellId) then
 				if t[1]=="ROGUE" then
@@ -208,9 +237,9 @@ local function updateTradeSkills()
 				end
 			end
 			tinsert(professions,{
-				skillName = spellName,
-				skillNameFull = spellName,
-				skillIcon = icon,
+				skillName = spellInfo.name,
+				skillNameFull = spellInfo.name,
+				skillIcon = spellInfo.iconID,
 				skillId = false,
 				spellId = spellId,
 				numSkill = skill,
@@ -259,7 +288,7 @@ local function updateCooldownAndRecipeLists(skillLineID,rebuildCooldowns) -- on 
 		--[[
 		if rebuildCooldowns then
 			--local cooldown, isDayCooldown, charges, maxCharges = C_TradeSkillUI.GetRecipeCooldown(recipeId);
-			local _,_,cooldown = GetSpellCooldown(recipeId);
+			local _,_,cooldown = ns.deprecated.C_Spell.GetSpellCooldown(recipeId);
 			--learnedRecipes[recipeId] = recipeInfo.learned
 			if recipeId==143011 then
 				ns:debug(name,recipeId,cooldown);
@@ -316,12 +345,14 @@ local function CreateTooltip2(self, content)
 		for _, recipeData in ipairs(recipes) do
 			local factionId, standing, itemId, spellId, recipeRank = unpack(recipeData);
 			if skillNameById[tsId] then
-				local Name = GetSpellInfo(spellId);
-				if Name then
+				--local Name = ((C_Spell and C_Spell.GetSpellInfo) or () or GetSpellInfo)(spellId);
+				local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(spellId)
+				if spellInfo and spellInfo.name then
 					-- faction header
 					if factionID~=recipeData[1] then
 						factionID = factionId;
-						factionName,_,currentStanding = GetFactionInfoByID(factionID);
+						local info = ns.deprecated.C_Reputation.GetFactionDataByID(factionID);
+						factionName,_,currentStanding = info.name, info.reaction or info.standing;
 						local currentStandingStr = "Error";
 						if factions[factionID].isMajor then
 							local info = C_MajorFactions.GetMajorFactionData(factionID)
@@ -360,7 +391,7 @@ local function CreateTooltip2(self, content)
 					if recipeRank then
 						stars = " "..("|Tinterface\\common\\reputationstar:12:12:0:0:32:32:2:14:2:14|t"):rep(recipeRank);
 					end
-					tt2:AddLine("    "..C("ltyellow",Name)..stars,C(color,standingText),C(color,buyable));
+					tt2:AddLine("    "..C("ltyellow",spellInfo.name)..stars,C(color,standingText),C(color,buyable));
 				end
 			end
 		end
@@ -381,7 +412,8 @@ local function AddFactionRecipeLines(tt,expansion,recipesByProfession)
 			for _,recipe in ipairs(recipes) do
 				if not factions[recipe[1]] then -- fill factions table
 					factions[recipe[1]] = {};
-					factions[recipe[1]].name,_,factions[recipe[1]].standing = GetFactionInfoByID(recipe[1]);
+					local info = ns.deprecated.C_Reputation.GetFactionDataByID(recipe[1]);
+					factions[recipe[1]].name,_,factions[recipe[1]].standing = info.name, info.reaction or info.standing
 					if C_Reputation.IsMajorFaction(recipe[1]) then
 						local info = C_MajorFactions.GetMajorFactionData(recipe[1])
 						if info then
@@ -576,7 +608,7 @@ local function createTooltip(tt)
 				elseif (v.type=="line") then
 					tt:AddLine(unpack(v.data));
 				elseif (v.type=="cdLine") then
-					tt:AddLine(iconnameLocale:format(GetItemIcon(v.data.name) or v.data.icon or ns.icon_fallback,C("ltyellow",v.data.name)),"~ "..ns.DurationOrExpireDate(v.data.timeLeft,v.data.lastUpdate));
+					tt:AddLine(iconnameLocale:format(ns.deprecated.C_Item.GetItemIcon(v.data.name) or v.data.icon or ns.icon_fallback,C("ltyellow",v.data.name)),"~ "..ns.DurationOrExpireDate(v.data.timeLeft,v.data.lastUpdate));
 				end
 			end
 		end

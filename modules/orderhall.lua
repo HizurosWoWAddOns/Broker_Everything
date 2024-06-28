@@ -301,7 +301,7 @@ function module.onevent(self,event,arg1,...)
 	if event=="PLAYER_LOGIN" then
 		local InstantWQ = GetClassTalentTreeInfoByType(Enum.GarrisonType.Type_7_0_Garrison,"InstantWQ");
 		if InstantWQ and InstantWQ.reagentItem then
-			GetItemInfo(InstantWQ.reagentItem);
+			--[[ns.deprecated.]]C_Item.GetItemInfo(InstantWQ.reagentItem);
 		end
 	end
 	if ns.eventPlayerEnteredWorld then

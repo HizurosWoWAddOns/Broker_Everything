@@ -56,14 +56,15 @@ do
 		[2510] = 2088,
 		[2511] = 2087,
 	};
+
 	local function normalizeValues(i,a,b,c)
 		a,b = i[a]-i[c],i[b]-i[c];
 		return a>0 and a or 1, b>0 and b or 1;
 	end
+
 	local function _GetFactionInfo(f,faction,extended)
-		local info = {};
-		info.name, info.description, info.standingID, info.barMin, info.barMax, info.barValue, info.atWarWith, info.canToggleAtWar,
-		info.isHeader, info.isCollapsed, info.hasRep, info.isWatched, info.isChild, info.factionID, info.hasBonusRepGain, info.canBeLFGBonus = f(faction);
+		local info = f(faction);
+
 		if info.factionID==nil then
 			-- there area 2 header entries without factionID. Misc and Inactive.
 			info.factionID = missingFactionID;
@@ -116,10 +117,14 @@ do
 			info.shortInfo.standingStr = info.friendInfo.reaction;
 			info.type = "friend"
 		else
-			info.shortInfo.max, info.shortInfo.value = normalizeValues(info,"barMax","barValue","barMin");
+			if info.barMax then
+				info.shortInfo.max, info.shortInfo.value = normalizeValues(info,"barMax","barValue","barMin");
+			else
+				info.shortInfo.max, info.shortInfo.value = normalizeValues(info,"nextReactionThreshold","currentStanding","currentReactionThreshold");
+			end
 			if info.shortInfo.value==0 then info.shortInfo.value=1; end
-			info.shortInfo.standingID = info.standingID;
-			info.shortInfo.standingStr = _G["FACTION_STANDING_LABEL"..info.standingID] or UNKNOWN;
+			info.shortInfo.standingID = info.reaction;
+			info.shortInfo.standingStr = _G["FACTION_STANDING_LABEL"..info.reaction] or UNKNOWN;
 			info.type = "faction"
 		end
 
@@ -166,12 +171,8 @@ do
 		return info;
 	end
 
-	function C_Reputation_GetFactionInfo(...)
-		return _GetFactionInfo(GetFactionInfo,...);
-	end
-
 	function C_Reputation_GetFactionInfoByID(faction_id)
-		return _GetFactionInfo(GetFactionInfoByID,faction_id,true);
+		return _GetFactionInfo(ns.deprecated.C_Reputation.GetFactionDataByID,faction_id,true);
 	end
 end
 
@@ -188,19 +189,19 @@ local function initReputationList()
 			collapsedL2 = collapsedL2 or {};
 			collapsed = collapsedL2;
 		end
-		for i = (C_Reputation and C_Reputation.GetNumFactions or GetNumFactions)(),1,-1 do
-			local info = (C_Reputation and C_Reputation.GetFactionInfo or C_Reputation_GetFactionInfo)(i);
+		for i = ns.deprecated.C_Reputation.GetNumFactions(),1,-1 do
+			local info = ns.deprecated.C_Reputation.GetFactionDataByIndex(i);
 			if info.isCollapsed then
 				tinsert(collapsed,1,i);
-				(C_Reputation and C_Reputation.ExpandFactionHeader or ExpandFactionHeader)(i);
+				ns.deprecated.C_Reputation.ExpandFactionHeader(i);
 			end
 		end
 		round=round+1;
 	elseif round==0 then
 		-- read factions
 		wipe(factions);
-		for i=1, (C_Reputation and C_Reputation.GetNumFactions or GetNumFactions)() do
-			local info = (C_Reputation and C_Reputation.GetFactionInfo or C_Reputation_GetFactionInfo)(i,true);
+		for i=1, ns.deprecated.C_Reputation.GetNumFactions() do
+			local info = ns.deprecated.C_Reputation.GetFactionDataByIndex(i);
 			tinsert(factions,{
 				factionID=info.factionID,
 				name=info.name,
@@ -214,7 +215,7 @@ local function initReputationList()
 		-- collapse headers again
 		local collapsed = round==1 and collapsedL2 or collapsedL1;
 		if collapsed and #collapsed>0 then
-			(C_Reputation and C_Reputation.CollapseFactionHeader or CollapseFactionHeader)(collapsed[1]);
+			ns.deprecated.C_Reputation.CollapseFactionHeader(collapsed[1]); -- TODO: Is function in TWW beta buggy? // works, but something revert action
 			tremove(collapsed,1);
 			if #collapsed==0 then
 				round=round+1;
@@ -251,13 +252,14 @@ local function updateBodyguards()
 end
 
 function updateBroker()
-	local txt = REPUTATION;
-	local _, _, _, _, _, watchedFactionID = GetWatchedFactionInfo();
+	local txt,info,_ = REPUTATION;
+	local watchedFactionInfo = ns.deprecated.C_Reputation.GetWatchedFactionData()
 
-	if watchedFactionID and watchedFactionID>0 then
-		local info = C_Reputation_GetFactionInfoByID(watchedFactionID);
-		if not info then return end
+	if watchedFactionInfo then
+		info = C_Reputation_GetFactionInfoByID(watchedFactionInfo.factionID);
+	end
 
+	if info then
 		local tmp = {};
 		if ns.profile[name].watchedNameOnBroker then
 			tinsert(tmp,info.name);

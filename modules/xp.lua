@@ -14,7 +14,7 @@ local sessionStartLevel = UnitLevel("player");
 local textbarSigns = {"=","-","#","||","/","\\","+",">","•","⁄"};
 local triggerLocked = false;
 
-local MAX_PLAYER_LEVEL = MAX_PLAYER_LEVEL -- missing changes by blizzard for bc and wotlk
+local MAX_PLAYER_LEVEL = GetMaxPlayerLevel and GetMaxPlayerLevel() or MAX_PLAYER_LEVEL or 0 -- missing changes by blizzard for bc and wotlk
 if MAX_PLAYER_LEVEL==60 and WOW_PROJECT_ID==WOW_PROJECT_BURNING_CRUSADE_CLASSIC then
 	MAX_PLAYER_LEVEL=70;
 elseif MAX_PLAYER_LEVEL==60 and WOW_PROJECT_ID==WOW_PROJECT_WRATH_CLASSIC then
@@ -244,9 +244,20 @@ function module.options()
 end
 
 function module.init()
-	-- https://wow.tools/files/#search=gametables/xp.txt
-
-	if WOW_PROJECT_ID==WOW_PROJECT_MAINLINE then
+	-- gametables/xp.txt
+	if ns.client_version>=11 then
+		-- from build 55000 (tww beta)
+		xp2levelup = {
+			   250,   595,  1085,  1715,  2485,  3405,  4460,  5660,  7005,    8490, --  1-10
+			  8150,  9210, 10335, 11510, 12745, 14035, 15385, 16790, 18250,   19770, -- 11-20
+			 21345, 22975, 24665, 26410, 28210, 30070, 31985, 33960, 35985,   38075, -- 21-30
+			 38430, 38725, 38970, 39155, 39280, 39355, 39370, 39325, 39225,   39070, -- 31-40
+			 38860, 38590, 38265, 37880, 37440, 36945, 36395, 35785, 35115,   34395, -- 41-50
+			 36305, 38265, 40275, 42330, 44430, 46580, 48780, 51030, 53320,   55665, -- 51-60
+			 58055, 60490, 62980, 65510, 68095, 70720, 73400, 76125, 78895,  225105, -- 61-70
+			247375,270190,293540,317430,341865,366835,392350,418405,445000,99999999  -- 71-80
+		}
+	elseif WOW_PROJECT_ID==WOW_PROJECT_MAINLINE then
 		-- from build 45969 (df beta)
 		xp2levelup = {
 			   250,   590,  1065,  1675,  2420,  3305,  4325,  5485,  6775,    8205, --  1-10

@@ -75,8 +75,9 @@ I[name3] = {iconfile=134269,coords={0.05,0.95,0.05,0.95}}				--IconName::ZoneTex
 --------------------------
 local function setSpell(tb,id)
 	if IsSpellKnown(id) then
-		local sName, _, icon, _, _, _, _, _, _ = GetSpellInfo(id);
-		table.insert(tb,{type="spell",id=id,icon=icon,name=sName,name2=sName});
+		--local sName, _, icon, _, _, _, _, _, _ = ns.deprecated.C_Spell.GetSpellInfo(id);
+		local info = ns.deprecated.C_Spell.GetSpellInfo(id)
+		table.insert(tb,{type="spell",id=id,icon=info.iconID,name=info.name,name2=info.name});
 	end
 end
 
@@ -98,7 +99,7 @@ end
 
 local function addToy(id)
 	if not foundToys[id] and PlayerHasToy then
-		local toyName, _, _, _, _, _, _, _, _, toyIcon = GetItemInfo(id);
+		local toyName, _, _, _, _, _, _, _, _, toyIcon = --[[ns.deprecated.]]C_Item.GetItemInfo(id);
 		local hasToy = PlayerHasToy(id);
 		local canUse = C_ToyBox.IsToyUsable(id);
 		if _toyUsableBug[id] then
@@ -152,7 +153,7 @@ local function updateItems()
 			for sharedSlot,item in pairs(ns.items.byID[id]) do
 				local isHS,hsLoc = itemIsHearthstone(id);
 				local obj = {type="item", id=id, sharedSlot=sharedSlot};
-				obj.name, _, _, _, _, _, _, _, _, obj.icon = GetItemInfo(item.link);
+				obj.name, _, _, _, _, _, _, _, _, obj.icon = --[[ns.deprecated.]]C_Item.GetItemInfo(item.link);
 				if obj.name then
 					obj.name2 = isHS and obj.name..hsLoc or obj.name;
 					if _itemMustBeEquipped[id] then
@@ -222,7 +223,7 @@ local function zone(byName)
 end
 
 local function GetZoneInfo()
-	local zoneColor,zoneLabel,zoneType, _, f = "white","",GetZonePVPInfo()
+	local zoneColor,zoneLabel,zoneType, _, f = "white","", C_PvP.GetZonePVPInfo()
 
 	if zoneType == "combat" or zoneType == "arena" or zoneType == "hostile" then
 		zoneColor,zoneLabel = zoneRed,HOSTILE;
@@ -323,7 +324,10 @@ end
 local function tpmAddObject(tt,parent,name,line,column,data)
 	local start, duration, enabled;
 	if data.type=="spell" then
-		start, duration, enabled = GetSpellCooldown(data.id);
+		start, duration, enabled = ns.deprecated.C_Spell.GetSpellCooldown(data.id);
+		if type(start)=="table" then
+			start,duration,enabled = start.startTime,start.duration,start.isEnabled;
+		end
 	elseif data.type=="item" then
 		local bagIndex, slotIndex
 		if data.sharedSlot then
@@ -335,7 +339,7 @@ local function tpmAddObject(tt,parent,name,line,column,data)
 			start, duration, enabled = GetInventoryItemCooldown("player", slotIndex)
 		end
 		if not (start and duration and enabled) then
-			start, duration, enabled = GetItemCooldown(data.id)
+			start, duration, enabled = ns.deprecated.C_Item.GetItemCooldown(data.id)
 		end
 		if start and duration then
 			if enabled==0 then

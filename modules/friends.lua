@@ -280,11 +280,7 @@ local function createTooltip(tt)
 							if ti.clientProgram=="WoW" then
 								ti.realmInfo = {};
 								local areaName,realmName,_ = ti.richPresence:match("^(.*) %- (.*)$");
-								_, ti.realmInfo.Name, _, _, ti.realmInfo.Locale, _, ti.realmInfo.Region, ti.realmInfo.Timezone = ns.LRI:GetRealmInfoByID(ti.realmID);
-								if not ti.realmInfo.Name and realmName and strlen(realmName)>0 then
-									-- get missing realmInfo via realmName from richPresence
-									_, ti.realmInfo.Name, _, _, ti.realmInfo.Locale, _, ti.realmInfo.Region, ti.realmInfo.Timezone = ns.LRI:GetRealmInfo(realmName,ns.region);
-								end
+								_, ti.realmInfo.Name, _, _, ti.realmInfo.Locale, _, ti.realmInfo.Region, ti.realmInfo.Timezone = ns.LRI:GetRealmInfo(realmName,ns.region);
 								if not (ti.realmName and ti.realmName~="") then
 									if  ti.realmInfo.Name then
 										-- get realmName from realmInfo

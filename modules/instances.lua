@@ -23,6 +23,7 @@ local hide = {
 	[1028] = true, -- bfa world bosses // no raid
 	[1192] = true, -- shadowlands world bosses // no raid
 	[1205] = true, -- dragonflight world bosses // no raid
+	[1278] = true, -- the war within world bosses // no raid
 }
 -- some entries have not exact matching names between encounter journal and raidinfo frame
 local rename_il,rename_ej,ignore_ej = {},{},{};
@@ -72,10 +73,12 @@ local function updateInstances(name,mode)
 			activeRaids[name][data[difficultyName]] = {data[instanceReset],currentTime,data[encounterProgress],data[numEncounters]};
 		end
 	end
-	for i=1, (NUM_LE_EXPANSION_LEVELS+1) do
+	local num = EJ_GetNumTiers()
+	for i=1, num do
 		EJ_SelectTier(i);
 		local index, instance_id, instance_name, _ = 1;
 		instance_id, instance_name = EJ_GetInstanceByIndex(index, mode);
+		--ns:debug(name,i,instance_id,instance_name)
 		while instance_id~=nil do
 			if rename_ej[instance_name] then
 				instance_name = rename_ej[instance_name];
@@ -165,7 +168,13 @@ function createTooltip(tt,name,mode)
 	elseif ns.profile[name].invertExpansionOrder then
 		exp_start, exp_stop, exp_direction = (NUM_LE_EXPANSION_LEVELS+1), 1, -1;
 	end
-	for i=exp_start, exp_stop, exp_direction do
+	local tierMod = 0;
+	for tier=exp_start, exp_stop, exp_direction do
+		local i = tier;
+		if tier==exp_start then
+			tier=tier+1;
+		end
+
 		local hColor,sState,_status_,_mode_ = "gray","Plus","","";
 		if ns.profile[name]['showExpansion'..i]==nil then
 			ns.profile[name]['showExpansion'..i] = true;
@@ -178,10 +187,13 @@ function createTooltip(tt,name,mode)
 		tt:SetLineScript(l,"OnMouseUp",toggleExpansion, {name=name,mode=mode,expansion=i});
 
 		if ns.profile[name]['showExpansion'..i] then
+			EJ_SelectTier(tier);
 			tt:AddSeparator();
-			EJ_SelectTier(i);
 			local index, instance_id, instance_name, _ = 1;
 			instance_id, instance_name = EJ_GetInstanceByIndex(index, mode);
+			if tier~=i then
+				ns:debug(instance_id, instance_name)
+			end
 			while instance_id~=nil do
 				if not hide[instance_id] then
 					local status,diff,encounter,id = {},{},"","";

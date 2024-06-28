@@ -51,7 +51,18 @@ end
 -- function module.onevent(self,event,msg) end
 
 function module.onupdate()
-	local f = GetMouseFocus();
+	--if not GetMouseFocus then return end
+	local f;
+	if GetMouseFoci then
+		local objs = GetMouseFoci();
+		f = objs[1]
+		--if #objs>1 then
+		--	ns:debugPrint(name,)
+		--end
+	else
+		f = GetMouseFocus();
+	end
+	if not f then return end
 	local mod = IsShiftKeyDown();
 	local combat = InCombatLockdown();
 

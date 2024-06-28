@@ -109,7 +109,7 @@ local function UpdateInventory()
 				end
 			end
 			-- get sockets and gems of eqiupment
-			local stats = GetItemStats(obj.link);
+			local stats = ns.deprecated.C_Item.GetItemStats(obj.link);
 			local numGems,_ = 0;
 			lst.gems = false;
 			if stats then
@@ -124,7 +124,7 @@ local function UpdateInventory()
 			if numGems>0 then
 				obj.gems = {};
 				for i=1, numGems do
-					_, obj.gems[i] = GetItemGem(obj.link, i);
+					_, obj.gems[i] = --[[ns.deprecated.]]C_Item.GetItemGem(obj.link, i);
 					if not obj.gems[i] then
 						obj.gems[i] = false;
 						obj.empty_gem = true;
@@ -289,7 +289,7 @@ local function createTooltip(tt)
 				none=false;
 
 				-- nice blizzard. Query heirloom item info's. very unstable/slow...
-				local itemName, _, itemQuality, itemLevel, _, itemType, subType = GetItemInfo(obj.link);
+				local itemName, _, itemQuality, itemLevel, _, itemType, subType = --[[ns.deprecated.]]C_Item.GetItemInfo(obj.link);
 				if not itemName then
 					tt:AddLine(
 						C("ltyellow",_G[slots[i].."SLOT"]),

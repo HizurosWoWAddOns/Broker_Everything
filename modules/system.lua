@@ -21,14 +21,7 @@ local fps     = {cur=0,min=-5,max=0,his={},curStr="",minStr="",maxStr=""};
 local memory  = {cur=0,min=0,max=0,his={},list={},curStr="",minStr="",maxStr="",brokerStr="",numAddOns=0,loadedAddOns=0};
 local netStatTimeout,memoryTimeout,enabled,module,isHooked,memUpdateLock=1,2,{};
 local version, build, buildDate, interfaceVersion = GetBuildInfo();
---local UpdateAddOnMemoryUsage = UpdateAddOnMemoryUsage;
-local IsAddOnLoaded = IsAddOnLoaded or C_AddOns.IsAddOnLoaded -- Patch 10.2
-local GetNumAddOns = GetNumAddOns or C_AddOns.GetNumAddOns;
-local GetAddOnInfo = GetAddOnInfo or C_AddOns.GetAddOnInfo;
-local GetAddOnEnableState = GetAddOnEnableState or C_AddOns.GetAddOnEnableState;
-local LoadAddOn = LoadAddOn or C_AddOns.LoadAddOn;
---local UpdateAddOnMemoryUsage = UpdateAddOnMemoryUsage or C_AddOns.UpdateAddOnMemoryUsage;
-local GetAddOnMemoryUsage = GetAddOnMemoryUsage or C_AddOns.GetAddOnMemoryUsage;
+local GetAddOnMecmoryUsage = GetAddOnMemoryUsage or C_AddOns.GetAddOnMemoryUsage;
 local addonpanels,updateAllTicker,memUpdateLocked = {};
 local triggerUpdateToken = {};
 local addonpanels_select = {["none"]=L["None (disable right click)"]};
@@ -77,16 +70,16 @@ I[name_traf] = {iconfile="Interface\\Addons\\"..addon.."\\media\\memory"}; --Ico
 local function checkAddonManager()
 	addonpanels["Blizzard's Addons Panel"] = function(chk) if (chk) then local AddonList = _G["AddonList"]; return (AddonList); end if (AddonList:IsShown()) then AddonList:Hide(); else AddonList:Show(); end end;
 	addonpanels_select["Blizzard's Addons Panel"] = "Blizzard's Addons Panel";
-	addonpanels["ACP"] = function(chk) if (chk) then return (IsAddOnLoaded("ACP")); end ACP:ToggleUI() end
-	addonpanels["Ampere"] = function(chk) if (chk) then return (IsAddOnLoaded("Ampere")); end InterfaceOptionsFrame_OpenToCategory("Ampere"); InterfaceOptionsFrame_OpenToCategory("Ampere"); end
-	addonpanels["OptionHouse"] = function(chk) if (chk) then return (IsAddOnLoaded("OptionHouse")); end OptionHouse:Open(1) end
-	addonpanels["stAddonManager"] = function(chk) if (chk) then return (IsAddOnLoaded("stAddonManager")); end stAddonManager:LoadWindow() end
-	addonpanels["BetterAddonList"] = function(chk) if (chk) then return (IsAddOnLoaded("BetterAddonList")); end end
+	addonpanels["ACP"] = function(chk) if (chk) then return (--[[ns.deprecated.]]C_AddOns.IsAddOnLoaded("ACP")); end ACP:ToggleUI() end
+	addonpanels["Ampere"] = function(chk) if (chk) then return (--[[ns.deprecated.]]C_AddOns.IsAddOnLoaded("Ampere")); end InterfaceOptionsFrame_OpenToCategory("Ampere"); InterfaceOptionsFrame_OpenToCategory("Ampere"); end
+	addonpanels["OptionHouse"] = function(chk) if (chk) then return (--[[ns.deprecated.]]C_AddOns.IsAddOnLoaded("OptionHouse")); end OptionHouse:Open(1) end
+	addonpanels["stAddonManager"] = function(chk) if (chk) then return (--[[ns.deprecated.]]C_AddOns.IsAddOnLoaded("stAddonManager")); end stAddonManager:LoadWindow() end
+	addonpanels["BetterAddonList"] = function(chk) if (chk) then return (--[[ns.deprecated.]]C_AddOns.IsAddOnLoaded("BetterAddonList")); end end
 	local panelstates,d,s = {};
 	local addonname,title,notes,loadable,reason,security,newVersion = 1,2,3,4,5,6,7;
-	for i=1, GetNumAddOns() do
-		d = {GetAddOnInfo(i)};
-		s = (GetAddOnEnableState(ns.player.name,i)>0);
+	for i=1, --[[ns.deprecated.]]C_AddOns.GetNumAddOns() do
+		d = {--[[ns.deprecated.]]C_AddOns.GetAddOnInfo(i)};
+		s = (--[[ns.deprecated.]]C_AddOns.GetAddOnEnableState(ns.player.name,i)>0);
 		if (addonpanels[d[addonname]]) and (s) then
 			addonpanels_select[d[addonname]] = d[title];
 		end
@@ -97,7 +90,7 @@ local function addonpanel(self,button)
 	local ap = ns.profile[name_sys].addonpanel;
 	if (ap~="none") then
 		if (ap~="Blizzard's Addons Panel") then
-			if not IsAddOnLoaded(ap) then LoadAddOn(ap) end
+			if not --[[ns.deprecated.]]C_AddOns.IsAddOnLoaded(ap) then --[[ns.deprecated.]]C_AddOns.LoadAddOn(ap) end
 		end
 		if (addonpanels[ap]) and (addonpanels[ap](true)) then
 			addonpanels[ap]();
@@ -245,12 +238,12 @@ local function updateMemory(updateToken)
 			securecall("C_AddOns.UpdateAddOnMemoryUsage");
 		end
 	end
-	local num=GetNumAddOns();
+	local num=--[[ns.deprecated.]]C_AddOns.GetNumAddOns();
 	local lst,grps,sum,numLoadedAddOns = {},{},0,0;
 	memory.numAddOns=0;
 	for i=1, num do
-		local Name = GetAddOnInfo(i);
-		local IsLoaded = IsAddOnLoaded(Name);
+		local Name = --[[ns.deprecated.]]C_AddOns.GetAddOnInfo(i);
+		local IsLoaded = --[[ns.deprecated.]]C_AddOns.IsAddOnLoaded(Name);
 
 		local group = nil;
 		for pat,gName in pairs(addonGroups)do
@@ -262,7 +255,7 @@ local function updateMemory(updateToken)
 
 		if not group then
 			if IsLoaded then
-				local tmp = {name=Name,cur=floor(GetAddOnMemoryUsage(i)*1000),min=0,max=0,curStr="",minStr="",maxStr=""};
+				local tmp = {name=Name,cur=floor(ns.deprecated.C_AddOns.GetAddOnMemoryUsage(i)*1000),min=0,max=0,curStr="",minStr="",maxStr=""};
 				min(tmp,"min","cur");
 				max(tmp,"max","cur");
 				memoryStr(tmp,"cur");
@@ -278,7 +271,7 @@ local function updateMemory(updateToken)
 				memory.numAddOns=memory.numAddOns+1;
 			end
 			if IsLoaded then
-				grps[group].cur=grps[group].cur+floor(GetAddOnMemoryUsage(i)*1000);
+				grps[group].cur=grps[group].cur+floor(ns.deprecated.C_AddOns.GetAddOnMemoryUsage(i)*1000);
 			end
 		end
 	end
@@ -478,8 +471,8 @@ local function updateAll()
 		if memoryTimeout<=0 then
 			-- for debugging
 			-- try to get the list of addons in lua errors like 'script ran too long' :-/
-			local activeAddOns,numActiveAddOns,numAddOns = {},0,GetNumAddOns();
-			for i=1, numAddOns do local n=GetAddOnInfo(i); if IsAddOnLoaded(n) then tinsert(activeAddOns,n) end end
+			local activeAddOns,numActiveAddOns,numAddOns = {},0,--[[ns.deprecated.]]C_AddOns.GetNumAddOns();
+			for i=1, numAddOns do local n=--[[ns.deprecated.]]C_AddOns.GetAddOnInfo(i); if --[[ns.deprecated.]]C_AddOns.IsAddOnLoaded(n) then tinsert(activeAddOns,n) end end
 			numActiveAddOns,activeAddOns = #activeAddOns,table.concat(activeAddOns,",");
 
 			updateMemory(triggerUpdateToken);

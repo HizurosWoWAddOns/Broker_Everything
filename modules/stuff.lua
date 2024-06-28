@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Stuff" -- L["Stuff"] L["ModDesc-Stuff"]
-local ttName,module,tt = name.."TT",name
+local ttName,module,tt = name.."TT"
 
 
 -- register icon names and default files --

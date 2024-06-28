@@ -104,13 +104,13 @@ frame:SetScript("OnEvent",function(_,event,id)
 	if event=="PLAYER_LOGIN" then
 		local name;
 		for ID, key in pairs(byItemId) do
-			name = GetItemInfo(ID);
+			name = (C_Item and C_Item.GetItemInfo or GetItemInfo)(ID);
 			if name then
 				L[key] = name;
 			end
 		end
 	elseif event=="GET_ITEM_INFO_RECEIVED" and byItemId[id] then
-		L[byItemId[id]] = GetItemInfo(id);
+		L[byItemId[id]] = (C_Item and C_Item.GetItemInfo or GetItemInfo)(id);
 	end
 end);
 frame:RegisterEvent("PLAYER_LOGIN");

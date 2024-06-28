@@ -16,8 +16,6 @@ local gmticket,ClassIconCoords = {},{};
 local customTitle = MAINMENU_BUTTON
 local IsBlizzCon = IsBlizzCon or function() return false; end -- Legion Fix
 local menu = {};
-local IsAddOnLoaded = IsAddOnLoaded or C_AddOns.IsAddOnLoaded;
-local LoadAddOn = LoadAddOn or C_AddOns.LoadAddOn;
 
 
 -- register icon names and default files --
@@ -179,7 +177,7 @@ end
 
 local function OpenCollectionsJournalPanel(index)
 	if not CollectionsJournal then
-		LoadAddOn("Blizzard_Collections")
+		C_AddOns.LoadAddOn("Blizzard_Collections")
 	end
 	ShowUIPanel(CollectionsJournal);
 	securecall("CollectionsJournal_SetTab", CollectionsJournal, index)
@@ -329,15 +327,15 @@ function module.init()
 		--{name=UIOPTIONS_MENU,		iconName="UiOpts",			func=function() securecall("InterfaceOptionsFrame_Show") end,		},
 		{name=MACROS,				iconName="Macros",			func=function() securecall("ShowMacroFrame") end,		},
 		{name=MAC_OPTIONS,			iconName="MacOpts",			func=function() securecall("ShowUIPanel", MacOptionsFrame) end,		 view=IsMacClient()==true},
-		{name=ADDONS,				iconName="Addons",			view=( (IsAddOnLoaded("OptionHouse")) or (IsAddOnLoaded("ACP")) or (IsAddOnLoaded("Ampere")) or (IsAddOnLoaded("stAddonManager")) or (_G["AddonList"]) ),
+		{name=ADDONS,				iconName="Addons",			view=( (C_AddOns.IsAddOnLoaded("OptionHouse")) or (C_AddOns.IsAddOnLoaded("ACP")) or (C_AddOns.IsAddOnLoaded("Ampere")) or (C_AddOns.IsAddOnLoaded("stAddonManager")) or (_G["AddonList"]) ),
 		func=function()
-			if (IsAddOnLoaded("OptionHouse")) then
+			if (C_AddOns.IsAddOnLoaded("OptionHouse")) then
 				OptionHouse:Open(1);
-			elseif (IsAddOnLoaded("ACP")) then
+			elseif (C_AddOns.IsAddOnLoaded("ACP")) then
 				ACP:ToggleUI();
-			elseif (IsAddOnLoaded("Ampere")) then
+			elseif (C_AddOns.IsAddOnLoaded("Ampere")) then
 				InterfaceOptionsFrame_OpenToCategory("Ampere");
-			elseif (IsAddOnLoaded("stAddonManager")) then
+			elseif (C_AddOns.IsAddOnLoaded("stAddonManager")) then
 				stAddonManager:LoadWindow()
 			elseif (_G["AddonList"]) then
 				AddonList:Show();

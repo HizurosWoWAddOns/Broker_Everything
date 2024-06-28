@@ -20,7 +20,7 @@ local diffName = {
 diffName[5] = GetDifficultyInfo(18);
 diffName[6] = RAID_DIFFICULTY1:gsub("(%d+)","%%d");
 
-local BossKillQueryUpdate,diffTypes = false,setmetatable({ -- http://wowpedia.org/API_GetDifficultyInfo / http://wow.gamepedia.com/DifficultyID
+local BossKillQueryUpdate,diffTypes = false,setmetatable({ -- https://warcraft.wiki.gg/API_GetDifficultyInfo / https://warcraft.wiki.gg/DifficultyID
 	[14] = 4,	-- 14 / 10-30 raid / normal
 	[15] = 4,	-- 15 / 10-30 raid / heroic
 	[16] = 4,	-- 16 / 20 raid / mystic
