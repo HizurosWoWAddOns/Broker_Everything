@@ -224,8 +224,8 @@ local function colorLowFree(free)
 end
 
 local function sortBags(a,b)
-	local a1,a2 = strsplit(":",a); a = tonumber(a1)*100+tonumber(a2);
-	local b1,b2 = strsplit(":",b); b = tonumber(b1)*100+tonumber(b2);
+	local a1,a2 = strsplit(":",a); a = tonumber(a1:trim())*100+tonumber(a2:trim());
+	local b1,b2 = strsplit(":",b); b = tonumber(b1:trim())*100+tonumber(b2:trim());
 	return a < b;
 end
 
