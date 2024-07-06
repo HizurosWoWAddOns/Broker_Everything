@@ -278,25 +278,44 @@ local function createTooltip(tt)
 
 							-- wow clients compare
 							if ti.clientProgram=="WoW" then
-								ti.realmInfo = {};
-								local areaName,realmName,_ = ti.richPresence:match("^(.*) %- (.*)$");
-								_, ti.realmInfo.Name, _, _, ti.realmInfo.Locale, _, ti.realmInfo.Region, ti.realmInfo.Timezone = ns.LRI:GetRealmInfo(realmName,ns.region);
 								if not (ti.realmName and ti.realmName~="") then
-									if  ti.realmInfo.Name then
-										-- get realmName from realmInfo
-										ti.realmName = ti.realmInfo.Name;
-									elseif realmName then
-										-- get realmName from richPresence
-										ti.realmName = realmName;
+									-- missing realm name. try to get it from richPresence
+									local _,realmName = strsplit("-",ti.richPresence)
+									if realmName then
+										realmName = realmName:trim()
+										if realmName~="" then
+											-- get realmName from richPresence
+											ti.realmName = realmName;
+										end
+									end
+								end
+								if ti.realmName and ti.realmName~="" then
+									ti.realmInfo = {};
+									_, ti.realmInfo.Name, _, _, ti.realmInfo.Locale, _, ti.realmInfo.Region, ti.realmInfo.Timezone = ns.LRI:GetRealmInfo(ti.realmName,ns.region);
+								else
+									ns:debug("missing realmName",ti.realmName)
+								end
+								if  ti.realmInfo.Name then
+									-- get realmName from realmInfo
+									ti.realmName = ti.realmInfo.Name;
+								end
+								if not (ti.areaName and ti.areaName~="") then
+									-- missing area name. try to it from richPresence
+									local areaName = strsplit("-",ti.richPresence)
+									if areaName then
+										areaName = areaName:trim();
+										if areaName~="" then
+											ti.areaName = areaName;
+										end
 									end
 								end
 								-- show different project id
 								if WOW_PROJECT_ID ~= ti.wowProjectID then
 									-- add project name to realmName
-									ti.realmName = ti.realmName .. " |cffffee00("..L["WoWProjectId"..ti.wowProjectID]..")|r";
-									if areaName and strlen(areaName)>0 then
-										-- replace areaName
-										ti.areaName = areaName;
+									if ti.realmName and ti.realmName~="" then
+										ti.realmName = ti.realmName .. " |cffffee00("..L["WoWProjectId"..ti.wowProjectID]..")|r";
+									else
+										ti.realmName = "|cffffee00"..L["WoWProjectId"..ti.wowProjectID].."|r";
 									end
 								end
 							end
@@ -365,7 +384,7 @@ local function createTooltip(tt)
 								-- realm (own column)
 								if ns.profile[name].showRealm=="1" and ti.realmID>0 then
 									local realmLocaleIcon = ""
-									if ns.profile[name].showRealmLanguageFlag and ti.realmInfo.Locale then
+									if ns.profile[name].showRealmLanguageFlag and ti.realmInfo and ti.realmInfo.Locale then
 										if ti.realmInfo.Region=="EU" and ti.realmInfo.Locale=="enUS" then
 											ti.realmInfo.Locale = "enGB"; -- Great Britain
 										elseif ti.realmInfo.Region=="US" and ti.realmInfo.Timezone=="AEST" then
