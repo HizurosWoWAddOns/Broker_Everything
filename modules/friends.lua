@@ -129,6 +129,10 @@ local function createTooltip2(self,data)
 		if (data.realm) then
 			tt2:SetCell(tt2:AddLine(C(color1,L["Realm"])),2,ns.scm(data.realm),nil,"RIGHT",0);
 		end
+		-- class
+		if ns.profile[name].showClassTT2 then
+			tt2:SetCell(tt2:AddLine(C(color1,CLASS)),2,data.className or UNKNOWN,"RIGHT",0)
+		end
 		-- faction
 		if ns.profile[name].showFactionTT2 then
 			tt2:SetCell(tt2:AddLine(C(color1,FACTION)),2, data.factionL .. " |TInterface\\PVPFrame\\PVP-Currency-".. data.factionT ..":14:14:0:-1:32:32:3:29:3:29|t", nil,"RIGHT",0);
@@ -348,7 +352,7 @@ local function createTooltip(tt)
 							if ti.clientProgram=="WoW" and ti.realmID>0 and ti.className then
 								nameStr = C(ti.className,ns.scm(nameStr)); -- wow character name in class color
 							else
-								nameStr = C("ltblue",ns.scm(nameStr)); -- all other in light blue
+								nameStr = C("ltgray",ns.scm(nameStr)); -- all other in light gray
 							end
 							-- toon name - append realm name or asterisk
 							if tonumber(ns.profile[name].showRealm)>1 and ti.realmName~=ns.realm_short and ti.realmID and ti.realmID>0 then
@@ -596,6 +600,7 @@ module = {
 		showBroadcastTT2 = true,
 		showBattleTagTT2 = false,
 		showRealIDTT2 = false,
+		showClassTT2 = false,
 		showFactionTT2 = false,
 		showZoneTT2 = false,
 		showGameTT2 = false,
@@ -675,13 +680,14 @@ function module.options()
 			showDesktopApp={ type="toggle", order=11, name=L["Show DesktopApp"], desc=L["Display Battle.Net-Friends on DesktopApp in tooltip"] },
 		},
 		tooltip2 = {
-			name=L["Second tooltip options"],
+			name=L["FriendsTT2"],
 			order = 3,
 
-			desc={ type="description", order=11, name=L["The secondary tooltip will be displayed by moving the mouse over a friend in main tooltip. The tooltip will be displayed if one of the following options activated."], fontSize="medium"},
+			desc={ type="description", order=11, name=L["FriendsTT2Desc"], fontSize="medium"},
 			showBroadcastTT2={ type="toggle", order=12, name=L["Show broadcast message"], desc=L["Display broadcast message in tooltip (BattleNet friend only)"] },
 			showBattleTagTT2={ type="toggle", order=13, name=L["Show BattleTag"], desc=L["Display BattleTag in tooltip (BattleNet friend only)"] },
 			showRealIDTT2={ type="toggle", order=14, name=L["Show RealID"], desc=L["Display RealID in tooltip if available (BattleNet friend only)"] },
+			showClassTT2={ type="toggle", order=14, name=L["FriendsTT2Class"], desc=L["FriendsTT2ClassDesc"]},
 			showFactionTT2={ type="toggle", order=15, name=L["Show faction"], desc=L["Display faction in tooltip if available"] },
 			showZoneTT2={ type="toggle", order=16, name=L["Show zone"], desc=L["Display zone in second tooltip"] },
 			showGameTT2={ type="toggle", order=17, name=L["Show game"], desc=L["Display game in second tooltip"] },
