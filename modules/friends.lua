@@ -572,6 +572,7 @@ module = {
 		"BN_INFO_CHANGED",
 		"FRIENDLIST_UPDATE",
 		"PLAYER_LOGIN",
+		"PLAYER_ENTERING_WORLD",
 		"CHAT_MSG_SYSTEM"
 	},
 	config_defaults = {
@@ -706,6 +707,8 @@ function module.onevent(self,event,arg1)
 		if type(ns.profile[name].showBattleTags)=="boolean" then
 			ns.profile[name].showBattleTags = ns.profile[name].showBattleTags and "3" or "0";
 		end
+	elseif event=="PLAYER_ENTERING_WORLD" then
+		C_Timer.After(10,updateBroker);
 	elseif ns.eventPlayerEnteredWorld then
 		updateBroker();
 		if (tt) and (tt.key) and (tt.key==ttName) and (tt:IsShown()) then
