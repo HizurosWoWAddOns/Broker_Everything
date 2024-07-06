@@ -813,6 +813,7 @@ end
 module = {
 	events = {
 		"PLAYER_LOGIN",
+		"PLAYER_ENTERING_WORLD",
 		"PLAYER_GUILD_UPDATE",
 
 		--"GUILD_MOTD",
@@ -1020,13 +1021,16 @@ function module.onevent(self,event,msg,...)
 				end
 			end
 		end
-
 		if event=="GUILD_ROSTER_UPDATE" and msg==true then
 			RequestGuildRosterUpdate();
 			return;
 		end
 
-		updateBroker();
+		if event=="PLAYER_ENTERING_WORLD" then
+			C_Timer.After(10,updateBroker);
+		else
+			updateBroker();
+		end
 	end
 end
 
