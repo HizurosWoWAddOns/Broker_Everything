@@ -76,14 +76,18 @@ local function _status(afk,dnd)
 end
 
 local function updateBroker()
-	local dataobj = ns.LDB:GetDataObjectByName(module.ldbName);
-	local numBNFriends, numOnlineBNFriends = 0,0;
-	if BNConnected() then
+	local txt, numBNFriends, numOnlineBNFriends, IsBNetOnline,numFriends,friendsOnline  = {},0,0,BNConnected();
+
+	if IsBNetOnline then
 		numBNFriends, numOnlineBNFriends = BNGetNumFriends();
 	end
-	local numFriends = C_FriendList.GetNumFriends();
-	local friendsOnline = C_FriendList.GetNumOnlineFriends();
-	if not (tonumber(numOnlineBNFriends) and tonumber(friendsOnline)) then return end
+
+	numFriends = C_FriendList.GetNumFriends();
+	friendsOnline = C_FriendList.GetNumOnlineFriends();
+
+	if not (tonumber(numOnlineBNFriends) and tonumber(friendsOnline)) then
+		return
+	end
 
 	if ns.profile[name].splitFriendsBroker then
 		local friends = tostring(friendsOnline);
@@ -92,18 +96,37 @@ local function updateBroker()
 			friends = friends.."/"..numFriends;
 			bnfriends = bnfriends.."/"..numBNFriends;
 		end
-		dataobj.text = friends .." ".. C(BNConnected() and "ltblue" or "red",bnfriends);
-	else
-		local txt = tostring(numOnlineBNFriends + friendsOnline);
-		if ns.profile[name].showTotalCount then
-			txt = txt .."/".. (numBNFriends + numFriends);
+		tinsert(txt,friends);
+		if IsBNetOnline then
+			tinsert(txt,bnfriends)
 		end
-		dataobj.text = txt .. (BNConnected()==false and "("..C("red","BNet Off")..")" or "");
+	else
+		local str = tostring(numOnlineBNFriends + friendsOnline);
+		if ns.profile[name].showTotalCount then
+			str = str .."/".. (numBNFriends + numFriends);
+		end
+		tinsert(txt,str);
 	end
 
-	local broadcastText = select(4,BNGetInfo());
-	if (broadcastText) and (strlen(broadcastText)>0) then
-		dataobj.text=dataobj.text.." |Tinterface\\chatframe\\ui-chatinput-focusicon:0|t";
+	if IsBNetOnline then
+		local broadcastText = select(4,BNGetInfo());
+		if (broadcastText) and (strlen(broadcastText)>0) then
+			tinsert(txt,"|Tinterface\\chatframe\\ui-chatinput-focusicon:0|t");
+		end
+	end
+
+	if #txt==0 then
+		tinsert(txt,FRIENDS)
+	end
+
+	if not IsBNetOnline then
+		tinsert(txt,"("..C("red","BNet Off")..")");
+	end
+
+	local dataobj = ns.LDB:GetDataObjectByName(module.ldbName);
+	if dataobj then
+		--ns:debug(name,unpack(txt))
+		dataobj.text = table.concat(txt," ");
 	end
 end
 
