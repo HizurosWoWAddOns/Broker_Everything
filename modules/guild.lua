@@ -182,7 +182,17 @@ local function updateBroker()
 		tinsert(txt,L["No guild"]);
 	end
 
-	(ns.LDB:GetDataObjectByName(module.ldbName) or {}).text = table.concat(txt,"/");
+	if #txt==0 then
+		tinsert(txt,GUILD)
+	end
+
+	local ldbObject = ns.LDB:GetDataObjectByName(module.ldbName);
+	if ldbObject then
+		ldbObject.text = table.concat(txt,"/");
+	--else
+		--ns:debugPrint(name,"error. no ldbObject")
+	end
+
 end
 
 local function GetMemberRecipes(self,info)
