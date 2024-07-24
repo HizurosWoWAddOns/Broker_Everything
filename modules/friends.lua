@@ -125,7 +125,6 @@ local function updateBroker()
 
 	local dataobj = ns.LDB:GetDataObjectByName(module.ldbName);
 	if dataobj then
-		--ns:debug(name,unpack(txt))
 		dataobj.text = table.concat(txt," ");
 	end
 end
@@ -581,22 +580,7 @@ end
 ------------------------------------
 module = {
 	events = {
-		"BATTLETAG_INVITE_SHOW", -- ?
-		"BN_BLOCK_LIST_UPDATED",
-		"BN_CONNECTED",
-		"BN_CUSTOM_MESSAGE_CHANGED",
-		"BN_CUSTOM_MESSAGE_LOADED",
-		"BN_DISCONNECTED",
-		"BN_FRIEND_ACCOUNT_OFFLINE",
-		"BN_FRIEND_ACCOUNT_ONLINE",
-		"BN_FRIEND_INFO_CHANGED",
-		"BN_FRIEND_INVITE_ADDED",
-		"BN_FRIEND_INVITE_REMOVED",
-		"BN_INFO_CHANGED",
-		"FRIENDLIST_UPDATE",
 		"PLAYER_LOGIN",
-		"PLAYER_ENTERING_WORLD",
-		"CHAT_MSG_SYSTEM"
 	},
 	config_defaults = {
 		enabled = true,
@@ -730,9 +714,14 @@ function module.onevent(self,event,arg1)
 		if type(ns.profile[name].showBattleTags)=="boolean" then
 			ns.profile[name].showBattleTags = ns.profile[name].showBattleTags and "3" or "0";
 		end
-	elseif event=="PLAYER_ENTERING_WORLD" then
-		C_Timer.After(10,updateBroker);
-	elseif ns.eventPlayerEnteredWorld then
+		for _,e in ipairs({
+			"BATTLETAG_INVITE_SHOW","BN_BLOCK_LIST_UPDATED","BN_CONNECTED","BN_CUSTOM_MESSAGE_CHANGED","BN_CUSTOM_MESSAGE_LOADED",
+			"BN_DISCONNECTED","BN_FRIEND_ACCOUNT_OFFLINE","BN_FRIEND_ACCOUNT_ONLINE","BN_FRIEND_INFO_CHANGED","BN_FRIEND_INVITE_ADDED",
+			"BN_FRIEND_INVITE_REMOVED","BN_INFO_CHANGED","FRIENDLIST_UPDATE","PLAYER_ENTERING_WORLD","CHAT_MSG_SYSTEM"
+		}) do
+			self:RegisterEvent(e)
+		end
+	elseif ns.eventPlayerEnteredWorld or event=="PLAYER_ENTERING_WORLD" then
 		updateBroker();
 		if (tt) and (tt.key) and (tt.key==ttName) and (tt:IsShown()) then
 			createTooltip(tt);
