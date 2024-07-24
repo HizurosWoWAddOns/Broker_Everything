@@ -131,19 +131,20 @@ do
 	local SetTracking = C_Minimap and C_Minimap.SetTracking or SetTracking;
 	local GetTrackingInfo = C_Minimap and C_Minimap.GetTrackingInfo or GetTrackingInfo;
 	function trackingMenuOnClick(button)
-		SetTracking(button.arg1,not select(3,C_Minimap.GetTrackingInfo(button.arg1)));
+		local info,_,active = C_Minimap.GetTrackingInfo(button.arg1);
+		SetTracking(button.arg1,active or info.active);
 	end
 	if not trackingIsActive then
 		trackingIsActive = trackingIsActive or function(button)
-			local name, texture, active, category = C_Minimap.GetTrackingInfo(button.arg1);
-			return active;
+			local info, _, active = C_Minimap.GetTrackingInfo(button.arg1);
+			return active or info.active;
 		end
 	end
 end
 
 function module.onclick(self,button)
 	if tt then tt:Hide(); end
-	local Name, texture, active, category, nested, Type = 1,2,3,4,5,6;
+	local obj, texture, active, category, nested, Type;
 	local list,count = {},--[[ns.deprecated.]]C_Minimap.GetNumTrackingTypes();
 	local _, class = UnitClass("player");
 
@@ -154,11 +155,15 @@ function module.onclick(self,button)
 
 	local numTracking,hunterHeader,townHeader = 0,false;
 	for id=1, count do
-		local tmp={--[[ns.deprecated.]]C_Minimap.GetTrackingInfo(id)};
-		local Name, texture, active, category, nested = unpack(tmp);
-		if nested~=HUNTER_TRACKING and nested~=TOWNSFOLK then
-			local entry={label=Name, icon=texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};
-			if category=="spell" then
+		obj, texture, active, category, nested, Type=C_Minimap.GetTrackingInfo(id);
+		if type(obj)~="table" then
+			ns:debugPrint(name,"OLD Tracking list",obj,category,nested,Type)
+			obj = {name = obj, texture = texture, active = active, --[[category = category,]] subType = nested} -- cata classic
+		end
+
+		if obj.subType==-1 then
+			local entry={label=obj.name, icon=obj.texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};
+			if obj.category=="spell" then
 				entry.tCoordLeft = 0.0625;
 				entry.tCoordRight = 0.9;
 				entry.tCoordTop = 0.0625;
@@ -166,27 +171,26 @@ function module.onclick(self,button)
 			end
 			ns.EasyMenu:AddEntry(entry);
 		end
-		tinsert(list,tmp);
+		tinsert(list,obj);
 	end
 
 	for id=1, #list do
-		local Name, texture, active, category, nested = unpack(list[id]);
 		local entry;
-		if nested == HUNTER_TRACKING and class == "HUNTER" then
+		if list[id].subType==HUNTER_TRACKING and class == "HUNTER" then
 			if not hunterHeader then
 				ns.EasyMenu:AddEntry({separator=true});
 				ns.EasyMenu:AddEntry({label=HUNTER_TRACKING_TEXT, title=true});
 				hunterHeader=true;
 			end
 
-			entry = {label=Name, icon=texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};
-		elseif nested == TOWNSFOLK then
+			entry = {label=list[id].name, icon=list[id].texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};
+		elseif list[id].subType==TOWNSFOLK_TRACKING  then
 			if not townHeader then
 				ns.EasyMenu:AddEntry({separator=true});
 				ns.EasyMenu:AddEntry({label=TOWNSFOLK_TRACKING_TEXT, title=true});
 				townHeader=true
 			end
-			entry = {label=Name, icon=texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};
+			entry = {label=list[id].name, icon=list[id].texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};
 		end
 		if entry then
 			if category=="spell" then
