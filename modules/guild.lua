@@ -143,24 +143,26 @@ local function updateBroker()
 		local numMobile,numMembers,numMembersOnline = 0,GetNumGuildMembers();
 		for i=1, numMembers do
 			local mFullName,mRank,mRankIndex,mLevel,mClassLocale,mZone,mNote,mOfficerNote,mOnline,mIsAway,mClassFile,_,_,mIsMobile,_,mStanding,mGUID = GetGuildRosterInfo(i);
-			local mName, mRealm = strsplit("-",mFullName,2);
-			-- race names; must be cached by request GetPlayerInfoByGUID. That could take same time.
-			if ns.profile[name].showRace and not knownMemberRaces[mGUID] then
-				local _, _, mRaceName = GetPlayerInfoByGUID(mGUID);
-				if mRaceName then
-					knownMemberRaces[mGUID] = mRaceName;
+			if mFullName then -- GetGuildRosterInfo looks like buggy since 11.0
+				local mName, mRealm = strsplit("-",mFullName,2);
+				-- race names; must be cached by request GetPlayerInfoByGUID. That could take same time.
+				if ns.profile[name].showRace and not knownMemberRaces[mGUID] then
+					local _, _, mRaceName = GetPlayerInfoByGUID(mGUID);
+					if mRaceName then
+						knownMemberRaces[mGUID] = mRaceName;
+					end
 				end
+				if mIsMobile and mOnline then
+					numMobile = numMobile + 1;
+				end
+				-- levelup notification
+				if ns.profile[name].showMembersLevelUp and memberLevels[mGUID]~=nil and memberLevels[mGUID]~=mLevel then
+					ns:print( C(mClassFile,mName) .." ".. C("green",L["has reached Level %d."]:format(mLevel)) );
+				end
+				memberLevels[mGUID] = mLevel;
+				-- for on/off notification
+				memberIndex[mFullName] = i;
 			end
-			if mIsMobile and mOnline then
-				numMobile = numMobile + 1;
-			end
-			-- levelup notification
-			if ns.profile[name].showMembersLevelUp and memberLevels[mGUID]~=nil and memberLevels[mGUID]~=mLevel then
-				ns:print( C(mClassFile,mName) .." ".. C("green",L["has reached Level %d."]:format(mLevel)) );
-			end
-			memberLevels[mGUID] = mLevel;
-			-- for on/off notification
-			memberIndex[mFullName] = i;
 		end
 
 		if ns.profile[name].showApplicantsBroker and C_ClubFinder and C_ClubFinder.ReturnClubApplicantList then
@@ -201,6 +203,9 @@ end
 
 local function memberInviteOrWhisper(self,memberIndex)
 	local mFullName,_,_,_,_,_,_,_,mOnline,_,_,_,_,mIsMobile,_,_,mGUID = GetGuildRosterInfo(memberIndex);
+	if not mFullName then
+		return; -- GetGuildRosterInfo looks like buggy since 11.0
+	end
 	if IsAltKeyDown() then
 		if mIsMobile then
 			ns:print(L["GuildErrorInviteMobile"]);
@@ -289,6 +294,9 @@ end
 local function createTooltip2(self,memberIndex)
 	local tsName, tsIcon, tsValue, tsID = 1,2,3,4;
 	local mFullName,mRank,mRankIndex,mLevel,mClassLocale,mZone,mNote,mOfficerNote,mOnline,mIsAway,mClassFile,_,_,mIsMobile,_,mStanding,mGUID = GetGuildRosterInfo(memberIndex);
+	if not mFullName then
+		return -- GetGuildRosterInfo looks like buggy since 11.0
+	end
 	local mName, mRealm = strsplit("-",mFullName,2);
 
 	local s,t,_ = "";
@@ -385,6 +393,9 @@ local function ttAddMember(lineIndex,memberIndex)
 	if not (tt and tt.key and tt.key==ttName) then return end -- interrupt processing on close tooltip
 	local tsName, tsIcon, tsValue, tsID = 1,2,3,4;
 	local mFullName,mRank,mRankIndex,mLevel,mClassLocale,mZone,mNote,mOfficerNote,mOnline,mIsAway,mClassFile,_,_,mIsMobile,_,mStanding,mGUID = GetGuildRosterInfo(memberIndex);
+	if not mFullName then
+		return; -- GetGuildRosterInfo looks like buggy since 11.0
+	end
 	local mName, mRealm = strsplit("-",mFullName,2);
 
 	if not (tt and tt.key and tt.key==ttName) then return end
@@ -991,30 +1002,32 @@ function module.onevent(self,event,msg,...)
 		if member and memberIndex[member] then
 			-- On/Off post notes of guild members in general chat.
 			local mFullName,_,_,_,_,_,mNote,mOfficerNote,mOnline,_,mClassFile,_,_,mIsMobile = GetGuildRosterInfo(memberIndex[member]);
-			local mName = strsplit("-",mFullName,2);
-			local txt={};
-			if ns.profile[name].showMembersNotes then
-				local str = strtrim(mNote);
-				if str:len()>0 then
-					tinsert(txt,C("ltgray",NOTE_COLON).." "..C("ltblue",str));
+			if mFullName then -- GetGuildRosterInfo looks like buggy since 11.0
+				local mName = strsplit("-",mFullName,2);
+				local txt={};
+				if ns.profile[name].showMembersNotes then
+					local str = strtrim(mNote);
+					if str:len()>0 then
+						tinsert(txt,C("ltgray",NOTE_COLON).." "..C("ltblue",str));
+					end
 				end
-			end
-			if ns.profile[name].showMembersOffNotes then
-				local str = strtrim(mOfficerNote);
-				if str:len()>0 then
-					tinsert(txt,C("ltgray",GUILD_OFFICERNOTES_LABEL).." "..C("ltblue",str));
+				if ns.profile[name].showMembersOffNotes then
+					local str = strtrim(mOfficerNote);
+					if str:len()>0 then
+						tinsert(txt,C("ltgray",GUILD_OFFICERNOTES_LABEL).." "..C("ltblue",str));
+					end
 				end
-			end
-			if #txt>0 then
-				local mobileIcon = "";
-				if mIsMobile then
-					mobileIcon = ChatFrame_GetMobileEmbeddedTexture(73/255, 177/255, 73/255)
+				if #txt>0 then
+					local mobileIcon = "";
+					if mIsMobile then
+						mobileIcon = ChatFrame_GetMobileEmbeddedTexture(73/255, 177/255, 73/255)
+					end
+					tinsert(txt,1,C("ltgray",LFG_LIST_GUILD_MEMBER)..CHAT_HEADER_SUFFIX..C(mClassFile,mName).." "..mobileIcon);
+					C_Timer.After(0.1,function()
+						-- should prevent display this line before blizzards message
+						ns:print(true,table.concat(txt," || "));
+					end);
 				end
-				tinsert(txt,1,C("ltgray",LFG_LIST_GUILD_MEMBER)..CHAT_HEADER_SUFFIX..C(mClassFile,mName).." "..mobileIcon);
-				C_Timer.After(0.1,function()
-					-- should prevent display this line before blizzards message
-					ns:print(true,table.concat(txt," || "));
-				end);
 			end
 		end
 	else -- on events -- BE_DUMMY_EVENT / PLAYER_GUILD_UPDATE / GUILD_ROSTER_UPDATE / CLUB_FINDER_RECRUIT_LIST_CHANGED
@@ -1038,7 +1051,7 @@ function module.onevent(self,event,msg,...)
 
 		if event=="PLAYER_ENTERING_WORLD" then
 			C_Timer.After(10,updateBroker);
-		else
+		elseif ns.eventPlayerEnteredWorld then
 			updateBroker();
 		end
 	end
