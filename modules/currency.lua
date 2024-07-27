@@ -605,13 +605,8 @@ function module.init()
 	-- "prog:[kw]:%d:%d" k=knowledge, w=workorders, 1. integer = expansion index, 2. integer = profession index from GetProfessions
 	if ns.IsMoPRemix then
 		Currencies = {
-			--"EXPANSION_NAME4",697,738,776,752,777,789,
-			--"DUNGEON_AND_RAID",1166,
-			--"PLAYER_V_PLAYER",2123,391,1792,1586,1602,
-			"MISCELLANEOUS",2778,2853,2854,2855,2856,2857,2858,2859,2860,3001, --,2588,2032,1401,1388,1379,515,402,81,
-			--"EXPANSION_NAME3",416,615,614,361,
-			--"EXPANSION_NAME2",241,61,
-			--"EXPANSION_NAME1",1704,
+			"EXPANSION_NAME4",697,738,776,752,777,789,
+			"MISCELLANEOUS",2778,2853,2854,2855,2856,2857,2858,2859,2860,3001,--2588,2032,1401,1388,1379,515,402,81,
 		};
 		CurrenciesReplace = {
 			[2853]={iconFileID=3622223,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - ".."Primary Stat",}, -- primary
