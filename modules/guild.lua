@@ -191,8 +191,6 @@ local function updateBroker()
 	local ldbObject = ns.LDB:GetDataObjectByName(module.ldbName);
 	if ldbObject then
 		ldbObject.text = table.concat(txt,"/");
-	--else
-		--ns:debugPrint(name,"error. no ldbObject")
 	end
 
 end
