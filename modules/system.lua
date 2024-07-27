@@ -129,7 +129,7 @@ local function fpsStr(k)
 			["2blank"] = " ",
 			["3undercore"] = "_"
 		}
-		num = strrep(chr[ns.profile[name_fps].fillCharacter],3-strlen(num))..num;
+		num = strrep(chr[ns.profile[name_fps].fillCharacter] or "",3-strlen(num))..num;
 	end
 	fps[k.."Str"] = C( (fps[k]<18 and "red") or (fps[k]<24 and "orange") or (fps[k]<30 and "dkyellow") or (fps[k]<100 and "green") or (fps[k]<160 and "ltblue") or (fps[k]<200 and "ltviolet") or "violet", num ) .. ns.suffixColour("fps");
 end
