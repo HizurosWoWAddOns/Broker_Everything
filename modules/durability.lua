@@ -191,21 +191,23 @@ local function createTooltip(tt)
 	local a,g,d = ns.profile[name].autorepair, ns.profile[name].autorepairbyguild;
 	local lst = setmetatable({},{__call = function(t,a) rawset(t,#t+1,a) end});
 
-	lst({sep={3,0,0,0,0}});
-	lst({c1=C("ltblue",gsub(REPAIR_COST,HEADER_COLON,"")),c2=ns.GetCoinColorOrTextureString(name,repairCost,{inTooltip=true})});
-	lst({sep={1}});
-	lst({c1=CHARACTER,c2=ns.GetCoinColorOrTextureString(name,equipCost,{inTooltip=true})});
-	lst({c1=L["Bags"],c2=ns.GetCoinColorOrTextureString(name,bagCost,{inTooltip=true})});
-
-	if ns.profile[name].showDiscount and ns.client_version>=2 then
+	if repairCost>0 then
 		lst({sep={3,0,0,0,0}});
-		lst({c0=C("ltblue",L["Reputation discounts"])});
+		lst({c1=C("ltblue",gsub(REPAIR_COST,HEADER_COLON,"")),c2=ns.GetCoinColorOrTextureString(name,repairCost,{inTooltip=true})});
 		lst({sep={1}});
-		lst({c1=C("white",FACTION_STANDING_LABEL4), c2=ns.GetCoinColorOrTextureString(name,repairCostN,{inTooltip=true})});
-		lst({c1=C("white",FACTION_STANDING_LABEL5), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[5]),{inTooltip=true})});
-		lst({c1=C("white",FACTION_STANDING_LABEL6), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[6]),{inTooltip=true})});
-		lst({c1=C("white",FACTION_STANDING_LABEL7), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[7]),{inTooltip=true})});
-		lst({c1=C("white",FACTION_STANDING_LABEL8), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[8]),{inTooltip=true})});
+		lst({c1=CHARACTER,c2=ns.GetCoinColorOrTextureString(name,equipCost,{inTooltip=true})});
+		lst({c1=L["Bags"],c2=ns.GetCoinColorOrTextureString(name,bagCost,{inTooltip=true})});
+
+		if ns.profile[name].showDiscount and ns.client_version>=2 then
+			lst({sep={3,0,0,0,0}});
+			lst({c0=C("ltblue",L["Reputation discounts"])});
+			lst({sep={1}});
+			lst({c1=C("white",FACTION_STANDING_LABEL4), c2=ns.GetCoinColorOrTextureString(name,repairCostN,{inTooltip=true})});
+			lst({c1=C("white",FACTION_STANDING_LABEL5), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[5]),{inTooltip=true})});
+			lst({c1=C("white",FACTION_STANDING_LABEL6), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[6]),{inTooltip=true})});
+			lst({c1=C("white",FACTION_STANDING_LABEL7), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[7]),{inTooltip=true})});
+			lst({c1=C("white",FACTION_STANDING_LABEL8), c2=ns.GetCoinColorOrTextureString(name,ceil(repairCostN * discount[8]),{inTooltip=true})});
+		end
 	end
 
 	if (ns.profile[name].listCosts) then
