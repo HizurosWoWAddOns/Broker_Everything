@@ -9,9 +9,6 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Bags" -- L["Bags"] L["ModDesc-Bags"]
 local ttName,ttColumns,tt,module,createTooltip = name.."TT",3;
-
-local UseContainerItem,ContainerIDToInventoryID = UseContainerItem,ContainerIDToInventoryID;
-
 local IsMerchantOpen,G = false,{};
 local crap,bags,bagTypes,retry = {limit=2,sum=0,items={}},{sumFree=0,sumTotal=0,byTypeFree={},byTypeTotal={}},{};
 local LE_ITEM_CLASS_CONTAINER = LE_ITEM_CLASS_CONTAINER or Enum.ItemClass.Container;
@@ -43,7 +40,7 @@ local bbModeValues = {
 
 -- register icon names and default files --
 -------------------------------------------
-I[name] = {iconfile=133633,coords={0.05,0.95,0.05,0.95}}; --IconName::Bags--
+I[name] = {iconfile=133633,coords={0.07,0.93,0.07,0.93}}; --IconName::Bags--
 
 
 -- some local functions --
@@ -442,7 +439,7 @@ function module.options()
 		tooltip = {
 			showQuality={ type="toggle", order=1, name=L["Show item summary by quality"],    desc=L["Display an item summary list by qualities in tooltip"], width="double" },
 			qualityMode={ type="select", order=2, name=L["Item summary by quality mode"],    desc=L["Choose your favorite"], values=qualityModeValues, width="double" },
-			showBagTypes = { type="toggle", order=3, name=L["Show bags by type"], desc=L["Display a list of bag by types with free and total summary in tooltip"] },
+			showBagTypes = { type="toggle", order=3, name=L["Show bags by type"], desc=L["Display a list of bag by types with free and total summary in tooltip"], width="double" },
 		},
 		misc = {
 			critLowFree={ type="range", order=1, name=L["Critical low free slots"],         desc=L["Select the maximum free slot count to coloring in red."], min=1, max=50, step=1 },
