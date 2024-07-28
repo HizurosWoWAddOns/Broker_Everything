@@ -35,7 +35,11 @@ local qualityModes = {
 	["7"] = {empty=true,  vendor=false, max=1},
 	["8"] = {empty=true,  vendor=true,  max=1}
 };
-
+local bbModeValues = {
+	L["BagsItemsOfSpace"], -- Total items / Total space
+	L["BagsFreeOfSpace"], -- Free space / Total space
+	L["BagsFreeSpace"], -- Free space
+}
 
 -- register icon names and default files --
 -------------------------------------------
@@ -229,8 +233,19 @@ local function sortBags(a,b)
 	return a < b;
 end
 
+local function bagStr(free,total)
+	local mode = ns.profile[name].bbMode;
+	local color = colorLowFree(free);
+	if mode==2 then
+		return C(color,free .. "/" .. total);
+	elseif mode==3 then
+		return C(color,free .. " ".. L["Free"]);
+	end
+	return C(color,(total - free) .. "/" .. total);
+end
+
 local function updateBroker()
-	local txt, free, total, used = {},bags.sumFree,bags.sumTotal,0;
+	local txt, free, total = {},bags.sumFree,bags.sumTotal,0;
 	if total==0 or total==nil then
 		return;
 	end
@@ -242,17 +257,12 @@ local function updateBroker()
 			if dbBagTypes.single[key] and bags.byTypeTotal[key] and bags.byTypeTotal[key]>0 then
 				local f,t = bags.byTypeFree[key],bags.byTypeTotal[key];
 				total,free = total-t,free-f;
-				tinsert(txt,"|T"..value.icon..":0|t"..(t-f).."/"..t);
+				tinsert(txt,"|T"..value.icon..":0|t"..bagStr(f,t))
 			end
 		end
 	end
 
-	local color = colorLowFree(free);
-	if ns.profile[name].freespace then
-		tinsert(txt,1,C(color,free .. " ".. L["Free"]));
-	else
-		tinsert(txt,1,C(color,(total - free) .. "/" .. total));
-	end
+	tinsert(txt,1,bagStr(free,total));
 
 	(ns.LDB:GetDataObjectByName(module.ldbName) or {}).text = table.concat(txt,", ");
 end
@@ -386,12 +396,12 @@ module = {
 	},
 	config_defaults = {
 		enabled = true,
-		freespace = true,
 		critLowFree = 5,
 		warnLowFree = 15,
 		showQuality = true,
 		qualityMode = "1",
 		showBagTypes = true,
+		bbMode = 3,
 
 		autoCrapSelling = false,
 		autoCrapSellingInfo = true,
@@ -424,9 +434,10 @@ ns.ClickOpts.addDefaults(module,{
 function module.options()
 	local options = {
 		broker = {
-			freespace={ type="toggle", order=1, name=L["Show freespace"],                  desc=L["Show bagspace instead used and max. bagslots in broker button"] },
-			header         = { type="header", order=2, name=L["Show separate bag types"] },
-			desc           = { type="description", order=3, name=L["Display other bag types like herbalism or mining bags separated on broker button"] },
+			bbMode     = { type="select", order=1, name=L["BagsBBMode"], desc=L["BagsBBModeDesc"], values = bbModeValues, width="double"},
+			header     = { type="header", order=2, name=L["Show separate bag types"] },
+			desc       = { type="description", order=3, name=L["Display other bag types like herbalism or mining bags separated on broker button"] },
+			-- list of bag types filled by function
 		},
 		tooltip = {
 			showQuality={ type="toggle", order=1, name=L["Show item summary by quality"],    desc=L["Display an item summary list by qualities in tooltip"], width="double" },
@@ -475,6 +486,11 @@ function module.init()
 
 	-- init ns.items
 	ns.items.Init("bags");
+
+	if ns.profile[name].freespace~=nil then
+		ns.profile[name].bbMode = ns.profile[name].freespace and 3 or 1;
+		ns.profile[name].freespace = nil
+	end
 end
 
 function module.onevent(self,event,...)
