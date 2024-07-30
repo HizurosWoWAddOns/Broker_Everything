@@ -185,13 +185,13 @@ local function updateTradeSkills()
 		end
 		if skillName then
 			if C_SpellBook and C_SpellBook.GetSpellBookItemInfo then
-				local info = C_SpellBook and C_SpellBook.GetSpellBookItemInfo(1 + spelloffset, Enum.SpellBookSpellBank.Player);
+				local info = C_SpellBook.GetSpellBookItemInfo(1 + spelloffset, Enum.SpellBookSpellBank.Player);
 				professions[order] = {
 					skillName = info.name,
 					skillNameFull = info.name,
 					skillIcon = info.iconID,
 					skillId = info.skillLineIndex,
-					spellId = info.spellId,
+					spellId = info.spellID,
 					numSkill = rank or 0,
 					maxSkill = maxRank or 0,
 					skillModifier = rankModifier or 0,
@@ -252,58 +252,6 @@ local function updateTradeSkills()
 
 	maxInTitle = maxInTitleTmp;
 end
-
---[=[ - TradeSkillFrame does not exists in dragonflight; new functon coming soon.
-local function updateCooldownAndRecipeLists(skillLineID,rebuildCooldowns) -- on hooked TradeSkillFrame:RefreshTitle()
-	local factionRecipeIDs = {};
-	-- create recipe spellId list
-	for expansionIndex,recipes in pairs(faction_recipes) do
-		if not tonumber(recipes) and recipes[skillLineID] then
-			for _,recipeInfo in ipairs(recipes[skillLineID]) do
-				factionRecipeIDs[recipeInfo[faction_recipes.spellId]] = recipeInfo[faction_recipes.itemId];
-			end
-		end
-	end
-	--[[
-	local rebuildCooldowns = true;
-	if dataDB.recipeCooldowns[skillLineID]==nil then
-		dataDB.recipeCooldowns[skillLineID] = {};
-		rebuildCooldowns = true;
-	end
-	--]]
-	local learnedRecipes = {};
-	for i, recipeId in ipairs(C_TradeSkillUI.GetAllRecipeIDs()) do
-		-- status of recipes buyable from faction vendors
-		if factionRecipeIDs[recipeId] then
-			local recipeInfo = C_TradeSkillUI.GetRecipeInfo(recipeId);
-			if recipeInfo then
-				local isUnlearned = nil;
-				if not recipeInfo.learned then
-					isUnlearned = true;
-				end
-				toonDB.unlearnedRecipes[factionRecipeIDs[recipeId]] = isUnlearned;
-			end
-		end
-		-- spell cooldowns
-		--[[
-		if rebuildCooldowns then
-			--local cooldown, isDayCooldown, charges, maxCharges = C_TradeSkillUI.GetRecipeCooldown(recipeId);
-			local _,_,cooldown = ns.deprecated.C_Spell.GetSpellCooldown(recipeId);
-			--learnedRecipes[recipeId] = recipeInfo.learned
-			if recipeId==143011 then
-				ns:debug(name,recipeId,cooldown);
-			end
-			if cooldown then
-				dataDB.recipeCooldowns[skillLineID][recipeId] = {isDayCooldown, charges, maxCharges};
-				-- /dump C_TradeSkillUI.GetRecipeCooldown(GetMouseFocus().tradeSkillInfo.recipeID)
-				-- 143011
-			end
-		end
-		--]]
-	end
-end
---]=]
----------------------------
 
 local function updateBroker()
 	local inTitle = {};
