@@ -201,7 +201,7 @@
 		</Layers>
 	</Frame>
 
-	<Frame name="BrokerEverythingNotesEditor" parent="UIParent" inherits="ButtonFrameTemplate" movable="TRUE" enableMouse="TRUE" toplevel="TRUE" clampedToScreen="TRUE" hidden="true">
+	<Frame name="BrokerEverythingNotesEditor" parent="UIParent" mixin="BrokerEverythingNotesEditorMixin" inherits="ButtonFrameTemplate" movable="TRUE" enableMouse="TRUE" toplevel="TRUE" resizable="TRUE" clampedToScreen="TRUE" hidden="true">
 		<Size x="410" y="240"/>
 		<Anchors>
 			<Anchor point="CENTER"/>
@@ -215,7 +215,7 @@
 				</FontString>
 				<FontString parentKey="textCount" inherits="GameFontNormal">
 					<Anchors>
-						<Anchor point="BOTTOMRIGHT" x="-11" y="9" />
+						<Anchor point="BOTTOMRIGHT" x="-20" y="8" />
 					</Anchors>
 				</FontString>
 			</Layer>
@@ -251,26 +251,21 @@
 						<FontString inherits="SystemFont_Med2">
 							<Color r=".99" g=".99" b=".99"/>
 						</FontString>
+						<Scripts>
+							<OnCursorChanged function="ScrollingEdit_OnCursorChanged"/>
+							<OnUpdate function="InputScrollFrame_OnUpdate"/>
+						</Scripts>
 					</EditBox>
 				</ScrollChild>
 			</ScrollFrame>
+			<Button parentKey="ResizeButton" inherits="PanelResizeButtonTemplate">
+				<Anchors>
+					<Anchor point="BOTTOMRIGHT" x="-2" y="4"/>
+				</Anchors>
+			</Button>
 		</Frames>
 		<Scripts>
-			<OnLoad>
-				self:RegisterForDrag("LeftButton");
-				self:SetScript("OnDragStart", self.StartMoving);
-				self:SetScript("OnDragStop", self.StopMovingOrSizing);
-				ButtonFrameTemplate_HidePortrait(self);
-				self.Scroll.ScrollBar:SetPoint("TOPLEFT",self.Scroll,"TOPRIGHT",5,-16);
-				self.Scroll.ScrollBar:SetPoint("BOTTOMLEFT",self.Scroll,"BOTTOMRIGHT",5,15);
-				self.text = self.Scroll.text;
-				self.text.Left:Hide()
-				self.text.Middle:Hide()
-				self.text.Right:Hide()
-				hooksecurefunc(_G,"CloseWindows",function()
-					self:Hide();
-				end);
-			</OnLoad>
+			<OnLoad method="OnLoad" />
 		</Scripts>
 	</Frame>
 

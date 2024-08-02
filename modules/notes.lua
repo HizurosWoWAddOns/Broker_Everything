@@ -60,32 +60,11 @@ end
 
 -- local function updateBroker() end
 
-local function initEditor()
-	editor = BrokerEverythingNotesEditor;
-
-	(editor.TitleText or editor.TitleContainer.TitleText):SetText(("%s - %s"):format(L["Notes"],C("gray",addon)));
-	editor.title.Instructions:SetText(L["Title (optional)"]);
-	editor.text.Instructions:SetText(L["Input your note here..."]);
-
-	editor.title:SetMaxLetters(titleLimit);
-	editor.text:SetMaxLetters(textLimit);
-
-	editor.titleCount:SetText("0 / "..titleLimit);
-	editor.textCount:SetText("0 / "..ns.FormatLargeNumber(name,textLimit));
-
-	editor:SetScript("OnHide",note_save);
-	editor.title:SetScript("OnTextChanged",note_save);
-	editor.text:SetScript("OnTextChanged",note_save);
-end
-
 function note_edit(self,index)
 	local title,text = "","";
 	if index then
 		title = ns.data[name][index][1];
 		text = ns.data[name][index][2];
-	end
-	if not editor then
-		initEditor();
 	end
 	editor.index = index or false;
 	editor.title:SetText(title);
@@ -125,6 +104,64 @@ local function note_show(self,index)
 	end
 	GameTooltip:AddLine(text,1,1,1);
 	GameTooltip:Show();
+end
+
+BrokerEverythingNotesEditorMixin = {}
+
+function BrokerEverythingNotesEditorMixin:OnLoad()
+	ns:debug("?")
+	editor = self
+	ButtonFrameTemplate_HidePortrait(self);
+
+	-- remember position & size
+	self:SetUserPlaced(false)
+	self:ClearAllPoints()
+	self:SetPoint("CENTER",0,0)
+	self:SetSize(410,240)
+	self:SetUserPlaced(true)
+
+
+	-- frame movable
+	self:RegisterForDrag("LeftButton");
+	self:SetScript("OnDragStart", self.StartMoving);
+	self:SetScript("OnDragStop", self.StopMovingOrSizing);
+
+	-- frame resizable
+	local minWidth,minHeight = 410,240;
+	self.ResizeButton:Init(self,minWidth,minHeight,minWidth*3,minHeight*3);
+
+	(self.TitleText or self.TitleContainer.TitleText):SetText(("%s - %s"):format(L["Notes"],C("gray",addon))); -- same template on differnt game clients retail/classic
+	self.title.Instructions:SetText(L["Title (optional)"]);
+	self.title:SetMaxLetters(titleLimit);
+	self.titleCount:SetText("0 / "..titleLimit);
+	self.textCount:SetText("0 / "..ns.FormatLargeNumber(name,textLimit));
+	self:SetScript("OnHide",note_save);
+	self.title:SetScript("OnTextChanged",note_save);
+
+
+	self.Scroll.ScrollBar:SetPoint("TOPLEFT",self.Scroll,"TOPRIGHT",5,-16);
+	self.Scroll.ScrollBar:SetPoint("BOTTOMLEFT",self.Scroll,"BOTTOMRIGHT",5,15);
+
+	self.text = self.Scroll.text;
+	self.text.Left:Hide()
+	self.text.Middle:Hide()
+	self.text.Right:Hide()
+	self.text.Instructions:SetText(L["Input your note here..."]);
+	self.text:SetMaxLetters(textLimit);
+	self.text:SetScript("OnTextChanged",note_save);
+
+	-- hide window on escape and other reasons
+	hooksecurefunc(_G,"CloseWindows",function()
+		self:Hide();
+	end);
+end
+
+function BrokerEverythingNotesEditorMixin:ResetFrame()
+	self:SetUserPlaced(false)
+	self:ClearAllPoints()
+	self:SetPoint("CENTER",0,0)
+	self:SetSize(410,240)
+	self:SetUserPlaced(true)
 end
 
 function createTooltip(tt)
@@ -178,10 +215,12 @@ module = {
 	},
 	clickOptionsRename = {
 		["newnote"] = "1_new_note",
+		["resetwindow"] = "2_reset_frame",
 		["menu"] = "9_open_menu"
 	},
 	clickOptions = {
 		["newnote"] = {"Add new note","module","newNote"},
+		["resetwindow"] = {"Reset window size and position"},
 		["menu"] = "OptionMenu"
 	}
 }
@@ -192,6 +231,7 @@ end
 
 ns.ClickOpts.addDefaults(module,{
 	newnote = "__NONE",
+	resetwindow = "__NONE",
 	menu = "_RIGHT"
 });
 
@@ -199,12 +239,17 @@ function module.newNote()
 	note_edit({},nil);
 end
 
+function module.resetFrame()
+	BrokerEverythingNotesEditor:ResetFrame()
+end
+
 function module.options()
 	return {
 		broker = nil,
 		tooltip = nil,
 		misc = {
-			shortNumbers=true
+			shortNumbers=true,
+			resetwindow = {type="execute", name=RESET, desc=L["Reset window size and position"], func = function() BrokerEverythingNotesEditor:ResetFrame() end}
 		},
 	}
 end
