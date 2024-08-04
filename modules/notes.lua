@@ -133,8 +133,6 @@ function BrokerEverythingNotesEditorMixin:OnLoad()
 	(self.TitleText or self.TitleContainer.TitleText):SetText(("%s - %s"):format(L["Notes"],C("gray",addon))); -- same template on differnt game clients retail/classic
 	self.title.Instructions:SetText(L["Title (optional)"]);
 	self.title:SetMaxLetters(titleLimit);
-	self.titleCount:SetText("0 / "..titleLimit);
-	self.textCount:SetText("0 / "..ns.FormatLargeNumber(name,textLimit));
 	self:SetScript("OnHide",note_save);
 	self.title:SetScript("OnTextChanged",note_save);
 
@@ -154,6 +152,11 @@ function BrokerEverythingNotesEditorMixin:OnLoad()
 	hooksecurefunc(_G,"CloseWindows",function()
 		self:Hide();
 	end);
+end
+
+function BrokerEverythingNotesEditorMixin:OnShow()
+	self.titleCount:SetText("0 / "..titleLimit);
+	self.textCount:SetText("0 / "..ns.FormatLargeNumber(name,textLimit));
 end
 
 function BrokerEverythingNotesEditorMixin:ResetFrame()
