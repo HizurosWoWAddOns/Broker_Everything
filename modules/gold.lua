@@ -11,7 +11,7 @@ local time,date,tinsert,tconcat=time,date,tinsert,table.concat;
 local name = "Gold"; -- BONUS_ROLL_REWARD_MONEY L["ModDesc-Gold"]
 local ttName, ttName2, tt, tt2, createTooltip, module = name.."TT", name.."TT2";
 local login_money,profit = nil,{};
-local listTopProfit = {};
+local listTopProfit,accountBankMoney = {},false;
 local me = ns.player.name_realm;
 local ttLines = {
 	{"showProfitSession",L["Session"],"session"},
@@ -48,6 +48,13 @@ local function migrateData()
 		end
 	end
 	--ns.data[name] = nil;
+end
+
+local function updateAccountBankMoney()
+	if not (C_Bank and C_Bank.FetchDepositedMoney and Enum and Enum.BankType and Enum.BankType.Account) then
+		return;
+	end
+	accountBankMoney = C_Bank.FetchDepositedMoney(Enum.BankType.Account)
 end
 
 local function listProfitOnEnter(self,data)
@@ -238,6 +245,10 @@ local function updateBroker()
 			tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,p.session,{hideMoney=ns.profile[name].goldHideBB}));
 		end
 	end
+	updateAccountBankMoney()
+	if ns.profile[name].accountBankMoneyBroker and accountBankMoney and accountBankMoney>0 then
+		tinsert(broker,ns.GetCoinColorOrTextureString(name,accountBankMoney,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
+	end
 	if #broker==0 then
 		broker = {BONUS_ROLL_REWARD_MONEY};
 	end
@@ -287,6 +298,11 @@ function createTooltip(tt,update)
 	local totalGold = {Alliance=0,Horde=0,Neutral=0};
 	totalGold[ns.player.faction] = ns.toon[name].money;
 
+	updateAccountBankMoney()
+	if accountBankMoney~=false then
+		totalGold.Neutral = accountBankMoney;
+	end
+
 	if tt.lines~=nil then tt:Clear(); end
 
 	tt:AddHeader(C("dkyellow",L["Gold information"]));
@@ -299,7 +315,11 @@ function createTooltip(tt,update)
 
 	local faction = ns.player.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..ns.player.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 	tt:AddLine(C(ns.player.class,ns.player.name) .. faction, ns.GetCoinColorOrTextureString(name,ns.toon[name].money,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
+	if ns.profile[name].accountBankMoney and accountBankMoney~=false then
+		tt:AddLine(C("dkyellow",ACCOUNT_BANK_PANEL_TITLE),ns.GetCoinColorOrTextureString(name,accountBankMoney,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT,test=true}))
+	end
 	tt:AddSeparator();
+
 
 	local lineCount=0;
 	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true,]] currentHide=true,--[[forceSameRealm=true]]}) do
@@ -324,6 +344,8 @@ function createTooltip(tt,update)
 		if ns.profile[name].splitSummaryByFaction and ns.profile[name].showAllFactions then
 			tt:AddLine(L["Total Gold"].." |TInterface\\PVPFrame\\PVP-Currency-Alliance:16:16:0:-1:16:16:0:16:0:16|t", ns.GetCoinColorOrTextureString(name,totalGold.Alliance,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
 			tt:AddLine(L["Total Gold"].." |TInterface\\PVPFrame\\PVP-Currency-Horde:16:16:0:-1:16:16:0:16:0:16|t", ns.GetCoinColorOrTextureString(name,totalGold.Horde,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
+			tt:AddSeparator()
+			tt:AddLine(TOTAL..(accountBankMoney and " + "..C("dkyellow",ACCOUNT_BANK_PANEL_TITLE) or ""), ns.GetCoinColorOrTextureString(name,totalGold.Alliance+totalGold.Horde+totalGold.Neutral,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
 		else
 			tt:AddLine(L["Total Gold"], ns.GetCoinColorOrTextureString(name,totalGold.Alliance+totalGold.Horde+totalGold.Neutral,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}))
 		end
@@ -346,6 +368,28 @@ function createTooltip(tt,update)
 	if not update then
 		ns.roundupTooltip(tt);
 	end
+end
+
+if (C_Bank and C_Bank.FetchDepositedMoney and Enum and Enum.BankType and Enum.BankType.Account) then
+	local function updateToonProfits(value)
+		login_money = login_money + value
+		for _,Type in ipairs({"daily","weekly","monthly"}) do
+			local Table,p = ns.toon[name].profitv2,profit[Type];
+			if Table and type(Table[Type])=="table" then
+				Table[Type][p[1]] = Table[Type][p[1]] + value;
+				Table[Type][p[2]] = Table[Type][p[2]] + value;
+			end
+		end
+	end
+	hooksecurefunc(C_Bank,"WithdrawMoney",function(bankType, amountToWithdraw)
+		if bankType ~= Enum.BankType.Account then return end
+		updateToonProfits(amountToWithdraw)
+	end)
+
+	hooksecurefunc(C_Bank,"DepositMoney",function(bankType, amountToDeposit)
+		if bankType ~= Enum.BankType.Account then return end
+		updateToonProfits(-amountToDeposit)
+	end)
 end
 
 
@@ -378,6 +422,8 @@ module = {
 		showProfitEmpty = true,
 		goldHideBB = "0",
 		goldHideTT = "0",
+		accountBankMoneyBroker = true,
+		accountBankMoney = true,
 	},
 	new = {
 		showProfitDailyAll = true,
@@ -386,6 +432,8 @@ module = {
 		showProfitEmpty = true,
 		showProfitTop = true,
 		numProfitTop = true,
+		accountBankMoneyBroker = true,
+		accountBankMoney = true,
 	},
 	clickOptionsRename = {
 		["1_open_tokenframe"] = "currency",
@@ -414,6 +462,7 @@ function module.options()
 			goldHideBB = 1,
 			showCharGold={ type="toggle", order=2, name=L["Show character gold"],     desc=L["Show character gold on broker button"] },
 			showProfitSessionBroker={ type="toggle", order=3, name=L["Show session profit"],     desc=L["Show session profit on broker button"] },
+			accountBankMoneyBroker = {type="toggle", order=4, name=ACCOUNT_BANK_PANEL_TITLE, desc=L["AccountBankMoneyBrokerDesc"]},
 		},
 		tooltip = {
 			goldHideTT = 1,
@@ -421,9 +470,10 @@ function module.options()
 			showRealmNames=3,
 			showCharsFrom=4,
 			splitSummaryByFaction={type="toggle",order=5, name=L["Split summary by faction"], desc=L["Separate summary by faction (Alliance/Horde)"] },
+			accountBankMoney = {type="toggle",order=6, name=ACCOUNT_BANK_PANEL_TITLE, desc=L["AccountBankMoneyDesc"]},
 
 			profit = {
-				type = "group", order=6, inline = true,
+				type = "group", order=7, inline = true,
 				name = L["GoldProfits"],
 				args = {
 					showProfitEmpty = { type="toggle", order=1, name=L["GoldProfitEmpty"], desc=L["GoldProfitEmptyDesc"]},
