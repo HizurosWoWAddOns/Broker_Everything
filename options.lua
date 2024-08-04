@@ -41,6 +41,17 @@ local goldHideValues = {
 	["4"]=L["ShowHighestOnly"]
 };
 
+local delimiterBBValues
+do
+	local t = LOCALE_TEXT_LABEL or "Text"
+	delimiterBBValues = {
+		[", "]   = t..", "..t,
+		[" / "]  = t.." / "..t,
+		[" || "] = t.." || "..t,
+		[" \\ "] = t.." \\ "..t,
+	}
+end
+
 local nsProfileMT
 --@do-not-package@
 do
@@ -342,6 +353,7 @@ ns.sharedOptions = {
 	showCharsFrom   = { type="select", name=L["CharsFrom"], desc=L["CharsFromDesc"], values=ns.showCharsFrom_Values },
 	goldHideBB      = { type="select", name=L["HideMoney"], desc=L["HideMoneyDescBrokerButton"], width = "double", values = goldHideValues },
 	goldHideTT      = { type="select", name=L["HideMoney"], desc=L["HideMoneyDescTooltip"], width = "double", values = goldHideValues },
+	delimiterBB     = { type="select", name=L["DelimiterBB"], desc=L["DelimiterBBDesc"], values = delimiterBBValues },
 }
 
 local sharedDefaults = {

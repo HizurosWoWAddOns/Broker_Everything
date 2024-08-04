@@ -247,12 +247,12 @@ local function updateBroker()
 	end
 	updateAccountBankMoney()
 	if ns.profile[name].accountBankMoneyBroker and accountBankMoney and accountBankMoney>0 then
-		tinsert(broker,ns.GetCoinColorOrTextureString(name,accountBankMoney,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
+		tinsert(broker,(ns.profile[name].accountBankShortcut and L["AccountBankShortcut"].." " or "")..ns.GetCoinColorOrTextureString(name,accountBankMoney,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
 	end
 	if #broker==0 then
 		broker = {BONUS_ROLL_REWARD_MONEY};
 	end
-	ns.LDB:GetDataObjectByName(module.ldbName).text = table.concat(broker,", ");
+	ns.LDB:GetDataObjectByName(module.ldbName).text = table.concat(broker,ns.profile[name].delimiterBB);
 end
 
 local function ttAddProfit(all)
@@ -426,6 +426,8 @@ module = {
 		goldHideTT = "0",
 		accountBankMoneyBroker = true,
 		accountBankMoney = true,
+		accountBankShortcut = true,
+		delimiterBB = ", ",
 	},
 	new = {
 		showProfitDailyAll = true,
@@ -436,6 +438,8 @@ module = {
 		numProfitTop = true,
 		accountBankMoneyBroker = true,
 		accountBankMoney = true,
+		accountBankShortcut = true,
+		delimiterBB = true,
 	},
 	clickOptionsRename = {
 		["1_open_tokenframe"] = "currency",
@@ -461,10 +465,12 @@ ns.ClickOpts.addDefaults(module,{
 function module.options()
 	return {
 		broker = {
-			goldHideBB = 1,
+			goldHideBB = 0,
+			delimiterBB = 1,
 			showCharGold={ type="toggle", order=2, name=L["Show character gold"],     desc=L["Show character gold on broker button"] },
 			showProfitSessionBroker={ type="toggle", order=3, name=L["Show session profit"],     desc=L["Show session profit on broker button"] },
 			accountBankMoneyBroker = {type="toggle", order=4, name=ACCOUNT_BANK_PANEL_TITLE, desc=L["AccountBankMoneyBrokerDesc"]},
+			accountBankShortcut = {type="toggle", order=5, name=L["AccountBankShortcutBB"], desc=L["AccountBankShortcutBBDesc"]},
 		},
 		tooltip = {
 			goldHideTT = 1,
