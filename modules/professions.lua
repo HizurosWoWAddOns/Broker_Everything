@@ -174,7 +174,8 @@ do
 	end
 end
 
-local function updateTradeSkills()
+local updateTradeSkills
+function updateTradeSkills()
 	wipe(professions)
 	local maxInTitleTmp = 0;
 	local lst = {GetProfessions()}; -- prof1, prof2, arch, fish, cook
@@ -186,20 +187,25 @@ local function updateTradeSkills()
 		if skillName then
 			if C_SpellBook and C_SpellBook.GetSpellBookItemInfo then
 				local info = C_SpellBook.GetSpellBookItemInfo(1 + spelloffset, Enum.SpellBookSpellBank.Player);
-				professions[order] = {
-					skillName = info.name,
-					skillNameFull = info.name,
-					skillIcon = info.iconID,
-					skillId = info.skillLineIndex,
-					spellId = info.spellID,
-					numSkill = rank or 0,
-					maxSkill = maxRank or 0,
-					skillModifier = rankModifier or 0,
-				}
-				chkCooldownSpells(info.skillLineIndex,info.iconID);
-				chkExpiredCooldowns();
-				skillNameById[info.skillLineIndex] = info.name;
-				maxInTitleTmp=maxInTitleTmp+1;
+				if info then
+					professions[order] = {
+						skillName = info.name,
+						skillNameFull = info.name,
+						skillIcon = info.iconID,
+						skillId = info.skillLineIndex,
+						spellId = info.spellID,
+						numSkill = rank or 0,
+						maxSkill = maxRank or 0,
+						skillModifier = rankModifier or 0,
+					}
+					chkCooldownSpells(info.skillLineIndex,info.iconID);
+					chkExpiredCooldowns();
+					skillNameById[info.skillLineIndex] = info.name;
+					maxInTitleTmp=maxInTitleTmp+1;
+				else -- something goes wrong. retry it some seconds later...
+					C_Timer.After(3.14159,updateTradeSkills)
+					return;
+				end
 			else
 				local _, spellId = GetSpellBookItemInfo(1 + spelloffset, BOOKTYPE_PROFESSION);
 				professions[order] = {
