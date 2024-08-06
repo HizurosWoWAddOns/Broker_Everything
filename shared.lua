@@ -144,6 +144,11 @@ function ns.IsNotClassicClient() -- for AceOptions
 	return WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
 end
 
+function ns.IsMoPRemix()
+	if C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID(424143) then
+		return true
+	end
+end
 
   ---------------------------------------
 --- player and twinks dependent data    ---

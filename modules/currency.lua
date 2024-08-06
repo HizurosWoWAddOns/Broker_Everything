@@ -603,7 +603,7 @@ function module.init()
 	};
 	local A = faction=="Alliance";
 	-- "prog:[kw]:%d:%d" k=knowledge, w=workorders, 1. integer = expansion index, 2. integer = profession index from GetProfessions
-	if ns.IsMoPRemix then
+	if ns.IsMoPRemix() then
 		Currencies = {
 			"EXPANSION_NAME4",697,738,776,752,777,789,
 			"MISCELLANEOUS",2778,2853,2854,2855,2856,2857,2858,2859,2860,3001,--2588,2032,1401,1388,1379,515,402,81,
