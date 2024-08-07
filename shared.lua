@@ -145,9 +145,14 @@ function ns.IsNotClassicClient() -- for AceOptions
 end
 
 function ns.IsMoPRemix()
-	if C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID(424143) then
+	if not (C_UnitAuras and C_UnitAuras.GetPlayerAuraBySpellID) then
+		return false;
+	end
+	local info = C_UnitAuras.GetPlayerAuraBySpellID(424143);
+	if info and info[1] then
 		return true
 	end
+	return false
 end
 
   ---------------------------------------

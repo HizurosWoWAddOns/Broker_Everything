@@ -502,6 +502,29 @@ function module.OptionMenu(parent)
 	ns.EasyMenu:ShowMenu(parent);
 end
 
+local function checkRemixCurrencies() -- TODO: remove after remix
+	-- must be later executed. aura api is slow
+	if ns.IsMoPRemix() or #CurrenciesReplace>0 then
+		return
+	end
+	Currencies = {
+		"EXPANSION_NAME4",697,738,776,752,777,789,
+		"MISCELLANEOUS",2778,2853,2854,2855,2856,2857,2858,2859,2860,3001,--2588,2032,1401,1388,1379,515,402,81,
+	};
+	CurrenciesReplace = {
+		[2853]={iconFileID=3622223,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - ".."Primary Stat",}, -- primary
+		[2854]={iconFileID=3622225,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..ITEM_MOD_STAMINA_SHORT,}, -- stamina
+		[2855]={iconFileID=3622219,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..ITEM_MOD_CRIT_RATING_SHORT,}, -- crit
+		[2856]={iconFileID=3622220,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_HASTE,}, -- haste
+		[2857]={iconFileID=3622221,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_LIFESTEAL,}, -- leech
+		[2858]={iconFileID=3622222,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_MASTERY,}, -- mastery
+		[2859]={iconFileID=3622224,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_MOVEMENT_SPEED,}, -- speed
+		[2860]={iconFileID=3622226,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_VERSATILITY,}, -- versa
+		[3001]={iconFileID=4549266,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - ".."XP Bonus" ,}, -- exp gain
+	}
+	return true
+end
+
 function module.init()
 	local strs = ({
 		deDE = {"Dungeon und Schlachtzug","Versteckte Währungen"}, esES = {"Mazmorra y banda","Monedas ocultas"},
@@ -603,39 +626,22 @@ function module.init()
 	};
 	local A = faction=="Alliance";
 	-- "prog:[kw]:%d:%d" k=knowledge, w=workorders, 1. integer = expansion index, 2. integer = profession index from GetProfessions
-	if ns.IsMoPRemix() then
-		Currencies = {
-			"EXPANSION_NAME4",697,738,776,752,777,789,
-			"MISCELLANEOUS",2778,2853,2854,2855,2856,2857,2858,2859,2860,3001,--2588,2032,1401,1388,1379,515,402,81,
-		};
-		CurrenciesReplace = {
-			[2853]={iconFileID=3622223,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - ".."Primary Stat",}, -- primary
-			[2854]={iconFileID=3622225,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..ITEM_MOD_STAMINA_SHORT,}, -- stamina
-			[2855]={iconFileID=3622219,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..ITEM_MOD_CRIT_RATING_SHORT,}, -- crit
-			[2856]={iconFileID=3622220,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_HASTE,}, -- haste
-			[2857]={iconFileID=3622221,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_LIFESTEAL,}, -- leech
-			[2858]={iconFileID=3622222,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_MASTERY,}, -- mastery
-			[2859]={iconFileID=3622224,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_MOVEMENT_SPEED,}, -- speed
-			[2860]={iconFileID=3622226,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_VERSATILITY,}, -- versa
-			[3001]={iconFileID=4549266,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - ".."XP Bonus" ,}, -- exp gain
-		}
-	else
-		Currencies = {
-			"EXPANSION_NAME10",3089,
-			"EXPANSION_NAME9",2806,2807,2809,2812,2777,2709,2708,2707,2706,2650,2651,2594,2245,2118,2003,2122,2045,2011,2134,2105,"prof:k:9:1","prof:k:9:2","prof:w:9:1","prof:w:9:2",
-			"DUNGEON_AND_RAID",1166,
-			"PLAYER_V_PLAYER",2123,391,1792,1586,1602,
-			"MISCELLANEOUS",2588,2032,1401,1388,1379,515,402,81,
-			"EXPANSION_NAME8",2009,1979,1931,1904,1906,1977,1822,1813,1810,1828,1767,1885,1877,1883,1889,1808,1802,1891,1754,1820,1728,1816,1191,
-			"EXPANSION_NAME7",1803,1755,1719,1721,1718,A and 1717 or 1716,1299,1560,1580,1587,1710,1565,1553,
-			"EXPANSION_NAME6",1149,1533,1342,1275,1226,1220,1273,1155,1508,1314,1154,1268,
-			"EXPANSION_NAME5",2778,823,824,1101,994,1129,944,980,910,1020,1008,1017,999,
-			"EXPANSION_NAME4",697,738,776,752,777,789,
-			"EXPANSION_NAME3",416,615,614,361,
-			"EXPANSION_NAME2",241,61,
-			"EXPANSION_NAME1",1704,
-		};
-	end
+
+	Currencies = {
+		"EXPANSION_NAME10",3089,
+		"EXPANSION_NAME9",2806,2807,2809,2812,2777,2709,2708,2707,2706,2650,2651,2594,2245,2118,2003,2122,2045,2011,2134,2105,"prof:k:9:1","prof:k:9:2","prof:w:9:1","prof:w:9:2",
+		"DUNGEON_AND_RAID",1166,
+		"PLAYER_V_PLAYER",2123,391,1792,1586,1602,
+		"MISCELLANEOUS",2588,2032,1401,1388,1379,515,402,81,
+		"EXPANSION_NAME8",2009,1979,1931,1904,1906,1977,1822,1813,1810,1828,1767,1885,1877,1883,1889,1808,1802,1891,1754,1820,1728,1816,1191,
+		"EXPANSION_NAME7",1803,1755,1719,1721,1718,A and 1717 or 1716,1299,1560,1580,1587,1710,1565,1553,
+		"EXPANSION_NAME6",1149,1533,1342,1275,1226,1220,1273,1155,1508,1314,1154,1268,
+		"EXPANSION_NAME5",2778,823,824,1101,994,1129,944,980,910,1020,1008,1017,999,
+		"EXPANSION_NAME4",697,738,776,752,777,789,
+		"EXPANSION_NAME3",416,615,614,361,
+		"EXPANSION_NAME2",241,61,
+		"EXPANSION_NAME1",1704,
+	};
 
 
 	-- for dragonflight
@@ -743,6 +749,7 @@ function module.onevent(self,event,arg1)
 			ns.toon[name] = {headers={}};
 		end
 		resetCurrencySession();
+		C_Timer.After(10,function() checkRemixCurrencies(event) end) -- TODO: remove after remix
 
 		-- covenant
 		covenantID = C_Covenants.GetActiveCovenantID();
@@ -750,6 +757,15 @@ function module.onevent(self,event,arg1)
 			self:RegisterEvent("COVENANT_CHOSEN");
 		else
 			insertShadowlandCurrencies();
+		end
+		if ns.IsRetailClient() then
+			self:RegisterEvent("UNIT_AURA") -- TODO: remove after remix
+		end
+	elseif event=="UNIT_AURA" and arg1=="player" then
+		local stop = checkRemixCurrencies(event)
+		self.UACount=(self.UACount or 0)+1; -- TODO: remove after remix
+		if stop or self.UACount>3 then
+			self:UnregisterEvent(event)
 		end
 	elseif event=="COVENANT_CHOSEN" then
 		-- update Covenant currencies
