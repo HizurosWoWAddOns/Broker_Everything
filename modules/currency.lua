@@ -504,7 +504,7 @@ end
 
 local function checkRemixCurrencies() -- TODO: remove after remix
 	-- must be later executed. aura api is slow
-	if ns.IsMoPRemix() or #CurrenciesReplace>0 then
+	if not ns.IsMoPRemix() or #CurrenciesReplace>0 then
 		return
 	end
 	Currencies = {
