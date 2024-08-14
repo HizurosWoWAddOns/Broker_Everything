@@ -117,7 +117,7 @@ local function getProfitV2(tbl)
 	local Table = tbl.profitv2;
 	for _,Type in ipairs({"daily","weekly","monthly"}) do
 		local p = profit[Type];
-		if Table and type(Table[Type])=="table" then
+		if p and Table and type(Table[Type])=="table" then
 			t[Type] = tbl.money-(Table[Type][p[1]] or 0);
 			t[Type.."Last"] = (Table[Type][p[1]] or 0)-(Table[Type][p[2]] or 0);
 			--t[Type.."Last2"] = (Table[Type][p[2]] or 0)-(Table[Type][p[3]] or 0);
