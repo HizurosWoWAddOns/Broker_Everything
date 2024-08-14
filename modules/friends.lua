@@ -59,6 +59,13 @@ local GetClientInfo = setmetatable({
 	end
 })
 
+local editboxes = {
+	_G.ChatFrame1EditBox,
+	_G.StaticPopup1EditBox,
+	_G.CommunitiesFrame.ChatEditBox,
+}
+
+
 -- register icon names and default files --
 -------------------------------------------
 I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\friends"}; --IconName::Friends--
@@ -191,22 +198,32 @@ local function createTooltip2(self,data)
 	ns.roundupTooltip(tt2);
 end
 
+local function AddNameToEditBox(name,realm)
+	local name = data.name;
+	if ns.realm~=data.realm then
+		name = name.."-"..data.realm;
+	end
+	for _,editbox in ipairs(editboxes) do
+		if editbox and editbox:IsVisible() and editbox:HasFocus() then
+			editbox:Insert(name)
+			break;
+		end
+	end
+end
+
 local function tooltipLineScript_OnMouseUp(self,data,button)
 	if data.type=="realm" then
-		-- whisper toon to toon
 		if IsAltKeyDown() then
+			-- party invite
 			if C_PartyInfo.InviteUnit then
 				C_PartyInfo.InviteUnit(data.fullName);
 			elseif InviteUnit then
 				InviteUnit(data.fullName);
 			end
 		elseif IsShiftKeyDown() then
+			-- copy to chatbox
 			if data.client=="WoW" then
-				local name = data.name;
-				if ns.realm~=data.realm then
-					name = name.."-"..ns.realm;
-				end
-				_G["ChatFrame1EditBox"]:Insert(name)
+				AddNameToEditBox(data.name,data.realm)
 			end
 		else
 			ChatFrame_SendTell(data.fullName:gsub(" ",""));
@@ -219,11 +236,7 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 			end
 		elseif IsShiftKeyDown() then
 			if data.client=="WoW" then
-				local name = data.name;
-				if ns.realm~=data.realm then
-					name = name.."-"..ns.realm;
-				end
-				_G["ChatFrame1EditBox"]:Insert(name)
+				AddNameToEditBox(data.name,data.realm)
 			end
 		else
 			local func,name = "BNet",data.account; -- account name
