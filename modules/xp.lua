@@ -30,6 +30,7 @@ I[name] = {iconfile="interface\\icons\\ability_dualwield",coords={0.05,0.95,0.05
 -- some local functions --
 --------------------------
 local function GetExperience(level,currentXP,maxXP,exhaustion)
+	if not (currentXP and maxXP) then return 0,0,0,0,0 end
 	if level>=MAX_PLAYER_LEVEL then return 0,0,-1; end
 	local xpOverLevelup,percentCurrentXP,percentExhaustion = (currentXP+exhaustion)-maxXP,currentXP/maxXP,0;
 	if xpOverLevelup>0 then
