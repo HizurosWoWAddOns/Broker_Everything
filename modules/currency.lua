@@ -502,29 +502,6 @@ function module.OptionMenu(parent)
 	ns.EasyMenu:ShowMenu(parent);
 end
 
-local function checkRemixCurrencies() -- TODO: remove after remix
-	-- must be later executed. aura api is slow
-	if not ns.IsMoPRemix() or #CurrenciesReplace>0 then
-		return
-	end
-	Currencies = {
-		"EXPANSION_NAME4",697,738,776,752,777,789,
-		"MISCELLANEOUS",2778,2853,2854,2855,2856,2857,2858,2859,2860,3001,--2588,2032,1401,1388,1379,515,402,81,
-	};
-	CurrenciesReplace = {
-		[2853]={iconFileID=3622223,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - ".."Primary Stat",}, -- primary
-		[2854]={iconFileID=3622225,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..ITEM_MOD_STAMINA_SHORT,}, -- stamina
-		[2855]={iconFileID=3622219,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..ITEM_MOD_CRIT_RATING_SHORT,}, -- crit
-		[2856]={iconFileID=3622220,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_HASTE,}, -- haste
-		[2857]={iconFileID=3622221,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_LIFESTEAL,}, -- leech
-		[2858]={iconFileID=3622222,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_MASTERY,}, -- mastery
-		[2859]={iconFileID=3622224,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_MOVEMENT_SPEED,}, -- speed
-		[2860]={iconFileID=3622226,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - "..STAT_VERSATILITY,}, -- versa
-		[3001]={iconFileID=4549266,maxQuantity=0,name=AUCTION_SUBCATEGORY_CLOAK.." - ".."XP Bonus" ,}, -- exp gain
-	}
-	return true
-end
-
 function module.init()
 	local strs = ({
 		deDE = {"Dungeon und Schlachtzug","Versteckte Währungen"}, esES = {"Mazmorra y banda","Monedas ocultas"},
@@ -749,7 +726,6 @@ function module.onevent(self,event,arg1)
 			ns.toon[name] = {headers={}};
 		end
 		resetCurrencySession();
-		C_Timer.After(10,function() checkRemixCurrencies(event) end) -- TODO: remove after remix
 
 		-- covenant
 		covenantID = C_Covenants.GetActiveCovenantID();
@@ -757,15 +733,6 @@ function module.onevent(self,event,arg1)
 			self:RegisterEvent("COVENANT_CHOSEN");
 		else
 			insertShadowlandCurrencies();
-		end
-		if ns.IsRetailClient() then
-			self:RegisterEvent("UNIT_AURA") -- TODO: remove after remix
-		end
-	elseif event=="UNIT_AURA" and arg1=="player" then
-		local stop = checkRemixCurrencies(event)
-		self.UACount=(self.UACount or 0)+1; -- TODO: remove after remix
-		if stop or self.UACount>3 then
-			self:UnregisterEvent(event)
 		end
 	elseif event=="COVENANT_CHOSEN" then
 		-- update Covenant currencies
