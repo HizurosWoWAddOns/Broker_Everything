@@ -628,7 +628,7 @@ function module.init()
 	-- "prog:[kw]:%d:%d" k=knowledge, w=workorders, 1. integer = expansion index, 2. integer = profession index from GetProfessions
 
 	Currencies = {
-		"EXPANSION_NAME10",3089,
+		"EXPANSION_NAME10",2815,3056,2803,3008, 2914,2915,2917,2916, 3093,3028,3055, 3089,
 		"EXPANSION_NAME9",2806,2807,2809,2812,2777,2709,2708,2707,2706,2650,2651,2594,2245,2118,2003,2122,2045,2011,2134,2105,"prof:k:9:1","prof:k:9:2","prof:w:9:1","prof:w:9:2",
 		"DUNGEON_AND_RAID",1166,
 		"PLAYER_V_PLAYER",2123,391,1792,1586,1602,
