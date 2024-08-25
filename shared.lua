@@ -693,7 +693,7 @@ function ns.pairsToons(modName,opts)
 				-- ignore
 			elseif opts.currentFirst==true and toonNameRealm==ns.player.name_realm then
 				tinsert(t,1,index);
-			elseif not (opts.forceSameRealm==true and realm~=ns.realm) and not (opts.forceSameFaction==true and ns.faction~=ns.toonsDB[toonNameRealm].faction) then
+			elseif not (opts.forceSameRealm==true and realm~=ns.realm) and not (opts.forceSameFaction==true and ns.player.faction~=ns.toonsDB[toonNameRealm].faction) then
 				tinsert(t,index);
 			end
 		end
