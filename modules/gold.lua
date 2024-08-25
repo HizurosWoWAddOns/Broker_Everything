@@ -469,8 +469,8 @@ function module.options()
 			delimiterBB = 1,
 			showCharGold={ type="toggle", order=2, name=L["Show character gold"],     desc=L["Show character gold on broker button"] },
 			showProfitSessionBroker={ type="toggle", order=3, name=L["Show session profit"],     desc=L["Show session profit on broker button"] },
-			accountBankMoneyBroker = {type="toggle", order=4, name=ACCOUNT_BANK_PANEL_TITLE, desc=L["AccountBankMoneyBrokerDesc"]},
-			accountBankShortcut = {type="toggle", order=5, name=L["AccountBankShortcutBB"], desc=L["AccountBankShortcutBBDesc"]},
+			accountBankMoneyBroker = {type="toggle", order=4, name=ACCOUNT_BANK_PANEL_TITLE or "Warband bank", desc=L["AccountBankMoneyBrokerDesc"], hidden=ns.IsClassicClient},
+			accountBankShortcut = {type="toggle", order=5, name=L["AccountBankShortcutBB"], desc=L["AccountBankShortcutBBDesc"], hidden=ns.IsClassicClient},
 		},
 		tooltip = {
 			goldHideTT = 1,
@@ -478,7 +478,7 @@ function module.options()
 			showRealmNames=3,
 			showCharsFrom=4,
 			splitSummaryByFaction={type="toggle",order=5, name=L["Split summary by faction"], desc=L["Separate summary by faction (Alliance/Horde)"] },
-			accountBankMoney = {type="toggle",order=6, name=ACCOUNT_BANK_PANEL_TITLE, desc=L["AccountBankMoneyDesc"]},
+			accountBankMoney = {type="toggle",order=6, name=ACCOUNT_BANK_PANEL_TITLE or "Warband bank", desc=L["AccountBankMoneyDesc"], hidden=ns.IsClassicClient},
 
 			profit = {
 				type = "group", order=7, inline = true,
