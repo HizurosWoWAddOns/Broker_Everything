@@ -199,9 +199,8 @@ local function createTooltip2(self,data)
 end
 
 local function AddNameToEditBox(name,realm)
-	local name = data.name;
-	if ns.realm~=data.realm then
-		name = name.."-"..data.realm;
+	if ns.realm~=realm then
+		name = name.."-"..realm;
 	end
 	for _,editbox in ipairs(editboxes) do
 		if editbox and editbox:IsVisible() and editbox:HasFocus() then
