@@ -62,8 +62,10 @@ local GetClientInfo = setmetatable({
 local editboxes = {
 	_G.ChatFrame1EditBox,
 	_G.StaticPopup1EditBox,
-	_G.CommunitiesFrame.ChatEditBox,
 }
+if not ns.IsClassicClient then
+	tinsert(editboxes,_G.CommunitiesFrame.ChatEditBox)
+end
 
 
 -- register icon names and default files --
