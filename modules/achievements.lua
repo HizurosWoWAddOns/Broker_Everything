@@ -233,10 +233,12 @@ module = {
 		["menu"] = "open_menu"
 	},
 	clickOptions = {
+		["achievements"] = {ACHIEVEMENTS,"call","ToggleAchievementFrame"},
 		["menu"] = "OptionMenuCustom"
 	}
 };
 
+ns.ClickOpts.addDefaults(module,"achievements","_LEFT");
 ns.ClickOpts.addDefaults(module,"menu","_RIGHT");
 
 function module.options()
