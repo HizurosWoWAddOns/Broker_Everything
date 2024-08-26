@@ -527,8 +527,10 @@ function module.onevent(self,event,arg1)
 		ns.ClickOpts.update(name);
 	else
 		ns.toon[name].money = GetMoney();
-		if event=="PLAYER_LOGIN" then
+		if login_money==nil and ns.toon[name].money~=nil then
 			login_money = ns.toon[name].money;
+		end
+		if event=="PLAYER_LOGIN" then
 			C_Timer.After(0.5,function()
 				updateProfit();
 				updateBroker();
