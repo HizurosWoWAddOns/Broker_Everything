@@ -191,7 +191,7 @@ local function initReputationList()
 		end
 		for i = ns.deprecated.C_Reputation.GetNumFactions(),1,-1 do
 			local info = ns.deprecated.C_Reputation.GetFactionDataByIndex(i);
-			if info.isCollapsed then
+			if info and info.isCollapsed then
 				tinsert(collapsed,1,i);
 				ns.deprecated.C_Reputation.ExpandFactionHeader(i);
 			end
@@ -202,13 +202,15 @@ local function initReputationList()
 		wipe(factions);
 		for i=1, ns.deprecated.C_Reputation.GetNumFactions() do
 			local info = ns.deprecated.C_Reputation.GetFactionDataByIndex(i);
-			tinsert(factions,{
-				factionID=info.factionID,
-				name=info.name,
-				isHeader=info.isHeader,
-				isChild=info.isChild,
-				hasRep=info.hasRep
-			});
+			if info then
+				tinsert(factions,{
+					factionID=info.factionID,
+					name=info.name,
+					isHeader=info.isHeader,
+					isChild=info.isChild,
+					hasRep=info.hasRep
+				});
+			end
 		end
 		round=round+1;
 	else
