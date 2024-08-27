@@ -571,6 +571,8 @@ local function init()
 		[208704]=1, -- Toy - Deepdweller's Earthen Hearthstone
 		[209035]=1, -- Toy - Hearthstone of the Flame
 		[212337]=1, -- Toy - Stone of the Hearth
+		[228940]=1, -- Toy - Deepdweller's Earthen Hearthstone
+
 	};
 
 	--_itemReplacementIds = {64488,28585,6948,44315,44314,37118,142542,142298};
