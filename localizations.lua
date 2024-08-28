@@ -10,8 +10,11 @@ local L, addon, ns = {}, ...;
 -- Do you want to help localize this addon?
 -- https://www.curseforge.com/wow/addons/@cf-project-name@/localization
 
-ns.L = setmetatable(L,{
+ns.L = setmetatable({},{
 	__index=function(t,k)
+		if L[k] then
+			return L[k];
+		end
 		local v = tostring(k);
 --@do-not-package@
 		local kType = type(k);
@@ -22,8 +25,11 @@ ns.L = setmetatable(L,{
 			return "<"..k..">"; -- makes untranslated entries visible
 		end
 --@end-do-not-package@
-		rawset(t,k,v);
+		L[k] = v;
 		return v;
+	end,
+	__newindex = function(t,k,v)
+		L[k] = v;
 	end
 });
 
