@@ -18,15 +18,27 @@ I[name] = {iconfile="Interface\\minimap\\tracking\\none"}; --IconName::Tracking-
 
 -- some local functions --
 --------------------------
+
+local C_Minimap_GetTrackingInfo
+if ns.IsClassicClient() then
+	function C_Minimap_GetTrackingInfo(id)
+		local info = {}
+		info.name, info.texture, info.active, info.type, info.subType, info.spellID = C_Minimap.GetTrackingInfo(id)
+		return info;
+	end
+else
+	C_Minimap_GetTrackingInfo = C_Minimap.GetTrackingInfo
+end
+
 local function updateTracking()
 	local tActive = 0
 	local n = {}
 
-	for i = 1, --[[ns.deprecated.]]C_Minimap.GetNumTrackingTypes() do
-		local name, tex, active, category = --[[ns.deprecated.]]C_Minimap.GetTrackingInfo(i)
-		if (active) then
+	for i = 1, C_Minimap.GetNumTrackingTypes() do
+		local info = C_Minimap_GetTrackingInfo(i)
+		if info.active then
 			tActive = tActive + 1
-			n[tActive] = {["Name"] = name, ["Texture"] = tex}
+			n[tActive] = {["Name"] = info.name, ["Texture"] = info.texture}
 		end
 	end
 
@@ -125,45 +137,33 @@ end
 -- function module.onenter(self) end
 -- function module.onleave(self) end
 
-local trackingMenuOnClick
-local trackingIsActive = MiniMapTrackingDropDownButton_IsActive
-do
-	local SetTracking = C_Minimap and C_Minimap.SetTracking or SetTracking;
-	local GetTrackingInfo = C_Minimap and C_Minimap.GetTrackingInfo or GetTrackingInfo;
-	function trackingMenuOnClick(button)
-		local info,_,active = C_Minimap.GetTrackingInfo(button.arg1);
-		SetTracking(button.arg1,active or info.active);
-	end
-	if not trackingIsActive then
-		trackingIsActive = trackingIsActive or function(button)
-			local info, _, active = C_Minimap.GetTrackingInfo(button.arg1);
-			return active or info.active;
-		end
-	end
+local function trackingMenuOnClick(button)
+	local info = C_Minimap_GetTrackingInfo(button.arg1);
+	C_Minimap.SetTracking(button.arg1,not info.active);
+end
+
+local function trackingIsActive(button)
+	local info = C_Minimap_GetTrackingInfo(button.arg1);
+	return active or info.active;
 end
 
 function module.onclick(self,button)
 	if tt then tt:Hide(); end
-	local obj, texture, active, category, nested, Type;
-	local list,count = {},--[[ns.deprecated.]]C_Minimap.GetNumTrackingTypes();
+	local info, category
+	local list,count = {},C_Minimap.GetNumTrackingTypes();
 	local _, class = UnitClass("player");
 
 	ns.EasyMenu:InitializeMenu();
 	ns.EasyMenu:AddEntry({label=L["Tracking options"], title=true});
-	ns.EasyMenu:AddEntry({label=MINIMAP_TRACKING_NONE, checked=MiniMapTrackingDropDown_IsNoTrackingActive, func=--[[ns.deprecated.]]C_Minimap.ClearAllTracking });
+	ns.EasyMenu:AddEntry({label=MINIMAP_TRACKING_NONE, checked=MiniMapTrackingDropDown_IsNoTrackingActive, func=C_Minimap.ClearAllTracking });
 	ns.EasyMenu:AddEntry({separator=true});
 
 	local numTracking,hunterHeader,townHeader = 0,false;
 	for id=1, count do
-		obj, texture, active, category, nested, Type=C_Minimap.GetTrackingInfo(id);
-		if type(obj)~="table" then
-			ns:debugPrint(name,"OLD Tracking list",obj,category,nested,Type)
-			obj = {name = obj, texture = texture, active = active, --[[category = category,]] subType = nested} -- cata classic
-		end
-
-		if obj.subType==-1 then
-			local entry={label=obj.name, icon=obj.texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};
-			if obj.category=="spell" then
+		info = C_Minimap_GetTrackingInfo(id);
+		if info.subType==-1 then
+			local entry={label=info.name, icon=info.texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};
+			if info.category=="spell" then
 				entry.tCoordLeft = 0.0625;
 				entry.tCoordRight = 0.9;
 				entry.tCoordTop = 0.0625;
@@ -171,7 +171,7 @@ function module.onclick(self,button)
 			end
 			ns.EasyMenu:AddEntry(entry);
 		end
-		tinsert(list,obj);
+		tinsert(list,info);
 	end
 
 	for id=1, #list do
@@ -193,7 +193,7 @@ function module.onclick(self,button)
 			entry = {label=list[id].name, icon=list[id].texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};
 		end
 		if entry then
-			if category=="spell" then
+			if info.type=="spell" then
 				entry.tCoordLeft = 0.0625;
 				entry.tCoordRight = 0.9;
 				entry.tCoordTop = 0.0625;
