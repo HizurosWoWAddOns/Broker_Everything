@@ -10,20 +10,24 @@ if ns.client_version<5 then return end
 -----------------------------------------------------------
 local name = "Currency"; -- CURRENCY L["ModDesc-Currency"]
 local ttName,ttColumns,tt,tt2,module = name.."TT",5;
-local currencies,currencySession,faction = {},{},UnitFactionGroup("player");
+local currencySession = {};
 local BrokerPlacesMax,createTooltip = 10;
-local Currencies,CovenantCurrencies,covenantID = {},{},0;
-local expantionProfCurrencies,expantionProfWorkorders,profIconReplace = {},{};
+local Currencies,CovenantCurrencies,covenantID,profSkillLines,tradeSkillNames,CurrenciesDefault,profSkillLine2Currencies = {},{},0,{},{};
+local currency2skillLine,profIconReplace,knownCurrencies,hiddenCurrencies = {},{},{}
+local CurrenciesReplace,CurrenciesRename = {},{}
 local headers = {
 	HIDDEN_CURRENCIES = "Hidden currencies", -- L["Hidden currencies"]
 	DUNGEON_AND_RAID = "Dungeon and Raid", -- L["Dungeons and Raids"]
 	PLAYER_V_PLAYER = PLAYER_V_PLAYER,
 	MISCELLANEOUS = MISCELLANEOUS,
+	FAVORITES = FAVORITES,
+}
+local CurrenciesRenameFormat = {
+	w = PROFESSIONS_CRAFTING_ORDERS_TAB_NAME.." - %s"
 }
 local countCorrectionList = {
 	[1822] = 1, -- Renown; currency value 1 count lower than display for players
 }
-local CurrenciesReplace = {}
 
 
 -- register icon names and default files --
@@ -45,14 +49,15 @@ local function CountCorrection(id,info)
 	end
 end
 
-local function CapColor(colors,str,nonZero,count,mCount,count2,mCount2)
-	local col,c = nonZero and colors[1] or "gray",0;
-	if nonZero then
+local function CapColor(colors,str,opts) -- nonZero,count,mCount,count2,mCount2
+	local col,c = opts.nonZero and colors[1] or "gray",0;
+	local mCount,mCount2 = opts.maxCount,opts.maxCount2;
+	if opts.nonZero then
 		if mCount>0 then
-			c = mCount-count;
+			c = mCount-opts.count;
 		end
-		if count2 and mCount2 then
-			local tmp=mCount2-count2;
+		if opts.count2 and mCount2 then
+			local tmp=mCount2-opts.count2;
 			if mCount==0 or tmp<c then
 				mCount=mCount2;
 				c=tmp;
@@ -60,7 +65,9 @@ local function CapColor(colors,str,nonZero,count,mCount,count2,mCount2)
 		end
 		if mCount>0 then
 			local c2,c3,c4 = .25,.125,.05; -- 25%, 12.5%, 5%
-			if mCount<=100 then
+			if opts.capInvert then
+				c2,c3,c4 = .75,.5,.25;
+			elseif mCount<=100 then
 				c2,c3,c4 = .3,.2,.1; -- 30%, 20%, 10%
 			end
 			if c<ceil(mCount*c4) then
@@ -90,21 +97,8 @@ local function validateID(id)
 	return tonumber(id) or tostring(id):find("^prof:[kw]:%d*:%d*$");
 end
 
-local function GetCurrency(currencyId)
-	local profExpTbl,profExpansion,profIndex,currencyInfo,currencyIdStr,_;
-	if type(currencyId)=="string" then
-		_, profExpTbl, profExpansion, profIndex = strsplit(":",currencyId)
-		profExpansion, profIndex = tonumber(profExpansion), tonumber(profIndex);
-	end
-	if profIndex then
-		currencyIdStr = currencyId;
-		-- for dragonflight prof currencies
-		if profExpTbl=="k" then -- profession knowledge
-			currencyId = expantionProfCurrencies[profExpansion][profIndex];
-		elseif profExpTbl=="w" then -- workorders
-			currencyId = expantionProfWorkorders[profExpansion][profIndex];
-		end
-	end
+local function GetCurrency(currencyId,skillLineID)
+	local currencyInfo,_;
 	if tonumber(currencyId) then
 		currencyInfo = C_CurrencyInfo.GetCurrencyInfo(currencyId);
 		if not currencyInfo.iconFileID and profIconReplace[currencyId] then
@@ -117,21 +111,28 @@ local function GetCurrency(currencyId)
 				currencyInfo[k] = v;
 			end
 		end
+		if CurrenciesCapInvert[currencyId] then
+			currencyInfo.capInvert = true;
+		end
+		local rename = CurrenciesRename[currencyId];
+		if rename and CurrenciesRenameFormat[rename] then
+			currencyInfo.name = CurrenciesRenameFormat[rename]:format(tradeSkillNames[currency2skillLine[currencyId]])
+		end
 	end
-	return currencyId,currencyInfo,{str=currencyIdStr,tbl=profExpTbl,exp=profExpansion,index=profIndex};
+	return currencyId,currencyInfo
 end
 
 local function updateBroker()
 	local elems,obj = {},ns.LDB:GetDataObjectByName(module.ldbName)
-	if faction~="Neutral" then
-		local i = I(name.."_"..faction);
+	if ns.player.faction~="Neutral" then
+		local i = I(name.."_"..ns.player.faction);
 		obj.iconCoords = i.coords or {0,1,0,1};
 		obj.icon = i.iconfile;
 	end
 	for i=1, BrokerPlacesMax do
-		local obj,currencyId,currencyInfo,profInfo = ns.profile[name].currenciesInTitle[i];
+		local obj,currencyId,currencyInfo = ns.profile[name].currenciesInTitle[i];
 		if obj and validateID(obj) then
-			currencyId,currencyInfo,profInfo = GetCurrency(obj);
+			currencyId,currencyInfo = GetCurrency(obj);
 		end
 		if currencyId and currencyInfo and currencyInfo.discovered then
 			CountCorrection(currencyId,currencyInfo);
@@ -140,12 +141,12 @@ local function updateBroker()
 				str = str.."/"..ns.FormatLargeNumber(name,currencyInfo.maxQuantity);
 			end
 			if ns.profile[name].showCapColorBroker and (currencyInfo.maxQuantity>0 or currencyInfo.maxWeeklyQuantity>0) then
-				local t = {profInfo.tbl=="w" and {"red","orange","yellow","green"} or {"green","yellow","orange","red"},str,currencyInfo.quantity>0,currencyInfo.quantity,currencyInfo.maxQuantity};
+				local opts = {nonZero=currencyInfo.quantity>0,count=currencyInfo.quantity,maxCount=currencyInfo.maxQuantity,capInvert=currencyInfo.capInvert};
 				if currencyInfo.maxWeeklyQuantity>0 then
-					tinsert(t,currencyInfo.quantityEarnedThisWeek);
-					tinsert(t,currencyInfo.maxWeeklyQuantity);
+					opts.count2 = currencyInfo.quantityEarnedThisWeek;
+					opts.maxCount2 = currencyInfo.maxWeeklyQuantity;
 				end
-				str = CapColor(unpack(t));
+				str = CapColor(currencyInfo.capInvert and {"red","orange","yellow","green"} or {"green","yellow","orange","red"},str,opts);
 			end
 			tinsert(elems, str.."|T"..(currencyInfo.iconFileID or ns.icon_fallback)..":0|t");
 		end
@@ -226,7 +227,7 @@ function createTooltip(tt,update)
 			end
 			tt:SetLineScript(l,"OnMouseUp", toggleCurrencyHeader,Currencies[i]);
 		elseif not parentIsCollapsed then
-			local currencyId,currencyInfo,profInfo = GetCurrency(Currencies[i]);
+			local currencyId,currencyInfo = GetCurrency(Currencies[i]);
 			if currencyId and currencyInfo and currencyInfo.name and (currencyInfo.discovered or hiddenSection) then
 				CountCorrection(currencyId,currencyInfo);
 
@@ -238,7 +239,11 @@ function createTooltip(tt,update)
 
 					-- cap coloring
 					if ns.profile[name].showCapColor then
-						str = CapColor(currencyInfo.maxWeeklyQuantity>0 and {"dkgreen","dkyellow","dkorange","dkred"} or (profInfo.tbl=="w" and {"red","orange","yellow","green"}) or {"green","yellow","orange","red"},str,currencyInfo.quantity>0,currencyInfo.quantity,currencyInfo.maxQuantity);
+						local colors = currencyInfo.capInvert and {"red","orange","yellow","green"} or {"green","yellow","orange","red"};
+						if currencyInfo.maxWeeklyQuantity>0 then
+							colors = currencyInfo.capInvert and {"dkred","dkorange","dkyellow","dkgreen"} or {"dkgreen","dkyellow","dkorange","dkred"};
+						end
+						str = CapColor(colors,str,{nonZero=currencyInfo.quantity>0,count=currencyInfo.quantity,maxCount=currencyInfo.maxQuantity,capInvert=currencyInfo.capInvert});
 					end
 				end
 
@@ -248,7 +253,7 @@ function createTooltip(tt,update)
 
 					-- cap coloring
 					if ns.profile[name].showCapColor then
-						wstr = CapColor({"green","yellow","orange","red"},wstr,currencyInfo.quantity>0,currencyInfo.quantityEarnedThisWeek,currencyInfo.maxWeeklyQuantity);
+						wstr = CapColor(currencyInfo.capInvert and {"red","orange","yellow","green"} or {"green","yellow","orange","red"},wstr,{nonZero=currencyInfo.quantity>0,count=currencyInfo.quantityEarnedThisWeek,maxCount=currencyInfo.maxWeeklyQuantity,capInvert=currencyInfo.capInvert});
 					end
 
 					str = wstr.." "..str;
@@ -327,13 +332,13 @@ local function aceOptOnBrokerValues(info)
 			if Currencies[i]=="HIDDEN_CURRENCIES" and not ns.profile[name].showHidden then
 				break;
 			elseif validateID(Currencies[i]) then
-				local currencyId,currencyInfo,profInfo = GetCurrency(Currencies[i]);
+				local currencyId,currencyInfo = GetCurrency(Currencies[i]);
 				if currencyInfo and currencyInfo.name then
 					local color = "white";
 					if not currencyInfo.discovered then
 						color = "ltgray";
 					end
-					local order,id = ("%04d"):format(n),(profInfo and profInfo.str) or ("%05d"):format(currencyId);
+					local order,id = ("%04d"):format(n),("%05d"):format(currencyId);
 					aceCurrencies.values[order..":"..id] = C(color,currencyInfo.name);
 					aceCurrencies.order[id] = order;
 					n=n+1;
@@ -344,6 +349,116 @@ local function aceOptOnBrokerValues(info)
 	return aceCurrencies.values;
 end
 
+local function updateProfessions()
+	local temp = {}
+	local profs = {GetProfessions()};
+	for index=1, 2 do
+		local tradeSkillName,skillLine,_;
+		if profs[index] then
+			tradeSkillName, _, _, _, _, _, skillLine = GetProfessionInfo(profs[index]);
+		end
+		if skillLine then
+			tinsert(temp,{tradeSkillName,skillLine});
+			tradeSkillNames[skillLine] = tradeSkillName;
+		end
+	end
+	if #temp~=#profSkillLines then
+		profSkillLines = temp;
+		return true;
+	end
+	return false;
+end
+
+local function get_currency(t)
+	local f,id=ns.player.faction;
+	if type(t)=="table" then
+		id = t[(f=="Alliance" and 1) or (f=="Horde" and 2) or --[[Neutral]] 3] or nil;
+	else
+		id = t;
+	end
+	return id;
+end
+
+local function updateCurrencies()
+	wipe(Currencies);
+
+	-- Favs
+	if type(ns.profile[name].favs)=="table" and #ns.profile[name].favs>0 then
+		tinsert(Currencies,"FAVORITES");
+		for _, fav in ipairs(ns.profile[name].favs) do
+			local id = get_currency(fav);
+			if id then
+				tinsert(Currencies,id);
+			end
+		end
+	end
+
+	-- default currencies
+	for i=1, #CurrenciesDefault do
+		local group = CurrenciesDefault[i];
+
+		-- add header
+		tinsert(Currencies,group.h);
+
+		-- add normal currencies
+		for g=1, #group do
+			local id = get_currency(group[g]);
+			if id then
+				tinsert(Currencies,id);
+				knownCurrencies[id] = true;
+			end
+		end
+
+		-- add covenant currencies
+		if covenantID>0 and CovenantCurrencies[group.h] then
+			for currencyID, covenant in pairs(CovenantCurrencies[group.h]) do
+				if covenant==covenantID then
+					tinsert(Currencies,currencyID)
+				end
+			end
+		end
+
+		-- add profession currencies
+		ns:debugPrint("<updateCurrencies>",group.h,profSkillLine2Currencies[group.h],#profSkillLines)
+		if profSkillLine2Currencies[group.h] then
+			if #profSkillLines==0 then
+				updateProfessions()
+			end
+			for i=1, #profSkillLines do
+				local t = profSkillLine2Currencies[group.h][profSkillLines[i][2]]
+				if t then
+					for n=1, #t do
+						tinsert(Currencies,t[n]);
+						knownCurrencies[t[n]] = true
+						currency2skillLine[t[n]] = profSkillLines[i][2];
+					end
+				end
+			end
+		end
+	end
+
+	-- hidden currencies
+	if not hiddenCurrencies then
+		local ignore = {["n/a"]=1,["UNUSED"]=1};
+		hiddenCurrencies = {}
+		for i=42, 9999 do
+			if not knownCurrencies[i] and not ns.isArchaeologyCurrency(i) then
+				local info = C_CurrencyInfo.GetCurrencyInfo(i);
+				if info and info.name and not (ignore[info.name] or info.name:find("zzold") or info.name:find("Test") or info.name:find("Prototype") --[[or info.name:find("Scoreboard")]]) then -- (and not info.isHeader)
+					tinsert(hiddenCurrencies,i);
+				end
+			end
+		end
+	end
+
+	if hiddenCurrencies then
+		tinsert(Currencies,"HIDDEN_CURRENCIES");
+		for h=1, #hiddenCurrencies do
+			tinsert(Currencies,hiddenCurrencies[h]);
+		end
+	end
+end
+
 
 -- module functions and variables --
 ------------------------------------
@@ -352,7 +467,9 @@ module = {
 	events = {
 		"PLAYER_LOGIN",
 		"CURRENCY_DISPLAY_UPDATE",
-		"CHAT_MSG_CURRENCY"
+		"CHAT_MSG_CURRENCY",
+		"NEUTRAL_FACTION_SELECT_RESULT",
+		"SKILL_LINES_CHANGED",
 	},
 	config_defaults = {
 		enabled = false,
@@ -436,7 +553,7 @@ function module.OptionMenu(parent)
 		local id = ns.profile[name].currenciesInTitle[place];
 
 		if validateID(id) then
-			local currencyId,currencyInfo,profInfo = GetCurrency(id);
+			local currencyId,currencyInfo = GetCurrency(id);
 			if currencyId and currencyInfo and currencyInfo.name then
 				pList = ns.EasyMenu:AddEntry({
 					arrow = true,
@@ -460,7 +577,7 @@ function module.OptionMenu(parent)
 				break;
 			elseif validateID(Currencies[i]) then
 				--isHidden = Currencies[i]=="HIDDEN_CURRENCIES";
-				local currencyId,currencyInfo,profInfo = GetCurrency(Currencies[i]);
+				local currencyId,currencyInfo = GetCurrency(Currencies[i]);
 				if currencyId and currencyInfo and currencyInfo.name then
 					CountCorrection(currencyId,currencyInfo);
 					local nameStr,disabled = currencyInfo.name,true;
@@ -521,144 +638,90 @@ function module.init()
 			break;
 		end
 	end
-	local KY,NL,NF,VE,NX = 1,4,3,2,0;
+
+	local KY,NL,NF,VE,NX = 1,4,3,2,0; -- covenant ids
 	CovenantCurrencies = {
-		-- general sl currencies??
-		--[1769] = NX, -- Questerfahrung (Standard, versteckt)
-		--[[
-		[1792] = NX, -- Ehre
-		[1802] = NX, -- Stand der wöchentlichen Belohnungen im PvP der Schattenlande
-		[1828] = NX, -- Seelenasche
-		[1877] = NX, -- Bonuserfahrung
-		[1883] = NX, -- Seelenbandmedienenergie
-		[1885] = NX, -- Dankbare Gabe
-		[1889] = NX, -- Abenteuerkampagnenfortschritt
-		[1891] = NX, -- Honor from Rated
-		[1808] = NX, -- Kanalisierte Anima
-		[1767] = NX, -- Stygia
+		["EXPANSION_NAME9"] = {
+			-- unsorted covenant currencies
+			[1794]=NX,[1804]=NX,[1805]=NX,[1806]=NX,[1807]=NX,[1837]=NX,[1839]=NX,[1840]=NX,[1841]=NX,[1843]=NX,[1844]=NX,
+			[1845]=NX,[1846]=NX,[1849]=NX,[1850]=NX,[1851]=NX,[1852]=NX,[1880]=NX,[1884]=NX,[1887]=NX,[1888]=NX,
 
-		[1822] = NX, -- Ruhm
-		[1813] = NX, -- Reservoiranima
-		[1810] = NX, -- Erlöste Seele
-		--]]
+			-- kyrianer currencies
+			[1867]=KY,[1871]=KY,[1819]=KY,[1847]=KY,[1848]=KY,
 
-		-- unsorted covenant currencies
-		[1794] = NX, -- Sühnenanima
-		[1804] = NX, -- Aufgestiegene
-		[1805] = NX, -- Unvergängliche Armee
-		[1806] = NX, -- Wilde Jagd
-		[1807] = NX, -- Hof der Ernter
-		[1837] = NX, -- Der Gluthof
-		[1839] = NX, -- Rendel und Knüppelfratze
-		[1840] = NX, -- Steinkopf
-		[1841] = NX, -- Grufthüter Kassir
-		[1843] = NX, -- Seuchenerfinder Marileth
-		[1844] = NX, -- Großmeister Vole
-		[1845] = NX, -- Alexandros Mograine
-		[1846] = NX, -- Sika
-		[1849] = NX, -- Mikanikos
-		[1850] = NX, -- Choofa
-		[1851] = NX, -- Dromanin Aliothe
-		[1852] = NX, -- Jagdhauptmann Korayn
-		[1880] = NX, -- Ve'nari
-		[1884] = NX, -- Die Eingeschworenen
-		[1887] = NX, -- Hof der Nacht
-		[1888] = NX, -- Marasmius
+			-- night fae currencies
+			[1869]=NF,[1873]=NF,[1853]=NF,
 
-		-- kyrianer currencies
-		--[1829] = KY, -- Ruhm (Kyrianer)
-		--[1859] = KY, -- Reservoiranima - Kyrianer
-		--[1863] = KY, -- Erlöste Seele - Kyrianer
-		[1867] = KY, -- Architekt des Sanktums - Kyrianer
-		[1871] = KY, -- Animaweber des Sanktums - Kyrianer
-		[1819] = KY, -- Medaillon des Dienstes
-		[1847] = KY, -- Kleia und Pelagos
-		[1848] = KY, -- Polemarch Adrestes
+			-- necrolords currencies
+			[1870]=NL,[1874]=NL,[1842]=NL,[1878]=NL,
 
-		-- night fae currencies
-		--[1831] = NF, -- Ruhm (Nachtfae)
-		--[1861] = NF, -- Reservoiranima - Nachtfae
-		--[1865] = NF, -- Erlöste Seele - Nachtfae
-		[1869] = NF, -- Architekt des Sanktums - Nachtfae
-		[1873] = NF, -- Animaweber des Sanktums - Nachtfae
-		[1853] = NF, -- Lady Mondbeere
-
-		-- necrolords currencies
-		--[1832] = NL, -- Ruhm (Nekrolords)
-		--[1862] = NL, -- Reservoiranima - Nekrolords
-		--[1866] = NL, -- Erlöste Seele - Nekrolords
-		[1870] = NL, -- Architekt des Sanktums - Nekrolords
-		[1874] = NL, -- Animaweber des Sanktums - Nekrolords
-		[1842] = NL, -- Baronin Vashj
-		[1878] = NL, -- Flickmeister
-
-		-- venthyr currencies
-		--[1830] = VE, -- Ruhm (Venthyr)
-		--[1860] = VE, -- Reservoiranima - Venthyr
-		--[1864] = VE, -- Erlöste Seele - Venthyr
-		[1868] = VE, -- Architekt des Sanktums - Venthyr
-		[1872] = VE, -- Animaweber des Sanktums - Venthyr
-		--[1816] = NX, -- Sündensteinfragmente
-		[1838] = VE, -- Die Gräfin
-	};
-	local A = faction=="Alliance";
-	-- "prog:[kw]:%d:%d" k=knowledge, w=workorders, 1. integer = expansion index, 2. integer = profession index from GetProfessions
-
-	Currencies = {
-		"EXPANSION_NAME10",2815,3056,2803,3008, 2914,2915,2917,2916, 3093,3028,3055, 3089,
-		"EXPANSION_NAME9",2806,2807,2809,2812,2777,2709,2708,2707,2706,2650,2651,2594,2245,2118,2003,2122,2045,2011,2134,2105,"prof:k:9:1","prof:k:9:2","prof:w:9:1","prof:w:9:2",
-		"DUNGEON_AND_RAID",1166,
-		"PLAYER_V_PLAYER",2123,391,1792,1586,1602,
-		"MISCELLANEOUS",2588,2032,1401,1388,1379,515,402,81,
-		"EXPANSION_NAME8",2009,1979,1931,1904,1906,1977,1822,1813,1810,1828,1767,1885,1877,1883,1889,1808,1802,1891,1754,1820,1728,1816,1191,
-		"EXPANSION_NAME7",1803,1755,1719,1721,1718,A and 1717 or 1716,1299,1560,1580,1587,1710,1565,1553,
-		"EXPANSION_NAME6",1149,1533,1342,1275,1226,1220,1273,1155,1508,1314,1154,1268,
-		"EXPANSION_NAME5",2778,823,824,1101,994,1129,944,980,910,1020,1008,1017,999,
-		"EXPANSION_NAME4",697,738,776,752,777,789,
-		"EXPANSION_NAME3",416,615,614,361,
-		"EXPANSION_NAME2",241,61,
-		"EXPANSION_NAME1",1704,
+			-- venthyr currencies
+			[1868]=VE,[1872]=VE,[1838]=VE,
+		}
 	};
 
-
-	-- for dragonflight
-	expantionProfCurrencies[9] = {};
-	local skillLine2DfCurrency = {
-		[171] = 2024, -- Alchemy
-		[164] = 2023, -- Blacksmithing
-		[333] = 2030, -- Enchanting
-		[202] = 2027, -- Engineering
-		[773] = 2028, -- Inscription
-		[755] = 2029, -- Jewelcrafting
-		[165] = 2025, -- Leatherworking
-		[197] = 2026, -- Tailoring
-		[393] = 2033, -- Skinning
-		[182] = 2034, -- Herbalism
-		[186] = 2035, -- Mining
-	};
-	expantionProfWorkorders[9] = {};
-	local skillLine2DfWorkorder = {
-		[171] = 2170, -- Alchemy
-		[164] = 2165, -- Blacksmithing
-		[333] = 2173, -- Enchanting
-		[202] = 2172, -- Engineering
-		[773] = 2175, -- Inscription
-		[755] = 2174, -- Jewelcrafting
-		[165] = 2169, -- Leatherworking
-		[197] = 2171, -- Tailoring
+	CurrenciesDefault = {
+		{h="EXPANSION_NAME10",2815,2813,3056,2803,3008, 2914,2915,2917,2916, 3093,3028,3055, 3089},
+		{h="EXPANSION_NAME9",2806,2807,2809,2812,2777,2709,2708,2707,2706,2650,2651,2594,2245,2118,2003,2122,2045,2011,2134,2105},
+		{h="DUNGEON_AND_RAID",1166},
+		{h="PLAYER_V_PLAYER",2123,391,1792,1586,1602},
+		{h="MISCELLANEOUS",2588,2032,1401,1388,1379,515,402,81},
+		{h="EXPANSION_NAME8",2009,1979,1931,1904,1906,1977,1822,1813,1810,1828,1767,1885,1877,1883,1889,1808,1802,1891,1754,1820,1728,1816,1191},
+		{h="EXPANSION_NAME7",1803,1755,1719,1721,1718,{1717,1716},1299,1560,1580,1587,1710,1565,1553},
+		{h="EXPANSION_NAME6",1149,1533,1342,1275,1226,1220,1273,1155,1508,1314,1154,1268},
+		{h="EXPANSION_NAME5",2778,823,824,1101,994,1129,944,980,910,1020,1008,1017,999},
+		{h="EXPANSION_NAME4",697,738,776,752,777,789},
+		{h="EXPANSION_NAME3",416,615,614,361},
+		{h="EXPANSION_NAME2",241,61},
+		{h="EXPANSION_NAME1",1704},
 	}
-	local skillName,skillLine,_={};
-	for i,index in ipairs({GetProfessions()}) do
-		if index then
-			_, _, _, _, _, _, skillLine = GetProfessionInfo(index);
-		end
-		if skillLine then
-			if skillLine2DfCurrency[skillLine] then
-				expantionProfCurrencies[9][i] = skillLine2DfCurrency[skillLine];
-				expantionProfWorkorders[9][i] = skillLine2DfWorkorder[skillLine];
-			end
-		end
-	end
+
+	profSkillLine2Currencies = {
+		-- dragonflight
+		["EXPANSION_NAME9"] = {
+			-- [<skillLineID>] = {<Knowledge>,<Workorder>,<Concentration>}
+			[171] = {2024,2170}, -- Alchemy
+			[164] = {2023,2165}, -- Blacksmithing
+			[333] = {2030,2173}, -- Enchanting
+			[202] = {2027,2172}, -- Engineering
+			[773] = {2028,2175}, -- Inscription
+			[755] = {2029,2174}, -- Jewelcrafting
+			[165] = {2025,2169}, -- Leatherworking
+			[197] = {2026,2171}, -- Tailoring
+			[393] = {2033}, -- Skinning
+			[182] = {2034}, -- Herbalism
+			[186] = {2035}, -- Mining
+
+		},
+		-- the war within
+		["EXPANSION_NAME10"] = {
+			[171] = {2785,2170,3045}, -- Alchemy
+			[164] = {2786,2165,3040}, -- Blacksmithing
+			[333] = {2787,2173,3046}, -- Enchanting
+			[202] = {2788,2172,3044}, -- Engineering
+			[773] = {2790,2175,3043}, -- Inscription
+			[755] = {2791,2174,3013}, -- Jewelcrafting
+			[165] = {2792,2169,3042}, -- Leatherworking
+			[197] = {2795,2171,3041}, -- Tailoring
+			[393] = {2794}, -- Skinning
+			[182] = {2789}, -- Herbalism
+			[186] = {2793}, -- Mining
+
+		}
+		-- Note: It looks like dragonflight and the war within sharing workorder weekly cap
+	}
+
+	CurrenciesRename = {
+		[2170]="w",[2165]="w",[2173]="w",[2172]="w",[2175]="w",[2174]="w",[2169]="w",[2171]="w",
+	}
+
+	-- invert colored cap on broker button and in tooltip
+	CurrenciesCapInvert = {
+		-- concentration
+		[3040]=1,[3041]=1,[3042]=1,[3043]=1,[3044]=1,[3045]=1,[3046]=1,
+		-- workorders df/tww
+		[2170]=1,[2165]=1,[2173]=1,[2172]=1,[2175]=1,[2174]=1,[2169]=1,[2171]=1,
+	}
 
 	profIconReplace = {
 		[2170]=2024, -- Alchemy
@@ -670,50 +733,6 @@ function module.init()
 		[2169]=2025, -- Leatherworking
 		[2171]=2026, -- Tailoring
 	}
-
-	local ignore = {["n/a"]=1,["UNUSED"]=1};
-	tinsert(Currencies,"HIDDEN_CURRENCIES");
-	local known = {};
-	for i=1, #Currencies do
-		if tonumber(Currencies[i]) then
-			known[Currencies[i]] = true;
-		end
-	end
-	for i=42, 2500 do
-		if not known[i] and not ns.isArchaeologyCurrency(i) then
-			local info = C_CurrencyInfo.GetCurrencyInfo(i);
-			if info and info.name and not (ignore[info.name] or info.name:find("zzold") or info.name:find("Test") or info.name:find("Prototype") or info.name:find("Scoreboard")) then -- (and not info.isHeader)
-				tinsert(Currencies,i);
-			end
-		end
-	end
-end
-
-local insertShadowlandCurrencies
-do
-	local insertAfter,hasInsertedCovenant = nil,false;
-	local function InsertCurrency(id)
-		if not insertAfter then
-			for i=1, #Currencies do
-				if Currencies[i]==1191 then
-					insertAfter = i+1;
-				end
-			end
-		end
-		tinsert(Currencies,insertAfter,id);
-		insertAfter=insertAfter+1;
-	end
-	function insertShadowlandCurrencies()
-		if hasInsertedCovenant then return end
-		hasInsertedCovenant = true;
-
-		-- covenantID
-		for id,covenant in ns.pairsByKeys(CovenantCurrencies)do
-			if covenant==covenantID then
-				InsertCurrency(id);
-			end
-		end
-	end
 end
 
 function module.onevent(self,event,arg1)
@@ -728,16 +747,14 @@ function module.onevent(self,event,arg1)
 		resetCurrencySession();
 
 		-- covenant
-		covenantID = C_Covenants.GetActiveCovenantID();
+		covenantID = C_Covenants.GetActiveCovenantID() or 0;
 		if covenantID==0 then
+			-- covenant not choosen; wait  for event
 			self:RegisterEvent("COVENANT_CHOSEN");
-		else
-			insertShadowlandCurrencies();
 		end
 	elseif event=="COVENANT_CHOSEN" then
 		-- update Covenant currencies
-		covenantID = C_Covenants.GetActiveCovenantID();
-		insertShadowlandCurrencies();
+		covenantID = C_Covenants.GetActiveCovenantID() or 0;
 	elseif event=="CHAT_MSG_CURRENCY" then -- detecting new currencies
 		local id = tonumber(arg1:match("currency:(%d*)"));
 		if id and not currencySession[id] then
@@ -746,6 +763,11 @@ function module.onevent(self,event,arg1)
 			currencySession[id] = currencyInfo.quantity;
 		end
 	end
+
+	if event=="PLAYER_LOGIN" or event=="NEUTRAL_FACTION_SELECT_RESULT" or event=="COVENANT_CHOSEN" or (event=="SKILL_LINES_CHANGED" and updateProfessions()) then
+		updateCurrencies();
+	end
+
 	if ns.eventPlayerEnteredWorld then
 		updateBroker();
 		if (tt) and (tt.key) and (tt.key==ttName) and (tt:IsShown()) then
