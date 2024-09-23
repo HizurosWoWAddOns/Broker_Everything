@@ -334,7 +334,7 @@ function module.init()
 			elseif (C_AddOns.IsAddOnLoaded("ACP")) then
 				ACP:ToggleUI();
 			elseif (C_AddOns.IsAddOnLoaded("Ampere")) then
-				InterfaceOptionsFrame_OpenToCategory("Ampere");
+				Settings.OpenToCategory("Ampere");
 			elseif (C_AddOns.IsAddOnLoaded("stAddonManager")) then
 				stAddonManager:LoadWindow()
 			elseif (_G["AddonList"]) then
