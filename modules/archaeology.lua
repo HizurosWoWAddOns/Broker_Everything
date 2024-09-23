@@ -73,9 +73,8 @@ local function updateRaceArtifact(t,...)
 		t[raceArtifactIcon] = iconFormat1:format(t[raceArtifactIcon]);
 
 		if(type(t[raceKeystoneItemID])=="number" and t[raceKeystoneItemID]>0) then
-			--keystoneItem2race[t[raceKeystoneItemID]] = t;
 			t[raceKeystoneIcon] = iconFormat1:format( ns.deprecated.C_Item.GetItemIconByID(t[raceKeystoneItemID]) or ns.icon_fallback);
-			t[raceKeystoneCount] = --[[ns.deprecated.]]C_Item.GetItemCount(t[raceKeystoneItemID],true,true);
+			t[raceKeystoneCount] = C_Item.GetItemCount(t[raceKeystoneItemID],true,true);
 		end
 
 		if(t[raceKeystoneSlots]>0)then
@@ -91,7 +90,7 @@ local function updateRaceArtifact(t,...)
 
 		t[raceKeystoneCount] = 0;
 		if(type(t[raceKeystoneItemID])=="number" and t[raceKeystoneItemID]>0) then
-			t[raceKeystoneCount] = --[[ns.deprecated.]]C_Item.GetItemCount(t[raceKeystoneItemID],true,true);
+			t[raceKeystoneCount] = C_Item.GetItemCount(t[raceKeystoneItemID],true,true);
 		end
 
 		if(t[raceKeystoneSlots]>0)then

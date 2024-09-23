@@ -99,7 +99,7 @@ end
 
 local function addToy(id)
 	if not foundToys[id] and PlayerHasToy then
-		local toyName, _, _, _, _, _, _, _, _, toyIcon = --[[ns.deprecated.]]C_Item.GetItemInfo(id);
+		local toyName, _, _, _, _, _, _, _, _, toyIcon = C_Item.GetItemInfo(id);
 		local hasToy = PlayerHasToy(id);
 		local canUse = C_ToyBox.IsToyUsable(id);
 		if _toyUsableBug[id] then
@@ -153,7 +153,7 @@ local function updateItems()
 			for sharedSlot,item in pairs(ns.items.byID[id]) do
 				local isHS,hsLoc = itemIsHearthstone(id);
 				local obj = {type="item", id=id, sharedSlot=sharedSlot};
-				obj.name, _, _, _, _, _, _, _, _, obj.icon = --[[ns.deprecated.]]C_Item.GetItemInfo(item.link);
+				obj.name, _, _, _, _, _, _, _, _, obj.icon = C_Item.GetItemInfo(item.link);
 				if obj.name then
 					obj.name2 = isHS and obj.name..hsLoc or obj.name;
 					if _itemMustBeEquipped[id] then

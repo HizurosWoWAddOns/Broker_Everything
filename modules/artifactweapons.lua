@@ -73,7 +73,7 @@ function updateItemState()
 			local item = CopyTable(itemInfo);
 			item.type = "bag";
 			ns.ScanTT.query(item,true);
-			item.name, _, _, _, _, _, _, _, _, item.icon = --[[ns.deprecated.]]C_Item.GetItemInfo(item.link);
+			item.name, _, _, _, _, _, _, _, _, item.icon = C_Item.GetItemInfo(item.link);
 			local knowledge = item.linkData[#item.linkData-3];
 			if knowledge then
 				if klvls[knowledge]==nil then klvls[knowledge]={}; end

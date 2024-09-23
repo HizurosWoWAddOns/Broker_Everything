@@ -60,7 +60,7 @@ function crap.sell()
 		local I=numItems-(i-1);
 		local bag,slot,price = unpack(crap.items[I]);
 		sum = sum + price;
-		--[[ns.deprecated.]]C_Container.UseContainerItem(bag, slot);
+		C_Container.UseContainerItem(bag, slot);
 		tremove(crap.items,I);
 	end
 	crap.sum = crap.sum + sum;
@@ -118,20 +118,20 @@ end
 function crap.search()
 	wipe(crap.holdMessages);
 	for bag=0, NUM_BAG_SLOTS do
-		local numSlots = --[[ns.deprecated.]]C_Container.GetContainerNumSlots(bag);
-		local numFreeSlots = --[[ns.deprecated.]]C_Container.GetContainerNumFreeSlots(bag);
+		local numSlots = C_Container.GetContainerNumSlots(bag);
+		local numFreeSlots = C_Container.GetContainerNumFreeSlots(bag);
 		if numSlots ~= numFreeSlots then
 			for slot=1, numSlots do
-				local link,itemId,itemInfo,count,quality,price,classID,subClassID,_ = --[[ns.deprecated.]]C_Container.GetContainerItemLink(bag,slot);
+				local link,itemId,itemInfo,count,quality,price,classID,subClassID,_ = C_Container.GetContainerItemLink(bag,slot);
 				if link then
 					itemId = tonumber((link:match("item:(%d+)")));
 				end
 				if link and itemId then
-					itemInfo,count = --[[ns.deprecated.]]C_Container.GetContainerItemInfo(bag, slot);
+					itemInfo,count = C_Container.GetContainerItemInfo(bag, slot);
 					if not count and itemInfo then
 						count = itemInfo.stackCount;
 					end
-					_,_,quality,_,_,_,_,_,_,_,price,classID,subClassID = --[[ns.deprecated.]]C_Item.GetItemInfo(link);
+					_,_,quality,_,_,_,_,_,_,_,price,classID,subClassID = C_Item.GetItemInfo(link);
 					if price>0 and itemId and checkSellThisItem(itemId,link,classID,subClassID,quality)=="sell" then
 						tinsert(crap.items,{bag,slot,price*count});
 					end
@@ -157,7 +157,7 @@ end
 local function updateBagTypes()
 	bagTypes[LE_ITEM_CLASS_CONTAINER..":0"] = {name=L["Bags"],icon=133633};
 	for i=1, 11 do
-		local n = --[[ns.deprecated.]]C_Item.GetItemSubClassInfo(LE_ITEM_CLASS_CONTAINER,i);
+		local n = C_Item.GetItemSubClassInfo(LE_ITEM_CLASS_CONTAINER,i);
 		bagTypes[LE_ITEM_CLASS_CONTAINER..HEADER_COLON..i] = {name=n,icon=0};
 	end
 end
@@ -187,12 +187,12 @@ local function itemQuality()
 		for sharedSlot, item in pairs(items) do
 			if item.bag>=0 then
 				if not itemPrice then
-					itemName, _, itemQuality, _, _, _, _, _, _, _, itemPrice = --[[ns.deprecated.]]C_Item.GetItemInfo(item.link);
+					itemName, _, itemQuality, _, _, _, _, _, _, _, itemPrice = C_Item.GetItemInfo(item.link);
 					if not itemName then
 						failed = true;
 					end
 				end
-				local itemInfo,count = --[[ns.deprecated.]]C_Container.GetContainerItemInfo(item.bag,item.slot);
+				local itemInfo,count = C_Container.GetContainerItemInfo(item.bag,item.slot);
 				if not count and itemInfo then
 					count = itemInfo.stackCount;
 				end
@@ -331,31 +331,31 @@ end
 
 -- Function to determine the total number of bag slots and the number of free bag slots.
 function updateBags()
-	local backpackSlots = --[[ns.deprecated.]]C_Container.GetContainerNumSlots(0) or 0;
+	local backpackSlots = C_Container.GetContainerNumSlots(0) or 0;
 	if backpackSlots==0 then -- api return invalid value
 		updateBagsRetry(.5,{"<retry>","<invalid api value>","zero backpack slots are invalid"});
 		return;
 	end
 
-	local backpackFreeSlots = --[[ns.deprecated.]]C_Container.GetContainerNumFreeSlots(0) or 0;
+	local backpackFreeSlots = C_Container.GetContainerNumFreeSlots(0) or 0;
 	local totalSlots,freeSlots = {["1:0"]=backpackSlots},{["1:0"]=backpackFreeSlots};
 	local sum = {backpackSlots,backpackFreeSlots};
 
 	for bagIndex=1, (NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS) do
 		local itemIcon, itemClassID, itemSubClassID, _, link = 0, 1, 0;
-		if bagIndex>0 and --[[ns.deprecated.]]C_Container.GetContainerNumSlots(bagIndex)>0 then
+		if bagIndex>0 and C_Container.GetContainerNumSlots(bagIndex)>0 then
 			link = GetInventoryItemLink("player", ns.deprecated.C_Container.ContainerIDToInventoryID(bagIndex));
 		end
 		if link then
-			_, _, _, _, _, _, _, _, _, itemIcon, _, itemClassID, itemSubClassID = --[[ns.deprecated.]]C_Item.GetItemInfo(link);
+			_, _, _, _, _, _, _, _, _, itemIcon, _, itemClassID, itemSubClassID = C_Item.GetItemInfo(link);
 			if not itemIcon then
 				updateBagsRetry(.5,{"<retry>","<invalid item info>",link,tostring(itemIcon)});
 				return;
 			end
 		end
 		if itemIcon and itemClassID and itemSubClassID then
-			local bagSlots = --[[ns.deprecated.]]C_Container.GetContainerNumSlots(bagIndex);
-			local bagSlotsFree = --[[ns.deprecated.]]C_Container.GetContainerNumFreeSlots(bagIndex);
+			local bagSlots = C_Container.GetContainerNumSlots(bagIndex);
+			local bagSlotsFree = C_Container.GetContainerNumFreeSlots(bagIndex);
 			local bT = itemClassID..":"..itemSubClassID;
 			if not totalSlots[bT] then
 				totalSlots[bT], freeSlots[bT] = bagSlots,bagSlotsFree;
@@ -364,7 +364,7 @@ function updateBags()
 				freeSlots[bT] = freeSlots[bT]+bagSlotsFree;
 			end
 			if not (bagTypes[bT] and bagTypes[bT].icon) then
-				local n = --[[ns.deprecated.]]C_Item.GetItemSubClassInfo(itemClassID,itemSubClassID);
+				local n = C_Item.GetItemSubClassInfo(itemClassID,itemSubClassID);
 				bagTypes[bT] = {name=n,icon=itemIcon};
 			elseif bagTypes[bT].icon < itemIcon then
 				bagTypes[bT].icon = itemIcon;

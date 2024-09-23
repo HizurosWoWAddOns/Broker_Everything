@@ -70,16 +70,16 @@ I[name_traf] = {iconfile="Interface\\Addons\\"..addon.."\\media\\memory"}; --Ico
 local function checkAddonManager()
 	addonpanels["Blizzard's Addons Panel"] = function(chk) if (chk) then local AddonList = _G["AddonList"]; return (AddonList); end if (AddonList:IsShown()) then AddonList:Hide(); else AddonList:Show(); end end;
 	addonpanels_select["Blizzard's Addons Panel"] = "Blizzard's Addons Panel";
-	addonpanels["ACP"] = function(chk) if (chk) then return (--[[ns.deprecated.]]C_AddOns.IsAddOnLoaded("ACP")); end ACP:ToggleUI() end
-	addonpanels["Ampere"] = function(chk) if (chk) then return (--[[ns.deprecated.]]C_AddOns.IsAddOnLoaded("Ampere")); end InterfaceOptionsFrame_OpenToCategory("Ampere"); InterfaceOptionsFrame_OpenToCategory("Ampere"); end
-	addonpanels["OptionHouse"] = function(chk) if (chk) then return (--[[ns.deprecated.]]C_AddOns.IsAddOnLoaded("OptionHouse")); end OptionHouse:Open(1) end
-	addonpanels["stAddonManager"] = function(chk) if (chk) then return (--[[ns.deprecated.]]C_AddOns.IsAddOnLoaded("stAddonManager")); end stAddonManager:LoadWindow() end
-	addonpanels["BetterAddonList"] = function(chk) if (chk) then return (--[[ns.deprecated.]]C_AddOns.IsAddOnLoaded("BetterAddonList")); end end
+	addonpanels["ACP"] = function(chk) if (chk) then return (C_AddOns.IsAddOnLoaded("ACP")); end ACP:ToggleUI() end
+	addonpanels["Ampere"] = function(chk) if (chk) then return (C_AddOns.IsAddOnLoaded("Ampere")); end Settings.OpenToCategory("Ampere"); end
+	addonpanels["OptionHouse"] = function(chk) if (chk) then return (C_AddOns.IsAddOnLoaded("OptionHouse")); end OptionHouse:Open(1) end
+	addonpanels["stAddonManager"] = function(chk) if (chk) then return (C_AddOns.IsAddOnLoaded("stAddonManager")); end stAddonManager:LoadWindow() end
+	addonpanels["BetterAddonList"] = function(chk) if (chk) then return (C_AddOns.IsAddOnLoaded("BetterAddonList")); end end
 	local panelstates,d,s = {};
 	local addonname,title,notes,loadable,reason,security,newVersion = 1,2,3,4,5,6,7;
-	for i=1, --[[ns.deprecated.]]C_AddOns.GetNumAddOns() do
-		d = {--[[ns.deprecated.]]C_AddOns.GetAddOnInfo(i)};
-		s = (--[[ns.deprecated.]]C_AddOns.GetAddOnEnableState(ns.player.name,i)>0);
+	for i=1, C_AddOns.GetNumAddOns() do
+		d = {C_AddOns.GetAddOnInfo(i)};
+		s = (C_AddOns.GetAddOnEnableState(ns.player.name,i)>0);
 		if (addonpanels[d[addonname]]) and (s) then
 			addonpanels_select[d[addonname]] = d[title];
 		end
@@ -90,7 +90,7 @@ local function addonpanel(self,button)
 	local ap = ns.profile[name_sys].addonpanel;
 	if (ap~="none") then
 		if (ap~="Blizzard's Addons Panel") then
-			if not --[[ns.deprecated.]]C_AddOns.IsAddOnLoaded(ap) then --[[ns.deprecated.]]C_AddOns.LoadAddOn(ap) end
+			if not C_AddOns.IsAddOnLoaded(ap) then C_AddOns.LoadAddOn(ap) end
 		end
 		if (addonpanels[ap]) and (addonpanels[ap](true)) then
 			addonpanels[ap]();
@@ -238,12 +238,12 @@ local function updateMemory(updateToken)
 			securecall("C_AddOns.UpdateAddOnMemoryUsage");
 		end
 	end
-	local num=--[[ns.deprecated.]]C_AddOns.GetNumAddOns();
+	local num=C_AddOns.GetNumAddOns();
 	local lst,grps,sum,numLoadedAddOns = {},{},0,0;
 	memory.numAddOns=0;
 	for i=1, num do
-		local Name = --[[ns.deprecated.]]C_AddOns.GetAddOnInfo(i);
-		local IsLoaded = --[[ns.deprecated.]]C_AddOns.IsAddOnLoaded(Name);
+		local Name = C_AddOns.GetAddOnInfo(i);
+		local IsLoaded = C_AddOns.IsAddOnLoaded(Name);
 
 		local group = nil;
 		for pat,gName in pairs(addonGroups)do
@@ -471,8 +471,8 @@ local function updateAll()
 		if memoryTimeout<=0 then
 			-- for debugging
 			-- try to get the list of addons in lua errors like 'script ran too long' :-/
-			local activeAddOns,numActiveAddOns,numAddOns = {},0,--[[ns.deprecated.]]C_AddOns.GetNumAddOns();
-			for i=1, numAddOns do local n=--[[ns.deprecated.]]C_AddOns.GetAddOnInfo(i); if --[[ns.deprecated.]]C_AddOns.IsAddOnLoaded(n) then tinsert(activeAddOns,n) end end
+			local activeAddOns,numActiveAddOns,numAddOns = {},0,C_AddOns.GetNumAddOns();
+			for i=1, numAddOns do local n=C_AddOns.GetAddOnInfo(i); if C_AddOns.IsAddOnLoaded(n) then tinsert(activeAddOns,n) end end
 			numActiveAddOns,activeAddOns = #activeAddOns,table.concat(activeAddOns,",");
 
 			updateMemory(triggerUpdateToken);

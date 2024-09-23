@@ -1044,8 +1044,8 @@ do
 		for bagIndex,bool in pairs(updateBags) do
 			bagIndex=tonumber(bagIndex)
 			if bagIndex and bool==true then
-				local numBagSlots = --[[ns.deprecated.]]C_Container.GetContainerNumSlots(bagIndex);
-				local numFreeSlots = --[[ns.deprecated.]]C_Container.GetContainerNumFreeSlots(bagIndex);
+				local numBagSlots = C_Container.GetContainerNumSlots(bagIndex);
+				local numFreeSlots = C_Container.GetContainerNumFreeSlots(bagIndex);
 				local IndexTabardType =  INVTYPE_TABARD or Enum.InventoryType.IndexTabardType;
 				local IndexBodyType =  INVTYPE_BODY or Enum.InventoryType.IndexBodyType;
 				if numBagSlots~=numFreeSlots then -- do not scan empty bag ;-)
@@ -1060,7 +1060,7 @@ do
 					--]]
 					for slotIndex=1, numBagSlots do
 						local sharedSlotIndex = bagIndex+(slotIndex/100);
-						local itemInfo, count, _, _, _, _, link, _, _, id = --[[ns.deprecated.]]C_Container.GetContainerItemInfo(bagIndex,slotIndex);
+						local itemInfo, count, _, _, _, _, link, _, _, id = C_Container.GetContainerItemInfo(bagIndex,slotIndex);
 						if not count and type(itemInfo)=="table" then
 							count = itemInfo.stackCount;
 							link = itemInfo.hyperlink;
@@ -1136,7 +1136,7 @@ do
 				local _, spell = ns.deprecated.C_Item.GetItemSpell(id); -- test if item has a spell
 				if spell then
 					for sharedSlot, info in pairs(itemsByID[...])do
-						local _, count, _, _, _, _, _, _, _ = --[[ns.deprecated.]]C_Container.GetContainerItemInfo(info.bag,info.slot);
+						local _, count, _, _, _, _, _, _, _ = C_Container.GetContainerItemInfo(info.bag,info.slot);
 						_, info.spell = ns.deprecated.C_Item.GetItemSpell(info.link); -- multiple items with same id could have different spells by itemLink.
 						if info.spell then
 							if not itemsBySpell[info.spell] then
@@ -1147,7 +1147,7 @@ do
 					end
 				end
 			elseif callbacks.toys[id] and PlayerHasToy then
-				local toyName, _, _, _, _, _, _, _, _, toyIcon = --[[ns.deprecated.]]C_Item.GetItemInfo(id);
+				local toyName, _, _, _, _, _, _, _, _, toyIcon = C_Item.GetItemInfo(id);
 				local hasToy = PlayerHasToy(id);
 				local canUse = C_ToyBox.IsToyUsable(id);
 				if toyName and hasToy and canUse then
@@ -1335,10 +1335,10 @@ do
 		end
 		if data._type=="bag" or data._type=="bags" then
 			if data.link==nil then
-				data.link = --[[ns.deprecated.]]C_Container.GetContainerItemLink(data.bag,data.slot);
+				data.link = C_Container.GetContainerItemLink(data.bag,data.slot);
 			end
 			data.linkData = GetLinkData(data.link);
-			data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = --[[ns.deprecated.]]C_Item.GetItemInfo(data.link);
+			data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = C_Item.GetItemInfo(data.link);
 			data.startTime, data.duration, data.isEnabled = C_Container.GetContainerItemCooldown(data.bag,data.slot);
 			data.hasCooldown, data.repairCost = tt:SetBagItem(data.bag,data.slot);
 		elseif data._type=="inventory" or data._type=="inv" then
