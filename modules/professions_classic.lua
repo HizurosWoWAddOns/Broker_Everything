@@ -225,7 +225,7 @@ local function checkCooldownSpells(_skillLine,_nameLoc,_icon,_skill,_maxSkill,_s
 				idOrGroup = (cd[cdGroup]>0) and "cd.group."..cd[cdGroup] or cd[spellId];
 				_name = (cd[cdGroup]>0) and cd_groups[cdGroup].." cooldown group" or false;
 				if not _name then
-					local info = ns.deprecated.C_Spell.GetSpellInfo(cd[spellId]);
+					local info = C_Spell.GetSpellInfo(cd[spellId]);
 					_name = info.name;
 				end
 				timeLeft,lastUpdate = cdResetTypes[cd[cdType]](cd[spellId]);
@@ -474,8 +474,8 @@ function module.init()
 		1804,0,   -- Lockpicking, rouge
 	}
 	for i=1, #t, 2 do
-		local info = ns.deprecated.C_Spell.GetSpellInfo(t[i])
-		if info.name then
+		local info = C_Spell.GetSpellInfo(t[i])
+		if info and info.name then
 			skillName2Info[info.name] = {spellId=t[i],icon=info.iconID,skillId=t[i+1]}
 		end
 	end
