@@ -7,10 +7,11 @@ local C,L,I=ns.LC.color,ns.L,ns.I;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Guild"; -- GUILD L["ModDesc-Guild"]
-local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module = name.."TT", name.."TT2",10,2;
+local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module = name.."TT", name.."TT2",11,2;
 local pattern_FRIEND_OFFLINE = ERR_FRIEND_OFFLINE_S:gsub("%%s","(.*)"):trim();
 local pattern_FRIEND_ONLINE = ERR_FRIEND_ONLINE_SS:gsub("[\124:%[%]]","#"):gsub("%%s","(.*)"):trim();
-local knownMemberRaces = {}; -- filled by updateBroker
+local knownMemberRaces = {}; -- filled by GetMemberRace
+local knownMemberFactions = {}; -- filled by GetMemberFaction
 local memberLevels = {}; -- filled by updateBroker
 local memberIndex = {}; -- filled by updateBroker
 local membersOnline = {}; -- filled by createTooltip
@@ -21,7 +22,7 @@ local flags = {}; -- filled by module.onenter
 local ttHooks = {} -- filled by module.onenter
 local applScroll = {step=0,stepWidth=3,numLines=5,lines={},lineCols={},slider=false,regionColor={1,.5,0,.15}};
 local membScroll = {step=0,stepWidth=5,numLines=15,lines={},lineCols={},slider=false,regionColor={1,.82,0,.11}};
-local tradeSkillLock,tradeSkillsUpdateDelay,chatNotificationEnabled,frame = false,0;
+local tradeSkillLock,chatNotificationEnabled,frame = false;
 local icon_arrow_right = "|T"..ns.icon_arrow_right..":0|t";
 local triggerLockTradeSkill,triggerLockRequestUpdate = false,false
 local CanViewOfficerNote = CanViewOfficerNote or C_GuildInfo.CanViewOfficerNote;
@@ -67,6 +68,29 @@ local function GetApplicants()
 		end
 	end
 	return {};
+end
+
+local function GetMemberRace(GUID)
+	local raceName = knownMemberRaces[GUID];
+	if not raceName then
+		_, _, raceName = GetPlayerInfoByGUID(GUID);
+		if raceName then
+			knownMemberRaces[GUID] = raceName;
+		end
+	end
+	return raceName;
+end
+
+local function GetMemberFaction(GUID)
+	local faction = knownMemberFactions[GUID]
+	if not faction then
+		local playerLocation = PlayerLocation:CreateFromGUID(GUID)
+		local raceID = C_PlayerInfo.GetRace(playerLocation);
+		local factionInfo = C_CreatureInfo.GetFactionInfo(raceID) or {name=UNKNOWN}
+		knownMemberFactions[GUID] = factionInfo.name;
+		faction = factionInfo.name;
+	end
+	return faction
 end
 
 local function updateTradeSkills()
@@ -145,12 +169,9 @@ local function updateBroker()
 			local mFullName,mRank,mRankIndex,mLevel,mClassLocale,mZone,mNote,mOfficerNote,mOnline,mIsAway,mClassFile,_,_,mIsMobile,_,mStanding,mGUID = GetGuildRosterInfo(i);
 			if mFullName then -- GetGuildRosterInfo looks like buggy since 11.0
 				local mName, mRealm = strsplit("-",mFullName,2);
-				-- race names; must be cached by request GetPlayerInfoByGUID. That could take same time.
 				if ns.profile[name].showRace and not knownMemberRaces[mGUID] then
-					local _, _, mRaceName = GetPlayerInfoByGUID(mGUID);
-					if mRaceName then
-						knownMemberRaces[mGUID] = mRaceName;
-					end
+					-- race names; must be cached by request GetPlayerInfoByGUID. That could take same time.
+					GetMemberRace(mGUID)
 				end
 				if mIsMobile and mOnline then
 					numMobile = numMobile + 1;
@@ -315,15 +336,15 @@ local function createTooltip2(self,memberIndex)
 	end
 	tt2:AddLine(C("ltblue",L["Realm"]),C("dkyellow",ns.scm(realm)));
 	if ns.profile[name].showRaceInTT2 then
-		local mRaceName = knownMemberRaces[mGUID];
-		if not mRaceName then
-			_, _, mRaceName = GetPlayerInfoByGUID(mGUID);
-			if mRaceName then
-				knownMemberRaces[mGUID] = mRaceName;
-			end
-		end
+		local mRaceName = GetMemberRace(mGUID);
 		if mRaceName then
 			tt2:AddLine(C("ltblue",RACE),mRaceName);
+		end
+	end
+	if ns.profile[name].showFactionInTT2 then
+		local mFactionName = GetMemberFaction(mGUID)
+		if mFactionName then
+			tt2:AddLine(C("ltblue",FACTION),mFactionName);
 		end
 	end
 	if ns.profile[name].showZoneInTT2 then
@@ -425,17 +446,21 @@ local function ttAddMember(lineIndex,memberIndex)
 	-- race name
 	if flags.showRace then
 		-- race names; must be cached by request GetPlayerInfoByGUID. That could take same time.
-		local mRaceName = knownMemberRaces[mGUID];
-		if not mRaceName then
-			_, _, mRaceName = GetPlayerInfoByGUID(mGUID);
-			if mRaceName then
-				knownMemberRaces[mGUID] = mRaceName;
-			end
-		end
+		local mRaceName = GetMemberRace(mGUID);
 		if offColor then
 			mRaceName = C(offColor,mRaceName);
 		end
 		tt:SetCell(lineIndex,cellIndex,mRaceName or "");
+		cellIndex = cellIndex + 1;
+	end
+
+	-- faction
+	if flags.showFaction and PlayerLocation and PlayerLocation.CreateFromGUID then
+		local mFaction = GetMemberFaction(mGUID)
+		if mFaction~="" and ns.player.factionL~=mFaction then
+			mFaction = C("red",mFaction)
+		end
+		tt:SetCell(lineIndex,cellIndex,mFaction or "")
 		cellIndex = cellIndex + 1;
 	end
 
@@ -852,6 +877,7 @@ module = {
 		-- guild members
 		showRealmNames = true,
 		showRace = true,		showRaceInTT2 = false,
+		showFaction = true,		showFactionInTT2 = false,
 		showZone = true,		showZoneInTT2 = false,
 		showNotes = true,		showNotesInTT2 = false,
 		showONotes = true,		showONotesInTT2 = false,
@@ -915,14 +941,15 @@ function module.options()
 
 			showRealmNames    = 20,
 			showRace          = { type="toggle", order=21, name=RACE, desc=L["Show race from guild members in tooltip"]},
-			showZone          = { type="toggle", order=22, name=ZONE, desc=L["Show current zone from guild members in tooltip"]},
-			showNotes         = { type="toggle", order=23, name=L["Notes"], desc=L["Show notes from guild members in tooltip"]},
-			showONotes        = { type="toggle", order=24, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"], hidden=ns.IsClassicClient},
-			showRank          = { type="toggle", order=25, name=RANK, desc=L["Show rank name from guild members in tooltip"]},
-			showRankID        = { type="toggle", order=26, name=RANK.."ID", desc=L["Show rank id from guild members in tooltip"]},
-			showProfessions   = { type="toggle", order=27, name=TRADE_SKILLS, desc=L["Show professions from guild members in tooltip"], hidden=ns.IsClassicClient },
-			showApplicants    = { type="toggle", order=28, name=L["Applicants"], desc=L["Show applicants in tooltip"], hidden=ns.IsClassicClient },
-			showMobileChatter = { type="toggle", order=29, name=L["Mobile app user"], desc=L["Show mobile chatter in tooltip (Armory App users)"] },
+			showFaction       = { type="toggle", order=22, name=RACE, desc=L["Show faction from guild members in tooltip"]},
+			showZone          = { type="toggle", order=23, name=ZONE, desc=L["Show current zone from guild members in tooltip"]},
+			showNotes         = { type="toggle", order=24, name=L["Notes"], desc=L["Show notes from guild members in tooltip"]},
+			showONotes        = { type="toggle", order=25, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"], hidden=ns.IsClassicClient},
+			showRank          = { type="toggle", order=26, name=RANK, desc=L["Show rank name from guild members in tooltip"]},
+			showRankID        = { type="toggle", order=27, name=RANK.."ID", desc=L["Show rank id from guild members in tooltip"]},
+			showProfessions   = { type="toggle", order=28, name=TRADE_SKILLS, desc=L["Show professions from guild members in tooltip"], hidden=ns.IsClassicClient },
+			showApplicants    = { type="toggle", order=29, name=L["Applicants"], desc=L["Show applicants in tooltip"], hidden=ns.IsClassicClient },
+			showMobileChatter = { type="toggle", order=30, name=L["Mobile app user"], desc=L["Show mobile chatter in tooltip (Armory App users)"] },
 			--splitTables       = { type="toggle", order=30, name=L["Separate mobile app user"], desc=L["Display mobile chatter with own table in tooltip"] }, -- deprecated
 			showBattleTag     = { type="toggle", order=31, name=BATTLETAG, desc=L["Append the BattleTag of your friends to the character name"], hidden=ns.IsClassicClient },
 			showTableBackground={ type="toggle", order=32, name=L["GuildTableBg"], desc=L["GuildTableBgDesc"], hidden=ns.IsClassicClient },
@@ -933,11 +960,12 @@ function module.options()
 			order = 3,
 			desc                 = { type="description", order=1, name=L["The secondary tooltip will be displayed by moving the mouse over a guild member in main tooltip. The tooltip will be displayed if one of the following options activated."], fontSize="medium"},
 			showRaceInTT2        = { type="toggle",      order=2, name=RACE, desc=L["Show race from guild member"]},
-			showZoneInTT2        = { type="toggle",      order=2, name=ZONE, desc=L["Show current zone from guild member"]},
-			showNotesInTT2       = { type="toggle",      order=3, name=L["Notes"], desc=L["Show notes from guild member"]},
-			showONotesInTT2      = { type="toggle",      order=4, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild member"], hidden=ns.IsClassicClient},
-			showRankInTT2        = { type="toggle",      order=5, name=RANK, desc=L["Show rank from guild member"]},
-			showProfessionsInTT2 = { type="toggle",      order=6, name=TRADE_SKILLS, desc=L["Show professions from guild member"], hidden=ns.IsClassicClient}
+			showFactionInTT2     = { type="toggle",      order=3, name=FACTION, desc=L["Show faction from guild member"]},
+			showZoneInTT2        = { type="toggle",      order=4, name=ZONE, desc=L["Show current zone from guild member"]},
+			showNotesInTT2       = { type="toggle",      order=5, name=L["Notes"], desc=L["Show notes from guild member"]},
+			showONotesInTT2      = { type="toggle",      order=6, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild member"], hidden=ns.IsClassicClient},
+			showRankInTT2        = { type="toggle",      order=7, name=RANK, desc=L["Show rank from guild member"]},
+			showProfessionsInTT2 = { type="toggle",      order=8, name=TRADE_SKILLS, desc=L["Show professions from guild member"], hidden=ns.IsClassicClient}
 		},
 		misc = {
 			order = 4,
@@ -1071,6 +1099,10 @@ function module.onenter(self)
 		if ns.profile[name].showRace then
 			tinsert(ttAlignings,"LEFT"); -- race
 			flags.showRace=true;
+		end
+		if ns.profile[name].showFaction then
+			tinsert(ttAlignings,"LEFT"); -- faction
+			flags.showFaction=true;
 		end
 		if ns.profile[name].showZone then
 			tinsert(ttAlignings,"CENTER"); -- zone
