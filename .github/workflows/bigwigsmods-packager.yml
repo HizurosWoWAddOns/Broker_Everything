@@ -16,6 +16,9 @@ jobs:
       # setup under repo > settings > secrets
 
     steps:
+      - name: Install svn
+        run: sudo apt-get install -y subversion
+
       - name: Clone project
         uses: actions/checkout@v4
 
