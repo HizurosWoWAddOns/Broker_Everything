@@ -1,4 +1,4 @@
-name: build
+name: packager
 
 on:
   push:
@@ -22,6 +22,6 @@ jobs:
       - name: Clone project
         uses: actions/checkout@v4
 
-      - name: Package and release (retail)
+      - name: Package and release
         uses: BigWigsMods/packager@v2
 
