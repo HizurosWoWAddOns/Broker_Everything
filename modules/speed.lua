@@ -36,9 +36,9 @@ local function updateToonSkill(...)
 		ns.toon[name].skill = 0;
 	end
 	for i=1, #riding_skills do
-		if IsSpellKnown(riding_skills[i][1]) then
-			if ns.toon[name].skill<riding_skills[i][1] then
-				ns.toon[name].skill = riding_skills[i][1];
+		if IsSpellKnown(riding_skills[i].spell) then
+			if ns.toon[name].skill<riding_skills[i].spell then
+				ns.toon[name].skill = riding_skills[i].spell;
 			end
 			break;
 		end
@@ -49,6 +49,7 @@ end
 local CalcSpeed = {
 	x=0,y=0,t=0,s=0
 };
+
 local worldMapByMapID = setmetatable({},{__index=function(t,k)
 	if not tonumber(k) then
 		return false; -- invalid key
@@ -124,6 +125,10 @@ end
 local function tooltipOnEnter(self,data)
 	GameTooltip:SetOwner(tt,"ANCHOR_NONE");
 	GameTooltip:SetPoint("TOP",tt,"BOTTOM");
+	local Link
+	if data.spell then
+		Link = C_Spell.GetSpellLink(data.spell)
+	end
 	if data.info then
 		for i=1, #data.info do
 			local aid = data.info[i]:match("^a(%d+)$");
@@ -141,8 +146,10 @@ local function tooltipOnEnter(self,data)
 			end
 			GameTooltip:AddLine(Name,unpack(color));
 		end
-	elseif data.link then
-		GameTooltip:SetHyperlink(data.link);
+	elseif Link and Link:match("spell:%d+") then
+		GameTooltip:SetHyperlink(Link);
+	elseif data.spell then
+		GameTooltip:SetSpellByID(data.spell)
 	end
 	if data.extend=="trainerfaction" and ns.client_version>=3 then
 		GameTooltip:AddLine(" ");
@@ -169,9 +176,9 @@ local function tooltipOnEnter(self,data)
 			if mapInfo then
 				mapName = mapInfo.name;
 			end
-			GameTooltip:AddDoubleLine(v[6] or UNKNOWN, ttTrainerLine:format(mapName, v[4], v[5] ) ); -- TODO: BfA - removed function
-			--GetMapNameByID()
-			--GetFactionInfoByID()
+			if mapName then
+				GameTooltip:AddDoubleLine(v[6] or UNKNOWN, ttTrainerLine:format(mapName, v[4], v[5] ) ); -- TODO: BfA - removed function
+			end
 		end
 	end
 	--/run local t=GameTooltip t:Hide(); t:SetOwner(UIParent,"ANCHOR_NONE") t:SetPoint("CENTER") t:SetUnit("Creature-0-0-0-0-35135-0"); t:Show();
@@ -190,34 +197,35 @@ local function createTooltip(tt)
 	tt:AddLine(C("ltblue",L["Riding skill"]));
 	tt:AddSeparator();
 	local learned = nil;
-	for i,v in ipairs(riding_skills) do
-		local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(v[1])
-		local l,Link,ttExtend = nil,"spell:"..v[1];
-		if(learned==nil and IsSpellKnown(v[1]))then
+	-- list known/available riding skills
+	for i,skill in ipairs(riding_skills) do
+		local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(skill.spell)
+		local l,ttExtend;
+		-- check if learned. skills ordered in table from highest to lowest.
+		if(learned==nil and IsSpellKnown(skill.spell))then
 			learned = true;
 		end
 		local cell1color,cell2;
-
-		if learned==nil then
-			if(lvl>=v[2])then
+		if learned==nil then -- not learned
+			if(lvl>=skill.minLevel)then
 				cell1color = "yellow";
 				cell2 = C("ltgray",L["Learnable"]);
 				ttExtend = true;
-			elseif v.race==false then
-				local factionInfo = ns.deprecated.C_Reputation.GetFactionDataByID(v.faction)
+			elseif skill.race==false then
+				local factionInfo = ns.deprecated.C_Reputation.GetFactionDataByID(skill.faction)
 				cell1color = "red";
 				cell2 = C("ltgray", L["Need excalted reputation:"].." "..factionInfo.name);
 			else
 				cell1color = "red";
-				cell2 = C("ltgray", L["Need level"].." "..v[2]);
+				cell2 = C("ltgray", L["Need level"].." "..skill.minLevel);
 			end
-		elseif(learned==true)then
+		elseif(learned==true)then -- highest learned
 			cell1color = "green";
-			cell2 = _(v[3]);
+			cell2 = _(skill.speed);
 			learned=false;
-		elseif(learned==false)then
+		elseif(learned==false)then -- lower learned spells in darker green
 			cell1color = "dkgreen";
-			cell2 = C("gray",_(v[3]));
+			cell2 = C("gray",_(skill.speed));
 		end
 
 		if cell1color and cell2 then
@@ -226,11 +234,12 @@ local function createTooltip(tt)
 			tt:SetCell(l,3,cell2);
 		end
 
-		if l and Link then
-			tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {link=Link,extend=ttExtend and "trainerfaction" or nil});
+		if l and ns.client_version>=4 then
+			tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {spell=skill.spell, extend=ttExtend and "trainerfaction" or nil});
 			tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 		end
 	end
+
 	if ns.client_version<2 then
 		if lvl<40 then
 			tt:AddSeparator();
@@ -264,7 +273,6 @@ local function createTooltip(tt)
 				local active=false;
 				local custom = "";
 				local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(spell[Id])
-				local Link = ns.deprecated.C_Spell.GetSpellLink(spell[Id]);
 
 				if spell[CustomText]==true and spellInfo.rank then
 					local ranks = {strsplit(" ",spellInfo.rank)}; -- TODO: missing rank in bfa?
@@ -308,8 +316,8 @@ local function createTooltip(tt)
 					local l=tt:AddLine();
 					tt:SetCell(l,1,C("ltyellow",spellInfo.name .. custom));
 					tt:SetCell(l,3,_(spell[Speed]));
-					if Link then
-						tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {link=Link});
+					if spell[Id] then
+						tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {spell=spell[Id]});
 						tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 					end
 					count=count+1;
@@ -468,15 +476,15 @@ function module.init()
 	if ns.client_version<4 then
 		local skills = {};
 		if ns.player.faction=="Alliance" then
-			tinsert(skills,{828,   40, 60, race="NightElf", faction=69}); -- NightElf
-			tinsert(skills,{824,   40, 60, race="Human",    faction=72}); -- Human
-			tinsert(skills,{826,   40, 60, race="Dwarf",    faction=47}); -- Dwarf
-			tinsert(skills,{10907, 40, 60, race="Gnome",    faction=54}); -- Gnome
+			tinsert(skills,{spell=828,   minLevel=40, speed=60, race="NightElf", faction=69}); -- NightElf
+			tinsert(skills,{spell=824,   minLevel=40, speed=60, race="Human",    faction=72}); -- Human
+			tinsert(skills,{spell=826,   minLevel=40, speed=60, race="Dwarf",    faction=47}); -- Dwarf
+			tinsert(skills,{spell=10907, minLevel=40, speed=60, race="Gnome",    faction=54}); -- Gnome
 		else
-			tinsert(skills,{825,   40, 60, race="Orc",      faction=76}); -- Orc
-			tinsert(skills,{10861, 40, 60, race="Troll",    faction=530}); -- Troll
-			tinsert(skills,{18995, 40, 60, race="Tauren",   faction=81}); -- Tauren
-			tinsert(skills,{10906, 40, 60, race="Scourge",  faction=68}); -- Scourge
+			tinsert(skills,{spell=825,   minLevel=40, speed=60, race="Orc",      faction=76}); -- Orc
+			tinsert(skills,{spell=10861, minLevel=40, speed=60, race="Troll",    faction=530}); -- Troll
+			tinsert(skills,{spell=18995, minLevel=40, speed=60, race="Tauren",   faction=81}); -- Tauren
+			tinsert(skills,{spell=10906, minLevel=40, speed=60, race="Scourge",  faction=68}); -- Scourge
 		end
 		riding_skills = {};
 		for i=1, #skills do
@@ -491,23 +499,13 @@ function module.init()
 				tinsert(riding_skills,skills[i]);
 			end
 		end
-		--[[
-		trainer_faction = UnitFactionGroup("player")=="Alliance" and {
-			-- { <factionID>, <npcID>, <zoneID>, <x>, <y> }
-			{  72, 43693, 84, 77.6, 67.2},
-			{  72, 43769, 84, 70.6, 73.0},
-		} or {
-			{  76, 44919, 85, 49.0, 59.6},
-			{  76, 35093, 100, 54.2, 41.6},
-		};
-		--]]
 		return;
 	end
-	riding_skills = { -- <spellid>, <skill>, <minLevel>, <air speed increase>, <ground speed increase>
-		{90265, 40, 310},
-		{34090, 30, 150},
-		{33391, 20, 100},
-		{33388, 10,  60},
+	riding_skills = { -- <spellid>, <minLevel>, <air speed increase>, <ground speed increase>
+		{spell=90265, minLevel=40, speed=310},
+		{spell=34090, minLevel=30, speed=150},
+		{spell=33391, minLevel=20, speed=100},
+		{spell=33388, minLevel=10, speed=60},
 	};
 	licenses = { -- <spellid>, <minLevel>, <mapIds>
 		-- bfa pathfinder
@@ -598,7 +596,7 @@ function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip(
 		{ttName, ttColumns, "LEFT","RIGHT", "RIGHT", "CENTER", "LEFT", "LEFT", "LEFT", "LEFT"}, -- for LibQTip:Aquire
-		{false}, -- show/hide mode
+		{ns.client_version<4}, -- show/hide mode
 		{self} -- anchor data
 	);
 	createTooltip(tt);
