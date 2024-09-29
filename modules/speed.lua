@@ -126,8 +126,8 @@ local function tooltipOnEnter(self,data)
 	GameTooltip:SetOwner(tt,"ANCHOR_NONE");
 	GameTooltip:SetPoint("TOP",tt,"BOTTOM");
 	local Link
-	if data.spell then
-		Link = C_Spell.GetSpellLink(data.spell)
+	if data.spell and not data.link then
+		Link = ns.deprecated.C_Spell.GetSpellLink(data.spell)
 	end
 	if data.info then
 		for i=1, #data.info do
@@ -146,20 +146,22 @@ local function tooltipOnEnter(self,data)
 			end
 			GameTooltip:AddLine(Name,unpack(color));
 		end
-	elseif Link and Link:match("spell:%d+") then
-		GameTooltip:SetHyperlink(Link);
+	elseif data.link or (Link and Link:match("spell:%d+")) then
+		GameTooltip:SetHyperlink(Link or data.link);
 	elseif data.spell then
 		GameTooltip:SetSpellByID(data.spell)
 	end
-	if data.extend=="trainerfaction" and ns.client_version>=3 then
+	if data.extend=="trainerfaction" and ns.client_version>4 then
 		GameTooltip:AddLine(" ");
 		GameTooltip:AddLine(C("ltblue",L["Trainer that offer reputation dicount"]));
-		local faction,ttTrainerLine,ttFactionLine = false,"%s (%0.1f, %0.1f)","%s (%0.1f%%)";
+		local faction,ttTrainerLine,ttFactionLine,fInfo = false,"%s (%0.1f, %0.1f)","%s (%0.1f%%)";
 		for i=1, #trainer_faction do
 			local v = trainer_faction[i];
 			if faction~=v[1] then
-				local fInfo = ns.deprecated.C_Reputation.GetFactionDataByID(v[1]);
-				if fInfo.name then
+				fInfo = ns.deprecated.C_Reputation.GetFactionDataByID(v[1]);
+			end
+			if fInfo and fInfo.name then
+				if faction~=v[1] then
 					if faction then
 						GameTooltip:AddLine(" ");
 					end
@@ -168,16 +170,18 @@ local function tooltipOnEnter(self,data)
 						standing = ttFactionLine:format(standing,((fInfo.currentStanding-fInfo.currentReactionThreshold)/(fInfo.nextReactionThreshold-fInfo.currentReactionThreshold))*100);
 					end
 					GameTooltip:AddDoubleLine(C("gray",fInfo.name), C("gray",standing) );
-					faction = v[1];
 				end
-			end
-			local mapName
-			local mapInfo = C_Map.GetMapInfo(v[3]);
-			if mapInfo then
-				mapName = mapInfo.name;
-			end
-			if mapName then
-				GameTooltip:AddDoubleLine(v[6] or UNKNOWN, ttTrainerLine:format(mapName, v[4], v[5] ) ); -- TODO: BfA - removed function
+				local mapInfo
+				for m=1, #v[3] do
+					mapInfo = C_Map.GetMapInfo(v[3][m]);
+					if mapInfo then
+						break;
+					end
+				end
+				if mapInfo then
+					GameTooltip:AddDoubleLine(v[6] or UNKNOWN, ttTrainerLine:format(mapInfo.name, v[4], v[5] ) );
+				end
+				faction = v[1];
 			end
 		end
 	end
@@ -317,7 +321,11 @@ local function createTooltip(tt)
 					tt:SetCell(l,1,C("ltyellow",spellInfo.name .. custom));
 					tt:SetCell(l,3,_(spell[Speed]));
 					if spell[Id] then
-						tt:SetLineScript(l,"OnEnter",tooltipOnEnter, {spell=spell[Id]});
+						local data = {spell=spell[Id]}
+						if ns.client_version>=4 then
+							data.link = "spell:"..spell[Id]..":0";
+						end
+						tt:SetLineScript(l,"OnEnter",tooltipOnEnter, data);
 						tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 					end
 					count=count+1;
@@ -508,13 +516,13 @@ function module.init()
 		{spell=33388, minLevel=10, speed=60},
 	};
 	licenses = { -- <spellid>, <minLevel>, <mapIds>
-		-- bfa pathfinder
-		{"a13250", 50, {}},
-		{"a11446", 0, {}},
-		{"a10018", 0, { --[[ draenor map ids? ]] }},
-		{115913,   0, {[862]=1,[858]=1,[929]=1,[928]=1,[857]=1,[809]=1,[905]=1,[903]=1,[806]=1,[873]=1,[808]=1,[951]=1,[810]=1,[811]=1,[807]=1}},
-		{54197,    0, {[485]=1,[486]=1,[510]=1,[504]=1,[488]=1,[490]=1,[491]=1,[541]=1,[492]=1,[493]=1,[495]=1,[501]=1,[496]=1}},
-		{90267,    0, {[4]=1,[9]=1,[11]=1,[13]=1,[14]=1,[16]=1,[17]=1,[19]=1,[20]=1,[21]=1,[22]=1,[23]=1,[24]=1,[26]=1,[27]=1,[28]=1,[29]=1,[30]=1,[32]=1,[34]=1,[35]=1,[36]=1,[37]=1,[38]=1,[39]=1,[40]=1,[41]=1,[42]=1,[43]=1,[61]=1,[81]=1,[101]=1,[121]=1,[141]=1,[161]=1,[181]=1,[182]=1,[201]=1,[241]=1,[261]=1,[281]=1,[301]=1,[321]=1,[341]=1,[362]=1,[381]=1,[382]=1,[462]=1,[463]=1,[464]=1,[471]=1,[476]=1,[480]=1,[499]=1,[502]=1,[545]=1,[606]=1,[607]=1,[610]=1,[611]=1,[613]=1,[614]=1,[615]=1,[640]=1,[673]=1,[684]=1,[685]=1,[689]=1,[700]=1,[708]=1,[709]=1,[720]=1,[772]=1,[795]=1,[864]=1,[866]=1,[888]=1,[889]=1,[890]=1,[891]=1,[892]=1,[893]=1,[894]=1,[895]=1}},
+		{"a40231", 70, {}}, -- tww pathfinder
+		{"a13250", 50, {}}, -- bfa pathfinder
+		{"a11446", 0, {}}, -- legion pathfinder
+		{"a10018", 0, {}},-- wod pathfinder
+		{115913,   85, {[862]=1,[858]=1,[929]=1,[928]=1,[857]=1,[809]=1,[905]=1,[903]=1,[806]=1,[873]=1,[808]=1,[951]=1,[810]=1,[811]=1,[807]=1}},
+		{54197,    80, {[485]=1,[486]=1,[510]=1,[504]=1,[488]=1,[490]=1,[491]=1,[541]=1,[492]=1,[493]=1,[495]=1,[501]=1,[496]=1}},
+		{90267,    70, {[4]=1,[9]=1,[11]=1,[13]=1,[14]=1,[16]=1,[17]=1,[19]=1,[20]=1,[21]=1,[22]=1,[23]=1,[24]=1,[26]=1,[27]=1,[28]=1,[29]=1,[30]=1,[32]=1,[34]=1,[35]=1,[36]=1,[37]=1,[38]=1,[39]=1,[40]=1,[41]=1,[42]=1,[43]=1,[61]=1,[81]=1,[101]=1,[121]=1,[141]=1,[161]=1,[181]=1,[182]=1,[201]=1,[241]=1,[261]=1,[281]=1,[301]=1,[321]=1,[341]=1,[362]=1,[381]=1,[382]=1,[462]=1,[463]=1,[464]=1,[471]=1,[476]=1,[480]=1,[499]=1,[502]=1,[545]=1,[606]=1,[607]=1,[610]=1,[611]=1,[613]=1,[614]=1,[615]=1,[640]=1,[673]=1,[684]=1,[685]=1,[689]=1,[700]=1,[708]=1,[709]=1,[720]=1,[772]=1,[795]=1,[864]=1,[866]=1,[888]=1,[889]=1,[890]=1,[891]=1,[892]=1,[893]=1,[894]=1,[895]=1}},
 	};
 	if ns.client_version>7.35 then
 		deprecated_licenses = {
@@ -527,18 +535,18 @@ function module.init()
 	end
 	trainer_faction = UnitFactionGroup("player")=="Alliance" and {
 		-- { <factionID>, <npcID>, <zoneID>, <x>, <y> }
-		{  72, 43693, 84, 77.6, 67.2},
-		{  72, 43769, 84, 70.6, 73.0},
-		{ 946, 35100, 100, 54.2, 62.6},
-		{1050, 35133, 114, 58.8, 68.2},
-		{1090, 31238, 125, 70.8, 45.6},
-		{1269, 60166, 390, 84.2, 61.6},
+		{  72, 43693, {84,1453}, 77.6, 67.2},
+		{  72, 43769, {84,1453}, 70.6, 73.0},
+		{ 946, 35100, {100,1944}, 54.2, 62.6},
+		{1050, 35133, {114}, 58.8, 68.2},
+		{1090, 31238, {125}, 70.8, 45.6},
+		{1269, 60166, {390}, 84.2, 61.6},
 	} or {
-		{  76, 44919, 85, 49.0, 59.6},
-		{  76, 35093, 100, 54.2, 41.6},
-		{1085, 35135, 114, 42.0, 55.2},
-		{1090, 31238, 125, 70.8, 45.6},
-		{1269, 60167, 390, 62.8, 23.2},
+		{  76, 44919, {85,1454}, 49.0, 59.6},
+		{  76, 35093, {100,1944}, 54.2, 41.6},
+		{1085, 35135, {114}, 42.0, 55.2},
+		{1090, 31238, {125}, 70.8, 45.6},
+		{1269, 60167, {390}, 62.8, 23.2},
 	};
 	bonus_spells = { -- <spellid>, <chkActive[bool]>, <type>, <typeValue>, <customText>, <speed increase>, <special>
 		-- race spells
