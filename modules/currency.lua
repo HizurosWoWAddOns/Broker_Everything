@@ -115,7 +115,7 @@ local function GetCurrency(currencyId,skillLineID)
 			currencyInfo.capInvert = true;
 		end
 		local rename = CurrenciesRename[currencyId];
-		if rename and CurrenciesRenameFormat[rename] then
+		if rename and CurrenciesRenameFormat[rename] and currency2skillLine[currencyId] and tradeSkillNames[currency2skillLine[currencyId]] then
 			currencyInfo.name = CurrenciesRenameFormat[rename]:format(tradeSkillNames[currency2skillLine[currencyId]])
 		end
 	end
@@ -419,7 +419,6 @@ local function updateCurrencies()
 		end
 
 		-- add profession currencies
-		ns:debugPrint("<updateCurrencies>",group.h,profSkillLine2Currencies[group.h],#profSkillLines)
 		if profSkillLine2Currencies[group.h] then
 			if #profSkillLines==0 then
 				updateProfessions()
@@ -630,6 +629,7 @@ function module.init()
 	})[GetLocale()];
 	headers.DUNGEON_AND_RAID = strs and strs[1] or "Dungeons and raids";
 	headers.HIDDEN_CURRENCIES = strs and strs[2] or "Hidden currencies";
+
 	for i=1, 99 do
 		local n = "EXPANSION_NAME"..i;
 		if _G[n] then
