@@ -94,20 +94,6 @@ ns.icon_arrow_right = "interface\\CHATFRAME\\ChatFrameExpandArrow";
 ns.media = "Interface\\AddOns\\"..addon.."\\media\\";
 ns.locale = GetLocale();
 ns.ui = {size={UIParent:GetSize()},center={UIParent:GetCenter()}};
-ns.realm = GetRealmName();
-ns.region = ns.LRI:GetCurrentRegion() or ({"US","KR","EU","TW","CN"})[GetCurrentRegion()];
-do
-	local pattern = "^"..(ns.realm:gsub("(.)","[%1]*")).."$";
-	for i,v in ipairs(GetAutoCompleteRealms()) do
-		if v:match(pattern) then
-			ns.realm_short = v;
-			break;
-		end
-	end
-	if not ns.realm_short then
-		ns.realm_short = ns.realm:gsub(" ",""):gsub("%-","");
-	end
-end
 
 
   -----------------------
@@ -155,6 +141,62 @@ function ns.stripRealm(name)
 	name = name:gsub("%-","");
 	return name;
 end
+ns.region = ns.LRI:GetCurrentRegion() or ({"US","KR","EU","TW","CN"})[GetCurrentRegion()];
+ns.realm = GetRealmName();
+ns.realms = {};
+do
+	local pattern = "^"..(ns.realm:gsub("(.)","[%1]*")).."$";
+	for i,v in ipairs(GetAutoCompleteRealms()) do
+		if v:match(pattern) then
+			ns.realm_short = v;
+			break;
+		end
+	end
+	if not ns.realm_short then
+		ns.realm_short = ns.realm:gsub(" ",""):gsub("%-","");
+	end
+
+	local realms;
+	local function Init()
+		if realms then return end
+		realms = {}
+		local _,_,_,_,_,_,_,_,ids = ns.LRI:GetRealmInfo(ns.realm,ns.region);
+		if type(ids)=="table" then
+			for i=1, #ids do
+				local _,name,apiName = ns.LRI:GetRealmInfoByID(ids[i]);
+				if type(name)=="string" and type(apiName)=="string" then
+					realms[name] = apiName;
+					if apiName~=name then
+						realms[apiName] = name;
+					end
+				end
+			end
+		else
+			realms[ns.realm] = ns.realm_short;
+			if ns.realm~=ns.realm_short then
+				realms[ns.realm_short] = ns.realm;
+			end
+		end
+	end
+	setmetatable(ns.realms,{
+		__index = function(t,k)
+			Init();
+			return realms[k] or false;
+		end
+	});
+end
+
+ns.realmLocale = setmetatable({},{
+	__index = function(t,k)
+		local _,name,apiName,_,locale = ns.LRI:GetRealmInfo(k)
+		if name then
+			rawset(t,k,locale);
+			return locale;
+		end
+		return false;
+	end
+})
+
 ns.player = {
 	name = UnitName("player"),
 	female = UnitSex("player")==3,
@@ -167,37 +209,6 @@ L[ns.player.faction] = ns.player.factionL;
 ns.player.classLocale = ns.player.female and _G["LOCALIZED_CLASS_NAMES_FEMALE"][ns.player.class] or _G["LOCALIZED_CLASS_NAMES_MALE"][ns.player.class];
 ns.player.raceLocale,ns.player.race,ns.player.raceIndex = UnitRace("player");
 ns.LC.colorset("suffix",ns.LC.colorset[ns.player.class:lower()]);
-ns.realms = {};
-do
-	local initFinished = false;
-	local function Init()
-		if initFinished then return end
-		initFinished = true;
-		local _,_,_,_,_,_,_,_,ids = ns.LRI:GetRealmInfo(ns.realm,ns.region);
-		if type(ids)=="table" then
-			for i=1, #ids do
-				local _,name,apiName = ns.LRI:GetRealmInfoByID(ids[i]);
-				if type(name)=="string" and type(apiName)=="string" then
-					ns.realms[name] = apiName;
-					if apiName~=name then
-						ns.realms[apiName] = name;
-					end
-				end
-			end
-		else
-			ns.realms[ns.realm] = ns.realm_short;
-			if ns.realm~=ns.realm_short then
-				ns.realms[ns.realm_short] = ns.realm;
-			end
-		end
-	end
-	setmetatable(ns.realms,{
-		__index = function(t,k)
-			Init();
-			return rawget(t,k) or false;
-		end
-	});
-end
 
 ---@param name string
 ---@return string name
@@ -212,16 +223,17 @@ end
 ---@param realm string realm name
 ---@param faction string faction name
 ---@return boolean
-function ns.showThisChar(modName,realm,faction)
-	if not ns.profile[modName].showAllFactions and ns.player.faction~=faction then
+function ns.showThisChar(modName,realm,faction,forceRealm,forceFaction,n)
+	local result
+	if not ((ns.profile[modName].showAllFactions and ns.player.faction==faction) or forceFaction) then
 		return false;
 	end
-	if ns.profile[modName].showCharsFrom=="1" and realm~=ns.realm then -- same realm
-		return false;
-	elseif ns.profile[modName].showCharsFrom=="2" and not ns.realms[realm] then -- connected realms
-		return false;
-	end
-	return true;
+	return forceRealm
+		or (ns.profile[modName].showCharsFrom=="1" and realm==ns.realm) -- same realm
+		or (ns.profile[modName].showCharsFrom=="2" and ns.realms[realm]~=false) -- connected realms
+		or (ns.profile[modName].showCharsFrom=="3" and ns.realmLocale[realm]==ns.locale) -- same language
+		or (ns.profile[modName].showCharsFrom=="4") -- all realms; was missing... Oops :-)
+		or false;
 end
 
 ---@param modName string module name
@@ -688,12 +700,12 @@ function ns.pairsToons(modName,opts)
 	local t = {};
 	for index, toonNameRealm in ipairs(ns.toonsDB.order) do
 		local name,realm = strsplit("-",toonNameRealm,2);
-		if ns.showThisChar(modName,realm,ns.toonsDB[toonNameRealm].faction) then
-			if opts.currentHide==true and toonNameRealm==ns.player.name_realm then
-				-- ignore
-			elseif opts.currentFirst==true and toonNameRealm==ns.player.name_realm then
+		local forceRealm = (opts.forceSameRealm==true and realm==ns.realm);
+		local forceFaction = (opts.forceSameFaction==true and ns.player.faction==ns.toonsDB[toonNameRealm].faction);
+		if not (opts.currentHide==true and toonNameRealm==ns.player.name_realm) and ns.showThisChar(modName,realm,ns.toonsDB[toonNameRealm].faction,forceRealm,forceFaction,toonNameRealm) then
+			if opts.currentFirst==true and toonNameRealm==ns.player.name_realm then
 				tinsert(t,1,index);
-			elseif not (opts.forceSameRealm==true and realm~=ns.realm) and not (opts.forceSameFaction==true and ns.player.faction~=ns.toonsDB[toonNameRealm].faction) then
+			else
 				tinsert(t,index);
 			end
 		end
