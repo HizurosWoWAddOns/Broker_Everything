@@ -124,19 +124,11 @@ frame:RegisterEvent("GET_ITEM_INFO_RECEIVED");
 
 -- localization by ;) - step 3
 local locale = GetLocale();
-L["WoWToken"] = ({
-	deDE="WoW-Marke",
-	esES="Ficha de WoW",
-	esMX="Ficha de WoW",
-	frFR="Jeton WoW",
-	itIT="Gettone WoW",
-	koKR="WoW 토큰",
-	ptBR="Ficha de WoW",
-	ptPT="Ficha de WoW",
-	ruRU="Жетон WoW",
-	zhCN="魔兽世界时光徽章",
-	zhTW="魔獸代幣"
-})[locale] or "WoW Token";
+L["WoWToken"]=({deDE="WoW-Marke",esES="Ficha de WoW",esMX="Ficha de WoW",frFR="Jeton WoW",itIT="Gettone WoW",koKR="WoW 토큰",ptBR="Ficha de WoW",ptPT="Ficha de WoW",ruRU="Жетон WoW",zhCN="魔兽世界时光徽章",zhTW="魔獸代幣"})[locale] or "WoW Token";
+L["Dungeons and raids"]=({deDE="Dungeons und Schlachtzüge",esES="Mazmorra y banda",esMX="Mazmorra y banda",frFR="Donjons & Raids",itIT="Spedizioni e Incursioni",ptBR="Masmorras e Raides",ptPT="Masmorras e Raides",ruRU="Подземелья и рейды",koKR="던전 및 공격대",zhCN="地下城与团队副本",zhTW="地下城与团队副本"})[locale] or "Dungeons and raids";
+L["Hidden currencies"]=({deDE="Versteckte Währungen",esES="Monedas ocultas",esMX="Kaŝaj valutoj",frFR="Monnaies cachées",itIT="Valute nascoste",ptBR="Moedas ocultas",ptPT="Moedas ocultas",ruRU="Скрытые валюты",koKR="숨겨진 통화",zhCN="隐藏的货币",zhTW="隱藏的貨幣"})[locale] or "Hidden currencies";
+L["Torghast"]=({frFR="Tourment",itIT="Torgast",ptBR="Thanator",ptPT="Thanator",ruRU="Торгаст",koKR="토르가스트",zhCN="托加斯特",zhTW="托加斯特"})[locale] or "Torghast"
+L["DragonRacing"]=({deDE="Drachenrennen",esES="Carreras de dragones",esMX="Carreras de dragones",frFR="Course de Dragons",itIT="Corsa dei Draghi",ptBR="Corrida de Dragões",ptPT="Corrida de Dragões",ruRU="Гонки драконов"})[locale] or "DragonRacing"
 
 L[addon.."_Shortcut"] = "BE";
 
