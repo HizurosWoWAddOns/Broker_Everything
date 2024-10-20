@@ -11,10 +11,11 @@ if ns.client_version<5 then return end
 local name = "Currency"; -- CURRENCY L["ModDesc-Currency"]
 local ttName,ttColumns,tt,tt2,module = name.."TT",5;
 local currencySession = {};
-local BrokerPlacesMax,createTooltip = 10;
-local Currencies,CovenantCurrencies,covenantID,profSkillLines,tradeSkillNames,CurrenciesDefault,profSkillLine2Currencies = {},{},0,{},{};
+local BrokerPlacesMax,FavPlacesMax,createTooltip = 10,10;
+local Currencies,CurrenciesFav,CurrenciesHidden,CovenantCurrencies,covenantID,profSkillLines,tradeSkillNames,CurrenciesDefault,profSkillLine2Currencies = {},{},{},{},0,{},{};
 local currency2skillLine,profIconReplace,knownCurrencies,hiddenCurrencies = {},{},{}
-local CurrenciesReplace,CurrenciesRename = {},{}
+local CurrenciesReplace,CurrenciesRename,hiddenCurrenciesSel,hiddenCurrenciesCategories,hiddenCurrenciesCategoriesPattern = {},{},{},{},{}
+local hidden2section = {}
 local headers = {
 	HIDDEN_CURRENCIES = "Hidden currencies", -- L["Hidden currencies"]
 	DUNGEON_AND_RAID = "Dungeon and Raid", -- L["Dungeons and Raids"]
@@ -22,6 +23,7 @@ local headers = {
 	MISCELLANEOUS = MISCELLANEOUS,
 	FAVORITES = FAVORITES,
 }
+local currencyCounter = {}
 local CurrenciesRenameFormat = {
 	w = PROFESSIONS_CRAFTING_ORDERS_TAB_NAME.." - %s"
 }
@@ -171,9 +173,17 @@ local function setInTitle(titlePlace, currencyId)
 	updateBroker()
 end
 
+local function setFavorite(place, currencyId)
+	if currencyId and currencySession[currencyId] then
+		ns.profile[name].favs[place] = currencyId;
+	else
+		ns.profile[name].favs[place] = nil;
+	end
+end
+
 local function toggleCurrencyHeader(self,headerString)
-	ns.toon[name].headers[headerString] = ns.toon[name].headers[headerString]==nil or nil;
-	createTooltip(tt,true);
+	ns.toon[name].headers[headerString] = not ns.toon[name].headers[headerString];
+	createTooltip(tt);
 end
 
 local function tooltip2Show(self,id)
@@ -194,43 +204,50 @@ local function tooltip2Hide(self)
 	end
 end
 
-function createTooltip(tt,update)
-	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
-
-	if tt.lines~=nil then tt:Clear(); end
-	tt:AddHeader(C("dkyellow",CURRENCY))
-	if ns.profile[name].shortTT == true then
-		tt:AddSeparator(4,0,0,0,0);
-		local c,l = 3,tt:AddLine(C("ltblue",COMMUNITIES_SETTINGS_NAME_LABEL));
-		tt:AddSeparator()
-	end
-	local empty,hiddenSection,parentIsCollapsed = false,false,false;
-
-	for i=1, #Currencies do
-		if Currencies[i]=="HIDDEN_CURRENCIES" and not ns.profile[name].showHidden then
-			break;
-		elseif not validateID(Currencies[i]) then
-			if Currencies[i]=="HIDDEN_CURRENCIES" then
-				hiddenSection = true;
-			end
+local function createTooltip_AddCurrencies(currencyList)
+	local empty,parentIsCollapsed
+	-- loop table
+	for index=1, #currencyList do
+		-- header
+		if type(currencyList[index])=="string" then
+			local headerStr = currencyList[index];
 			if empty==true and not parentIsCollapsed then
 				tt:SetCell(tt:AddLine(),1,C("gray",L["No currencies discovered..."]),nil,nil,0);
 			end
-			empty = true;
-			parentIsCollapsed = ns.toon[name].headers[Currencies[i]]~=nil;
+			local counter = "";
+				counter = " "..C("ltgray",(currencyCounter[headerStr] or "?"));
+			if headerStr:match("HIDDEN_CURRENCIES") then
+				if ns.toon[name].headers[headerStr]==nil then
+					ns.toon[name].headers[headerStr] = true;
+				end
+			end
+			empty,parentIsCollapsed =  true,ns.toon[name].headers[headerStr];
 			local l=tt:AddLine();
 			if not parentIsCollapsed then
-				tt:SetCell(l,1,C("ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t "..headers[Currencies[i]]),nil,nil,0);
+				tt:SetCell(l,1,C("ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t "..headers[headerStr]));
+				if counter~="" then
+					tt:SetCell(l,2,counter);
+				end
 				tt:AddSeparator();
 			else
-				tt:SetCell(l,1,C("gray","|Tinterface\\buttons\\UI-PlusButton-Up:0|t "..headers[Currencies[i]]),nil,nil,0);
+				tt:SetCell(l,1,C("gray","|Tinterface\\buttons\\UI-PlusButton-Up:0|t "..headers[headerStr]));
+				if counter~="" then
+					tt:SetCell(l,2,counter);
+				end
 			end
-			tt:SetLineScript(l,"OnMouseUp", toggleCurrencyHeader,Currencies[i]);
-		elseif not parentIsCollapsed then
-			local currencyId,currencyInfo = GetCurrency(Currencies[i]);
-			if currencyId and currencyInfo and currencyInfo.name and (currencyInfo.discovered or hiddenSection) then
-				CountCorrection(currencyId,currencyInfo);
+			tt:SetLineScript(l,"OnMouseUp", toggleCurrencyHeader,headerStr);
+		else
+			local currencyId, currencyInfo
+			if validateID(currencyList[index]) then
+				currencyId, currencyInfo = GetCurrency(currencyList[index]);
+			end
 
+			if (currencyInfo and currencyInfo.name and currencyInfo.discovered) then
+				empty = false;
+			end
+
+			if not parentIsCollapsed then
+				CountCorrection(currencyId,currencyInfo);
 				local str = ns.FormatLargeNumber(name,currencyInfo.quantity,true);
 
 				-- cap
@@ -282,11 +299,36 @@ function createTooltip(tt,update)
 						tt:SetCell(l,3,C(color,prefix..num));
 					end
 				end
+
+				-- mouse over tooltip
 				tt:SetLineScript(l, "OnEnter", tooltip2Show, currencyId);
 				tt:SetLineScript(l, "OnLeave", tooltip2Hide);
-				empty = false;
 			end
 		end
+
+	end
+end
+
+function createTooltip(tt)
+	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
+
+	if tt.lines~=nil then tt:Clear(); end
+	tt:AddHeader(C("dkyellow",CURRENCY))
+	if ns.profile[name].shortTT == true then
+		tt:AddSeparator(4,0,0,0,0);
+		local c,l = 3,tt:AddLine(C("ltblue",COMMUNITIES_SETTINGS_NAME_LABEL));
+		tt:AddSeparator()
+	end
+
+	local hasHeader = false;
+	if ns.profile[name].favs and #ns.profile[name].favs>0 then
+		createTooltip_AddCurrencies({"FAVORITES",unpack(ns.profile[name].favs)})
+	end
+
+	createTooltip_AddCurrencies(Currencies)
+
+	if ns.profile[name].showHidden then
+		createTooltip_AddCurrencies(CurrenciesHidden)
 	end
 
 	if (ns.profile.GeneralOptions.showHints) then
@@ -379,83 +421,267 @@ local function get_currency(t)
 	return id;
 end
 
-local function updateCurrencies()
-	wipe(Currencies);
-
-	-- Favs
-	if type(ns.profile[name].favs)=="table" and #ns.profile[name].favs>0 then
-		tinsert(Currencies,"FAVORITES");
-		for _, fav in ipairs(ns.profile[name].favs) do
-			local id = get_currency(fav);
-			if id then
-				tinsert(Currencies,id);
-			end
-		end
-	end
-
-	-- default currencies
-	for i=1, #CurrenciesDefault do
-		local group = CurrenciesDefault[i];
-
-		-- add header
-		tinsert(Currencies,group.h);
-
-		-- add normal currencies
-		for g=1, #group do
-			local id = get_currency(group[g]);
-			if id then
-				tinsert(Currencies,id);
-				knownCurrencies[id] = true;
-			end
-		end
-
-		-- add covenant currencies
-		if covenantID>0 and CovenantCurrencies[group.h] then
-			for currencyID, covenant in pairs(CovenantCurrencies[group.h]) do
-				if covenant==covenantID then
-					tinsert(Currencies,currencyID)
+local function hiddenCurrenciesAddCategory(index,info,category)
+	if not category then
+		for cat,values in pairs(hiddenCurrenciesCategoriesPattern) do
+			for _,pattern in ipairs(values) do
+				if pattern and info.name:match(pattern) then
+					return hiddenCurrenciesAddCategory(index,info,cat)
 				end
 			end
 		end
-
-		-- add profession currencies
-		if profSkillLine2Currencies[group.h] then
-			if #profSkillLines==0 then
-				updateProfessions()
+		for cat, values in pairs(hiddenCurrenciesSel) do
+			if values[index] then
+				return hiddenCurrenciesAddCategory(index,info,cat)
 			end
-			for i=1, #profSkillLines do
-				local t = profSkillLine2Currencies[group.h][profSkillLines[i][2]]
-				if t then
-					for n=1, #t do
-						tinsert(Currencies,t[n]);
-						knownCurrencies[t[n]] = true
-						currency2skillLine[t[n]] = profSkillLines[i][2];
+		end
+		return false;
+	end
+	tinsert(hiddenCurrencies,index)
+	local section = hidden2section[index];
+	if section then
+		if not hiddenCurrenciesCategories[section] then
+			hiddenCurrenciesCategories[section] = {}
+		end
+		tinsert(hiddenCurrenciesCategories[section],index)
+	else
+		if not hiddenCurrenciesCategories[category] then
+			hiddenCurrenciesCategories[category] = {}
+		end
+		tinsert(hiddenCurrenciesCategories[category],index)
+	end
+	return true;
+end
+
+local function updateCurrencies()
+	currencyCounter.FAVORITES = #ns.profile[name].favs;
+
+	-- default currencies
+	if #Currencies==0 then
+		local tmp = {}
+		for i=1, #CurrenciesDefault do
+			local group = CurrenciesDefault[i];
+
+			-- add header
+			tinsert(tmp,group.h);
+			currencyCounter[group.h] = #group;
+
+			-- add normal currencies
+			for g=1, #group do
+				local id = get_currency(group[g]);
+				if id then
+					tinsert(tmp,id);
+					knownCurrencies[id] = true;
+				end
+			end
+
+			-- add covenant currencies
+			if covenantID>0 and CovenantCurrencies[group.h] then
+				for currencyID, covenant in pairs(CovenantCurrencies[group.h]) do
+					if covenant==covenantID then
+						tinsert(tmp,currencyID)
+					end
+				end
+			end
+
+			-- add profession currencies
+			if profSkillLine2Currencies[group.h] then
+				if #profSkillLines==0 then
+					updateProfessions()
+				end
+				for i=1, #profSkillLines do
+					local t = profSkillLine2Currencies[group.h][profSkillLines[i][2]]
+					if t then
+						for n=1, #t do
+							tinsert(tmp,t[n]);
+							knownCurrencies[t[n]] = true
+							currency2skillLine[t[n]] = profSkillLines[i][2];
+							currencyCounter[group.h] = currencyCounter[group.h] + 1;
+						end
 					end
 				end
 			end
 		end
+		Currencies = tmp;
 	end
 
 	-- hidden currencies
-	if not hiddenCurrencies then
-		local ignore = {["n/a"]=1,["UNUSED"]=1};
+	if CurrenciesHidden then
+		local ignore,tmpH = {["n/a"]=1,["UNUSED"]=1},{};
 		hiddenCurrencies = {}
+		hiddenCurrenciesCategories = {}
+
+		for cat,values in pairs(hiddenCurrenciesCategoriesPattern) do
+			if not headers["HIDDEN_CURRENCIES_"..strupper(cat)] then
+				headers["HIDDEN_CURRENCIES_"..strupper(cat)] = headers.HIDDEN_CURRENCIES.." - "..(values[2] or L[cat]);
+			end
+		end
+
 		for i=42, 9999 do
-			if not knownCurrencies[i] and not ns.isArchaeologyCurrency(i) then
+			if not knownCurrencies[i] then
 				local info = C_CurrencyInfo.GetCurrencyInfo(i);
-				if info and info.name and not (ignore[info.name] or info.name:find("zzold") or info.name:find("Test") or info.name:find("Prototype") --[[or info.name:find("Scoreboard")]]) then -- (and not info.isHeader)
-					tinsert(hiddenCurrencies,i);
+				if info and info.name and not (ignore[info.name] or info.name:find("zzold") or info.name:find("Test") or info.name:find("Prototype")) then
+					if ns.isArchaeologyCurrency(i) then
+						hiddenCurrenciesAddCategory(i,info,"Archaeology") -- add archaeology currencies to category Archaeology
+					elseif not hiddenCurrenciesAddCategory(i,info) then -- add currencies by pattern to corresponding categories
+						hiddenCurrenciesAddCategory(i,info,"Misc"); -- add the rest to category misc.
+					end
 				end
 			end
 		end
-	end
 
-	if hiddenCurrencies then
-		tinsert(Currencies,"HIDDEN_CURRENCIES");
-		for h=1, #hiddenCurrencies do
-			tinsert(Currencies,hiddenCurrencies[h]);
+		tinsert(tmpH,"HIDDEN_CURRENCIES");
+		currencyCounter["HIDDEN_CURRENCIES"] = #hiddenCurrenciesCategories.Misc;
+		for i=1, #hiddenCurrenciesCategories.Misc do
+			tinsert(tmpH,hiddenCurrenciesCategories.Misc[i]);
+		end
+		local last = nil;
+		for cat, currencies in pairs(hiddenCurrenciesCategories) do
+			if cat~="Misc" then
+				local catUpper = strupper(cat);
+				if last~=cat then
+					tinsert(tmpH,"HIDDEN_CURRENCIES_"..catUpper);
+					currencyCounter["HIDDEN_CURRENCIES_"..catUpper] = #currencies;
+					last=cat;
+				end
+				for i=1, #currencies do
+					tinsert(tmpH,currencies[i]);
+				end
+				if hiddenCurrenciesSel[cat] and #hiddenCurrenciesSel[cat]>0 then
+					currencyCounter["HIDDEN_CURRENCIES_"..catUpper] = (currencyCounter["HIDDEN_CURRENCIES_"..catUpper] or 0) + #hiddenCurrenciesSel[cat]>0;
+					for i=1, #hiddenCurrenciesSel[cat] do
+						tinsert(tmpH,hiddenCurrenciesSel[cat][i])
+					end
+				end
+			end
+		end
+		CurrenciesHidden = tmpH
+	end
+end
+
+local CurrencyMenus
+function CurrencyMenus(opts)
+	if opts.maxPlaces then
+		-- profileKey,Label,maxPlaces,setFunction
+		local parent = ns.EasyMenu:AddEntry({ label=opts.Label, arrow=true});
+		for place=1, opts.maxPlaces do
+			local id = ns.profile[name][opts.profileKey][place];
+			CurrencyMenus({
+				parent=parent,
+				place=place,
+				id=id,
+				setFunction=opts.setFunction
+			})
+		end
+	elseif opts.pageNum then
+		local header = Currencies[opts.currentHeader];
+		local label = headers[header];
+		if opts.headers[header] then
+			opts.pageNum = opts.pageNum + 1;
+			label = label .." - ".. PAGE_NUMBER:format(opts.pageNum+1);
+		else
+			opts.pageNum=0;
+			opts.headers[header] = true;
+		end
+		opts.counter=0;
+		return ns.EasyMenu:AddEntry({label=C("ltblue",label), arrow=true}, pList);
+	elseif opts.place then
+		-- parent,place,id,setFunction
+		if validateID(opts.id) then
+			local currencyId,currencyInfo = GetCurrency(opts.id);
+			if currencyId and currencyInfo and currencyInfo.name then
+				if opts.parent then
+					opts.parent = ns.EasyMenu:AddEntry({
+						arrow = true,
+						label = (C("dkyellow","%s %d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"],opts.place,(currencyInfo.iconFileID or ns.icon_fallback),C("ltblue",currencyInfo.name)),
+					},opts.parent);
+				end
+				ns.EasyMenu:AddEntry({ label = C("ltred",L["Remove the currency"]), func=function() opts.setFunction(opts.place, false); end }, opts.parent);
+				ns.EasyMenu:AddEntry({separator=true}, opts.parent);
+			end
+		else
+			opts.parent = ns.EasyMenu:AddEntry({
+				arrow = true,
+				label = (C("dkyellow","%s %d:").."  %s"):format(L["Place"],opts.place,L["Add a currency"])
+			},opts.parent);
+		end
+
+		local page = {parent=opts.parent,limit=40,counter=0,pageNum=0,currentHeader=false,headers={}}; -- ["HIDDEN_CURRENCIES"]=true
+		local parent2 = opts.parent;
+		for i=1, #Currencies do
+			local currencyId,currencyInfo;
+			local tCurrency = type(Currencies[i])
+			if page.currentHeader and Currencies[page.currentHeader]=="FAVORITES" and tCurrency=="number" then
+				-- ignore
+			elseif tCurrency=="number" then
+				currencyId,currencyInfo = GetCurrency(Currencies[i]);
+			elseif tCurrency=="string" and page.currentHeader~=i then
+				-- first header/page
+				page.currentHeader = i;
+				if Currencies[i]~="FAVORITES" then
+					parent2 = CurrencyMenus(page)
+				end
+			end
+
+			if  currencyId and currencyInfo and currencyInfo.name then
+				if page.currentHeader then
+					page.counter = page.counter + 1;
+					if page.counter > page.limit then
+						parent2 = CurrencyMenus(page)  -- next page
+					end
+				end
+
+				CountCorrection(currencyId,currencyInfo);
+
+				local nameStr,disabled = currencyInfo.name,true;
+				if ns.profile[name].currenciesInTitle[opts.place]~=Currencies[i] then
+					nameStr,disabled = C("ltyellow",nameStr),false;
+				end
+
+				if ns.debugMode then
+					nameStr = nameStr .. C("white"," ("..currencyId..")")
+				end
+
+				ns.EasyMenu:AddEntry({
+					label = nameStr,
+					icon = currencyInfo.iconFileID or ns.icon_fallback,
+					disabled = disabled,
+					keepShown = false,
+					func = function() opts.setFunction(opts.place,Currencies[i]); end
+				}, parent2);
+			end
 		end
 	end
+end
+
+local function optionButtonName(info)
+	local key = info[#info];
+	local index = tonumber((key:match("(%d+)$")));
+	local label = L["Place"].." "..index;
+	if ns.profile[name].currenciesInTitle[index] then
+		local _,cInfo = GetCurrency(ns.profile[name].currenciesInTitle[index]);
+		if cInfo then
+			label = label .. ": ".. cInfo.name;
+		end
+	end
+	return label;
+end
+
+local function optionButtonMenu(info)
+	local key = info[#info];
+	local place = tonumber((key:match("(%d+)$")));
+	local current = ns.profile[name].currenciesInTitle[place];
+	ns.EasyMenu:InitializeMenu();
+
+	CurrencyMenus({
+		parent=nil,
+		place=place,
+		id=current,
+		setFunction=opts.setFunction
+	})
+
+	--ns.EasyMenu:AddConfig(name,true);
+	ns.EasyMenu:ShowMenu(parent);
 end
 
 
@@ -474,6 +700,7 @@ module = {
 		enabled = false,
 		shortTT = false,
 		currenciesInTitle = {},
+		favs = {},
 		showTotalCap = true,
 		showWeeklyCap = true,
 		showCapColor = true,
@@ -483,6 +710,7 @@ module = {
 		spacer=0,
 		showIDs = false,
 		showHidden = false,
+		showHiddenInMenu = false, -- TODO: implement
 	},
 	clickOptionsRename = {
 		["charinfo"] = "1_open_character_info",
@@ -508,36 +736,40 @@ function module.options()
 		info={ type="description", order=9, name=L["CurrencyBrokerInfo"], fontSize="medium", hidden=true },
 	};
 
+	local tooltip = {
+		showTotalCap  = { type="toggle", order=1, name=L["CurrencyCapTotal"], desc=L["CurrencyCapTotalDesc"] },
+		showWeeklyCap = { type="toggle", order=2, name=L["CurrencyCapWeekly"], desc=L["CurrencyCapWeeklyDesc"] },
+		showCapColor  = { type="toggle", order=3, name=L["Coloring total cap"], desc=L["Coloring limited currencies by total and/or weekly cap."] },
+		showSession   = { type="toggle", order=4, name=L["Show session earn/loss"], desc=L["Display session profit in tooltip"] },
+		showIDs       = { type="toggle", order=5, name=L["Show currency id's"], desc=L["Display the currency id's in tooltip"] },
+		shortTT       = { type="toggle", order=6, name=L["Short Tooltip"], desc=L["Display the content of the tooltip shorter"] },
+		header        = { type="header", order=20, name=L["CurrencyFavorites"], hidden=isHidden },
+		info          = { type="description", order=21, name=L["CurrencyFavoritesInfo"], fontSize="medium", hidden=true },
+	}
+
 	for i=1, BrokerPlacesMax do
-		broker["currenciesInTitle"..i] = {type="select", order=4+(i>4 and i+1 or i), name=L["Place"].." "..i, desc=L["CurrencyOnBrokerDesc"], values=aceOptOnBrokerValues, get=AceOptOnBroker, set=AceOptOnBroker, hidden=isHidden };
+		--broker["currenciesInTitle"..i] = {type="select", order=4+(i>4 and i+1 or i), name=L["Place"].." "..i, desc=L["CurrencyOnBrokerDesc"], values=aceOptOnBrokerValues, get=AceOptOnBroker, set=AceOptOnBroker, hidden=isHidden };
+		broker["currenciesInTitle"..i] = {
+			type = "execute", order = 4+(i>4 and i+1 or i),
+			name = optionButtonName,
+			desc = L["CurrencyOnBrokerDesc"],
+			func = optionButtonMenu
+		}
+	end
+
+	for i=1, FavPlacesMax do
+		--tooltip["favPlace"..i] = {type="select", order=22+(i>4 and i+1 or i), name=L["Place"].." "..i, desc=L["CurrencyFavoritesDesc"], values={}, --[[values=aceOptOnBrokerValues, get=AceOptOnBroker, set=AceOptOnBroker,]] hidden=isHidden };
 	end
 
 	return {
 		broker = broker,
-		tooltip = {
-			showTotalCap  = { type="toggle", order=1, name=L["CurrencyCapTotal"], desc=L["CurrencyCapTotalDesc"] },
-			showWeeklyCap = { type="toggle", order=2, name=L["CurrencyCapWeekly"], desc=L["CurrencyCapWeeklyDesc"] },
-			showCapColor  = { type="toggle", order=3, name=L["Coloring total cap"], desc=L["Coloring limited currencies by total and/or weekly cap."] },
-			showSession   = { type="toggle", order=4, name=L["Show session earn/loss"], desc=L["Display session profit in tooltip"] },
-			showIDs       = { type="toggle", order=5, name=L["Show currency id's"], desc=L["Display the currency id's in tooltip"] },
-			shortTT       = { type="toggle", order=6, name=L["Short Tooltip"], desc=L["Display the content of the tooltip shorter"] },
-		},
+		tooltip = tooltip,
 		misc = {
 			shortNumbers=1,
-			showHidden = {type="toggle", order=2, name=L["CurrenyHidden"], desc=L["CurrencyHiddenDesc"], hidden=ns.IsClassicClient }
+			showHidden = {type="toggle", order=2, name=L["CurrenyHidden"], desc=L["CurrencyHiddenDesc"], hidden=ns.IsClassicClient },
+			showHiddenInMenu={type="toggle",order=3, name=L["CurrencyHiddenMenu"], desc=L["CurrencyHiddenMenuDesc"], hidden=ns.IsClassicClient },
 		},
 	}, nil, true
-end
-
-local function addMenuSubPage(pList,page)
-	local pageIsTable = type(page)=="table";
-	local i = (pageIsTable and page.currentHeader) or page;
-	local label = headers[Currencies[i]];
-	if pageIsTable and page.headers[Currencies[i]] then
-		page.num = page.num + 1;
-		label = label .." - ".. PAGE_NUMBER:format(page.num);
-	end
-	return ns.EasyMenu:AddEntry({label=C("ltblue",label), arrow=true}, pList);
 end
 
 function module.OptionMenu(parent)
@@ -545,73 +777,21 @@ function module.OptionMenu(parent)
 
 	ns.EasyMenu:InitializeMenu();
 
-	ns.EasyMenu:AddEntry({ label=L["Currency on broker - menu"], title=true});
+	ns.EasyMenu:AddEntry({ label=L["Broker & Favorites"], title=true});
 
-	for place=1, BrokerPlacesMax do
-		local pList,pList2,d;
-		local id = ns.profile[name].currenciesInTitle[place];
+	CurrencyMenus({
+		profileKey="currenciesInTitle",
+		Label=L["Currency on broker - menu"],
+		maxPlaces=BrokerPlacesMax,
+		setFunction=setInTitle
+	})
 
-		if validateID(id) then
-			local currencyId,currencyInfo = GetCurrency(id);
-			if currencyId and currencyInfo and currencyInfo.name then
-				pList = ns.EasyMenu:AddEntry({
-					arrow = true,
-					label = (C("dkyellow","%s %d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"],place,(currencyInfo.iconFileID or ns.icon_fallback),C("ltblue",currencyInfo.name)),
-				});
-				ns.EasyMenu:AddEntry({ label = C("ltred",L["Remove the currency"]), func=function() setInTitle(place, false); end }, pList);
-				ns.EasyMenu:AddEntry({separator=true}, pList);
-			end
-		end
-
-		if not pList then
-			pList = ns.EasyMenu:AddEntry({
-				arrow = true,
-				label = (C("dkyellow","%s %d:").."  %s"):format(L["Place"],place,L["Add a currency"])
-			});
-		end
-
-		local page = {limit=40,counter=0,num=0,currentHeader=false,headers={["HIDDEN_CURRENCIES"]=true}};
-		for i=1, #Currencies do
-			if Currencies[i]=="HIDDEN_CURRENCIES" and not ns.profile[name].showHidden then
-				break;
-			elseif validateID(Currencies[i]) then
-				--isHidden = Currencies[i]=="HIDDEN_CURRENCIES";
-				local currencyId,currencyInfo = GetCurrency(Currencies[i]);
-				if currencyId and currencyInfo and currencyInfo.name then
-					CountCorrection(currencyId,currencyInfo);
-					local nameStr,disabled = currencyInfo.name,true;
-					if ns.profile[name].currenciesInTitle[place]~=Currencies[i] then
-						nameStr,disabled = C("ltyellow",nameStr),false;
-					end
-					ns.EasyMenu:AddEntry({
-						label = nameStr, --.." ("..currencyId..")",
-						icon = currencyInfo.iconFileID or ns.icon_fallback,
-						disabled = disabled,
-						keepShown = false,
-						func = function() setInTitle(place,Currencies[i]); end
-					}, pList2);
-					-- next page
-					if page.currentHeader and page.headers[ Currencies[page.currentHeader] ] then
-						page.counter = page.counter + 1;
-						if page.counter == page.limit then
-							page.counter = 0;
-							--pList2 = ns.EasyMenu:AddEntry({label=C("ltblue",label), arrow=true}, pList);
-							pList2 = addMenuSubPage(pList,page);
-						end
-					end
-				end
-			else
-				-- headers with paging
-				if page.currentHeader~=i and page.headers[Currencies[i]] then
-					page.currentHeader = i;
-					pList2 = addMenuSubPage(pList,page);
-				else -- without paging
-					page.currentHeader = false;
-					pList2 = addMenuSubPage(pList,i);
-				end
-			end
-		end
-	end
+	CurrencyMenus({
+		profileKey="favs",
+		Label=L["Favorites in tooltip - menu"],
+		maxPlaces=FavPlacesMax,
+		setFunction=setFavorite
+	})
 
 	ns.EasyMenu:AddConfig(name,true);
 
@@ -619,16 +799,9 @@ function module.OptionMenu(parent)
 end
 
 function module.init()
-	local strs = ({
-		deDE = {"Dungeon und Schlachtzug","Versteckte Währungen"}, esES = {"Mazmorra y banda","Monedas ocultas"},
-		esMX = {"Mazmorra y banda","Kaŝaj valutoj"},               frFR = {"Donjons & Raids","Monnaies cachées"},
-		itIT = {"Spedizioni e Incursioni","Valute nascoste"},      ptBR = {"Masmorras e Raides","Moedas ocultas"},
-		ptPT = {"Masmorras e Raides","Moedas ocultas"},            ruRU = {"Подземелья и рейды","Скрытые валюты"},
-		koKR = {"던전 및 공격대","숨겨진 통화"},                     zhCN = {"地下城与团队副本","隐藏的货币"},
-		zhTW = {"地下城与团队副本","隱藏的貨幣"}
-	})[GetLocale()];
-	headers.DUNGEON_AND_RAID = strs and strs[1] or "Dungeons and raids";
-	headers.HIDDEN_CURRENCIES = strs and strs[2] or "Hidden currencies";
+	headers.DUNGEON_AND_RAID = L["Dungeons and raids"];
+	headers.HIDDEN_CURRENCIES = L["Hidden currencies"];
+	headers.HIDDEN_CURRENCIES_ARCHAEOLOGY = L["Hidden currencies"].." - "..PROFESSIONS_ARCHAEOLOGY;
 
 	for i=1, 99 do
 		local n = "EXPANSION_NAME"..i;
@@ -733,6 +906,32 @@ function module.init()
 		[2169]=2025, -- Leatherworking
 		[2171]=2026, -- Tailoring
 	}
+
+	hiddenCurrenciesCategoriesPattern={
+		-- TableKey = {<locale name>, <english name>, (more optional pattern) ... }
+		Archaeology={ARCHAEOLOGY,"Archaeology"},
+		Torghast={L["Torghast"],"Torghast"},
+		Timewalking={PLAYER_DIFFICULTY_TIMEWALKER,"Timewalking"},
+		DragonRacing={L["DragonRacing"],"Dragon Racing"},
+		Delves={DELVES_LABEL,"Delves"},
+		Professions={TRADE_SKILLS,"Professions" --[[,PROFESSIONS_TRACKER_HEADER_PROFESSION]]},
+		PvP={PVP,"PvP"},
+		--Shadowlands={EXPANSION_NAME9},
+		--DragonFlight={EXPANSION_NAME10},
+	}
+
+	for k,v in pairs({
+		PvP={103,104,121,122,123,124,125,126,181,221,301,321,483,484,692,1324,1325,1356,1357,1585,1703,2235,2237},
+		Professions={2023,2024,2025,2026,2027,2028,2029,2033,2035,2169,2170,2172,2174,2175,2786,2788,2789,2790,2791,2792,2793,2794,3040,3042,3043,3044,3045,3047,3048,3049,3050,3051,3052,3053},
+		Delves={2533},
+		--Shadowlands={},
+		--DragonFlight={},
+	})do
+		hiddenCurrenciesSel[k] = {}
+		for i=1, #v do
+			hiddenCurrenciesSel[k][v[i]] = 1;
+		end
+	end
 end
 
 function module.onevent(self,event,arg1)
@@ -775,17 +974,6 @@ function module.onevent(self,event,arg1)
 		end
 	end
 end
-
---[[
--- C_Covenants.GetCovenantIDs(); -- only a little table with 4 entries
--- C_Covenants.GetCovenantData(id); -- to get names for comment line
-{
- 1, -- kyrian
- 2, -- venthyr
- 3, -- nightfae
- 4, -- necrolords
-}
---]]
 
 -- function module.optionspanel(panel) end
 -- function module.onmousewheel(self,direction) end
