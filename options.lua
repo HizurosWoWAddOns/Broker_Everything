@@ -30,6 +30,7 @@ local dbDefaults,db = {
 ns.showCharsFrom_Values = { -- used in xp.lua to display current mode in tooltip
 	["1"] = ns.realm,
 	["2"] = L["Connected realms"],
+	["3"] = L["Current language"],
 	["4"] = L["All realms"]
 };
 
@@ -218,7 +219,8 @@ local function opt(info,value,...)
 		end
 --@do-not-package@
 		if db.profile[section][key]==nil then
-			ns:debug("Options","<FIXME:opt:NilOptions>",tostring(section),tostring(key),tostring(key):len());
+			local x = debugstack();
+			ns:debug("Options","<FIXME:opt:NilOptions>",tostring(section),tostring(key),tostring(key):len(),x);
 		end
 --@end-do-not-package@
 		return db.profile[section][key];
