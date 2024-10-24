@@ -11,7 +11,7 @@ local name = "Quest Log" -- QUESTLOG_BUTTON L["ModDesc-Quest Log"]
 local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module,createTooltip = name.."TT",name.."TT2",9,2;
 local quests,numQuestStatus,sum,url,tt2created,requested
 local urls = {
-	WoWHead = function(id)
+	WoWHead = {"WoWHead",function(id)
 		local url,lc,bv = {"https://www.wowhead.com"},(GetLocale()),GetBuildInfo()
 		local lang = {deDE="de",esES="es",esMX="es",frFR="fr",ptBR="pt",ptPT="pt",itIT="it",ruRU="ru",koKR="ko",zhCN="cn",zhTW="cn"};
 		if bv:match("^1%.") then
@@ -26,14 +26,18 @@ local urls = {
 		end
 		tinsert(url,"quest="..id);
 		return table.concat(url,"/");
-	end,
-	Buffed = function(id)
+	end},
+	Buffed = {"Buffed",function(id)
 		local url = {deDE="http://wowdata.buffed.de/?q=%d",ruRU="http://wowdata.buffed.ru/?q=%d"}
-		return (url[GetLocale()] or "http://wowdata.getbuffed.com/?q=%d"):format(id)
-	end,
-	WoWDB = function(id)
+		local locale = GetLocale();
+		if url[locale] then
+			return (url[GetLocale()] or "http://wowdata.getbuffed.com/?q=%d"):format(id)
+		end
+		return "Error"
+	end},
+	WoWDB = {"WoWDB (english only)",function(id)
 		return ("http://www.wowdb.com/quests/%d"):format(id)
-	end
+	end}
 	--
 }
 local hideQuestsAnytime = {
@@ -83,13 +87,21 @@ StaticPopupDialogs["BE_URL_DIALOG"] = {
 	hideOnEscape = 1,
 	maxLetters = 1024,
 	editBoxWidth = 250,
-	OnShow = function(f)
-		local e,b = _G[f:GetName().."EditBox"],_G[f:GetName().."Button2"]
-		if e then e:SetText(url) e:SetFocus() e:HighlightText(0) end
-		if b then b:ClearAllPoints() b:SetWidth(100) b:SetPoint("CENTER",e,"CENTER",0,-30) end
+	subText = L["Ctrl+C to copy the URL for use in your web browser."],
+	OnShow = function(self,data)
+		local target = urls[ns.profile[name].questIdUrl];
+
+		self.text:SetText(target[1].." URL")
+
+		local editbox =_G[self:GetName().."EditBox"];
+		if editbox then
+			editbox:SetText(target[2](data))
+			editbox:SetFocus()
+			editbox:HighlightText(0)
+		end
 	end,
-	EditBoxOnEscapePressed = function(f)
-		f:GetParent():Hide()
+	EditBoxOnEscapePressed = function(self)
+		self:GetParent():Hide()
 	end
 }
 
@@ -129,8 +141,7 @@ local function showQuest(self,questIndex)
 end
 
 local function showQuestURL(self,questId)
-	url = urls[ns.profile[name].questIdUrl](questId);
-	StaticPopup_Show("BE_URL_DIALOG");
+	StaticPopup_Show("BE_URL_DIALOG",nil,nil,questId);
 end
 
 local function pushQuest(self,questIndex)
