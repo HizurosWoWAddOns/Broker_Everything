@@ -189,9 +189,6 @@ function createTooltip(tt,name,mode)
 			tt:AddSeparator();
 			local index, instance_id, instance_name, _ = 1;
 			instance_id, instance_name = EJ_GetInstanceByIndex(index, mode);
-			if tier~=i then
-				ns:debug(instance_id, instance_name)
-			end
 			while instance_id~=nil do
 				if not hide[instance_id] then
 					local status,diff,encounter,id = {},{},"","";
