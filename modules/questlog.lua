@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Quest Log" -- QUESTLOG_BUTTON L["ModDesc-Quest Log"]
-local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module,createTooltip = name.."TT",name.."TT2",9,2;
+local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module,createTooltip = name.."TT",name.."TT2",10,2;
 local quests,numQuestStatus,sum,url,tt2created,requested
 local urls = {
 	WoWHead = {"WoWHead",function(id)
@@ -245,54 +245,78 @@ local function ttAddLine(obj)
 		end
 	end
 
-	tt:SetCell(l,cell,C(color,obj[Level])); cell=cell+1; -- [1]
-	if ns.profile[name].showQuestTagsShort then tt:SetCell(l,cell,obj[ShortType]); end cell=cell+1; -- [2]
-	tt:SetCell(l,cell,C(color,ns.strCut(obj.Title2 or obj[Title],32))); cell=cell+1; -- [3]
+	-- level
+	tt:SetCell(l,cell,C(color,obj[Level]));
+	cell=cell+1; -- [1]
+
+	-- quest tabs short
+	if ns.profile[name].showQuestTagsShort then
+		tt:SetCell(l,cell,obj[ShortType]);
+	end
+	cell=cell+1; -- [2]
+
+	-- quest title
+	tt:SetCell(l,cell,C(color,ns.strCut(obj.Title2 or obj[Title],32)));
+	cell=cell+1; -- [3]
+
+	-- quest zone
 	if ns.profile[name].showQuestZone then
 		local mapName = " ";
 		if obj[QuestId] and questZones[obj[QuestId]] and questZones[obj[QuestId]].mapName then
 			mapName = questZones[obj[QuestId]].mapName;
 		end
-		tt:SetCell(l,cell,mapName); cell=cell+1; -- [4]
+		tt:SetCell(l,cell,mapName);
+		cell=cell+1; -- [4]
 	end
-	if ns.profile[name].showQuestTags then
-		tt:SetCell(l,cell,C(color,obj[Type])); cell=cell+1; -- [5]
-	end
-	tt:SetLineScript(l,"OnMouseUp",showQuest, obj[Index]);
 
+	-- quest tags long
+	if ns.profile[name].showQuestTags then
+		tt:SetCell(l,cell,C(color,obj[Type]));
+		cell=cell+1; -- [5]
+	end
+
+	-- quest id
 	if ns.profile[name].showQuestIds then
 		tt:SetCell(l,cell,obj[QuestId])
-		if (obj[QuestId]~=L["QuestId"]) then
-			tt:SetCellScript(l,cell,"OnMouseUp",showQuestURL,obj[QuestId]);
-		end
 		cell=cell+1; -- [6]
 	end
 
+	-- quest options
 	if ns.profile[name].showQuestOptions then
+
+		-- link external
+		local str = strsplit(" ",ns.profile[name].questIdUrl,2)
+		tt:SetCell(l, cell, str)
+		tt:SetCellScript(l,cell,"OnMouseUp",showQuestURL,obj[QuestId]);
+		cell=cell+1; -- [7]
+
+		-- quest tracking
 		if ns.client_version>=5 then
 			tt:SetCell(l,cell,IsQuestWatched(obj[Index]) and UNTRACK_QUEST_ABBREV or TRACK_QUEST_ABBREV);
 			tt:SetCellScript(l,cell,"OnMouseUp",trackQuest,obj[QuestId]);
-			cell=cell+1; -- [7]
+			cell=cell+1; -- [8]
 		end
 
+		-- quest cancel
 		tt:SetCell(l,cell,CANCEL .. (requested==obj[QuestId] and C("orange"," ("..L["really?"]..")") or ""));
 		tt:SetCellScript(l,cell,"OnMouseUp",deleteQuest,obj[QuestId]);
-		cell=cell+1; -- [8]
+		cell=cell+1; -- [9]
 
+		-- quest sharing
 		if IsInGroup() then
 			if GetNumGroupMembers()>1 and GetQuestLogPushable(obj[Index]) then
 				tt:SetCell(l,cell,SHARE_QUEST_ABBREV);
 				tt:SetCellScript(l,cell,"OnMouseUp",pushQuest,obj[Index]);
-				cell=cell+1 -- [9]
+				cell=cell+1 -- [10]
 			end
 			if #GroupQuest>0 and IsShiftKeyDown() then
-				l,c = tt:AddLine();
-				tt:SetCell(l,1,table.concat(GroupQuest,", "), nil, nil, ttColumns);
+				tt:SetCell(tt:AddLine(),1,table.concat(GroupQuest,", "), nil, nil, ttColumns);
 				tt:AddSeparator();
 			end
 		end
 	end
 
+	tt:SetLineScript(l,"OnMouseUp",showQuest, obj[Index]);
 	tt:SetLineScript(l,"OnEnter", createTooltip2, obj);
 	tt:SetLineScript(l,"OnLeave", hideTooltip2);
 
@@ -302,7 +326,6 @@ end
 function createTooltip(tt, update, from)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local header = false;
-	--if self then requested=false; end
 
 	if tt.lines~=nil then tt:Clear(); end
 	tt:SetCell(select(1,tt:AddLine()),1,C("dkyellow",name),tt:GetHeaderFont(),"LEFT",ttColumns)
@@ -437,6 +460,10 @@ ns.ClickOpts.addDefaults(module,{
 });
 
 function module.options()
+	local questIdUrlValues = {}
+	for k,v in pairs(urls)do
+		tinsert(questIdUrlValues,v[1])
+	end
 	return {
 		broker = nil,
 		tooltip = {
@@ -448,13 +475,7 @@ function module.options()
 			showQuestOptions={ type="toggle", order=5, name=L["Show quest option"], desc=L["Show quest options like track, untrack, share and cancel in tooltip."] },
 			showPvPWeeklys={ type="toggle", order=6, name=L["Show PvP weeklys"], desc=L["Show PvP weekly quests in tooltip"]},
 			showWorldQuests={ type="toggle", order=7, name=L["Show world quests"], desc=L["Show quests to complete 4 world quests for a faction in tooltip."], width="full" },
-			questIdUrl={ type="select", order=8, name=L["Fav. website"], desc=L["Choose your favorite website for further informations to a quest."],
-				values = {
-					WoWHead = "WoWHead",
-					WoWDB = "WoWDB (english only)",
-					Buffed = "Buffed"
-				}
-			},
+			questIdUrl={ type="select", order=8, name=L["Fav. website"], desc=L["Choose your favorite website for further informations to a quest."], values = questIdUrlValues },
 			separateBy={
 				type="select", order=9, name=L["Separate quests by"], desc=L["Separate the quests by header (like Blizzard) or status"],
 				values = {
