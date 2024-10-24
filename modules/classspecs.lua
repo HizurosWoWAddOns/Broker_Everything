@@ -224,7 +224,6 @@ function createTooltip(tt,update)
 					if not tmp[Name] then
 						tmp[Name] = UNKNOWN
 					end
-					ns:debug("GetTalentInfo",unpack(tmp));
 					if ns.profile[name].showTalentsShort then
 						if tmp[Available] then
 							isUnlocked = true;
