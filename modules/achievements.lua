@@ -67,7 +67,7 @@ local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local txt = {};
 
-	local now = GetTotalAchievementPoints();
+	local now = GetTotalAchievementPoints() or 0;
 	if not session.total then
 		session.total = now
 	end
@@ -85,7 +85,7 @@ end
 
 local function resetSessionCounter()
 	wipe(session);
-	session.total = GetTotalAchievementPoints();
+	session.total = GetTotalAchievementPoints() or 0;
 	local categories = listCategories();
 	for i=1, #categories do
 		if categories[i][3]~=true then
@@ -121,7 +121,7 @@ local function createTooltip(tt)
 	if tt.lines~=nil then tt:Clear(); end
 	local l = tt:AddHeader(C("dkyellow",ACHIEVEMENTS));
 
-	local now = GetTotalAchievementPoints();
+	local now = GetTotalAchievementPoints() or 0;
 	local diff = now-session.total;
 	tt:SetCell(l,2,C("dkyellow",now) .. (diff>0 and C("ltgreen"," +"..diff) or ""),nil,"RIGHT",0);
 	count=0;
