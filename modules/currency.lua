@@ -164,21 +164,14 @@ local function updateBroker()
 	end
 end
 
-local function setInTitle(titlePlace, currencyId)
-	if currencyId and currencySession[currencyId] then
-		ns.profile[name].currenciesInTitle[titlePlace] = currencyId;
+local function setFunction(self)
+	local id = tonumber(self.arg1.currencyId);
+	if id then
+		ns.profile[name][self.arg1.section][self.arg1.place] = self.arg1.currencyId;
 	else
-		ns.profile[name].currenciesInTitle[titlePlace] = nil;
+		ns.profile[name][self.arg1.section][self.arg1.place] = nil;
 	end
-	updateBroker()
-end
-
-local function setFavorite(place, currencyId)
-	if currencyId and currencySession[currencyId] then
-		ns.profile[name].favs[place] = currencyId;
-	else
-		ns.profile[name].favs[place] = nil;
-	end
+	LibStub("AceConfigRegistry-3.0"):NotifyChange(addon); -- force update ace3 option panel
 end
 
 local function toggleCurrencyHeader(self,headerString)
@@ -187,7 +180,6 @@ local function toggleCurrencyHeader(self,headerString)
 end
 
 local function tooltip2Show(self,id)
-	local pos = {};
 	if (not tt2) then
 		tt2=GameTooltip;
 	end
@@ -421,36 +413,41 @@ local function get_currency(t)
 	return id;
 end
 
-local function hiddenCurrenciesAddCategory(index,info,category)
-	if not category then
-		for cat,values in pairs(hiddenCurrenciesCategoriesPattern) do
-			for _,pattern in ipairs(values) do
-				if pattern and info.name:match(pattern) then
+local hiddenCurrenciesAddCategory
+do
+	local currentCat;
+	function hiddenCurrenciesAddCategory(index,info,category)
+		if not category then
+			for cat,values in pairs(hiddenCurrenciesCategoriesPattern) do
+				for _,pattern in ipairs(values) do
+					if pattern and info.name:match(pattern) then
+						return hiddenCurrenciesAddCategory(index,info,cat)
+					end
+				end
+			end
+			for cat, values in pairs(hiddenCurrenciesSel) do
+				if values[index] then
 					return hiddenCurrenciesAddCategory(index,info,cat)
 				end
 			end
+			return false;
 		end
-		for cat, values in pairs(hiddenCurrenciesSel) do
-			if values[index] then
-				return hiddenCurrenciesAddCategory(index,info,cat)
+
+		--tinsert(hiddenCurrencies,index)
+		local section = hidden2section[index];
+		if section then
+			if not hiddenCurrenciesCategories[section] then
+				hiddenCurrenciesCategories[section] = {}
 			end
+			tinsert(hiddenCurrenciesCategories[section],index)
+		else
+			if not hiddenCurrenciesCategories[category] then
+				hiddenCurrenciesCategories[category] = {}
+			end
+			tinsert(hiddenCurrenciesCategories[category],index)
 		end
-		return false;
+		return true;
 	end
-	tinsert(hiddenCurrencies,index)
-	local section = hidden2section[index];
-	if section then
-		if not hiddenCurrenciesCategories[section] then
-			hiddenCurrenciesCategories[section] = {}
-		end
-		tinsert(hiddenCurrenciesCategories[section],index)
-	else
-		if not hiddenCurrenciesCategories[category] then
-			hiddenCurrenciesCategories[category] = {}
-		end
-		tinsert(hiddenCurrenciesCategories[category],index)
-	end
-	return true;
 end
 
 local function updateCurrencies()
@@ -508,7 +505,6 @@ local function updateCurrencies()
 	-- hidden currencies
 	if CurrenciesHidden then
 		local ignore,tmpH = {["n/a"]=1,["UNUSED"]=1},{};
-		hiddenCurrencies = {}
 		hiddenCurrenciesCategories = {}
 
 		for cat,values in pairs(hiddenCurrenciesCategoriesPattern) do
@@ -559,107 +555,135 @@ local function updateCurrencies()
 	end
 end
 
-local CurrencyMenus
-function CurrencyMenus(opts)
-	if opts.maxPlaces then
-		-- profileKey,Label,maxPlaces,setFunction
-		local parent = ns.EasyMenu:AddEntry({ label=opts.Label, arrow=true});
-		for place=1, opts.maxPlaces do
-			local id = ns.profile[name][opts.profileKey][place];
-			CurrencyMenus({
-				parent=parent,
-				place=place,
-				id=id,
-				setFunction=opts.setFunction
-			})
-		end
-	elseif opts.pageNum then
-		local header = Currencies[opts.currentHeader];
+local CurrencyMenu
+do
+	local parent0,page = nil,{}
+
+	local function CurrencyMenu_Paging()
+		local header = page.currentHeader;
 		local label = headers[header];
-		if opts.headers[header] then
-			opts.pageNum = opts.pageNum + 1;
-			label = label .." - ".. PAGE_NUMBER:format(opts.pageNum+1);
+		if page.headers[header] then
+			page.pageNum = page.pageNum + 1;
+			label = label .." - ".. PAGE_NUMBER:format(page.pageNum+1);
 		else
-			opts.pageNum=0;
-			opts.headers[header] = true;
+			page.pageNum=0;
+			page.headers[header] = true;
 		end
-		opts.counter=0;
-		return ns.EasyMenu:AddEntry({label=C("ltblue",label), arrow=true}, pList);
-	elseif opts.place then
-		-- parent,place,id,setFunction
-		if validateID(opts.id) then
-			local currencyId,currencyInfo = GetCurrency(opts.id);
-			if currencyId and currencyInfo and currencyInfo.name then
-				if opts.parent then
-					opts.parent = ns.EasyMenu:AddEntry({
-						arrow = true,
-						label = (C("dkyellow","%s %d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"],opts.place,(currencyInfo.iconFileID or ns.icon_fallback),C("ltblue",currencyInfo.name)),
-					},opts.parent);
-				end
-				ns.EasyMenu:AddEntry({ label = C("ltred",L["Remove the currency"]), func=function() opts.setFunction(opts.place, false); end }, opts.parent);
-				ns.EasyMenu:AddEntry({separator=true}, opts.parent);
-			end
-		else
-			opts.parent = ns.EasyMenu:AddEntry({
-				arrow = true,
-				label = (C("dkyellow","%s %d:").."  %s"):format(L["Place"],opts.place,L["Add a currency"])
-			},opts.parent);
+		page.counter=0;
+		page.parent = ns.EasyMenu:AddEntry({label=C("ltblue",label), arrow=true}, page.parent);
+	end
+
+	local function CurrencyMenu_AddEntry(section,place,currencyId,currencyInfo)
+		CountCorrection(currencyId,currencyInfo);
+		local nameStr,disabled,tooltip = ns.strCut(currencyInfo.name,32),true;
+		if nameStr~=currencyInfo.name then
+			tooltip = {currencyInfo.name,""};
+		end
+		if ns.profile[name][section][place]~=currencyId then
+			nameStr,disabled = C("ltyellow",nameStr),false;
 		end
 
-		local page = {parent=opts.parent,limit=40,counter=0,pageNum=0,currentHeader=false,headers={}}; -- ["HIDDEN_CURRENCIES"]=true
-		local parent2 = opts.parent;
-		for i=1, #Currencies do
-			local currencyId,currencyInfo;
-			local tCurrency = type(Currencies[i])
-			if page.currentHeader and Currencies[page.currentHeader]=="FAVORITES" and tCurrency=="number" then
-				-- ignore
-			elseif tCurrency=="number" then
-				currencyId,currencyInfo = GetCurrency(Currencies[i]);
-			elseif tCurrency=="string" and page.currentHeader~=i then
+		if ns.debugMode then
+			nameStr = nameStr .. C("white"," ("..currencyId..")")
+		end
+
+		ns.EasyMenu:AddEntry({
+			label = nameStr,
+			tooltip = tooltip,
+			icon = currencyInfo.iconFileID or ns.icon_fallback,
+			disabled = disabled,
+			keepShown = false,
+			func=setFunction,
+			arg1={section=section, place=place, currencyId=currencyId}
+		}, page.parent);
+	end
+
+	local function CurrencyMenu_AddEntries(section,place,CurrencyList,Parent)
+		for _,currencyId in ipairs(CurrencyList) do
+			local tCurrency, currencyInfo = type(currencyId)
+
+			if tCurrency=="string" then
 				-- first header/page
-				page.currentHeader = i;
-				if Currencies[i]~="FAVORITES" then
-					parent2 = CurrencyMenus(page)
-				end
+				page.counter=0;
+				page.currentHeader = currencyId;
+				page.parent=Parent;
+				CurrencyMenu_Paging() -- next page
+			elseif tCurrency=="number" then
+				currencyId,currencyInfo = GetCurrency(currencyId);
 			end
-
-			if  currencyId and currencyInfo and currencyInfo.name then
+			if currencyInfo and currencyInfo.name then
 				if page.currentHeader then
 					page.counter = page.counter + 1;
 					if page.counter > page.limit then
-						parent2 = CurrencyMenus(page)  -- next page
+						page.parent=Parent;
+						CurrencyMenu_Paging() -- next page
 					end
 				end
 
-				CountCorrection(currencyId,currencyInfo);
-
-				local nameStr,disabled = currencyInfo.name,true;
-				if ns.profile[name].currenciesInTitle[opts.place]~=Currencies[i] then
-					nameStr,disabled = C("ltyellow",nameStr),false;
-				end
-
-				if ns.debugMode then
-					nameStr = nameStr .. C("white"," ("..currencyId..")")
-				end
-
-				ns.EasyMenu:AddEntry({
-					label = nameStr,
-					icon = currencyInfo.iconFileID or ns.icon_fallback,
-					disabled = disabled,
-					keepShown = false,
-					func = function() opts.setFunction(opts.place,Currencies[i]); end
-				}, parent2);
+				CurrencyMenu_AddEntry(section,place,currencyId,currencyInfo)
 			end
+		end
+	end
+
+	function CurrencyMenu(section, place, parent)
+		if type(place)=="string" then
+			-- place as label
+			parent0 = ns.EasyMenu:AddEntry({ label=place, arrow=true});
+			for p=1, section=="favs" and FavPlacesMax or BrokerPlacesMax do
+				CurrencyMenu(section,p,parent0)
+			end
+			return;
+		end
+
+		local id,currencyId,currencyInfo = ns.profile[name][section][place];
+		if validateID(id) then
+			currencyId,currencyInfo = GetCurrency(id);
+		end
+
+		local hasCurrency = currencyId and currencyInfo and currencyInfo.name~=nil
+		if parent==true then
+			-- in open panel
+			parent0,parent = nil,nil;
+			if hasCurrency then
+				-- remove
+				ns.EasyMenu:AddEntry({label = C("ltred",L["Remove the currency"]), keepShown=false, func=setFunction, arg1={section=section, place=place} });
+				ns.EasyMenu:AddEntry({separator=true});
+			else
+				-- add
+				ns.EasyMenu:AddEntry({title = true,label = (C("dkyellow","%s %d:").."  %s"):format(L["Place"],place,L["Add a currency"])});
+				ns.EasyMenu:AddEntry({separator=true});
+			end
+		else
+			-- submenu on broker button option menu
+			if hasCurrency and parent and parent.menuList~=nil then
+				-- sub menu
+				parent = ns.EasyMenu:AddEntry({arrow = true,label = (C("dkyellow","%s %d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"],place,(currencyInfo.iconFileID or ns.icon_fallback),C("ltblue",currencyInfo.name)),},parent0);
+				-- remove option in sub menu
+				ns.EasyMenu:AddEntry({label = C("ltred",L["Remove the currency"]), keepShown=false, func=setFunction, arg1={section=section, place=place} }, parent);
+				ns.EasyMenu:AddEntry({separator=true}, parent);
+			else
+				-- sub menu
+				parent = ns.EasyMenu:AddEntry({arrow = true,label = (C("dkyellow","%s %d:").."  %s"):format(L["Place"],place,L["Add a currency"])},parent0);
+			end
+		end
+
+		page = {parent=parent,limit=40,counter=0,pageNum=0,currentHeader=false,headers={}};
+		-- normal currencies
+		CurrencyMenu_AddEntries(section,place,Currencies,parent)
+
+		-- hidden currencies
+		if ns.profile[name].showHiddenInMenu then
+			CurrencyMenu_AddEntries(section,place,CurrenciesHidden,parent)-- hiddenCurrencies
 		end
 	end
 end
 
 local function optionButtonName(info)
 	local key = info[#info];
-	local index = tonumber((key:match("(%d+)$")));
+	local section,index = key:match("^([a-zA-Z]*)(%d+)$"); index = tonumber(index);
 	local label = L["Place"].." "..index;
-	if ns.profile[name].currenciesInTitle[index] then
-		local _,cInfo = GetCurrency(ns.profile[name].currenciesInTitle[index]);
+	if ns.profile[name][section][index] then
+		local _,cInfo = GetCurrency(ns.profile[name][section][index]);
 		if cInfo then
 			label = label .. ": ".. cInfo.name;
 		end
@@ -669,19 +693,12 @@ end
 
 local function optionButtonMenu(info)
 	local key = info[#info];
+	local section,index = key:match("^(.*)(%d+)$"); index = tonumber(index);
 	local place = tonumber((key:match("(%d+)$")));
-	local current = ns.profile[name].currenciesInTitle[place];
+
 	ns.EasyMenu:InitializeMenu();
-
-	CurrencyMenus({
-		parent=nil,
-		place=place,
-		id=current,
-		setFunction=opts.setFunction
-	})
-
-	--ns.EasyMenu:AddConfig(name,true);
-	ns.EasyMenu:ShowMenu(parent);
+	CurrencyMenu(section, place, true)
+	ns.EasyMenu:ShowMenu();
 end
 
 
@@ -743,12 +760,12 @@ function module.options()
 		showSession   = { type="toggle", order=4, name=L["Show session earn/loss"], desc=L["Display session profit in tooltip"] },
 		showIDs       = { type="toggle", order=5, name=L["Show currency id's"], desc=L["Display the currency id's in tooltip"] },
 		shortTT       = { type="toggle", order=6, name=L["Short Tooltip"], desc=L["Display the content of the tooltip shorter"] },
+		showHidden    = { type="toggle", order=7, name=L["CurrenyHidden"], desc=L["CurrencyHiddenDesc"], hidden=ns.IsClassicClient },
 		header        = { type="header", order=20, name=L["CurrencyFavorites"], hidden=isHidden },
 		info          = { type="description", order=21, name=L["CurrencyFavoritesInfo"], fontSize="medium", hidden=true },
 	}
 
 	for i=1, BrokerPlacesMax do
-		--broker["currenciesInTitle"..i] = {type="select", order=4+(i>4 and i+1 or i), name=L["Place"].." "..i, desc=L["CurrencyOnBrokerDesc"], values=aceOptOnBrokerValues, get=AceOptOnBroker, set=AceOptOnBroker, hidden=isHidden };
 		broker["currenciesInTitle"..i] = {
 			type = "execute", order = 4+(i>4 and i+1 or i),
 			name = optionButtonName,
@@ -758,7 +775,12 @@ function module.options()
 	end
 
 	for i=1, FavPlacesMax do
-		--tooltip["favPlace"..i] = {type="select", order=22+(i>4 and i+1 or i), name=L["Place"].." "..i, desc=L["CurrencyFavoritesDesc"], values={}, --[[values=aceOptOnBrokerValues, get=AceOptOnBroker, set=AceOptOnBroker,]] hidden=isHidden };
+		tooltip["favs"..i] = {
+			type = "execute", order = 22+(i>4 and i+1 or i),
+			name = optionButtonName,
+			desc = L["CurrencyFavoritesDesc"],
+			func = optionButtonMenu
+		}
 	end
 
 	return {
@@ -766,8 +788,7 @@ function module.options()
 		tooltip = tooltip,
 		misc = {
 			shortNumbers=1,
-			showHidden = {type="toggle", order=2, name=L["CurrenyHidden"], desc=L["CurrencyHiddenDesc"], hidden=ns.IsClassicClient },
-			showHiddenInMenu={type="toggle",order=3, name=L["CurrencyHiddenMenu"], desc=L["CurrencyHiddenMenuDesc"], hidden=ns.IsClassicClient },
+			showHiddenInMenu={type="toggle",order=2, name=L["CurrencyHiddenMenu"], desc=L["CurrencyHiddenMenuDesc"], hidden=ns.IsClassicClient },
 		},
 	}, nil, true
 end
@@ -778,20 +799,12 @@ function module.OptionMenu(parent)
 	ns.EasyMenu:InitializeMenu();
 
 	ns.EasyMenu:AddEntry({ label=L["Broker & Favorites"], title=true});
-
-	CurrencyMenus({
-		profileKey="currenciesInTitle",
-		Label=L["Currency on broker - menu"],
-		maxPlaces=BrokerPlacesMax,
-		setFunction=setInTitle
-	})
-
-	CurrencyMenus({
-		profileKey="favs",
-		Label=L["Favorites in tooltip - menu"],
-		maxPlaces=FavPlacesMax,
-		setFunction=setFavorite
-	})
+	if false then
+		ns.EasyMenu:AddEntry({ label="Temporary disabled", disabled=true});
+	else
+		CurrencyMenu("currenciesInTitle",L["Currency on broker - menu"])
+		CurrencyMenu("favs",             L["Favorites in tooltip - menu"])
+	end
 
 	ns.EasyMenu:AddConfig(name,true);
 
