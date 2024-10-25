@@ -526,17 +526,18 @@ function module.onevent(self,event,arg1)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 	else
-		ns.toon[name].money = GetMoney();
-		if login_money==nil and ns.toon[name].money~=nil then
-			login_money = ns.toon[name].money;
-		end
 		if event=="PLAYER_LOGIN" then
 			C_Timer.After(0.5,function()
+				ns.toon[name].money = GetMoney();
+				if login_money==nil and ns.toon[name].money~=nil then
+					login_money = ns.toon[name].money;
+				end
 				updateProfit();
 				updateBroker();
 				module.lockFirstUpdate = false;
 			end);
-		elseif ns.eventPlayerEnteredWorld and not module.lockFirstUpdate then
+		elseif ns.eventPlayerEnteredWorld and (not module.lockFirstUpdate) and login_money~=nil then
+			ns.toon[name].money = GetMoney();
 			updateBroker();
 		end
 	end
