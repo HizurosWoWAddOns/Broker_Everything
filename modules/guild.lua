@@ -944,7 +944,7 @@ function module.options()
 
 			showRealmNames    = 20,
 			showRace          = { type="toggle", order=21, name=RACE, desc=L["Show race from guild members in tooltip"]},
-			showFaction       = { type="toggle", order=22, name=RACE, desc=L["Show faction from guild members in tooltip"]},
+			showFaction       = { type="toggle", order=22, name=FACTION, desc=L["Show faction from guild members in tooltip"]},
 			showZone          = { type="toggle", order=23, name=ZONE, desc=L["Show current zone from guild members in tooltip"]},
 			showNotes         = { type="toggle", order=24, name=L["Notes"], desc=L["Show notes from guild members in tooltip"]},
 			showONotes        = { type="toggle", order=25, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"], hidden=ns.IsClassicClient},
