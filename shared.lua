@@ -225,7 +225,8 @@ end
 ---@return boolean
 function ns.showThisChar(modName,realm,faction,forceRealm,forceFaction,n)
 	local result
-	if not ((ns.profile[modName].showAllFactions and ns.player.faction==faction) or forceFaction) then
+
+	if not (ns.profile[modName].showAllFactions or ns.player.faction==faction or forceFaction) then
 		return false;
 	end
 	return forceRealm
