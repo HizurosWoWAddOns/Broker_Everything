@@ -483,8 +483,10 @@ function createTooltip(tt)
 
 			-- display average item level
 			local weapon = ns.items.bySlot[-0.16];
+			weapon.type = "inv";
+			ns.ScanTT.query(weapon,true)
 			if weapon then
-				tt:AddLine(C("ltgreen",STAT_AVERAGE_ITEM_LEVEL),"",C("ltyellow",weapon.level));
+				tt:AddLine(C("ltgreen",STAT_AVERAGE_ITEM_LEVEL),"",C("ltyellow",weapon.level or "?"));
 			end
 
 			-- display relic slot and relic items
