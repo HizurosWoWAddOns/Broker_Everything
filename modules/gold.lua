@@ -10,7 +10,7 @@ local time,date,tinsert,tconcat=time,date,tinsert,table.concat;
 -----------------------------------------------------------
 local name = "Gold"; -- BONUS_ROLL_REWARD_MONEY L["ModDesc-Gold"]
 local ttName, ttName2, tt, tt2, createTooltip, module = name.."TT", name.."TT2";
-local login_money,profit = nil,{};
+local login_money,Date = nil,{};
 local listTopProfit,accountBankMoney = {},nil;
 local me = ns.player.name_realm;
 local ttLines = {
@@ -35,11 +35,11 @@ local function migrateData()
 	if not (ns.data[name] and ns.data[name].Profit) then return end
 	-- reason to migrate from ns.data to ns.toons:
 	-- Toon profit entries in ns.data wouldn't be delete on deleting toon data by user.
-	for Type,Players in pairs(ns.data[name].Profit)do
+	for interval,Players in pairs(ns.data[name].Profit)do
 		for Player, Values in pairs(Players) do
 			if ns.toonsDB[Player] then
-				ns.tablePath(ns.toonsDB,Player,name,"profit",Type);
-				ns.toonsDB[Player][name].profit[Type] = Values;
+				ns.tablePath(ns.toonsDB,Player,name,"profit",interval);
+				ns.toonsDB[Player][name].profit[interval] = Values;
 				if ns.toonsDB[Player].gold then
 					ns.toonsDB[Player][name].money = ns.toonsDB[Player].gold;
 					ns.toonsDB[Player].gold = nil
@@ -95,32 +95,30 @@ local function listProfitOnEnter(self,data)
 	ns.roundupTooltip(tt2);
 end
 
-local function getProfit(Table)
+local function getProfit(tbl,isCurrent)
+	local method,Table=ns.profile[name].profitMethod;
 	local t = {session=0,daily=0,weekly=0,monthly=0,dailyLast=0,weeklyLast=0,monthlyLast=0};
-	if not last and login_money~=nil and ns.toon[name].money then
+	if isCurrent and ns.toon[name].money then
 		t.session = ns.toon[name].money-login_money;
 	end
-	for _,Type in ipairs({"daily","weekly","monthly"}) do
-		if type(Table[Type])=="table" then
-			t[Type] = Table[Type][profit[Type][1]] or 0;
-			t[Type.."Last"] = tonumber(Table[Type][profit[Type][2]]) or 0;
-		end
+	if method==1 then
+		Table = tbl.profit;
+	elseif method==2 then
+		Table = tbl.profitv2;
 	end
-	return t;
-end
-
-local function getProfitV2(tbl)
-	local t = {session=0,daily=0,weekly=0,monthly=0,dailyLast=0,weeklyLast=0,monthlyLast=0};
-	if not last and login_money~=nil and ns.toon[name].money then
-		t.session = ns.toon[name].money-login_money;
-	end
-	local Table = tbl.profitv2;
-	for _,Type in ipairs({"daily","weekly","monthly"}) do
-		local p = profit[Type];
-		if p and Table and type(Table[Type])=="table" then
-			t[Type] = tbl.money-(Table[Type][p[1]] or 0);
-			t[Type.."Last"] = (Table[Type][p[1]] or 0)-(Table[Type][p[2]] or 0);
-			--t[Type.."Last2"] = (Table[Type][p[2]] or 0)-(Table[Type][p[3]] or 0);
+	if Table then
+		for _,interval in ipairs({"daily","weekly","monthly"}) do
+			local _date,_tbl = Date[interval],Table[interval];
+			if _date and type(_tbl)=="table" then
+				if method==1 then
+					t[interval] = _tbl[_date[1]] or 0;
+					t[interval.."Last"] = tonumber(_tbl[_date[2]]) or 0;
+				elseif method==2 then
+					t[interval] = tbl.money-(_tbl[_date[1]] or 0);
+					t[interval.."Last"] = (_tbl[_date[1]] or 0) - (_tbl[_date[2]] or 0);
+					--t[interval.."Last2"] = (_tbl[_date[2]] or 0) - (_tbl[_date[3]] or 0);
+				end
+			end
 		end
 	end
 	return t;
@@ -130,23 +128,23 @@ local function getProfitAll()
 	local values = {};
 	wipe(listTopProfit)
 	for i, toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true, currentHide=true, forceSameRealm=true]]}) do
-		if toonData[name] and toonData[name].profit then
-			local val = getProfitV2(toonData[name]);
-			for Type,Value in pairs(val) do
-				values[Type] = (values[Type] or 0) + Value;
-				if not listTopProfit[Type] then
-					listTopProfit[Type] = {up={},down={}}
+		if toonData[name] and (toonData[name].profit or toonData[name].profitv2) then
+			local val = getProfit(toonData[name],isCurrent);
+			for interval,Value in pairs(val) do
+				values[interval] = (values[interval] or 0) + Value;
+				if not listTopProfit[interval] then
+					listTopProfit[interval] = {up={},down={}}
 				end
 				if Value>0 then
-					if not listTopProfit[Type].up[Value] then
-						listTopProfit[Type].up[Value] = {}
+					if not listTopProfit[interval].up[Value] then
+						listTopProfit[interval].up[Value] = {}
 					end
-					tinsert(listTopProfit[Type].up[Value],toonNameRealm)
+					tinsert(listTopProfit[interval].up[Value],toonNameRealm)
 				elseif Value<0 then
-					if not listTopProfit[Type].down[Value] then
-						listTopProfit[Type].down[Value] = {}
+					if not listTopProfit[interval].down[Value] then
+						listTopProfit[interval].down[Value] = {}
 					end
-					tinsert(listTopProfit[Type].down[Value],toonNameRealm)
+					tinsert(listTopProfit[interval].down[Value],toonNameRealm)
 				end
 			end
 		end
@@ -160,9 +158,9 @@ function updateProfit()
 	local today = time({year=T.year,month=T.month,day=T.day,hour=23,min=59,sec=59});
 	local week = time({year=T.year,month=T.month,day=T.day+(7-w)+1,hour=0,min=0,sec=0})-1;
 
-	profit.daily = { today, today-day, today-day-day };
-	profit.weekly = { week, week-(day*7), week-(day*14) };
-	profit.monthly = {
+	Date.daily = { today, today-day, today-day-day };
+	Date.weekly = { week, week-(day*7), week-(day*14) };
+	Date.monthly = {
 		time({year=T.year,month=T.month+1,day=1,hour=0,min=0,sec=0})-1,
 		time({year=T.year,month=T.month,day=1,hour=0,min=0,sec=0})-1,
 		time({year=T.year,month=T.month-1,day=1,hour=0,min=0,sec=0})-1
@@ -171,47 +169,50 @@ function updateProfit()
 	ns.tablePath(ns.toon,name,"profit");
 	ns.tablePath(ns.toon,name,"profitv2");
 	local money = login_money<ns.toon[name].money and login_money or ns.toon[name].money;
-	for k,v in pairs(profit) do
-		if not ns.toon[name].profit[k] then
-			ns.toon[name].profit[k] = {}
+	for interval,timestamp in pairs(Date) do
+		-- profit table for current character; get or create
+		if not ns.toon[name].profit[interval] then
+			ns.toon[name].profit[interval] = {}
 		end
-		local p = ns.toon[name].profit[k];
+		local profitV1 = ns.toon[name].profit[interval];
 
-		if p[v[1]]==nil then
-			p[v[1]] = ns.toon[name].money - ns.toon[name].money;
+		if profitV1[timestamp[1]]==nil then
+			-- this day/week/month is nil; set 0
+			profitV1[timestamp[1]] = 0;
 		end
-		if p[v[2]]==nil then
-			p[v[2]] = "0";
-		elseif type(p[v[2]])=="number" then
-			p[v[2]] = tostring(ns.toon[name].money-p[v[2]]); -- string is fixed value; today/this week/this month is number and will be a string on change to yesterday/last week/last month
+
+		if profitV1[timestamp[2]]==nil then
+			-- yesterday/last week/last month is nil; set 0 as string
+			profitV1[timestamp[2]] = "0";
+		elseif type(profitV1[timestamp[2]])=="number" then
+			-- string is fixed value; today/this week/this month is number and will be a string on change to yesterday/last week/last month
+			profitV1[timestamp[2]] = tostring(ns.toon[name].money-profitV1[timestamp[2]]);
 		end
-		local c = 0;
-		for x,y in ns.pairsByKeys(p,true) do
+
+		local c = 0; -- cleanup older entries
+		for x in ns.pairsByKeys(profitV1,true) do
 			c=c+1;
 			if c>5 then
-				p[x] = nil; -- remove older entries
+				profitV1[x] = nil;
 			end
 		end
 
-		if not ns.toon[name].profitv2[k] then
-			ns.toon[name].profitv2[k] = {}
+		-- profit table (v2) for current character; get or create
+		if not ns.toon[name].profitv2[interval] then
+			ns.toon[name].profitv2[interval] = {}
 		end
-		local p2 = ns.toon[name].profitv2[k];
-		if not p2[v[1]] then
-			p2[v[1]] = money;
-		end
-		if not p2[v[2]] then
-			p2[v[2]] = money;
-		end
-		if not p2[v[3]] then
-			p2[v[3]] = money;
+		local profitV2 = ns.toon[name].profitv2[interval];
+		for i=1, 3 do
+			if not profitV2[timestamp[i]] then
+				profitV2[timestamp[i]] = money;
+			end
 		end
 
-		local c = 0;
-		for x,y in ns.pairsByKeys(p2,true) do
+		c = 0; -- cleanup older entries
+		for x in ns.pairsByKeys(profitV2,true) do
 			c=c+1;
 			if c>5 then
-				p2[x] = nil; -- remove older entries
+				profitV2[x] = nil;
 			end
 		end
 	end
@@ -238,8 +239,8 @@ local function updateBroker()
 	if ns.profile[name].showCharGold then
 		tinsert(broker,ns.GetCoinColorOrTextureString(name,ns.toon[name].money,{hideMoney=ns.profile[name].goldHideBB}));
 	end
-	if ns.profile[name].showProfitSessionBroker and login_money and ns.toon[name] and ns.toon[name].profit then
-		local p = getProfit(ns.toon[name].profit);
+	if ns.profile[name].showProfitSessionBroker and ns.toon[name] then
+		local p = getProfit(ns.toon[name],true);
 		if p.session~=0 then
 			local sign = (p.session>0 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (p.session<0 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
 			tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,p.session,{hideMoney=ns.profile[name].goldHideBB}));
@@ -267,8 +268,7 @@ local function ttAddProfit(all)
 	if all then
 		values = getProfitAll();
 	else
-		--values = getProfit(ns.toon[name].profit);
-		values = getProfitV2(ns.toon[name])
+		values = getProfit(ns.toon[name],true)
 	end
 	for i,v in ipairs(ttLines) do
 		if not (i==1 and all) then
@@ -375,11 +375,11 @@ end
 if (C_Bank and C_Bank.FetchDepositedMoney and Enum and Enum.BankType and Enum.BankType.Account) then
 	local function updateToonProfits(value)
 		login_money = login_money + value
-		for _,Type in ipairs({"daily","weekly","monthly"}) do
-			local Table,p = ns.toon[name].profitv2,profit[Type];
-			if Table and type(Table[Type])=="table" then
-				Table[Type][p[1]] = Table[Type][p[1]] + value;
-				Table[Type][p[2]] = Table[Type][p[2]] + value;
+		for _,interval in ipairs({"daily","weekly","monthly"}) do
+			local Table,_date = ns.toon[name].profitv2,Date[interval];
+			if Table and type(Table[interval])=="table" then
+				Table[interval][_date[1]] = Table[interval][_date[1]] + value;
+				Table[interval][_date[2]] = Table[interval][_date[2]] + value;
 			end
 		end
 	end
@@ -428,6 +428,7 @@ module = {
 		accountBankMoney = true,
 		accountBankShortcut = true,
 		delimiterBB = ", ",
+		profitMethod = 2,
 	},
 	new = {
 		showProfitDailyAll = true,
