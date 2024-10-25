@@ -22,6 +22,12 @@ local ttLines = {
 	{"showProfitMonthly",L["This month"],"monthly"},
 	{"showProfitMonthly",L["Last month"],"monthly",true},
 };
+local showAllRealmsLabel = {
+	["1"]=L["Current realm only"],
+	["2"]=L["Connected realms"],
+	["3"]=L["Language realms"],
+	["4"]=L["All Realms"]
+};
 
 
 -- register icon names and default files --
@@ -294,7 +300,7 @@ end
 function createTooltip(tt,update)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
-	local sAR,sAF = ns.profile[name].showCharsFrom=="4",ns.profile[name].showAllFactions==true;
+	local sAR,sAF = ns.profile[name].showCharsFrom,ns.profile[name].showAllFactions==true;
 	local totalGold = {Alliance=0,Horde=0,Neutral=0};
 	totalGold[ns.player.faction] = ns.toon[name].money;
 
@@ -309,7 +315,9 @@ function createTooltip(tt,update)
 	tt:AddSeparator(4,0,0,0,0);
 
 	if(sAR or sAF)then
-		tt:AddLine(C("ltgreen","("..(sAR and L["All realms"] or "")..((sAR and sAF) and "/" or "")..(sAF and L["AllFactions"] or "")..")"));
+		local str = showAllRealmsLabel[sAR] or "";
+		str = str .. (str~="" and "/" or "") .. (sAF and L["AllFactions"] or (ns.player.faction=="Alliance" and L["AllianceOnly"] or L["HordeOnly"]));
+		tt:AddLine(C("ltgreen",str));
 		tt:AddSeparator(4,0,0,0,0);
 	end
 
@@ -323,7 +331,8 @@ function createTooltip(tt,update)
 
 	local lineCount=0;
 	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true,]] currentHide=true,--[[forceSameRealm=true]]}) do
-		if toonData[name] and toonData[name].money then
+		local _sAF = sAF or ns.player.faction==toonData.faction;
+		if toonData[name] and toonData[name].money and _sAF then
 			local faction = toonData.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
 			local line = tt:AddLine(
 				C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction,
