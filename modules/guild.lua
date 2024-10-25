@@ -745,6 +745,9 @@ local function createTooltip(tt,update)
 	if flags.showRace then
 		tinsert(titles,C("ltyellow",RACE));
 	end
+	if flags.showFaction then
+		tinsert(titles,C("ltyellow",FACTION));
+	end
 	if flags.showZone then
 		tinsert(titles,C("ltyellow",ZONE));
 	end
