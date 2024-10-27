@@ -745,6 +745,9 @@ local function createTooltip(tt,update)
 	if flags.showRace then
 		tinsert(titles,C("ltyellow",RACE));
 	end
+	if flags.showFaction then
+		tinsert(titles,C("ltyellow",FACTION));
+	end
 	if flags.showZone then
 		tinsert(titles,C("ltyellow",ZONE));
 	end
@@ -917,6 +920,7 @@ if ns.client_version<5 then
 	module.config_defaults.showApplicants = false
 	module.config_defaults.showApplicantsBroker = false
 	module.config_defaults.showTableBackground = false;
+	module.config_defaults.showFaction = false;
 end
 
 ns.ClickOpts.addDefaults(module,{
@@ -941,7 +945,7 @@ function module.options()
 
 			showRealmNames    = 20,
 			showRace          = { type="toggle", order=21, name=RACE, desc=L["Show race from guild members in tooltip"]},
-			showFaction       = { type="toggle", order=22, name=RACE, desc=L["Show faction from guild members in tooltip"]},
+			showFaction       = { type="toggle", order=22, name=FACTION, desc=L["Show faction from guild members in tooltip"],hidden=ns.IsClassicClient },
 			showZone          = { type="toggle", order=23, name=ZONE, desc=L["Show current zone from guild members in tooltip"]},
 			showNotes         = { type="toggle", order=24, name=L["Notes"], desc=L["Show notes from guild members in tooltip"]},
 			showONotes        = { type="toggle", order=25, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"], hidden=ns.IsClassicClient},
@@ -1010,6 +1014,9 @@ function module.onevent(self,event,msg,...)
 					C_ClubFinder.RequestApplicantList(Enum.ClubFinderRequestType.Guild); -- trigger CLUB_FINDER_RECRUITS_UPDATED
 				end
 			end
+		end
+		if ns.IsClassicClient then
+			ns.profile[name].showFaction = false;
 		end
 		RequestGuildRosterUpdate();
 	elseif event=="GUILD_TRADESKILL_UPDATE" and not triggerLockTradeSkill then
