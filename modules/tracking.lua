@@ -19,47 +19,32 @@ I[name] = {iconfile="Interface\\minimap\\tracking\\none"}; --IconName::Tracking-
 -- some local functions --
 --------------------------
 
-local C_Minimap_GetTrackingInfo
-if ns.IsClassicClient() then
-	function C_Minimap_GetTrackingInfo(id)
-		local info = {}
-		info.name, info.texture, info.active, info.type, info.subType, info.spellID = C_Minimap.GetTrackingInfo(id)
-		return info;
-	end
-else
-	C_Minimap_GetTrackingInfo = C_Minimap.GetTrackingInfo
-end
-
 local function updateTracking()
-	local tActive = 0
-	local n = {}
-
+	local tbl = {}
 	for i = 1, C_Minimap.GetNumTrackingTypes() do
-		local info = C_Minimap_GetTrackingInfo(i)
+		local info = C_Minimap.GetTrackingInfo(i)
 		if info.active then
-			tActive = tActive + 1
-			n[tActive] = {["Name"] = info.name, ["Texture"] = info.texture}
+			tinsert(tbl,info)
 		end
 	end
-
-	return tActive, n
+	return tbl
 end
 
 local function updateBroker()
 	-- broker button text
-	local numActive, trackActive = updateTracking()
-	local n = TRACKING;
-	local dataobj = ns.LDB:GetDataObjectByName(module.ldbName)
+	local trackActive = updateTracking()
+	local txt = TRACKING;
 	if ns.profile[name].displaySelection then
-		if numActive == 0 then
-			n = "None";
+		if #trackActive == 0 then
+			txt = "None";
 		else
-			for i = 1, numActive, 1 do
-				n = trackActive[i]["Name"];
+			txt = trackActive[1].name;
+			if #trackActive>1 then
+				txt = txt.." "..L["and %d more..."]:format(#trackActive-1)
 			end
 		end
 	end
-	dataobj.text = n;
+	ns.LDB:GetDataObjectByName(module.ldbName).text = txt;
 end
 
 -- module variables for registration --
@@ -116,15 +101,15 @@ function module.ontooltip(tooltip)
 	tt=tooltip;
 	if (ns.tooltipChkOnShowModifier(false)) then tt:Hide(); return; end
 
-	local numActive, trackActive = updateTracking()
+	local trackActive = updateTracking()
 	tt:AddLine(TRACKING)
 	tt:AddLine(" ")
 
-	if numActive == 0 then
+	if #trackActive == 0 then
 		tt:AddLine(C("white",L["No tracking option active."]))
 	else
-		for i = 1, numActive do
-			tt:AddDoubleLine("|T"..trackActive[i]["Texture"]..":16:16:0:0:64:64:4:60:4:60|t "..C("white",trackActive[i]["Name"]))
+		for i = 1, #trackActive do
+			tt:AddDoubleLine("|T"..trackActive[i].texture..":16:16:0:0:64:64:4:60:4:60|t "..C("white",trackActive[i].name))
 		end
 	end
 
@@ -138,12 +123,12 @@ end
 -- function module.onleave(self) end
 
 local function trackingMenuOnClick(button)
-	local info = C_Minimap_GetTrackingInfo(button.arg1);
+	local info = C_Minimap.GetTrackingInfo(button.arg1);
 	C_Minimap.SetTracking(button.arg1,not info.active);
 end
 
 local function trackingIsActive(button)
-	local info = C_Minimap_GetTrackingInfo(button.arg1);
+	local info = C_Minimap.GetTrackingInfo(button.arg1);
 	return active or info.active;
 end
 
@@ -158,10 +143,10 @@ function module.onclick(self,button)
 	ns.EasyMenu:AddEntry({label=MINIMAP_TRACKING_NONE, checked=MiniMapTrackingDropDown_IsNoTrackingActive, func=C_Minimap.ClearAllTracking });
 	ns.EasyMenu:AddEntry({separator=true});
 
-	local numTracking,hunterHeader,townHeader = 0,false;
+	local hunterHeader,townHeader = false;
 	for id=1, count do
-		info = C_Minimap_GetTrackingInfo(id);
-		if info.subType==-1 then
+		info = C_Minimap.GetTrackingInfo(id);
+		if info.subType==-1 then -- only show normal entries first in list
 			local entry={label=info.name, icon=info.texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};
 			if info.category=="spell" then
 				entry.tCoordLeft = 0.0625;
@@ -175,6 +160,7 @@ function module.onclick(self,button)
 	end
 
 	for id=1, #list do
+		-- add other subTypes with own header
 		local entry;
 		if list[id].subType==HUNTER_TRACKING and class == "HUNTER" then
 			if not hunterHeader then
@@ -184,7 +170,7 @@ function module.onclick(self,button)
 			end
 
 			entry = {label=list[id].name, icon=list[id].texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};
-		elseif list[id].subType==TOWNSFOLK_TRACKING  then
+		elseif list[id].subType==(TOWNSFOLK_TRACKING or 2)  then
 			if not townHeader then
 				ns.EasyMenu:AddEntry({separator=true});
 				ns.EasyMenu:AddEntry({label=TOWNSFOLK_TRACKING_TEXT, title=true});
