@@ -63,17 +63,19 @@ local function listProfitOnEnter(self,data)
 		if listTopProfit[key][d] then
 			local c = 1;
 			for Value,Toons in ns.pairsByKeys(listTopProfit[key][d],direction)do -- Type > Up/Down > Value > [Toons]
-				if h then
-					tt2:AddLine(C("ltgray",direction and L["GoldProfits"] or L["GoldLosses"]), rText)
-					rText = ""
-					h=false;
+				if type(Value)=="number" and type(Toons)=="table" and #Toons>0 then
+					if h then
+						tt2:AddLine(C("ltgray",direction and L["GoldProfits"] or L["GoldLosses"]), rText)
+						rText = ""
+						h=false;
+					end
+					if not direction then
+						Value = -Value;
+					end
+					tt2:AddLine(table.concat(Toons,"|n"),C(direction and "green" or "red",ns.GetCoinColorOrTextureString(name,Value,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT})));
+					c=c+1;
+					if c>num then break; end
 				end
-				if not direction then
-					Value = -Value;
-				end
-				tt2:AddLine(table.concat(Toons,"|n"),C(direction and "green" or "red",ns.GetCoinColorOrTextureString(name,Value,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT})));
-				c=c+1;
-				if c>num then break; end
 			end
 		end
 	end
