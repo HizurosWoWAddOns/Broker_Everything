@@ -11,15 +11,14 @@ local time,date,tinsert,tconcat=time,date,tinsert,table.concat;
 local name = "Gold"; -- BONUS_ROLL_REWARD_MONEY L["ModDesc-Gold"]
 local ttName, ttName2, tt, tt2, createTooltip, module = name.."TT", name.."TT2";
 local login_money,Date = nil,{};
-local listTopProfit,accountBankMoney = {},nil;
-local me = ns.player.name_realm;
+local listTopProfit,accountBankMoney,ticker = {},nil;
 local ttLines = {
 	{"showProfitSession",L["Session"],"session"},
-	{"showProfitDaily",HONOR_TODAY,"daily"},
+	{"showProfitDaily",HONOR_TODAY,"daily",false},
 	{"showProfitDaily",HONOR_YESTERDAY,"daily",true},
-	{"showProfitWeekly",ARENA_THIS_WEEK,"weekly"},
+	{"showProfitWeekly",ARENA_THIS_WEEK,"weekly",false},
 	{"showProfitWeekly",HONOR_LASTWEEK,"weekly",true},
-	{"showProfitMonthly",L["This month"],"monthly"},
+	{"showProfitMonthly",L["This month"],"monthly",false},
 	{"showProfitMonthly",L["Last month"],"monthly",true},
 };
 local showAllRealmsLabel = {
@@ -37,28 +36,9 @@ I[name] = {iconfile="Interface\\Minimap\\TRACKING\\Auctioneer",coords={0.05,0.95
 
 -- some local functions --
 --------------------------
-local function migrateData()
-	if not (ns.data[name] and ns.data[name].Profit) then return end
-	-- reason to migrate from ns.data to ns.toons:
-	-- Toon profit entries in ns.data wouldn't be delete on deleting toon data by user.
-	for interval,Players in pairs(ns.data[name].Profit)do
-		for Player, Values in pairs(Players) do
-			if ns.toonsDB[Player] then
-				ns.tablePath(ns.toonsDB,Player,name,"profit",interval);
-				ns.toonsDB[Player][name].profit[interval] = Values;
-				if ns.toonsDB[Player].gold then
-					ns.toonsDB[Player][name].money = ns.toonsDB[Player].gold;
-					ns.toonsDB[Player].gold = nil
-				end
-			end
-		end
-	end
-	--ns.data[name] = nil;
-end
-
 local function updateAccountBankMoney()
 	if not (C_Bank and C_Bank.FetchDepositedMoney and Enum and Enum.BankType and Enum.BankType.Account) then
-		return;
+		return; -- war band bank does not exists on classic clients.
 	end
 	accountBankMoney = C_Bank.FetchDepositedMoney(Enum.BankType.Account) or 0
 end
@@ -160,6 +140,7 @@ end
 
 local updateProfit;
 function updateProfit()
+	-- generate timestamps
 	local w,day,T = tonumber(date("%w")),86400,date("*t"); w = w==0 and 7 or w;
 	local today = time({year=T.year,month=T.month,day=T.day,hour=23,min=59,sec=59});
 	local week = time({year=T.year,month=T.month,day=T.day+(7-w)+1,hour=0,min=0,sec=0})-1;
@@ -172,16 +153,18 @@ function updateProfit()
 		time({year=T.year,month=T.month-1,day=1,hour=0,min=0,sec=0})-1
 	};
 
+	-- prepare tables
 	ns.tablePath(ns.toon,name,"profit");
 	ns.tablePath(ns.toon,name,"profitv2");
-	local money = login_money<ns.toon[name].money and login_money or ns.toon[name].money;
+
 	for interval,timestamp in pairs(Date) do
 		-- profit table for current character; get or create
 		if not ns.toon[name].profit[interval] then
 			ns.toon[name].profit[interval] = {}
 		end
-		local profitV1 = ns.toon[name].profit[interval];
 
+		--== provit table version 1 ==--
+		local profitV1 = ns.toon[name].profit[interval];
 		if profitV1[timestamp[1]]==nil then
 			-- this day/week/month is nil; set 0
 			profitV1[timestamp[1]] = 0;
@@ -203,14 +186,15 @@ function updateProfit()
 			end
 		end
 
-		-- profit table (v2) for current character; get or create
+		-- profit table (version 2) for current character; get or create
 		if not ns.toon[name].profitv2[interval] then
 			ns.toon[name].profitv2[interval] = {}
 		end
+
 		local profitV2 = ns.toon[name].profitv2[interval];
 		for i=1, 3 do
 			if not profitV2[timestamp[i]] then
-				profitV2[timestamp[i]] = money;
+				profitV2[timestamp[i]] = ns.toon[name].money;
 			end
 		end
 
@@ -229,7 +213,8 @@ function updateProfit()
 			ns.toon[name].profit[k]=nil;
 		end
 	end
-	C_Timer.After(today-time()+1,updateProfit); -- next update
+
+	C_Timer.After(today-time()+1,updateProfit); -- next update at midnight
 end
 
 local function deleteCharacterGoldData(self,name_realm,button)
@@ -298,7 +283,7 @@ local function ttAddProfit(all)
 end
 
 function createTooltip(tt,update)
-	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
+	if not (tt and tt.key and tt.key==ttName) or login_money==nil then return end -- don't override other LibQTip tooltips...
 
 	local sAR,sAF = ns.profile[name].showCharsFrom,ns.profile[name].showAllFactions==true;
 	local totalGold = {Alliance=0,Horde=0,Neutral=0};
@@ -381,14 +366,20 @@ function createTooltip(tt,update)
 	end
 end
 
+--== Warband bank money ==--
+-- removing drawed / adding withdrawed player money; thats not loss or profit.
 if (C_Bank and C_Bank.FetchDepositedMoney and Enum and Enum.BankType and Enum.BankType.Account) then
 	local function updateToonProfits(value)
 		login_money = login_money + value
 		for _,interval in ipairs({"daily","weekly","monthly"}) do
-			local Table,_date = ns.toon[name].profitv2,Date[interval];
-			if Table and type(Table[interval])=="table" then
-				Table[interval][_date[1]] = Table[interval][_date[1]] + value;
-				Table[interval][_date[2]] = Table[interval][_date[2]] + value;
+			local TblV1,TblV2,_date = ns.toon[name].profitv1,ns.toon[name].profitv2,Date[interval];
+			if TblV2 and type(TblV2[interval])=="table" then
+				TblV2[interval][_date[1]] = TblV2[interval][_date[1]] + value; -- today, current week/month
+				TblV2[interval][_date[2]] = TblV2[interval][_date[2]] + value; -- yesterday, last week/month
+				--TblV2[interval][_date[3]] = TblV2[interval][_date[3]] + value;
+			end
+			if TblV1 and type(TblV1[interval])=="table" then
+				--TblV1[interval][_date[1]] =
 			end
 		end
 	end
@@ -525,11 +516,13 @@ function module.OptionMenu(self,button,modName)
 end
 
 function module.init()
-	module.lockFirstUpdate = true
+	module.lockFirstUpdate = true -- locked; waiting on first value from GetMoney function on login.
 	if not ns.toon[name] then
 		ns.toon[name] = {}
 	end
-	migrateData()
+	if ns.data[name] then
+		ns.data[name] = nil; -- remove old data
+	end
 end
 
 function module.onevent(self,event,arg1)
@@ -537,16 +530,18 @@ function module.onevent(self,event,arg1)
 		ns.ClickOpts.update(name);
 	else
 		if event=="PLAYER_LOGIN" then
-			C_Timer.After(0.5,function()
-				ns.toon[name].money = GetMoney();
-				if login_money==nil and ns.toon[name].money~=nil then
-					login_money = ns.toon[name].money;
+			ticker = C_Timer.NewTicker(0.2, function()
+				local money = GetMoney()
+				if money then
+					ticker:Cancel()
+					login_money,ns.toon[name].money,ticker = money,money;
+					updateProfit();
+					updateBroker();
+					module.lockFirstUpdate = false;
 				end
-				updateProfit();
-				updateBroker();
-				module.lockFirstUpdate = false;
-			end);
-		elseif ns.eventPlayerEnteredWorld and (not module.lockFirstUpdate) and login_money~=nil then
+			end,50) -- 10 seconds to get current player money; i hope it is enough for slow pc's and net connections.
+		elseif ns.eventPlayerEnteredWorld and not module.lockFirstUpdate then
+			-- PLAYER_MONEY, PLAYER_TRADE_MONEY, TRADE_MONEY_CHANGED
 			ns.toon[name].money = GetMoney();
 			updateBroker();
 		end
