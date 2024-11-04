@@ -235,8 +235,11 @@ local function updateBroker()
 	if ns.profile[name].showProfitSessionBroker and ns.toon[name] then
 		local p = getProfit(ns.toon[name],true);
 		if p.session~=0 then
-			local sign = (p.session>0 and "|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t") or (p.session<0 and "|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t") or "";
-			tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,p.session,{hideMoney=ns.profile[name].goldHideBB}));
+			local sess,sign = p.session,"|Tinterface\\buttons\\ui-microstream-green:14:14:0:0:32:32:6:26:26:6|t";
+			if sess<0 then
+				sess,sign = -sess,"|Tinterface\\buttons\\ui-microstream-red:14:14:0:0:32:32:6:26:6:26|t";
+			end
+			tinsert(broker, sign .. ns.GetCoinColorOrTextureString(name,sess,{hideMoney=ns.profile[name].goldHideBB}));
 		end
 	end
 	updateAccountBankMoney()
