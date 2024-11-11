@@ -117,11 +117,13 @@ module = {
 local options
 local function listOptTitles()
 	local titles,num = {},GetNumTitles()
+	titles.desc = {type="description", order=1, name=L["TitlesShowDesc"]}
 	for i=1, num do
 		local tempName, playerTitle = GetTitleName(i);
 		if tempName and IsTitleKnown(i) then
 			titles["title-"..i] = {
 				type = "toggle",
+				order = 2,
 				name = tempName,
 				get = optHideTitle,
 				set = optHideTitle,
@@ -136,7 +138,7 @@ function module.options()
 	options = {
 		broker = {},
 		tooltip = {
-			ttRows = {type = "range", order=1, name=L["TitlesRows"], desc=L["TitlesRowsDesc"], min=1, max=8, step=1},
+			ttRows = {type = "range", order=1, name=L["TitlesRow"], desc=L["TitlesRowDesc"], min=1, max=8, step=1},
 			ttShowTitles = {
 				type = "group", order = 2,
 				name = L["TitlesShow"],
@@ -156,12 +158,10 @@ function module.onevent(self,event,...)
 		--ns.ClickOpts.update(name);
 		return;
 	end
-	if event=="PLAYER_ENTERING_WORLD" or event=="KNOWN_TITLES_UPDATE" or (event=="UNIT_NAME_UPDATE" and (...)=="player") then
-		if listOptTitles then
-			listOptTitles()
-			listOptTitles = nil
-		end
-
+	if event=="PLAYER_LOGIN" or event=="KNOWN_TITLES_UPDATE" then
+		listOptTitles()
+	end
+	if event=="PLAYER_ENTERING_WORLD" or (event=="UNIT_NAME_UPDATE" and (...)=="player") then
 		updateBroker()
 	end
 end
