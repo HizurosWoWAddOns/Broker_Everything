@@ -43,46 +43,6 @@ local function updateAccountBankMoney()
 	accountBankMoney = C_Bank.FetchDepositedMoney(Enum.BankType.Account) or 0
 end
 
-local function listProfitOnEnter(self,data)
-	local ttl = ttLines[data.index];
-	local num = ns.profile[name].numProfitTop;
-
-	tt2 = ns.acquireTooltip(
-		{ttName2,2,"LEFT","RIGHT","RIGHT"},
-		{true,true},
-		{self,"horizontal",tt}
-	);
-	if tt2.lines~=nil then tt2:Clear(); end
-
-	tt2:AddHeader(L["GoldProfitTopHeader"]:format(num), C("dkyellow",ttl[2]));
-	tt2:AddSeparator();
-	local key = ttl[3]..(ttl[4] and "Last" or "");
-	local rText = C("orange",L["Experimental"]);
-	for _,d in ipairs({"up","down"})do
-		local h,direction=true,d=="up";
-		if listTopProfit[key][d] then
-			local c = 1;
-			for Value,Toons in ns.pairsByKeys(listTopProfit[key][d],direction)do -- Type > Up/Down > Value > [Toons]
-				if type(Value)=="number" and type(Toons)=="table" and #Toons>0 then
-					if h then
-						tt2:AddLine(C("ltgray",direction and L["GoldProfits"] or L["GoldLosses"]), rText)
-						rText = ""
-						h=false;
-					end
-					if not direction then
-						Value = -Value;
-					end
-					tt2:AddLine(table.concat(Toons,"|n"),C(direction and "green" or "red",ns.GetCoinColorOrTextureString(name,Value,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT})));
-					c=c+1;
-					if c>num then break; end
-				end
-			end
-		end
-	end
-
-	ns.roundupTooltip(tt2);
-end
-
 local function getProfit(tbl,isCurrent)
 	local method,Table=ns.profile[name].profitMethod;
 	local t = {session=0,daily=0,weekly=0,monthly=0,dailyLast=0,weeklyLast=0,monthlyLast=0};
@@ -219,14 +179,6 @@ function updateProfit()
 	C_Timer.After(today-time()+1,updateProfit); -- next update at midnight
 end
 
-local function deleteCharacterGoldData(self,name_realm,button)
-	if button == "RightButton" then
-		Broker_Everything_CharacterDB[name_realm][name] = nil;
-		tt:Clear();
-		createTooltip(tt,true);
-	end
-end
-
 local function updateBroker()
 	local broker = {};
 	if ns.profile[name].showCharGold then
@@ -250,6 +202,66 @@ local function updateBroker()
 		broker = {BONUS_ROLL_REWARD_MONEY};
 	end
 	ns.LDB:GetDataObjectByName(module.ldbName).text = table.concat(broker,ns.profile[name].delimiterBB);
+end
+
+local function initFirstUpdate()
+	if not module.lockFirstUpdate then return end
+	local money = GetMoney()
+	if money then
+		ticker:Cancel()
+		login_money,ns.toon[name].money,ticker = money,money;
+		updateProfit();
+		updateBroker();
+		module.lockFirstUpdate = false;
+	end
+end
+
+local function deleteCharacterGoldData(self,name_realm,button)
+	if button == "RightButton" then
+		Broker_Everything_CharacterDB[name_realm][name] = nil;
+		tt:Clear();
+		createTooltip(tt,true);
+	end
+end
+
+local function listProfitOnEnter(self,data)
+	local ttl = ttLines[data.index];
+	local num = ns.profile[name].numProfitTop;
+
+	tt2 = ns.acquireTooltip(
+		{ttName2,2,"LEFT","RIGHT","RIGHT"},
+		{true,true},
+		{self,"horizontal",tt}
+	);
+	if tt2.lines~=nil then tt2:Clear(); end
+
+	tt2:AddHeader(L["GoldProfitTopHeader"]:format(num), C("dkyellow",ttl[2]));
+	tt2:AddSeparator();
+	local key = ttl[3]..(ttl[4] and "Last" or "");
+	local rText = C("orange",L["Experimental"]);
+	for _,d in ipairs({"up","down"})do
+		local h,direction=true,d=="up";
+		if listTopProfit[key][d] then
+			local c = 1;
+			for Value,Toons in ns.pairsByKeys(listTopProfit[key][d],direction)do -- Type > Up/Down > Value > [Toons]
+				if type(Value)=="number" and type(Toons)=="table" and #Toons>0 then
+					if h then
+						tt2:AddLine(C("ltgray",direction and L["GoldProfits"] or L["GoldLosses"]), rText)
+						rText = ""
+						h=false;
+					end
+					if not direction then
+						Value = -Value;
+					end
+					tt2:AddLine(table.concat(Toons,"|n"),C(direction and "green" or "red",ns.GetCoinColorOrTextureString(name,Value,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT})));
+					c=c+1;
+					if c>num then break; end
+				end
+			end
+		end
+	end
+
+	ns.roundupTooltip(tt2);
 end
 
 local function ttAddProfit(all)
@@ -375,6 +387,9 @@ end
 -- removing drawed / adding withdrawed player money; thats not loss or profit.
 if (C_Bank and C_Bank.FetchDepositedMoney and Enum and Enum.BankType and Enum.BankType.Account) then
 	local function updateToonProfits(value)
+		if not login_money then
+			initFirstUpdate()
+		end
 		login_money = login_money + value
 		for _,interval in ipairs({"daily","weekly","monthly"}) do
 			local TblV1,TblV2,_date = ns.toon[name].profitv1,ns.toon[name].profitv2,Date[interval];
@@ -404,7 +419,7 @@ end
 ------------------------------------
 module = {
 	events = {
-		"PLAYER_LOGIN",
+		"PLAYER_ENTERING_WORLD",
 		"PLAYER_MONEY",
 		"PLAYER_TRADE_MONEY",
 		"TRADE_MONEY_CHANGED",
@@ -533,23 +548,14 @@ end
 function module.onevent(self,event,arg1)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
-	else
-		if event=="PLAYER_LOGIN" then
-			ticker = C_Timer.NewTicker(0.2, function()
-				local money = GetMoney()
-				if money then
-					ticker:Cancel()
-					login_money,ns.toon[name].money,ticker = money,money;
-					updateProfit();
-					updateBroker();
-					module.lockFirstUpdate = false;
-				end
-			end,50) -- 10 seconds to get current player money; i hope it is enough for slow pc's and net connections.
-		elseif ns.eventPlayerEnteredWorld and not module.lockFirstUpdate then
-			-- PLAYER_MONEY, PLAYER_TRADE_MONEY, TRADE_MONEY_CHANGED
-			ns.toon[name].money = GetMoney();
-			updateBroker();
-		end
+	end
+	if module.lockFirstUpdate and not ticker then
+		ticker = C_Timer.NewTicker(0.2, initFirstUpdate ,50) -- 10 seconds to get current player money; i hope it is enough for slow pc's and net connections.
+	end
+	if ns.eventPlayerEnteredWorld and not module.lockFirstUpdate then
+		-- PLAYER_MONEY, PLAYER_TRADE_MONEY, TRADE_MONEY_CHANGED
+		ns.toon[name].money = GetMoney();
+		updateBroker();
 	end
 end
 
