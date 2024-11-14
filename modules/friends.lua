@@ -735,11 +735,15 @@ function module.onevent(self,event,arg1)
 		}) do
 			self:RegisterEvent(e)
 		end
-	elseif ns.eventPlayerEnteredWorld or event=="PLAYER_ENTERING_WORLD" then
-		updateBroker();
-		if (tt) and (tt.key) and (tt.key==ttName) and (tt:IsShown()) then
-			createTooltip(tt);
-		end
+	elseif (ns.eventPlayerEnteredWorld or event=="PLAYER_ENTERING_WORLD") and not self.locked then
+		self.locked=true -- catch up mass triggered events
+		C_Timer.After(0.314159,function()
+			updateBroker();
+			if (tt) and (tt.key) and (tt.key==ttName) and (tt:IsShown()) then
+				createTooltip(tt);
+			end
+			self.locked=nil
+		end)
 	end
 end
 
