@@ -207,7 +207,7 @@ function module.onevent(self,event,msg)
 	elseif event=="BE_UPDATE_CFG" then
 		ns.ClickOpts.update(name);
 	elseif event=="GUILD_EVENT_LOG_UPDATE" then
-		wipe(logs);
+		local tmp = {}
 		local numEvents = GetNumGuildEvents();
 		local cY,cM,cD,cH = strsplit(".",date("%Y.%m.%d.%H"));
 		local type, player1, player2, rank, year, month, day, hour,key;
@@ -215,14 +215,14 @@ function module.onevent(self,event,msg)
 			type, player1, player2, rank, year, month, day, hour = GetGuildEventInfo(i);
 
 			if (type=="join") or (type=="quit") then
-				tinsert(logs,{
+				tinsert(tmp,{
 					type = type,
 					char = player1 or UNKNOWN,
 					recent = RecentTimeDate(year, month, day, hour),
 					time = time({year=cY-year,month=cM-month,day=cD-day,hour=cH-hour,min=0,sec=0})
 				});
 			else
-				tinsert(logs,{
+				tinsert(tmp,{
 					type = type,
 					char = player2 or UNKNOWN,
 					by = player1 or UNKNOWN,
@@ -232,6 +232,7 @@ function module.onevent(self,event,msg)
 				});
 			end
 		end
+		logs = tmp;
 	end
 end
 
