@@ -20,6 +20,7 @@ local dbDefaults,db = {
 			ttModifierKey1 = "NONE",
 			ttModifierKey2 = "NONE",
 			goldHide = "0",
+			goldHideZero = true,
 			separateThousands = true,
 			showAddOnLoaded = true,
 			chatCommands = true
@@ -256,7 +257,8 @@ local options = {
 						goldColor          = {type="select",order=1,name=L["GoldColor"],desc=L["GoldColorDesc"],values={_none=ADDON_DISABLED,color=L["GoldColorCoin"],white=L["GoldColorWhite"]} },
 						goldCoins          = {type="toggle",order=2,name=L["GoldCoins"],desc=L["GoldCoinsDesc"]},
 						separateThousands  = {type="toggle",order=3,name=L["DigitGroup"],desc=L["DigitGroupDesc"]},
-						goldHide           = {type="select",order=4,name=L["HideMoney"],desc=L["HideMoneyDescEverywhere"], width = "double", values= goldHideValues }
+						goldHide           = {type="select",order=4,name=L["HideMoney"],desc=L["HideMoneyDescEverywhere"], width = "double", values= goldHideValues },
+						goldHideZero       = {type="toggle",order=5,name=L["HideMoneyZero"],desc=L["HideMoneyZeroDesc"], hidden=function() return ns.profile.GeneralOptions.goldHide~="0" end},
 					}
 				},
 				tooltip = {

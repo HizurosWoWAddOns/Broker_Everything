@@ -1515,6 +1515,10 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 		showSilver = (gold==0 and silver>0);
 		showCopper = (gold==0 and silver==0 and copper>0);
 	end
+	-- override showCopper for zero money to avoid empty lines
+	if hideMoney~=0 and amount==0 then
+		showCopper = true;
+	end
 
 	if gold>0 then
 		local str = tostring(ns.FormatLargeNumber(modName,gold,opts.inTooltip) or "white");
