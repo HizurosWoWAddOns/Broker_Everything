@@ -9,9 +9,9 @@ local time,date,tinsert,tconcat=time,date,tinsert,table.concat;
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Gold"; -- BONUS_ROLL_REWARD_MONEY L["ModDesc-Gold"]
-local ttName, ttName2, tt, tt2, createTooltip, module = name.."TT", name.."TT2";
+local ttName, ttName2, ttColumns, ttColumns2, tt, tt2, createTooltip, module = name.."TT", name.."TT2",3,2;
 local login_money,Date = nil,{};
-local listTopProfit,accountBankMoney,ticker = {},nil;
+local listTopProfit,accountBankMoney,ticker = {};
 local ttLines = {
 	{"showProfitSession",L["Session"],"session"},
 	{"showProfitDaily",HONOR_TODAY,"daily",false},
@@ -58,14 +58,8 @@ local function getProfit(tbl,isCurrent)
 		for _,interval in ipairs({"daily","weekly","monthly"}) do
 			local _date,_tbl = Date[interval],Table[interval];
 			if _date and type(_tbl)=="table" then
-				if method==1 then
-					t[interval] = _tbl[_date[1]] or 0;
-					t[interval.."Last"] = tonumber(_tbl[_date[2]]) or 0;
-				elseif method==2 then
-					t[interval] = tbl.money-(_tbl[_date[1]] or 0);
-					t[interval.."Last"] = (_tbl[_date[1]] or 0) - (_tbl[_date[2]] or 0);
-					--t[interval.."Last2"] = (_tbl[_date[2]] or 0) - (_tbl[_date[3]] or 0);
-				end
+				t[interval] = _tbl[_date[1]] and (tbl.money-_tbl[_date[1]]) or 0;
+				t[interval.."Last"] = (_tbl[_date[1]] or tbl.money) - (_tbl[_date[2]] or 0);
 			end
 		end
 	end
@@ -229,11 +223,13 @@ local function listProfitOnEnter(self,data)
 	local num = ns.profile[name].numProfitTop;
 
 	tt2 = ns.acquireTooltip(
-		{ttName2,2,"LEFT","RIGHT","RIGHT"},
+		{ttName2,ttColumns2,"LEFT","RIGHT","RIGHT"},
 		{true,true},
 		{self,"horizontal",tt}
 	);
-	if tt2.lines~=nil then tt2:Clear(); end
+	if tt2.lines~=nil then
+		tt2:Clear();
+	end
 
 	tt2:AddHeader(L["GoldProfitTopHeader"]:format(num), C("dkyellow",ttl[2]));
 	tt2:AddSeparator();
@@ -565,7 +561,7 @@ end
 
 function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip({ttName, 3, "LEFT", "RIGHT","RIGHT"},{false},{self})
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "RIGHT","RIGHT"},{false},{self})
 	createTooltip(tt);
 end
 
