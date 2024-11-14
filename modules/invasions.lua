@@ -12,7 +12,7 @@ local name = "Invasions"; -- L["ModDesc-Invasions"]
 local ttName, ttColumns, tt, module = name.."TT", 3;
 local regionLabel,region,timeStamp = {L["North america / Brazil / Oceania"],L["Korea"],L["Europe / Russia"],L["Taiwan"],L["China"]};
 local events = {--- 1491375600000
-	{ enabled=true, icon=nil, label=SPLASH_LEGION_PREPATCH_FEATURE1_TITLE.." ("..EXPANSION_NAME6..")", start1=1491337800, start3=1491375600, interval=66600, length=21600, achievement=11544, order=false },
+	{ enabled=true, icon=nil, label=SPLASH_LEGION_PREPATCH_FEATURE1_TITLE.." ("..EXPANSION_NAME6..")", start1=1491337800, start3=1491375600, start5=1491300000, interval=66600, length=21600, achievement=11544, order=false },
 	{ enabled=true, icon=nil, label=SPLASH_BATTLEFORAZEROTH_8_1_FEATURE2_TITLE.." ("..EXPANSION_NAME7..")", start1=1544612400, start3=1544580000, interval=68400, length=25200, achievement=13283, order={942,864,896,862,895,863}, orderType="zone" },
 	--{ enabled=true, icon=nil, label=SPLASH_LEGION_PREPATCH_FEATURE1_TITLE.." ("..EXPANSION_NAME6..")", start1=1491337800, start3=1491375600, interval=66600, length=21600, achievement=11544, order={641,634,630,650,634,650,641,630,634,641,650,630}, orderType="zone" },
 	-- covenantID -- 1 kyrian, 2 venthyr, 3 nightfae, 4 necrolords
