@@ -244,7 +244,7 @@ local function createTooltip_AddCurrencies(currencyList)
 
 				-- cap
 				if ns.profile[name].showTotalCap and currencyInfo.maxQuantity>0 then
-					str = str .."/".. ns.FormatLargeNumber(name,currencyInfo.maxQuantity,true);
+					str = str .. (not currencyInfo.useTotalEarnedForMaxQty and "/".. ns.FormatLargeNumber(name,currencyInfo.maxQuantity,true) or "");
 
 					-- cap coloring
 					if ns.profile[name].showCapColor then
@@ -263,6 +263,18 @@ local function createTooltip_AddCurrencies(currencyList)
 					-- cap coloring
 					if ns.profile[name].showCapColor then
 						wstr = CapColor(currencyInfo.capInvert and {"red","orange","yellow","green"} or {"green","yellow","orange","red"},wstr,{nonZero=currencyInfo.quantity>0,count=currencyInfo.quantityEarnedThisWeek,maxCount=currencyInfo.maxWeeklyQuantity,capInvert=currencyInfo.capInvert});
+					end
+
+					str = wstr.." "..str;
+				end
+
+				-- season cap
+				if currencyInfo.useTotalEarnedForMaxQty then
+					local wstr = "("..ns.FormatLargeNumber(name,currencyInfo.totalEarned,true).."/"..ns.FormatLargeNumber(name,currencyInfo.maxQuantity,true)..")";
+
+					-- cap coloring
+					if ns.profile[name].showCapColor then
+						wstr = CapColor(currencyInfo.capInvert and {"red","orange","yellow","green"} or {"green","yellow","orange","red"},wstr,{nonZero=currencyInfo.quantity>0,count=currencyInfo.totalEarned,maxCount=currencyInfo.maxQuantity,capInvert=currencyInfo.capInvert});
 					end
 
 					str = wstr.." "..str;
