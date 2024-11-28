@@ -240,11 +240,12 @@ local function createTooltip_AddCurrencies(currencyList)
 
 			if not parentIsCollapsed then
 				CountCorrection(currencyId,currencyInfo);
+				local showSeasonCap = ns.profile[name].showSeasonCap and currencyInfo.useTotalEarnedForMaxQty;
 				local str = ns.FormatLargeNumber(name,currencyInfo.quantity,true);
 
 				-- cap
 				if ns.profile[name].showTotalCap and currencyInfo.maxQuantity>0 then
-					str = str .. (not currencyInfo.useTotalEarnedForMaxQty and "/".. ns.FormatLargeNumber(name,currencyInfo.maxQuantity,true) or "");
+					str = str .. (not showSeasonCap and "/".. ns.FormatLargeNumber(name,currencyInfo.maxQuantity,true) or "");
 
 					-- cap coloring
 					if ns.profile[name].showCapColor then
@@ -269,7 +270,7 @@ local function createTooltip_AddCurrencies(currencyList)
 				end
 
 				-- season cap
-				if currencyInfo.useTotalEarnedForMaxQty then
+				if showSeasonCap then
 					local wstr = "("..ns.FormatLargeNumber(name,currencyInfo.totalEarned,true).."/"..ns.FormatLargeNumber(name,currencyInfo.maxQuantity,true)..")";
 
 					-- cap coloring
@@ -735,6 +736,7 @@ module = {
 		showCapColor = true,
 		showCapBroker = true,
 		showCapColorBroker = true,
+		showSeasonCap = true,
 		showSession = true,
 		spacer=0,
 		showIDs = false,
@@ -769,10 +771,11 @@ function module.options()
 		showTotalCap  = { type="toggle", order=1, name=L["CurrencyCapTotal"], desc=L["CurrencyCapTotalDesc"] },
 		showWeeklyCap = { type="toggle", order=2, name=L["CurrencyCapWeekly"], desc=L["CurrencyCapWeeklyDesc"] },
 		showCapColor  = { type="toggle", order=3, name=L["Coloring total cap"], desc=L["Coloring limited currencies by total and/or weekly cap."] },
-		showSession   = { type="toggle", order=4, name=L["Show session earn/loss"], desc=L["Display session profit in tooltip"] },
-		showIDs       = { type="toggle", order=5, name=L["Show currency id's"], desc=L["Display the currency id's in tooltip"] },
-		shortTT       = { type="toggle", order=6, name=L["Short Tooltip"], desc=L["Display the content of the tooltip shorter"] },
-		showHidden    = { type="toggle", order=7, name=L["CurrenyHidden"], desc=L["CurrencyHiddenDesc"], hidden=ns.IsClassicClient },
+		showSeasonCap = { type="toggle", order=4, name=L["Season cap"], desc=L["Display season cap in tooltip"] },
+		showSession   = { type="toggle", order=5, name=L["Show session earn/loss"], desc=L["Display session profit in tooltip"] },
+		showIDs       = { type="toggle", order=6, name=L["Show currency id's"], desc=L["Display the currency id's in tooltip"] },
+		shortTT       = { type="toggle", order=7, name=L["Short Tooltip"], desc=L["Display the content of the tooltip shorter"] },
+		showHidden    = { type="toggle", order=8, name=L["CurrenyHidden"], desc=L["CurrencyHiddenDesc"], hidden=ns.IsClassicClient },
 		header        = { type="header", order=20, name=L["CurrencyFavorites"], hidden=isHidden },
 		info          = { type="description", order=21, name=L["CurrencyFavoritesInfo"], fontSize="medium", hidden=true },
 	}
