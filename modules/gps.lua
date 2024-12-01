@@ -321,6 +321,33 @@ local function transportMenuDoUpdate()
 	end
 end
 
+local cd_day = 60 * 60 * 24;
+local cd_hour = 60 * 60;
+local cd_minute = 60;
+
+local function cooldownFmt(cooldown)
+	if cooldown > cd_day then
+		local d = math.floor(cooldown / cd_day);
+		local h = (cooldown - d * cd_day) / cd_hour;
+		h = math.floor(h + 0.5);
+		return string.format('%dd%dh', d, h);
+	end
+	if cooldown > cd_hour then
+		local h = math.floor(cooldown / cd_hour);
+		local m = (cooldown - h * cd_hour) / cd_minute;
+		m = math.floor(m + 0.5);
+		return string.format('%dh%dm', h, m);
+	end
+	if cooldown > cd_minute then
+		local m = math.floor(cooldown / cd_minute);
+		local s = cooldown - m * cd_minute;
+		s = math.floor(s + 0.5);
+		return string.format('%dm%ds', m, s);
+	end
+	local s = math.floor(cooldown + 0.5);
+	return string.format('%ds', s);
+end
+
 local function tpmAddObject(tt,parent,name,line,column,data)
 	local start, duration, enabled;
 	if data.type=="spell" then
@@ -364,7 +391,11 @@ local function tpmAddObject(tt,parent,name,line,column,data)
 	if data.mustBeEquipped==true and data.equipped==false then
 		info = " "..C("orange","(click to equip)");
 	end
-	line = tt:AddLine(iStr16:format(data.icon)..(data.name2 or data.name)..info, "1","2","3");
+	local cooldown = "";
+	if data.cooldown and data.cooldown ~= 0 then
+		cooldown = " "..C("green", '('..cooldownFmt(data.cooldown)..')');
+	end
+	line = tt:AddLine(iStr16:format(data.icon)..(data.name2 or data.name)..info..cooldown, "1","2","3");
 	tt:SetLineScript(line,"OnEnter",tpmOnEnter,data);
 end
 
@@ -523,7 +554,7 @@ local function init()
 
 	-- toys
 	_toyIds = {
-		18984,18986,30542,30544,43824,48933,87215,95567,95568,95589,95590,110560,112059,129929,132517,136849,140192,140324,151016,151652,168807,168808,169297,169298,172924,198156,211788,
+		18984,18986,30542,30544,43824,48933,87215,95567,95568,95589,95590,110560,112059,129929,132517,136849,140192,140324,151016,151652,168807,168808,169297,169298,172924,198156,211788,221966,
 
 		-- hearth stones
 		54452,64488,93672,142542,162973,163045,165669,165670,165802,166746,166747,168862,168907,172179,184353,180290,182773,183716,184871,188952,190196,190237,193588,200630,206195,208704,209035,212337,228940
