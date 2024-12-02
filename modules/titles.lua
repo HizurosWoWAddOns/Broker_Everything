@@ -9,6 +9,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "Titles"; L[name] = PAPERDOLL_SIDEBAR_TITLES;
 local ttName, ttColumns, tt, module = name.."TT", 6;
+local newTitles,knownTitles = {}
 
 
 -- register icon names and default files --
@@ -39,8 +40,8 @@ end
 function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	if tt.lines~=nil then tt:Clear(); end
-	local l = tt:AddHeader(C("dkyellow",L[name]));
 
+	tt:SetCell(tt:AddLine(),1,C("dkyellow",L[name]),tt:GetHeaderFont(),"CENTER",0);
 	tt:AddSeparator(4,0,0,0,0);
 
 	local current = GetCurrentTitle();
@@ -49,7 +50,7 @@ function createTooltip(tt)
 	local curCell,line;
 	table.sort(titles,PlayerTitleSort)
 
-	l=tt:AddLine();
+	local l=tt:AddLine();
 	tt:SetCell(l,1,PLAYER_TITLE_NONE,nil,"CENTER",0) -- no title as separate line
 	tt:SetLineScript(l,"OnMouseUp",setTitle,titles[1].id)
 	tt:AddSeparator(1.1,.7,.7,.7);
@@ -67,6 +68,8 @@ function createTooltip(tt)
 			local title = titles[i].name;
 			if titles[i].id==current then
 				title = C("dkyellow",title)
+			elseif newTitles[title] then
+				title = C("ltgreen",title)
 			end
 			tt:SetCell(line,curCell,title)
 			tt:SetCellScript(line,curCell,"OnMouseUp",setTitle,titles[i].id)
@@ -116,6 +119,10 @@ module = {
 
 local options
 local function listOptTitles()
+	local firstRun = knownTitles==nil
+	if firstRun then
+		knownTitles = {}
+	end
 	local titles,num = {},GetNumTitles()
 	titles.desc = {type="description", order=1, name=L["TitlesShowDesc"]}
 	for i=1, num do
@@ -129,6 +136,10 @@ local function listOptTitles()
 				set = optHideTitle,
 				width = "half"
 			}
+			if not firstRun and not knownTitles[tempName] then
+				newTitles[tempName] = true
+			end
+			knownTitles[tempName] = true;
 		end
 	end
 	options.tooltip.ttShowTitles.args = titles
