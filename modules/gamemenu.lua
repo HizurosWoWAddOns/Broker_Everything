@@ -99,8 +99,13 @@ local function createTooltip(tt)
 		elseif secHide then
 			-- nothing
 		else
+			local isDisabled,typeDisabled = false,type(v.disabled);
 			if v.get~=nil then v.get(v) end
-			if v.disabled==nil then v.disabled=false end
+			if typeDisabled=="boolean" and v.disabled==true then
+				isDisabled=true;
+			elseif typeDisabled=="function" then
+				isDisabled = v.disabled();
+			end
 			if v.view==nil then v.view=true end
 			if v.name~=nil and v.view then
 				if cell==1 then line, column = tt:AddLine() end
@@ -113,8 +118,8 @@ local function createTooltip(tt)
 					end
 				end
 				local icon = I("gm_"..v.iconName)
-				tt:SetCell(line, cell, (v.disabled and link_disabled or link):format((icon.iconfile or ns.icon_fallback), (icon.coordsStr or iconCoords), v.name), nil, nil, oneCell and 2 or 1)
-				if (not v.disabled) or not (InCombatLockdown() and (v.click or v.macro)) then
+				tt:SetCell(line, cell, (isDisabled and link_disabled or link):format((icon.iconfile or ns.icon_fallback), (icon.coordsStr or iconCoords), v.name), nil, nil, oneCell and 2 or 1)
+				if (not isDisabled) or not (InCombatLockdown() and (v.click or v.macro)) then
 					tt:SetCellScript(line,cell, (v.click or v.macro) and "OnEnter" or "OnMouseUp",tooltipCellScript_OnAction, v);
 				end
 				if not oneCell then
@@ -220,21 +225,41 @@ function module.options()
 end
 
 function module.init()
-	ClassIconCoords={
-		["WARRIOR"] = "16:16:0:-1:256:256:5:59:5:59",
-		["MAGE"] = "16:16:0:-1:256:256:69:122:5:59",
-		["ROGUE"] = "16:16:0:-1:256:256:132:185:5:59",
-		["DRUID"] = "16:16:0:-1:256:256:195:248:5:59",
-		["HUNTER"] = "16:16:0:-1:256:256:5:59:69:123",
-		["SHAMAN"] = "16:16:0:-1:256:256:69:122:69:123",
-		["PRIEST"] = "16:16:0:-1:256:256:132:185:69:123",
-		["WARLOCK"] = "16:16:0:-1:256:256:195:248:69:123",
-		["PALADIN"] = "16:16:0:-1:256:256:5:59:133:187",
-		["DEATHKNIGHT"] = "16:16:0:-1:256:256:69:123:133:187",
-		["MONK"] = "16:16:0:-1:256:256:133:184:133:187",
-	};
+	ClassIconCoords = "16:16:0:-1"
+	if C_Texture and C_Texture.GetAtlasInfo then
+		local a = C_Texture.GetAtlasInfo("classicon-"..ns.player.class)
+		ClassIconFile = tostring(a.file)
+		ClassIconCoords = table.concat({
+			16,16,
+			0,-1,
+			a.width,a.height,
+			(a.width*a.leftTexCoord),
+			(a.width*a.rightTexCoord),
+			(a.height*a.topTexCoord),
+			(a.height*a.bottomTexCoord)
+		},":");
+	else
+		ClassIconFile = "Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes"
+		local coords = {
+			["WARRIOR"] = "5:59:5:59",
+			["MAGE"] = "69:122:5:59",
+			["ROGUE"] = "132:185:5:59",
+			["DRUID"] = "195:248:5:59",
+			["HUNTER"] = "5:59:69:123",
+			["SHAMAN"] = "69:122:69:123",
+			["PRIEST"] = "132:185:69:123",
+			["WARLOCK"] = "195:248:69:123",
+			["PALADIN"] = "5:59:133:187",
+			["DEATHKNIGHT"] = "69:123:133:187",
+			["MONK"] = "133:184:133:187",
+		}
+		if coords[ns.player.class] then
+			ClassIconCoords = "16:16:0:-1:256:256:"..coords[ns.player.class];
+		end
+	end
 
-	I["gm_Character-neutral"] = {iconfile="Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes", coordsStr=ClassIconCoords[ns.player.class]};			--IconName::gm_Character-neutral--
+
+	I["gm_Character-neutral"] = {iconfile=ClassIconFile, coordsStr=ClassIconCoords};																			--IconName::gm_Character-neutral--
 	I["gm_Spellbook"]         = {iconfile="Interface\\ICONS\\inv_misc_book_09"}																					--IconName::gm_Spellbook--
 	I["gm_Talents"]           = {iconfile="Interface\\ICONS\\ability_marksmanship"}																				--IconName::gm_Talents--
 	I["gm_Questlog"]          = {iconfile="interface\\lfgframe\\lfgicon-quest"}																					--IconName::gm_Questlog--
@@ -247,15 +272,16 @@ function module.init()
 	I["gm_Macros"]            = {iconfile="interface\\macroframe\\macroframe-icon"}																				--IconName::gm_Macros--
 	I["gm_MacOpts"]           = {iconfile="Interface\\ICONS\\inv_gizmo_02"}																						--IconName::gm_MacOpts--
 	--I["gm_Addons"]            = {iconfile="Interface\\ICONS\\INV_Misc_EngGizmos_20"}																			--IconName::gm_Addons--
-	I["gm_Addons"]            = {iconfile=ns.media.."INV_Misc_EngGizmos_20"}																			--IconName::gm_Addons--
-	--I["gm_ReloadUi"]          = {iconfile="Interface\\ICONS\\achievement_guildperk_quick and dead"}																--IconName::gm_ReloadUi--
-	I["gm_ReloadUi"]          = {iconfile=ns.media.."achievement_guildperk_quick and dead"}																--IconName::gm_ReloadUi--
+	I["gm_Addons"]            = {iconfile=ns.media.."INV_Misc_EngGizmos_20"}																					--IconName::gm_Addons--
+	--I["gm_ReloadUi"]          = {iconfile="Interface\\ICONS\\achievement_guildperk_quick and dead"}															--IconName::gm_ReloadUi--
+	I["gm_ReloadUi"]          = {iconfile=ns.media.."achievement_guildperk_quick and dead"}																		--IconName::gm_ReloadUi--
 	I["gm_gmticket"]          = {iconfile="Interface\\CHATFRAME\\UI-CHATICON-BLIZZ", coordsStr="0:2"}															--IconName::gm_gmticket--
 	I["gm_gmticket_edit"]     = {iconfile="Interface\\ICONS\\inv_misc_note_05"}																					--IconName::gm_gmticket_edit--
 	I["gm_gmticket_cancel"]   = {iconfile="Interface\\buttons\\ui-grouploot-pass-up",coordsStr="16:16:0:-1:32:32:2:32:2:32"}									--IconName::gm_gmticket_cancel--
 
 	if ns.client_version<4 then
 	else
+		I["gm_Professions"]       = {iconfile="Interface\\ICONS\\trade_mining"}																						--IconName::gm_Professions--
 		I["gm_Achievments"]       = {iconfile="Interface\\buttons\\ui-microbutton-achievement-up", coordsStr="16:16:0:-1:64:64:5:54:32:59"}							--IconName::gm_Achievments--
 		I["gm_LFGuild"]           = {iconfile="Interface\\buttons\\UI-MicroButton-Guild-Disabled-"..ns.player.faction, coordsStr="16:16:0:-1:64:64:8:54:32:59"}		--IconName::gm_FLGuild--
 		I["gm_PvP-neutral"]       = {iconfile="Interface\\minimap\\tracking\\BattleMaster", coordsStr="16:16:0:-1:16:16:0:16:0:16"}									--IconName::gm_PvP-neutral--
@@ -263,6 +289,7 @@ function module.init()
 		I["gm_PvP-horde"]         = {iconfile="interface\\pvpframe\\pvp-currency-Horde", coordsStr="16:16:0:-1:16:16:0:16:0:16"}									--IconName::gm_PvP-horde--
 		I["gm_Raidfinder"]        = {iconfile="Interface\\ICONS\\inv_helmet_06"}																					--IconName::gm_Raidfinder--
 		I["gm_LFDungeon"]         = {iconfile="Interface\\ICONS\\levelupicon-lfd"}																					--IconName::gm_LFDungeon--
+		I["gm_Delves"]            = {iconfile="Interface\\ICONS\\UI_Delves"}																						--IconName::gm_Delves--
 		I["gm_Mounts"]            = {iconfile="Interface\\ICONS\\mountjournalportrait"}																				--IconName::gm_Mounts--
 		I["gm_Pets"]              = {iconfile="Interface\\ICONS\\inv_box_petcarrier_01"}																			--IconName::gm_Pets--
 		I["gm_ToyBox"]            = {iconfile="Interface\\ICONS\\Trade_Archaeology_chestoftinyglassanimals"}														--IconName::gm_ToyBox--
@@ -279,52 +306,44 @@ function module.init()
 		canLFD = C_LFGInfo.CanPlayerUseGroupFinder(); -- shadowlands
 	end
 
+	local lfg_get = function(v)
+		if ns.player.faction=="Neutral" then
+			v.disabled=true;
+			v.iconName="Help";
+		end
+		if not v.disabled and IsInGuild() then
+			v.name=GUILD;
+			v.iconName = "Guild";
+			if ns.IsClassicClient() then
+				function v.func() securecall("ToggleFriendsFrame",FRIEND_TAB_GUILD); end
+				v.click = nil;
+			end
+		end
+	end
 	menu = { --section 1
 		{name=CHARACTER_BUTTON,		iconName="Character-{class}",	func=function() securecall("ToggleCharacter", "PaperDollFrame") end },
 		{name=SPELLBOOK,			iconName="Spellbook",			click='SpellbookMicroButton',			disabled=IsBlizzCon(), taint=true},
-		{name=TALENTS,				iconName="Talents",				click='TalentMicroButton',				disabled=UnitLevel("player")<10, taint=true},
-		{name=ACHIEVEMENT_BUTTON,	iconName="Achievments",			click='AchievementMicroButton',		taint=true, hide=ns.IsClassicClient},
+		{name=TALENTS,				iconName="Talents",				click='TalentsMicroButton',				disabled=function() return UnitLevel("player")<10 end, taint=true},
+		{name=ACHIEVEMENT_BUTTON,	iconName="Achievments",			click='AchievementMicroButton',			taint=true, hide=ns.IsClassicEraClient},
 		{name=QUESTLOG_BUTTON,		iconName="Questlog",			click='QuestLogMicroButton',			taint=true},
-		{
-			name=LOOKINGFORGUILD,
-			iconName="LFGuild",
-			click='GuildMicroButton',
-			disabled=(IsTrialAccount() or IsBlizzCon()),
-			get=function(v)
-				if ns.player.faction=="Neutral" then
-					v.disabled=true;
-					v.iconName="Help";
-				end
-				if not v.disabled and IsInGuild() then
-					v.name=GUILD;
-					v.iconName = "Guild";
-					if ns.IsClassicClient() then
-						function v.func() securecall("ToggleFriendsFrame",FRIEND_TAB_GUILD); end
-						v.click = nil;
-					end
-				end
-			end,
-			taint=true
-		},
+		{name=LOOKINGFORGUILD,		iconName="LFGuild",				click='GuildMicroButton',				disabled=(IsTrialAccount() or IsBlizzCon()), get=lfg_get, taint=true},
 		{name=SOCIAL_BUTTON,		iconName="Friends",			func=function() securecall("ToggleFriendsFrame", 1) end,		disabled=IsTrialAccount()},
 
-		{name=GROUP_FINDER,			iconName="PvP-{faction}",	func=function() securecall("PVEFrame_ToggleFrame","GroupFinderFrame"); end, disabled=not canLFD, hide=ns.IsClassicClient},
-		{name=PLAYER_V_PLAYER,		iconName="LFDungeon",		func=function() securecall("PVEFrame_ToggleFrame","PVPUIFrame"); end, disabled=not canLFD, hide=ns.IsClassicClient},
+		{name=GROUP_FINDER,			iconName="LFDungeon",		func=function() securecall("PVEFrame_ToggleFrame","GroupFinderFrame"); end, disabled=not canLFD, hide=ns.IsClassicEraClient},
+		{name=PLAYER_V_PLAYER,		iconName="PvP-{faction}",	func=function() securecall("PVEFrame_ToggleFrame","PVPUIFrame"); end, disabled=not canLFD, hide=ns.IsClassicEraClient},
 		{name=CHALLENGES,			iconName="Challenges",		func=function() securecall("PVEFrame_ToggleFrame","ChallengesFrame"); end, disabled=not canLFD, hide=ns.IsClassicClient},
 
-		{name=MOUNTS,				iconName="Mounts",			func=function() OpenCollectionsJournalPanel(1) end, taint=true, hide=ns.IsClassicClient},
-		{name=PET_JOURNAL,			iconName="Pets",			func=function() OpenCollectionsJournalPanel(2) end, taint=true, hide=ns.IsClassicClient},
-		{name=TOY_BOX,				iconName="ToyBox",			func=function() OpenCollectionsJournalPanel(3) end, taint=true, hide=ns.IsClassicClient},
-		{name=HEIRLOOMS,			iconName="Heirlooms",		func=function() OpenCollectionsJournalPanel(4) end, taint=true, hide=ns.IsClassicClient},
+		{name=MOUNTS,				iconName="Mounts",			func=function() OpenCollectionsJournalPanel(1) end, taint=true, hide=ns.IsClassicEraClient},
+		{name=PET_JOURNAL,			iconName="Pets",			func=function() OpenCollectionsJournalPanel(2) end, taint=true, hide=ns.IsClassicEraClient},
+		{name=TOY_BOX,				iconName="ToyBox",			func=function() OpenCollectionsJournalPanel(3) end, taint=true, hide=ns.IsClassicEraClient},
+		{name=HEIRLOOMS,			iconName="Heirlooms",		func=function() OpenCollectionsJournalPanel(4) end, taint=true, hide=ns.IsClassicEraClient},
 
-		{name=ENCOUNTER_JOURNAL,	iconName="EJ",				func=function() securecall("ToggleEncounterJournal") end, iconCoords="", hide=ns.IsClassicClient},
+		{name=ENCOUNTER_JOURNAL,	iconName="EJ",				func=function() securecall("ToggleEncounterJournal") end, iconCoords="", hide=ns.IsClassicEraClient},
 		{name=BLIZZARD_STORE,		iconName="Store",			click='StoreMicroButton', disabled=IsTrialAccount(), taint=true, hide=ns.IsClassicClient},
 		{sep=true}, -- section 2
 		{name=GAMEMENU_HELP,		iconName="Help",			func=function() securecall("ToggleHelpFrame") end,		},
-		--{name=SYSTEMOPTIONS_MENU,	iconName="SysOpts",			func=function() securecall("VideoOptionsFrame_Toggle") end,		},
 		{name=UIOPTIONS_MENU,		iconName="UiOpts",			func=function() securecall("InterfaceOptionsFrame_Show") end,		},
 		{name=KEY_BINDINGS,			iconName="KeyBinds",		func=function() securecall("KeyBindingFrame_LoadUI") securecall("ShowUIPanel", KeyBindingFrame) end,		taint=true},
-		--{name=UIOPTIONS_MENU,		iconName="UiOpts",			func=function() securecall("InterfaceOptionsFrame_Show") end,		},
 		{name=MACROS,				iconName="Macros",			func=function() securecall("ShowMacroFrame") end,		},
 		{name=MAC_OPTIONS,			iconName="MacOpts",			func=function() securecall("ShowUIPanel", MacOptionsFrame) end,		 view=IsMacClient()==true},
 		{name=ADDONS,				iconName="Addons",			view=( (C_AddOns.IsAddOnLoaded("OptionHouse")) or (C_AddOns.IsAddOnLoaded("ACP")) or (C_AddOns.IsAddOnLoaded("Ampere")) or (C_AddOns.IsAddOnLoaded("stAddonManager")) or (_G["AddonList"]) ),
@@ -344,6 +363,25 @@ function module.init()
 		{sep=true, taint=true}, -- section 3
 		{name=RELOADUI,			iconName="ReloadUi",			macro="/reload",																taint=true},
 	}
+	if ns.client_version==4 then
+		menu[9].func = nil;
+		menu[9].click = 'TogglePVPFrame';
+		--menu[16].click = 'GameMenuButtonStore';
+	end
+	if PlayerSpellsMicroButton then -- new Micro button bar
+		menu[3]["click"] = "PlayerSpellsMicroButton";
+		menu[3]["disabled"] = false;
+	end
+	if _G.ProfessionMicroButton then
+		-- replace spellbook
+		menu[2] = {name=TRADE_SKILLS,iconName='Professions',click='ProfessionMicroButton',disabled=IsBlizzCon(), taint=true};
+	end
+	if _G.DELVES_LABEL then
+		local delvesDisabled = function()
+			return not (GetExpansionLevel() >= LE_EXPANSION_WAR_WITHIN);
+		end
+		tinsert(menu,11,{name=DELVES_LABEL, iconName="Delves", func=function() securecall("PVEFrame_ToggleFrame","DelvesDashboardFrame"); end, disabled=delvesDisabled, hide=ns.IsClassicClient})
+	end
 end
 
 function module.onevent(self, event, arg1, ...)
