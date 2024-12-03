@@ -63,6 +63,10 @@ do
 	end
 
 	local function _GetFactionInfo(f,faction,extended)
+		faction = tonumber(faction)
+		if not (faction and faction>0) then
+			return;
+		end
 		local info = f(faction);
 
 		if info.factionID==nil then
