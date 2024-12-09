@@ -254,7 +254,6 @@ end
 module = {
 	events = {
 		"PLAYER_LOGIN",
-		"ARTIFACT_UPDATE",
 		"RESEARCH_ARTIFACT_UPDATE",
 		"RESEARCH_ARTIFACT_COMPLETE",
 		"CURRENCY_DISPLAY_UPDATE",
@@ -277,6 +276,10 @@ module = {
 	}
 };
 
+if ns.client_version>=5 then
+	tinsert(module.events,"ARTIFACT_UPDATE")
+end
+
 ns.ClickOpts.addDefaults(module,{
 	archaeology = "_LEFT",
 	menu = "_RIGHT"
@@ -294,6 +297,12 @@ function module.options()
 	}
 end
 
+local function AddToRacesOrder(...)
+	for i,v in ipairs({...})do
+		tinsert(racesOrder,v);
+	end
+end
+
 function module.init()
 	racesOrder = {
 		"947", -- continent header / mapID / Azeroth
@@ -302,16 +311,6 @@ function module.init()
 		461829,462321,
 		"113", -- continent header / mapID / Northend
 		461843,461835,
-		"424", -- continent header / mapID / Pandaria
-		633002,633000,839111,
-		"572", -- continent header / mapID / Draenor
-		1030617,1030618,1030616,
-		"619", -- continent header / mapID / Legion
-		1445575,1445577,1445573,
-		"876", -- continent header / mapID / KulTiras
-		2060049,
-		"875", -- continent header / mapID / Zandalar
-		2060051
 	};
 	races = { -- [<raceTextureID>] = { <raceIndex>, <currencyId>, <raceKeystone2FragmentsCount> }
 		--Azeroth
@@ -328,26 +327,49 @@ function module.init()
 		--Northend
 		[461843] = {nil, 399, nil}, -- Vrykul
 		[461835] = {nil, 400, nil}, -- Nerubian
-
-		--Pandaria
-		[633002] = {nil, 676, 20}, -- Pandaren
-		[633000] = {nil, 677, 20}, -- Mogu
-		[839111] = {nil, 754, 20}, -- Mantid
-
-		--Draenor
-		[1030617] = {nil, 821, 20}, -- DraenorOrc
-		[1030618] = {nil, 828, 20}, -- Ogre
-		[1030616] = {nil, 829, 20}, -- Arakkoa
-
-		--Legion
-		[1445575] = {nil, 1172, nil}, -- HighborneNightElves
-		[1445577] = {nil, 1173, nil}, -- HighmountainTauren
-		[1445573] = {nil, 1174, nil}, -- Demons
-
-		-- BfA
-		[2060049] = {nil,1535, nil}, -- Drust
-		[2060051] = {nil,1534, nil}, -- Zandalari
 	};
+	local cv = ns.client_version;
+	if cv<5 then
+		racesOrder[7] = "1945" -- old mapid of outland
+	end
+	if cv>=5 then
+		--Pandaria
+		AddToRacesOrder(
+			"424", -- continent header / mapID / Pandaria
+			633002,633000,839111
+		)
+		races[633002] = {nil, 676, 20} -- Pandaren
+		races[633000] = {nil, 677, 20} -- Mogu
+		races[839111] = {nil, 754, 20} -- Mantid
+	elseif cv>=6 then
+		--Draenor
+		AddToRacesOrder(
+			"572", -- continent header / mapID / Draenor
+			1030617,1030618,1030616
+		)
+		races[1030617] = {nil, 821, 20} -- DraenorOrc
+		races[1030618] = {nil, 828, 20} -- Ogre
+		races[1030616] = {nil, 829, 20} -- Arakkoa
+	elseif cv>=7 then
+		--Legion
+		AddToRacesOrder(
+			"619", -- continent header / mapID / Legion
+			1445575,1445577,1445573
+		)
+		races[1445575] = {nil, 1172, nil} -- HighborneNightElves
+		races[1445577] = {nil, 1173, nil} -- HighmountainTauren
+		races[1445573] = {nil, 1174, nil} -- Demons
+	elseif cv>=8 then
+		-- BfA
+		AddToRacesOrder(
+			"876", -- continent header / mapID / KulTiras
+			2060049,
+			"875", -- continent header / mapID / Zandalar
+			2060051
+		)
+		races[2060049] = {nil,1535, nil} -- Drust
+		races[2060051] = {nil,1534, nil} -- Zandalari
+	end
 end
 
 function module.onevent(self,event,arg1,...)
