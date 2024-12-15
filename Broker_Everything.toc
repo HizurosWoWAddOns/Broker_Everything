@@ -1,6 +1,6 @@
 ## Interface: 110005
 ## Interface-Cata: 40401
-## Interface-Classic: 11504
+## Interface-Classic: 11505
 ## Title: Broker: Everything
 ## IconTexture: 892831
 ## Notes: A collection of modules to display various informations as Broker-buttons on Broker Display AddOns or minimap buttons.
