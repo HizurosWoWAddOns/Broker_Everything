@@ -51,7 +51,7 @@ local function CountCorrection(id,info)
 	end
 end
 
-local function CapColor(colors,str,opts) -- nonZero,count,mCount,count2,mCount2
+local function CapColorSteps(colors,str,opts) -- nonZero,count,mCount,count2,mCount2
 	local col,c = opts.nonZero and colors[1] or "gray",0;
 	local mCount,mCount2 = opts.maxCount,opts.maxCount2;
 	if opts.nonZero then
@@ -82,6 +82,22 @@ local function CapColor(colors,str,opts) -- nonZero,count,mCount,count2,mCount2
 		end
 	end
 	return C(col,str);
+end
+
+local function CapColorGradient(colors,str,opts)
+	local color = colors[1];
+	-- opts.maxCount and opts.count; total cap
+	-- opts.maxCount2 and opts.count2; weekly cap
+	if opts.nonZero then
+		local capFraction
+		if opts.count2 and opts.maxCount2 then
+			capFraction = opts.count2/opts.maxCount2;
+		else
+			capFraction = opts.count/opts.maxCount;
+		end
+		color = ns.LC.colorGradient(capFraction,colors[1],colors[2],colors[3])
+	end
+	return C(color,str);
 end
 
 local function resetCurrencySession()
@@ -148,7 +164,13 @@ local function updateBroker()
 					opts.count2 = currencyInfo.quantityEarnedThisWeek;
 					opts.maxCount2 = currencyInfo.maxWeeklyQuantity;
 				end
-				str = CapColor(currencyInfo.capInvert and {"red","orange","yellow","green"} or {"green","yellow","orange","red"},str,opts);
+				local colors = currencyInfo.capInvert and {"red","yellow","green"} or {"green","yellow","red"};
+				local CapColor = CapColorGradient
+				if not ns.profile[name].showCapColorGradient then
+					tinsert(colors,currencyInfo.capInvert and 2 or 3, "orange");
+					CapColor = CapColorSteps
+				end
+				str = CapColor(colors,str,opts);
 			end
 			tinsert(elems, str.."|T"..(currencyInfo.iconFileID or ns.icon_fallback)..":0|t");
 		end
@@ -240,8 +262,20 @@ local function createTooltip_AddCurrencies(currencyList)
 
 			if not parentIsCollapsed then
 				CountCorrection(currencyId,currencyInfo);
-				local showSeasonCap = ns.profile[name].showSeasonCap and currencyInfo.useTotalEarnedForMaxQty;
+				local showSeasonCap = ns.profile[name].showSeasonCap and currencyInfo.useTotalEarnedForMaxQty and currencyInfo.maxQuantity>0;
 				local str = ns.FormatLargeNumber(name,currencyInfo.quantity,true);
+				local colors1 = {"green","yellow","red"}
+				local colors2 = {"dkgreen","dkyellow","dkred"}
+				local CapColor = CapColorGradient;
+				if currencyInfo.capInvert then
+					colors1 = {"red","yellow","green"}
+					colors2 = {"dkred","dkyellow","dkgreen"}
+				end
+				if not ns.profile[name].showCapColorGradient then
+					tinsert(colors1,currencyInfo.capInvert and 2 or 3, "orange");
+					tinsert(colors2,currencyInfo.capInvert and 2 or 3, "dkorange");
+					CapColor = CapColorSteps
+				end
 
 				-- cap
 				if ns.profile[name].showTotalCap and currencyInfo.maxQuantity>0 then
@@ -249,11 +283,7 @@ local function createTooltip_AddCurrencies(currencyList)
 
 					-- cap coloring
 					if ns.profile[name].showCapColor then
-						local colors = currencyInfo.capInvert and {"red","orange","yellow","green"} or {"green","yellow","orange","red"};
-						if currencyInfo.maxWeeklyQuantity>0 then
-							colors = currencyInfo.capInvert and {"dkred","dkorange","dkyellow","dkgreen"} or {"dkgreen","dkyellow","dkorange","dkred"};
-						end
-						str = CapColor(colors,str,{nonZero=currencyInfo.quantity>0,count=currencyInfo.quantity,maxCount=currencyInfo.maxQuantity,capInvert=currencyInfo.capInvert});
+						str = CapColor(currencyInfo.maxWeeklyQuantity>0 and colors2 or colors1,str,{nonZero=currencyInfo.quantity>0,count=currencyInfo.quantity,maxCount=currencyInfo.maxQuantity,capInvert=currencyInfo.capInvert});
 					end
 				end
 
@@ -263,7 +293,7 @@ local function createTooltip_AddCurrencies(currencyList)
 
 					-- cap coloring
 					if ns.profile[name].showCapColor then
-						wstr = CapColor(currencyInfo.capInvert and {"red","orange","yellow","green"} or {"green","yellow","orange","red"},wstr,{nonZero=currencyInfo.quantity>0,count=currencyInfo.quantityEarnedThisWeek,maxCount=currencyInfo.maxWeeklyQuantity,capInvert=currencyInfo.capInvert});
+						wstr = CapColor(colors1,wstr,{nonZero=currencyInfo.quantity>0,count=currencyInfo.quantityEarnedThisWeek,maxCount=currencyInfo.maxWeeklyQuantity,capInvert=currencyInfo.capInvert});
 					end
 
 					str = wstr.." "..str;
@@ -275,7 +305,7 @@ local function createTooltip_AddCurrencies(currencyList)
 
 					-- cap coloring
 					if ns.profile[name].showCapColor then
-						wstr = CapColor(currencyInfo.capInvert and {"red","orange","yellow","green"} or {"green","yellow","orange","red"},wstr,{nonZero=currencyInfo.quantity>0,count=currencyInfo.totalEarned,maxCount=currencyInfo.maxQuantity,capInvert=currencyInfo.capInvert});
+						wstr = CapColor(colors1,wstr,{nonZero=currencyInfo.quantity>0,count=currencyInfo.totalEarned,maxCount=currencyInfo.maxQuantity,capInvert=currencyInfo.capInvert});
 					end
 
 					str = wstr.." "..str;
@@ -734,6 +764,7 @@ module = {
 		showTotalCap = true,
 		showWeeklyCap = true,
 		showCapColor = true,
+		showCapColorGradient = true,
 		showCapBroker = true,
 		showCapColorBroker = true,
 		showSeasonCap = true,
@@ -762,6 +793,7 @@ function module.options()
 	local broker = {
 		showCapBroker={ type="toggle", order=1, name=L["Show total/weekly cap"], desc=L["Display currency total cap in tooltip."] },
 		showCapColorBroker={ type="toggle", order=2, name=L["Coloring total/weekly cap"], desc=L["Display total/weekly caps in different colors"] },
+		showCapColorGradient = { type="toggle", order=3, name=L["Colors gradient for total/weekly cap"], desc=L["Use color gradient for total/weekly caps instead of fixed steps for single colors"] },
 		spacer={ type="range", order=3, name=L["Space between currencies"], desc=L["Add more space between displayed currencies on broker button"], min=0, max=10, step=1 },
 		header={ type="header", order=4, name=L["Currency on broker"], hidden=isHidden },
 		info={ type="description", order=9, name=L["CurrencyBrokerInfo"], fontSize="medium", hidden=true },
