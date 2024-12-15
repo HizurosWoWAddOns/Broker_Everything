@@ -698,7 +698,7 @@ do
 			end
 		else
 			-- submenu on broker button option menu
-			if hasCurrency and parent and parent.menuList~=nil then
+			if hasCurrency then
 				-- sub menu
 				parent = ns.EasyMenu:AddEntry({arrow = true,label = (C("dkyellow","%s %d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"],place,(currencyInfo.iconFileID or ns.icon_fallback),C("ltblue",currencyInfo.name)),},parent0);
 				-- remove option in sub menu
