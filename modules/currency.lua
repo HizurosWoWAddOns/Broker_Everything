@@ -374,56 +374,8 @@ function createTooltip(tt)
 	ns.roundupTooltip(tt);
 end
 
-local aceCurrencies = {values={},order={},created=false};
-
 local function isHidden(info,isEasyMenu)
 	return isEasyMenu; -- only for easymenu
-end
-
-local function AceOptOnBroker(info,value)
-	local place=tonumber((info[#info]:gsub("currenciesInTitle","")));
-	if type(value)=="string" and place then
-		local _,id = strsplit(":",value);
-		if validateID(id) then
-			ns.profile[name].currenciesInTitle[place] = id;
-		end
-		module.onevent(module.eventFrame,"BE_UPDATE_CFG",info[#info]);
-	end
-	local id = ("%05d"):format(ns.profile[name].currenciesInTitle[place]);
-	if aceCurrencies.order[id] then
-		return aceCurrencies.order[id]..":"..id;
-	end
-	return false;
-end
-
-local function aceOptOnBrokerValues(info)
-	-- generate currencies list one time per AceOptions creation/refresh. one table for all select fields.
-	if info[#info]=="currenciesInTitle1" or not aceCurrencies.created then
-		aceCurrencies.created = true;
-		local id = ns.profile[name].currenciesInTitle[tonumber((info[#info]:gsub("currenciesInTitle","")))];
-		local list,orderList,n = {},{},1;
-		wipe(aceCurrencies.values);
-		wipe(aceCurrencies.order);
-		aceCurrencies.values[false] = NONE;
-		for i=1, #Currencies do
-			if Currencies[i]=="HIDDEN_CURRENCIES" and not ns.profile[name].showHidden then
-				break;
-			elseif validateID(Currencies[i]) then
-				local currencyId,currencyInfo = GetCurrency(Currencies[i]);
-				if currencyInfo and currencyInfo.name then
-					local color = "white";
-					if not currencyInfo.discovered then
-						color = "ltgray";
-					end
-					local order,id = ("%04d"):format(n),("%05d"):format(currencyId);
-					aceCurrencies.values[order..":"..id] = C(color,currencyInfo.name);
-					aceCurrencies.order[id] = order;
-					n=n+1;
-				end
-			end
-		end
-	end
-	return aceCurrencies.values;
 end
 
 local function updateProfessions()
