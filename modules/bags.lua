@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Bags" -- L["Bags"] L["ModDesc-Bags"]
 local ttName,ttColumns,tt,module,createTooltip = name.."TT",3;
 local IsMerchantOpen,G = false,{};
-local crap,bags,bagTypes,retry = {limit=2,sum=0,items={}},{sumFree=0,sumTotal=0,byTypeFree={},byTypeTotal={}},{};
+local crap,bags,bagTypes,retry = {limit=2,sum=0,items={},exclude={}},{sumFree=0,sumTotal=0,byTypeFree={},byTypeTotal={}},{};
 local LE_ITEM_CLASS_CONTAINER = LE_ITEM_CLASS_CONTAINER or Enum.ItemClass.Container;
 local qualityModeValues = {
 	["1"]=L["BagsQualityAll"],
@@ -37,6 +37,11 @@ local bbModeValues = {
 	L["BagsFreeOfSpace"], -- Free space / Total space
 	L["BagsFreeSpace"], -- Free space
 }
+
+-- exclude items from selling
+crap.exclude[228431] = true; -- Rock Buddy; error message. vendor wont this item.
+
+
 
 -- register icon names and default files --
 -------------------------------------------
@@ -126,7 +131,7 @@ function crap.search()
 				if link then
 					itemId = tonumber((link:match("item:(%d+)")));
 				end
-				if link and itemId then
+				if link and itemId and not crap.exclude[itemId] then
 					itemInfo,count = C_Container.GetContainerItemInfo(bag, slot);
 					if not count and itemInfo then
 						count = itemInfo.stackCount;
