@@ -230,7 +230,7 @@ local function ttAddLine(obj)
 	local cell, color,GroupQuest = 1,"red",{};
 
 	if (obj[Color]) then
-		color = ns.LC.colorTable2HexCode(obj[Color]);
+		color = ns.LC.colorTable2HexCode(obj[Color],"int");
 	end
 
 	if (type(obj[QuestId])=="number") and (IsInGroup()) then
@@ -354,7 +354,7 @@ function createTooltip(tt, update, from)
 
 		if ns.profile[name].separateBy=="status" then
 			local firstHeader = true;
-			for i,s in ipairs({{"fail","red",L["Failed quests"]},{"active","ltgreen",L["Active quests"]},{"complete","ltblue",L["Completed quests"]}}) do
+			for i,s in ipairs({{"fail","red",L["Failed quests"]},{"active","ltGreen",L["Active quests"]},{"complete","ltblue",L["Completed quests"]}}) do
 				if numQuestStatus[s[1]]>0 then
 					if not firstHeader then
 						tt:AddSeparator(2,0,0,0,0);
