@@ -489,6 +489,7 @@ function module.init()
 	-- init ns.items
 	ns.items.Init("bags");
 
+	ns.profileSilenceFIXME = true
 	if ns.profile[name].freespace~=nil then
 		ns.profile[name].bbMode = ns.profile[name].freespace and 3 or 1;
 		ns.profile[name].freespace = nil

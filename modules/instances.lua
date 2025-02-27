@@ -78,7 +78,6 @@ local function updateInstances(name,mode)
 		EJ_SelectTier(i);
 		local index, instance_id, instance_name, _ = 1;
 		instance_id, instance_name = EJ_GetInstanceByIndex(index, mode);
-		--ns:debug(name,i,instance_id,instance_name)
 		while instance_id~=nil do
 			if rename_ej[instance_name] then
 				instance_name = rename_ej[instance_name];

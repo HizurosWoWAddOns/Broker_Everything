@@ -733,10 +733,11 @@ end
 ---@param tbl table
 ---@param a string
 ---@param ... string
+---@return table
 function ns.tablePath(tbl,a,...)
-	if type(a)~="string" then return end
+	if type(a)~="string" then return tbl; end
 	if type(tbl[a])~="table" then tbl[a]={}; end
-	if (...) then ns.tablePath(tbl[a],...); end
+	if (...) then return ns.tablePath(tbl[a],...); end
 end
 
 

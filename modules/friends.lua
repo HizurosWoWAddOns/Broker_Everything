@@ -337,8 +337,6 @@ local function createTooltip(tt)
 										-- get realmName from realmInfo
 										ti.realmName = ti.realmInfo.Name;
 									end
-								else
-									ns:debug("missing realmName",ti.realmName)
 								end
 								if not (ti.areaName and ti.areaName~="") then
 									-- missing area name. try to it from richPresence

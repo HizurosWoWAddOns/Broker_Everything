@@ -149,9 +149,6 @@ local function pushQuest(self,questIndex)
 		SelectQuestLogEntry(questIndex)
 		QuestLogPushQuest();
 	else
-		if WOW_PROJECT_ID~=WOW_PROJECT_MAINLINE then
-			ns:debug(name,"QuestLogPushQuest","SelectQuestLogEntry not found...")
-		end
 		QuestLogPushQuest(questIndex);
 	end
 end

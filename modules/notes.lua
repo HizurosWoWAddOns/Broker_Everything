@@ -109,7 +109,6 @@ end
 BrokerEverythingNotesEditorMixin = {}
 
 function BrokerEverythingNotesEditorMixin:OnLoad()
-	ns:debug("?")
 	editor = self
 	ButtonFrameTemplate_HidePortrait(self);
 
