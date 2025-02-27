@@ -11,6 +11,7 @@ local name = "Friends"; -- FRIENDS L["ModDesc-Friends"]
 local ttName,ttName2,ttColumns,tt,tt2,module = name.."TT",name.."TT2",8;
 
 local D4icon = "Interface/AddOns/Broker_Everything/media/Battlenet-D4icon.tga";
+local CODicon = "Interface/AddOns/Broker_Everything/media/Battlenet-CODicon.tga";
 local GetClientInfo = setmetatable({
 	-- Blizzard
 	ANBS = {icon=4557783, short="DI",      long="Diablo Immortal"},
@@ -33,18 +34,18 @@ local GetClientInfo = setmetatable({
 	-- Activision
 	WLBY = {icon=4034243, short="CB4",     long="Crash Bandicoot 4"},
 	DST2 = {icon=1711629, short="DST2",    long="Destiny 2"},
+	AUKS = {icon=CODicon, short="COD",     long="Call Of Duty"},
 	VIPR = {icon=2204215, short="BO4",     long="Call Of Duty: Black Ops 4"},
 	FORE = {icon=4256535, short="CoDV",    long="Call Of Duty: Vanguard"},
 	LAZR = {icon=3581732, short="MW2",     long="Call Of Duty: Modern Warfare 2"},
 	ODIN = {icon=3257658, short="MW",      long="Call Of Duty: Modern Warfare"},
 	ZEUS = {icon=3920823, short="BOCW",    long="Call Of Duty: Black Ops Cold War"},
-
 },{
 	__call = function(t,name)
 		local v = rawget(t,name)
 		if not v then
 			v = {icon=134400,short=name,long=name}
-			ns.print("Game name '"..name.."' not known. Please report the addon author.");
+			ns:print("Game name '"..name.."' not known. Please report the addon author. - One or more of your friends are playing a game that this addon does not know.");
 			rawset(t,name,v)
 		elseif not (v.icon and v.short and v.long and v.iconStr) then
 			v.icon = v.icon or 134400;
