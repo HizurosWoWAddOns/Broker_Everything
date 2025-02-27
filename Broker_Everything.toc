@@ -1,11 +1,26 @@
-## Interface: 110007
+## Interface: 110100
 ## Interface-Cata: 40401
-## Interface-Classic: 11505
+## Interface-Classic: 11506
 ## Title: Broker: Everything
 ## IconTexture: 892831
 ## Notes: A collection of modules to display various informations as Broker-buttons on Broker Display AddOns or minimap buttons.
 ## Author: Hizuro, Ekaterina, Hungtar
 ## Version: @project-version@
+
+# https://warcraft.wiki.gg/wiki/Addon_Categories
+## Category: Data Broker (need translation)
+## Category-enUS: Data Broker
+## Category-deDE: Datenbroker
+## Category-esES: Intermediario de Datos
+## Category-esMX: Intermediario de Datos
+## Category-frFR: Courtier de Données
+## Category--itIT:
+## Category--koKR:
+## Category-ptBR: Corretor de Dados
+## Category-ruRU: Посредник данных
+## Category-zhCN: 数据管理
+## Category-zhTW: 資料管理
+
 ## SavedVariables: Broker_Everything_DataDB, Broker_Everything_CharacterDB, Broker_Everything_AceDB
 ## OptionalDeps: LibStub, CallbackHandler-1.0, LibSharedMedia-3.0, LibDataBroker-1.1, LibDBIcon-1.0, LibQTip-1.0, LibColors-1.0, LibRealmInfo, LibTime-1.0, Ace3, LibDropDownMenu
 
