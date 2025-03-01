@@ -223,7 +223,8 @@ local function createTooltip_AddCurrencies(currencyList)
 	-- loop table
 	for index=1, #currencyList do
 		-- header
-		if type(currencyList[index])=="string" then
+		local currencyListIndexType = type(currencyList[index]);
+		if currencyListIndexType=="string" then
 			local headerStr = currencyList[index];
 			if empty==true and not parentIsCollapsed then
 				tt:SetCell(tt:AddLine(),1,C("gray",L["No currencies discovered..."]),nil,nil,0);
@@ -250,6 +251,10 @@ local function createTooltip_AddCurrencies(currencyList)
 				end
 			end
 			tt:SetLineScript(l,"OnMouseUp", toggleCurrencyHeader,headerStr);
+		elseif currencyListIndexType=="boolean" then
+			if not parentIsCollapsed then
+				tt:AddSeparator(1,1,1,1,.45);
+			end
 		else
 			local currencyId, currencyInfo
 			if validateID(currencyList[index]) then
@@ -453,7 +458,7 @@ local function updateCurrencies()
 		local tmp = {}
 		for i=1, #CurrenciesDefault do
 			local group = CurrenciesDefault[i];
-
+			local separator = true;
 			-- add header
 			tinsert(tmp,group.h);
 			currencyCounter[group.h] = #group;
@@ -468,15 +473,21 @@ local function updateCurrencies()
 			end
 
 			-- add covenant currencies
+			separator=true
 			if covenantID>0 and CovenantCurrencies[group.h] then
 				for currencyID, covenant in pairs(CovenantCurrencies[group.h]) do
 					if covenant==covenantID then
+						if separator then
+							tinsert(tmp,true)
+							separator=false;
+						end
 						tinsert(tmp,currencyID)
 					end
 				end
 			end
 
 			-- add profession currencies
+			separator=true;
 			if profSkillLine2Currencies[group.h] then
 				if #profSkillLines==0 then
 					updateProfessions()
@@ -485,6 +496,10 @@ local function updateCurrencies()
 					local t = profSkillLine2Currencies[group.h][profSkillLines[i][2]]
 					if t then
 						for n=1, #t do
+							if separator then
+								tinsert(tmp,true)
+								separator=false;
+							end
 							tinsert(tmp,t[n]);
 							knownCurrencies[t[n]] = true
 							currency2skillLine[t[n]] = profSkillLines[i][2];
@@ -846,7 +861,7 @@ function module.init()
 	};
 
 	CurrenciesDefault = {
-		{h="EXPANSION_NAME10",3090,2815,2813,3056,2803,3008, 3110,3109,3108,3107, 3093,3028,3055, 3089},
+		{h="EXPANSION_NAME10",3226,3220,3218,3216,3116,true, 3110,3109,3108,3107,true, 3090,2815,2813,3056,2803,3008, 3093,3028,3055, 3089},
 		{h="EXPANSION_NAME9",2806,2807,2809,2812,2777,2709,2708,2707,2706,2650,2651,2594,2245,2118,2003,2122,2045,2011,2134,2105},
 		{h="DUNGEON_AND_RAID",1166},
 		{h="PLAYER_V_PLAYER",2123,391,1792,1586,1602},
