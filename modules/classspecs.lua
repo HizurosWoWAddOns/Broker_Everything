@@ -43,7 +43,7 @@ end
 
 local function setSpec(self, spec)
 	if not InCombatLockdown() then
-		SetSpecialization(spec.index,spec.ispet);
+		(C_SpecializationInfo and C_SpecializationInfo.SetSpecialization or SetSpecialization)(spec.index,spec.ispet);
 	end
 end
 
