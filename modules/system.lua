@@ -220,6 +220,19 @@ local function resetMemUpdateLock()
 	memUpdateLocked = false;
 end
 
+local memUpdateLocked2 = false;
+local function memUpdateHook()
+	-- second update lock for execution of UpdateAddOnMemoryUsage by other addons.
+	memUpdateLocked2 = true
+	C_Timer.After(3.14159,function() memUpdateLocked2 = false end)
+end
+
+if UpdateAddOnMemoryUsage then
+	hooksecurefunc("UpdateAddOnMemoryUsage",memUpdateHook)
+elseif C_AddOns.UpdateAddOnMemoryUsage then
+	hooksecurefunc(C_AddOns,"UpdateAddOnMemoryUsage",memUpdateHook);
+end
+
 local function updateMemory(updateToken)
 	-- against too often triggered UpdateAddOnMemoryUsage.
 	if (IsInInstance() and enabled.sys_mod and ns.profile[name_sys].updateIntervalNotInInstance)
@@ -231,7 +244,7 @@ local function updateMemory(updateToken)
 	--
 	setMemoryTimeout();
 	if not (enabled.sys_mod or enabled.mem_mod) then return end
-	if updateToken==triggerUpdateToken then
+	if updateToken==triggerUpdateToken and not memUpdateLocked2 then
 		if UpdateAddOnMemoryUsage then
 			securecall("UpdateAddOnMemoryUsage")
 		elseif C_AddOns.UpdateAddOnMemoryUsage then
