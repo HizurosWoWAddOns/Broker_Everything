@@ -85,6 +85,14 @@ ns.LC.colorset({
 	["unknown"]		= "ee0000",
 });
 
+ns.color = setmetatable({},{
+	__index = function(t,k)
+		local c = ns.LC.color(k,"colortable");
+		rawset(t,k,c)
+		return c;
+	end
+})
+
 
   ---------------------------------------
 --- misc shared data                    ---
@@ -243,15 +251,16 @@ end
 ---@param prepDash boolean prepend dash
 function ns.showRealmName(modName,name,color,prepDash)
 	if not (ns.realm_short==name or ns.realm==name) then
+		local Color = color and ns.LC.color(color,"colortable") or ns.color.dkyellow;
 		if ns.profile[modName].showRealmNames then
 			if type(name)=="string" and name:len()>0 then
 				local _,_name = ns.LRI:GetRealmInfo(name,ns.region);
 				if _name then
-					return (prepDash~=false and ns.LC.color("white"," - "))..ns.LC.color(color or "dkyellow", ns.scm(name));
+					return (prepDash~=false and ns.color.white:wrapText(" - "))..Color:wrapText(ns.scm(name));
 				end
 			end
 		else
-			return ns.LC.color(color or "dkyellow"," *");
+			return Color:wrapText(" *");
 		end
 	end
 	return "";
@@ -264,10 +273,10 @@ end
 --- some cvars on combat...               ---
   -----------------------------------------
 do
-	local blacklist = {alwaysShowActionBars = true, bloatnameplates = true, bloatTest = true, bloatthreat = true, consolidateBuffs = true, fullSizeFocusFrame = true, maxAlgoplates = true, nameplateMotion = true, nameplateOverlapH = true, nameplateOverlapV = true, nameplateShowEnemies = true, nameplateShowEnemyGuardians = true, nameplateShowEnemyPets = true, nameplateShowEnemyTotems = true, nameplateShowFriendlyGuardians = true, nameplateShowFriendlyPets = true, nameplateShowFriendlyTotems = true, nameplateShowFriends = true, repositionfrequency = true, showArenaEnemyFrames = true, showArenaEnemyPets = true, showPartyPets = true, showTargetOfTarget = true, targetOfTargetMode = true, uiScale = true, useCompactPartyFrames = true, useUiScale = true}
+	local exclude = {alwaysShowActionBars = true, bloatnameplates = true, bloatTest = true, bloatthreat = true, consolidateBuffs = true, fullSizeFocusFrame = true, maxAlgoplates = true, nameplateMotion = true, nameplateOverlapH = true, nameplateOverlapV = true, nameplateShowEnemies = true, nameplateShowEnemyGuardians = true, nameplateShowEnemyPets = true, nameplateShowEnemyTotems = true, nameplateShowFriendlyGuardians = true, nameplateShowFriendlyPets = true, nameplateShowFriendlyTotems = true, nameplateShowFriends = true, repositionfrequency = true, showArenaEnemyFrames = true, showArenaEnemyPets = true, showPartyPets = true, showTargetOfTarget = true, targetOfTargetMode = true, uiScale = true, useCompactPartyFrames = true, useUiScale = true}
 	function ns.SetCVar(...)
 		local cvar = ...
-		if ns.client_version>5.48 and InCombatLockdown() and blacklist[cvar]==true then
+		if ns.client_version>5.48 and InCombatLockdown() and exclude[cvar]==true then
 			local msg
 			-- usefull blacklisted cvars...
 			if cvar=="uiScale" or cvar=="useUiScale" then
@@ -276,7 +285,7 @@ do
 			-- useless blacklisted cvars...
 				msg = L["CVarInCombat"]:format(cvar);
 			end
-			ns:print(ns.LC.color("ltorange",msg));
+			ns:print(ns.color.ltorange:wrapText(msg));
 		else
 			SetCVar(...)
 		end
@@ -566,9 +575,9 @@ do
 		-- <addon> >> <msg>
 		local msgs = {};
 		for i=1, #found do
-			tinsert(msgs, ns.LC.color("ltblue",found[i]).."\n"..ns.LC.color("ltgray"," >> ")..L[list[found[i]]]);
+			tinsert(msgs, ns.color.ltblue:wrapText(found[i]).."\n"..ns.color.ltgray:wrapText(" >> ")..L[list[found[i]]]);
 		end
-		return ns.LC.color("orange",L["CoExistDisabled"]).."\n"
+		return ns.color.orange:wrapText(L["CoExistDisabled"]).."\n"
 			.. tconcat(msgs,"\n");
 	end
 end
@@ -581,7 +590,7 @@ end
 ---@return string
 function ns.suffixColour(str)
 	if (ns.profile.GeneralOptions.suffixColour) then
-		str = ns.LC.color("suffix",str);
+		return ns.color.suffix:wrapText(str)
 	end
 	return str;
 end
@@ -1490,7 +1499,7 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 
 	-- color option
 	opts.color = (opts.color or ns.profile.GeneralOptions.goldColor):lower();
-	local colors = (opts.color=="white" and {"white","white","white"}) or (opts.color=="color" and {"copper","silver","gold"}) or false;
+	local colors = (opts.color=="white" and {ns.color.white,ns.color.white,ns.color.white}) or (opts.color=="color" and {ns.color.copper,ns.color.silver,ns.color.gold}) or false;
 
 	-- goin icon option
 	opts.coins = opts.coins or ns.profile.GeneralOptions.goldCoins;
@@ -1523,7 +1532,7 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 
 	if gold>0 then
 		local str = tostring(ns.FormatLargeNumber(modName,gold,opts.inTooltip) or "white");
-		tinsert(t, (colors and ns.LC.color(colors[3],str) or str) .. (opts.coins and tex:format("Gold") or "") );
+		tinsert(t, (colors and colors[3]:wrapText(str) or str) .. (opts.coins and tex:format("Gold") or "") );
 		if hideMoney==4 then
 			stop = true;
 		end
@@ -1531,7 +1540,7 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 
 	if showSilver and (not stop) then
 		local str = tostring(gold>0 and zz:format(silver) or silver);
-		tinsert(t, (colors and ns.LC.color(colors[2],str) or str) .. (opts.coins and tex:format("Silver") or "") );
+		tinsert(t, (colors and colors[2]:wrapText(str) or str) .. (opts.coins and tex:format("Silver") or "") );
 		if hideMoney==4 then
 			stop = true;
 		end
@@ -1539,7 +1548,7 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 
 	if showCopper and (not stop) then
 		local str = tostring((silver>0 or gold>0) and zz:format(copper) or copper);
-		tinsert(t, (colors and ns.LC.color(colors[1],str) or str) .. (opts.coins and tex:format("Copper") or "") );
+		tinsert(t, (colors and colors[1]:wrapText(str) or str) .. (opts.coins and tex:format("Copper") or "") );
 	end
 
 	return tconcat(t,opts.sep or " ");
@@ -1769,9 +1778,9 @@ do
 			end
 
 			if (Data.tooltip) and (type(Data.tooltip)=="table") then
-				entry.tooltipTitle = ns.LC.color("dkyellow",Data.tooltip[1]);
+				entry.tooltipTitle = ns.color.dkyellow:wrapText(Data.tooltip[1]);
 				if type(Data.tooltip[2])=="string" and Data.tooltip[2]~="" then
-					entry.tooltipText = ns.LC.color("white",Data.tooltip[2]);
+					entry.tooltipText = ns.color.white:wrapText(Data.tooltip[2]);
 				end
 				entry.tooltipOnButton=1;
 			end
@@ -2189,7 +2198,7 @@ do
 				end
 				if func and type(func)=="function" then
 					mod.onclick[key] = actName;
-					tinsert(mod.clickHints,ns.LC.color("copper",values[key]).." || "..ns.LC.color("green",L[action[iLabel]]));
+					tinsert(mod.clickHints,ns.color.copper:wrapText(values[key]).." || "..ns.color.green:wrapText(L[action[iLabel]]));
 					hasOptions = true;
 				end
 			end
