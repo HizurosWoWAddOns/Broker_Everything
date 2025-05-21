@@ -139,19 +139,25 @@ end
 
 local function GetILevelColor(il)
 	local colors = {"cyan","green","yellow","orange","red"};
+	local diff = inventory.iLevelMax-inventory.iLevelMin;
+
 	if not inventory then
 		UpdateInventory();
 	end
 
-	if (il==inventory.iLevelMax) then return colors[1]; end
+	if (il==inventory.iLevelMax) then
+		return colors[1];
+	elseif (il==inventory.iLevelMin ) then
+		return colors[(diff<=6 and 3) or (diff<=9 and 4) or 5];
+	end
 
-	local diff = inventory.iLevelMax-inventory.iLevelMin;
-	if (diff<=6) then
-		if (il==inventory.iLevelMin) then return colors[3]; end
-	else
-		if (il==inventory.iLevelMin) then return colors[5]; end
+	if ns.profile[name].showItemLevelGradient then
+		return ns.LC.colorGradient(il/inventory.iLevelMax,colors[5],colors[3],colors[2]);
+	end
+
+	if (diff>6) then
 		local p=floor(diff/3);
-		local p1,p2,p3 = inventory.iLevelMin+p,inventory.iLevelMin+(p*2),inventory.iLevelMin+(p*3);
+		local p1,p2 = inventory.iLevelMin+p,inventory.iLevelMin+(p*2) --,inventory.iLevelMin+(p*3);
 
 		if (il>p2) then
 			return colors[2];
@@ -333,11 +339,13 @@ local function createTooltip(tt)
 					end
 
 					if ns.profile[name].showUpgrades and itemInfo.upgrades then
-						local col,cur,max = "ltblue",strsplit("/",itemInfo.upgrades);
-						if ns.profile[name].fullyUpgraded and cur==max then
-							col="blue";
+						local upColor, upName, upCurrent, upMax = "ltblue",itemInfo.upgrades:match("^(.*) ([0-9]*)/([0-9]*)$");
+						if ns.profile[name].fullyUpgraded and tonumber(upCurrent)==tonumber(upMax) then
+							upgrades = " "..C("blue",itemInfo.upgrades);
+						else
+							upColor = ns.LC.colorGradient(upCurrent/upMax,"dkyellow","ltblue")
+							upgrades = " "..C("ltblue",upName).." "..C(upColor,upCurrent.."/"..upMax);
 						end
-						upgrades = " "..C(col,itemInfo.upgrades);
 					end
 
 					local itemLevelStr = "";
@@ -406,6 +414,7 @@ module = {
 		showItemLevel = true,
 		showCurrentSet = true,
 		fullyUpgraded = true,
+		showItemLevelGradient = true,
 
 		showNotEnchanted = true,
 		showEmptyGems = true,
@@ -457,18 +466,19 @@ function module.options()
 			showShorterInfo={ type="toggle", order=3, name=L["ShorterSetInfo"], desc=L["ShorterSetInfoDesc"], hidden=ns.IsClassicClient},
 		},
 		tooltip = {
-			showSets={ type="toggle", order=1, name=L["EquipSets"], desc=L["EquipSetsDesc"], hidden=ns.IsClassicClient},
-			showInventory={ type="toggle", order=2, name=L["Show inventory"], desc=L["Display a list of currently equipped items"]},
-			showEmptySlots={ type="toggle", order=3, name=L["Show emtpy slots"], desc=L["Display empty equipment slots"]},
-			showNotEnchanted={ type="toggle", order=4, name=L["Show 'not enchanted' mark"], desc=L["Display a red # on not enchanted/enchantable items"]},
-			showEmptyGems={ type="toggle", order=5, name=L["Show 'empty socket' mark"], desc=L["Display a yellow # on items with empty sockets"]},
-			showTSet={ type="toggle", order=6, name=L["Show T-Set"], desc=L["Display a T-Set label on items"], hidden=ns.IsClassicClient},
-			showSetName={ type="toggle", order=7, name=L["Show Set name"], desc=L["Display set name on items"], hidden=ns.IsClassicClient},
-			showGreenText={ type="toggle", order=8, name=L["Show green text"], desc=L["Display green text line from item tooltip like titanforged"], hidden=ns.IsClassicClient},
-			showUpgrades={ type="toggle", order=9, name=L["Show upgrade info"], desc=L["Display upgrade info like 2/6"], hidden=ns.IsClassicClient},
-			fullyUpgraded={ type="toggle", order=10, name=L["Darker blue for fully upgraded"], desc=L["Display upgrade counter in darker blue on fully upgraded items"], hidden=ns.IsClassicClient},
-			showTabard={ type="toggle", order=11, name=L["ShowTabard"], desc=L["ShowTabardDesc"]},
-			showShirt={ type="toggle", order=12, name=L["ShowShirt"], desc=L["ShowShirtDesc"]},
+			showSets        ={ type="toggle", order=1, name=L["EquipSets"], desc=L["EquipSetsDesc"], hidden=ns.IsClassicClient},
+			showInventory   ={ type="toggle", order=2, name=L["Show inventory"], desc=L["Display a list of currently equipped items"]},
+			showItemLevelGradient={ type="toggle", order=3, name=L["ColorGradient"], desc=L["ColorGradientDescItemLevel"] },
+			showEmptySlots  ={ type="toggle", order=4, name=L["Show emtpy slots"], desc=L["Display empty equipment slots"]},
+			showNotEnchanted={ type="toggle", order=5, name=L["Show 'not enchanted' mark"], desc=L["Display a red # on not enchanted/enchantable items"]},
+			showEmptyGems   ={ type="toggle", order=6, name=L["Show 'empty socket' mark"], desc=L["Display a yellow # on items with empty sockets"]},
+			showTSet        ={ type="toggle", order=7, name=L["Show T-Set"], desc=L["Display a T-Set label on items"], hidden=ns.IsClassicClient},
+			showSetName     ={ type="toggle", order=8, name=L["Show Set name"], desc=L["Display set name on items"], hidden=ns.IsClassicClient},
+			showGreenText   ={ type="toggle", order=9, name=L["Show green text"], desc=L["Display green text line from item tooltip like titanforged"], hidden=ns.IsClassicClient},
+			showUpgrades    ={ type="toggle", order=10, name=L["Show upgrade info"], desc=L["Display upgrade info like 2/6"], hidden=ns.IsClassicClient},
+			fullyUpgraded   ={ type="toggle", order=11, name=L["Darker blue for fully upgraded"], desc=L["Display upgrade counter in darker blue on fully upgraded items"], hidden=ns.IsClassicClient},
+			showTabard      ={ type="toggle", order=12, name=L["ShowTabard"], desc=L["ShowTabardDesc"]},
+			showShirt       ={ type="toggle", order=13, name=L["ShowShirt"], desc=L["ShowShirtDesc"]},
 		},
 		misc = {
 			ignoreMainHand={ type="select", order=1, name=L["Ignore main hand"], desc=L["'Save set' should ignore main hand weapon"], values=ignoreWeapon, hidden=ns.IsClassicClient },
