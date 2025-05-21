@@ -219,7 +219,7 @@ local function tooltip2Hide(self)
 end
 
 local function createTooltip_AddCurrencies(currencyList)
-	local empty,parentIsCollapsed
+	local empty,parentIsCollapsed,prevType
 	-- loop table
 	for index=1, #currencyList do
 		-- header
@@ -251,10 +251,12 @@ local function createTooltip_AddCurrencies(currencyList)
 				end
 			end
 			tt:SetLineScript(l,"OnMouseUp", toggleCurrencyHeader,headerStr);
+			prevType = currencyListIndexType;
 		elseif currencyListIndexType=="boolean" then
-			if not parentIsCollapsed then
+			if not parentIsCollapsed and prevType~="boolean" then
 				tt:AddSeparator(1,1,1,1,.45);
 			end
+			prevType = currencyListIndexType;
 		else
 			local currencyId, currencyInfo
 			if validateID(currencyList[index]) then
@@ -265,7 +267,8 @@ local function createTooltip_AddCurrencies(currencyList)
 				empty = false;
 			end
 
-			if not parentIsCollapsed then
+			if not parentIsCollapsed and ((ns.profile[name].onlyDiscovered and currencyInfo.discovered) or not ns.profile[name].onlyDiscovered) then
+				prevType = currencyListIndexType;
 				CountCorrection(currencyId,currencyInfo);
 				local showSeasonCap = ns.profile[name].showSeasonCap and currencyInfo.useTotalEarnedForMaxQty and currencyInfo.maxQuantity>0;
 				local str = ns.FormatLargeNumber(name,currencyInfo.quantity,true);
@@ -736,6 +739,7 @@ module = {
 		showCapColorBroker = true,
 		showSeasonCap = true,
 		showSession = true,
+		onlyDiscovered=false,
 		spacer=0,
 		showIDs = false,
 		showHidden = false,
@@ -772,6 +776,7 @@ function module.options()
 		showCapColor  = { type="toggle", order=3, name=L["Coloring total cap"], desc=L["Coloring limited currencies by total and/or weekly cap."] },
 		showSeasonCap = { type="toggle", order=4, name=L["Season cap"], desc=L["Display season cap in tooltip"] },
 		showSession   = { type="toggle", order=5, name=L["Show session earn/loss"], desc=L["Display session profit in tooltip"] },
+		onlyDiscovered= { type="toggle", order=6, name=L["CurrencyShowDiscovered"], desc=L["CurrencyShowDiscoveredDesc"]},
 		showIDs       = { type="toggle", order=6, name=L["Show currency id's"], desc=L["Display the currency id's in tooltip"] },
 		shortTT       = { type="toggle", order=7, name=L["Short Tooltip"], desc=L["Display the content of the tooltip shorter"] },
 		showHidden    = { type="toggle", order=8, name=L["CurrenyHidden"], desc=L["CurrencyHiddenDesc"], hidden=ns.IsClassicClient },
