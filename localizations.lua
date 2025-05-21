@@ -33,6 +33,31 @@ ns.L = setmetatable({},{
 	end
 });
 
+-- It is not nice to read from a user the own addon or module offer more than implemented
+-- and a look into the code pointing on a globalstring from Blizzard.
+-- It sounds like another addon has changed the globalstring.
+-- Or Blizzard has changed the globalstring? Maybe...
+
+local lang = GetLocale();
+local info,correct = {},{
+	RELOADUI = ({--[[enUS="Reload UI",]]deDE="Neu laden",esES="Reiniciar IU",esMX="Recargar",frFR="Recharger",itIT="Riavvio IU",koKR="UI 재시작",ptBR="Recarregar IU",ptPT="Recarregar IU",ruRU="Перезагрузка",zhCN="重新加载UI",zhTW="重新載入"})[lang] or "Reload UI"
+};
+local function GetGlobalString(string)
+	local result, warning, secure, foreign = _G[string], nil, issecurevariable(_G,string)
+	local isChanged = correct[string]~=nil and _G[string]~=correct[string];
+	if not secure and not info[string] then
+		local str = {L["Info: Globalstring \"%2\" was %3 by \"%1\"."]:format(foreign,string,isChanged and "modified" or "touched")};
+		info[string]=true;
+	end
+	if isChanged then
+		result=correct[string];
+		if secure then
+			ns:debugPrint("Warning: Blizzard has changed globalstring",string,"Old: "..correct[string],"New: ".._G[string])
+		end
+	end
+	return result;
+end
+
 -- localization by Blizzard - step 1
 L["Achievements"] = ACHIEVEMENTS
 L["Archaeology"] = PROFESSIONS_ARCHAEOLOGY
@@ -76,6 +101,8 @@ L["Wardrobe"] = WARDROBE
 L["WorkOrders"] = CAPACITANCE_WORK_ORDERS
 L["XP"] = XP
 L["WoWProjectId2"] = EXPANSION_NAME0;
+L["ReloadUI"] = GetGlobalString("RELOADUI");
+
 
 --@do-not-package@
 -- found in globalstrings by script

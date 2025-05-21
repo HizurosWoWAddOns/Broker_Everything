@@ -18,23 +18,36 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\stuff"}; --IconName:
 
 -- some local functions --
 --------------------------
+local function toggleFullscreen()
+	C_CVar.SetCVar("gxMaximize",C_CVar.GetCVar("gxMaximize")=="1" and "0" or "1");
+	RestartGx();
+end
+
 local function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
-	local line, column
+	local line
 
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",L[name]))
-	tt:AddLine (" ")
+	tt:AddLine(" ")
 
-	line, column = tt:AddLine(RELOADUI)
+	line = tt:AddLine(L["ReloadUI"])
 	tt:SetLineScript(line, "OnMouseUp", C_UI.Reload); -- Use static Popup to avoid taint.
+
+	tt:AddLine(" ")
+
+	line = tt:AddLine(L["StuffToggleFullScreen"])
+	tt:SetLineScript(line,"OnMouseUp", toggleFullscreen);
 
 	if ns.profile.GeneralOptions.showHints then
 		tt:AddLine(" ")
-		line, column = nil, nil
+		line = nil
 		tt:AddLine(
-			C("copper",L["ModKeyS"].."+"..L["MouseBtnL"]).." || "..C("green",RELOADUI)
+			C("copper",L["ModKeyS"].."+"..L["MouseBtnL"]).." || "..C("green",L["ReloadUI"])
+		)
+		tt:AddLine(
+			C("copper",L["ModKeyS"].."+"..L["MouseBtnR"]).." || "..C("green",L["StuffToggleFullScreen"])
 		)
 	end
 	ns.roundupTooltip(tt);
@@ -69,8 +82,10 @@ function module.onclick(self,button)
 	if ns.profile[name].disableOnClick then return end
 	local shift = IsShiftKeyDown()
 
-	if (button=="LeftButton") and (shift) then
+	if button=="LeftButton" and shift then
 		C_UI.Reload();
+	elseif button=="RightButton" and shift then
+		toggleFullscreen();
 	end
 end
 
