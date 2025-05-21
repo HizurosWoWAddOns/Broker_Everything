@@ -1,6 +1,6 @@
-## Interface: 110100
+## Interface: 110105
 ## Interface-Cata: 40402
-## Interface-Classic: 11506
+## Interface-Classic: 11507
 ## Title: Broker: Everything
 ## IconTexture: 892831
 ## Notes: A collection of modules to display various informations as Broker-buttons on Broker Display AddOns or minimap buttons.
@@ -8,7 +8,7 @@
 ## Version: @project-version@
 
 # https://warcraft.wiki.gg/wiki/Addon_Categories
-## Category: Data Broker (need translation)
+## Category: Data Broker (need translation on https://warcraft.wiki.gg/wiki/Addon_Categories)
 ## Category-enUS: Data Broker
 ## Category-deDE: Datenbroker
 ## Category-esES: Intermediario de Datos
