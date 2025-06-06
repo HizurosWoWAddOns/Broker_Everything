@@ -10,8 +10,8 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Friends"; -- FRIENDS L["ModDesc-Friends"]
 local ttName,ttName2,ttColumns,tt,tt2,module = name.."TT",name.."TT2",8;
 
-local D4icon = "Interface/AddOns/Broker_Everything/media/Battlenet-D4icon.tga";
-local CODicon = "Interface/AddOns/Broker_Everything/media/Battlenet-CODicon.tga";
+local CODicon = ns.media.."Battlenet-CODicon.tga";
+local SORicon = ns.media.."Battlenet-SORicon.tga";
 local GetClientInfo = setmetatable({
 	-- Blizzard
 	ANBS = {icon=4557783, short="DI",      long="Diablo Immortal"},
@@ -19,17 +19,18 @@ local GetClientInfo = setmetatable({
 	BSAp = {icon=796351,  short="Mobile",  long="Mobile App"},
 	CLNT = {icon=796351,  short=nil,       long=nil},
 	D3   = {icon=536090,  short="D3",      long="Diablo 3"},
-	Fen  = {icon=D4icon,  short="D4",      long="Diablo 4"},
+	Fen  = {icon=5207606, short="D4",      long="Diablo 4"},
 	GRY  = {icon=4553312, short="Arclight",long="Warcraft Arclight Rumble"},
 	Hero = {icon=1087463, short="HotS",    long="Heroes of the Storm"},
 	OSI  = {icon=4034244, short="D2",      long="Diablo II Resurrected"},
 	Pro  = {icon=1313858, short="OW",      long="Overwatch"},
+	Pro2 = {icon=4734171, short="OW2",     long="Overwatch 2"},
 	RTRO = {icon=4034242, short="Arcade",  long="Blizzard Arcade Collection"},
 	S1   = {icon=1669008, short="SC1",     long="Starcraft"},
 	S2   = {icon=374211,  short="SC2",     long="Starcraft 2"},
 	W3   = {icon=3257659, short="WC3",     long="Warcraft 3 Reforged"},
 	WoW  = {icon=374212,  short="WoW",     long="World of Warcraft"},
-	WTCG = {icon=374211,  short="HS",      long="Hearthstone"},
+	WTCG = {icon=852633,  short="HS",      long="Hearthstone"},
 
 	-- Activision
 	WLBY = {icon=4034243, short="CB4",     long="Crash Bandicoot 4"},
@@ -40,6 +41,9 @@ local GetClientInfo = setmetatable({
 	LAZR = {icon=3581732, short="MW2",     long="Call Of Duty: Modern Warfare 2"},
 	ODIN = {icon=3257658, short="MW",      long="Call Of Duty: Modern Warfare"},
 	ZEUS = {icon=3920823, short="BOCW",    long="Call Of Duty: Black Ops Cold War"},
+
+	-- new
+	SCOR = {icon=SORicon, short="SOT",     long="Sea of Thieves"}
 },{
 	__call = function(t,name)
 		local v = rawget(t,name)
