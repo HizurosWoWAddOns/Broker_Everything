@@ -1,5 +1,5 @@
 # Broker_Everything (WoW AddOn)
-![Build](https://github.com/HizurosWoWAddOns/Broker_Everything/actions/workflows/bigwigsmods-packager.yml/badge.svg)
+![Build](https://img.shields.io/github/actions/workflow/status/HizurosWoWAddOns/Broker_Everything/packager.yml?style=flat-square)
 ![Tag](https://img.shields.io/github/v/tag/HizurosWoWAddOns/Broker_Everything?style=flat-square)
 ![Downloads](https://img.shields.io/github/downloads/HizurosWoWAddOns/Broker_Everything/total?style=flat-square)
 ![Downloads](https://img.shields.io/github/downloads/HizurosWoWAddOns/Broker_Everything/latest/total?style=flat-square)
