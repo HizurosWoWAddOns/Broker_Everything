@@ -51,14 +51,10 @@ end
 -- function module.onevent(self,event,msg) end
 
 function module.onupdate()
-	--if not GetMouseFocus then return end
 	local f;
 	if GetMouseFoci then
 		local objs = GetMouseFoci();
-		f = objs[1]
-		--if #objs>1 then
-		--	ns:debugPrint(name,)
-		--end
+		f = objs[1] or WorldFrame; -- WorldFrame no longer listed with GetMouseFoci
 	else
 		f = GetMouseFocus();
 	end
