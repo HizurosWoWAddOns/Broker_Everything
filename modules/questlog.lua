@@ -10,6 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Quest Log" -- QUESTLOG_BUTTON L["ModDesc-Quest Log"]
 local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module,createTooltip = name.."TT",name.."TT2",10,2;
 local quests,numQuestStatus,sum,url,tt2created,requested
+local tradeskills = {}
 local urls = {
 	WoWHead = {"WoWHead",function(id)
 		local url,lc,bv = {"https://www.wowhead.com"},(GetLocale()),GetBuildInfo()
@@ -451,6 +452,10 @@ if ns.client_version<4 then
 	module.config_defaults.tooltip2QuestZone = false
 end
 
+if ns.client_version>=7 then
+	tinsert(module.events,"TRADE_SKILL_LIST_UPDATE")
+end
+
 ns.ClickOpts.addDefaults(module,{
 	questlog = "_LEFT",
 	menu = "_RIGHT"
@@ -499,18 +504,12 @@ function module.options()
 end
 
 -- function module.init() end
-
 function module.onevent(self,event,msg)
 	if event=="BE_UPDATE_CFG" then
 		ns.ClickOpts.update(name);
 	end
-	if event=="PLAYER_LOGIN" or event=="QUEST_LOG_UPDATE" then
-		local numEntries, numQuests = (GetNumQuestLogEntries or C_QuestLog.GetNumQuestLogEntries)();
-		local header, _ = false;
-		sum,quests,numQuestStatus = numQuests,{},{fail=0,complete=0,active=0};
-
+	if event=="PLAYER_LOGIN" or event=="TRADE_SKILL_LIST_UPDATE" then
 		-- list trade skills
-		local tradeskills = {}
 		if GetProfessions then -- retail
 			for order,index in ipairs({GetProfessions()}) do -- prof1, prof2, arch, fish, cook
 				if index then
@@ -532,6 +531,25 @@ function module.onevent(self,event,msg)
 				end
 			end
 		end
+	end
+	if event=="PLAYER_LOGIN" and ns.client_version==5 then
+		C_Timer.After(3.14159,function()
+			-- toggle questlog in login. mop classic wont trigger QUEST_LOG_UPDATE before quest log was open.
+			local current = ns.GetCVar("Sound_EnableSFX");
+			if current=="1" then
+				ns.SetCVar("Sound_EnableSFX",0);
+			end
+			ToggleQuestLog();
+			ToggleQuestLog();
+			if current=="1" then
+				ns.SetCVar("Sound_EnableSFX",1);
+			end
+		end)
+	end
+	if event=="PLAYER_LOGIN" or event=="QUEST_LOG_UPDATE" then
+		local numEntries, numQuests = (GetNumQuestLogEntries or C_QuestLog.GetNumQuestLogEntries)();
+		local header, _ = false;
+		sum,quests,numQuestStatus = numQuests,{},{fail=0,complete=0,active=0};
 
 		for index=1, numEntries do
 			local q = ns.deprecated.C_QuestLog.GetInfo(index) or {};
