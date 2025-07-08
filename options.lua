@@ -157,6 +157,13 @@ local function toggleAllModules(info)
 	end
 end
 
+local function HideAllMinimapButtons()
+	for modName,modObject in pairs(ns.modules) do
+		db.profile[modName].minimap.hide = true;
+		ns.updateMinimapButton(modName);
+	end
+end
+
 -- option set/get function
 local function opt(info,value,...)
 	if not db then return end
@@ -248,6 +255,7 @@ local options = {
 						suffixColour    = { type="toggle",order=2,name=L["SuffixColor"],desc=L["SuffixColorDesc"] },
 						usePrefix       = { type="toggle",order=3,name=L["Prefix"],desc=L["PrefixDesc"] },
 						chatCommands    = { type="toggle",order=4,name=L["ChatCommands"],desc=L["ChatCommandsDesc"] },
+						minimapOff      = { type="execute",order=5,name=L["HideAllMinimapButtons"],desc=L["HideAllMinimapButtonsDesc"], func = HideAllMinimapButtons}
 					}
 				},
 				gold = {

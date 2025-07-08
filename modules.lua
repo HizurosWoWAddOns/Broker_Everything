@@ -33,7 +33,7 @@ function ns.updateMinimapButton(modName)
 	if ns.LDBI:IsRegistered(mod.ldbName) then
 		-- perform refresh on minimap button if already exists
 		ns.LDBI:Refresh(mod.ldbName);
-	elseif not cfg.minimap.hide then
+	elseif not cfg.minimap.hide and cfg.enabled then
 		-- register minimap button if not exists
 		ns.LDBI:Register(mod.ldbName,mod.obj,cfg.minimap);
 	end
