@@ -11,22 +11,12 @@ if ns.client_version<5 then return end
 local name1 = "Raids" -- RAIDS L["ModDesc-Raids"]
 local name2 = "Dungeons" -- DUNGEONS L["ModDesc-Dungeons"]
 local ttName1, ttName2, ttColumns, tt1, tt2, createTooltip, module1, module2 = name1.."TT", name2.."TT", 5
-local fState,symbol,renameIt = C("ltgray"," (%d/%d)"),"|Tinterface\\buttons\\UI-%sButton-Up:0|t ",{};
-local instanceName, instanceID, instanceReset, instanceDifficulty, locked, extended, instanceIDMostSig, isRaid, maxPlayers, difficultyName, numEncounters, encounterProgress=1,2,3,4,5,6,7,8,9,10,11,12; -- GetSavedInstanceInfo
-local activeRaids,PL_collected,PEW_collected,activeEncounter = {},true,true;
+local fState,symbol = C("ltgray"," (%d/%d)"),"|Tinterface\\buttons\\UI-%sButton-Up:0|t ";
+local PL_collected,PEW_collected,activeEncounter = true,true;
 local BossKillQueryUpdate,UpdateInstaceInfoLock = false,{};
-local hide = {
-	[322] = true, -- pandaria world bosses // no raid
-	[557] = true, -- draenor world bosses // no raid
-	[822] = true, -- legion world bosses // no raid
-	[959] = true, -- legion invasionpoints (argus) // no raid
-	[1028] = true, -- bfa world bosses // no raid
-	[1192] = true, -- shadowlands world bosses // no raid
-	[1205] = true, -- dragonflight world bosses // no raid
-	[1278] = true, -- the war within world bosses // no raid
-}
+local ejInstanceId2instanceMapId = {};
 -- some entries have not exact matching names between encounter journal and raidinfo frame
-local rename_il,rename_ej,ignore_ej = {},{},{};
+local ignore_ej = {};
 local diffModeShort = {
 	[RAID_DIFFICULTY_10PLAYER] = "10n",
 	[RAID_DIFFICULTY_20PLAYER] = "20n",
@@ -55,48 +45,80 @@ local function RequestRaidInfoUpdate()
 	end
 end
 
-local function updateInstances(name,mode)
-	if EncounterJournal and EncounterJournal:IsShown() then return end -- prevent use of EJ_SelectTier while EncounterJournal is shown
-	local currentTime,num = time(),GetNumSavedInstances();
-	for i=1, num do
-		local data = {GetSavedInstanceInfo(i)};
-		if data[isRaid]==mode and data[instanceReset]>0 then
-			local name = data[instanceName];
-			if rename_il[name] then
-				name = rename_il[name];
-			elseif renameManually[name] then
-				name = renameManually[name];
-			end
-			if activeRaids[name]==nil then
-				activeRaids[name] = {new=true};
-			end
-			activeRaids[name][data[difficultyName]] = {data[instanceReset],currentTime,data[encounterProgress],data[numEncounters]};
-		end
-	end
-	local num = EJ_GetNumTiers()
-	for i=1, num do
-		EJ_SelectTier(i);
-		local index, instance_id, instance_name, _ = 1;
-		instance_id, instance_name = EJ_GetInstanceByIndex(index, mode);
-		while instance_id~=nil do
-			if rename_ej[instance_name] then
-				instance_name = rename_ej[instance_name];
-			end
-			if activeRaids[instance_name] then
-				if ns.toon[name]==nil then
-					ns.toon[name]={};
+local ejInstances,ejDoubleInstanceNames,ejInstancesFinished,LoadEjInstances,LoadEjInstancesLock={},{};
+do
+
+	local function getEjInstances(exp,mode)
+		-- walk through list
+		local index = 1;
+		local ejInstanceId, instanceName, _, _, _, _, _, _, _, shouldDisplayDifficulty, instanceMapId = EJ_GetInstanceByIndex(index, mode);
+		while ejInstanceId~=nil do
+			if instanceMapId and shouldDisplayDifficulty then
+				ejInstances[exp][instanceMapId] = {index=index,isRaid=mode,ejId=ejInstanceId,instanceName=instanceName};
+				if ejDoubleInstanceNames[instanceName]==nil then
+					ejDoubleInstanceNames[instanceName] = {}
 				end
-				ns.toon[name][instance_id] = activeRaids[instance_name];
+				tinsert(ejDoubleInstanceNames[instanceName],instanceMapId);
+				ejDoubleInstanceNames[instanceMapId] = true;
 			end
-			index = index + 1;
-			instance_id, instance_name = EJ_GetInstanceByIndex(index, mode);
+			index = index+1;
+			ejInstanceId, instanceName, _, _, _, _, _, _, _, shouldDisplayDifficulty, instanceMapId = EJ_GetInstanceByIndex(index, mode);
 		end
 	end
-	UpdateInstaceInfoLock[name] = nil;
+
+	function LoadEjInstances()
+		if LoadEjInstancesLock then return end LoadEjInstancesLock = true;
+
+		local numTiers = EJ_GetNumTiers();
+
+		-- Note: Tier 1-n is not
+		for ejTier=1, numTiers do
+			EJ_SelectTier(ejTier);
+			local exp = ejTier-1;
+			if not _G["EXPANSION_NAME"..exp] then
+				exp = exp-1;
+			end
+			if ejInstances[exp]==nil then
+				ejInstances[exp]={};
+			end
+			-- get all raids
+			getEjInstances(exp,true);
+			-- get all dungeons
+			getEjInstances(exp,false);
+		end
+
+		ejInstancesFinished=true;
+	end
+end
+
+local activeInstances = {last=0,Raids={},Dungeons={}};
+local function updateInstances()
+	local currentTime = time();
+	if activeInstances.last>=currentTime-2 then
+		return;
+	end
+	activeInstances.last = currentTime;
+
+	local num = GetNumSavedInstances();
+	for index=1, num do
+		local iName, lockoutId, reset, difficultyId, locked, extended,
+		instanceIDMostSig, isRaid, maxPlayers, difficultyName,
+		numEncounters, encounterProgress, extendDisabled, instanceMapId = GetSavedInstanceInfo(index);
+		local aInst = activeInstances[isRaid and "Raids" or "Dungeons"];
+		if reset>0 and instanceMapId and difficultyName then
+			if aInst[instanceMapId]==nil then
+				aInst[instanceMapId] = {};
+			end
+			aInst[instanceMapId][difficultyName] = {reset,currentTime,encounterProgress,numEncounters,isRaid};
+		end
+	end
+
+	ns.toon[name1] = activeInstances.Raids;
+	ns.toon[name2] = activeInstances.Dungeons;
 end
 
 local function createTooltip2(self,instance)
-	local id,name,label = unpack(instance);
+	local instanceMapId,name,label = unpack(instance);
 	local t = time();
 
 	GameTooltip:SetOwner(self,"ANCHOR_NONE");
@@ -109,45 +131,46 @@ local function createTooltip2(self,instance)
 	GameTooltip:AddLine(C("gray",ns.realm));
 	GameTooltip:AddLine(" ");
 
+	local numShownToons = 0;
 	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
-		if toonName then
-			local diffState = {};
-			if toonData[name] and toonData[name][id] then
-				if toonData[name][id].new then
-					for diffName, data in ns.pairsByKeys(toonData[name][id]) do
-						if type(data)=="table" and (data[1]+data[2])>t then
-							local diff,state = C("ltgray",diffName)..", ",C("orange",L["In progress"]);
-							if data[3]==data[4] then
-								state = C("green",L["Cleared"]);
-							else
-								state = state..fState:format(data[3],data[4]);
-							end
-							tinsert(diffState,diff..state);
-						end
+		if not isCurrent and toonData[name] and toonData[name][instanceMapId] then
+			-- toonData - name - instanceMapId - diffName - data [ reset, timestamp, encounterProgress, numEncounters ]
+			local diffState, entries = {}, toonData[name][instanceMapId];
+			for diffName, data in ns.pairsByKeys(entries) do
+				if type(data)=="table" and (data[1]+data[2])>t then
+					local diffColor, stateColor, stateStr = "ltgray", "orange", "In progress";
+					local encounter = fState:format(data[3],data[4]);
+					if data[3]==data[4] then
+						stateColor,stateStr="green","Cleared";
+						encounter = "";
 					end
-				elseif (toonData[name][id][1]+toonData[name][id][2])>t and toonData[name][id][5] and toonData[name][id][5]~="" then
-					local diff,state = C("ltgray",toonData[name][id][5])..", ", C("orange",L["In progress"]);
-					if toonData[name][id][3]==toonData[name][id][4] then
-						state = C("green",L["Cleared"]);
-					else
-						state = state..fState:format(toonData[name][id][3],toonData[name][id][4]);
-					end
-					tinsert(diffState,diff..state);
+					tinsert(diffState,C(diffColor,diffName)..C(stateColor,L[stateStr])..encounter);
+					numShownToons = numShownToons+1;
 				end
 			end
 			local factionSymbol = "";
 			if toonData.faction and toonData.faction~="Neutral" then
 				factionSymbol = " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t";
 			end
-			GameTooltip:AddDoubleLine(C(toonData.class,ns.scm(toonName))..factionSymbol,#diffState==0 and C("gray",L["Free"]) or table.concat(diffState,"\n"));
+			if (ns.profile[name].showActiveOnly and #diffState>0) or not ns.profile[name].showActiveOnly then
+				GameTooltip:AddDoubleLine(C(toonData.class,ns.scm(toonName))..factionSymbol,#diffState==0 and C("gray",L["Free"]) or table.concat(diffState,"\n"));
+			end
 		end
 	end
+	if numShownToons==0 then
+		GameTooltip:AddLine(C("ltgray",L["No active instance ids on other twinks found."]))
+	end
+
 	GameTooltip:Show();
 end
 
 local function toggleExpansion(self,data)
 	ns.profile[data.name]['showExpansion'..data.expansion] = not ns.profile[data.name]['showExpansion'..data.expansion];
 	createTooltip(data.name==name1 and tt1 or tt2,data.name,data.mode); -- force update tooltip?
+end
+
+local function sortByIndex(a,b)
+	return a.index<b.index and -1 or 1;
 end
 
 function createTooltip(tt,name,mode)
@@ -158,47 +181,57 @@ function createTooltip(tt,name,mode)
 
 	tt:AddHeader(C("dkyellow",name==name1 and RAIDS or DUNGEONS));
 
-	updateInstances(name,mode);
+	if not ejInstancesFinished then
+		tt:AddSeparator(4,0,0,0,0)
+		tt:AddLine(L["Sorry. List under construction."])
+		tt:AddLine(L["Try again in some seconds."])
+		ns.roundupTooltip(tt);
+		return;
+	end
+
+	updateInstances();
 
 	-- create instance list
-	local exp_start, exp_stop, exp_direction = 1, (NUM_LE_EXPANSION_LEVELS+1), 1;
-	if ns.profile[name].invertExpansionOrder then
-		exp_start, exp_stop, exp_direction = (NUM_LE_EXPANSION_LEVELS+1), 1, -1;
+	local exp_max,prevLabel = GetNumExpansions(),"";
+	if not _G["EXPANSION_NAME"..exp_max] then
+		exp_max = exp_max-1;
 	end
-	local tierMod = 0;
-	for tier=exp_start, exp_stop, exp_direction do
-		local i = tier;
-		if tier==exp_start then
-			tier=tier+1;
+	local exp_start, exp_stop, exp_direction = 1, exp_max, 1;
+	if ns.profile[name].invertExpansionOrder then
+		exp_start, exp_stop, exp_direction = exp_max, 1, -1;
+	end
+
+	for exp=exp_start, exp_stop, exp_direction do
+		if prevLabel~=_G["EXPANSION_NAME"..exp] then
+			local hColor,sState,_status_,_mode_ = "gray","Plus","","";
+			if ns.profile[name]['showExpansion'..exp]==nil then
+				ns.profile[name]['showExpansion'..exp] = true;
+			end
+			if ns.profile[name]['showExpansion'..exp] then
+				hColor,sState,_status_,_mode_ = "ltblue","Minus",C("ltblue",STATUS),C("ltblue",MODE);
+			end
+			tt:AddSeparator(4,0,0,0,0);
+			local l=tt:AddLine(symbol:format(sState)..C(hColor,_G["EXPANSION_NAME"..exp]),_status_,_mode_);
+			tt:SetLineScript(l,"OnMouseUp",toggleExpansion, {name=name,mode=mode,expansion=exp});
+			prevLabel = _G["EXPANSION_NAME"..exp];
+			if ns.profile[name]['showExpansion'..exp] then
+				tt:AddSeparator();
+			end
 		end
 
-		local hColor,sState,_status_,_mode_ = "gray","Plus","","";
-		if ns.profile[name]['showExpansion'..i]==nil then
-			ns.profile[name]['showExpansion'..i] = true;
-		end
-		if ns.profile[name]['showExpansion'..i] then
-			hColor,sState,_status_,_mode_ = "ltblue","Minus",C("ltblue",STATUS),C("ltblue",MODE);
-		end
-		tt:AddSeparator(4,0,0,0,0);
-		local l=tt:AddLine(symbol:format(sState)..C(hColor,_G['EXPANSION_NAME'..(i-1)]),_status_,_mode_);
-		tt:SetLineScript(l,"OnMouseUp",toggleExpansion, {name=name,mode=mode,expansion=i});
-
-		if ns.profile[name]['showExpansion'..i] then
-			EJ_SelectTier(tier);
-			tt:AddSeparator();
-			local index, instance_id, instance_name, _ = 1;
-			instance_id, instance_name = EJ_GetInstanceByIndex(index, mode);
-			while instance_id~=nil do
-				if not hide[instance_id] then
+		if ns.profile[name]['showExpansion'..exp] then
+			table.sort(ejInstances[exp],sortByIndex)
+			local alreadyShown = {}
+			for instanceMapId, ejInfo in pairs(ejInstances[exp]) do
+				if ejInfo.isRaid==mode and not (ejDoubleInstanceNames[instanceMapId] and alreadyShown[ejInfo.instanceName])--[[ and not hide[ejInfo.ejId] ]] then
+					alreadyShown[ejInfo.instanceName] = true;
 					local status,diff,encounter,id = {},{},"","";
-					if ignore_ej[instance_name] then
-						status = false;
-					elseif rename_ej[instance_name] then
-						instance_name = rename_ej[instance_name];
+					if ignore_ej[ejInfo.instanceName] then
+						status = nil;
 					end
 					if status then
-						if activeRaids[instance_name] then
-							for diffName, data in ns.pairsByKeys(activeRaids[instance_name])do
+						if activeInstances[name][instanceMapId] then
+							for diffName, data in ns.pairsByKeys(activeInstances[name][instanceMapId])do
 								if type(data)=="table" then
 									local s,d = C("orange",L["In progress"]),C("ltgray",diffName);
 									if data[3]==data[4] then
@@ -212,60 +245,86 @@ function createTooltip(tt,name,mode)
 							end
 						end
 						if ns.profile[name].showID then
-							id = C("gray"," ("..instance_id..")");
+							-- ejDoubleInstanceNames
+							id = C("gray"," ("..instanceMapId..")");
 						end
 						local l=tt:AddLine(
-							C("ltyellow","    "..instance_name)..id,
+							C("ltyellow","    "..ejInfo.instanceName)..id,
 							#status==0 and C("gray",L["Free"]) or table.concat(status,"\n"),
 							#diff==0 and "" or table.concat(diff,"\n")
 						);
 
-						tt:SetLineScript(l,"OnEnter",createTooltip2,{instance_id,name,instance_name});
+						tt:SetLineScript(l,"OnEnter",createTooltip2,{instanceMapId,name,ejInfo.instanceName});
 						tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
+					end
+				end
+			end
+
+			--[[
+			EJ_SelectTier(tier)
+			local index, ejInfo.instanceMapId, ejInfo.instanceName, _ = 1;
+			ejInfo.instanceMapId, ejInfo.instanceName = EJ_GetInstanceByIndex(index, mode);
+			while ejInfo.instanceMapId~=nil do
+				if not hide[ejInfo.instanceMapId] then
+					local status,diff,encounter,id = {},{},"","";
+					if ignore_ej[ejInfo.instanceName] then
+						status = false;
+					end
+					if status then
+						if activeInstances[ejInfo.instanceName] then
+							for diffName, data in ns.pairsByKeys(activeInstances[ejInfo.instanceName])do
+								if type(data)=="table" then
+									local s,d = C("orange",L["In progress"]),C("ltgray",diffName);
+									if data[3]==data[4] then
+										s = C("green",L["Cleared"]);
+									else
+										s = s .. fState:format(data[3],data[4]);
+									end
+									tinsert(status,s);
+									tinsert(diff,d);
+								end
+							end
+						end
+						if ns.profile[name].showID then
+							id = C("gray"," ("..ejInfo.instanceMapId..")");
+						end
+						local l=tt:AddLine(
+							C("ltyellow","    "..ejInfo.instanceName)..id,
+							#status==0 and C("gray",L["Free"]) or table.concat(status,"\n"),
+							#diff==0 and "" or table.concat(diff,"\n")
+						);
+
+						-- tt:SetLineScript(l,"OnEnter",createTooltip2,{ejInfo.instanceMapId,name,ejInfo.instanceName});
+						-- tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 
 						if ns.toon[name]==nil then
 							ns.toon[name]={};
 						end
-						ns.toon[name][instance_id] = activeRaids[instance_name];
+						ns.toon[name][ejInfo.instanceMapId] = activeInstances[ejInfo.instanceName];
 					end
 				end
 				index = index + 1;
-				instance_id, instance_name = EJ_GetInstanceByIndex(index, mode);
+				ejInfo.instanceMapId, ejInfo.instanceName = EJ_GetInstanceByIndex(index, mode);
 			end
+			--]]
 		end
 	end
 
-	--if ns.profile.GeneralOptions.showHints then
-	--	tt:AddSeparator(4,0,0,0,0)
-	--	ns.ClickOpts.ttAddHints(tt,name);
-	--end
+	if ns.profile.GeneralOptions.showHints then
+		tt:AddSeparator(4,0,0,0,0)
+		ns.ClickOpts.ttAddHints(tt,name);
+	end
 	ns.roundupTooltip(tt);
 end
 
 local function OnEvent(self,event,...)
+	local name = self==module1.eventFrame and name1 or name2;
 	if event=="PLAYER_LOGIN" then
-		for _,v in ipairs(renameIt)do
-			local B,A = (EJ_GetInstanceInfo(v[3]));
-			if v[2]>0 then
-				local res = ns.ScanTT.query({type="link",link="instancelock:0:"..v[2]},true);
-				if res and res.lines and res.lines[1] then
-					local name = {strsplit('"',res.lines[1])};
-					if name[2] then
-						A = name[2];
-					end
-				end
-			end
-			if A and B and A~=B then
-				if v[1]=="IL" then
-					rename_il[A] = B;
-				elseif v[1]=="EJ" then
-					rename_ej[B] = A;
-				elseif v[1]=="XX" then
-					ignore_ej[B] = true;
-				end
-			end
+		if ns.toon[name]==nil then
+			ns.toon[name]={}
 		end
-		wipe(renameIt);
+
+		C_Timer.After(3.14159,LoadEjInstances)
 
 		RequestRaidInfo(); -- trigger UPDATE_INSTANCE_INFO
 	elseif event=="BOSS_KILL" then
@@ -273,17 +332,10 @@ local function OnEvent(self,event,...)
 		BossKillQueryUpdate=true;
 		C_Timer.After(0.14,RequestRaidInfoUpdate);
 	elseif event=="UPDATE_INSTANCE_INFO" then
-		local mode,name = false,name2;
-		if self==module1.eventFrame then
-			mode,name = true,name1;
-		end
 		BossKillQueryUpdate=false;
-		if not UpdateInstaceInfoLock[name] then
-			UpdateInstaceInfoLock[name] = true;
-			C_Timer.After(0.3, function()
-				updateInstances(name,mode);
-			end);
-		end
+		C_Timer.After(0.3, function()
+			updateInstances();
+		end);
 	end
 end
 
@@ -315,6 +367,7 @@ module2 = {
 		showID = false,
 		showCharsFrom = true,
 		showAllFactions = true,
+		showActiveOnly = false,
 	}
 }
 
@@ -323,9 +376,11 @@ function module1.options()
 		broker = nil,
 		tooltip = {
 			invertExpansionOrder={ type="toggle", order=1, width="double", name=L["Invert expansion order"], desc=L["Invert order by exspansion in tooltip"] },
-			tooltip2header = { type="header", order=2, name=L["Tooltip2"]},
-			showCharsFrom = 2,
-			showAllFactions = 3,
+			showID = { type = "toggle", order=2, name=L["Show IDs"], desc=L["Display instance id's behind the name in tooltip"] },
+			tooltip2header = { type="header", order=20, name=L["Tooltip2"]},
+			showCharsFrom = 21,
+			showAllFactions = 22,
+			showActiveOnly = { type = "toggle", order=23, name=L["InstancesShowActiveTwinks"], desc=L["InstancesShowActiveTwinksDesc"] },
 		},
 		misc = nil,
 	}
@@ -336,80 +391,18 @@ function module2.options()
 		broker = nil,
 		tooltip = {
 			invertExpansionOrder={ type="toggle", order=1, width="double", name=L["Invert expansion order"], desc=L["Invert order by exspansion in tooltip"] },
-			tooltip2header = { type="header", order=2, name=L["Tooltip2"]},
-			showCharsFrom = 2,
-			showAllFactions = 3,
+			showID = { type = "toggle", order=2, name=L["Show IDs"], desc=L["Display instance id's behind the name in tooltip"] },
+			tooltip2header = { type="header", order=20, name=L["Tooltip2"]},
+			showCharsFrom = 21,
+			showAllFactions = 22,
+			showActiveOnly = { type = "toggle", order=23, name=L["InstancesShowActiveTwinks"], desc=L["InstancesShowActiveTwinksDesc"] },
 		},
 		misc = nil,
 	}
 end
 
-function module1.init() -- raids
-	-- {<target>,<raidinfo>,<encounterjournalid>}
-	-- IL = InstanceLock, EJ = EncounterJournal, XX = No ID, list without Free/InProgress/Cleared-info
-	-- classic
-	table.insert(renameIt,{"IL",  409, 741}); -- molten core
-	table.insert(renameIt,{"IL",  531, 744}); -- temple of ahn'qiraj
-	-- bc
-	table.insert(renameIt,{"IL",  548, 748}); -- serpentshrine cavern
-	table.insert(renameIt,{"IL",  550, 749}); -- tempest keep
-	table.insert(renameIt,{"IL",  564, 751}); -- black temple
-	table.insert(renameIt,{"IL",  580, 752}); -- sunwell
-	-- woltk
-	table.insert(renameIt,{"IL",  615, 755}); -- obsidian sanctum
-	table.insert(renameIt,{"IL",  724, 761}); -- rubin sanctum
-	table.insert(renameIt,{"IL",  631, 758}); -- Icecrown Citadel
-	-- mop
-	table.insert(renameIt,{"EJ",  996, 320}); -- Terrace of Endless Spring
-	table.insert(renameIt,{"IL", 1136, 369}); -- siege of orgrimmar
-	-- wod
-	table.insert(renameIt,{"EJ", 1205, 457}); -- Blackrock Foundry
-	table.insert(renameIt,{"IL", 1228, 477}); -- Highmaul
-	-- legion
-	table.insert(renameIt,{"EJ", 1530, 786}); -- The Nighthold
-	table.insert(renameIt,{"IL", 1676, 875, all=0}); -- Tomb of Sargeras
-end
-
-function module2.init() -- dungeons
-	table.insert(renameIt,{"IL", 1688,  63}); -- Deadmines
-	table.insert(renameIt,{"IL",  938, 184}); -- End Time
-	table.insert(renameIt,{"IL",  939, 185}); -- Well of Eternity
-	table.insert(renameIt,{"IL",  940, 186}); -- Hour of Twilight
-	table.insert(renameIt,{"IL",  429, 230}); -- Dire Maul
-	table.insert(renameIt,{"XX",    0, 237}); -- The Temple of Atal'hakkar
-	table.insert(renameIt,{"XX",    0, 238}); -- The Stockade (or maybe Stormwind Stockade)
-	table.insert(renameIt,{"IL",  558, 247}); -- Auchenai Crypts
-	--table.insert(renameIt,{"IL",   , 248}); --
-	table.insert(renameIt,{"IL",  585, 249}); -- Magisters' Terrace
-	table.insert(renameIt,{"IL",  557, 250}); -- Mana-Tombs
-	--table.insert(renameIt,{"IL",   , 251}); --
-	table.insert(renameIt,{"IL",  556, 252}); -- Sethekk Halls
-	table.insert(renameIt,{"IL",  555, 253}); -- Shadow Labyrinth
-	table.insert(renameIt,{"IL",  552, 254}); -- The Arcatraz
-	--table.insert(renameIt,{"IL",   , 255}); -- The Black Morass
-	table.insert(renameIt,{"IL",  542, 256}); -- The Blood Furnace
-	table.insert(renameIt,{"IL",  553, 257}); -- The Botanica
-	table.insert(renameIt,{"IL",  554, 258}); -- The Mechanar
-	table.insert(renameIt,{"IL",  540, 259}); -- The Shattered Halls
-	table.insert(renameIt,{"IL",  547, 260}); -- The Slave Pens
-	table.insert(renameIt,{"IL",  545, 261}); -- The Steamvault
-	table.insert(renameIt,{"IL",  546, 262}); -- The Underbog
-	table.insert(renameIt,{"IL",  619, 271}); -- Ahn'kahet: The Old Kingdom
-	table.insert(renameIt,{"IL",  600, 273}); -- Drak'Tharon Keep
-	table.insert(renameIt,{"IL",  595, 279}); -- The Culling of Stratholme
-	table.insert(renameIt,{"IL",  632, 280}); -- The Forge of Souls
-	table.insert(renameIt,{"IL",  576, 281}); -- The Nexus
-	table.insert(renameIt,{"IL",  578, 282}); -- The Oculus
-	--table.insert(renameIt,{"IL",   , 283}); --
-	table.insert(renameIt,{"IL",  961, 302}); -- Stormstout Brewery
-	table.insert(renameIt,{"IL",  962, 303}); -- Gate of the Setting Sun
-	table.insert(renameIt,{"IL", 1001, 311}); -- Scarlet Halls
-	table.insert(renameIt,{"IL", 1004, 316}); -- Scarlet Monastery
-	table.insert(renameIt,{"IL", 1009, 330, all=0});  -- Heart of Fear
-	table.insert(renameIt,{"IL", 1195, 558}); -- Iron Docks
-	table.insert(renameIt,{"IL", 1492, 727}); -- Maw of Souls
-	table.insert(renameIt,{"IL", 1544, 777}); -- Assault on Violet Hold
-end
+-- function module1.init() end
+-- function module2.init() end
 
 module1.onevent = OnEvent;
 module2.onevent = OnEvent;
