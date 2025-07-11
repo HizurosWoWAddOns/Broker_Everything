@@ -276,7 +276,7 @@ module = {
 	}
 };
 
-if ns.client_version>=5 then
+if ns.client_version>=7 then
 	tinsert(module.events,"ARTIFACT_UPDATE")
 end
 
