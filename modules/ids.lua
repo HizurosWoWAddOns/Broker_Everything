@@ -143,12 +143,15 @@ local function createTooltip(tt)
 				if diff~=0 and showDiff[diff] and (diffCounter[diff][2]>0 or diffCounter[diff][1]>0) then
 					local header,headerShown,doExtend = (diffName[diff]) and diffName[diff] or "Unknown type",false,false;
 					for i,v in ipairs(data) do
-						local duration,color,show = false,"ltgray",ns.profile[name].showExpiredEntries;
+						local duration,color,color2,show = false,"ltgray","white",ns.profile[name].showExpiredEntries;
+						local validEncounter = v[encounterProgress]>0 and v[numEncounters]>0;
+						local completed = validEncounter and v[encounterProgress]==v[numEncounters];
 						if v[instanceReset]>0 then
-							duration = ns.DurationOrExpireDate(v[instanceReset])
-							color = "ltyellow";
+							color = completed and "ltgreen" or "ltyellow";
+							color2 = completed and "ltgray" or "white";
+							duration = C(color2,ns.DurationOrExpireDate(v[instanceReset]))
 							show = true;
-						elseif v[encounterProgress]>0 and v[numEncounters]>0 and v[encounterProgress]<v[numEncounters] then
+						elseif validEncounter and v[encounterProgress]<v[numEncounters] then
 							if v[extended] then
 								doExtend = false;
 								duration = L["Unextend ID"];
@@ -164,7 +167,7 @@ local function createTooltip(tt)
 							show = true;
 						else
 							doExtend = false;
-							duration = C("gray",RAID_INSTANCE_EXPIRES_EXPIRED);
+							duration = C(completed and "ltgreen" or "gray",RAID_INSTANCE_EXPIRES_EXPIRED);
 						end
 						if show then
 							if not headerShown then
@@ -173,11 +176,11 @@ local function createTooltip(tt)
 							end
 							local l=tt:AddLine(
 								C(color,"    "..v[instanceName]),
-								v[difficultyName].. (not diffName[diff] and " ("..v[instanceDifficulty]..")" or ""),
-								("%s/%s"):format(
+								C(color2,v[difficultyName].. (not diffName[diff] and " ("..v[instanceDifficulty]..")" or "")),
+								C(color2,("%s/%s"):format(
 									(v[encounterProgress]>0) and v[encounterProgress] or "?",
 									(v[numEncounters]>0) and v[numEncounters] or "?"
-								),
+								)),
 								duration or ""
 							);
 							if doExtend then
