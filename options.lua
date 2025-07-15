@@ -159,8 +159,10 @@ end
 
 local function HideAllMinimapButtons()
 	for modName,modObject in pairs(ns.modules) do
-		db.profile[modName].minimap.hide = true;
-		ns.updateMinimapButton(modName);
+		if db.profile[modName].minimap then
+			db.profile[modName].minimap.hide = true;
+			ns.updateMinimapButton(modName);
+		end
 	end
 end
 
