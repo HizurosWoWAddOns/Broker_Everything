@@ -24,6 +24,7 @@ local headers = {
 	FAVORITES = FAVORITES,
 }
 local currencyCounter = {}
+local PROFESSIONS_CRAFTING_ORDERS_TAB_NAME = _G["PROFESSIONS_CRAFTING_ORDERS_TAB_NAME"] or "Crafting orders";
 local CurrenciesRenameFormat = {
 	w = PROFESSIONS_CRAFTING_ORDERS_TAB_NAME.." - %s"
 }
@@ -105,8 +106,10 @@ local function resetCurrencySession()
 	for _,id in ipairs(Currencies)do
 		if tonumber(id) then
 			local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(id);
-			CountCorrection(id,currencyInfo);
-			currencySession[id] = currencyInfo.quantity;
+			if currencyInfo then
+				CountCorrection(id,currencyInfo);
+				currencySession[id] = currencyInfo.quantity;
+			end
 		end
 	end
 end
@@ -119,6 +122,8 @@ local function GetCurrency(currencyId,skillLineID)
 	local currencyInfo,_;
 	if tonumber(currencyId) then
 		currencyInfo = C_CurrencyInfo.GetCurrencyInfo(currencyId);
+	end
+	if currencyInfo then
 		if not currencyInfo.iconFileID and profIconReplace[currencyId] then
 			local info = C_CurrencyInfo.GetCurrencyInfo(profIconReplace[currencyId]);
 			currencyInfo.iconFileID = info.iconFileID;
@@ -461,52 +466,54 @@ local function updateCurrencies()
 		local tmp = {}
 		for i=1, #CurrenciesDefault do
 			local group = CurrenciesDefault[i];
-			local separator = true;
-			-- add header
-			tinsert(tmp,group.h);
-			currencyCounter[group.h] = #group;
+			if _G[group.h] then
+				local separator = true;
+				-- add header
+				tinsert(tmp,group.h);
+				currencyCounter[group.h] = #group;
 
-			-- add normal currencies
-			for g=1, #group do
-				local id = get_currency(group[g]);
-				if id then
-					tinsert(tmp,id);
-					knownCurrencies[id] = true;
-				end
-			end
-
-			-- add covenant currencies
-			separator=true
-			if covenantID>0 and CovenantCurrencies[group.h] then
-				for currencyID, covenant in pairs(CovenantCurrencies[group.h]) do
-					if covenant==covenantID then
-						if separator then
-							tinsert(tmp,true)
-							separator=false;
-						end
-						tinsert(tmp,currencyID)
+				-- add normal currencies
+				for g=1, #group do
+					local id = get_currency(group[g]);
+					if id then
+						tinsert(tmp,id);
+						knownCurrencies[id] = true;
 					end
 				end
-			end
 
-			-- add profession currencies
-			separator=true;
-			if profSkillLine2Currencies[group.h] then
-				if #profSkillLines==0 then
-					updateProfessions()
-				end
-				for i=1, #profSkillLines do
-					local t = profSkillLine2Currencies[group.h][profSkillLines[i][2]]
-					if t then
-						for n=1, #t do
+				-- add covenant currencies
+				separator=true
+				if covenantID>0 and CovenantCurrencies[group.h] then
+					for currencyID, covenant in pairs(CovenantCurrencies[group.h]) do
+						if covenant==covenantID then
 							if separator then
 								tinsert(tmp,true)
 								separator=false;
 							end
-							tinsert(tmp,t[n]);
-							knownCurrencies[t[n]] = true
-							currency2skillLine[t[n]] = profSkillLines[i][2];
-							currencyCounter[group.h] = currencyCounter[group.h] + 1;
+							tinsert(tmp,currencyID)
+						end
+					end
+				end
+
+				-- add profession currencies
+				separator=true;
+				if profSkillLine2Currencies[group.h] then
+					if #profSkillLines==0 then
+						updateProfessions()
+					end
+					for i=1, #profSkillLines do
+						local t = profSkillLine2Currencies[group.h][profSkillLines[i][2]]
+						if t then
+							for n=1, #t do
+								if separator then
+									tinsert(tmp,true)
+									separator=false;
+								end
+								tinsert(tmp,t[n]);
+								knownCurrencies[t[n]] = true
+								currency2skillLine[t[n]] = profSkillLines[i][2];
+								currencyCounter[group.h] = currencyCounter[group.h] + 1;
+							end
 						end
 					end
 				end
@@ -978,14 +985,16 @@ function module.onevent(self,event,arg1)
 		resetCurrencySession();
 
 		-- covenant
-		covenantID = C_Covenants.GetActiveCovenantID() or 0;
-		if covenantID==0 then
-			-- covenant not choosen; wait  for event
-			self:RegisterEvent("COVENANT_CHOSEN");
+		if C_Covenants then
+			covenantID = C_Covenants.GetActiveCovenantID() or 0;
+			if covenantID==0 then
+				-- covenant not choosen; wait  for event
+				self:RegisterEvent("COVENANT_CHOSEN");
+			end
 		end
 	elseif event=="COVENANT_CHOSEN" then
 		-- update Covenant currencies
-		covenantID = C_Covenants.GetActiveCovenantID() or 0;
+		covenantID = C_Covenants and C_Covenants.GetActiveCovenantID() or 0;
 	elseif event=="CHAT_MSG_CURRENCY" then -- detecting new currencies
 		local id = tonumber(arg1:match("currency:(%d*)"));
 		if id and not currencySession[id] then
