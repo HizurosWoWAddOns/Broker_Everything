@@ -223,6 +223,15 @@ local function tooltip2Hide(self)
 	end
 end
 
+local function IsCurrencyShown(currencyInfo)
+	if not currencyInfo or parentIsCollapsed then
+		return false;
+	end
+	local chkDiscoveredState = (ns.profile[name].onlyDiscovered and currencyInfo.discovered) or not ns.profile[name].onlyDiscovered;
+	local chkEmptyState = not (ns.profile[name].hideEmpty and currencyInfo.quantity==0) or not ns.profile[name].hideEmpty;
+	return chkDiscoveredState and chkEmptyState;
+end
+
 local function createTooltip_AddCurrencies(currencyList)
 	local empty,parentIsCollapsed,prevType
 	-- loop table
@@ -234,46 +243,34 @@ local function createTooltip_AddCurrencies(currencyList)
 			if empty==true and not parentIsCollapsed then
 				tt:SetCell(tt:AddLine(),1,C("gray",L["No currencies discovered..."]),nil,nil,0);
 			end
-			local counter = "";
-				counter = " "..C("ltgray",(currencyCounter[headerStr] or "?"));
 			if headerStr:match("HIDDEN_CURRENCIES") then
 				if ns.toon[name].headers[headerStr]==nil then
 					ns.toon[name].headers[headerStr] = true;
 				end
 			end
-			empty,parentIsCollapsed =  true,ns.toon[name].headers[headerStr];
+			parentIsCollapsed =  ns.toon[name].headers[headerStr];
 			local l=tt:AddLine();
 			if not parentIsCollapsed then
 				tt:SetCell(l,1,C("ltblue","|Tinterface\\buttons\\UI-MinusButton-Up:0|t "..headers[headerStr]));
-				if counter~="" then
-					tt:SetCell(l,2,counter);
-				end
 				tt:AddSeparator();
 			else
 				tt:SetCell(l,1,C("gray","|Tinterface\\buttons\\UI-PlusButton-Up:0|t "..headers[headerStr]));
-				if counter~="" then
-					tt:SetCell(l,2,counter);
-				end
 			end
 			tt:SetLineScript(l,"OnMouseUp", toggleCurrencyHeader,headerStr);
 			prevType = currencyListIndexType;
-		elseif currencyListIndexType=="boolean" then
-			if not parentIsCollapsed and prevType~="boolean" then
-				tt:AddSeparator(1,1,1,1,.45);
-			end
+			empty = true;
+		elseif currencyListIndexType=="boolean" and not parentIsCollapsed and prevType=="number" then
+			tt:AddSeparator(1,1,1,1,.45);
 			prevType = currencyListIndexType;
-		else
+		elseif currencyListIndexType=="number" then
 			local currencyId, currencyInfo
 			if validateID(currencyList[index]) then
 				currencyId, currencyInfo = GetCurrency(currencyList[index]);
 			end
 
-			if (currencyInfo and currencyInfo.name and currencyInfo.discovered) then
-				empty = false;
-			end
-
-			if not parentIsCollapsed and ((ns.profile[name].onlyDiscovered and currencyInfo.discovered) or not ns.profile[name].onlyDiscovered) then
+			if IsCurrencyShown(currencyInfo) then
 				prevType = currencyListIndexType;
+				empty = false;
 				CountCorrection(currencyId,currencyInfo);
 				local showSeasonCap = ns.profile[name].showSeasonCap and currencyInfo.useTotalEarnedForMaxQty and currencyInfo.maxQuantity>0;
 				local str = ns.FormatLargeNumber(name,currencyInfo.quantity,true);
@@ -354,6 +351,9 @@ local function createTooltip_AddCurrencies(currencyList)
 			end
 		end
 
+	end
+	if prevType=="string" and empty then -- last section is empty
+		tt:SetCell(tt:AddLine(),1,C("gray",L["No currencies discovered..."]),nil,nil,0);
 	end
 end
 
@@ -458,68 +458,99 @@ do
 	end
 end
 
-local function updateCurrencies()
-	currencyCounter.FAVORITES = #ns.profile[name].favs;
-
-	-- default currencies
-	if #Currencies==0 then
-		local tmp = {}
-		for i=1, #CurrenciesDefault do
-			local group = CurrenciesDefault[i];
-			if _G[group.h] then
-				local separator = true;
-				-- add header
-				tinsert(tmp,group.h);
-				currencyCounter[group.h] = #group;
-
-				-- add normal currencies
-				for g=1, #group do
-					local id = get_currency(group[g]);
-					if id then
-						tinsert(tmp,id);
-						knownCurrencies[id] = true;
+local initCurrencies,currentExp,playerLevel
+do
+	local firstExp,tmp
+	function initCurrencies(t,list)
+		if t==nil then
+			tmp,firstExp = {},nil;
+			initCurrencies(true,CurrenciesExpansionDefault)
+			initCurrencies(true,CurrenciesMiscDefault)
+			initCurrencies(true,CurrenciesExpansionDefault)
+			Currencies = tmp;
+		elseif t==true then
+			local isExpList,currentExpOnly = list==CurrenciesExpansionDefault,nil;
+			if isExpList and currentExp==nil then
+				currentExp = GetExpansionForLevel(UnitLevel("player"))
+				currentExpOnly = "EXPANSION_NAME"..currentExp;
+			end
+			local start = isExpList and firstExp or 1
+			for i=start or 1, #list do
+				if (isExpList and ((currentExpOnly and list[i].h and list[i].h==currentExpOnly) or firstExp)) or list==CurrenciesMiscDefault then
+					initCurrencies(tmp,list[i])
+					if currentExpOnly then
+						firstExp = i+1;
+						break;
 					end
 				end
+			end
+		else
+			local separator = true;
+			-- add header
+			tinsert(tmp,list.h);
+			currencyCounter[list.h] = #list;
 
-				-- add covenant currencies
-				separator=true
-				if covenantID>0 and CovenantCurrencies[group.h] then
-					for currencyID, covenant in pairs(CovenantCurrencies[group.h]) do
-						if covenant==covenantID then
+			-- add normal currencies
+			for g=1, #list do
+				local id = get_currency(list[g]);
+				if id then
+					tinsert(tmp,id);
+					knownCurrencies[id] = true;
+				end
+			end
+
+			-- add covenant currencies
+			separator=true
+			if covenantID>0 and CovenantCurrencies[list.h] then
+				for currencyID, covenant in pairs(CovenantCurrencies[list.h]) do
+					if covenant==covenantID then
+						if separator then
+							tinsert(tmp,true)
+							separator=false;
+						end
+						tinsert(tmp,currencyID)
+					end
+				end
+			end
+
+			-- add profession currencies
+			separator=true;
+			if profSkillLine2Currencies[list.h] then
+				if #profSkillLines==0 then
+					updateProfessions()
+				end
+				for i=1, #profSkillLines do
+					local t = profSkillLine2Currencies[list.h][profSkillLines[i][2]]
+					if t then
+						for n=1, #t do
 							if separator then
 								tinsert(tmp,true)
 								separator=false;
 							end
-							tinsert(tmp,currencyID)
-						end
-					end
-				end
-
-				-- add profession currencies
-				separator=true;
-				if profSkillLine2Currencies[group.h] then
-					if #profSkillLines==0 then
-						updateProfessions()
-					end
-					for i=1, #profSkillLines do
-						local t = profSkillLine2Currencies[group.h][profSkillLines[i][2]]
-						if t then
-							for n=1, #t do
-								if separator then
-									tinsert(tmp,true)
-									separator=false;
-								end
-								tinsert(tmp,t[n]);
-								knownCurrencies[t[n]] = true
-								currency2skillLine[t[n]] = profSkillLines[i][2];
-								currencyCounter[group.h] = currencyCounter[group.h] + 1;
-							end
+							tinsert(tmp,t[n]);
+							knownCurrencies[t[n]] = true
+							currency2skillLine[t[n]] = profSkillLines[i][2];
+							currencyCounter[list.h] = currencyCounter[list.h] + 1;
 						end
 					end
 				end
 			end
 		end
-		Currencies = tmp;
+	end
+end
+
+local function updateCurrencies()
+	currencyCounter.FAVORITES = #ns.profile[name].favs;
+
+	local pL,cE = UnitLevel("player"),0
+	if pL~=playerLevel then
+		cE = GetExpansionForLevel(UnitLevel("player"))
+		-- reinit Currencies list on player level reached higher expansion for his level
+	end
+	-- default currencies
+	if #Currencies==0 or cE~=currentExpansion then
+		currentExp=nil
+		initCurrencies();
 	end
 
 	-- hidden currencies
@@ -536,7 +567,8 @@ local function updateCurrencies()
 		for i=42, 9999 do
 			if not knownCurrencies[i] then
 				local info = C_CurrencyInfo.GetCurrencyInfo(i);
-				if info and info.name and not (ignore[info.name] or info.name:find("zzold") or info.name:find("Test") or info.name:find("Prototype")) then
+				local checkName = info and info.name:lower() or nil;
+				if info and info.name and not (ignore[info.name] or checkName:find("zzold") or checkName:find("Test") or checkName:find("Prototype") or --[[ checkName:find("[dnt]") or ]] checkName:find("[ph]")) then
 					if ns.isArchaeologyCurrency(i) then
 						hiddenCurrenciesAddCategory(i,info,"Archaeology") -- add archaeology currencies to category Archaeology
 					elseif not hiddenCurrenciesAddCategory(i,info) then -- add currencies by pattern to corresponding categories
@@ -784,9 +816,10 @@ function module.options()
 		showSeasonCap = { type="toggle", order=4, name=L["Season cap"], desc=L["Display season cap in tooltip"] },
 		showSession   = { type="toggle", order=5, name=L["Show session earn/loss"], desc=L["Display session profit in tooltip"] },
 		onlyDiscovered= { type="toggle", order=6, name=L["CurrencyShowDiscovered"], desc=L["CurrencyShowDiscoveredDesc"]},
-		showIDs       = { type="toggle", order=6, name=L["Show currency id's"], desc=L["Display the currency id's in tooltip"] },
-		shortTT       = { type="toggle", order=7, name=L["Short Tooltip"], desc=L["Display the content of the tooltip shorter"] },
-		showHidden    = { type="toggle", order=8, name=L["CurrenyHidden"], desc=L["CurrencyHiddenDesc"], hidden=ns.IsClassicClient },
+		hideEmpty     = { type="toggle", order=7, name=L["CurrencyHideEmpty"], desc=L["CurrencyHideEmptyDesc"] },
+		showIDs       = { type="toggle", order=8, name=L["Show currency id's"], desc=L["Display the currency id's in tooltip"] },
+		shortTT       = { type="toggle", order=9, name=L["Short Tooltip"], desc=L["Display the content of the tooltip shorter"] },
+		showHidden    = { type="toggle", order=10, name=L["CurrencyHidden"], desc=L["CurrencyHiddenDesc"], hidden=ns.IsClassicClient },
 		header        = { type="header", order=20, name=L["CurrencyFavorites"], hidden=isHidden },
 		info          = { type="description", order=21, name=L["CurrencyFavoritesInfo"], fontSize="medium", hidden=true },
 	}
@@ -872,12 +905,9 @@ function module.init()
 		}
 	};
 
-	CurrenciesDefault = {
+	CurrenciesExpansionDefault = {
 		{h="EXPANSION_NAME10",3149,3226,3220,3218,3216,3116,true, 3110,3109,3108,3107,true, 3090,2815,2813,3056,2803,3008, 3093,3028,3055, 3089},
 		{h="EXPANSION_NAME9",2806,2807,2809,2812,2777,2709,2708,2707,2706,2650,2651,2594,2245,2118,2003,2122,2045,2011,2134,2105},
-		{h="DUNGEON_AND_RAID",1166},
-		{h="PLAYER_V_PLAYER",2123,391,1792,1586,1602},
-		{h="MISCELLANEOUS",3309,3100,2588,2032,1401,1388,1379,515,402,81},
 		{h="EXPANSION_NAME8",2009,1979,1931,1904,1906,1977,1822,1813,1810,1828,1767,1885,1877,1883,1889,1808,1802,1891,1754,1820,1728,1816,1191},
 		{h="EXPANSION_NAME7",1803,1755,1719,1721,1718,{1717,1716},1299,1560,1580,1587,1710,1565,1553},
 		{h="EXPANSION_NAME6",1149,1533,1342,1275,1226,1220,1273,1155,1508,1314,1154,1268},
@@ -886,6 +916,12 @@ function module.init()
 		{h="EXPANSION_NAME3",416,615,614,361},
 		{h="EXPANSION_NAME2",241,61},
 		{h="EXPANSION_NAME1",1704},
+	}
+
+	CurrenciesMiscDefault = {
+		{h="DUNGEON_AND_RAID",1166},
+		{h="PLAYER_V_PLAYER",2123,391,1792,1586,1602},
+		{h="MISCELLANEOUS",3309,3100,2588,2032,1401,1388,1379,515,402,81},
 	}
 
 	profSkillLine2Currencies = {
