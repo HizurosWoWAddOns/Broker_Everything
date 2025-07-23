@@ -13,6 +13,12 @@ local data,xp2levelup = {};
 local sessionStartLevel = UnitLevel("player");
 local textbarSigns = {"=","-","#","||","/","\\","+",">","•","⁄"};
 local triggerLocked = false;
+local chromieTimePreviewAtlasToExpansionIndex = {
+	burningcrusade=1, wrathofthelichking=2, cataclysm = 3,
+	mistsofpandaria=4, warlordsofdraenor=5, legion=6,
+	battleforazeroth=7, shadowlands=8, dragonflight=9,
+	thewarwithin=10, mitnight=11, thelasttitan=12
+};
 
 local MAX_PLAYER_LEVEL = GetMaxPlayerLevel and GetMaxPlayerLevel() or MAX_PLAYER_LEVEL or 0 -- missing changes by blizzard for bc and wotlk
 if MAX_PLAYER_LEVEL==60 and WOW_PROJECT_ID==WOW_PROJECT_BURNING_CRUSADE_CLASSIC then
@@ -50,6 +56,43 @@ local function deleteCharacterXP(self,name_realm)
 	createTooltip(tt);
 end
 
+-- UnitChromieTimeID(unitToken) -- return number value but not corresponding with _G.EXPANSION_NAME%d
+local chromieTimeExpansions = {}
+local function updateChromieTime()
+	chromieTimeExpansions.list = false
+	chromieTimeExpansions.current = false;
+	-- check if available for current character. Too low or too high level?
+	if not (C_PlayerInfo.CanPlayerEnterChromieTime and C_ChromieTime) then
+		chromieTimeExpansions.current = -1 -- wrong client for cromie time
+		return false;
+	end
+	if not C_PlayerInfo.CanPlayerEnterChromieTime() then
+		chromieTimeExpansions.current = -2 -- player is out of required level range
+		return false;
+	end
+	-- get list of expansion options
+	local tmp = C_ChromieTime.GetChromieTimeExpansionOptions();
+	if not tmp then -- failed?
+		chromieTimeExpansions.current = -3; -- get data failed
+		return false;
+	end
+	for i, v in pairs(tmp)do
+		v.exp = chromieTimePreviewAtlasToExpansionIndex[v.previewAtlas:lower():gsub("chromietime%-portrait%-small%-","")];
+		if v.alreadyOn then
+			chromieTimeExpansions.current = v;
+			-- alternative: C_ChromieTime.GetChromieTimeExpansionOption(UnitChromieTimeID(unitToken));
+			-- unitToken is limited to player and party1-4
+			-- seen in Interface\AddOns\Blizzard_FrameXMLUtil\PartyUtil.lua
+		end
+	end
+	chromieTimeExpansions.list = tmp;
+	return true;
+end
+
+local function chromieTimeSortByExp(a,b)
+	return a.exp < b.exp;
+end
+
 local function updateBroker()
 	local text,level = L[name],UnitLevel("player");
 	local needToLevelup, percentCurrentXP, percentExhaustion, percentCurrentXPStr, percentExhaustionStr = GetExperience(level,data.cur,data.max,data.rest);
@@ -78,6 +121,18 @@ local function updateBroker()
 		end
 		text = ns.textBar(ns.profile[name].textBarCharCount,{1,percentCurrentXP or 1,ns.round(percentExhaustion-percentCurrentXP)},{"gray2","violet","ltblue"},ns.profile[name].textBarCharacter);
 	end
+
+	if level<MAX_PLAYER_LEVEL and ns.profile[name].chromieTimeBroker and updateChromieTime() then
+		local current = NONE;
+		for _, entry in ipairs(chromieTimeExpansions.list) do
+			if entry.alreadyOn then
+				current = entry.name;
+				break;
+			end
+		end
+		text = text .. ", " .. current;
+	end
+
 	(module.obj or ns.LDB:GetDataObjectByName(module.ldbName) or {}).text = text;
 end
 
@@ -102,6 +157,41 @@ function createTooltip(tt)
 		if percentExhaustionStr then
 			tt:AddLine(C("ltyellow",TUTORIAL_TITLE26),"",C("cyan",percentExhaustionStr));
 		end
+
+		if ns.profile[name].chromieTimeTooltip then
+			local available = updateChromieTime();
+			if ns.profile[name].chromieTimeTooltipLong and available then
+				--
+				tt:AddSeparator(4,0,0,0,0)
+				tt:AddLine(C("ltblue",CHROMIE_TIME_PREVIEW_CARD_DEFAULT_TITLE))
+				tt:AddSeparator();
+				if type(chromieTimeExpansions)=="table" then
+					table.sort(chromieTimeExpansions,chromieTimeSortByExp);
+					for i,entry in pairs(chromieTimeExpansions.list) do
+						local n = _G["EXPANSION_NAME"..entry.exp] or entry.name; -- failsave for next expansion ;-)
+						local l = tt:AddLine(C(entry.alreadyOn and "ltgreen" or "ltyellow", n))
+						if entry.alreadyOn then
+							tt:SetCell(l, 2, C("ltgreen",SPEC_ACTIVE), nil,"RIGHT", 0)
+							tt:SetLineColor(l, 1, 1, 1,.45);
+						end
+					end
+				end
+			elseif available then
+				local l = tt:AddLine(C("ltyellow",CHROMIE_TIME_PREVIEW_CARD_DEFAULT_TITLE))
+				local current = chromieTimeExpansions.current;
+				if current then
+					tt:SetCell(l, 2, C("ltgreen",_G["EXPANSION_NAME"..current.exp] or current.name), nil, "RIGHT", 0)
+				else
+					tt:SetCell(l, 2, C("ltgray",NONE), nil, "RIGHT", 0)
+				end
+			else
+				tt:AddSeparator(4,0,0,0,0)
+				tt:AddLine(CHROMIE_TIME_PREVIEW_CARD_DEFAULT_TITLE)
+				tt:AddSeparator();
+				tt:AddLine(L["XPChromieTimeNotAvailable"])
+			end
+		end
+
 	end
 
 	if ns.profile[name].showMyOtherChars then
@@ -177,6 +267,10 @@ module = {
 		textBarCharacter = "=",
 		textBarCharCount = 20,
 
+		chromieTimeBroker = true,
+		chromieTimeTooltip = true,
+		chromieTimeTooltipLong = true,
+
 		showAllFactions=true,
 		showRealmNames=true,
 		showCharsFrom="2"
@@ -190,6 +284,12 @@ module = {
 		["menu"] = "OptionMenu"
 	}
 };
+
+if ns.IsClassicClient() then
+	module.config_defaults.chromieTimeBroker = false
+	module.config_defaults.chromieTimeTooltip = false
+	module.config_defaults.chromieTimeTooltipLong = false
+end
 
 ns.ClickOpts.addDefaults(module,{
 	switch = "_LEFT",
@@ -219,6 +319,7 @@ function module.options()
 		broker = {
 			order=1,
 			display={ type="select", order=1, name=L["Display XP in broker"], desc=L["Select to show XP as an absolute value; Deselected will show it as a percentage."], values=displayValues, width="double" },
+			chromieTimeBroker = { type="toggle", order=2, name=L["XPChromieTimeShow"], desc=L["XPChromieTimeBrokerDesc"], hidden=ns.IsClassicClient }
 		},
 		broker2 = {
 			order=2,
@@ -229,11 +330,13 @@ function module.options()
 		},
 		tooltip = {
 			order=3,
-			showMyOtherChars={ type="toggle", order=1, name=L["Show other chars xp"], desc=L["Display a list of my chars on same realm with her level and xp"] },
-			showNonMaxLevelOnly={ type="toggle", order=2, name=L["Hide characters at maximum level"], desc=L["Hide all characters who have reached the level cap."] },
-			showAllFactions=3,
-			showRealmNames=4,
-			showCharsFrom=5
+			chromieTimeTooltip = { type="toggle", order=1, name=L["XPChromieTimeShow"], desc=L["XPChromieTimeTooltipDesc"], hidden=ns.IsClassicClient },
+			chromieTimeTooltipLong = { type="toggle", order=2, name=L["XPChromieTimeTooltipLong"], desc=L["XPChromieTimeTooltipLongDesc"], hidden=ns.IsClassicClient },
+			showMyOtherChars={ type="toggle", order=3, name=L["Show other chars xp"], desc=L["Display a list of my chars on same realm with her level and xp"] },
+			showNonMaxLevelOnly={ type="toggle", order=4, name=L["Hide characters at maximum level"], desc=L["Hide all characters who have reached the level cap."] },
+			showAllFactions=5,
+			showRealmNames=6,
+			showCharsFrom=7
 		},
 		misc = {
 			order=4,
