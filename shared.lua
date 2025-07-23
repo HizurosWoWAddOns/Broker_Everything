@@ -490,11 +490,11 @@ end
 
 ----------------------------------------
 
----@param tooltip frame|LibQTipTooltip
+---@param frame frame
 ---@param func function
-function ns.RegisterMouseWheel(tooltip,func)
-	tooltip:EnableMouseWheel(1);
-	tooltip:SetScript("OnMouseWheel", func);
+function ns.RegisterMouseWheel(frame,func)
+	frame:EnableMouseWheel(1);
+	frame:SetScript("OnMouseWheel", func);
 end
 
 -- L["ModKey" .. ns.tooltipModifiers.<key>.l]

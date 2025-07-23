@@ -263,7 +263,7 @@ module = {
 	},
 	config_defaults = {
 		enabled = true,
-		useWheel = false,
+		useWheel = true,
 		steps = 10,
 		listHardware = true
 	},
@@ -390,14 +390,8 @@ end
 
 function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-
-	if not self.mousewheelOn then
-		self:EnableMouseWheel(1);
-		self.mousewheelOn = true;
-	end
-
-	tt = ns.acquireTooltip({ttName, 2, "LEFT", "RIGHT"},{false},{self})
 	ns.RegisterMouseWheel(self,module.onmousewheel)
+	tt = ns.acquireTooltip({ttName, 2, "LEFT", "RIGHT"},{false},{self})
 	createTooltip(tt);
 end
 
