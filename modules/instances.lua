@@ -199,28 +199,28 @@ function createTooltip(tt,name,mode)
 	end
 
 	for exp=exp_start, exp_stop, exp_direction do
-		if prevLabel~=_G["EXPANSION_NAME"..exp] then
-			local hColor,sState,_status_,_mode_ = "gray","Plus","","";
-			if ns.profile[name]['showExpansion'..exp]==nil then
-				ns.profile[name]['showExpansion'..exp] = true;
-			end
-			if ns.profile[name]['showExpansion'..exp] then
-				hColor,sState,_status_,_mode_ = "ltblue","Minus",C("ltblue",STATUS),C("ltblue",MODE);
-			end
-			tt:AddSeparator(4,0,0,0,0);
-			local l=tt:AddLine(symbol:format(sState)..C(hColor,_G["EXPANSION_NAME"..exp]),_status_,_mode_);
-			tt:SetLineScript(l,"OnMouseUp",toggleExpansion, {name=name,mode=mode,expansion=exp});
-			prevLabel = _G["EXPANSION_NAME"..exp];
-			if ns.profile[name]['showExpansion'..exp] then
-				tt:AddSeparator();
-			end
-		end
-
-		if ns.profile[name]['showExpansion'..exp] then
+		if ns.profile[name]['showExpansion'..exp] and ejInstances and ejInstances[exp] then
 			table.sort(ejInstances[exp],sortByIndex)
 			local alreadyShown = {}
 			for instanceMapId, ejInfo in pairs(ejInstances[exp]) do
 				if ejInfo.isRaid==mode and not (ejDoubleInstanceNames[instanceMapId] and alreadyShown[ejInfo.instanceName])--[[ and not hide[ejInfo.ejId] ]] then
+					if prevLabel~=_G["EXPANSION_NAME"..exp] then
+						local hColor,sState,_status_,_mode_ = "gray","Plus","","";
+						if ns.profile[name]['showExpansion'..exp]==nil then
+							ns.profile[name]['showExpansion'..exp] = true;
+						end
+						if ns.profile[name]['showExpansion'..exp] then
+							hColor,sState,_status_,_mode_ = "ltblue","Minus",C("ltblue",STATUS),C("ltblue",MODE);
+						end
+						tt:AddSeparator(4,0,0,0,0);
+						local l=tt:AddLine(symbol:format(sState)..C(hColor,_G["EXPANSION_NAME"..exp]),_status_,_mode_);
+						tt:SetLineScript(l,"OnMouseUp",toggleExpansion, {name=name,mode=mode,expansion=exp});
+						prevLabel = _G["EXPANSION_NAME"..exp];
+						if ns.profile[name]['showExpansion'..exp] then
+							tt:AddSeparator();
+						end
+					end
+
 					alreadyShown[ejInfo.instanceName] = true;
 					local status,diff,encounter,id = {},{},"","";
 					if ignore_ej[ejInfo.instanceName] then
