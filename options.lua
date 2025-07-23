@@ -97,9 +97,9 @@ local ttModifierValues = {NONE = L["ModKeyDefault"]};
 for i,v in pairs(ns.tooltipModifiers) do ttModifierValues[i] = L["ModKey"..v.l]; end
 
 local function calcDataSize(info,obj)
-	if info then
-		local key = info[#info];
-		return "~"..ns.FormatLargeNumber(true,calcDataSize(nil,Broker_Everything_CharacterDB[key])).."B";
+	if type(info)=="table" then
+		local key = info[#info-1];
+		return ns.FormatLargeNumber(true,calcDataSize(nil,Broker_Everything_CharacterDB[key])).."B";
 	end
 	local obj_t = type(obj);
 	if obj_t=="table" then
@@ -348,8 +348,8 @@ local options = {
 				},
 				list = {
 					type = "group", order=8,
-					name = L["OptCharList"],
-					childGroups="tab",
+					name = BAG_FILTER_TITLE_SORTING or L["Sort"], --L["OptCharSort"],
+					--childGroups="tab",
 					args = {
 					}
 				}
@@ -565,44 +565,8 @@ function ns.Options_RegisterModule(modName)
 	end
 end
 
-local function buildCharDataOptions()
-	wipe(options.args.chars.args.list.args);
-	local lst = options.args.chars.args.list.args;
-	-- Broker_Everything_CharacterDB
-	-- Broker_Everything_CharacterDB.order
-	for order,name_realm in ipairs(Broker_Everything_CharacterDB.order)do
-		if Broker_Everything_CharacterDB[name_realm] then
-			local charName, realm = strsplit("%-",name_realm,2);
-			local label,hasError = "",false
-			if Broker_Everything_CharacterDB[name_realm].class and charName and realm then
-				label = C(Broker_Everything_CharacterDB[name_realm].class or "ffff0000",charName or "error").."\n"..C("gray",realm or "error");
-			else
-				label = C("ffff0000",charName) .. "\n" .. C("gray",realm);
-				hasError = true;
-			end
-			lst[name_realm] = {
-				type = "group", order = order, inline=true,
-				name = "",
-				args = {
-					label = {
-						type = "description", order=1, width="normal", fontSize = "medium",
-						name = label,
-					},
-					[name_realm] = {
-						type = "description", order = 2, width = "half",
-						name = calcDataSize,
-					},
-					up   = {type="execute", order=3, width="half", name=L["Up"], desc=label, disabled=(order==1) },
-					down = {type="execute", order=4, width="half", name=L["Down"], desc=label, disabled=(order==#Broker_Everything_CharacterDB.order) },
-					del  = {type="execute", order=5, width="half", name=DELETE, desc=label, disabled=(name_realm==ns.player.name_realm) },
-					error = {type = "description", order=6, fontSize = "medium", name = C("red",L["CharDataError"].." "..name_realm).."\n"..L["CharDataErrorTODO"], hidden=not hasError },
-				}
-			}
-		end
-	end
-end
-
-function options.args.chars.func(info) -- function for buttons 'Up', 'Down' and 'Delete' for single character and 'Delete all'
+local buildCharDataOptions
+local function charsFunc(info) -- function for buttons 'Up', 'Down' and 'Delete' for single character and 'Delete all'
 	local key,char = info[#info],info[#info-1];
 	if key=="up" or key=="down" then
 		local cur
@@ -630,6 +594,96 @@ function options.args.chars.func(info) -- function for buttons 'Up', 'Down' and 
 	elseif key=="delete" then -- delete all
 		Broker_Everything_CharacterDB = {};
 		C_UI.Reload();
+	end
+end
+
+local function hideOnRealmList(info)
+	return info[2]~="list"
+end
+
+local realms = {}
+local function getRealmList(realm)
+	local lst = options.args.chars.args;
+	if not lst[realm] then
+		lst[realm] = {
+			type = "group", order = 10,
+			childGroups="tab",
+			name = realm,
+			args = {}
+		}
+		tinsert(realms,realm)
+	end
+	return lst[realm].args
+end
+
+local function charLabel(info)
+	local byRealm = info[2]~="list";
+	local name_realm = info[#info-1];
+	local charInfo = Broker_Everything_CharacterDB[name_realm];
+	local charName, realm = strsplit("%-",name_realm,2);
+	local label,hasError = {},false
+	if charInfo.class and charName and realm then
+		tinsert(label,C(charInfo.class,charName)..ns.factionIcon(charInfo.faction));
+		tinsert(label,C("dkyellow",LEVEL.." "..charInfo.level));
+		tinsert(label,"#br#");
+		if charInfo.lastLogin then
+			tinsert(label,C("ltgray",LAST_ONLINE_COLON.." "..date("%Y-%m-%d",charInfo.lastLogin)));
+		else
+			tinsert(label,C("ltgray",UNKNOWN))
+		end
+	else
+		label = C("ffff0000",charName or "Error") .. " - " .. C("ltgray",realm or "Error");
+	end
+	return table.concat(label,", "):gsub("%, #br#%, ","\n");
+end
+
+function buildCharDataOptions()
+	wipe(options.args.chars.args.list.args)
+	local lstAll = options.args.chars.args.list.args;
+	for i=#realms, 1, -1 do
+		local r = tremove(realms,i);
+		options.args.chars.args[r]=nil
+	end
+	local t = time();
+	-- Broker_Everything_CharacterDB
+	-- Broker_Everything_CharacterDB.order
+	for order,name_realm in ipairs(Broker_Everything_CharacterDB.order)do
+		if Broker_Everything_CharacterDB[name_realm] then
+			local charInfo = Broker_Everything_CharacterDB[name_realm];
+			local charName, realm = strsplit("%-",name_realm,2);
+			local lst = getRealmList(realm);
+
+			lst[name_realm] = {
+				type = "group", order = order, inline=true,
+				name = "",
+				func = charsFunc,
+				args = {
+					label = {
+						type = "description", order = 10, width="double", fontSize = "medium",
+						name = charLabel,
+					},
+					size = {
+						type = "description", order = 11, width = "half",
+						name = calcDataSize,
+					},
+					del  = {type="execute", order = 14, width="half", name=DELETE, desc=label, disabled=(name_realm==ns.player.name_realm) },
+				}
+			};
+			local label = C(charInfo.class,charName).. ns.factionIcon(charInfo.faction,16,16) .." | " .. C("dkyellow",realm).." | ".. C("ltgray",LEVEL.." "..charInfo.level);
+			lstAll[name_realm] = {
+				type = "group", order = order, inline=true,
+				name = "",
+				func = charsFunc,
+				args = {
+					label = {
+						type = "description", order=10, width="double", fontSize = "medium",
+						name = label,
+					},
+					up   = {type="execute", order=12, width="half", name=L["Up"], desc=label, disabled=(order==1), hidden=hideOnRealmList },
+					down = {type="execute", order=13, width="half", name=L["Down"], desc=label, disabled=(order==#Broker_Everything_CharacterDB.order), hidden=hideOnRealmList },
+				}
+			};
+		end
 	end
 end
 

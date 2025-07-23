@@ -139,7 +139,10 @@ local function moduleInit(name, force)
 					if e=="PLAYER_LOGIN" then
 						tinsert(queue,name);
 					else
-						mod.eventFrame:RegisterEvent(e);
+						local retOK = pcall(mod.eventFrame.RegisterEvent,mod.eventFrame,e);
+						if not retOK then
+							ns:debug("<nsModules>","<moduleInit>","<RegisterEvent:failed>",e,"for",name)
+						end
 					end
 				end
 			end

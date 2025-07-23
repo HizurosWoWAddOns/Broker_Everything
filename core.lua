@@ -61,8 +61,9 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 				ns.toonsDB[ns.player.name_realm][v] = ns.player[v];
 			end
 		end
-		ns.toonsDB[ns.player.name_realm].level = UnitLevel("player");
 		ns.toon = ns.toonsDB[ns.player.name_realm];
+		ns.toon.level = UnitLevel("player");
+		ns.toon.lastLogin = time();
 
 		-- data cache
 		ns.data = Broker_Everything_DataDB

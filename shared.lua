@@ -188,10 +188,13 @@ do
 	end
 	setmetatable(ns.realms,{
 		__index = function(t,k)
-			Init();
 			return realms[k] or false;
+		end,
+		__call = function(t,a)
+			return realms;
 		end
 	});
+	Init();
 end
 
 ns.realmLocale = setmetatable({},{
@@ -706,6 +709,23 @@ function ns.table2string(tbl)
 	return "{"..table.concat(tmp,", ").."}";
 end
 
+function ns.tConcatMod(t,delim1,delim2)
+	local r = {}
+	delim1 = delim1 or ", ";
+	delim2 = delim2 or " ";
+	if #t>0 then
+		for i=1, #t do
+			if i>1 and t[i]:match("^[%[%{%(]") then
+				t[i-1] = t[i-1]..delim2..t[i];
+			else
+				tinsert(r,t[i])
+			end
+		end
+	else
+		r=t;
+	end
+	return table.concat(r,delim1);
+end
 
 ---@param modName string module name
 ---@param opts table
@@ -1400,7 +1420,10 @@ do
 
 		if data._type=="link" and data.link then
 			data.str = data.link;
-			tt:SetHyperlink(data.link);
+			local retOK = pcall(tt.SetHyperlink, tt, data.link)
+			if not retOK then
+				ns:debug("<nsScanTT>","<SetHyperlink:failed>",data.link)
+			end
 		end
 
 		try = try + 1;

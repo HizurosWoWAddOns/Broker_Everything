@@ -95,6 +95,7 @@ module = {
 
 function module.init()
 	-- see https://wow.curseforge.com/projects/broker-everything/pages/modules/surprise
+	-- [<itemId>] = {<Cooldown|Loot>, "?", <tooltipLine>, <expansionIndex>}
 	items = {
 		-- 1. Unhatched Jubling Egg >> A Jubling's Tiny Home
 		[19462] = {ITEM_COOLDOWN, "duration"},
