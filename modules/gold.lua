@@ -319,7 +319,7 @@ function createTooltip(tt,update)
 		tt:AddSeparator(4,0,0,0,0);
 	end
 
-	local faction = ns.player.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..ns.player.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+	local faction = ns.factionIcon(ns.player.faction,16,16);
 	tt:AddLine(C(ns.player.class,ns.player.name) .. faction, ns.GetCoinColorOrTextureString(name,ns.toon[name].money,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
 	if ns.profile[name].accountBankMoney and accountBankMoney~=nil then
 		tt:AddLine(C("dkyellow",ACCOUNT_BANK_PANEL_TITLE),ns.GetCoinColorOrTextureString(name,accountBankMoney,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT,test=true}))
@@ -331,7 +331,7 @@ function createTooltip(tt,update)
 	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true,]] currentHide=true,--[[forceSameRealm=true]]}) do
 		local _sAF = sAF or ns.player.faction==toonData.faction;
 		if toonData[name] and toonData[name].money and _sAF then
-			local faction = toonData.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+			local faction = ns.factionIcon(toonData.faction,16,16);
 			local line = tt:AddLine(
 				C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction,
 				ns.GetCoinColorOrTextureString(name,toonData[name].money,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT})
@@ -349,8 +349,8 @@ function createTooltip(tt,update)
 	if(lineCount>0)then
 		tt:AddSeparator()
 		if ns.profile[name].splitSummaryByFaction and ns.profile[name].showAllFactions then
-			tt:AddLine(L["Total Gold"].." |TInterface\\PVPFrame\\PVP-Currency-Alliance:16:16:0:-1:16:16:0:16:0:16|t", ns.GetCoinColorOrTextureString(name,totalGold.Alliance,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
-			tt:AddLine(L["Total Gold"].." |TInterface\\PVPFrame\\PVP-Currency-Horde:16:16:0:-1:16:16:0:16:0:16|t", ns.GetCoinColorOrTextureString(name,totalGold.Horde,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
+			tt:AddLine(L["Total Gold"].." "..ns.factionIcon("Alliance",16,16), ns.GetCoinColorOrTextureString(name,totalGold.Alliance,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
+			tt:AddLine(L["Total Gold"].." "..ns.factionIcon("Horde",16,16), ns.GetCoinColorOrTextureString(name,totalGold.Horde,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
 			if ns.profile[name].accountBankMoney and accountBankMoney~=nil then
 				tt:AddSeparator()
 				tt:AddLine(TOTAL..(accountBankMoney and " + "..C("dkyellow",ACCOUNT_BANK_PANEL_TITLE) or ""), ns.GetCoinColorOrTextureString(name,totalGold.Alliance+totalGold.Horde+totalGold.Neutral,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));

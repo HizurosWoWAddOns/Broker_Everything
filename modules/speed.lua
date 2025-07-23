@@ -428,7 +428,7 @@ local function createTooltip(tt)
 					skillName = spellInfo.name;
 					color = skillColor[toonData[name].skill] or "yellow";
 				end
-				local faction = toonData.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+				local faction = ns.factionIcon(toonData.faction,16,16);
 				local line, column = tt:AddLine(C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction);
 				tt:SetCell(line,2, C(color,skillName), nil,"RIGHT", 0);
 			end

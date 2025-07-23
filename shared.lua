@@ -266,6 +266,11 @@ function ns.showRealmName(modName,name,color,prepDash)
 	return "";
 end
 
+function ns.factionIcon(faction,w,h,prependSpace)
+	w,h = w or 16,h or 16;
+	return faction~="Neutral" and (prependSpace and " " or "").."|TInterface\\PVPFrame\\PVP-Currency-"..faction..":"..w..":"..h..":0:0:32:32:2:30:2:30|t" or ""
+end
+
 
   -----------------------------------------
 --- SetCVar hook                          ---

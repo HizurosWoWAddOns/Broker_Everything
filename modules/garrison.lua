@@ -100,7 +100,7 @@ local function createTooltip(tt)
 			local t=time();
 			for index,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameFaction=true}) do
 				if toonData.missions then
-					local faction = toonData.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+					local faction = ns.factionIcon(toonData.faction,16,16,true);
 					local l=tt:AddLine(C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction );
 					if isCurrent then
 						tt:SetLineColor(l, 0.1, 0.3, 0.6);
@@ -223,10 +223,7 @@ local function createTooltip(tt)
 						toonRealm = C("gray"," - ")..C("dkyellow",toonRealm);
 					end
 				end
-				local factionSymbol="";
-				if toonData.faction and toonData.faction~="Neutral" then
-					factionSymbol = " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t";
-				end
+				local factionSymbol=ns.factionIcon(toonData.faction,16,16,true);
 				tt:SetCell(l,1,C(toonData.class or "white", toonName)..(toonRealm or "")..factionSymbol,nil,nil,ttColumns-1);
 				if(toonData.garrison_cache and toonData.garrison_cache[1]>0)then
 					local cache = floor((time()-toonData.garrison_cache[1])/600);

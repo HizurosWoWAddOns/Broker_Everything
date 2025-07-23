@@ -148,10 +148,7 @@ local function createTooltip2(self,instance)
 					numShownToons = numShownToons+1;
 				end
 			end
-			local factionSymbol = "";
-			if toonData.faction and toonData.faction~="Neutral" then
-				factionSymbol = " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t";
-			end
+			local factionSymbol = ns.factionIcon(toonData.faction or "Neutral",16,16);
 			if (ns.profile[name].showActiveOnly and #diffState>0) or not ns.profile[name].showActiveOnly then
 				GameTooltip:AddDoubleLine(C(toonData.class,ns.scm(toonName))..factionSymbol,#diffState==0 and C("gray",L["Free"]) or table.concat(diffState,"\n"));
 			end

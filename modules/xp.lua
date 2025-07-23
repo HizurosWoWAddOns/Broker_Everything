@@ -211,7 +211,7 @@ function createTooltip(tt)
 
 				local factionSymbol = "";
 				if toonData.faction and toonData.faction~="Neutral" then
-					factionSymbol = "|TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t";
+					factionSymbol = ns.factionIcon(toonData.faction,16,16);
 				end
 
 				toonData.level = toonData.level or 1;

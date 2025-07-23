@@ -171,7 +171,7 @@ local function createTooltip2(self,data)
 		end
 		-- faction
 		if ns.profile[name].showFactionTT2 then
-			tt2:SetCell(tt2:AddLine(C(color1,FACTION)),2, data.factionL .. " |TInterface\\PVPFrame\\PVP-Currency-".. data.factionT ..":14:14:0:-1:32:32:3:29:3:29|t", nil,"RIGHT",0);
+			tt2:SetCell(tt2:AddLine(C(color1,FACTION)),2, data.factionL .. " "..ns.factionIcon(data.factionT,14,14), nil,"RIGHT",0);
 		end
 	end
 	-- zone
@@ -403,7 +403,7 @@ local function createTooltip(tt)
 							end
 							-- toon name - append faction icon
 							if ns.profile[name].showFaction=="1" and ti.clientProgram=="WoW" and ti.factionName then
-								nameStr = nameStr.."|TInterface\\PVPFrame\\PVP-Currency-"..ti.factionName..":16:16:0:-1:32:32:2:30:2:30|t";
+								nameStr = nameStr..ns.factionIcon(ti.factionName,16,16);
 							elseif ns.profile[name].showBattleTags=="0" and ti.clientProgram~="App" then
 								nameStr = nameStr.." "..bcIcon;
 							end
@@ -454,7 +454,7 @@ local function createTooltip(tt)
 										if ti.factionName=="Neutral" then
 											tt:SetCell(l,7,"|TInterface\\minimap\\tracking\\battlemaster:16:16:0:-1:32:32:2:30:2:30|t");
 										else
-											tt:SetCell(l,7,"|TInterface\\PVPFrame\\PVP-Currency-"..ti.factionName..":16:16:0:-1:32:32:2:30:2:30|t");
+											tt:SetCell(l,7,ns.factionIcon(ti.factionName,16,16));
 										end
 									end
 								end
@@ -534,7 +534,7 @@ local function createTooltip(tt)
 						end
 					end
 					if ns.profile[name].showFaction=="1" then
-						nameStr = nameStr.."|TInterface\\PVPFrame\\PVP-Currency-"..ns.player.faction..":16:16:0:-1:32:32:2:30:2:30|t";
+						nameStr = nameStr..ns.factionIcon(ns.player.faction,16,16);
 					end
 					tt:SetCell(l,3,nameStr);
 
@@ -557,7 +557,7 @@ local function createTooltip(tt)
 					if ns.profile[name].showFaction=="2" then
 						tt:SetCell(l,7,C(ns.player.faction=="Horde" and "red" or "ltblue",ns.player.factionL or ns.player.faction));
 					elseif ns.profile[name].showFaction=="3" then
-						tt:SetCell(l,7,"|TInterface\\PVPFrame\\PVP-Currency-"..ns.player.faction..":16:16:0:-1:32:32:2:30:2:30|t");
+						tt:SetCell(l,7,ns.factionIcon(ns.player.faction,16,16));
 					end
 					-- notes
 					if ns.profile[name].showNotes and type(v.notes)=="string" and v.notes:len()>0 then

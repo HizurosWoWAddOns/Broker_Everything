@@ -10,9 +10,6 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Mail" -- BUTTON_LAG_MAIL L["ModDesc-Mail"]
 local ttName, tooltip, tt, module = name.."TT"
 local alertLocked,onUpdateLocked,hookOn = false,false,false;
-local storedMailLineFaction = "%s%s |TInterface\\PVPFrame\\PVP-Currency-%s:16:16:0:-1:16:16:0:16:0:16|t";
-local storedMailLineNeutral = "%s%s";
-local icons = {}
 
 
 -- register icon names and default files --
@@ -175,7 +172,7 @@ local function AddStoredMailsLine(tt,toon)
 				end
 			end
 			local l=tt:AddLine(
-				(faction=="Neutral" and storedMailLineNeutral or storedMailLineFaction):format(C(class,ns.scm(toonName[1])),ns.showRealmName(name,toonName[2]),faction),
+				C(class,ns.scm(toonName[1]))..ns.showRealmName(name,toonName[2])..ns.factionIcon(faction,16,16),
 				str
 			);
 			if toon==ns.toon.name_realm then
@@ -323,10 +320,6 @@ function module.options()
 end
 
 function module.init()
-	for i=1, 22 do
-		local I = ("inv_letter_%02d"):format(i);
-		icons[I] = "|Tinterface\\icons\\"..I..":16:16:0:0|t";
-	end
 	if (not ns.coexist.IsNotAlone()) and ns.profile[name].hideMinimapMail then
 		ns.hideFrames("MiniMapMailFrame",true);
 	end

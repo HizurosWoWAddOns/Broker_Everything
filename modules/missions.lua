@@ -187,7 +187,7 @@ local function createTooltip(tt)
 		for index,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
 			if toonData.missions and #toonData.missions>0 then
 				local num = Counter(toonData.missions);
-				local l = tt:AddLine(C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. (toonData.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "") );
+				local l = tt:AddLine(C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. ns.factionIcon(toonData.faction,16,16) );
 				tt:SetCell(l,2, C("green",num.completed).."/"..C("yellow",num.inprogress),nil,"RIGHT",0);
 				n=n+1;
 			end

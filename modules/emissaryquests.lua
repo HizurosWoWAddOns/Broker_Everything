@@ -337,7 +337,7 @@ local function createTooltip(tt)
 		for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
 			local cell,line = 2;
 			if toonData.level>=minLevel then
-				local faction = toonData.faction~="Neutral" and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+				local faction = ns.factionIcon(toonData.faction,16,16);
 				if type(toonRealm)=="string" and toonRealm:len()>0 then
 					local _,_realm = ns.LRI:GetRealmInfo(toonRealm);
 					if _realm then toonRealm = _realm; end

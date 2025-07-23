@@ -436,7 +436,7 @@ local function createTooltip(tt,name,ttName)
 				end
 			end
 			if show then
-				local faction,str,l = toonData.faction and " |TInterface\\PVPFrame\\PVP-Currency-"..toonData.faction..":16:16:0:-1:16:16:0:16:0:16|t" or "";
+				local faction,str,l = ns.factionIcon(toonData.faction,16,16,true);
 
 				if IsShiftKeyDown() then
 					str = SecondsToTime(nextMissionEnding-t) .. " / " .. SecondsToTime(activeMission-t);
