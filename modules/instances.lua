@@ -47,14 +47,18 @@ end
 
 local ejInstances,ejDoubleInstanceNames,ejInstancesFinished,LoadEjInstances,LoadEjInstancesLock={},{};
 do
+	local function sortByName(a,b)
+		return a.instanceName<b.instanceName;
+	end
 
-	local function getEjInstances(exp,mode)
+	local function getEjInstances(ejTier,mode)
 		-- walk through list
+		local tmp = {};
 		local index = 1;
 		local ejInstanceId, instanceName, _, _, _, _, _, _, _, shouldDisplayDifficulty, instanceMapId = EJ_GetInstanceByIndex(index, mode);
 		while ejInstanceId~=nil do
 			if instanceMapId and shouldDisplayDifficulty then
-				ejInstances[exp][instanceMapId] = {index=index,isRaid=mode,ejId=ejInstanceId,instanceName=instanceName};
+				tinsert(tmp,{index=index,isRaid=mode,ejTier=ejTier,mapId=instanceMapId,ejId=ejInstanceId,instanceName=instanceName});
 				if ejDoubleInstanceNames[instanceName]==nil then
 					ejDoubleInstanceNames[instanceName] = {}
 				end
@@ -63,6 +67,10 @@ do
 			end
 			index = index+1;
 			ejInstanceId, instanceName, _, _, _, _, _, _, _, shouldDisplayDifficulty, instanceMapId = EJ_GetInstanceByIndex(index, mode);
+		end
+		table.sort(tmp,sortByName)
+		for _, entry in pairs(tmp) do
+			tinsert(ejInstances[ejTier],entry);
 		end
 	end
 
@@ -74,17 +82,16 @@ do
 		-- Note: Tier 1-n is not
 		for ejTier=1, numTiers do
 			EJ_SelectTier(ejTier);
-			local exp = ejTier-1;
-			if not _G["EXPANSION_NAME"..exp] then
-				exp = exp-1;
+			if not _G["EXPANSION_NAME"..(ejTier-1)] then
+				ejTier = ejTier-1; -- add entries from "Current season" to prev tier
 			end
-			if ejInstances[exp]==nil then
-				ejInstances[exp]={};
+			if ejInstances[ejTier]==nil then
+				ejInstances[ejTier]={};
 			end
 			-- get all raids
-			getEjInstances(exp,true);
+			getEjInstances(ejTier,true);
 			-- get all dungeons
-			getEjInstances(exp,false);
+			getEjInstances(ejTier,false);
 		end
 
 		ejInstancesFinished=true;
@@ -170,6 +177,28 @@ local function sortByIndex(a,b)
 	return a.index<b.index and -1 or 1;
 end
 
+local prevLabel
+local function addExpTitle(name, mode, ejTier, tt)
+	local exp = ejTier-1;
+	if prevLabel==_G["EXPANSION_NAME"..exp] then
+		return;
+	end
+	local hColor,sState,_status_,_mode_ = "gray","Plus","","";
+	if ns.profile[name]['showExpansion'..exp]==nil then
+		ns.profile[name]['showExpansion'..exp] = true;
+	end
+	if ns.profile[name]['showExpansion'..exp] then
+		hColor,sState,_status_,_mode_ = "ltblue","Minus",C("ltblue",STATUS),C("ltblue",MODE);
+	end
+	tt:AddSeparator(4,0,0,0,0);
+	local l=tt:AddLine(symbol:format(sState)..C(hColor,_G["EXPANSION_NAME"..exp]),_status_,_mode_);
+	tt:SetLineScript(l,"OnMouseUp",toggleExpansion, {name=name,mode=mode,expansion=exp});
+	prevLabel = _G["EXPANSION_NAME"..exp];
+	if ns.profile[name]['showExpansion'..exp] then
+		tt:AddSeparator();
+	end
+end
+
 function createTooltip(tt,name,mode)
 	local ttName = name==name1 and ttName1 or ttName2;
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
@@ -189,37 +218,24 @@ function createTooltip(tt,name,mode)
 	updateInstances();
 
 	-- create instance list
-	local exp_max,prevLabel = GetNumExpansions(),"";
-	if not _G["EXPANSION_NAME"..exp_max] then
-		exp_max = exp_max-1;
-	end
-	local exp_start, exp_stop, exp_direction = 1, exp_max, 1;
-	if ns.profile[name].invertExpansionOrder then
-		exp_start, exp_stop, exp_direction = exp_max, 1, -1;
+	prevLabel = "";
+	local numTiers = EJ_GetNumTiers();
+	if not _G["EXPANSION_NAME"..numTiers-1] then
+		numTiers = numTiers-1;
 	end
 
-	for exp=exp_start, exp_stop, exp_direction do
-		if ns.profile[name]['showExpansion'..exp] and ejInstances and ejInstances[exp] then
-			table.sort(ejInstances[exp],sortByIndex)
+	local ejTier_start, ejTier_stop, ejTier_direction = 1, numTiers, 1;
+	if ns.profile[name].invertExpansionOrder then
+		ejTier_start, ejTier_stop, ejTier_direction = numTiers, 1, -1;
+	end
+
+	for ejTier=ejTier_start, ejTier_stop, ejTier_direction do
+		if ns.profile[name]['showExpansion'..(ejTier-1)] and ejInstances and ejInstances[ejTier] then
 			local alreadyShown = {}
-			for instanceMapId, ejInfo in pairs(ejInstances[exp]) do
+			for _, ejInfo in ipairs(ejInstances[ejTier]) do
+				local instanceMapId = ejInfo.mapId;
 				if ejInfo.isRaid==mode and not (ejDoubleInstanceNames[instanceMapId] and alreadyShown[ejInfo.instanceName])--[[ and not hide[ejInfo.ejId] ]] then
-					if prevLabel~=_G["EXPANSION_NAME"..exp] then
-						local hColor,sState,_status_,_mode_ = "gray","Plus","","";
-						if ns.profile[name]['showExpansion'..exp]==nil then
-							ns.profile[name]['showExpansion'..exp] = true;
-						end
-						if ns.profile[name]['showExpansion'..exp] then
-							hColor,sState,_status_,_mode_ = "ltblue","Minus",C("ltblue",STATUS),C("ltblue",MODE);
-						end
-						tt:AddSeparator(4,0,0,0,0);
-						local l=tt:AddLine(symbol:format(sState)..C(hColor,_G["EXPANSION_NAME"..exp]),_status_,_mode_);
-						tt:SetLineScript(l,"OnMouseUp",toggleExpansion, {name=name,mode=mode,expansion=exp});
-						prevLabel = _G["EXPANSION_NAME"..exp];
-						if ns.profile[name]['showExpansion'..exp] then
-							tt:AddSeparator();
-						end
-					end
+					addExpTitle(name,mode,ejTier,tt);
 
 					alreadyShown[ejInfo.instanceName] = true;
 					local status,diff,encounter,id = {},{},"","";
@@ -256,54 +272,8 @@ function createTooltip(tt,name,mode)
 					end
 				end
 			end
-
-			--[[
-			EJ_SelectTier(tier)
-			local index, ejInfo.instanceMapId, ejInfo.instanceName, _ = 1;
-			ejInfo.instanceMapId, ejInfo.instanceName = EJ_GetInstanceByIndex(index, mode);
-			while ejInfo.instanceMapId~=nil do
-				if not hide[ejInfo.instanceMapId] then
-					local status,diff,encounter,id = {},{},"","";
-					if ignore_ej[ejInfo.instanceName] then
-						status = false;
-					end
-					if status then
-						if activeInstances[ejInfo.instanceName] then
-							for diffName, data in ns.pairsByKeys(activeInstances[ejInfo.instanceName])do
-								if type(data)=="table" then
-									local s,d = C("orange",L["In progress"]),C("ltgray",diffName);
-									if data[3]==data[4] then
-										s = C("green",L["Cleared"]);
-									else
-										s = s .. fState:format(data[3],data[4]);
-									end
-									tinsert(status,s);
-									tinsert(diff,d);
-								end
-							end
-						end
-						if ns.profile[name].showID then
-							id = C("gray"," ("..ejInfo.instanceMapId..")");
-						end
-						local l=tt:AddLine(
-							C("ltyellow","    "..ejInfo.instanceName)..id,
-							#status==0 and C("gray",L["Free"]) or table.concat(status,"\n"),
-							#diff==0 and "" or table.concat(diff,"\n")
-						);
-
-						-- tt:SetLineScript(l,"OnEnter",createTooltip2,{ejInfo.instanceMapId,name,ejInfo.instanceName});
-						-- tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
-
-						if ns.toon[name]==nil then
-							ns.toon[name]={};
-						end
-						ns.toon[name][ejInfo.instanceMapId] = activeInstances[ejInfo.instanceName];
-					end
-				end
-				index = index + 1;
-				ejInfo.instanceMapId, ejInfo.instanceName = EJ_GetInstanceByIndex(index, mode);
-			end
-			--]]
+		else
+			addExpTitle(name,mode,ejTier,tt); -- collapsed
 		end
 	end
 
