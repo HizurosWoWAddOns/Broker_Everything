@@ -648,8 +648,8 @@ function buildCharDataOptions()
 	-- Broker_Everything_CharacterDB
 	-- Broker_Everything_CharacterDB.order
 	for order,name_realm in ipairs(Broker_Everything_CharacterDB.order)do
-		if Broker_Everything_CharacterDB[name_realm] then
-			local charInfo = Broker_Everything_CharacterDB[name_realm];
+		local charInfo = Broker_Everything_CharacterDB[name_realm] or {};
+		if charInfo and charInfo.name and charInfo.level then
 			local charName, realm = strsplit("%-",name_realm,2);
 			local lst = getRealmList(realm);
 
