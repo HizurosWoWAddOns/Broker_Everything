@@ -191,16 +191,6 @@ local function updateBroker()
 	end
 end
 
-local function setFunction(self)
-	local id = tonumber(self.arg1.currencyId);
-	if id then
-		ns.profile[name][self.arg1.section][self.arg1.place] = self.arg1.currencyId;
-	else
-		ns.profile[name][self.arg1.section][self.arg1.place] = nil;
-	end
-	LibStub("AceConfigRegistry-3.0"):NotifyChange(addon); -- force update ace3 option panel
-end
-
 local function toggleCurrencyHeader(self,headerString)
 	ns.toon[name].headers[headerString] = not ns.toon[name].headers[headerString];
 	createTooltip(tt);
@@ -611,6 +601,16 @@ local CurrencyMenu
 do
 	local parent0,page = nil,{}
 
+	local function CurrencyMenu_SetCurrency(self)
+		local id = tonumber(self.arg1.currencyId);
+		if id then
+			ns.profile[name][self.arg1.section][self.arg1.place] = self.arg1.currencyId;
+		else
+			ns.profile[name][self.arg1.section][self.arg1.place] = nil;
+		end
+		updateBroker();
+	end
+
 	local function CurrencyMenu_Paging()
 		local header = page.currentHeader;
 		local label = headers[header];
@@ -645,7 +645,7 @@ do
 			icon = currencyInfo.iconFileID or ns.icon_fallback,
 			disabled = disabled,
 			keepShown = false,
-			func=setFunction,
+			func=CurrencyMenu_SetCurrency,
 			arg1={section=section, place=place, currencyId=currencyId}
 		}, page.parent);
 	end
@@ -698,7 +698,7 @@ do
 			parent0,parent = nil,nil;
 			if hasCurrency then
 				-- remove
-				ns.EasyMenu:AddEntry({label = C("ltred",L["Remove the currency"]), keepShown=false, func=setFunction, arg1={section=section, place=place} });
+				ns.EasyMenu:AddEntry({label = C("ltred",L["Remove the currency"]), keepShown=false, func=CurrencyMenu_SetCurrency, arg1={section=section, place=place} });
 				ns.EasyMenu:AddEntry({separator=true});
 			else
 				-- add
@@ -711,7 +711,7 @@ do
 				-- sub menu
 				parent = ns.EasyMenu:AddEntry({arrow = true,label = (C("dkyellow","%s %d:").."  |T%s:20:20:0:0|t %s"):format(L["Place"],place,(currencyInfo.iconFileID or ns.icon_fallback),C("ltblue",currencyInfo.name)),},parent0);
 				-- remove option in sub menu
-				ns.EasyMenu:AddEntry({label = C("ltred",L["Remove the currency"]), keepShown=false, func=setFunction, arg1={section=section, place=place} }, parent);
+				ns.EasyMenu:AddEntry({label = C("ltred",L["Remove the currency"]), keepShown=false, func=CurrencyMenu_SetCurrency, arg1={section=section, place=place} }, parent);
 				ns.EasyMenu:AddEntry({separator=true}, parent);
 			else
 				-- sub menu
@@ -1012,8 +1012,6 @@ end
 function module.onevent(self,event,arg1)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
-	elseif event=="BE_UPDATE_CFG" and arg1 and arg1:find("showHidden") then
-		aceCurrencies.created = false; -- recreate currency tables
 	elseif event=="PLAYER_LOGIN" then
 		if ns.toon[name]==nil or (ns.toon[name] and ns.toon[name].headers==nil) then
 			ns.toon[name] = {headers={}};
