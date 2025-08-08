@@ -258,7 +258,7 @@ local function createTooltip_AddCurrencies(currencyList)
 				currencyId, currencyInfo = GetCurrency(currencyList[index]);
 			end
 
-			if IsCurrencyShown(currencyInfo) then
+			if not parentIsCollapsed and IsCurrencyShown(currencyInfo) then
 				prevType = currencyListIndexType;
 				empty = false;
 				CountCorrection(currencyId,currencyInfo);
