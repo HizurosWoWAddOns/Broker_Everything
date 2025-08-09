@@ -54,7 +54,7 @@ local function updateBroker()
 	local tmp,obj = {},ns.LDB:GetDataObjectByName(module.ldbName);
 
 	if ns.profile[name].brokerSets~="_none" then
-		local collected,total = ns.deprecated.C_TransmogSets.GetFullBaseSetsCounts();
+		local collected,total = C_TransmogSets.GetFullBaseSetsCounts();
 		addToBroker(tmp,"violet","Sets",collected,total,session.misc.sets);
 	end
 
@@ -126,7 +126,7 @@ local function resetSessionCounter(x)
 	end
 	session.misc = {
 		illusions = count,
-		sets = (ns.deprecated.C_TransmogSets.GetFullBaseSetsCounts())
+		sets = (C_TransmogSets.GetFullBaseSetsCounts())
 	}
 	if x then
 		updateBroker();
@@ -207,7 +207,7 @@ local function createTooltip(tt)
 	addLine("ltyellow",WEAPON_ENCHANTMENT,collected,total,session.misc.illusions);
 
 	-- sets
-	local collected,total = ns.deprecated.C_TransmogSets.GetFullBaseSetsCounts();
+	local collected,total = C_TransmogSets.GetFullBaseSetsCounts();
 	addLine("ltyellow",WARDROBE_SETS,collected,total,session.misc.sets);
 
 	if ns.profile.GeneralOptions.showHints and false then

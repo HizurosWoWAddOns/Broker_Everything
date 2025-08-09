@@ -121,7 +121,7 @@ local function chkCooldownSpells(skillId,icon)
 				_name = (cd[cdGroup]>0) and cd_groups[cdGroup].." cooldown group" or false;
 				if not _name then
 					-- TODO: check classic clients after patch
-					_name = ns.deprecated.C_Spell.GetSpellInfo(cd[spellId]).name;
+					_name = C_Spell.GetSpellInfo(cd[spellId]).name;
 				end
 				timeLeft,lastUpdate = cdResetTypes[cd[cdType]](cd[spellId]);
 
@@ -232,7 +232,7 @@ function updateTradeSkills()
 	-- class skills
 	for spellId,t in pairs({[1804]={"ROGUE",0,true},[53428]={"DEATHKNIGHT",1,false}})do
 		if ns.player.class==t[1] then
-			local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(spellId)
+			local spellInfo = C_Spell.GetSpellInfo(spellId)
 			local skill,maxSkill = 0,0;
 			if IsSpellKnown(spellId) then
 				if t[1]=="ROGUE" then
@@ -300,7 +300,7 @@ local function CreateTooltip2(self, content)
 			local factionId, standing, itemId, spellId, recipeRank = unpack(recipeData);
 			if skillNameById[tsId] then
 				--local Name = ((C_Spell and C_Spell.GetSpellInfo) or () or GetSpellInfo)(spellId);
-				local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(spellId)
+				local spellInfo = C_Spell.GetSpellInfo(spellId)
 				if spellInfo and spellInfo.name then
 					-- faction header
 					if factionID~=recipeData[1] then
@@ -562,7 +562,7 @@ local function createTooltip(tt)
 				elseif (v.type=="line") then
 					tt:AddLine(unpack(v.data));
 				elseif (v.type=="cdLine") then
-					tt:AddLine(iconnameLocale:format(ns.deprecated.C_Item.GetItemIcon(v.data.name) or v.data.icon or ns.icon_fallback,C("ltyellow",v.data.name)),"~ "..ns.DurationOrExpireDate(v.data.timeLeft,v.data.lastUpdate));
+					tt:AddLine(iconnameLocale:format(C_Item.GetItemIcon(v.data.name) or v.data.icon or ns.icon_fallback,C("ltyellow",v.data.name)),"~ "..ns.DurationOrExpireDate(v.data.timeLeft,v.data.lastUpdate));
 				end
 			end
 		end

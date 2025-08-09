@@ -73,7 +73,7 @@ local function updateRaceArtifact(t,...)
 		t[raceArtifactIcon] = iconFormat1:format(t[raceArtifactIcon]);
 
 		if(type(t[raceKeystoneItemID])=="number" and t[raceKeystoneItemID]>0) then
-			t[raceKeystoneIcon] = iconFormat1:format( ns.deprecated.C_Item.GetItemIconByID(t[raceKeystoneItemID]) or ns.icon_fallback);
+			t[raceKeystoneIcon] = iconFormat1:format(C_Item.GetItemIconByID(t[raceKeystoneItemID]) or ns.icon_fallback);
 			t[raceKeystoneCount] = C_Item.GetItemCount(t[raceKeystoneItemID],true,true);
 		end
 
@@ -383,7 +383,7 @@ function module.onevent(self,event,arg1,...)
 		if tradeskill.id then
 			tradeskill.name,tradeskill.icon,tradeskill.skill,tradeskill.maxSkill = GetProfessionInfo(tradeskill.id);
 		else
-			local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(78670);
+			local spellInfo = C_Spell.GetSpellInfo(78670);
 			tradeskill.name,tradeskill.icon = spellInfo.name,spellInfo.iconID;
 			tradeskill.skill, tradeskill.maxSkill = 0,0;
 		end

@@ -1010,7 +1010,7 @@ do
 			hasChanged.equip = true;
 		end
 		-- item has 'Use:' effect spell
-		local _,itemSpellID = ns.deprecated.C_Item.GetItemSpell(info.link);
+		local _,itemSpellID = C_Item.GetItemSpell(info.link);
 		if itemSpellID then
 			info.spell = itemSpellID;
 			if itemsBySpell[info.spell] == nil then
@@ -1059,7 +1059,7 @@ do
 			if id then
 				local link = GetInventoryItemLink("player",slotIndex);
 				-- back again; need durability for detect changes to trigger update of durability module broker display
-				local _, _, _, _, _, itemClassID, itemSubClassID = ns.deprecated.C_Item.GetItemInfoInstant(link);
+				local _, _, _, _, _, itemClassID, itemSubClassID = C_Item.GetItemInfoInstant(link);
 				local durability, durabilityMax = GetInventoryItemDurability(slotIndex);
 				addItem({
 					bag=-1,
@@ -1100,7 +1100,7 @@ do
 					--[[
 					local isSoul = false; -- currently could not test. have no warlock on classic realms.
 					if ns.client_version<2 then
-						local _, _, _, _, _, itemClassID, itemSubClassID = ns.deprecated.C_Item.GetItemInfoInstant(GetInventoryItemLink("player", bagIndex+19));
+						local _, _, _, _, _, itemClassID, itemSubClassID = C_Item.GetItemInfoInstant(GetInventoryItemLink("player", bagIndex+19));
 						if itemSubClassID==1 then -- soul pouch
 							isSoul = true;
 						end
@@ -1117,8 +1117,8 @@ do
 							id = tonumber((link:match("item:(%d+)"))) or -1;
 						end
 						if link and id then
-							local _, _, _, itemEquipLocation, _, itemClassID, itemSubClassID = ns.deprecated.C_Item.GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
-							local durability, durabilityMax = ns.deprecated.C_Container.GetContainerItemDurability(bagIndex,slotIndex)
+							local _, _, _, itemEquipLocation, _, itemClassID, itemSubClassID = C_Item.GetItemInfoInstant(link); -- equipment in bags; merchant repair all function will be repair it too
+							local durability, durabilityMax = C_Container.GetContainerItemDurability(bagIndex,slotIndex)
 							local isEquipment = false;
 							if not (itemEquipLocation=="" or itemEquipLocation==IndexTabardType or itemEquipLocation==IndexBodyType) then
 								isEquipment = true; -- ignore shirts and tabards
@@ -1181,11 +1181,11 @@ do
 		elseif event=="GET_ITEM_INFO_RECEIVED" and (...)~=nil then
 			local id = ...;
 			if itemsByID[id] then
-				local _, spell = ns.deprecated.C_Item.GetItemSpell(id); -- test if item has a spell
+				local _, spell = C_Item.GetItemSpell(id); -- test if item has a spell
 				if spell then
 					for sharedSlot, info in pairs(itemsByID[...])do
 						local _, count, _, _, _, _, _, _, _ = C_Container.GetContainerItemInfo(info.bag,info.slot);
-						_, info.spell = ns.deprecated.C_Item.GetItemSpell(info.link); -- multiple items with same id could have different spells by itemLink.
+						_, info.spell = C_Item.GetItemSpell(info.link); -- multiple items with same id could have different spells by itemLink.
 						if info.spell then
 							if not itemsBySpell[info.spell] then
 								itemsBySpell[info.spell] = {};

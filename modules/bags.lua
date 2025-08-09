@@ -349,7 +349,7 @@ function updateBags()
 	for bagIndex=1, (NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS) do
 		local itemIcon, itemClassID, itemSubClassID, _, link = 0, 1, 0;
 		if bagIndex>0 and C_Container.GetContainerNumSlots(bagIndex)>0 then
-			link = GetInventoryItemLink("player", ns.deprecated.C_Container.ContainerIDToInventoryID(bagIndex));
+			link = GetInventoryItemLink("player", C_Container.ContainerIDToInventoryID(bagIndex));
 		end
 		if link then
 			_, _, _, _, _, _, _, _, _, itemIcon, _, itemClassID, itemSubClassID = C_Item.GetItemInfo(link);

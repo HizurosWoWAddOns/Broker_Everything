@@ -127,7 +127,7 @@ local function tooltipOnEnter(self,data)
 	GameTooltip:SetPoint("TOP",tt,"BOTTOM");
 	local Link
 	if data.spell and not data.link then
-		Link = ns.deprecated.C_Spell.GetSpellLink(data.spell)
+		Link = C_Spell.GetSpellLink(data.spell)
 	end
 	if data.info then
 		for i=1, #data.info do
@@ -203,7 +203,7 @@ local function createTooltip(tt)
 	local learned = nil;
 	-- list known/available riding skills
 	for i,skill in ipairs(riding_skills) do
-		local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(skill.spell)
+		local spellInfo = C_Spell.GetSpellInfo(skill.spell)
 		local l,ttExtend;
 		-- check if learned. skills ordered in table from highest to lowest.
 		if(learned==nil and IsSpellKnown(skill.spell))then
@@ -276,7 +276,7 @@ local function createTooltip(tt)
 			if(id and IsSpellKnown(id))then
 				local active=false;
 				local custom = "";
-				local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(spell[Id])
+				local spellInfo = C_Spell.GetSpellInfo(spell[Id])
 
 				if spell[CustomText]==true and spellInfo.rank then
 					local ranks = {strsplit(" ",spellInfo.rank)}; -- TODO: missing rank in bfa?
@@ -291,7 +291,7 @@ local function createTooltip(tt)
 					local start, duration, enabled = ns.deprecated.C_Spell.GetSpellCooldown(spell[Id]);
 					if(spell[Special])then
 						if(spell[Special][1]=="SPELL")then
-							local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(spell[Special][2])
+							local spellInfo = C_Spell.GetSpellInfo(spell[Special][2])
 							for i=1, 10 do
 								local res = --[[ns.deprecated.]]C_UnitAuras.GetDebuffDataByIndex("player", i)
 								if res and res.name==spellInfo.name then -- BfA -- changed arg2 to numeric index only
@@ -365,10 +365,10 @@ local function createTooltip(tt)
 					end
 				end
 			else
-				link = ns.deprecated.C_Spell.GetSpellLink(v[1]);
+				link = C_Spell.GetSpellLink(v[1]);
 				if link then
 					ready = IsSpellKnown(v[1]);
-					local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(v[1])
+					local spellInfo = C_Spell.GetSpellInfo(v[1])
 					Name = spellInfo.name;
 				elseif type(replace_unknown["s"..v[1]])=="table" then
 					v = replace_unknown["s"..v[1]];
@@ -424,7 +424,7 @@ local function createTooltip(tt)
 				end
 				local skillName,color = TRADE_SKILLS_UNLEARNED_TAB,"orange";
 				if toonData[name].skill>0 then
-					local spellInfo = ns.deprecated.C_Spell.GetSpellInfo(toonData[name].skill)
+					local spellInfo = C_Spell.GetSpellInfo(toonData[name].skill)
 					skillName = spellInfo.name;
 					color = skillColor[toonData[name].skill] or "yellow";
 				end

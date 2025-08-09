@@ -82,7 +82,7 @@ local function nsItems2Callback()
 			if tbl=="inv" then
 				d,dM = GetInventoryItemDurability(obj.slot);
 			else
-				d,dM = ns.deprecated.C_Container.GetContainerItemDurability(obj.bag,obj.slot);
+				d,dM = C_Container.GetContainerItemDurability(obj.bag,obj.slot);
 			end
 			durability, durabilityMax = d or 0, dM or 0;
 		end

@@ -75,8 +75,8 @@ I[name3] = {iconfile=134269,coords={0.05,0.95,0.05,0.95}}				--IconName::ZoneTex
 --------------------------
 local function setSpell(tb,id)
 	if IsSpellKnown(id) then
-		--local sName, _, icon, _, _, _, _, _, _ = ns.deprecated.C_Spell.GetSpellInfo(id);
-		local info = ns.deprecated.C_Spell.GetSpellInfo(id)
+		--local sName, _, icon, _, _, _, _, _, _ = C_Spell.GetSpellInfo(id);
+		local info = C_Spell.GetSpellInfo(id)
 		table.insert(tb,{type="spell",id=id,icon=info.iconID,name=info.name,name2=info.name});
 	end
 end
