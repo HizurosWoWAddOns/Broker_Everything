@@ -152,13 +152,14 @@ end
 ns.region = ns.LRI:GetCurrentRegion() or ({"US","KR","EU","TW","CN"})[GetCurrentRegion()];
 ns.realm = GetRealmName();
 ns.realms = {};
+ns.realm_shorts = {}
 do
 	local pattern = "^"..(ns.realm:gsub("(.)","[%1]*")).."$";
 	for i,v in ipairs(GetAutoCompleteRealms()) do
 		if v:match(pattern) then
 			ns.realm_short = v;
-			break;
 		end
+		ns.realm_shorts[v] = true;
 	end
 	if not ns.realm_short then
 		ns.realm_short = ns.realm:gsub(" ",""):gsub("%-","");
