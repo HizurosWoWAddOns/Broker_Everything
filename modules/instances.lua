@@ -135,29 +135,33 @@ local function createTooltip2(self,instance)
 	GameTooltip:ClearLines();
 
 	GameTooltip:AddLine(label);
-	GameTooltip:AddLine(C("gray",ns.realm));
-	GameTooltip:AddLine(" ");
-
 	local numShownToons = 0;
 	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
-		if not isCurrent and toonData[name] and toonData[name][instanceMapId] then
-			-- toonData - name - instanceMapId - diffName - data [ reset, timestamp, encounterProgress, numEncounters ]
-			local diffState, entries = {}, toonData[name][instanceMapId];
-			for diffName, data in ns.pairsByKeys(entries) do
-				if type(data)=="table" and (data[1]+data[2])>t then
-					local diffColor, stateColor, stateStr = "ltgray", "orange", "In progress";
-					local encounter = fState:format(data[3],data[4]);
-					if data[3]==data[4] then
-						stateColor,stateStr="green","Cleared";
-						encounter = "";
+		if not isCurrent and toonData[name] then
+			local diffState = {}
+			if toonData[name][instanceMapId] and not seeFreeOnly then
+				-- toonData - name - instanceMapId - diffName - data [ reset, timestamp, encounterProgress, numEncounters ]
+				local entries = toonData[name][instanceMapId];
+				for diffName, data in ns.pairsByKeys(entries) do
+					if type(data)=="table" and (data[1]+data[2])>t then
+						local diffColor, stateColor, stateStr = "ltgray", "orange", "In progress";
+						local encounter = fState:format(data[3],data[4]);
+						if data[3]==data[4] then
+							stateColor,stateStr="green","Cleared";
+							encounter = "";
+						end
+						tinsert(diffState,C(diffColor,diffName)..C(stateColor,L[stateStr])..encounter);
+						numShownToons = numShownToons+1;
 					end
-					tinsert(diffState,C(diffColor,diffName)..C(stateColor,L[stateStr])..encounter);
-					numShownToons = numShownToons+1;
 				end
 			end
 			local factionSymbol = ns.factionIcon(toonData.faction or "Neutral",16,16);
 			if (ns.profile[name].showActiveOnly and #diffState>0) or not ns.profile[name].showActiveOnly then
-				GameTooltip:AddDoubleLine(C(toonData.class,ns.scm(toonName))..factionSymbol,#diffState==0 and C("gray",L["Free"]) or table.concat(diffState,"\n"));
+				local realmName = "";
+				if toonRealm~=realm then
+					realmName = C("dkyellow"," - "..(ns.profile.GeneralOptions.scm and "*" or toonRealm))
+				end
+				GameTooltip:AddDoubleLine(C(toonData.class,ns.scm(toonName))..factionSymbol..realmName,#diffState==0 and C("gray",L["Free"]) or table.concat(diffState,"\n"));
 			end
 		end
 	end
