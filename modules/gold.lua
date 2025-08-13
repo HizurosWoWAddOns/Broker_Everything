@@ -12,7 +12,8 @@ local name = "Gold"; -- BONUS_ROLL_REWARD_MONEY L["ModDesc-Gold"]
 local ttName, ttName2, ttColumns, ttColumns2, tt, tt2, createTooltip, module = name.."TT", name.."TT2",3,2;
 local login_money,Date = nil,{};
 local GetMoney = _G.GetMoney;
-local listTopProfit,accountBankMoney,ticker = {};
+local listTopProfit,accountBankMoney = {};
+local tickerDuration, tickerInterations,tickerCounter, ticker = 1/5, 10*5, -1, nil -- 20 seconds to get current player money; i hope it is enough for slow pc's and net connections.
 local ttLines = {
 	{"showProfitSession",L["Session"],"session"},
 	{"showProfitDaily",HONOR_TODAY,"daily",false},
@@ -199,8 +200,21 @@ local function updateBroker()
 	ns.LDB:GetDataObjectByName(module.ldbName).text = table.concat(broker,ns.profile[name].delimiterBB);
 end
 
-local function initFirstUpdate()
-	if not module.lockFirstUpdate then return end
+function ns.GlobalFunctionError(funcName,msgGeneral,msgTaint)
+	local _, taintBy = issecurevariable(_G,funcName)
+	if taintBy then
+		ns:print(L[msgTaint]:format(taintBy))
+	else
+		ns:print(L[msgGeneral])
+	end
+end
+
+local function initFirstUpdate(...)
+	if (...) and ticker==...  then
+		tickerCounter=tickerCounter+1;
+	elseif not module.lockFirstUpdate then
+		 return;
+	end
 	local money = GetMoney()
 	if money then
 		ticker:Cancel()
@@ -208,6 +222,8 @@ local function initFirstUpdate()
 		updateProfit();
 		updateBroker();
 		module.lockFirstUpdate = false;
+	elseif (...) and ticker==... and tickerCounter==tickerInterations then
+		ns.GlobalFunctionError("GetMoney","ErrorMsgGetMoney","ErrorMsgGetMoneyTaint")
 	end
 end
 
@@ -547,7 +563,8 @@ function module.onevent(self,event,arg1)
 		ns.ClickOpts.update(name);
 	end
 	if module.lockFirstUpdate and not ticker then
-		ticker = C_Timer.NewTicker(0.2, initFirstUpdate ,50) -- 10 seconds to get current player money; i hope it is enough for slow pc's and net connections.
+		tickerCounter = 0;
+		ticker = C_Timer.NewTicker(tickerDuration, initFirstUpdate , tickerInterations)
 	end
 	if ns.eventPlayerEnteredWorld and not module.lockFirstUpdate then
 		-- PLAYER_MONEY, PLAYER_TRADE_MONEY, TRADE_MONEY_CHANGED
