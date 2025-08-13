@@ -11,6 +11,7 @@ local time,date,tinsert,tconcat=time,date,tinsert,table.concat;
 local name = "Gold"; -- BONUS_ROLL_REWARD_MONEY L["ModDesc-Gold"]
 local ttName, ttName2, ttColumns, ttColumns2, tt, tt2, createTooltip, module = name.."TT", name.."TT2",3,2;
 local login_money,Date = nil,{};
+local GetMoney = _G.GetMoney;
 local listTopProfit,accountBankMoney,ticker = {};
 local ttLines = {
 	{"showProfitSession",L["Session"],"session"},
