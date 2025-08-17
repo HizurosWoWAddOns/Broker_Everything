@@ -90,9 +90,18 @@ StaticPopupDialogs["BE_URL_DIALOG"] = {
 	editBoxWidth = 250,
 	subText = L["Ctrl+C to copy the URL for use in your web browser."],
 	OnShow = function(self,data)
+		if not (ns.profile[name].questIdUrl and urls[ns.profile[name].questIdUrl]) then
+			ns:print(L["ErrorMsgQuestUrl"])
+			self:Hide();
+			return
+		end
 		local target = urls[ns.profile[name].questIdUrl];
 
-		self.text:SetText(target[1].." URL")
+		if self.text and self.text.SetText then
+			self.text:SetText(target[1].." URL")
+		elseif self.SetText then
+			self:SetText(target[1].." URL")
+		end
 
 		local editbox =_G[self:GetName().."EditBox"];
 		if editbox then
@@ -464,7 +473,7 @@ ns.ClickOpts.addDefaults(module,{
 function module.options()
 	local questIdUrlValues = {}
 	for k,v in pairs(urls)do
-		tinsert(questIdUrlValues,v[1])
+		questIdUrlValues[k] = v[1]
 	end
 	return {
 		broker = nil,
