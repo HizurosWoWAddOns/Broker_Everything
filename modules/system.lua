@@ -7,14 +7,16 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name_sys,name_fps,name_traf,name_lat,name_mem = "System","FPS","Traffic","Latency","Memory";
--- L["Traffic"] L["Latency"] L["Memory"] L["ModDesc-System"] L["ModDesc-FPS"] L["ModDesc-Traffic"] L["ModDesc-Latency"] L["ModDesc-Memory"]
+local name_sys,name_fps,name_traf,name_lat,name_mem,name_rlm = "System","FPS","Traffic","Latency","Memory","Realm";
+-- L["Traffic"] L["Latency"] L["Memory"]
+-- L["ModDesc-System"] L["ModDesc-FPS"] L["ModDesc-Traffic"] L["ModDesc-Latency"] L["ModDesc-Memory"] L["ModDesc-Realm"]
 local ttNameSys, ttColumnsSys, ttSys  = name_sys .."TT",2;
 local ttNameFPS, ttColumnsFPS, ttFPS  = name_fps .."TT",2;
 local ttNameTraf,ttColumnsTraf,ttTraf = name_traf.."TT",2;
 local ttNameLat, ttColumnsLat, ttLat  = name_lat .."TT",2;
 local ttNameMem, ttColumnsMem, ttMem  = name_mem .."TT",3;
-local module_sys,module_fps,module_lat,module_mem,module_traf
+local ttNameRlm, ttColumnsRlm, ttRlm  = name_rlm .."TT",2;
+local module_sys,module_fps,module_lat,module_mem,module_traf,module_rlm
 local latency = {home={cur=0,min=99999,max=0,his={},curStr="",minStr="",maxStr="",brokerStr=""},world={cur=0,min=9999,max=0,his={},curStr="",minStr="",maxStr="",brokerStr=""}};
 local traffic = {inCur=0,inMin=99999,inMax=0,outCur=0,outMin=99999,outMax=0,inCurStr="",inMinStr="",inMaxStr="",outCurStr="",outMinStr="",outMaxStr="",inHis={},outHis={}};
 local fps     = {cur=0,min=-5,max=0,his={},curStr="",minStr="",maxStr=""};
@@ -55,14 +57,15 @@ local addonGroups = {
 
 -- register icon names and default files --
 -------------------------------------------
-I[name_sys] = {iconfile="Interface\\Addons\\"..addon.."\\media\\latency"}; --IconName::System--
-I[name_fps..'_yellow'] = {iconfile="Interface\\Addons\\"..addon.."\\media\\fps_yellow"}	--IconName::FPS_yellow--
-I[name_fps..'_red']    = {iconfile="Interface\\Addons\\"..addon.."\\media\\fps_red"}	--IconName::FPS_red--
-I[name_fps..'_blue']   = {iconfile="Interface\\Addons\\"..addon.."\\media\\fps_blue.png"}	--IconName::FPS_blue--
-I[name_fps..'_green']  = {iconfile="Interface\\Addons\\"..addon.."\\media\\fps_green.png"}	--IconName::FPS_green--
-I[name_lat] = {iconfile="Interface\\Addons\\"..addon.."\\media\\latency"}; --IconName::Latency--
-I[name_mem] = {iconfile="Interface\\Addons\\"..addon.."\\media\\memory"}; --IconName::Memory--
-I[name_traf] = {iconfile="Interface\\Addons\\"..addon.."\\media\\memory"}; --IconName::Traffic--
+I[name_sys] = {iconfile=ns.media.."latency"}; --IconName::System--
+I[name_fps..'_yellow'] = {iconfile=ns.media.."fps_yellow"}	--IconName::FPS_yellow--
+I[name_fps..'_red']    = {iconfile=ns.media.."fps_red"}	--IconName::FPS_red--
+I[name_fps..'_blue']   = {iconfile=ns.media.."fps_blue.png"}	--IconName::FPS_blue--
+I[name_fps..'_green']  = {iconfile=ns.media.."fps_green.png"}	--IconName::FPS_green--
+I[name_lat] = {iconfile=ns.media.."latency"}; --IconName::Latency--
+I[name_mem] = {iconfile=ns.media.."memory"}; --IconName::Memory--
+I[name_traf] = {iconfile=ns.media.."memory"}; --IconName::Traffic--
+I[name_rlm] = {iconfile=ns.media.."server128"} --IconName::Realm--
 
 
 -- some local functions --
@@ -227,6 +230,8 @@ local function memUpdateHook()
 	C_Timer.After(3.14159,function() memUpdateLocked2 = false end)
 end
 
+-- local function updateRealm() end
+
 if UpdateAddOnMemoryUsage then
 	hooksecurefunc("UpdateAddOnMemoryUsage",memUpdateHook)
 elseif C_AddOns.UpdateAddOnMemoryUsage then
@@ -313,7 +318,7 @@ local function createTooltip(tt, name, ttName, update)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	local allHidden=true;
 	if tt.lines~=nil then tt:Clear(); end
-	tt:AddHeader(C("dkyellow",L[name]))
+	local headerLine = tt:AddHeader(C("dkyellow",L[name]))
 	if name_sys==name then
 		if ns.profile[name].showFpsInTooltip then
 			tt:AddSeparator(4,0,0,0,0);
@@ -374,15 +379,19 @@ local function createTooltip(tt, name, ttName, update)
 			end
 			allHidden=false;
 		end
+		if ns.profile[name].showRealmInTooltip then
+			if ns.profile[name].showRealmConnection then
+			end
+		end
 		if ns.profile[name].showClientInfoInTooltip then
 			tt:AddSeparator(4,0,0,0,0);
 			tt:SetCell(tt:AddLine(),1,C("ltblue",L["Client info"]),nil,nil,0);
 			tt:AddSeparator();
-			tt:AddLine(C("ltyellow",GAME_VERSION_LABEL..HEADER_COLON),version);
-			tt:AddLine(C("ltyellow",L["Build version"]..HEADER_COLON),build);
-			tt:AddLine(C("ltyellow",L["Build date"]..HEADER_COLON),buildDate);
-			tt:AddLine(C("ltyellow",L["Interface version"]..HEADER_COLON),interfaceVersion);
-			tt:AddLine(C("ltyellow",L["Locale code"]..HEADER_COLON),ns.locale);
+			tt:AddLine(C("ltyellow",GAME_VERSION_LABEL..HEADER_COLON),version.."  ");
+			tt:AddLine(C("ltyellow",L["Build version"]..HEADER_COLON),build.."  ");
+			tt:AddLine(C("ltyellow",L["Build date"]..HEADER_COLON),buildDate.."  ");
+			tt:AddLine(C("ltyellow",L["Interface version"]..HEADER_COLON),interfaceVersion.."  ");
+			tt:AddLine(C("ltyellow",L["Locale code"]..HEADER_COLON),ns.locale.."  ");
 			allHidden=false;
 		end
 		if allHidden then
@@ -453,6 +462,37 @@ local function createTooltip(tt, name, ttName, update)
 		tt:AddLine(C("ltyellow",L["Min."] .. HEADER_COLON), traffic.outMinStr);
 		tt:AddLine(C("ltyellow",L["Max."] .. HEADER_COLON), traffic.outMaxStr);
 
+	elseif name_rlm==name then
+		tt:SetCell(headerLine,2,"|T".. ns.media.."server128"..":64:64:0:0|t",nil,"RIGHT",0)
+		tt:AddSeparator(4,0,0,0,0);
+		tt:AddLine(C("ltyellow",CURRENT_PET), C("ltblue",ns.realm))
+		tt:AddSeparator();
+		local label = C("ltyellow",L["Connected with:"])
+		local realms = ns.realms();
+		local short = realms[ns.realm]
+		local tmp = {}
+		for k in ns.pairsByKeys(realms) do
+			if k~=short and k~=ns.realm and not ns.realm_shorts[k] then
+				tinsert(tmp,k)
+			end
+		end
+		if #tmp>=4 then
+			for i=1, #tmp, 2 do
+				if tmp[i] then
+					tt:AddLine(label, C("green",tmp[i]))
+					if tmp[i+1] then
+						label = C("green",tmp[i+1]);
+					end
+				end
+			end
+		else
+			for i=1, #tmp do
+				if tmp[i] then
+					tt:AddLine(label, C("green",tmp[i]))
+					label = ""
+				end
+			end
+		end
 	end
 
 	if not update then
@@ -461,7 +501,7 @@ local function createTooltip(tt, name, ttName, update)
 end
 
 local function updateAll()
-	if not (enabled.sys_mod or enabled.fps_mod or enabled.lat_mod or enabled.mem_mod) then return; end
+	if not (enabled.sys_mod or enabled.fps_mod or enabled.lat_mod or enabled.mem_mod or enabled.rlm_mod) then return; end
 
 	-- apply hook
 	if not isHooked and (enabled.sys_mod or enabled.mem_mod) then
@@ -494,6 +534,11 @@ local function updateAll()
 		end
 	end
 
+	-- update realm
+	-- if enabled.rlm_mod then
+	-- 	updateRealm();
+	-- end
+
 	-- update broker buttons and visible tooltips
 	if enabled.sys_mod then
 		local broker = {};
@@ -525,6 +570,10 @@ local function updateAll()
 
 		if memory.numAddOns>0 and ns.profile[name_sys].showAddOnsCountOnBroker then
 			tinsert(broker, memory.loadedAddOns.."/"..memory.numAddOns);
+		end
+
+		if ns.profile[name_sys].showRealmOnBroker then
+			tinsert(broker,ns.realm)
 		end
 
 		if ns.profile[name_sys].showClientVersionOnBroker then
@@ -623,6 +672,7 @@ module_sys = {
 		showFpsOnBroker = true,
 		showMemoryUsageOnBroker = true,
 		showAddOnsCountOnBroker = false,
+		showRealmOnBroker = true,
 		showClientVersionOnBroker = false,
 		showClientBuildOnBroker = false,
 		showInterfaceVersionOnBroker = false,
@@ -632,6 +682,8 @@ module_sys = {
 		showLatencyInTooltip = true,
 		showFpsInTooltip = true,
 		showMemoryUsageInTooltip = true,
+		showRealmInTooltip = true,
+		showRealmConnection = true,
 		showClientInfoInTooltip = true,
 		numDisplayAddOns = 10,
 
@@ -690,6 +742,12 @@ module_traf = {
 	},
 }
 
+module_rlm = {
+	config_defaults = {
+		enabled = true
+	}
+}
+
 ns.ClickOpts.addDefaults(module_sys,clickOptionsDefaults);
 ns.ClickOpts.addDefaults(module_mem,clickOptionsDefaults);
 
@@ -746,20 +804,23 @@ function module_sys.options()
 
 			showFpsOnBroker      = { type="toggle", order=5, name=L["FPS"],              desc=L["Display fps on broker"] },
 
-			showMemoryUsageOnBroker = { type="toggle", order=6, name=L["Memory usage"],     desc=L["Display memory usage on broker"] },
-			showAddOnsCountOnBroker = { type="toggle", order=7, name=ADDONS,           desc=L["Display addon count on broker"] },
+			showMemoryUsageOnBroker = { type="toggle", order=6, name=L["Memory usage"],  desc=L["Display memory usage on broker"] },
+			showAddOnsCountOnBroker = { type="toggle", order=7, name=ADDONS,             desc=L["Display addon count on broker"] },
 
-			showClientVersionOnBroker    = { type="toggle", order=8, name=L["Client version"],    desc=L["Display client version on broker"] },
-			showClientBuildOnBroker      = { type="toggle", order=9, name=L["Client build"],      desc=L["Display client build number on broker"] },
-			showInterfaceVersionOnBroker = { type="toggle", order=10, name=L["Interface version"], desc=L["Display interface version on broker"] },
+			showRealmOnBroker       = { type="toggle", order=8, name=L["Realm"], desc=L["SystemRealmOnBrokerDesc"]},
+
+			showClientVersionOnBroker    = { type="toggle", order=9, name=L["Client version"],    desc=L["Display client version on broker"] },
+			showClientBuildOnBroker      = { type="toggle", order=10, name=L["Client build"],      desc=L["Display client build number on broker"] },
+			showInterfaceVersionOnBroker = { type="toggle", order=11, name=L["Interface version"], desc=L["Display interface version on broker"] },
 		},
 		tooltip = {
 			showTrafficInTooltip     = { type="toggle", order=1, name=L["Traffic"],      desc=L["Display traffic in tooltip"] },
 			showLatencyInTooltip     = { type="toggle", order=2, name=L["Latency"],      desc=L["Display latency in tooltip"] },
 			showFpsInTooltip         = { type="toggle", order=3, name=L["FPS"],          desc=L["Display fps in tooltip"] },
 			showMemoryUsageInTooltip = { type="toggle", order=4, name=L["Memory usage"], desc=L["Display memory usage in tooltip"] },
-			showClientInfoInTooltip  = { type="toggle", order=5, name=L["Client info"], desc=L["Display client info in tooltip"] },
-			numDisplayAddOns         = { type="range",  order=6, name=ADDONS, desc=L["Select the maximum number of addons to display, otherwise drag to 'All'."], step = 1, min = 0, max = 100},
+			showRealmInTooltip       = { type="toggle", order=5, name=L["Realm"],        desc=L["SystemRealmShowTTDesc"] },
+			showClientInfoInTooltip  = { type="toggle", order=6, name=L["Client info"],  desc=L["Display client info in tooltip"] },
+			numDisplayAddOns         = { type="range",  order=7, name=ADDONS, desc=L["Select the maximum number of addons to display, otherwise drag to 'All'."], step = 1, min = 0, max = 100},
 		},
 		misc = {},
 	}
@@ -815,12 +876,15 @@ function module_traf.options()
 	}
 end
 
+--function module_rlm.options() end
+
 function module_sys.init()
 	enabled.sys_mod = true;
 	enabled.fps_sys = (ns.profile[name_sys].showFpsOnBroker or ns.profile[name_sys].showFpsInTooltip);
 	enabled.lat_sys = (ns.profile[name_sys].showWorldOnBroker or ns.profile[name_sys].showHomeOnBroker or ns.profile[name_sys].showLatencyInTooltip);
 	enabled.mem_sys = (ns.profile[name_sys].showMemoryUsageOnBroker or ns.profile[name_sys].showAddOnsCountOnBroker or ns.profile[name_sys].showMemoryUsageInTooltip);
-	enabled.traf_sys = (ns.profile[name_sys].showInboundOnBroker or ns.profile[name_sys].showOutboundOnBroker or ns.profile[name_sys].showTrafficInTooltip);
+	enabled.traf_sys= (ns.profile[name_sys].showInboundOnBroker or ns.profile[name_sys].showOutboundOnBroker or ns.profile[name_sys].showTrafficInTooltip);
+	enabled.rlm_sys = (ns.profile[name_sys].showRealmOnBroker or ns.profile[name_sys].showRealmInTooltip)
 end
 
 function module_fps.init()
@@ -837,6 +901,10 @@ end
 
 function module_traf.init()
 	enabled.traf_mod=true;
+end
+
+function module_rlm.init()
+	enabled.rlm_mod=true;
 end
 
 function module_sys.onevent(self,event,msg)
@@ -879,6 +947,14 @@ function module_traf.onevent(self,event,msg)
 	end
 end
 
+function module_rlm.onevent(self,event,msg)
+	if event=="BE_UPDATE_CFG" then
+		ns.ClickOpts.update(name_rlm);
+	elseif event=="PLAYER_LOGIN" then
+		init();
+	end
+end
+
 -- function module_*.optionspanel(panel) end
 -- function module_*.onmousewheel(self,direction) end
 -- function module_*.ontooltip(tt) end
@@ -913,6 +989,12 @@ function module_traf.onenter(self)
 	createTooltip(ttTraf, name_traf, ttNameTraf);
 end
 
+function module_rlm.onenter(self)
+	if (ns.tooltipChkOnShowModifier(false)) then return; end
+	ttRlm = ns.acquireTooltip({ttNameRlm, ttColumnsRlm, "LEFT","RIGHT", "RIGHT"},{true},{self});
+	createTooltip(ttRlm, name_rlm, ttNameRlm);
+end
+
 -- function module_*.onleave(self) end
 -- function module_*.onclick(self,button) end
 -- function module_*.ondblclick(self,button) end
@@ -925,3 +1007,4 @@ ns.modules[name_fps] = module_fps;
 ns.modules[name_lat] = module_lat;
 ns.modules[name_mem] = module_mem;
 ns.modules[name_traf] = module_traf;
+ns.modules[name_rlm] = module_rlm;
