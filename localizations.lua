@@ -131,6 +131,7 @@ local byItemId = {
 	-- [<itemId>] = "<english name>",
 	[113340] = "Blood Card"
 };
+local byItemIdCount = 0;
 
 local frame = CreateFrame("Frame");
 frame:SetScript("OnEvent",function(_,event,id)
@@ -140,14 +141,23 @@ frame:SetScript("OnEvent",function(_,event,id)
 			name = C_Item.GetItemInfo(ID);
 			if name then
 				L[key] = name;
+			else
+				byItemIdCount = byItemIdCount+1;
 			end
 		end
+		if byItemIdCount>0 then
+			frame:RegisterEvent("GET_ITEM_INFO_RECEIVED");
+		end
+		print("L",event,byItemIdCount)
 	elseif event=="GET_ITEM_INFO_RECEIVED" and byItemId[id] then
 		L[byItemId[id]] = C_Item.GetItemInfo(id);
+		byItemIdCount=byItemIdCount-1;
+		if byItemIdCount==0 then
+			frame:UnregisterEvent(event)
+		end
 	end
 end);
 frame:RegisterEvent("PLAYER_LOGIN");
-frame:RegisterEvent("GET_ITEM_INFO_RECEIVED");
 
 -- localization by ;) - step 3
 local locale = GetLocale();

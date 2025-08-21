@@ -1051,7 +1051,7 @@ do
 		hasChanged[scanner] = true;
 	end
 
-	local scanInventory
+	local scanInventoryTry,scanInventory=0;
 	function scanInventory()
 		local retry = false;
 		for slotIndex=1, 19 do
@@ -1081,9 +1081,10 @@ do
 			end
 		end
 		callbackHandler();
-		if retry then
+		if retry and scanInventoryTry<5 then
 			-- retry on heirloom link bug
 			C_Timer.After(1.2,scanInventory);
+			scanInventoryTry=scanInventoryTry+1;
 			return;
 		end
 		inventoryDelayed = false;
@@ -1179,30 +1180,30 @@ do
 		elseif event=="PLAYER_LOGIN" then
 			updateBags["0"] = true; -- BAG_UPDATE fired with 1-12 as bag index (argument) before PLAYER_LOGIN; bag index 0 is missing
 			scanBags();
-		elseif event=="GET_ITEM_INFO_RECEIVED" and (...)~=nil then
-			local id = ...;
-			if itemsByID[id] then
-				local _, spell = C_Item.GetItemSpell(id); -- test if item has a spell
-				if spell then
-					for sharedSlot, info in pairs(itemsByID[...])do
-						local _, count, _, _, _, _, _, _, _ = C_Container.GetContainerItemInfo(info.bag,info.slot);
-						_, info.spell = C_Item.GetItemSpell(info.link); -- multiple items with same id could have different spells by itemLink.
-						if info.spell then
-							if not itemsBySpell[info.spell] then
-								itemsBySpell[info.spell] = {};
-							end
-							itemsBySpell[info.spell][sharedSlot] = count;
-						end
-					end
-				end
-			elseif callbacks.toys[id] and PlayerHasToy then
-				local toyName, _, _, _, _, _, _, _, _, toyIcon = C_Item.GetItemInfo(id);
-				local hasToy = PlayerHasToy(id);
-				local canUse = C_ToyBox.IsToyUsable(id);
-				if toyName and hasToy and canUse then
-					callbacks.toys[id](id,toyIcon,toyName);
-				end
-			end
+		--elseif event=="GET_ITEM_INFO_RECEIVED" and (...)~=nil then
+		--	local id = ...;
+		--	if itemsByID[id] then
+		--		local _, spell = C_Item.GetItemSpell(id); -- test if item has a spell
+		--		if spell then
+		--			for sharedSlot, info in pairs(itemsByID[...])do
+		--				local _, count, _, _, _, _, _, _, _ = C_Container.GetContainerItemInfo(info.bag,info.slot);
+		--				_, info.spell = C_Item.GetItemSpell(info.link); -- multiple items with same id could have different spells by itemLink.
+		--				if info.spell then
+		--					if not itemsBySpell[info.spell] then
+		--						itemsBySpell[info.spell] = {};
+		--					end
+		--					itemsBySpell[info.spell][sharedSlot] = count;
+		--				end
+		--			end
+		--		end
+		--	elseif callbacks.toys[id] and PlayerHasToy then
+		--		local toyName, _, _, _, _, _, _, _, _, toyIcon = C_Item.GetItemInfo(id);
+		--		local hasToy = PlayerHasToy(id);
+		--		local canUse = C_ToyBox.IsToyUsable(id);
+		--		if toyName and hasToy and canUse then
+		--			callbacks.toys[id](id,toyIcon,toyName);
+		--		end
+		--	end
 		elseif inventoryEvents[event] and not inventoryDelayed then
 			if event=="UNIT_INVENTORY_CHANGED" and (...)~="player" then
 				return;
@@ -1236,7 +1237,7 @@ do
 		eventFrame:RegisterEvent("PLAYER_LOGIN")
 		eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
 		eventFrame:RegisterEvent("UPDATE_INVENTORY_DURABILITY");
-		eventFrame:RegisterEvent("GET_ITEM_INFO_RECEIVED");
+		--eventFrame:RegisterEvent("GET_ITEM_INFO_RECEIVED");
 		eventFrame:RegisterEvent("MERCHANT_CLOSED");
 		if ns.ammo_classic then
 			eventFrame:RegisterEvent("UNIT_INVENTORY_CHANGED");
