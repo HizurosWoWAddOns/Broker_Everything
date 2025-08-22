@@ -148,7 +148,6 @@ frame:SetScript("OnEvent",function(_,event,id)
 		if byItemIdCount>0 then
 			frame:RegisterEvent("GET_ITEM_INFO_RECEIVED");
 		end
-		print("L",event,byItemIdCount)
 	elseif event=="GET_ITEM_INFO_RECEIVED" and byItemId[id] then
 		L[byItemId[id]] = C_Item.GetItemInfo(id);
 		byItemIdCount=byItemIdCount-1;
