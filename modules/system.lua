@@ -465,16 +465,17 @@ local function createTooltip(tt, name, ttName, update)
 	elseif name_rlm==name then
 		tt:SetCell(headerLine,2,"|T".. ns.media.."server128"..":64:64:0:0|t",nil,"RIGHT",0)
 		tt:AddSeparator(4,0,0,0,0);
-		tt:AddLine(C("ltyellow",CURRENT_PET), C("ltblue",ns.realm))
-		tt:AddSeparator();
+		tt:AddLine(C("ltyellow",REFORGE_CURRENT), C("ltblue",ns.realm))
 		local label = C("ltyellow",L["Connected with:"])
-		local realms = ns.realms();
-		local short = realms[ns.realm]
+		local short = ns.realms[ns.realm]
 		local tmp = {}
-		for k in ns.pairsByKeys(realms) do
-			if k~=short and k~=ns.realm and not ns.realm_shorts[k] then
+		for k in ns.pairsByKeys(ns.realms) do
+			if k~=short and k~=ns.realm and ns.realm_shorts[k]==nil then
 				tinsert(tmp,k)
 			end
+		end
+		if #tmp>0 then
+			tt:AddSeparator();
 		end
 		if #tmp>=4 then
 			for i=1, #tmp, 2 do

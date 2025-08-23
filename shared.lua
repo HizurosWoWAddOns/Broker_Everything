@@ -46,6 +46,7 @@ ns.LT = LibStub("LibTime-1.0");
 ns.LC = LibStub("LibColors-1.0");
 ns.LRI = LibStub("LibRealmInfo");
 
+
 -- broker_everything colors
 ns.LC.colorset({
 	["ltyellow"]	= "fff569",
@@ -159,43 +160,30 @@ do
 		if v:match(pattern) then
 			ns.realm_short = v;
 		end
-		ns.realm_shorts[v] = true;
 	end
 	if not ns.realm_short then
 		ns.realm_short = ns.realm:gsub(" ",""):gsub("%-","");
 	end
 
-	local realms;
-	local function Init()
-		if realms then return end
-		realms = {}
-		local _,_,_,_,_,_,_,_,ids = ns.LRI:GetRealmInfo(ns.realm,ns.region);
-		if type(ids)=="table" then
-			for i=1, #ids do
-				local _,name,apiName = ns.LRI:GetRealmInfoByID(ids[i]);
-				if type(name)=="string" and type(apiName)=="string" then
-					realms[name] = apiName;
-					if apiName~=name then
-						realms[apiName] = name;
-					end
+	local realms = {}
+	local _,_,_,_,_,_,_,_,ids = ns.LRI:GetRealmInfo(ns.realm,ns.region);
+	if type(ids)=="table" then
+		for i=1, #ids do
+			local _,name,apiName = ns.LRI:GetRealmInfoByID(ids[i]);
+			if type(name)=="string" and type(apiName)=="string" then
+				realms[name] = apiName;
+				if apiName~=name then
+					ns.realm_shorts[apiName] = name
 				end
 			end
-		else
-			realms[ns.realm] = ns.realm_short;
-			if ns.realm~=ns.realm_short then
-				realms[ns.realm_short] = ns.realm;
-			end
+		end
+	else
+		realms[ns.realm] = ns.realm_short;
+		if ns.realm~=ns.realm_short then
+			ns.realm_shorts[ns.realm_short] = ns.realm;
 		end
 	end
-	setmetatable(ns.realms,{
-		__index = function(t,k)
-			return realms[k] or false;
-		end,
-		__call = function(t,a)
-			return realms;
-		end
-	});
-	Init();
+	ns.realms = realms;
 end
 
 ns.realmLocale = setmetatable({},{
