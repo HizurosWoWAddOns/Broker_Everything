@@ -36,7 +36,7 @@ local function updateToonSkill(...)
 		ns.toon[name].skill = 0;
 	end
 	for i=1, #riding_skills do
-		if IsSpellKnown(riding_skills[i].spell) then
+		if ns.deprecated.C_SpellBook.IsSpellInSpellBook(riding_skills[i].spell) then
 			if ns.toon[name].skill<riding_skills[i].spell then
 				ns.toon[name].skill = riding_skills[i].spell;
 			end
@@ -206,7 +206,7 @@ local function createTooltip(tt)
 		local spellInfo = C_Spell.GetSpellInfo(skill.spell)
 		local l,ttExtend;
 		-- check if learned. skills ordered in table from highest to lowest.
-		if(learned==nil and IsSpellKnown(skill.spell))then
+		if(learned==nil and ns.deprecated.C_SpellBook.IsSpellInSpellBook(skill.spell))then
 			learned = true;
 		end
 		local cell1color,cell2;
@@ -273,7 +273,7 @@ local function createTooltip(tt)
 				id = spell[Id];
 			end
 
-			if(id and IsSpellKnown(id))then
+			if(id and ns.deprecated.C_SpellBook.IsSpellInSpellBook(id))then
 				local active=false;
 				local custom = "";
 				local spellInfo = C_Spell.GetSpellInfo(spell[Id])
@@ -367,7 +367,7 @@ local function createTooltip(tt)
 			else
 				link = C_Spell.GetSpellLink(v[1]);
 				if link then
-					ready = IsSpellKnown(v[1]);
+					ready = ns.deprecated.C_SpellBook.IsSpellInSpellBook(v[1]);
 					local spellInfo = C_Spell.GetSpellInfo(v[1])
 					Name = spellInfo.name;
 				elseif type(replace_unknown["s"..v[1]])=="table" then

@@ -234,7 +234,7 @@ function updateTradeSkills()
 		if ns.player.class==t[1] then
 			local spellInfo = C_Spell.GetSpellInfo(spellId)
 			local skill,maxSkill = 0,0;
-			if IsSpellKnown(spellId) then
+			if ns.deprecated.C_SpellBook.IsSpellInSpellBook(spellId) then
 				if t[1]=="ROGUE" then
 					skill = UnitLevel("player") * 5;
 					maxSkill = skill;
