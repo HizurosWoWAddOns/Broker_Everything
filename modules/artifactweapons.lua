@@ -182,7 +182,7 @@ local function updateCharacterDB(equipped)
 				local icon,itemname,color,linktype,itemid,data,_=ns.icon_fallback;
 				if v.relicLink then
 					_,_,color,linktype,itemid,data,itemname = v.relicLink:find("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
-					icon = C_Item.GetItemIcon(itemid);
+					icon = C_Item.GetItemIconByID(itemid);
 				end
 				local affected = {C_ArtifactUI.GetPowersAffectedByRelic(i)};
 				for I,A in ipairs(affected) do
