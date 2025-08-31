@@ -562,7 +562,11 @@ local function createTooltip(tt)
 				elseif (v.type=="line") then
 					tt:AddLine(unpack(v.data));
 				elseif (v.type=="cdLine") then
-					tt:AddLine(iconnameLocale:format(C_Item.GetItemIcon(v.data.name) or v.data.icon or ns.icon_fallback,C("ltyellow",v.data.name)),"~ "..ns.DurationOrExpireDate(v.data.timeLeft,v.data.lastUpdate));
+					local itemIcon,_
+					if v.data.name then
+						_, _, _, _, _, _, _, _, _, itemIcon = C_Item.GetItemInfo(v.data.name)
+					end
+					tt:AddLine(iconnameLocale:format(itemIcon or v.data.icon or ns.icon_fallback,C("ltyellow",v.data.name)),"~ "..ns.DurationOrExpireDate(v.data.timeLeft,v.data.lastUpdate));
 				end
 			end
 		end
