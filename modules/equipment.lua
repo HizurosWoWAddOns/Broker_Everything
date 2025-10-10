@@ -58,7 +58,7 @@ local function updateBroker()
 	local icon,iconCoords,text = I[name].iconfile,{0.1,0.9,0.1,0.9},{};
 	local pending = (equipPending and C("orange",equipPending)) or false;
 
-	if ns.profile[name].showCurrentSet and C_EquipmentSet then
+	if ns.profile[name].showCurrentSet and C_EquipmentSet and not ns.IsClassicClient() then
 		for equipName, iconFileID, setID, isEquipped, _, _, _, numMissing in pairsEquipmentSets() do
 			if equipName and isEquipped then
 				icon,iconCoords = iconFileID,{0.05,0.95,0.05,0.95};
@@ -226,7 +226,7 @@ local function createTooltip(tt)
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",BAG_FILTER_EQUIPMENT))
 
-	if (ns.profile[name].showSets) and C_EquipmentSet then
+	if (ns.profile[name].showSets) and C_EquipmentSet and not ns.IsClassicClient() then
 		-- equipment sets
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",WARDROBE_SETS));
