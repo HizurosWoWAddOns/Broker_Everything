@@ -393,6 +393,9 @@ local function createTooltip(tt)
 							else
 								nameStr = C("ltgray",ns.scm(nameStr)); -- all other in light gray
 							end
+							if fi.gameAccountInfo.timerunningSeasonID and TimerunningUtil and TimerunningUtil.AddTinyIcon then
+								nameStr = TimerunningUtil.AddSmallIcon(nameStr)
+							end
 							-- toon name - append realm name or asterisk
 							if tonumber(ns.profile[name].showRealm)>1 and ti.realmName~=ns.realm_short and ti.realmID and ti.realmID>0 then
 								if ns.profile[name].showRealm=="2" then
