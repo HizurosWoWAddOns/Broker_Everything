@@ -480,6 +480,7 @@ function ns.Options_RegisterDefaults() -- re-registration for dbDefaults after '
 	db:RegisterDefaults(dbDefaults);
 end
 
+local groupOrders,groupCount = {},0;
 function ns.Options_RegisterModule(modName)
 	local mod,modOptions = ns.modules[modName],{};
 
@@ -504,7 +505,17 @@ function ns.Options_RegisterModule(modName)
 		end
 
 		-- add toggle to ModToggleTab
-		options.args.modEnable.args[modName] = {type="toggle",name=L[modName],desc=L["ModDesc-"..modName]};
+		local modEnable = options.args.modEnable;
+		if mod.group then
+			if not modEnable.args[mod.group] then
+				groupCount=groupCount+2;
+				modEnable.args[mod.group] = {type="header",name=L[mod.group], order=-groupCount};
+				groupOrders[mod.group] = groupCount-1;
+			end
+			modEnable.args[modName] = {type="toggle",name=L[modName],desc=L["ModDesc-"..modName],order=-groupOrders[mod.group]};
+		else
+			modEnable.args[modName] = {type="toggle",name=L[modName],desc=L["ModDesc-"..modName]};
+		end
 
 		-- add shared option defaults
 		if type(mod.options)=="function" then

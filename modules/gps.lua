@@ -9,7 +9,7 @@ local C, L, I, _ = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name0 = "GPS / Location / ZoneText"; L[name0] = ("%s / %s / %s"):format(L["GPS"],L["Location"],L["ZoneText"]);
+local group = "GPSGroup";
 local name1 = "GPS"; -- L["GPS"] L["ModDesc-GPS"]
 local name2 = "Location"; -- L["Location"] L["ModDesc-Location"]
 local name3 = "ZoneText"; -- L["ZoneText"] L["ModDesc-ZoneText"]
@@ -602,6 +602,7 @@ end
 ------------------------------------
 module1 = { -- GPS
 	events = {},
+	group = group,
 	config_defaults = {
 		enabled = true,
 		bothZones = "2",
@@ -614,6 +615,7 @@ module1 = { -- GPS
 
 module2 = { -- Location
 	events = {},
+	group = group,
 	config_defaults = {
 		enabled = false,
 		precision = 0,
@@ -625,6 +627,7 @@ module2 = { -- Location
 
 module3 = { -- ZoneText
 	events = {},
+	group = group,
 	config_defaults = {
 		enabled = false,
 		bothZones = "2",

@@ -7,6 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
+local group = "SystemGroup"
 local name_sys,name_fps,name_traf,name_lat,name_mem,name_rlm = "System","FPS","Traffic","Latency","Memory","Realm";
 -- L["Traffic"] L["Latency"] L["Memory"]
 -- L["ModDesc-System"] L["ModDesc-FPS"] L["ModDesc-Traffic"] L["ModDesc-Latency"] L["ModDesc-Memory"] L["ModDesc-Realm"]
@@ -660,6 +661,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module_sys = {
+	group = group,
 	events = {
 		"PLAYER_LOGIN",
 	},
@@ -697,6 +699,7 @@ module_sys = {
 };
 
 module_fps = {
+	group = group,
 	icon_suffix = "_blue",
 	events = {
 		"PLAYER_LOGIN",
@@ -708,6 +711,7 @@ module_fps = {
 };
 
 module_lat = {
+	group = group,
 	events = {
 		"PLAYER_LOGIN",
 	},
@@ -719,6 +723,7 @@ module_lat = {
 };
 
 module_mem = {
+	group = group,
 	events = {
 		"PLAYER_LOGIN",
 	},
@@ -733,6 +738,7 @@ module_mem = {
 }
 
 module_traf = {
+	group = group,
 	events = {
 		"PLAYER_LOGIN",
 	},
@@ -744,6 +750,7 @@ module_traf = {
 }
 
 module_rlm = {
+	group = group,
 	config_defaults = {
 		enabled = true
 	}
