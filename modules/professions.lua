@@ -11,7 +11,7 @@ if not ns.IsRetailClient() then return end
 local name = "Professions"; -- TRADE_SKILLS L["ModDesc-Professions"]
 local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module = name.."TT",name.."TT2",2,3;
 local professions,cdSpells,skillNameById,toonDB,locked = {},{},{};
-local faction_recipes,friendStandingLabel = {factionId=1,standing=2,itemId=3,spellId=4,rank=5};
+local faction_recipes,faction_knowledge,friendStandingLabel = {factionId=1,standing=2,itemId=3,spellId=4,rank=5},{};
 local maxInTitle,triggerLock = 1,false;
 local cd_groups = { -- %s cooldown group
 	"Transmutation",	-- L["Transmutation cooldown group"]
@@ -65,7 +65,7 @@ end
 
 local cdResetTypes = {
 	function(id) -- get duration directly from GetSpellCooldown :: blizzard didn't update return values after reload.
-		local start, stop = ns.deprecated.C_Spell.GetSpellCooldown(id);
+		local start, stop = C_Spell.GetSpellCooldown(id);
 		if type(start)=="table" then
 			start, stop = start.startTime, start.duration;
 		end
@@ -112,7 +112,10 @@ local function chkCooldownSpells(skillId,icon)
 		local cooldown,idOrGroup,timeLeft,lastUpdate,_name
 		local spellId, cdGroup, cdType = 1,2,3;
 		for _,cd in pairs(cdSpells[skillId]) do
-			cooldown = ns.deprecated.C_Spell.GetSpellCooldown(cd[spellId]);
+			cooldown = C_Spell.GetSpellCooldown(cd[spellId]);
+			if ns.bullshitRestrictions.chk(value) then
+				return false;
+			end
 			if type(cooldown)=="table" then
 				cooldown = cooldown.duration;
 			end
@@ -234,7 +237,7 @@ function updateTradeSkills()
 		if ns.player.class==t[1] then
 			local spellInfo = C_Spell.GetSpellInfo(spellId)
 			local skill,maxSkill = 0,0;
-			if ns.deprecated.C_SpellBook.IsSpellInSpellBook(spellId) then
+			if C_SpellBook.IsSpellInSpellBook(spellId) then
 				if t[1]=="ROGUE" then
 					skill = UnitLevel("player") * 5;
 					maxSkill = skill;
@@ -320,11 +323,13 @@ local function CreateTooltip2(self, content)
 								local ranks = C_GossipInfo.GetFriendshipReputationRanks(factionID);
 								currentStandingStr = friendInfo.reaction..c:format(ranks.currentLevel);
 								currentStanding = ranks.currentLevel;
-							else
+							elseif currentStanding then
 								currentStandingStr = _G["FACTION_STANDING_LABEL"..currentStanding];
 							end
 						end
-						tt2:AddLine(C("ltgray",factionName:gsub("%-%\r%\n","")),C("ltgray",currentStandingStr));
+						if currentStandingStr then
+							tt2:AddLine(C("ltgray",factionName:gsub("%-%\r%\n","")),C("ltgray",currentStandingStr));
+						end
 					end
 					-- recipe
 					local color,buyable = "red",NO;
