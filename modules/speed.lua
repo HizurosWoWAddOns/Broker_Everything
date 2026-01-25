@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Speed"; -- SPEED L["ModDesc-Speed"]
 local ttName, ttColumns, tt, module = name.."TT", 3
 local riding_skills,licenses,bonus_spells,replace_unknown,trainer_faction,deprecated_licenses = {},{},{},{},{},{};
-local updateToonSkillLocked
+local updateToonSkillLocked,currentMapID
 
 -- register icon names and default files --
 -------------------------------------------
@@ -36,7 +36,7 @@ local function updateToonSkill(...)
 		ns.toon[name].skill = 0;
 	end
 	for i=1, #riding_skills do
-		if ns.deprecated.C_SpellBook.IsSpellInSpellBook(riding_skills[i].spell) then
+		if C_SpellBook.IsSpellInSpellBook(riding_skills[i].spell) then
 			if ns.toon[name].skill<riding_skills[i].spell then
 				ns.toon[name].skill = riding_skills[i].spell;
 			end
@@ -50,7 +50,10 @@ local CalcSpeed = {
 	x=0,y=0,t=0,s=0
 };
 
-local worldMapByMapID = setmetatable({},{__index=function(t,k)
+local worldMapByMapID = {
+	[2371]=2371 -- k'aresh
+}
+setmetatable(worldMapByMapID,{__index=function(t,k)
 	if not tonumber(k) then
 		return false; -- invalid key
 	end
@@ -72,9 +75,14 @@ end})
 
 function CalcSpeed:Update()
 	-- Get mapID and positionInfo
-	local mapID = worldMapByMapID[C_Map.GetBestMapForUnit("player") or 0];
-	if not (mapID and mapID>0) then return end
-	local posInfo = C_Map.GetPlayerMapPosition(mapID,"player");
+	if not currentMapID then
+		currentMapID = C_Map.GetBestMapForUnit("player") or 0
+		if worldMapByMapID[currentMapID]~=currentMapID then
+			currentMapID = worldMapByMapID[currentMapID];
+		end
+	end
+	if not (currentMapID and currentMapID>0) then return end
+	local posInfo = C_Map.GetPlayerMapPosition(currentMapID,"player");
 	if not posInfo then
 		return
 	end
@@ -84,7 +92,7 @@ function CalcSpeed:Update()
 	dt,self.t = time-self.t,time;
 
 	-- Calculate speed
-	local w,h,x,y,dx,dy = C_Map.GetMapWorldSize(mapID);
+	local w,h,x,y,dx,dy = C_Map.GetMapWorldSize(currentMapID);
 	x,y = (posInfo.x * w), (posInfo.y * h);
 	local dx,dy = x-self.x,y-self.y;
 	self.x,self.y = x,y;
@@ -206,7 +214,7 @@ local function createTooltip(tt)
 		local spellInfo = C_Spell.GetSpellInfo(skill.spell)
 		local l,ttExtend;
 		-- check if learned. skills ordered in table from highest to lowest.
-		if(learned==nil and ns.deprecated.C_SpellBook.IsSpellInSpellBook(skill.spell))then
+		if(learned==nil and C_SpellBook.IsSpellInSpellBook(skill.spell))then
 			learned = true;
 		end
 		local cell1color,cell2;
@@ -273,7 +281,7 @@ local function createTooltip(tt)
 				id = spell[Id];
 			end
 
-			if(id and ns.deprecated.C_SpellBook.IsSpellInSpellBook(id))then
+			if(id and C_SpellBook.IsSpellInSpellBook(id))then
 				local active=false;
 				local custom = "";
 				local spellInfo = C_Spell.GetSpellInfo(spell[Id])
@@ -288,7 +296,7 @@ local function createTooltip(tt)
 				end
 
 				if(spell[ChkActive])then
-					local start, duration, enabled = ns.deprecated.C_Spell.GetSpellCooldown(spell[Id]);
+					local start, duration, enabled = C_Spell.GetSpellCooldown(spell[Id]);
 					if(spell[Special])then
 						if(spell[Special][1]=="SPELL")then
 							local spellInfo = C_Spell.GetSpellInfo(spell[Special][2])
@@ -367,7 +375,7 @@ local function createTooltip(tt)
 			else
 				link = C_Spell.GetSpellLink(v[1]);
 				if link then
-					ready = ns.deprecated.C_SpellBook.IsSpellInSpellBook(v[1]);
+					ready = C_SpellBook.IsSpellInSpellBook(v[1]);
 					local spellInfo = C_Spell.GetSpellInfo(v[1])
 					Name = spellInfo.name;
 				elseif type(replace_unknown["s"..v[1]])=="table" then
@@ -590,6 +598,8 @@ function module.onevent(self,event,...)
 			CalcSpeed.as = GetTime();
 		end
 		return;
+	elseif event=="ZONE_CHANGED" then
+		currentMapID = nil;
 	elseif not updateToonSkillLocked then
 		updateToonSkillLocked = true; -- event trigger twice
 		C_Timer.After(0.2, updateToonSkill);
