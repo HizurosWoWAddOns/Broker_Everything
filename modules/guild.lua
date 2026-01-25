@@ -71,7 +71,7 @@ local function GetApplicants()
 end
 
 local function GetMemberRace(GUID)
-	local raceName = knownMemberRaces[GUID];
+	local raceName,_ = knownMemberRaces[GUID];
 	if not raceName then
 		_, _, raceName = GetPlayerInfoByGUID(GUID);
 		if raceName then
@@ -381,7 +381,12 @@ local function ttAddApplicant(lineIndex,applicantInfo)
 
 	local isDps,isHealer,isTank = false,false,false;
 	for _, specID in ipairs(applicantInfo.specIds) do
-		local role = GetSpecializationRoleByID(specID);
+		local role=nil;
+		if C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo then
+			role = C_SpecializationInfo.GetSpecializationInfo(specID);
+		elseif GetSpecializationRoleEnumByID then
+			role = GetSpecializationRoleEnumByID(specID);
+		end
 		if role=="DAMAGER" and not isDps then
 			isDps = true;
 			tinsert(roles,DAMAGER);
