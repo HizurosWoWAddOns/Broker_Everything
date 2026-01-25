@@ -173,25 +173,34 @@ local function updateCharacterDB(equipped)
 
 		ns.toon[name].obtained[itemID] = true;
 
-		-- update relict slots. (only possible with open artifact frame)
+		-- update relict slots. (only possible with open artifact frame, functions return wrong data on closed frame)
 		if artifact_frame or artifact_forge then
-			for i,v in ipairs(ArtifactFrame.PerksTab.TitleContainer.RelicSlots)do
-				if not v.relicType then
-					artifactLocked = ARTIFACT_VISIT_FORGE_TO_START;
+			for RelicSlotIndex=1, C_ArtifactUI.GetNumRelicSlots() do
+				local RelicName,RelicIcon,slotTypeName,link,itemid,color,affected,_ = C_ArtifactUI.GetRelicInfo(RelicSlotIndex);
+
+				if link then
+					_,_,itemid = link:find("%|Hitem:(%d+)")
+					local itemName, itemLink, itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType, expansionID, setID, isCraftingReagent = C_Item.GetItemInfo(itemid)
+					color = "quality"..itemQuality;
+					if not slotTypeName then
+						artifactLocked = ARTIFACT_VISIT_FORGE_TO_START
+					end
+					affected = {C_ArtifactUI.GetPowersAffectedByRelic(RelicSlotIndex)};
+					for _,A in ipairs(affected) do
+						affected[I] = (C_ArtifactUI.GetPowerInfo(A) or {}).spellID or UNKNOWN
+					end
+					ns.ScanTT.query({type="link",link=link,obj={awItemID=itemID,relicIndex=RelicSlotIndex},callback=GetRelicTooltipData});
 				end
-				local icon,itemname,color,linktype,itemid,data,_=ns.icon_fallback;
-				if v.relicLink then
-					_,_,color,linktype,itemid,data,itemname = v.relicLink:find("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
-					icon = C_Item.GetItemIconByID(itemid);
-				end
-				local affected = {C_ArtifactUI.GetPowersAffectedByRelic(i)};
-				for I,A in ipairs(affected) do
-					affected[I] = (C_ArtifactUI.GetPowerInfo(A) or {}).spellID or UNKNOWN
-				end
-				ns.toon[name][itemID].relic[i]={id=tonumber(itemid),color=color,icon=icon,name=itemname,type=v.relicType,locked=v.lockedReason or false,link=v.relicLink,affected=affected};
-				if v.relicLink then
-					ns.ScanTT.query({type="link",link=v.relicLink,obj={awItemID=itemID,relicIndex=i},callback=GetRelicTooltipData});
-				end
+				ns.toon[name][itemID].relic[RelicSlotIndex]={
+					id=tonumber(itemid),
+					color=color,
+					icon=RelicIcon,
+					name=RelicName,
+					type=slotTypeName,
+					locked=C_ArtifactUI.GetRelicLockedReason(RelicSlotIndex) or false,
+					link=link,
+					affected=affected
+				};
 			end
 		end
 
@@ -304,7 +313,7 @@ local function createTooltip2(parent,artifactID)
 	ttAlt = tt;
 
 	tt:Clear();
-	l=tt:AddHeader("|T"..(C_Item.GetItemIcon(artifactID) or ns.icon_fallback)..":0|t "..C("ltyellow",item.name));
+	l=tt:AddHeader("|T"..(C_Item.GetItemIconByID(artifactID) or ns.icon_fallback)..":0|t "..C("ltyellow",item.name));
 	--tt:SetCell(l,3,C("gray","(class spec?)"));
 
 	tt:AddSeparator();
@@ -427,7 +436,6 @@ function createTooltip(tt)
 				tt:AddSeparator(3,0,0,0,0);
 				-- localized name if artifact knowledge
 				local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(1171);
-				--local ak = GetCurrencyInfo(1171); -- TODO: removed in shadowlands
 				tt:AddLine(C("ltblue",currencyInfo.name or L["Artifact knowledge"]));
 				tt:AddSeparator();
 				l=tt:AddLine();
