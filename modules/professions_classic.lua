@@ -39,7 +39,7 @@ end
 
 local cdResetTypes = {
 	function(id) -- get duration directly from GetSpellCooldown :: blizzard didn't update return values after reload.
-		local start, stop = ns.deprecated.C_Spell.GetSpellCooldown(id);
+		local start, stop = C_Spell.GetSpellCooldown(id);
 		return stop - (GetTime()-start), time();
 	end,
 	function(id) -- use GetSpellCooldown to test and use GetQuestResetTime as duration time
