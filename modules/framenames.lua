@@ -10,6 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Framenames" -- L["Framenames"] L["ModDesc-Framenames"]
 local ttName,ldbObject,module = name.."TT";
 local lastFrame,lastMod,lastCombatState,ticker = nil,nil,nil;
+local GetName,GetDebugName = UIParent.GetName,UIParent.GetDebugName;
 
 
 -- register icon names and default files --
@@ -20,8 +21,11 @@ I[name] = {iconfile="Interface\\Addons\\"..addon.."\\media\\equip"}; --IconName:
 -- some local functions --
 --------------------------
 local function ownership(p,f)
-	local secure, taint = issecurevariable(p,f);
-	return secure==true and "Blizzard" or taint;
+	if type(p)=="table" and type(f)=="string" then
+		local secure, taint = issecurevariable(p,f);
+		return secure==true and "Blizzard" or taint;
+	end
+	return "Blizzard";
 end
 
 
@@ -80,17 +84,17 @@ function module.onupdate()
 		elseif f:IsProtected() and combat then
 			F = "<Protected Frame>";
 		else
-			F = f:GetName();
+			F = GetName(f);
 
-			if F then
-				O = ownership(f:GetParent() or _G,F);
+			if type(F)=="string" then
+				O = ownership(f:GetParent() or _G,F) or O;
 			end
 
 			if F=="WorldFrame" then
 				-- Units
 				local guid,id,_ = UnitGUID("mouseover");
 				local uName = UnitName("mouseover");
-				if guid and uName then
+				if guid and not ns.bullshitRestrictions.chk(guid) and uName then
 					O = false;
 					P,_,_,_,_,id = strsplit("-",guid);
 					if _G[P:upper()] then
@@ -119,7 +123,7 @@ function module.onupdate()
 
 			if F == nil then
 				--F = "<anonym>";
-				F = f:GetDebugName();
+				F = GetDebugName(f);
 				local parent = f:GetParent();
 				if parent then
 					for i,v in pairs(parent)do
