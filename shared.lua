@@ -291,21 +291,6 @@ end
 
 
   ---------------------------------------
---- Blizzards new "Secure Value" System is the bigges bullshit ever ---
---- Restricts access on more than only combat relevant data.        ---
-  ---------------------------------------
-do
-	ns.bullshitRestrictions = {}
-	function ns.bullshitRestrictions.chk(value)
-		if not (C_Secrets and C_Secrets.HasSecretRestrictions) then
-			return false;
-		end
-		return C_Secrets.HasSecretRestrictions(value)
-	end
-end
-
-
-  ---------------------------------------
 --- Helpful function for extra tooltips ---
   ---------------------------------------
 local brokerDragHooks, openTooltip, hiddenMouseOver = {};
