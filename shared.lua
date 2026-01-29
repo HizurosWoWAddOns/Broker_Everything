@@ -1093,7 +1093,19 @@ do
 		inventoryDelayed = false;
 	end
 
+	local scanBagsDelayedTicker = nil;
+	local scanBagsDelayedTickerTimeout = 3.14159/2;
+	local scanBagsDelayedCounter = nil;
+	local scanBagsDelayedCounterDefault = 4; -- n * Timeout - before script should scan the bags; hopefully after anything could trigger events
+
 	local function scanBags()
+		if scanBagsDelayedTicker==nil or tonumber(scanBagsDelayedCounter)==nil then return end
+		if scanBagsDelayedCounter>0 then
+			--ns:debug("<scanBags>",scanBagsDelayedCounter);
+			scanBagsDelayedCounter = scanBagsDelayedCounter - 1;
+			return;
+		end
+		--ns:debugPrint("<scanBags>");
 		for bagIndex,bool in pairs(updateBags) do
 			bagIndex=tonumber(bagIndex)
 			if bagIndex and bool==true then
@@ -1156,6 +1168,16 @@ do
 		end
 		wipe(updateBags);
 		callbackHandler();
+		scanBagsDelayedTicker:Cancel();
+		scanBagsDelayedTicker = nil;
+		scanBagsDelayedCounter = nil;
+	end
+
+	local function scanBagsMoreDelay()
+		if not scanBagsDelayedTicker then
+			scanBagsDelayedTicker = C_Timer.NewTicker(scanBagsDelayedTickerTimeout,scanBags);
+		end
+		scanBagsDelayedCounter = scanBagsDelayedCounterDefault;
 	end
 
 	local inventoryEvents = {
@@ -1179,10 +1201,10 @@ do
 		if event=="BAG_UPDATE" and tonumber(...) and (...)<=NUM_BAG_SLOTS then
 			updateBags[tostring(...)] = true
 		elseif event=="BAG_UPDATE_DELAYED" and tableLength(updateBags)>0 then
-			scanBags();
+			scanBagsMoreDelay();
 		elseif event=="PLAYER_LOGIN" then
 			updateBags["0"] = true; -- BAG_UPDATE fired with 1-12 as bag index (argument) before PLAYER_LOGIN; bag index 0 is missing
-			scanBags();
+			scanBagsMoreDelay();
 		--elseif event=="GET_ITEM_INFO_RECEIVED" and (...)~=nil then
 		--	local id = ...;
 		--	if itemsByID[id] then
