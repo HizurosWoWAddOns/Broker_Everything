@@ -245,14 +245,38 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 				AddNameToEditBox(data.name,data.realm)
 			end
 		else
-			local func,name = "BNet",data.account; -- account name
+			local friendName,chatType,editBox;
 			if button=="RightButton" then
-				func,name = "",data.name; -- toon name
-				if ns.realm~=data.realm then
-					name = name .."-".. ns.stripRealm(data.realm);
+				if WOW_PROJECT_ID ~= data.wowProjectID then
+					ns:print(L["Sorry, could not whisper to another wow version."])
+					return;
 				end
+				chatType = "WHISPER"
+				friendName = data.name;
+				if ns.realm~=data.realm then
+					friendName = data.name .."-".. ns.stripRealm(data.realm);
+				end
+			else
+				chatType = "BN_WHISPER"
+				friendName = data.account;
 			end
-			securecall("ChatFrame_Send"..func.."Tell",name);
+
+			if ChatFrameUtil and ChatFrameUtil.ChooseBoxForSend then
+				-- from ChatFrameUtil.lua - ChatFrameUtil.Send[BNet]Tell does not work very well.
+				editBox = ChatFrameUtil.ChooseBoxForSend();
+			end
+			if editBox and editBox.SetChatType and editBox.SetTellTarget and editBox.UpdateHeader then
+				editBox:SetChatType(chatType);
+				editBox:SetTellTarget(friendName);
+				if ( editBox ~= ChatFrameUtil.GetActiveWindow() ) then
+					ChatFrameUtil.OpenChat("");
+				end
+				editBox:UpdateHeader();
+			elseif chatType=="BN_WHISPER" and ChatFrame_SendBNetTell then -- old way
+				securecall("ChatFrame_SendBNetTell",friendName);
+			elseif chatType=="WHISPER" and ChatFrame_SendTell then -- old way
+				securecall("ChatFrame_SendTell",friendName);
+			end
 		end
 	end
 end
@@ -480,6 +504,9 @@ local function createTooltip(tt)
 								broadcast = strtrim(fi.customMessage or ""),
 								broadcastTime = fi.customMessageTime or false,
 							};
+							if ti.clientProgram then
+								data.wowProjectID = data.wowProjectID;
+							end
 							if ti.factionName then
 								data.factionT = ti.factionName:upper();
 								data.factionL = _G["FACTION_"..ti.factionName:upper()];
