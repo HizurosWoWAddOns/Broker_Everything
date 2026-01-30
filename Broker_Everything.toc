@@ -1,4 +1,4 @@
-## Interface: 120000, 110207, 50503, 38000, 20505, 11508
+## Interface: 120001, 120000, 50503, 38000, 20505, 11508
 ## Title: Broker: Everything
 ## IconTexture: 892831
 ## Notes: A collection of modules to display various informations as Broker-buttons on Broker Display AddOns or minimap buttons.
