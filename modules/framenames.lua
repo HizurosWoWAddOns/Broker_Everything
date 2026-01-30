@@ -94,7 +94,7 @@ function module.onupdate()
 				-- Units
 				local guid,id,_ = UnitGUID("mouseover");
 				local uName = UnitName("mouseover");
-					if guid and not HST.checkIsSecretValue_BULLSHIT(guid) and uName then
+					if guid and not ns.HST.checkIsSecretValue_BULLSHIT(guid) and uName then
 					O = false;
 					P,_,_,_,_,id = strsplit("-",guid);
 					if _G[P:upper()] then
