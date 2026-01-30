@@ -32,7 +32,7 @@ local LibStub = _G.LibStub
 
 -- Init shared lib and debug mode
 ns.debugMode = "@project-version@"=="@".."project-version".."@";
-ns.HSTLibStub("HizurosSharedTools")
+ns.HST = LibStub("HizurosSharedTools")
 ns.HST.RegisterPrint(ns,addon,"BE");
 
 
