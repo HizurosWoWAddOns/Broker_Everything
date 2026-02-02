@@ -201,7 +201,8 @@ function updateTradeSkills()
 						maxSkill = maxRank or 0,
 						skillModifier = rankModifier or 0,
 					}
-					chkCooldownSpells(info.skillLineIndex,info.iconID);
+					pcall(chkCooldownSpells,info.skillLineIndex,info.iconID);
+					--chkCooldownSpells(info.skillLineIndex,info.iconID);
 					chkExpiredCooldowns();
 					skillNameById[info.skillLineIndex] = info.name;
 					maxInTitleTmp=maxInTitleTmp+1;
@@ -222,7 +223,8 @@ function updateTradeSkills()
 					skillModifier = rankModifier or 0,
 				};
 			end
-			chkCooldownSpells(skillLine,texture);
+			pcall(chkCooldownSpells,skillLine,texture);
+			--chkCooldownSpells(skillLine,texture);
 			chkExpiredCooldowns();
 			skillNameById[skillLine] = skillName;
 			maxInTitleTmp=maxInTitleTmp+1;

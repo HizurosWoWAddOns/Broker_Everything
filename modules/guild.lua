@@ -989,6 +989,9 @@ function module.options()
 end
 
 -- function module.init() end
+local function chkMsgIsBullShit(msg,state,pattern)
+	return state, msg:gsub("[\124:%[%]]","#"):match(pattern)
+end
 
 function module.onevent(self,event,msg,...)
 	if event=="BE_UPDATE_CFG" and msg and msg:find("^ClickOpt") then
@@ -1030,9 +1033,11 @@ function module.onevent(self,event,msg,...)
 		C_Timer.After(0.15,function() updateTradeSkills(); triggerLockTradeSkill=false end)
 	elseif event=="CHAT_MSG_SYSTEM" and (ns.profile[name].showMembersNotes or ns.profile[name].showMembersOffNotes) then
 		-- update online status; GUILD_ROSTER_UPDATE/GetGuildRosterInfo trigger too slow real updates
-		local state,member = "online",msg:gsub("[\124:%[%]]","#"):match(pattern_FRIEND_ONLINE);
+		local success, _, state, member = pcall(chkMsgIsBullShit, msg, "online", pattern_FRIEND_ONLINE);
+		--local state,member = "online",msg:gsub("[\124:%[%]]","#"):match(pattern_FRIEND_ONLINE);
 		if not member then
-			state,member = "offline",msg:match(pattern_FRIEND_OFFLINE);
+			success, _, state, member = pcall(chkMsgIsBullShit, msg, "offline", pattern_FRIEND_OFFLINE);
+			--state,member = "offline",msg:match(pattern_FRIEND_OFFLINE);
 		end
 		if member and not member:find("-") then
 			member = member.."-"..ns.realm_short;
