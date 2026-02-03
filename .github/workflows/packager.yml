@@ -1,6 +1,7 @@
 name: packager
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - '**'
