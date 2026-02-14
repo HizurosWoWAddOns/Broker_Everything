@@ -51,8 +51,13 @@ local CalcSpeed = {
 };
 
 local worldMapByMapID = {
-	[2371]=2371 -- k'aresh
+	[1355]=1355, -- nazjatar
+	[2133]=2133, -- zaralek
+	[2351]=2351, -- housing zone
+	[2352]=2352, -- housing zone
+	[2371]=2371, -- k'aresh
 }
+
 setmetatable(worldMapByMapID,{__index=function(t,k)
 	if not tonumber(k) then
 		return false; -- invalid key
@@ -74,6 +79,9 @@ setmetatable(worldMapByMapID,{__index=function(t,k)
 end})
 
 function CalcSpeed:Update()
+	if IsInInstance() then
+		return
+	end
 	-- Get mapID and positionInfo
 	if not currentMapID then
 		currentMapID = C_Map.GetBestMapForUnit("player") or 0
@@ -81,22 +89,31 @@ function CalcSpeed:Update()
 			currentMapID = worldMapByMapID[currentMapID];
 		end
 	end
-	if not (currentMapID and currentMapID>0) then return end
+	if not (currentMapID and currentMapID>0) then
+		return
+	end
 	local posInfo = C_Map.GetPlayerMapPosition(currentMapID,"player");
 	if not posInfo then
+		local id = C_Map.GetBestMapForUnit("player")
+		if id then
+			posInfo = C_Map.GetPlayerMapPosition(id,"player");
+		end
+	end
+	if not posInfo then
+		ns:debugPrint("posInfo is nil",currentMapID)
 		return
 	end
 
 	-- Get delta time
 	local time,dt = GetTime();
-	dt,self.t = time-self.t,time;
+	dt,CalcSpeed.t = time-CalcSpeed.t,time;
 
 	-- Calculate speed
-	local w,h,x,y,dx,dy = C_Map.GetMapWorldSize(currentMapID);
+	local w,h,x,y = C_Map.GetMapWorldSize(currentMapID);
 	x,y = (posInfo.x * w), (posInfo.y * h);
-	local dx,dy = x-self.x,y-self.y;
-	self.x,self.y = x,y;
-	self.s = math.sqrt(dx*dx + dy*dy) / dt;
+	local dx,dy = x-CalcSpeed.x,y-CalcSpeed.y;
+	CalcSpeed.x,CalcSpeed.y = x,y;
+	CalcSpeed.s = math.sqrt(dx*dx + dy*dy) / dt;
 
 	if C_UnitAuras then
 		local tspeed = 60
@@ -106,13 +123,13 @@ function CalcSpeed:Update()
 		if thrill and time < as + mb then
 			local p,b = (time-as) / ad;
 			b = tspeed + (1-p) * mb;
-			if self.s < b then
-				self.s = b
+			if CalcSpeed.s < b then
+				CalcSpeed.s = b
 			end
 		end
 
-		if (self.s < tspeed and thrill) or (self.s > tspeed and not thrill) then
-			self.s = tspeed
+		if (CalcSpeed.s < tspeed and thrill) or (CalcSpeed.s > tspeed and not thrill) then
+			CalcSpeed.s = tspeed
 		end
 	end
 end
