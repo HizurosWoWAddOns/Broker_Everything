@@ -1029,13 +1029,14 @@ function module.onevent(self,event,arg1)
 	elseif event=="COVENANT_CHOSEN" then
 		-- update Covenant currencies
 		covenantID = C_Covenants and C_Covenants.GetActiveCovenantID() or 0;
-	elseif event=="CHAT_MSG_CURRENCY" then -- detecting new currencies
+	elseif event=="CHAT_MSG_CURRENCY" and ns.HST.BullShitDetector.ChatMsgSystem(arg1) then -- detecting new currencies
 		local id = tonumber(arg1:match("currency:(%d*)"));
 		if id and not currencySession[id] then
 			local currencyInfo = C_CurrencyInfo.GetCurrencyInfo(id);
 			CountCorrection(id,currencyInfo);
 			currencySession[id] = currencyInfo.quantity;
 		end
+		-- TODO: maybe need a loop through all currencies to detect changed currency. very nice blizzard. /sarcasm
 	end
 
 	if event=="PLAYER_LOGIN" or event=="NEUTRAL_FACTION_SELECT_RESULT" or event=="COVENANT_CHOSEN" or (event=="SKILL_LINES_CHANGED" and updateProfessions()) then
