@@ -144,7 +144,8 @@ local function updateBroker()
 	end
 	local str = ("%."..ns.profile[name].precision.."f"):format(speed / 7 * 100 ) .. "%";
 	local l = 4 + (ns.profile[name].precision>0 and ns.profile[name].precision+1 or 0) - str:len();
-	ns.LDB:GetDataObjectByName(module.ldbName).text = strrep(" ",l)..str;
+	ns.LDB:GetDataObjectByName(module.ldbName).text = strrep("|TInterface\\buttons\\ui-passivehighlight:9:9|t",l)..str;
+	-- hidden texture as placeholder is not nice but it works.
 end
 
 local function tooltipOnEnter(self,data)
