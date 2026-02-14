@@ -389,12 +389,13 @@ function module.onevent(self,event,arg1,...)
 		end
 	end
 	if ns.eventPlayerEnteredWorld then
-		if event=="CHAT_MSG_CURRENCY" then
+		if event=="CHAT_MSG_CURRENCY" and ns.HST.BullShitDetector.ChatMsgSystem(arg1) then
 			local currencyStr  = arg1:match(CHAT_MSG_CURRENCY_PATTERN);
 			if currencyName2race[currencyStr] and races[currencyName2race[currencyStr]] then
 				currencySeen = races[currencyName2race[currencyStr]];
 			end
 		end
+		-- TODO: maybe need a loop through all currencies to detect changed currency. very nice blizzard. /sarcasm
 		updateRaces(true);
 	end
 end
