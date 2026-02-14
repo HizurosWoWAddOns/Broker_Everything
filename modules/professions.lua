@@ -113,7 +113,7 @@ local function chkCooldownSpells(skillId,icon)
 		local spellId, cdGroup, cdType = 1,2,3;
 		for _,cd in pairs(cdSpells[skillId]) do
 			cooldown = C_Spell.GetSpellCooldown(cd[spellId]);
-			if ns.HST.checkIsSecretValue_BULLSHIT(value) then
+			if ns.HST.BullShitDetector.generalTesting(value) then
 				return false;
 			end
 			if type(cooldown)=="table" then
