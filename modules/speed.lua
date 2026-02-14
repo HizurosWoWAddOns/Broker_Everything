@@ -470,7 +470,10 @@ end
 module = {
 	events = {
 		"PLAYER_LOGIN",
+		"PLAYER_ENTERING_WORLD",
 		"SKILL_LINES_CHANGED",
+		"ZONE_CHANGED",
+		"ZONE_CHANGED_INDOOR",
 	},
 	config_defaults = {
 		enabled = false,
@@ -616,8 +619,11 @@ function module.onevent(self,event,...)
 			CalcSpeed.as = GetTime();
 		end
 		return;
-	elseif event=="ZONE_CHANGED" then
-		currentMapID = nil;
+	elseif event=="PLAYER_ENTERING_WORLD" or event=="ZONE_CHANGED" or event=="ZONE_CHANGED_INDOOR" then
+		local id = C_Map.GetBestMapForUnit("player");
+		if currentMapID~=id then
+			currentMapID = nil;
+		end
 	elseif not updateToonSkillLocked then
 		updateToonSkillLocked = true; -- event trigger twice
 		C_Timer.After(0.2, updateToonSkill);
