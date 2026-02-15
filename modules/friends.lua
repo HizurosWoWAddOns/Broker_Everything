@@ -232,7 +232,7 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 				AddNameToEditBox(data.name,data.realm)
 			end
 		else
-			ChatFrame_SendTell(data.fullName:gsub(" ",""));
+			(ChatFrameUtil and ChatFrameUtil.SendTell or ChatFrame_SendTell)(data.fullName:gsub(" ",""));
 		end
 	elseif data.type=="battlenet" then
 		-- battlenet whisper

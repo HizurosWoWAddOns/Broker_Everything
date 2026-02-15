@@ -431,7 +431,7 @@ local function ttAddMember(lineIndex,memberIndex)
 
 	local status;
 	if mIsMobile then
-		status = (mIsAway==2 and MOBILE_BUSY_ICON) or (mIsAway==1 and MOBILE_AWAY_ICON) or ChatFrame_GetMobileEmbeddedTexture(73/255, 177/255, 73/255)
+		status = (mIsAway==2 and MOBILE_BUSY_ICON) or (mIsAway==1 and MOBILE_AWAY_ICON) or (ChatFrameUtil and ChatFrameUtil.GetMobileEmbeddedTexture or ChatFrame_GetMobileEmbeddedTexture)(73/255, 177/255, 73/255)
 	else
 		status = ("|T%s:0|t"):format(_G["FRIENDS_TEXTURE_"  .. ((mIsAway==1 and "AFK") or (mIsAway==2 and "DND") or "ONLINE")]);
 	end
@@ -1063,7 +1063,7 @@ function module.onevent(self,event,msg,...)
 				if #txt>0 then
 					local mobileIcon = "";
 					if mIsMobile then
-						mobileIcon = ChatFrame_GetMobileEmbeddedTexture(73/255, 177/255, 73/255)
+						mobileIcon = (ChatFrameUtil and ChatFrameUtil.GetMobileEmbeddedTexture or ChatFrame_GetMobileEmbeddedTexture)(73/255, 177/255, 73/255)
 					end
 					tinsert(txt,1,C("ltgray",LFG_LIST_GUILD_MEMBER)..CHAT_HEADER_SUFFIX..C(mClassFile,mName).." "..mobileIcon);
 					C_Timer.After(0.1,function()
