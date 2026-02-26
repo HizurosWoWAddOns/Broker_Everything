@@ -94,7 +94,7 @@ function module.onupdate()
 				-- Units
 				local guid,id,_ = UnitGUID("mouseover");
 				local uName = UnitName("mouseover");
-				if guid and not ns.HST.BullShitDetector.generalTesting(guid) and uName then
+				if guid and not ns.HST.BullShitDetector("generalTesting",guid) and uName then
 					O = "?";
 					P,_,_,_,_,id = strsplit("-",guid);
 					if _G[P:upper()] then

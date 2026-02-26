@@ -6,9 +6,9 @@
 	<!-- localizations -->
 	<Script file="localizations.lua" />
 	<!--@do-not-package@-->
-	<Script file="localizations.imported-en.lua"/>
-	<Script file="localizations.imported-de.lua"/>
-	<Script file="localizations.workfile.lua"/>
+	<Script file=".dev/localizations.imported-en.lua"/>
+	<Script file=".dev/localizations.imported-de.lua"/>
+	<Script file=".dev/localizations.workfile.lua"/>
 	<!--@end-do-not-package@-->
 	<!-- /localizations -->
 
@@ -69,30 +69,8 @@
 	<Script file="modules/ammo_classic.lua"/>
 	<!-- /modules for classic -->
 
-	<!--@do-not-package@-->
-	<!--
-	<Script file="_modules/lookingfor.lua"/>
-	<Script file="_modules/communities.lua"/>
-	<Script file="_modules/workorders.lua"/>
-	<Script file="_modules/pvp.lua"/>
-	<Script file="_modules/stats.lua"/>
-	<Script file="_modules/mythicplus.lua"/>
-	<Script file="_modules/shadowlands.lua"/>
-	<Script file="_modules/talents_classic.lua"/>
-	<Script file="_modules/soulshards_classic.lua"/>
-	-->
-	<!--Script file="_modules/broker_everything.lua"/-->
-	<!--Script file="_modules/worldpvpareas.lua"/-->
-	<!--Script file="_modules/playerkills.lua"/-->
-	<!--Script file="_modules/quickjoin.lua"/-->
-	<!--@end-do-not-package@-->
-
 	<Script file="chatcommand.lua" />
 	<Script file="core.lua"/>
-
-	<!--@do-not-package@-->
-	<include file="infoframe.xml" />
-	<!--@end-do-not-package@-->
 
 	<Frame name="BE_SecureFrame" hidden="hidden" virtual="true">
 		<Layers>

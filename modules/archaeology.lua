@@ -389,7 +389,7 @@ function module.onevent(self,event,arg1,...)
 		end
 	end
 	if ns.eventPlayerEnteredWorld then
-		if event=="CHAT_MSG_CURRENCY" and ns.HST.BullShitDetector.ChatMsgSystem(arg1) then
+		if event=="CHAT_MSG_CURRENCY" and ns.HST.BullShitDetector("ChatMsgSystem",arg1) then
 			local currencyStr  = arg1:match(CHAT_MSG_CURRENCY_PATTERN);
 			if currencyName2race[currencyStr] and races[currencyName2race[currencyStr]] then
 				currencySeen = races[currencyName2race[currencyStr]];

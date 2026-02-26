@@ -85,7 +85,7 @@ local function updateEvents()
 			local numEvents = C_Calendar.GetNumDayEvents(monthOffset, day);
 			for eIndex=1, numEvents do
 				local event,Event = {},C_Calendar.GetDayEvent(monthOffset, day, eIndex);
-				if ns.HST.BullShitDetector.CalendarGetDayEvent(Event) and events[Event.calendarType] then
+				if ns.HST.BullShitDetector("CalendarGetDayEvent",Event) and events[Event.calendarType] then
 					for _,k in ipairs(copyEventKeys)do
 						event[k] = Event[k];
 					end

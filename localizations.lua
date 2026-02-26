@@ -22,7 +22,7 @@ ns.L = setmetatable({},{
 			ns.debug("localization","<FIXME:WrongKeyType>",kType,v,debugstack());
 		end
 		if "@project-version@" == "@".."project-version".."@" then
-			return "<"..k..">"; -- makes untranslated entries visible
+			return "<"..v..">"; -- makes untranslated entries visible
 		end
 --@end-do-not-package@
 		L[k] = v;

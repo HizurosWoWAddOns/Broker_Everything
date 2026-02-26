@@ -473,7 +473,7 @@ module = {
 		"PLAYER_ENTERING_WORLD",
 		"SKILL_LINES_CHANGED",
 		"ZONE_CHANGED",
-		"ZONE_CHANGED_INDOOR",
+		"ZONE_CHANGED_INDOORS",
 	},
 	config_defaults = {
 		enabled = false,
