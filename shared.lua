@@ -2122,11 +2122,11 @@ do
 		OptionMenu  = {"ClickOptMenu","shared","OptionMenu"}, -- L["ClickOptMenu"]
 		OptionMenuCustom = {"ClickOptMenu","module","OptionMenu"},
 		OptionPanel = {"ClickOptPanel","namespace","ToggleBlizzOptionPanel"}, -- L["ClickOptPanel"]
-		CharacterInfo = {CHARACTER_INFO,"call",{"ToggleCharacter","PaperDollFrame"}},
-		GarrisonReport = {GARRISON_LANDING_PAGE_TITLE,"call","GarrisonLandingPage_Toggle"}, --"ClickOptGarrReport"
-		Guild = {GUILD,"call","ToggleGuildFrame"}, -- "ClickOptGuild"
-		Currency = {CURRENCY,"call",{"ToggleCharacter","TokenFrame"}}, -- "ClickOptCurrency"
-		QuestLog = {QUEST_LOG,"call","ToggleQuestLog"} -- "ClickOptQuestLog"
+		CharacterInfo = {{CHARACTER_INFO},"call",{"ToggleCharacter","PaperDollFrame"}},
+		GarrisonReport = {{GARRISON_LANDING_PAGE_TITLE},"call","GarrisonLandingPage_Toggle"}, --"ClickOptGarrReport"
+		Guild = {{GUILD},"call","ToggleGuildFrame"}, -- "ClickOptGuild"
+		Currency = {{CURRENCY},"call",{"ToggleCharacter","TokenFrame"}}, -- "ClickOptCurrency"
+		QuestLog = {{QUEST_LOG},"call","ToggleQuestLog"} -- "ClickOptQuestLog"
 	};
 	local iLabel,iSource,iFunction,iPrefix = 1,2,3,4;
 
@@ -2239,7 +2239,13 @@ do
 				end
 				if func and type(func)=="function" then
 					mod.onclick[key] = actName;
-					tinsert(mod.clickHints,ns.color.copper:wrapText(values[key]).." || "..ns.color.green:wrapText(L[action[iLabel]]));
+					local name
+					if type(action[iLabel])=="table" then
+						name = action[iLabel][1];
+					else
+						name = L[action[iLabel]];
+					end
+					tinsert(mod.clickHints,ns.color.copper:wrapText(values[key]).." || "..ns.color.green:wrapText(name));
 					hasOptions = true;
 				end
 			end
