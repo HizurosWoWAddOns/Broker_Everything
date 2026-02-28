@@ -906,6 +906,7 @@ function module.init()
 	};
 
 	CurrenciesExpansionDefault = {
+		{h="EXPANSION_NAME11",3376,3316,3319,3385,3377,3392,3379,3400,3352,--[[ 3375, ]]},
 		{h="EXPANSION_NAME10",3149,3226,3220,3218,3216,3269,true, 3290,3288,3286,3284,true, 3090,2815,3056,2813,3116,2803,3008, 3093,3028,3055, 3089},
 		{h="EXPANSION_NAME9",2806,2807,2809,2812,2777,2709,2708,2707,2706,2650,2651,2594,2245,2118,2003,2122,2045,2011,2134,2105},
 		{h="EXPANSION_NAME8",2009,1979,1931,1904,1906,1977,1822,1813,1810,1828,1767,1885,1877,1883,1889,1808,1802,1891,1754,1820,1728,1816,1191},
@@ -955,8 +956,21 @@ function module.init()
 			[182] = {2789}, -- Herbalism
 			[186] = {2793}, -- Mining
 
-		}
+		},
 		-- Note: It looks like dragonflight and the war within sharing workorder weekly cap
+		["EXPANSION_NAME11"] = {
+			[171] = {3256}, -- Alchemy
+			[164] = {3257}, -- Blacksmithing
+			[333] = {3258}, -- Enchanting
+			[202] = {3259}, -- Engineering
+			[773] = {3261}, -- Inscription
+			[755] = {3262}, -- Jewelcrafting
+			[165] = {3263}, -- Leatherworking
+			[197] = {3266}, -- Tailoring
+			[393] = {3265}, -- Skinning
+			[182] = {3260}, -- Herbalism
+			[186] = {3264}, -- Mining
+		}
 	}
 
 	CurrenciesRename = {
