@@ -255,6 +255,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
+	name = VOLUME,
 	icon_suffix = "_100",
 	events = {
 		"PLAYER_LOGIN",

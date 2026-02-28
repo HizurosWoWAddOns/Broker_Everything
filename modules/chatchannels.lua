@@ -143,6 +143,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	name = CHAT_CHANNELS,
 	events = {
 		"PLAYER_ENTERING_WORLD",
 		"CHANNEL_UI_UPDATE",

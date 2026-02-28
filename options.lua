@@ -313,7 +313,7 @@ local options = {
 					name = "",
 					args = {
 						desc    = { type="description", order=0, fontSize="medium", width="double", name=C("orange",L["ModsToggleInfo"]) },
-						reload  = { type="execute", order=1, name=L["ReloadUI"], func=C_UI.Reload },
+						reload  = { type="execute", order=1, name=RELOADUI, func=C_UI.Reload },
 
 						enable  = { type="execute", order=2, name=ENABLE_ALL_ADDONS, func=toggleAllModules },
 						disable = { type="execute", order=3, name=DISABLE_ALL_ADDONS, func=toggleAllModules },
@@ -462,10 +462,11 @@ end
 
 local function ModName(info)
 	local key=info[#info];
+	local name = ns.modules[key].name or L[key];
 	if not ns.profile[key].enabled then
-		return C("gray",L[key]);
+		return C("gray",name);
 	end
-	return L[key];
+	return name;
 end
 
 local function ModDesc(info)
@@ -512,9 +513,9 @@ function ns.Options_RegisterModule(modName)
 				modEnable.args[mod.group] = {type="header",name=L[mod.group], order=-groupCount};
 				groupOrders[mod.group] = groupCount-1;
 			end
-			modEnable.args[modName] = {type="toggle",name=L[modName],desc=L["ModDesc-"..modName],order=-groupOrders[mod.group]};
+			modEnable.args[modName] = {type="toggle",name=mod.name or L[modName],desc=L["ModDesc-"..modName],order=-groupOrders[mod.group]};
 		else
-			modEnable.args[modName] = {type="toggle",name=L[modName],desc=L["ModDesc-"..modName]};
+			modEnable.args[modName] = {type="toggle",name=mod.name or L[modName],desc=L["ModDesc-"..modName]};
 		end
 
 		-- add shared option defaults

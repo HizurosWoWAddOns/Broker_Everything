@@ -269,6 +269,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	name = DURABILITY,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_DEAD",

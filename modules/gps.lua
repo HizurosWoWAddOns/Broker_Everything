@@ -273,7 +273,7 @@ local function createTooltip(tt,ttName,modName)
 	tt:AddSeparator()
 
 	line, column = tt:AddLine()
-	tt:SetCell(line,1,C("ltyellow",L["Inn"]..HEADER_COLON),nil,nil,1)
+	tt:SetCell(line,1,C("ltyellow",HOME_INN..HEADER_COLON),nil,nil,1)
 	tt:SetCell(line,2,GetBindLocation(),nil,nil,2)
 
 	if ns.profile.GeneralOptions.showHints then

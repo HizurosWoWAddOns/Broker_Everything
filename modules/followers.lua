@@ -517,6 +517,7 @@ moduleC = {
 };
 
 moduleF = {
+	name = GARRISON_FOLLOWERS,
 	events = {"PLAYER_LOGIN"},
 	config_defaults = CopyTable(config_defaults),
 	clickOptionsRename = clickOptionsRename,
@@ -524,6 +525,7 @@ moduleF = {
 };
 
 moduleS = {
+	name = GARRISON_SHIPYARD_FOLLOWERS,
 	events = {"PLAYER_LOGIN"},
 	config_defaults = CopyTable(config_defaults),
 	clickOptionsRename = clickOptionsRename,

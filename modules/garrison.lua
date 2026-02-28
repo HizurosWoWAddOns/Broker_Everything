@@ -287,6 +287,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	name = GARRISON_LOCATION_TOOLTIP,
 	events = {
 		"VARIABLES_LOADED",
 		"PLAYER_LOGIN",

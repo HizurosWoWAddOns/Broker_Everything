@@ -94,7 +94,7 @@ local function chromieTimeSortByExp(a,b)
 end
 
 local function updateBroker()
-	local text,level = L[name],UnitLevel("player");
+	local text,level = XP,UnitLevel("player");
 	local needToLevelup, percentCurrentXP, percentExhaustion, percentCurrentXPStr, percentExhaustionStr = GetExperience(level,data.cur,data.max,data.rest);
 
 	-- broker button text
@@ -251,6 +251,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	name = XP,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_LOGOUT",

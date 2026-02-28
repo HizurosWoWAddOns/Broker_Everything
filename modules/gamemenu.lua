@@ -191,6 +191,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	name = MAINMENU_BUTTON,
 	events = {
 		"PLAYER_LOGIN",
 		"UPDATE_WEB_TICKET"

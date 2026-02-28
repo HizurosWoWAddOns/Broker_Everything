@@ -81,8 +81,8 @@ local function moduleInit(name, force)
 			local ldbOblectTable = {
 				-- button data
 				type          = "data source",
-				label         = L[name],
-				text          = L[name],
+				label         = mod.name or L[name],
+				text          = mod.name or L[name],
 				icon          = icon.iconfile, -- default or custom icon
 				staticIcon    = icon.staticIcon or icon.iconfile, -- default icon only
 				iconCoords    = icon.coords or {0, 1, 0, 1},

@@ -214,6 +214,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
+	name = ACHIEVEMENTS,
 	events = {
 		"PLAYER_LOGIN",
 		"ACHIEVEMENT_EARNED"

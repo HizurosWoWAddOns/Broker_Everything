@@ -863,6 +863,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	name = GUILD,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_ENTERING_WORLD",

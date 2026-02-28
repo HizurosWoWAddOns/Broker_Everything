@@ -50,6 +50,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
+	name = TRACKING,
 	events = {
 		"MINIMAP_UPDATE_TRACKING",
 		"PLAYER_LOGIN"

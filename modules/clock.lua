@@ -115,6 +115,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	name = TIMEMANAGER_TITLE,
 	events = {},
 	onupdate_interval = 1,
 	timeout = 30,

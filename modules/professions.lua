@@ -593,6 +593,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	name = TRADE_SKILLS,
 	events = {
 		"VARIABLES_LOADED",
 		"PLAYER_LOGIN",

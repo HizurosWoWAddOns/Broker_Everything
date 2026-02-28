@@ -8,9 +8,9 @@ if ns.client_version<5 then return end
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local name1 = "Raids" -- RAIDS L["ModDesc-Raids"]
-local name2 = "Dungeons" -- DUNGEONS L["ModDesc-Dungeons"]
-local ttName1, ttName2, ttColumns, tt1, tt2, createTooltip, module1, module2 = name1.."TT", name2.."TT", 5
+local nameR = "Raids" -- RAIDS L["ModDesc-Raids"]
+local nameD = "Dungeons" -- DUNGEONS L["ModDesc-Dungeons"]
+local ttNameR, ttNameD, ttColumns, ttR, ttD, createTooltip, moduleR, moduleD = nameR.."TT", nameD.."TT", 5
 local fState,symbol = C("ltgray"," (%d/%d)"),"|Tinterface\\buttons\\UI-%sButton-Up:0|t ";
 local PL_collected,PEW_collected,activeEncounter = true,true;
 local BossKillQueryUpdate,UpdateInstaceInfoLock = false,{};
@@ -33,8 +33,8 @@ end
 
 -- register icon names and default files --
 -------------------------------------------
-I[name1] = {iconfile="interface\\minimap\\raid", coords={0.25,0.75,0.25,0.75}};
-I[name2] = {iconfile="interface\\minimap\\dungeon", coords={0.25,0.75,0.25,0.75}};
+I[nameR] = {iconfile="interface\\minimap\\raid", coords={0.25,0.75,0.25,0.75}};
+I[nameD] = {iconfile="interface\\minimap\\dungeon", coords={0.25,0.75,0.25,0.75}};
 
 
 -- some local functions --
@@ -120,8 +120,8 @@ local function updateInstances()
 		end
 	end
 
-	ns.toon[name1] = activeInstances.Raids;
-	ns.toon[name2] = activeInstances.Dungeons;
+	ns.toon[nameR] = activeInstances.Raids;
+	ns.toon[nameD] = activeInstances.Dungeons;
 end
 
 local function createTooltip2(self,instance)
@@ -129,7 +129,7 @@ local function createTooltip2(self,instance)
 	local t = time();
 
 	GameTooltip:SetOwner(self,"ANCHOR_NONE");
-	GameTooltip:SetPoint(ns.GetTipAnchor(self,"horizontal",tt1 or tt2));
+	GameTooltip:SetPoint(ns.GetTipAnchor(self,"horizontal",ttR or ttD));
 	GameTooltip:SetFrameLevel(self:GetFrameLevel()+1);
 
 	GameTooltip:ClearLines();
@@ -174,7 +174,7 @@ end
 
 local function toggleExpansion(self,data)
 	ns.profile[data.name]['showExpansion'..data.expansion] = not ns.profile[data.name]['showExpansion'..data.expansion];
-	createTooltip(data.name==name1 and tt1 or tt2,data.name,data.mode); -- force update tooltip?
+	createTooltip(data.name==nameR and ttR or ttD,data.name,data.mode); -- force update tooltip?
 end
 
 local function sortByIndex(a,b)
@@ -204,12 +204,12 @@ local function addExpTitle(name, mode, ejTier, tt)
 end
 
 function createTooltip(tt,name,mode)
-	local ttName = name==name1 and ttName1 or ttName2;
+	local ttName = name==nameR and ttNameR or ttNameD;
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
 	if tt.lines~=nil then tt:Clear(); end
 
-	tt:AddHeader(C("dkyellow",name==name1 and RAIDS or DUNGEONS));
+	tt:AddHeader(C("dkyellow",name==nameR and RAIDS or DUNGEONS));
 
 	if not ejInstancesFinished then
 		tt:AddSeparator(4,0,0,0,0)
@@ -289,7 +289,7 @@ function createTooltip(tt,name,mode)
 end
 
 local function OnEvent(self,event,...)
-	local name = self==module1.eventFrame and name1 or name2;
+	local name = self==moduleR.eventFrame and nameR or nameD;
 	if event=="PLAYER_LOGIN" then
 		if ns.toon[name]==nil then
 			ns.toon[name]={}
@@ -313,7 +313,8 @@ end
 
 -- module functions and variables --
 ------------------------------------
-module1 = {
+moduleR = {
+	name = RAIDS,
 	events = {
 		"PLAYER_LOGIN",
 		"UPDATE_INSTANCE_INFO",
@@ -326,7 +327,8 @@ module1 = {
 	}
 }
 
-module2 = {
+moduleD = {
+	name = DUNGEONS,
 	events = {
 		"PLAYER_LOGIN",
 		"UPDATE_INSTANCE_INFO",
@@ -342,7 +344,7 @@ module2 = {
 	}
 }
 
-function module1.options()
+function moduleR.options()
 	return {
 		broker = nil,
 		tooltip = {
@@ -357,7 +359,7 @@ function module1.options()
 	}
 end
 
-function module2.options()
+function moduleD.options()
 	return {
 		broker = nil,
 		tooltip = {
@@ -372,26 +374,26 @@ function module2.options()
 	}
 end
 
--- function module1.init() end
--- function module2.init() end
+-- function moduleR.init() end
+-- function moduleD.init() end
 
-module1.onevent = OnEvent;
-module2.onevent = OnEvent;
+moduleR.onevent = OnEvent;
+moduleD.onevent = OnEvent;
 
--- function module1.optionspanel(panel) end
--- function module1.onmousewheel(self,direction) end
--- function module1.ontooltip(tooltip) end
+-- function moduleR.optionspanel(panel) end
+-- function moduleR.onmousewheel(self,direction) end
+-- function moduleR.ontooltip(tooltip) end
 
-function module1.onenter(self)
+function moduleR.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt1 = ns.acquireTooltip({ttName1, ttColumns, "LEFT", "LEFT", "LEFT", "LEFT", "LEFT"},{false},{self});
-	createTooltip(tt1,name1,true); -- raids
+	ttR = ns.acquireTooltip({ttNameR, ttColumns, "LEFT", "LEFT", "LEFT", "LEFT", "LEFT"},{false},{self});
+	createTooltip(ttR,nameR,true); -- raids
 end
 
-function module2.onenter(self)
+function moduleD.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt2 = ns.acquireTooltip({ttName2, ttColumns, "LEFT", "LEFT", "LEFT", "LEFT", "LEFT"},{false},{self});
-	createTooltip(tt2,name2,false); -- dungeons
+	ttD = ns.acquireTooltip({ttNameD, ttColumns, "LEFT", "LEFT", "LEFT", "LEFT", "LEFT"},{false},{self});
+	createTooltip(ttD,nameD,false); -- dungeons
 end
 
 -- function module.onleave(self) end
@@ -401,6 +403,6 @@ end
 
 -- final module registration --
 -------------------------------
-ns.modules[name1] = module1;
-ns.modules[name2] = module2;
+ns.modules[nameR] = moduleR;
+ns.modules[nameD] = moduleD;
 

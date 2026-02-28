@@ -214,6 +214,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	name = GARRISON_MISSIONS,
 	events = {
 		"PLAYER_LOGIN",
 		"GARRISON_MISSION_LIST_UPDATE",

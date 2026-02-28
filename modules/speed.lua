@@ -79,9 +79,6 @@ setmetatable(worldMapByMapID,{__index=function(t,k)
 end})
 
 function CalcSpeed:Update()
-	if IsInInstance() then
-		return
-	end
 	-- Get mapID and positionInfo
 	if not currentMapID then
 		currentMapID = C_Map.GetBestMapForUnit("player") or 0
@@ -468,6 +465,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
+	name = SPEED,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_ENTERING_WORLD",

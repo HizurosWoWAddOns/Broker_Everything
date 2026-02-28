@@ -221,6 +221,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
+	name = WARDROBE,
 	events = {
 		"PLAYER_LOGIN",
 		"BAG_UPDATE_DELAYED",

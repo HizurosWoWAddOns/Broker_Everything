@@ -32,7 +32,7 @@ local function createTooltip(tt)
 	tt:AddHeader(C("dkyellow",L[name]))
 	tt:AddLine(" ")
 
-	line = tt:AddLine(L["ReloadUI"])
+	line = tt:AddLine(RELOADUI)
 	tt:SetLineScript(line, "OnMouseUp", C_UI.Reload); -- Use static Popup to avoid taint.
 
 	tt:AddLine(" ")
@@ -44,7 +44,7 @@ local function createTooltip(tt)
 		tt:AddLine(" ")
 		line = nil
 		tt:AddLine(
-			C("copper",L["ModKeyS"].."+"..L["MouseBtnL"]).." || "..C("green",L["ReloadUI"])
+			C("copper",L["ModKeyS"].."+"..L["MouseBtnL"]).." || "..C("green",RELOADUI)
 		)
 		tt:AddLine(
 			C("copper",L["ModKeyS"].."+"..L["MouseBtnR"]).." || "..C("green",L["StuffToggleFullScreen"])

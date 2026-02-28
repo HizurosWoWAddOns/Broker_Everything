@@ -661,6 +661,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module_sys = {
+	name = SYSTEM,
 	group = group,
 	events = {
 		"PLAYER_LOGIN",

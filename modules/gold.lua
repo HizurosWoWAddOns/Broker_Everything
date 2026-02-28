@@ -431,6 +431,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	name = BONUS_ROLL_REWARD_MONEY,
 	events = {
 		"PLAYER_ENTERING_WORLD",
 		"PLAYER_MONEY",

@@ -626,6 +626,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	name = FRIENDS,
 	events = {
 		"PLAYER_LOGIN",
 	},

@@ -400,6 +400,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	name = BAG_FILTER_EQUIPMENT,
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_REGEN_ENABLED",

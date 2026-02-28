@@ -421,6 +421,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	name = QUESTLOG_BUTTON,
 	events = {
 		"PLAYER_LOGIN",
 		"QUEST_LOG_UPDATE",

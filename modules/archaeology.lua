@@ -252,6 +252,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
+	name = PROFESSIONS_ARCHAEOLOGY,
 	events = {
 		"PLAYER_LOGIN",
 		"RESEARCH_ARTIFACT_UPDATE",

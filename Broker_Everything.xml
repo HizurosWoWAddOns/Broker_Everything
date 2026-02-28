@@ -5,11 +5,6 @@
 
 	<!-- localizations -->
 	<Script file="localizations.lua" />
-	<!--@do-not-package@-->
-	<Script file=".dev/localizations.imported-en.lua"/>
-	<Script file=".dev/localizations.imported-de.lua"/>
-	<Script file=".dev/localizations.workfile.lua"/>
-	<!--@end-do-not-package@-->
 	<!-- /localizations -->
 
 	<Script file="libs/HizurosSharedTools/HizurosSharedTools.lua"/>

@@ -590,6 +590,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
+	name = REPUTATION,
 	events = {
 		"PLAYER_LOGIN",
 		"UPDATE_FACTION",

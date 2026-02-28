@@ -269,6 +269,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	name = BUTTON_LAG_MAIL,
 	events = {
 		"PLAYER_LOGIN",
 		"UPDATE_PENDING_MAIL",
