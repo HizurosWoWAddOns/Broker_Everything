@@ -133,6 +133,67 @@ local function volumeClick(self,data,button)
 	percent(self,data.percent,data.pnow,button=="RightButton" and -1 or 1);
 end
 
+local updateMovieVolume,setMovieVolume,setMovieToggle,setMovieVolumeWheel
+do
+	local current;
+	function updateMovieVolume(start)
+		local movie = {enable = ns.profile[name].movieVolumeEnable, vol = ns.profile[name].movieVolume};
+		local master = {state = C_CVar.GetCVar("Sound_EnableAllSound")=="1", vol = tonumber(C_CVar.GetCVar("Sound_MasterVolume"))};
+		if start then
+			if movie.enable and not master.state then
+				current = CopyTable(master);
+				C_CVar.SetCVar("Sound_EnableAllSound","1")
+				if current.vol~=movie.vol then
+					C_CVar.SetCVar("Sound_MasterVolume",movie.vol);
+				end
+			end
+		elseif current then
+			if current.state~=master.state then
+				C_CVar.SetCVar("Sound_EnableAllSound","0")
+				if current.vol ~= movie.vol then
+					C_CVar.SetCVar("Sound_MasterVolume",current.vol)
+				end
+				current = nil;
+			end
+		end
+	end
+
+	function setMovieToggle()
+		ns.profile[name].movieVolumeEnable = not ns.profile[name].movieVolumeEnable;
+		updateTooltip();
+	end
+
+	function setMovieVolume(self,data,button)
+		if type(data)=="table" then
+			data = button=="RightButton" and -1 or 1;
+		end
+		local new = ns.profile[name].movieVolume + (data*10);
+		if new>=0 and new<=100 then
+			ns.profile[name].movieVolume = new;
+			updateTooltip();
+		end
+	end
+end
+
+local function lineTooltipOnEnter(self)
+	if not self.tooltip then return end
+	local x = tt:GetCenter();
+	local X = GetPhysicalScreenSize()/2;
+	GameTooltip:SetOwner(self,"ANCHOR_NONE");
+	if x>X then
+		GameTooltip:SetPoint("RIGHT",self,"LEFT",-12,0)
+	else
+		GameTooltip:SetPoint("LEFT",self,"RIGHT",12,0)
+	end
+	GameTooltip:SetText(L[self.tooltip[1]],1,1,1)
+	GameTooltip:AddLine(L[self.tooltip[2]],nil,nil,nil,true)
+	GameTooltip:Show();
+end
+
+local function lineTooltipOnLeave(self)
+	GameTooltip:Hide();
+end
+
 function createTooltip(tt, update)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 	if tt.lines~=nil then tt:Clear(); end
@@ -145,17 +206,35 @@ function createTooltip(tt, update)
 	for i,v in ipairs(vol) do
 		local color,disabled
 
-		local label = _G[v.locale];
-		if not label then
+		local label = v.locale;
+		if _G[v.locale] then
+			label = _G[v.locale];
+		elseif L[v.locale]~=v.locale and not L[v.locale]:match("^<") then
 			label = L[v.locale];
 		end
 
 		if (v.hide) or not label then
 			-- do nothing
 		elseif type(v.toggle)=="string" then
+			local volToggle = toggleEntry;
+			local volClick = volumeClick;
+			local volWheel = volumeWheel;
+			if v.special=="movie" then
+				volToggle = setMovieToggle;
+				volClick = setMovieVolume;
+				volWheel = setMovieVolume;
+				v.now = ns.profile[name].movieVolumeEnable and 1 or 0;--tonumber(GetCVar(v.toggle));
+				vol[i].now=v.now;
+				v.inv = v.now==1 and 0 or 1;
+
+				tt:AddSeparator(3,0,0,0,0);
+				tt:AddHeader(C("dkyellow",SPECIAL));
+				tt:AddSeparator();
+			else
+				v.now = tonumber(GetCVar(v.toggle)); vol[i].now=v.now;
+				v.inv = v.now==1 and 0 or 1;
+			end
 			l,c = tt:AddLine();
-			v.now = tonumber(GetCVar(v.toggle)); vol[i].now=v.now;
-			v.inv = v.now==1 and 0 or 1;
 			if (v.toggle~="no-toggle") then
 				if v.depend~=nil and ( (v.depend[1]~=nil and vol[v.depend[1]].now==0) or (v.depend[2]~=nil and vol[v.depend[2]].now==0) ) then
 					color = v.now==1 and "gray" or "dkgray";
@@ -165,7 +244,12 @@ function createTooltip(tt, update)
 					color = v.now==1 and "green" or "red";
 					disabled = v.now==1 and "white" or "gray";
 				end
-				tt:SetLineScript(l,"OnMouseUp",toggleEntry,v);
+				tt:SetLineScript(l,"OnMouseUp",volToggle,v);
+				if v.tooltip then
+					tt.lines[l].tooltip = v.tooltip;
+					tt:SetLineScript(l,"OnEnter",lineTooltipOnEnter)
+					tt:SetLineScript(l,"OnLeave",lineTooltipOnLeave)
+				end
 			else
 				if v.depend~=nil and ( (v.depend[1]~=nil and vol[v.depend[1]].now==0) or (v.depend[2]~=nil and vol[v.depend[2]].now==0) ) then
 					color = "gray";
@@ -180,16 +264,20 @@ function createTooltip(tt, update)
 			tt:SetCell(l,1,strrep(" ",3 * v.inset)..C(color,label));
 
 			if v.percent~=nil then
-				v.pnow = tonumber(("%.2f"):format(GetCVar(v.percent) or 0));
+				if v.percent:match("^be%.") then
+					v.pnow = tonumber(ns.profile[name][(v.percent:gsub("^be%.",""))]/100);
+				else
+					v.pnow = tonumber(("%.2f"):format(GetCVar(v.percent) or 0));
+				end
 
 				tt.lines[l].info = v;
 				tt.lines[l]:EnableMouseWheel(1)
-				tt.lines[l]:SetScript("OnMouseWheel",volumeWheel);
+				tt.lines[l]:SetScript("OnMouseWheel",volWheel,v);
 				tinsert(wheels,l);
 
 				tt:SetCell(l,ttColumns,C(disabled,ceil(v.pnow*100).."%"));
 
-				tt:SetCellScript(l,ttColumns,"OnMouseUp",volumeClick,v);
+				tt:SetCellScript(l,ttColumns,"OnMouseUp",volClick,v);
 			else
 				tt:SetCell(l,ttColumns,"           ");
 			end
@@ -214,12 +302,6 @@ function createTooltip(tt, update)
 					tt:SetLineScript(l,"OnMouseUp",setSoundHardware,I);
 				end
 			end
-		elseif (v.special=="video") then
-			tt:AddSeparator(3,0,0,0,0);
-			tt:AddHeader(C("dkyellow",VIDEO_VOLUME_TITLE));
-			tt:AddSeparator();
-			-- master volumes
-			tt:AddLine("   ".._G["MASTER_VOLUME"], "0%");
 		end
 	end
 
@@ -260,13 +342,17 @@ module = {
 	events = {
 		"PLAYER_LOGIN",
 		"CVAR_UPDATE",
-		"SOUND_DEVICE_UPDATE"
+		"SOUND_DEVICE_UPDATE",
+		"CINEMATIC_START",
+		"CINEMATIC_STOP",
 	},
 	config_defaults = {
 		enabled = true,
 		useWheel = true,
 		steps = 10,
-		listHardware = true
+		listHardware = true,
+		movieVolumeEnable = true,
+		movieVolume = 100,
 	},
 	clickOptionsRename = {
 		["mute"] = "0_mute",
@@ -342,6 +428,7 @@ function module.init()
         {inset=1,locale="ENABLE_REVERB",             toggle="Sound_EnableReverb",                     depend={1}        },
         {inset=1,locale="ENABLE_SOFTWARE_HRTF",      toggle="Sound_EnablePositionalLowPassFilter",    depend={1}        },
         {inset=1,locale="ENABLE_DSP_EFFECTS",        toggle="Sound_EnableDSPEffects",                 depend={1}        },
+        {inset=1,locale="MovieVolume",               toggle="be.movieVolumeEnable",                  special="movie",  percent="be.movieVolume", tooltip={"MovieVolume","MovieVolumeDesc"}},
         {inset=0,locale="HARDWARE",                  toggle=false,                                    special="hardware"},
     }
 	for i=1,#vol do
@@ -366,6 +453,8 @@ function module.onevent(self,event,arg1)
 			self.hooked = true;
 		end
 		updateBroker();
+	elseif event:match("CINEMA") then
+		updateMovieVolume(event:match("START")=="START")
 	end
 end
 
