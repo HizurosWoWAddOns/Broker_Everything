@@ -235,7 +235,7 @@ local function createTooltip_AddCurrencies(currencyList)
 		if currencyListIndexType=="string" then
 			local headerStr = currencyList[index];
 			if empty==true and not parentIsCollapsed then
-				tt:SetCell(tt:AddLine(),1,C("gray",L["No currencies discovered..."]),nil,nil,0);
+				tt:SetCell(tt:AddLine(),1,C("ltgray",L["No currencies discovered..."]),nil,nil,0);
 			end
 			if headerStr:match("HIDDEN_CURRENCIES") then
 				if ns.toon[name].headers[headerStr]==nil then
@@ -345,9 +345,6 @@ local function createTooltip_AddCurrencies(currencyList)
 			end
 		end
 
-	end
-	if prevType=="string" and empty then -- last section is empty
-		tt:SetCell(tt:AddLine(),1,C("gray",L["No currencies discovered..."]),nil,nil,0);
 	end
 end
 
