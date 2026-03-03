@@ -10,7 +10,7 @@ if ns.client_version<4 then return end
 -----------------------------------------------------------
 local name = "Surprise" -- L["Surprise"] L["ModDesc-Surprise"]
 local ttName,ttColumns,tt,module = name.."TT",3,nil
-local ITEM_DURATION,ITEM_COOLDOWN,ITEM_LOOTABLE=1,2,3
+local ITEM_DURATION,ITEM_COOLDOWN,ITEM_LOOTABLE,ITEM_USABLE=1,2,3,4
 local founds,items = {};
 
 
@@ -25,7 +25,7 @@ local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName);
 	local sum,finished = #founds,0;
 	for i=1, sum do
-		if items[founds[i].id] and items[founds[i].id][1]==ITEM_LOOTABLE then
+		if items[founds[i].id] and (items[founds[i].id][1]==ITEM_LOOTABLE or items[founds[i].id][1]==ITEM_USABLE) then
 			finished = finished+1;
 		end
 	end
@@ -70,7 +70,7 @@ local function createTooltip(tt)
 				(type(items[item.id][2])=="function" and items[item.id][2]())
 				or (items[item.id][2]=="tooltip" and item.lines[items[item.id][3]])
 				or (items[item.id][2]=="duration" and tonumber(item.duraction) and SecondsToTime(item.duraction))
-				or (items[item.id][1]==ITEM_LOOTABLE and C("green",L["(finished)"]))
+				or ((items[item.id][1]==ITEM_LOOTABLE or items[item.id][1]==ITEM_USABLE) and C("green",L["(finished)"]))
 				or "("..UNKNOWN..")"
 			);
 		end
@@ -151,7 +151,10 @@ function module.init()
 		[184104] = {ITEM_DURATION, "tooltip", 3},
 		[181818] = {ITEM_LOOTABLE},
 
-		--
+		-- 15, Weathered Eagle Egg >> Scruffbeak
+
+		[255008] = {ITEM_DURATION, "tooltip", 4},
+		[255151] = {ITEM_USABLE},
 	}
 	ns.items.RegisterCallback(name,bagCheck,"bags");
 end
