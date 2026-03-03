@@ -367,9 +367,9 @@ function createTooltip(tt)
 		createTooltip_AddCurrencies({"FAVORITES",unpack(ns.profile[name].favs)})
 	end
 
-	createTooltip_AddCurrencies(Currencies)
+	createTooltip_AddCurrencies(IsShiftKeyDown() and CurrenciesHidden or Currencies)
 
-	if ns.profile[name].showHidden then
+	if ns.profile[name].showHidden and not IsShiftKeyDown() then
 		createTooltip_AddCurrencies(CurrenciesHidden)
 	end
 
@@ -827,7 +827,8 @@ function module.options()
 		hideEmpty     = { type="toggle", order=7, name=L["CurrencyHideEmpty"], desc=L["CurrencyHideEmptyDesc"] },
 		showIDs       = { type="toggle", order=8, name=L["Show currency id's"], desc=L["Display the currency id's in tooltip"] },
 		shortTT       = { type="toggle", order=9, name=L["Short Tooltip"], desc=L["Display the content of the tooltip shorter"] },
-		showHidden    = { type="toggle", order=10, name=L["CurrencyHidden"], desc=L["CurrencyHiddenDesc"], hidden=ns.IsClassicClient },
+		showHidden    = { type="toggle", order=10, name=L["CurrencyHidden"], desc=L["CurrencyHiddenDesc"].."|n|n"..L["CurrencyHiddenShiftKey"] },
+		showHiddenInfo= { type="description", order=11, name=L["CurrencyHiddenShiftKey"] },
 		header        = { type="header", order=20, name=L["CurrencyFavorites"], hidden=isHidden },
 		info          = { type="description", order=21, name=L["CurrencyFavoritesInfo"], fontSize="medium", hidden=true },
 	}
@@ -855,7 +856,7 @@ function module.options()
 		tooltip = tooltip,
 		misc = {
 			shortNumbers=1,
-			showHiddenInMenu={type="toggle",order=2, name=L["CurrencyHiddenMenu"], desc=L["CurrencyHiddenMenuDesc"], hidden=ns.IsClassicClient },
+			showHiddenInMenu={type="toggle",order=2, name=L["CurrencyHiddenMenu"], desc=L["CurrencyHiddenMenuDesc"] },
 		},
 	}, nil, true
 end
