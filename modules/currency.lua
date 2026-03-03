@@ -15,7 +15,7 @@ local BrokerPlacesMax,FavPlacesMax,createTooltip = 10,10;
 local Currencies,CurrenciesFav,CurrenciesHidden,CovenantCurrencies,covenantID,profSkillLines,tradeSkillNames,CurrenciesDefault,profSkillLine2Currencies = {},{},{},{},0,{},{};
 local currency2skillLine,profIconReplace,knownCurrencies,hiddenCurrencies = {},{},{}
 local CurrenciesReplace,CurrenciesRename,hiddenCurrenciesSel,hiddenCurrenciesCategories,hiddenCurrenciesCategoriesPattern = {},{},{},{},{}
-local hidden2section = {}
+local hidden2section, CurrenciesExpansionDefault, CurrenciesMiscDefault, CurrenciesCapInvert = {}
 local headers = {
 	HIDDEN_CURRENCIES = "Hidden currencies", -- L["Hidden currencies"]
 	DUNGEON_AND_RAID = "Dungeon and Raid", -- L["Dungeons and Raids"]
@@ -42,6 +42,10 @@ I[name..'_Alliance'] = {iconfile="Interface\\PVPFrame\\PVP-Currency-Alliance", c
 
 -- some local functions --
 --------------------------
+local function trimUpper(s)
+	return strupper(gsub(s," ",""))
+end
+
 local function CountCorrection(id,info)
 	local v = countCorrectionList[id];
 	if v then
@@ -214,7 +218,7 @@ local function tooltip2Hide(self)
 end
 
 local function IsCurrencyShown(currencyInfo)
-	if not currencyInfo or parentIsCollapsed then
+	if not currencyInfo then
 		return false;
 	end
 	local chkDiscoveredState = (ns.profile[name].onlyDiscovered and currencyInfo.discovered) or not ns.profile[name].onlyDiscovered;
@@ -549,8 +553,9 @@ local function updateCurrencies()
 		hiddenCurrenciesCategories = {}
 
 		for cat,values in pairs(hiddenCurrenciesCategoriesPattern) do
-			if not headers["HIDDEN_CURRENCIES_"..strupper(cat)] then
-				headers["HIDDEN_CURRENCIES_"..strupper(cat)] = headers.HIDDEN_CURRENCIES.." - "..(values[2] or L[cat]);
+			local catUpper = trimUpper(cat)
+			if not headers["HIDDEN_CURRENCIES_"..catUpper] then
+				headers["HIDDEN_CURRENCIES_"..catUpper] = headers.HIDDEN_CURRENCIES.." - "..(values[2] or L[cat]);
 			end
 		end
 
@@ -558,9 +563,11 @@ local function updateCurrencies()
 			if not knownCurrencies[i] then
 				local info = C_CurrencyInfo.GetCurrencyInfo(i);
 				local checkName = info and info.name:lower() or nil;
-				if info and info.name and not (ignore[info.name] or checkName:find("zzold") or checkName:find("Test") or checkName:find("Prototype") or --[[ checkName:find("[dnt]") or ]] checkName:find("[ph]")) then
+				if info and info.name and not (ignore[info.name] or checkName:find("zzold") or checkName:find("Test") or checkName:find("Prototype") or --[[ checkName:find("[dnt]") or ]] checkName:find("%[ph%]")) then
 					if ns.isArchaeologyCurrency(i) then
 						hiddenCurrenciesAddCategory(i,info,"Archaeology") -- add archaeology currencies to category Archaeology
+					elseif checkName:match("account hwm") --[[ and not hiddenCurrenciesAddCategory(i,info) ]] then
+						hiddenCurrenciesAddCategory(i,info,"Account HWM"); -- add the rest to category misc.
 					elseif not hiddenCurrenciesAddCategory(i,info) then -- add currencies by pattern to corresponding categories
 						hiddenCurrenciesAddCategory(i,info,"Misc"); -- add the rest to category misc.
 					end
@@ -576,7 +583,7 @@ local function updateCurrencies()
 		local last = nil;
 		for cat, currencies in pairs(hiddenCurrenciesCategories) do
 			if cat~="Misc" then
-				local catUpper = strupper(cat);
+				local catUpper = trimUpper(cat);
 				if last~=cat then
 					tinsert(tmpH,"HIDDEN_CURRENCIES_"..catUpper);
 					currencyCounter["HIDDEN_CURRENCIES_"..catUpper] = #currencies;
@@ -875,6 +882,21 @@ function module.init()
 	headers.DUNGEON_AND_RAID = L["Dungeons and raids"];
 	headers.HIDDEN_CURRENCIES = L["Hidden currencies"];
 	headers.HIDDEN_CURRENCIES_ARCHAEOLOGY = L["Hidden currencies"].." - "..PROFESSIONS_ARCHAEOLOGY;
+	headers.HIDDEN_CURRENCIES_ACCOUNTHWM = L["Hidden account hwm"];
+
+	hiddenCurrenciesCategoriesPattern={
+		-- TableKey = {<locale name>, <english name>, (more optional pattern) ... }
+		Archaeology={ARCHAEOLOGY,"Archaeology"},
+		Torghast={L["Torghast"],"Torghast"},
+		Timewalking={PLAYER_DIFFICULTY_TIMEWALKER,"Timewalking"},
+		DragonRacing={L["DragonRacing"],"Dragon Racing"},
+		Delves={DELVES_LABEL,"Delves"},
+		Professions={TRADE_SKILLS,"Professions" --[[,PROFESSIONS_TRACKER_HEADER_PROFESSION]]},
+		PvP={PVP,"PvP"},
+		Account_HWM = {L["Account HWM"],"Account HWM"},
+		--Shadowlands={EXPANSION_NAME9},
+		--DragonFlight={EXPANSION_NAME10},
+	}
 
 	for i=1, 99 do
 		local n = "EXPANSION_NAME"..i;
@@ -965,7 +987,7 @@ function module.init()
 			[333] = {3258,3152}, -- Enchanting
 			[202] = {3259,3153}, -- Engineering
 			[773] = {3261,3155}, -- Inscription
-			[755] = {3262}, -- Jewelcrafting
+			[755] = {3262,3156}, -- Jewelcrafting
 			[165] = {3263,3157}, -- Leatherworking
 			[197] = {3266,3160}, -- Tailoring
 			[393] = {3265,3159}, -- Skinning
@@ -995,19 +1017,6 @@ function module.init()
 		[2174]=2029, -- Jewelcrafting
 		[2169]=2025, -- Leatherworking
 		[2171]=2026, -- Tailoring
-	}
-
-	hiddenCurrenciesCategoriesPattern={
-		-- TableKey = {<locale name>, <english name>, (more optional pattern) ... }
-		Archaeology={ARCHAEOLOGY,"Archaeology"},
-		Torghast={L["Torghast"],"Torghast"},
-		Timewalking={PLAYER_DIFFICULTY_TIMEWALKER,"Timewalking"},
-		DragonRacing={L["DragonRacing"],"Dragon Racing"},
-		Delves={DELVES_LABEL,"Delves"},
-		Professions={TRADE_SKILLS,"Professions" --[[,PROFESSIONS_TRACKER_HEADER_PROFESSION]]},
-		PvP={PVP,"PvP"},
-		--Shadowlands={EXPANSION_NAME9},
-		--DragonFlight={EXPANSION_NAME10},
 	}
 
 	for k,v in pairs({

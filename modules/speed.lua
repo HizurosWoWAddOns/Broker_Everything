@@ -97,7 +97,6 @@ function CalcSpeed:Update()
 		end
 	end
 	if not posInfo then
-		ns:debugPrint("posInfo is nil",currentMapID)
 		return
 	end
 
