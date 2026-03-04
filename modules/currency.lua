@@ -980,14 +980,14 @@ function module.init()
 		},
 		-- Note: It looks like dragonflight and the war within sharing workorder weekly cap
 		["EXPANSION_NAME11"] = {
-			[171] = {3256,3150}, -- Alchemy
-			[164] = {3257,3151}, -- Blacksmithing
-			[333] = {3258,3152}, -- Enchanting
-			[202] = {3259,3153}, -- Engineering
-			[773] = {3261,3155}, -- Inscription
-			[755] = {3262,3156}, -- Jewelcrafting
-			[165] = {3263,3157}, -- Leatherworking
-			[197] = {3266,3160}, -- Tailoring
+			[171] = {3256,3150,3161}, -- Alchemy
+			[164] = {3257,3151,3162}, -- Blacksmithing
+			[333] = {3258,3152,3163}, -- Enchanting
+			[202] = {3259,3153,3164}, -- Engineering
+			[773] = {3261,3155,3165}, -- Inscription
+			[755] = {3262,3156,3166}, -- Jewelcrafting
+			[165] = {3263,3157,3167}, -- Leatherworking
+			[197] = {3266,3160,3168}, -- Tailoring
 			[393] = {3265,3159}, -- Skinning
 			[182] = {3260,3154}, -- Herbalism
 			[186] = {3264,3158}, -- Mining
