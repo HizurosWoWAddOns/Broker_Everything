@@ -772,7 +772,6 @@ function module.options()
 end
 
 function module.init()
-	ns:debug("<module.init>")
 	-- [<tradeSkillId>]={ {<factionId>, <standingId>, <itemId>, <spellId>[, <recipeStars>]}, ... }
 	faction_recipes[6]={ -- legion
 		-- Alchemy
@@ -1102,6 +1101,7 @@ function module.onevent(self,event,arg1,...)
 			toonDB.cooldown_locks = {};
 		end
 		-- little migration
+		ns.profileSilenceFIXME=true;
 		if ns.profile[name].showLegionFactionRecipes then
 			for _,exp in ipairs({ {6,"Legion",{7,"BfA"},{8,"Shadow"},{9,"DFF"}} })do
 				ns.profile[name]["Expansion"..exp[1].."FactionRecipes"] = ns.profile[name]["show"..exp[2].."FactionRecipes"];
