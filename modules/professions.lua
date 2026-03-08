@@ -167,7 +167,11 @@ do
 		alreadyShown[skillLine] = true;
 	end
 	function UpdateFactionRecipesHook()
-		ProfessionsFrame:HookScript("OnShow",function() ticker = C_Timer.NewTicker(.2,UpdateFactionRecipes); end);
+		ProfessionsFrame:HookScript("OnShow",function()
+			if not (C_TradeSkillUI.IsTradeSkillGuild() or C_TradeSkillUI.IsTradeSkillLinked()) then
+				ticker = C_Timer.NewTicker(.2,UpdateFactionRecipes);
+			end
+		end);
 	end
 	if ProfessionsFrame then
 		-- client 10.1; ProfessionsFrame loaded early
