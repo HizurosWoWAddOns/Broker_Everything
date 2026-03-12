@@ -41,6 +41,8 @@ local function note_save(self)
 
 	local title = editor.title:GetText():trim();
 	local text = editor.text:GetText():trim();
+	local charOnly = editor.charOnly:GetChecked() and ns.player.name_realm_short or false;
+
 	local titleCount,textCount = strlen(title),strlen(text);
 
 	editor.titleCount:SetFormattedText("%d / %d",titleCount,32);
@@ -51,9 +53,13 @@ local function note_save(self)
 	end
 
 	if editor.index then
-		ns.data[name][editor.index] = {title,text};
+		ns.data[name][editor.index][1] = title;
+		ns.data[name][editor.index][2] = text;
+		if not (type(ns.data[name][editor.index][3])=="string" and ns.data[name][editor.index][3]~=ns.player.name_realm_short) then -- do not override charOnly entry with another char name
+			ns.data[name][editor.index][3] = charOnly;
+		end
 	else
-		tinsert(ns.data[name],{title,text});
+		tinsert(ns.data[name],{title,text,charOnly});
 		editor.index = #ns.data[name];
 	end
 end
@@ -61,14 +67,22 @@ end
 -- local function updateBroker() end
 
 function note_edit(self,index)
-	local title,text = "","";
+	local title,text,charOnly = "","",false;
 	if index then
 		title = ns.data[name][index][1];
 		text = ns.data[name][index][2];
+		charOnly = not not ns.data[name][index][3];
 	end
 	editor.index = index or false;
 	editor.title:SetText(title);
 	editor.text:SetText(text);
+	editor.charOnly:SetChecked(charOnly);
+	editor.charOnly:SetEnabled(not ns.data[name][index][3] or (ns.data[name][index][3] and ns.data[name][index][3]==ns.player.name_realm_short))
+	if ns.data[name][index][3] and ns.data[name][index][3]~=ns.player.name_realm_short then
+		editor.charOnly.Text:SetText(ns.data[name][index][3])
+	else
+		editor.charOnly.Text:SetText(L["NotesCharOnly"])
+	end
 	editor:Show();
 end
 
@@ -119,7 +133,6 @@ function BrokerEverythingNotesEditorMixin:OnLoad()
 	self:SetSize(410,240)
 	self:SetUserPlaced(true)
 
-
 	-- frame movable
 	self:RegisterForDrag("LeftButton");
 	self:SetScript("OnDragStart", self.StartMoving);
@@ -147,6 +160,17 @@ function BrokerEverythingNotesEditorMixin:OnLoad()
 	self.text:SetMaxLetters(textLimit);
 	self.text:SetScript("OnTextChanged",note_save);
 
+	self.charOnly.Text:SetText(L["NotesCharOnly"])
+	self.charOnly:SetScript("OnEnter",function()
+		GameTooltip:SetOwner(editor.charOnly.Text,"ANCHOR_RIGHT")
+		GameTooltip:SetText(L["NotesCharOnlyDesc"]);
+		GameTooltip:Show();
+	end);
+	self.charOnly:SetScript("OnLeave",function()
+		GameTooltip:Hide();
+	end);
+	self.charOnly:SetScript("OnClick",note_save);
+
 	-- hide window on escape and other reasons
 	hooksecurefunc(_G,"CloseWindows",function()
 		self:Hide();
@@ -173,18 +197,28 @@ function createTooltip(tt)
 	tt:AddHeader(C("dkyellow",L[name]));
 	tt:AddSeparator();
 	for i=1, #ns.data[name] do
-		local str = ns.data[name][i][1];
-		if strlen(str)==0 then
-			str = strsplit("\n",ns.data[name][i][2]);
-			str = ns.strCut(str,32);
+		if ns.data[name][i][3]==false or ns.data[name][i][3]==nil or ns.data[name][i][3]==ns.player.name_realm_short --[[ or IsShiftKeyDown() ]] then
+			local str = ns.data[name][i][1];
+			if strlen(str)==0 then
+				str = strsplit("\n",ns.data[name][i][2]);
+				str = ns.strCut(str,32);
+			end
+			if ns.data[name][i][3]==ns.player.name_realm_short then
+				str = C("ltyellow",str)
+			elseif not not ns.data[name][i][3] then
+				str = C("ltgray",str)
+			end
+			local l=tt:AddLine(str);
+			if ns.data[name][i][3] and ns.data[name][i][3]~=ns.player.name_realm_short then
+				tt:SetCell(l,2,ns.data[name][i][3])
+			end
+			if delIndex==i then
+				tt:SetCell(l,2,C("orange","("..L["really?"]..")"));
+			end
+			tt:SetLineScript(l,"OnMouseUp",note_options,i);
+			tt:SetLineScript(l,"OnEnter",note_show,i);
+			tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 		end
-		local l=tt:AddLine(str);
-		if delIndex==i then
-			tt:SetCell(l,2,C("orange","("..L["really?"]..")"));
-		end
-		tt:SetLineScript(l,"OnMouseUp",note_options,i);
-		tt:SetLineScript(l,"OnEnter",note_show,i);
-		tt:SetLineScript(l,"OnLeave",GameTooltip_Hide);
 	end
 	if #ns.data[name]==0 then
 		local l=tt:AddLine();
@@ -200,6 +234,7 @@ function createTooltip(tt)
 		tt:AddSeparator(4,0,0,0,0);
 		ns.AddSpannedLine(tt,C("ltblue",L["MouseBtnL"]).." || "..C("green",L["Edit note"]));
 		ns.AddSpannedLine(tt,C("ltblue",L["MouseBtnR"]).." || "..C("green",L["Delete note"]));
+		-- ns.AddSpannedLine(tt,C("ltblue",L["Hold shift"]).." || "..C("green",L["NotesSeeHidden"]));
 		ns.ClickOpts.ttAddHints(tt,name);
 	end
 	ns.roundupTooltip(tt);

@@ -237,6 +237,11 @@
 					<Anchor point="BOTTOMRIGHT" x="-2" y="4"/>
 				</Anchors>
 			</Button>
+			<CheckButton parentKey="charOnly" inherits="UICheckButtonTemplate">
+				<Anchors>
+					<Anchor point="BOTTOMLEFT" x="8" y="-2" />
+				</Anchors>
+			</CheckButton>
 		</Frames>
 		<Scripts>
 			<OnLoad method="OnLoad" />
