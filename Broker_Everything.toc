@@ -6,14 +6,13 @@
 ## Version: @project-version@
 
 # https://warcraft.wiki.gg/wiki/Addon_Categories
-## Category: Data Broker (need translation on https://warcraft.wiki.gg/wiki/Addon_Categories)
-## Category-enUS: Data Broker
+## Category: Data Broker
 ## Category-deDE: Datenbroker
 ## Category-esES: Intermediario de Datos
 ## Category-esMX: Intermediario de Datos
 ## Category-frFR: Courtier de Données
-## Category--itIT:
-## Category--koKR:
+## Category-itIT: Data Broker
+## Category-koKR: 데이터 브로커
 ## Category-ptBR: Corretor de Dados
 ## Category-ruRU: Посредник данных
 ## Category-zhCN: 数据管理
