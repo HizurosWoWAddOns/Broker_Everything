@@ -224,39 +224,30 @@ local function resetMemUpdateLock()
 	memUpdateLocked = false;
 end
 
-local memUpdateLocked2 = false;
-local function memUpdateHook()
-	-- second update lock for execution of UpdateAddOnMemoryUsage by other addons.
-	memUpdateLocked2 = true
-	C_Timer.After(3.14159,function() memUpdateLocked2 = false end)
-end
-
 -- local function updateRealm() end
-
-if UpdateAddOnMemoryUsage then
-	hooksecurefunc("UpdateAddOnMemoryUsage",memUpdateHook)
-elseif C_AddOns.UpdateAddOnMemoryUsage then
-	hooksecurefunc(C_AddOns,"UpdateAddOnMemoryUsage",memUpdateHook);
-end
 
 local function updateMemory(updateToken)
 	-- against too often triggered UpdateAddOnMemoryUsage.
 	if (IsInInstance() and enabled.sys_mod and ns.profile[name_sys].updateIntervalNotInInstance)
 	or (IsInInstance() and enabled.mem_mod and ns.profile[name_mem].updateIntervalNotInInstance)
-	or memUpdateLocked then return end
-
+	or memUpdateLocked then
+		return
+	end
 	memUpdateLocked = true;
 	C_Timer.After(25, resetMemUpdateLock);
 	--
 	setMemoryTimeout();
-	if not (enabled.sys_mod or enabled.mem_mod) then return end
-	if updateToken==triggerUpdateToken and not memUpdateLocked2 then
+
+	--[[
+	if updateToken==triggerUpdateToken then
 		if UpdateAddOnMemoryUsage then
 			securecall("UpdateAddOnMemoryUsage")
 		elseif C_AddOns.UpdateAddOnMemoryUsage then
 			securecall("C_AddOns.UpdateAddOnMemoryUsage");
 		end
 	end
+	--]]
+
 	local num=C_AddOns.GetNumAddOns();
 	local lst,grps,sum,numLoadedAddOns = {},{},0,0;
 	memory.numAddOns=0;
@@ -507,7 +498,11 @@ local function updateAll()
 
 	-- apply hook
 	if not isHooked and (enabled.sys_mod or enabled.mem_mod) then
-		hooksecurefunc("UpdateAddOnMemoryUsage",updateMemory);
+		if C_AddOns and C_AddOns.UpdateAddOnMemoryUsage then
+			hooksecurefunc(C_AddOns,"UpdateAddOnMemoryUsage",updateMemory);
+		elseif UpdateAddOnMemoryUsage then
+			hooksecurefunc("UpdateAddOnMemoryUsage",updateMemory)
+		end
 		isHooked = true;
 	end
 
@@ -524,13 +519,7 @@ local function updateAll()
 	-- update memmory usage
 	if not InCombatLockdown() and memoryTimeout~=false and ((enabled.mem_sys and ns.profile[name_sys].updateInterval>0) or (enabled.mem_mod and ns.profile[name_mem].updateInterval>0)) then
 		if memoryTimeout<=0 then
-			-- for debugging
-			-- try to get the list of addons in lua errors like 'script ran too long' :-/
-			local activeAddOns,numActiveAddOns,numAddOns = {},0,C_AddOns.GetNumAddOns();
-			for i=1, numAddOns do local n=C_AddOns.GetAddOnInfo(i); if C_AddOns.IsAddOnLoaded(n) then tinsert(activeAddOns,n) end end
-			numActiveAddOns,activeAddOns = #activeAddOns,table.concat(activeAddOns,",");
-
-			updateMemory(triggerUpdateToken);
+			updateMemory();
 		else
 			memoryTimeout=memoryTimeout-1;
 		end
