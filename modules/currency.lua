@@ -1068,7 +1068,7 @@ function module.onevent(self,event,arg1)
 	if ns.eventPlayerEnteredWorld then
 		updateBroker();
 		if (tt) and (tt.key) and (tt.key==ttName) and (tt:IsShown()) then
-			createTooltip(tt,true);
+			createTooltip(tt);
 		end
 	end
 end
