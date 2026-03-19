@@ -772,7 +772,11 @@ local function addUpdateInterval(opt,addHeader,order)
 			[1200] = L["All 20 minutes"],
 			[2400] = L["All 40 minutes"],
 			[3600] = L["One time per hour"]
-		}
+		},
+		set = function(info,value)
+			ns.profile[name_sys].updateInterval = value;
+			ns.profile[name_mem].updateInterval = value;
+		end
 	};
 
 	opt['updateIntervalDesc']={ type="description", order=order+4, name="|n"..table.concat({
@@ -785,7 +789,11 @@ local function addUpdateInterval(opt,addHeader,order)
 	opt['updateIntervalNotInInstance'] = {
 		type = "toggle", order=order+5,
 		name = L["SystemUpdateInInstances"],
-		desc = L["SystemUpdateInInstancesDesc1"].."|n|n"..C("ltgreen",L["SystemUpdateInInstancesDesc2"])
+		desc = L["SystemUpdateInInstancesDesc1"].."|n|n"..C("ltgreen",L["SystemUpdateInInstancesDesc2"]),
+		set = function(info,value)
+			ns.profile[name_sys].updateIntervalNotInInstance = value;
+			ns.profile[name_mem].updateIntervalNotInInstance = value;
+		end
 	}
 
 	return order+6
