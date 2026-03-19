@@ -632,7 +632,7 @@ function module.onevent(self,event,msg)
 				local mapId,mapName;
 				if ns.client_version>=4 then
 					if not questZones[q.questID] and not WorldMapFrame:IsShown() then
-						mapId = GetQuestUiMapID(q.questID,true);
+						mapId = GetQuestUiMapID(q.questID);
 						if mapId then
 							local mapInfo = C_Map.GetMapInfo(mapId);
 							if mapInfo then
