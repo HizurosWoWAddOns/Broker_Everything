@@ -57,6 +57,7 @@ function createTooltip(tt)
 
 	local index = 1;
 	for i=2, #titles do
+		ns.profileSilenceFIXME = true;
 		if titles[i] and titles[i].name and not ns.profile[name]["title-"..titles[i].id] then
 			curCell = index % numRows;
 			if curCell==0 then
