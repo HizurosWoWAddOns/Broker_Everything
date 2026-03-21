@@ -2268,12 +2268,18 @@ do
 				clickOpts = module.clickOptions[cfgKey];
 			end
 			if clickOpts then
+				local name
+				if type(clickOpts[iLabel])=="table" then
+					name = clickOpts[iLabel][1];
+				else
+					name = L[clickOpts[iLabel]]
+				end
 				local optKey = ns.ClickOpts.prefix..cfgKey;
 				-- ace option table entry
 				modOptions.ClickOpts[optKey] = {
 					type	= "select",
-					name	= L[clickOpts[iLabel]],
-					desc	= L["ClickOptDesc"].." "..L[clickOpts[iLabel]],
+					name	= name,
+					desc	= L["ClickOptDesc"].." "..name,
 					values	= values
 				};
 			end
