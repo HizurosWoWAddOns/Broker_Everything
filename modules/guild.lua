@@ -26,6 +26,7 @@ local tradeSkillLock,chatNotificationEnabled,frame = false;
 local icon_arrow_right = "|T"..ns.icon_arrow_right..":0|t";
 local triggerLockTradeSkill,triggerLockRequestUpdate = false,false
 local CanViewOfficerNote = CanViewOfficerNote or C_GuildInfo.CanViewOfficerNote;
+local currentGuildInfoText = EMPTY;
 local BACKDROP_SLIDER_8_8 = BACKDROP_SLIDER_8_8 or { -- classic
 	bgFile = "Interface\\Buttons\\UI-SliderBar-Background",
 	edgeFile = "Interface\\Buttons\\UI-SliderBar-Border",
@@ -275,7 +276,7 @@ local function createTooltip3(parent,sel)
 	if sel=="info" then
 		GameTooltip:SetText(GUILD_INFORMATION);
 		GameTooltip:AddLine(" ");
-		local info = strtrim(GetGuildInfoText() or "");
+		local info = currentGuildInfoText; -- Wow... C_GuildInfo.GetInfoTex() a protected function. WHAT??? Blizzard think it must be protected while combat.
 		if info=="" then
 			info = EMPTY;
 		else
@@ -1075,6 +1076,10 @@ function module.onevent(self,event,msg,...)
 			end
 		end
 	else -- on events -- BE_DUMMY_EVENT / PLAYER_GUILD_UPDATE / GUILD_ROSTER_UPDATE / CLUB_FINDER_RECRUIT_LIST_CHANGED
+
+		if not InCombatLockdown() then
+			currentGuildInfoText = C_GuildInfo.GetInfoText() or EMPTY;
+		end
 
 		if event=="BE_DUMMY_EVENT" or chatNotificationEnabled==nil then
 			-- toggle events
