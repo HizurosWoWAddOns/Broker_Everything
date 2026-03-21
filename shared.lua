@@ -624,8 +624,8 @@ do
 	function ns.updateIcons(name,part)
 		if name==true then
 			local result = true;
-			for modName,mod in pairs(ns.modules) do
-				if mod.isEnabled and ns.updateIcons(modName,part)==false then
+			for modName,module in pairs(ns.modules) do
+				if module.isEnabled and ns.updateIcons(modName,part)==false then
 					result = false;
 				end
 			end
