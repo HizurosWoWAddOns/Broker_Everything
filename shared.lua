@@ -2133,41 +2133,34 @@ do
 	function ns.ClickOpts.func(self,button,modName)
 		local module = ns.modules[modName];
 		if not (module and module.onclick) then return; end
-
 		-- click(plan)A = combine modifier if pressed with named button (left,right)
 		-- click(panl)B = combine modifier if pressed with left or right mouse button without expliced check.
-		local clickA,clickB,action,actName="","",nil,nil;
 
 		-- check modifier
-		if (IsAltKeyDown()) then		clickA=clickA.."ALT";   clickB=clickB.."ALT"; end
-		if (IsShiftKeyDown()) then		clickA=clickA.."SHIFT"; clickB=clickB.."SHIFT"; end
-		if (IsControlKeyDown()) then	clickA=clickA.."CTRL";  clickB=clickB.."CTRL"; end
-
-		-- no modifier used... add an undercore (for dropdown menu entry sorting)
-		if (clickA=="") then clickA=clickA.."_"; end
-		if (clickB=="") then clickB=clickB.."_"; end
+		local modifier = (IsAltKeyDown() and "ALT" or "") .. (IsShiftKeyDown() and "SHIFT" or "") .. (IsControlKeyDown() and "CTRL" or "");
+		if modifier=="" then
+			-- no modifier used... add an undercore (for dropdown menu entry sorting)
+			modifier = "_";
+		end
 
 		-- check which mouse button is pressed
-		if (button=="LeftButton") then
-			clickA=clickA.."LEFT";
-		elseif (button=="RightButton") then
-			clickA=clickA.."RIGHT";
-		--elseif () then
-		--	clickA=clickA.."";
-		-- more mouse buttons?
-		end
+		local click = (button=="LeftButton" and "LEFT")
+		           or (button=="RightButton" and "RIGHT")
+		--         or (button=="?Button" and "?") --	more mouse buttons?
+		           or "LEFT" -- fallback for unknown mouse buttons
 
-		-- planB
-		clickB=clickB.."CLICK";
+		-- get name of action
+		local actName = module.onclick[modifier..click]
+		            or module.onclick["_"..click] -- fallback if no click option with modifier defined
+		            or false;
 
-		if (module.onclick[clickA]) then
-			actName = module.onclick[clickA];
-			action = module.clickOptions[actName];
-		elseif (module.onclick[clickB]) then
-			actName = module.onclick[clickB];
+		-- get action
+		local action;
+		if actName then
 			action = module.clickOptions[actName];
 		end
 
+		-- start action
 		if action then
 			local func
 			if action[iSource]=="direct" then
