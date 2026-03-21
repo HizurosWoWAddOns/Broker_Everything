@@ -631,14 +631,14 @@ do
 			end
 			return result;
 		elseif type(name)=="string" and ns.modules[name] and ns.modules[name].isEnabled and ns.modules[name].obj then
-			local mod = ns.modules[name];
+			local module = ns.modules[name];
 			if part=="color" or part==nil then
-				mod.obj.iconR,mod.obj.iconG,mod.obj.iconB,mod.obj.iconA = unpack(ns.profile.GeneralOptions.iconcolor or ns.LC.color("white","colortable"));
+				module.obj.iconR,module.obj.iconG,module.obj.iconB,module.obj.iconA = unpack(ns.profile.GeneralOptions.iconcolor or ns.LC.color("white","colortable"));
 			end
 			if part=="icon" or part==nil then
-				local icon = ns.I(mod.iconName .. (mod.icon_suffix or ""));
-				mod.obj.iconCoords = icon.coords or {0,1,0,1};
-				mod.obj.icon = icon.iconfile;
+				local icon = ns.I(module.iconName .. (module.icon_suffix or ""));
+				module.obj.iconCoords = icon.coords or {0,1,0,1};
+				module.obj.icon = icon.iconfile;
 			end
 			return true;
 		end
@@ -1651,7 +1651,7 @@ do
 				--?
 			elseif (type(D.cvar)=="string") then
 				function D.checked() return (GetCVar(D.cvar)=="1") end;
-				function D.func() SetCVar(D.cvar,GetCVar(D.cvar)=="1" and "0" or "1",D.cvarEvent); end;
+				function D.func() SetCVar(D.cvar,GetCVar(D.cvar)=="1" and "0" or "1"); end;
 			end
 		end,
 		slider = function(...)
@@ -2080,15 +2080,15 @@ end
 ---@return string
 ---@return string
 function ns.DurationOrExpireDate(timeLeft,lastTime,durationTitle,expireTitle)
-	local mod = "shift";
+	local modifier = "shift";
 	timeLeft = timeLeft or 0;
 	if (type(lastTime)=="number") then
 		timeLeft = timeLeft - (time()-lastTime);
 	end
 	if (IsShiftKeyDown()) then
-		return date("%Y-%m-%d %H:%M",time()+timeLeft), expireTitle, mod;
+		return date("%Y-%m-%d %H:%M",time()+timeLeft), expireTitle, modifier;
 	end
-	return SecondsToTime(timeLeft), durationTitle, mod;
+	return SecondsToTime(timeLeft), durationTitle, modifier;
 end
 
 
@@ -2131,8 +2131,8 @@ do
 	local iLabel,iSource,iFunction,iPrefix = 1,2,3,4;
 
 	function ns.ClickOpts.func(self,button,modName)
-		local mod = ns.modules[modName];
-		if not (mod and mod.onclick) then return; end
+		local module = ns.modules[modName];
+		if not (module and module.onclick) then return; end
 
 		-- click(plan)A = combine modifier if pressed with named button (left,right)
 		-- click(panl)B = combine modifier if pressed with left or right mouse button without expliced check.
@@ -2160,12 +2160,12 @@ do
 		-- planB
 		clickB=clickB.."CLICK";
 
-		if (mod.onclick[clickA]) then
-			actName = mod.onclick[clickA];
-			action = mod.clickOptions[actName];
-		elseif (mod.onclick[clickB]) then
-			actName = mod.onclick[clickB];
-			action = mod.clickOptions[actName];
+		if (module.onclick[clickA]) then
+			actName = module.onclick[clickA];
+			action = module.clickOptions[actName];
+		elseif (module.onclick[clickB]) then
+			actName = module.onclick[clickB];
+			action = module.clickOptions[actName];
 		end
 
 		if action then
@@ -2173,7 +2173,7 @@ do
 			if action[iSource]=="direct" then
 				func = action[iFunction];
 			elseif action[iSource]=="module" then
-				func = mod[action[iFunction]];
+				func = module[action[iFunction]];
 			elseif action[iSource]=="namespace" then
 				func = ns[action[iFunction]];
 			elseif action[iSource]=="shared" then
@@ -2198,15 +2198,15 @@ do
 
 	function ns.ClickOpts.update(modName) -- executed on event BE_UPDATE_CFG from active modules
 		-- name, desc, default, func
-		local mod = ns.modules[modName];
-		if not (mod and type(mod.clickOptions)=="table") then return end
+		local module = ns.modules[modName];
+		if not (module and type(module.clickOptions)=="table") then return end
 		local hasOptions = false;
-		mod.onclick = {};
-		mod.clickHints = {};
+		module.onclick = {};
+		module.clickHints = {};
 
-		local order = mod.clickOptionsOrder or {};
+		local order = module.clickOptionsOrder or {};
 		if #order==0 then
-			for actName, actData in ns.pairsByKeys(mod.clickOptions) do
+			for actName, actData in ns.pairsByKeys(module.clickOptions) do
 				if actData then
 					tinsert(order,actName);
 				end
@@ -2214,10 +2214,10 @@ do
 		end
 
 		for _, actName in ipairs(order)do
-			local action = mod.clickOptions[actName];
+			local action = module.clickOptions[actName];
 			local cfgKey = ns.ClickOpts.prefix..actName;
-			if mod.clickOptionsRename and mod.clickOptionsRename[cfgKey] then
-				local altKey = mod.clickOptionsRename[cfgKey];
+			if module.clickOptionsRename and module.clickOptionsRename[cfgKey] then
+				local altKey = module.clickOptionsRename[cfgKey];
 				if ns.profile[modName](altKey)~=nil then
 					ns.profile[modName][cfgKey] = ns.profile[modName][altKey];
 					ns.profile[modName][altKey] = nil;
@@ -2229,7 +2229,7 @@ do
 				if functionType=="direct" then
 					func = action[iFunction];
 				elseif functionType=="module" then
-					func = mod[action[iFunction]];
+					func = module[action[iFunction]];
 				elseif functionType=="namespace" then
 					func = ns[action[iFunction]];
 				elseif functionType=="shared" then
@@ -2238,14 +2238,14 @@ do
 					func = _G[type(action[iFunction])=="table" and action[iFunction][1] or action[iFunction]];
 				end
 				if func and type(func)=="function" then
-					mod.onclick[key] = actName;
+					module.onclick[key] = actName;
 					local name
 					if type(action[iLabel])=="table" then
 						name = action[iLabel][1];
 					else
 						name = L[action[iLabel]];
 					end
-					tinsert(mod.clickHints,ns.color.copper:wrapText(values[key]).." || "..ns.color.green:wrapText(name));
+					tinsert(module.clickHints,ns.color.copper:wrapText(values[key]).." || "..ns.color.green:wrapText(name));
 					hasOptions = true;
 				end
 			end
@@ -2254,18 +2254,18 @@ do
 	end
 
 	function ns.ClickOpts.createOptions(modName,modOptions) -- executed by ns.Options_AddModuleOptions()
-		local mod = ns.modules[modName];
-		if not (mod and type(mod.clickOptions)=="table") then return end
+		local module = ns.modules[modName];
+		if not (module and type(module.clickOptions)=="table") then return end
 
 		-- generate option panel entries
-		for cfgKey,clickOpts in ns.pairsByKeys(mod.clickOptions) do
+		for cfgKey,clickOpts in ns.pairsByKeys(module.clickOptions) do
 			if modOptions.ClickOpts==nil then
 				modOptions.ClickOpts = {};
 			end
 			if type(clickOpts)=="string" and sharedClickOptions[clickOpts] then
 				-- copy shared entry
-				mod.clickOptions[cfgKey] = sharedClickOptions[clickOpts];
-				clickOpts = mod.clickOptions[cfgKey];
+				module.clickOptions[cfgKey] = sharedClickOptions[clickOpts];
+				clickOpts = module.clickOptions[cfgKey];
 			end
 			if clickOpts then
 				local optKey = ns.ClickOpts.prefix..cfgKey;
