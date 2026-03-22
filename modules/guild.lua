@@ -1078,7 +1078,11 @@ function module.onevent(self,event,msg,...)
 	else -- on events -- BE_DUMMY_EVENT / PLAYER_GUILD_UPDATE / GUILD_ROSTER_UPDATE / CLUB_FINDER_RECRUIT_LIST_CHANGED
 
 		if not InCombatLockdown() then
-			currentGuildInfoText = C_GuildInfo.GetInfoText() or EMPTY;
+			if C_GuildInfo and C_GuildInfo.GetInfoText then -- since midnight; function is protected in combat?!
+				currentGuildInfoText = C_GuildInfo.GetInfoText() or EMPTY;
+			else
+				currentGuildInfoText = GetGuildInfoText() or EMPTY;
+			end
 		end
 
 		if event=="BE_DUMMY_EVENT" or chatNotificationEnabled==nil then
