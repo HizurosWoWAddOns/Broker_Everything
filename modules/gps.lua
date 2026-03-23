@@ -81,11 +81,29 @@ local function setSpell(tb,id)
 	end
 end
 
+local function GetMageTransportSpells(tbl,flyoutID)
+	local _, _, numSlots, isKnown = GetFlyoutInfo(flyoutID);
+	if not isKnown then
+		return;
+	end
+	for slot=1, numSlots do
+		local flyoutSpellID, overrideSpellID, _, _, _ = GetFlyoutSlotInfo(flyoutID,slot)
+		if flyoutSpellID then
+			setSpell(tbl, flyoutSpellID)
+		end
+	end
+end
+
 local function updateSpells()
 	wipe(teleports); wipe(portals); wipe(spells);
 	if (ns.player.class=="MAGE") then
-		for i=1, #_teleportIds do setSpell(teleports,_teleportIds[i]) end
-		for i=1, #_portalIds do setSpell(portals,_portalIds[i]) end
+		if WOW_PROJECT_ID==WOW_PROJECT_MAINLINE then
+			GetMageTransportSpells(teleports,8) -- teleports
+			GetMageTransportSpells(portals,12) -- portals
+		else
+			for i=1, #_teleportIds do setSpell(teleports,_teleportIds[i]) end
+			for i=1, #_portalIds do setSpell(portals,_portalIds[i]) end
+		end
 	end
 	for i=1, #_classSpecialSpellIds do setSpell(spells,_classSpecialSpellIds[i]) end
 end
@@ -505,8 +523,12 @@ local function init()
 
 	-- spells
 	_classSpecialSpellIds = {50977,18960,556,126892,147420,193753};
+
+	-- mage portals and teleportations
+	-- fixed list for classic clients
 	_teleportIds = {3561,3562,3563,3565,3566,3567,32271,32272,33690,35715,49358,49359,53140,88342,88344,120145,132621,132627,176248,176242,193759,224869,281403,281404,344587,395277,446540};
 	_portalIds = {10059,11416,11417,11418,11419,11420,32266,32267,33691,35717,49360,49361,53142,88345,88346,120146,132620,132626,176246,176244,224871,281400,281402,344597,395289,446534};
+	-- retail clients collected by function
 
 	-- items
 	_itemIds = {
