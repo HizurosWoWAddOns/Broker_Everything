@@ -19,7 +19,7 @@ ns.L = setmetatable({},{
 --@do-not-package@
 		local kType = type(k);
 		if kType~="string" then
-			ns.debug("localization","<FIXME:WrongKeyType>",kType,v,debugstack());
+			ns:debug("localization","<FIXME:WrongKeyType>",kType,v,debugstack());
 		end
 		if "@project-version@" == "@".."project-version".."@" then
 			return "<"..v..">"; -- makes untranslated entries visible

@@ -1359,12 +1359,13 @@ do
 
 	local function GetLinkData(link)
 		if not link then return end
-		local _,_,_,link = link:match("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
-		link = {strsplit(_G["HEADER_COLON"],link or "")};
-		for i=1, #link do
-			link[i] = tonumber(link[i]) or 0;
+		local _,_,_,linkData = link:match("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
+		linkData = {strsplit(":",linkData or "")};
+		local res = {};
+		for i=1, #linkData do
+			tinsert(res,tonumber(linkData[i]) or 0)
 		end
-		return link;
+		return res;
 	end
 
 	local function collect(tt,Data)
