@@ -726,7 +726,7 @@ function ns.RegisterOptions()
 end
 
 function ns.ToggleBlizzOptionPanel()
-	Settings.OpenToCategory(addon)
+	Settings.OpenToCategory(opts)
 end
 
 if AddonCompartmentFrame then
