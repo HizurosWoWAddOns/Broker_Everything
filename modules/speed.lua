@@ -316,7 +316,7 @@ local function createTooltip(tt)
 							local spellInfo = C_Spell.GetSpellInfo(spell[Special][2])
 							for i=1, 10 do
 								local res = --[[ns.deprecated.]]C_UnitAuras.GetDebuffDataByIndex("player", i)
-								if res and res.name==spellInfo.name then -- BfA -- changed arg2 to numeric index only
+								if res and not (issecretvalue(res.name) or canaccessvalue(res.name)==false) and res.name==spellInfo.name then -- BfA -- changed arg2 to numeric index only
 									active=true;
 									break;
 								end
