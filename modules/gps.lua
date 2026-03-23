@@ -17,6 +17,7 @@ local updateinterval,module1,module2,module3 = 0.12;
 local ttName1, ttName2, ttName3, ttName4 = name1.."TT", name2.."TT", name3.."TT", "TransportMenuTT";
 local ttColumns,ttColumns4,onleave,tt4Params = 3,5;
 local tt1, tt2, tt3, tt4, items;
+local tpmIsShort = false;
 local zoneRed, zoneOrange, zoneYellow, zoneGreen,zoneBlue = C("red","%s"),C("orange","%s"),C("dkyellow","%s"),C("ltgreen","%s"),C("ltblue","%s");
 local tt5positions = {
 	["LEFT"]   = {edgeSelf = "RIGHT",  edgeParent = "LEFT",   x = -2, y =  0},
@@ -329,8 +330,84 @@ local function tpmOnEnter(self,data)
 	ns.secureButton(self,object);
 end
 
+local cooldownOverlay = {}
+do
+	local overlays = {used={},free={}}
+	local function overlayUpdate(self)
+		if self.cooldown==nil then
+			return
+		end
+		local t = ConvertSecondsToUnits(self.cooldown);
+		if t.hours>0 then
+			self.txt:SetText(t.hours.."h")
+		elseif t.minutes>0 then
+			self.txt:SetText(t.minutes.."m")
+		else
+			self.txt:SetText(t.seconds.."s")
+		end
+	end
+
+	local function overlayOnUpdate(self,elapsed)
+		if not self:IsShown() then
+			self:SetScript("OnUpdate",nil) -- auto unset
+		end
+		self.timeElapsed = (self.timeElapsed or 0) + elapsed;
+		if self.timeElapsed>=0.5 then
+			self.cooldown = self.cooldown - self.timeElapsed;
+			if self.cooldown and self.cooldown>0 then
+				self:Update();
+			else
+				cooldownOverlay.UnsetOverlay(self:GetParent())
+			end
+			self.timeElapsed = 0;
+		end
+	end
+
+	function cooldownOverlay.SetOverlay(frame,cooldown)
+		local f=overlays.used[frame];
+		if not f then
+			if overlays.free[1] then
+				f = table.remove(overlays.free,1);
+			end
+			if not f then
+				f = CreateFrame("Frame");
+				f.tex = f:CreateTexture(nil,"BACKGROUND")
+				f.tex:SetTexture("interface/buttons/white8x8")
+				f.tex:SetVertexColor(0,0,0,.65)
+				f.tex:SetAllPoints()
+				f.txt = f:CreateFontString(nil,"ARTWORK","GameFontHighlight")
+				f.txt:SetAllPoints()
+				f.Update = overlayUpdate;
+			end
+			overlays.used[frame]=f;
+		end
+		f.cooldown = cooldown;
+		f:SetParent(frame)
+		f:SetAllPoints();
+		--f:SetFrameStrata(frame:GetFrameStrata())
+		--f:SetFrameLevel(frame:GetFrameLevel()+9000)
+		f:SetScript("OnUpdate",overlayOnUpdate);
+	end
+
+	function cooldownOverlay.UnsetOverlay(frame)
+		if not frame then
+			for Frame in pairs(overlays.used)do
+				cooldownOverlay.UnsetOverlay(Frame)
+			end
+			return
+		end
+		local f = overlays.used[frame];
+		overlays.used[frame] = nil;
+		f:SetScript("OnUpdate",nil)
+		f:ClearAllPoints();
+		f:GetParent().cooldown = nil;
+		f:SetParent(nil)
+	end
+end
+
 local function transportMenuOnHide()
 	tt4Params = nil;
+	cooldownOverlay.UnsetOverlay()
 end
 
 local function transportMenuDoUpdate()
@@ -359,15 +436,18 @@ local function tpmAddObject(tt,parent,name,line,column,data)
 		if not (start and duration and enabled) then
 			start, duration, enabled = ns.deprecated.C_Item.GetItemCooldown(data.id)
 		end
-		if start and duration then
-			if enabled==0 then
-				data.cooldown = duration;
-			elseif start>0 and duration>0 then
-				data.cooldown = start + duration - GetTime()
-			end
+	end
+	if start and duration then
+		if enabled==0 then
+			data.cooldown = duration;
+		elseif start>0 and duration>0 then
+			data.cooldown = start + duration - GetTime()
+		end
+		if data.cooldown then
+			data.cooldownStr = SecondsToTime(data.cooldown)
 		end
 	end
-	if ns.profile[name].shortMenu then
+	if ns.profile[name].shortMenu or IsShiftKeyDown() then
 		if column<ttColumns4 and line~=nil then
 			column = column+1;
 		else
@@ -375,19 +455,27 @@ local function tpmAddObject(tt,parent,name,line,column,data)
 			line = tt:AddLine();
 		end
 		tt:SetCell(line, column, iStr32:format(data.icon), nil, nil, 1);
+		if data.cooldown and data.cooldown>0 then
+			cooldownOverlay.SetOverlay(tt.lines[line].cells[column],data.cooldown)
+		end
 		tt:SetCellScript(line,column,"OnEnter",tpmOnEnter,data);
 		return line,column;
 	end
 	local info = "";
 	if data.mustBeEquipped==true and data.equipped==false then
 		info = " "..C("orange","(click to equip)");
+	elseif data.cooldown then
+		info = " "..C("ltgray","(Cooldown "..data.cooldownStr..")")
 	end
-	line = tt:AddLine(iStr16:format(data.icon)..(data.name2 or data.name)..info, "1","2","3");
+	line = tt:AddLine(iStr16:format(data.icon)..(data.name2 or data.name), "1","2","3");
+	tt:SetCell(line,2,info)
 	tt:SetLineScript(line,"OnEnter",tpmOnEnter,data);
 end
 
 function transportMenu(self,button,name)
-	if InCombatLockdown() then return; end
+	if InCombatLockdown() then
+		return;
+	end
 	if (tt1~=nil) then tt1=ns.hideTooltip(tt1); end
 	if (tt2~=nil) then tt2=ns.hideTooltip(tt2); end
 	if (tt3~=nil) then tt3=ns.hideTooltip(tt3); end
@@ -395,25 +483,30 @@ function transportMenu(self,button,name)
 	updateItems();
 	updateSpells();
 
-	local columns = 5;
-	ttColumns4 = ns.profile[name].shortMenu and columns or 1;
+	local shortMenu = ns.profile[name].shortMenu or IsShiftKeyDown();
+	ttColumns4 = shortMenu and 5 or 2;
+	local ttCellAlign2 = shortMenu and "LEFT" or "RIGHT";
+	if tpmIsShort~=shortMenu and tt4 then
+		tt4=ns.hideTooltip(tt4);
+	end
 	if not (tt4 and tt4.key and tt4.key==ttName4) then
-		tt4 = ns.acquireTooltip({ttName4, ttColumns4, "LEFT","LEFT","LEFT","LEFT","LEFT"},{false},{self},{OnHide=transportMenuOnHide});
+		tt4 = ns.acquireTooltip({ttName4, ttColumns4, "LEFT",ttCellAlign2,"LEFT","LEFT","LEFT"},{false},{self},{OnHide=transportMenuOnHide});
 		tt4Params = {self,button,name};
 	end
+	tpmIsShort = shortMenu;
 
 	local line, column, counter = nil,ttColumns4,0
 
 	tt4:Clear()
 
 	-- title
-	if not ns.profile[name].shortMenu then
+	if not shortMenu then
 		tt4:AddHeader(C("dkyellow","Choose your transport"))
 	end
 
 	if #teleports>0 or #portals>0 or #spells>0 then
 		-- class title
-		if not ns.profile[name].shortMenu then
+		if not shortMenu then
 			tt4:AddSeparator(4,0,0,0,0)
 			tt4:AddLine(C("ltyellow",ns.player.classLocale))
 			tt4:AddSeparator()
@@ -424,7 +517,7 @@ function transportMenu(self,button,name)
 				line,column = tpmAddObject(tt4,self,name,line,column,data);
 				counter = counter+1;
 			end
-			if not ns.profile[name].shortMenu then
+			if not shortMenu then
 				tt4:AddSeparator()
 			end
 			for _,data in ns.pairsByKeys(portals) do
@@ -442,7 +535,7 @@ function transportMenu(self,button,name)
 	local t = "item";
 	if #foundItems>0 then
 		-- item title
-		if not ns.profile[name].shortMenu then
+		if not shortMenu then
 			tt4:AddSeparator(4,0,0,0,0);
 			tt4:AddLine(C("ltyellow",ITEMS));
 			tt4:AddSeparator();
@@ -456,7 +549,7 @@ function transportMenu(self,button,name)
 
 	if ns.client_version>=6 and foundToysNum>0 then
 		-- toy title
-		if not ns.profile[name].shortMenu then
+		if not shortMenu then
 			tt4:AddSeparator(4,0,0,0,0);
 			tt4:AddLine(C("ltyellow",TOY_BOX));
 			tt4:AddSeparator();
