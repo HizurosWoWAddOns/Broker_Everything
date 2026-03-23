@@ -155,7 +155,9 @@ function module.onupdate()
 			end
 		end
 
-		ldbObject.text = str;
+		if ns.HST.BullShitDetector("generalTesting",str) then
+			ldbObject.text = str;
+		end
 	end
 end
 
