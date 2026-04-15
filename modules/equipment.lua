@@ -523,10 +523,26 @@ function module.init()
 		enchantSlots = {
 			[6]={[202]=true},[9]={[333]=true},[10]=true,[11]=true,[12]=true,[15]=true,[16]=true -- enchanters
 		};
-	else-- if ns.client_version<10 then -- sl
-		-- idea: [<invSlot>] = true | { [<tradeSkillID>]=true, ... }
+	elseif ns.client_version<10 then
 		enchantSlots = {
 			[5]=true,[6]={[202]=true},[8]=true,[9]=true,[10]=true,[11]=true,[12]=true,[15]=true,[16]=true -- enchanters
+		}
+	else-- if ns.client_version<10 then
+		-- idea: [<invSlot>] = true | { [<tradeSkillID>]=true, ... }
+		enchantSlots = {
+			[1]=true, -- head
+			[5]=true, -- chest
+			[3]=true, -- shoulder
+			--[6]=true,
+			[7]={[197]=true},
+			--[8]=true,
+			--[9]=true,
+			--[10]=true,
+			[11]=true, -- finger1
+			[12]=true, -- finger2
+			--[15]=true,
+			[16]=true -- main hand
+			-- enchanters
 		}
 	end
 	warlords_crafted = {
