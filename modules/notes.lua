@@ -77,8 +77,14 @@ function note_edit(self,index)
 	editor.title:SetText(title);
 	editor.text:SetText(text);
 	editor.charOnly:SetChecked(charOnly);
-	editor.charOnly:SetEnabled(not ns.data[name][index][3] or (ns.data[name][index][3] and ns.data[name][index][3]==ns.player.name_realm_short))
-	if ns.data[name][index][3] and ns.data[name][index][3]~=ns.player.name_realm_short then
+	if index then
+		editor.charOnly:SetEnabled(
+			not ns.data[name][index][3]
+			or (ns.data[name][index][3]
+			and ns.data[name][index][3]==ns.player.name_realm_short)
+		)
+	end
+	if index and ns.data[name][index][3] and ns.data[name][index][3]~=ns.player.name_realm_short then
 		editor.charOnly.Text:SetText(ns.data[name][index][3])
 	else
 		editor.charOnly.Text:SetText(L["NotesCharOnly"])
