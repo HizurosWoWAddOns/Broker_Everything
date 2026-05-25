@@ -134,7 +134,7 @@ local function updateRaces(firstUpdate)
 			end
 			t[raceFragmentsIcon] = iconFormat1:format(iconFile or ns.icon_fallback);
 
-			updateRaceArtifact(t,GetActiveArtifactByRace(i));
+			updateRaceArtifact(t,GetActiveArtifactByRace(i,1));
 
 			if t[raceCurrencyName] then
 				currencyName2race[t[raceCurrencyName]] = info[2];
@@ -145,7 +145,7 @@ local function updateRaces(firstUpdate)
 			local _;
 			t[raceKeystoneFragmentsValue] = 0;
 			_, _, _, t[raceFragmentsCollected], t[raceNumFragmentsRequired] = GetArchaeologyRaceInfo(t[raceIndex]);
-			updateRaceArtifact(t,GetActiveArtifactByRace(t[raceIndex]));
+			updateRaceArtifact(t,GetActiveArtifactByRace(t[raceIndex],1));
 		end
 	end
 	updateBroker();

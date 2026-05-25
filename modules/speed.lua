@@ -19,6 +19,8 @@ I[name] = {iconfile="Interface\\Icons\\Ability_Rogue_Sprint",coords={0.05,0.95,0
 
 -- some local functions --
 --------------------------
+local issecretvalue = issecretvalue or function() return false end
+local canaccessvalue = canaccessvalue or function() return true end
 local UnitInVehicle = UnitInVehicle or function()
 	return false;
 end

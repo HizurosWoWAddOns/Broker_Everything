@@ -148,7 +148,7 @@ do
 		if not (skillLine and alreadyShown[skillLine]==nil) then return end
 		local count,known,unknown = 0,0,0;
 		for expansionIndex, recipes in pairs(faction_recipes) do
-			if tonumber(expansionIndex) and recipes[skillLine] then
+			if tonumber(expansionIndex) and type(recipes[skillLine])=="table" then
 				for index,recipe in ipairs(recipes[skillLine]) do
 					if recipe[faction_recipes.spellId]>0 then
 						local info = C_TradeSkillUI.GetRecipeInfo(recipe[faction_recipes.spellId]);

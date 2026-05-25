@@ -347,14 +347,14 @@ function module.init()
 		{name=KEY_BINDINGS,			iconName="KeyBinds",		func=function() securecall("KeyBindingFrame_LoadUI") securecall("ShowUIPanel", KeyBindingFrame) end,		taint=true},
 		{name=MACROS,				iconName="Macros",			func=function() securecall("ShowMacroFrame") end,		},
 		{name=MAC_OPTIONS,			iconName="MacOpts",			func=function() securecall("ShowUIPanel", MacOptionsFrame) end,		 view=IsMacClient()==true},
-		{name=ADDONS,				iconName="Addons",			view=( (C_AddOns.IsAddOnLoaded("OptionHouse")) or (C_AddOns.IsAddOnLoaded("ACP")) or (C_AddOns.IsAddOnLoaded("Ampere")) or (C_AddOns.IsAddOnLoaded("stAddonManager")) or (_G["AddonList"]) ),
+		{name=ADDONS,				iconName="Addons",			view=( (C_AddOns.IsAddOnLoaded("OptionHouse")) or (C_AddOns.IsAddOnLoaded("ACP")) or --[[ (C_AddOns.IsAddOnLoaded("Ampere")) or ]] (C_AddOns.IsAddOnLoaded("stAddonManager")) or (_G["AddonList"]) ),
 		func=function()
 			if (C_AddOns.IsAddOnLoaded("OptionHouse")) then
 				OptionHouse:Open(1);
 			elseif (C_AddOns.IsAddOnLoaded("ACP")) then
 				ACP:ToggleUI();
-			elseif (C_AddOns.IsAddOnLoaded("Ampere")) then
-				Settings.OpenToCategory("Ampere");
+			--elseif (C_AddOns.IsAddOnLoaded("Ampere")) then
+			--	Settings.OpenToCategory("Ampere"); -- outdated
 			elseif (C_AddOns.IsAddOnLoaded("stAddonManager")) then
 				stAddonManager:LoadWindow()
 			elseif (_G["AddonList"]) then

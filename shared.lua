@@ -227,8 +227,9 @@ end
 ---@param modName string module name
 ---@param realm string realm name
 ---@param faction string faction name
+---@param forceFaction boolean
 ---@return boolean
-function ns.showThisChar(modName,realm,faction,forceRealm,forceFaction,n)
+function ns.showThisChar(modName,realm,faction,forceRealm,forceFaction)
 	local result
 
 	if not (ns.profile[modName].showAllFactions or ns.player.faction==faction or forceFaction) then
@@ -246,6 +247,7 @@ end
 ---@param name string player name
 ---@param color string color name or color code
 ---@param prepDash boolean prepend dash
+---@return string
 function ns.showRealmName(modName,name,color,prepDash)
 	if not (ns.realm_short==name or ns.realm==name) then
 		local Color = color and ns.LC.color(color,"colortable") or ns.color.dkyellow;
@@ -263,6 +265,11 @@ function ns.showRealmName(modName,name,color,prepDash)
 	return "";
 end
 
+---@param faction string
+---@param w string|number
+---@param h string|number
+---@param prependSpace boolean
+---@return string
 function ns.factionIcon(faction,w,h,prependSpace)
 	w,h = w or 16,h or 16;
 	return faction~="Neutral" and (prependSpace and " " or "").."|TInterface\\PVPFrame\\PVP-Currency-"..faction..":"..w..":"..h..":0:0:32:32:2:30:2:30|t" or ""
@@ -763,9 +770,16 @@ end
 ---@param ... string
 ---@return table
 function ns.tablePath(tbl,a,...)
-	if type(a)~="string" then return tbl; end
-	if type(tbl[a])~="table" then tbl[a]={}; end
-	if (...) then return ns.tablePath(tbl[a],...); end
+	if type(a)~="string" then
+		return tbl;
+	end
+	if type(tbl[a])~="table" then
+		tbl[a]={};
+	end
+	if (...) then
+		return ns.tablePath(tbl[a],...);
+	end
+	return tbl;
 end
 
 
@@ -1406,9 +1420,6 @@ do
 		else
 			data = Data;
 		end
-
-		tt:SetOwner(UIParent,"ANCHOR_NONE");
-		tt:SetPoint("RIGHT",UIParent,"LEFT",0,0);
 
 		if not data._type then
 			data._type=data.type;
