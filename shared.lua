@@ -27,6 +27,10 @@ local CopyTable,SecondsToTime = CopyTable,SecondsToTime;
 -- could be deprecated in future.
 local GetCVar,SetCVar = C_CVar and C_CVar.GetCVar or GetCVar,C_CVar and C_CVar.SetCVar or SetCVar
 
+-- secret values not present in classic; hopefully in near future too...
+local issecretvalue = issecretvalue or function() return false end
+local canaccesvalue = canaccesvalue or function() return true end
+
 -- Foreign addon functions
 local LibStub = _G.LibStub
 
@@ -1368,8 +1372,27 @@ do
 		return res;
 	end
 
+	local function ttExtractInfo(data)
+		if not (data._type=="inventory" or data._type=="inv" or data._type=="bag" or data._type=="bags") then
+			return -- ??
+		end
+		for i, line in ipairs(data.cTooltipInfo.lines) do
+			local lvl = tonumber(line.leftText:match(_ITEM_LEVEL));
+			if lvl then
+				data.level=lvl;
+			elseif line.leftText:find(ITEM_UPGRADE_TOOLTIP_1) then
+				data.upgrades = line.leftText:gsub(ITEM_UPGRADE_TOOLTIP_1,"")
+			elseif ITEM_UPGRADE_TOOLTIP_2 and line.leftText:find(ITEM_UPGRADE_TOOLTIP_2) then
+				data.upgrades = line.leftText:gsub(ITEM_UPGRADE_TOOLTIP_2,"")
+			elseif i>4 and data.setname==nil and line.leftText:find("%(%d*/%d*%)$") then
+				data.setname = strsplit("(",line.leftText);
+			end
+		end
+	end
+
 	local function collect(tt,Data)
-		local data,_;
+		-- https://warcraft.wiki.gg/wiki/World_of_Warcraft_API#TooltipInfo
+		local copyLines,data,_ = false;
 		if not Data then
 			if #queries==0 then
 				if(ticker)then
@@ -1402,87 +1425,155 @@ do
 			data.linkData = GetLinkData(data.link);
 			data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = C_Item.GetItemInfo(data.link);
 			data.startTime, data.duration, data.isEnabled = C_Container.GetContainerItemCooldown(data.bag,data.slot);
-			data.hasCooldown, data.repairCost = tt:SetBagItem(data.bag,data.slot);
+			local itemData
+			if C_TooltipInfo and C_TooltipInfo.GetBagItem then
+				itemData = C_TooltipInfo.GetBagItem(data.bag,data.slot)
+			end
+			if itemData then
+				data.repairCost = itemData.repairCost;
+				data.cTooltipInfo = itemData
+				ttExtractInfo(data)
+			else -- for classic and as fallback
+				data.hasCooldown, data.repairCost = tt:SetBagItem(data.bag,data.slot);
+				data.link = ttData.hyperlink;
+				copyLines = true
+			end
 		elseif data._type=="inventory" or data._type=="inv" then
 			if data.link==nil then
 				data.link = GetInventoryItemLink("player",data.slot);
 			end
 			data.linkData = GetLinkData(data.link);
-			_,data.hasCooldown, data.repairCost = tt:SetInventoryItem("player", data.slot); -- repair costs
+			local invData
+			if C_TooltipInfo and C_TooltipInfo.GetInventoryItem then
+				invData = C_TooltipInfo.GetInventoryItem("player", data.slot);
+			end
+			if invData then
+				data.repairCost = invData.repairCost;
+				data.cTooltipInfo = invData
+				ttExtractInfo(data)
+			else -- for classic and as fallback
+				_,data.hasCooldown, data.repairCost = tt:SetInventoryItem("player", data.slot); -- repair costs
+				copyLines=true
+			end
 		elseif data._type=="unit" then
 			-- https://warcraft.wiki.gg/API_UnitGUID
 			data._type = "link";
 			if data.unit=="Creature" or data.unit=="Pet" or data.unit=="GameObject" or data.unit=="Vehicle" then
 				-- unit:<Creature|Pet|GameObject|Vehicle>-0-<server>-<instance>-<zone>-<id>-<spawn>
 				data.link = "unit:"..data.unit.."-0-0-0-0-"..data.id.."-0";
-			elseif data.unit=="Player" then
+			--elseif data.unit=="Player" then
 				-- unit:Player-<server>-<playerUniqueID>
-			elseif data.unit=="Vignette" then
+			--elseif data.unit=="Vignette" then
 				-- unit:Vignette-0-<server>-<instance>-<zone>-0-<spawn>
+				--data.link = "unit:Vignette-0-<server>-<instance>-<zone>-0-<spawn>"
+			end
+			if data.link then
+				local unitData
+				if C_TooltipInfo and C_TooltipInfo.GetHyperlink then
+					unitData = C_TooltipInfo.GetHyperlink(data.link);
+				end
+				if unitData then
+					data.cTooltipInfo = unitData
+				else -- for classic and as fallback
+					copyLines = true
+				end
 			end
 		elseif data._type=="item" then
 			data._type="link";
 			if not data.link then
 				data.link = "item:"..data.id;
 			end
+			local itemData
+			if C_TooltipInfo and C_TooltipInfo.GetItemByID then
+				itemData  = C_TooltipInfo.GetItemByID(data.id)
+			end
+			if itemData then
+				data.cTooltipInfo = itemData
+				-- ttExtractInfo(data)?
+			else -- for classic and as fallback
+				copyLines = true
+			end
 		elseif data._type=="quest" then
-			data._type="link";
-			if not data.link then
-				data.link = "quest:"..data.id.._G["HEADER_COLON"]..(data.level or 0);
+			data.link = "quest:"..data.id..":"..(data.level or 0);
+			local questData
+			if C_TooltipInfo and C_TooltipInfo.GetHyperlink then
+				-- can't get quest info if not in quest log... thats evil!
+				questData = C_TooltipInfo.GetHyperlink(data.link);
+			end
+			if questData then
+				data.cTooltipInfo = questData
+			else -- for classic and as fallback
+				copyLines = true
 			end
 		end
 
-		if data._type=="link" and data.link then
+		-- fallback to old tooltip scanning. for classic clients !?
+		if not data.cTooltipInfo and data._type=="link" and data.link then
 			data.str = data.link;
+
+			tt:SetOwner(UIParent,"ANCHOR_NONE");
+			tt:SetPoint("RIGHT",UIParent,"LEFT",0,0);
+
 			local retOK = pcall(tt.SetHyperlink, tt, data.link)
 			if not retOK then
 				ns:debug("<nsScanTT>","<SetHyperlink:failed>",data.link)
 			end
 		end
 
-		try = try + 1;
-		if try>8 then try=0; end
-
-		tt:Show();
-
-		local regions = {tt:GetRegions()};
-
-		data.lines={};
-		for _,v in ipairs(regions) do
-			if (v~=nil) and (v:GetObjectType()=="FontString")then
-				local str = strtrim(v:GetText() or "");
-				if str:len()>0 then
-					tinsert(data.lines,str);
-				end
-			end
+		try = try + 1
+		if try>8 then
+			try=0
 		end
 
-		if data._type=="inventory" or data._type=="inv" or data._type=="bag" or data._type=="bags" then
-			for i=2, min(#data.lines,20) do
-				local lvl = tonumber(data.lines[i]:match(_ITEM_LEVEL));
-				if lvl then
-					data.level=lvl;
-				elseif data.lines[i]:find(ITEM_UPGRADE_TOOLTIP_1) then
-					data.upgrades = data.lines[i]:gsub(ITEM_UPGRADE_TOOLTIP_1,"")
-				elseif ITEM_UPGRADE_TOOLTIP_2 and data.lines[i]:find(ITEM_UPGRADE_TOOLTIP_2) then
-					data.upgrades = data.lines[i]:gsub(ITEM_UPGRADE_TOOLTIP_2,"")
-				elseif i>4 and data.setname==nil and data.lines[i]:find("%(%d*/%d*%)$") then
-					data.setname = strsplit("(",data.lines[i]);
+		if not data.cTooltipInfo then
+			tt:Show()
+
+			if not data.lines and copyLines then
+				local regions = {tt:GetRegions()}
+
+				data.lines={};
+				for _,line in ipairs(regions) do
+					if not (issecretvalue(line) and canaccesvalue(line)) then
+						-- ignore
+					elseif line~=nil and line:GetObjectType()=="FontString" then
+						local str = strtrim(line:GetText() or "");
+						if str:len()>0 then
+							tinsert(data.lines,str);
+						end
+					end
+				end
+
+				if data._type=="inventory" or data._type=="inv" or data._type=="bag" or data._type=="bags" then
+					for i=2, min(#data.lines,20) do
+						local lvl = tonumber(data.lines[i]:match(_ITEM_LEVEL));
+						if lvl then
+							data.level=lvl;
+						elseif data.lines[i]:find(ITEM_UPGRADE_TOOLTIP_1) then
+							data.upgrades = data.lines[i]:gsub(ITEM_UPGRADE_TOOLTIP_1,"")
+						elseif ITEM_UPGRADE_TOOLTIP_2 and data.lines[i]:find(ITEM_UPGRADE_TOOLTIP_2) then
+							data.upgrades = data.lines[i]:gsub(ITEM_UPGRADE_TOOLTIP_2,"")
+						elseif i>4 and data.setname==nil and data.lines[i]:find("%(%d*/%d*%)$") then
+							data.setname = strsplit("(",data.lines[i]);
+						end
+					end
 				end
 			end
-		end
 
-		tt:Hide();
+			tt:Hide()
+		end
 
 		if Data then
-			return data;
+			return data
 		end
 
-		if(#data.lines>0)then
-			data.callback(data);
-			tremove(queries,1);
+		if data.cTooltipInfo and #data.cTooltipInfo.lines>0 then
+			data.callback(data)
+			tremove(queries,1)
+		elseif #data.lines>0 then
+			data.callback(data)
+			tremove(queries,1)
 		elseif data.try>5 then
-			tremove(queries,1);
+			tremove(queries,1)
 		end
 	end
 	--[[

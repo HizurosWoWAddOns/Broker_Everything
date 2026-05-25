@@ -37,6 +37,12 @@ local function updateBroker()
 end
 
 local function ScanTT_Callback(data)
+	if data.cTooltipInfo then
+		data.lines = {}
+		for _,v in ipairs(data.cTooltipInfo.lines)do
+			tinsert(data.lines,v.leftText or "")
+		end
+	end
 	tinsert(founds,data);
 	updateBroker();
 end

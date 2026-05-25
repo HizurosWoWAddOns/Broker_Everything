@@ -47,7 +47,14 @@ end
 
 local function callbackLocaleNames(data)
 	if data.type=="quest" or data.type=="unit" then
-		if type(data.lines[1])=="string" and strlen(data.lines[1])>0 then
+		if data.cTooltipInfo and type(data.cTooltipInfo.lines[1])=="string" and strlen(data.cTooltipInfo.lines[1])>0 then
+			if data.type=="unit" then
+				names[data.id2] = data.cTooltipInfo.lines[1];
+			else
+				names[data.id] = data.cTooltipInfo.lines[1];
+			end
+			namesCount = namesCount + 1;
+		elseif data.lines and type(data.lines[1])=="string" and strlen(data.lines[1])>0 then
 			if data.type=="unit" then
 				names[data.id2] = data.lines[1];
 			else

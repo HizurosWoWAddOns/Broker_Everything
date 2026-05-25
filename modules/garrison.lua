@@ -266,12 +266,22 @@ end
 
 local function updateBlueprints(Data)
 	local known = false;
-	for i,v in ipairs(Data.lines) do
-		if v:find(ITEM_SPELL_KNOWN) then
-			known=true;
+	if Data.cTooltipInfo then
+		for i,v in ipairs(Data.cTooltipInfo.lines) do
+			if v and v.leftText and v.leftText:find(ITEM_SPELL_KNOWN) then
+				known = true;
+				break;
+			end
+		end
+	else
+		for i,v in ipairs(Data.lines) do
+			if v:find(ITEM_SPELL_KNOWN) then
+				known=true;
+				break;
+			end
 		end
 	end
-	if (not known) then
+	if not known then
 		tinsert(blueprints3,{
 			id = Data.id,
 			name = Data.passThrough.name,

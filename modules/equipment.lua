@@ -334,8 +334,12 @@ local function createTooltip(tt)
 						setName=" "..C("dkgreen",itemInfo.setname);
 					end
 
-					if(ns.profile[name].showGreenText and itemInfo.lines and type(itemInfo.lines[2])=="string" and itemInfo.lines[2]:find("\124"))then
-						greenline = " "..itemInfo.lines[2];
+					if ns.profile[name].showGreenText then
+						if itemInfo.cTooltipInfo and type(itemInfo.cTooltipInfo.lines[2]) and itemInfo.cTooltipInfo.lines[2].leftText:find("\124") then
+							greenline = " "..itemInfo.cTooltipInfo.lines[2].leftText;
+						elseif itemInfo.lines and type(itemInfo.lines[2])=="string" and itemInfo.lines[2]:find("\124")then
+							greenline = " "..itemInfo.lines[2];
+						end
 					end
 
 					if ns.profile[name].showUpgrades and itemInfo.upgrades then

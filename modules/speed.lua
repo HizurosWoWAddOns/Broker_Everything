@@ -24,7 +24,9 @@ local UnitInVehicle = UnitInVehicle or function()
 end
 
 local function updateTrainerName(data)
-	if data.lines[1] then
+	if data.cTooltipInfo and data.cTooltipInfo.lines[1] then
+		trainer_faction[data.trainer_index][6] = data.cTooltipInfo.lines[1];
+	elseif data.lines and data.lines[1] then
 		trainer_faction[data.trainer_index][6] = data.lines[1];
 	end
 end
