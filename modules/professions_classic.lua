@@ -299,7 +299,13 @@ function module.ProfessionMenu(self,button,modName,actName)
 			ns.EasyMenu:AddEntry({
 				label = v[nameLocale],
 				icon = v[icon],
-				func = function() securecall("CastSpellByName",v[nameLocale]); end,
+				func = function()
+					if v.openBy=="SpellId" then
+						securecall("CastSpellByID",v.spellId);
+						return;
+					end
+					securecall("CastSpellByName",v[nameLocale]);
+				end,
 				disabled = not ((v[skill]) and (v[skill]>0));
 			});
 		end
@@ -449,35 +455,48 @@ function module.init()
 
 	-- collect localized profession names
 	local t = {
+		-- <spellId>, <skillLineId>, <misc>
 		-- main
-		2259,171, -- Alchemy
-		2018,164, -- Blacksmithing
-		2108,165, -- Leatherworking
-		3273,129, -- First Aid
-		3908,197, -- Tailoring
-		4036,202, -- Engineering
-		7411,333, -- Enchanting
-		45357,773, -- Inscription
-		25229,755, -- Jewelcrafting
+		2259,171,0, -- Alchemy
+		2018,164,0, -- Blacksmithing
+		2108,165,0, -- Leatherworking
+		3273,129,0, -- First Aid
+		3908,197,0, -- Tailoring
+		4036,202,0, -- Engineering
+		7411,333,0, -- Enchanting
+		45357,773,0, -- Inscription
+		25229,755,0, -- Jewelcrafting
 
 		-- main/collecting
-		2575,186, -- Mining
-		9134,182, -- Herbalism
-		8613,393, -- Skinning
+		2575,186,2656, -- Mining
+		9134,182,0, -- Herbalism
+		8613,393,0, -- Skinning
 
 		-- secondary
-		7620,356, -- Fishing
-		2550,185, -- Cooking
+		7620,356,-1, -- Fishing
+		2550,185,0, -- Cooking
 
 		-- misc
-		--2656,0,   -- Smelting
-		2842,0,   -- Poisons, rouge
-		1804,0,   -- Lockpicking, rouge
+		--2656,0,0,   -- Smelting
+		2842,0,-1,   -- Poisons, rouge
+		1804,0,-1,   -- Lockpicking, rouge
+		53428,960,0, -- rune forging
 	}
-	for i=1, #t, 2 do
+	for i=1, #t, 3 do
 		local info = C_Spell.GetSpellInfo(t[i])
 		if info and info.name then
-			skillName2Info[info.name] = {spellId=t[i],icon=info.iconID,skillId=t[i+1]}
+			skillName2Info[info.name] = {
+				spellId=t[i],
+				icon=info.iconID,
+				skillId=t[i+1],
+				openBy="Name"
+			}
+			if t[i+2] > 0 then
+				skillName2Info[info.name].spellId = t[i+2];
+				skillName2Info[info.name].openBy = "SpellId"
+			elseif t[i+2]==-1 then
+				skillName2Info[info.name].disabled = true;
+			end
 		end
 	end
 end
@@ -498,20 +517,17 @@ local function OnEventUpdate()
 
 				local skillInfo = skillName2Info[skillName];
 				if skillInfo then
-					d.spellId = skillInfo.spellId
 					d[icon] = skillInfo.icon
+					d.spellId = skillInfo.spellId
 					d.skillId = skillInfo.skillId
-				end
-
-				if d.spellId==2575 then
-					d.spellId = 2656; -- replace mining with smelting to open skillframe window
-				elseif d.spellId == 7620 or d.spellId == 2842 or d.spellId == 1804 then
-					-- hide some progessions in profession menu to prevent error message
-					d[disabled] = true;
+					d.openBy = skillInfo.openBy
+					if skillInfo.disabled then
+						d[disabled] = true
+					end
 				end
 
 				if lastHeader==TRADE_SKILLS then
-					short[n] = {d[skillLine],skillName,d[icon],d[skill],d[maxSkill],d.skillId,d.spellId};
+					short[n] = {d[skillLine],skillName,d[icon],d[skill],d[maxSkill],d.skillId,d.spellId,d.openBy};
 				end
 
 				tmp[n] = d or false;
