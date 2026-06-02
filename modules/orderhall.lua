@@ -270,6 +270,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	group = L["ExpansionFeatures"],
 	events = {
 		"PLAYER_LOGIN"
 	},

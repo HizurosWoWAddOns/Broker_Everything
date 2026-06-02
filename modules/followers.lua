@@ -501,6 +501,7 @@ end
 -- module functions and variables --
 ------------------------------------
 moduleC = {
+	group = L["ExpansionFeatures"],
 	isHiddenModule = true,
 	events = {
 		"PLAYER_LOGIN",
@@ -517,6 +518,7 @@ moduleC = {
 };
 
 moduleF = {
+	group = L["ExpansionFeatures"],
 	name = GARRISON_FOLLOWERS,
 	events = {"PLAYER_LOGIN"},
 	config_defaults = CopyTable(config_defaults),
@@ -525,6 +527,7 @@ moduleF = {
 };
 
 moduleS = {
+	group = L["ExpansionFeatures"],
 	name = GARRISON_SHIPYARD_FOLLOWERS,
 	events = {"PLAYER_LOGIN"},
 	config_defaults = CopyTable(config_defaults),
