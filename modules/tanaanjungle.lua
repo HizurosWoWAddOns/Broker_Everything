@@ -10,9 +10,9 @@ if ns.client_version<6 then return end
 -----------------------------------------------------------
 local name = "Tanaan Jungle Dailies"; -- L["Tanaan Jungle Dailies"] L["ModDesc-Tanaan Jungle Dailies"]
 local ttName, ttName2, ttColumns, ttColumns2, tt, tt2, module = name.."TT",name.."TT2", 2, 2;
-local try,dailiesReset,weekliesReset,namesCount,namesNeed,completed,numCompleted,names,questlog,numQuestlog = 6,0,0,0,0,{},{},{},{},{};
-local dubs,updateLock,updateTimeout = {},true,10;
-local ids,zone2hidden,numIDTypes,colorIDTypes,typeOrder,npcs,groupIds,titles;
+local dailiesReset,completed,numCompleted,questlog = 0,{},{},{};
+local updateLock = true;
+local ids,zone2hidden,numIDTypes,colorIDTypes,typeOrder,titles;
 -- [<questId>] = <number> ( 1=bosses, 2=zone dailies, 3=hidden zone dailies, 4=bonus zone dailies, 5=random dailies, 6=weeklies )
 --[=[
 what the difference between zone, hidden and bonus dailys?
@@ -31,72 +31,7 @@ I[name] = {iconfile="interface\\icons\\Achievement_Zone_Tanaanjungle", coords={.
 --------------------------
 local function updateResetTimes()
 	if dailiesReset>0 then return end
-
 	dailiesReset = time() + GetQuestResetTime() - 86400;
-	local wday,reset = tonumber(date("%w"));
-
-	if(wday==0)then
-		reset = 4*86400;
-	elseif(wday>3)then
-		reset = wday*86400;
-	elseif(wday<3)then
-		reset = (3+wday)*86400;
-	end
-	weekliesReset = dailiesReset - wday;
-end
-
-local function callbackLocaleNames(data)
-	if data.type=="quest" or data.type=="unit" then
-		if data.cTooltipInfo and type(data.cTooltipInfo.lines[1])=="string" and strlen(data.cTooltipInfo.lines[1])>0 then
-			if data.type=="unit" then
-				names[data.id2] = data.cTooltipInfo.lines[1];
-			else
-				names[data.id] = data.cTooltipInfo.lines[1];
-			end
-			namesCount = namesCount + 1;
-		elseif data.lines and type(data.lines[1])=="string" and strlen(data.lines[1])>0 then
-			if data.type=="unit" then
-				names[data.id2] = data.lines[1];
-			else
-				names[data.id] = data.lines[1];
-			end
-			namesCount = namesCount + 1;
-		end
-	end
-end
-
-local function updateLocaleNames()
-	local failed,tmp,c = false,{},0;
-	local locale=GetLocale();
-
-	if Broker_Everything_DataDB.locale~=locale then
-		Broker_Everything_DataDB.locale=locale;
-		Broker_Everything_DataDB.localeNames={};
-	end
-
-	names = Broker_Everything_DataDB.localeNames;
-
-	-- collect locale quest titles
-	for id,v in pairs(ids)do
-		if v~=1 and v~=3 then
-			if names[id]==nil then
-				ns.ScanTT.query({type="quest",id=id,level=100,callback=callbackLocaleNames});
-			else
-				namesCount = namesCount + 1;
-			end
-			namesNeed = namesNeed + 1;
-		end
-	end
-
-	-- collect locale npc names
-	for nID,qID in pairs(npcs)do
-		if names[qID]==nil then
-			ns.ScanTT.query({type="unit",id=nID,id2=qID,callback=callbackLocaleNames});
-		else
-			namesCount = namesCount + 1;
-		end
-		namesNeed = namesNeed + 1;
-	end
 end
 
 local function updateQuestStatus()
@@ -132,7 +67,6 @@ local function updateQuestStatus()
 end
 
 local function listQuests(TT,questlog,completed,numCompleted)
-	local questNameUknown = C("orange",L["Wait on name..."]);
 	for _,i in ipairs(typeOrder) do
 		local num=0;
 		TT:AddSeparator(4,0,0,0,0);
@@ -156,10 +90,7 @@ local function listQuests(TT,questlog,completed,numCompleted)
 					end
 				end
 				if color then
-					local questName = questNameUknown;
-					if names[id] then
-						questName = C("ltyellow",names[id]);
-					end
+					local questName = C("ltyellow",L["quest_"..id]);
 					TT:AddLine((ns.profile[name].showQuestIDs and C("gray",id).." " or "") .. questName,C(color,state));
 					num=num+1;
 				end
@@ -186,14 +117,6 @@ local function createTooltip(tt)
 	if tt.lines~=nil then tt:Clear(); end
 	local l = tt:AddHeader();
 	tt:SetCell(l,1,C("dkyellow",L[name]),nil,nil,ttColumns);
-
-	if(namesCount~=namesNeed)then
-		local l=tt:AddLine();
-		tt:SetCell(l,1,L["This module is waiting for some localized names."],nil,nil,2);
-		tt:AddLine(L["Count of data to collect:"],namesCount.." / "..namesNeed);
-		ns.roundupTooltip(tt);
-		return;
-	end
 
 	updateResetTimes();
 	--updateQuestStatus();
@@ -327,12 +250,6 @@ function module.init()
 		"violet",
 	}
 	typeOrder = {1,6,5,2,4};
-	npcs = { -- [<npcID>] = <questID>
-		[95053]=39287,[95044]=39288,[95056]=39289,[95054]=39290
-	};
-	groupIds = {
-		--[39432] =
-	};
 	titles = { -- {"<title>", <maxQuestCount>}
 		{"Rare bosses",4}, -- L["Rare bosses"]
 		{"Random zone daily",1}, -- L["Random zone dailies"]
@@ -361,7 +278,7 @@ function module.onevent(self,event,...)
 
 		updateQuestStatus();
 
-		C_Timer.After(3, updateLocaleNames);
+		Broker_Everything_DataDB.localeNames = nil; -- deprecated
 	elseif event=="QUEST_LOG_UPDATE" then
 		updateQuestStatus();
 	end

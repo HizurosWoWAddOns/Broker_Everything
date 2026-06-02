@@ -25,14 +25,6 @@ local UnitInVehicle = UnitInVehicle or function()
 	return false;
 end
 
-local function updateTrainerName(data)
-	if data.cTooltipInfo and data.cTooltipInfo.lines[1] then
-		trainer_faction[data.trainer_index][6] = data.cTooltipInfo.lines[1];
-	elseif data.lines and data.lines[1] then
-		trainer_faction[data.trainer_index][6] = data.lines[1];
-	end
-end
-
 local function updateToonSkill(...)
 	if ns.toon[name]==nil then
 		ns.toon[name] = {skill=0};
@@ -205,7 +197,7 @@ local function tooltipOnEnter(self,data)
 					end
 				end
 				if mapInfo then
-					GameTooltip:AddDoubleLine(v[6] or UNKNOWN, ttTrainerLine:format(mapInfo.name, v[4], v[5] ) );
+					GameTooltip:AddDoubleLine(L["npc_"..v[2]] or UNKNOWN, ttTrainerLine:format(mapInfo.name, v[4], v[5] ) );
 				end
 				faction = v[1];
 			end
@@ -524,6 +516,7 @@ function module.init()
 			tinsert(skills,{spell=18995, minLevel=40, speed=60, race="Tauren",   faction=81}); -- Tauren
 			tinsert(skills,{spell=10906, minLevel=40, speed=60, race="Scourge",  faction=68}); -- Scourge
 		end
+
 		riding_skills = {};
 		for i=1, #skills do
 			if skills[i].race~=ns.player.race then
@@ -539,12 +532,14 @@ function module.init()
 		end
 		return;
 	end
+
 	riding_skills = { -- <spellid>, <minLevel>, <air speed increase>, <ground speed increase>
 		{spell=90265, minLevel=40, speed=310},
 		{spell=34090, minLevel=30, speed=150},
 		{spell=33391, minLevel=20, speed=100},
 		{spell=33388, minLevel=10, speed=60},
 	};
+
 	licenses = { -- <spellid>, <minLevel>, <mapIds>
 		{"a40231", 70, {}}, -- tww pathfinder
 		{"a13250", 50, {}}, -- bfa pathfinder
@@ -603,15 +598,6 @@ end
 
 function module.onevent(self,event,...)
 	if event=="PLAYER_LOGIN" then
-		for i=1, #trainer_faction do
-			ns.ScanTT.query({
-				["type"]="unit",
-				["unit"]="Creature",
-				["id"]=trainer_faction[i][2],
-				["trainer_index"] = i,
-				["callback"] = updateTrainerName
-			});
-		end
 		updateToonSkillLocked = true;
 		updateToonSkill();
 		C_Timer.NewTicker(0.2,updateBroker);

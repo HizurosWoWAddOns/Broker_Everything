@@ -46,7 +46,7 @@ namespace.lua
 
 ## localizations
 localizations.lua
-#localizations/[TextLocale].lua
+localizations/[TextLocale].lua
 #@do-not-package@
 dev/localizations.imported.lua
 dev/localizations.imported-deDE.lua
