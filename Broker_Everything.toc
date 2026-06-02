@@ -41,4 +41,109 @@ libs\LibDropDownMenu\LibDropDownMenu.xml
 libs\LibRealmInfo\LibRealmInfo.lua
 libs\HizurosSharedTools\HizurosSharedTools.lua
 
-Broker_Everything.xml
+## try to shrink error reports
+namespace.lua
+
+## localizations
+localizations.lua
+#localizations/[TextLocale].lua
+#@do-not-package@
+dev/localizations.imported.lua
+dev/localizations.imported-deDE.lua
+dev/localizations.workfile.lua
+#@end-do-not-package@
+## /localizations
+
+shared.lua
+options.lua
+modules.lua
+chatcommand.lua
+core.xml
+
+## modules
+## mainline, vanilla, tbc, wrath, cata, mists, wowlabs??, wowhack??
+
+modules/bags.lua
+modules/chatchannels.lua
+modules/clock.lua
+modules/durability.lua
+modules/equipment.lua
+modules/framenames.lua
+modules/friends.lua
+modules/gamemenu.lua
+modules/gold.lua
+modules/gps.lua
+modules/guild.lua
+modules/ids.lua
+modules/instances.lua
+modules/mail.lua
+modules/nameplates.lua
+modules/notes.xml
+modules/questlog.lua
+modules/reputation.lua
+modules/speed.lua
+modules/stuff.lua
+modules/system.lua
+modules/volume.lua
+modules/xp.lua
+
+# modules for classic
+modules/professions_classic.lua [AllowLoadGameType classic]
+modules/ammo_classic.lua [AllowLoadGameType classic]
+
+# modules since tbc
+modules/titles.lua [AllowLoadGameType mainline, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+modules/tracking.lua [AllowLoadGameType mainline, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+
+# modules since wrath aka wotlk
+modules/achievements.lua [AllowLoadGameType mainline, wrath, cata, mists, wod, legion, bfa, shadow]
+modules/calendar.lua [AllowLoadGameType mainline, wrath, cata, mists, wod, legion, bfa, shadow]
+modules/currency.lua [AllowLoadGameType mainline, wrath, cata, mists, wod, legion, bfa, shadow]
+modules/guildlog.lua [AllowLoadGameType mainline, wrath, cata, mists, wod, legion, bfa, shadow]
+
+# modules since cata
+modules/archaeology.lua [AllowLoadGameType mainline, cata, mists, wod, legion, bfa, shadow]
+modules/surprise.lua [AllowLoadGameType mainline, cata, mists, wod, legion, bfa, shadow]
+
+# modules since mists aka mop
+modules/difficulty.lua [AllowLoadGameType mainline, mists, wod, legion, bfa, shadow]
+
+# modules since wod
+modules/followers.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
+modules/garrison.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
+modules/missions.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
+modules/tanaanjungle.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
+modules/wardrobe.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
+
+# modules since legion
+modules/artifactweapons.lua [AllowLoadGameType mainline, legion, bfa, shadow]
+modules/classspecs.lua [AllowLoadGameType mainline, legion, bfa, shadow]
+modules/emissaryquests.lua [AllowLoadGameType mainline, legion, bfa, shadow]
+modules/invasions.lua [AllowLoadGameType mainline, legion, bfa, shadow]
+modules/orderhall.lua [AllowLoadGameType mainline, legion, bfa, shadow]
+modules/wowtoken.lua [AllowLoadGameType mainline, legion, bfa, shadow]
+
+modules/professions.lua [AllowLoadGameType mainline, bfa, shadow]
+
+#@do-not-package@
+#dev/modules/lookingfor.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/realm.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/chromietime.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/stats.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/guild.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/delves.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/talents_classic.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/communities.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/workorders.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/pvp.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/mythicplus.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/shadowlands.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/talents_classic.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/soulshards_classic.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/broker_everything.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/worldpvpareas.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/playerkills.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#dev/modules/quickjoin.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+#@end-do-not-package@
+
+## /modules

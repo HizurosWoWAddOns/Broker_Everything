@@ -1,0 +1,114 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\..\FrameXML\UI.xsd">
+
+	<script file="core.lua" />
+
+	<Frame name="BE_SecureFrame" hidden="hidden" virtual="true">
+		<Layers>
+			<Layer level="ARTWORK">
+				<Texture parentKey="" hidden="true" alphamode="ADD" file="interface\friendsframe\ui-friendsframe-highlightbar" >
+					<Anchors>
+						<Anchor point="TOPLEFT" x="0" y="0" />
+						<Anchor point="BOTTOMRIGHT" x="0" y="0" />
+					</Anchors>
+					<Color a="1" r="1" g="0" b="0" />
+				</Texture>
+			</Layer>
+		</Layers>
+		<Scripts>
+			<OnEnter>
+				self.highlight:Show()
+			</OnEnter>
+			<OnLeave>
+				self.highlight:Hide()
+			</OnLeave>
+		</Scripts>
+		<Frames>
+			<Button name="$parentButton" inherits="SecureActionButtonTemplate" parentKey="button">
+				<Anchors>
+					<Anchor point="TOPLEFT" x="0" y="0" />
+					<Anchor point="BOTTOMRIGHT" x="0" y="0" />
+				</Anchors>
+				<HighlightTexture alphamode="ADD" file="interface\friendsframe\ui-friendsframe-highlightbar-blue" />
+			</Button>
+		</Frames>
+	</Frame>
+
+	<Button name="BE_SecureWrapper" hidden="hidden" virtual="true">
+		<HighlightTexture alphamode="ADD" file="interface\friendsframe\ui-friendsframe-highlightbar" />
+		<Frames>
+			<Button name="$parentButton" inherits="SecureActionButtonTemplate" parentKey="button">
+				<Anchors>
+					<Anchor point="TOPLEFT" x="0" y="0" />
+					<Anchor point="BOTTOMRIGHT" x="0" y="0" />
+				</Anchors>
+				<HighlightTexture alphamode="ADD" file="interface\friendsframe\ui-friendsframe-highlightbar-blue" />
+			</Button>
+		</Frames>
+	</Button>
+
+	<Texture name="BEReputationBarTextureTemplate" file="Interface\BUTTONS\GreyscaleRamp64" hidden="true" virtual="true">
+		<Size x="1"/>
+		<TexCoords left="1" right="0" top="1" bottom="0" />
+		<Anchors><Anchor point="TOPLEFT" /><Anchor point="BOTTOM" /></Anchors>
+	</Texture>
+
+	<Frame name="BEStatusBarTemplate" virtual="true">
+		<Layers>
+			<Layer level="BACKGROUND" textureSubLevel="1">
+				<Texture parentKey="Bar" inherits="BEReputationBarTextureTemplate" />
+			</Layer>
+			<Layer level="BACKGROUND" textureSubLevel="-1">
+				<Texture parentKey="Bg" file="Interface\BUTTONS\GreyscaleRamp64" SetAllPoints="true">
+					<Color r="0.2" g="0.2" b="0.2" />
+					<TexCoords left="1" right="0" top="1" bottom="0" />
+				</Texture>
+			</Layer>
+		</Layers>
+	</Frame>
+
+	<Frame name="BEReputationBarTemplate" virtual="true">
+		<Layers>
+			<Layer level="BACKGROUND" textureSubLevel="1">
+				<Texture parentKey="BarSingle" inherits="BEReputationBarTextureTemplate" />
+				<Texture parentKey="BarAIO" file="Interface\AddOns\Broker_Everything\media\aio-reputation-bar" hidden="true">
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+						<Anchor point="BOTTOM"/>
+					</Anchors>
+					<TexCoords left="0" right="0.830078125" top="0" bottom="0" />
+				</Texture>
+				<Texture parentKey="BarAIO_friend" file="Interface\AddOns\Broker_Everything\media\aio-reputation-bar_friend" hidden="true">
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+						<Anchor point="BOTTOM"/>
+					</Anchors>
+					<TexCoords left="0" right="0.830078125" top="0" bottom="0" />
+				</Texture>
+				<Texture parentKey="BarAIO_bodyguard" file="Interface\AddOns\Broker_Everything\media\aio-reputation-bar_bodyguard" hidden="true">
+					<Anchors>
+						<Anchor point="TOPLEFT"/>
+						<Anchor point="BOTTOM"/>
+					</Anchors>
+					<TexCoords left="0" right="0.830078125" top="0" bottom="0" />
+				</Texture>
+			</Layer>
+			<Layer level="BACKGROUND" textureSubLevel="-1">
+				<Texture parentKey="Bg" file="Interface\BUTTONS\GreyscaleRamp64" SetAllPoints="true">
+					<Color r="0.3" g="0.3" b="0.3" />
+					<TexCoords left="1" right="0" top="1" bottom="0" />
+				</Texture>
+				<Texture parentKey="Bg2" file="Interface\BUTTONS\GreyscaleRamp64" hidden="true">
+					<Size x="1" />
+					<Color r="0.66" g="0.66" b="0.66" />
+					<TexCoords left="1" right="0" top="1" bottom="0" />
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeKey="$parent.Bar1" />
+						<Anchor point="BOTTOM"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+	</Frame>
+
+</Ui>
