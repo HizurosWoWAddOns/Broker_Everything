@@ -125,20 +125,19 @@ local function formatBytes(bytes, precision)
 	return ("%0."..( (i==1 and 0) or precision or 1).."f"):format(bytes), units[i] or "b";
 end
 
-local function fpsStr(k)
+local function fpsStr(k,isModSys)
 	local num = tostring(fps[k]);
-	if ns.profile[name_fps].fillCharacter~="0none" then
-		local chr = {
-			["1zero"] = "0",
-			["2blank"] = " ",
-			["3undercore"] = "_"
-		}
-		num = strrep(chr[ns.profile[name_fps].fillCharacter] or "",3-strlen(num))..num;
+	if ns.profile[name_fps].spacerWidth>0 then
+		num = ns.spacer(isModSys and name_sys or name_fps, num, 3)..num;
 	end
 	fps[k.."Str"] = C( (fps[k]<18 and "red") or (fps[k]<24 and "orange") or (fps[k]<30 and "dkyellow") or (fps[k]<100 and "green") or (fps[k]<160 and "ltblue") or (fps[k]<200 and "ltviolet") or "violet", num ) .. ns.suffixColour("fps");
 end
 
-local function latencyStr(a,b)
+local function latencyStr(a,b,isModSys)
+	local str = latency[a][b]
+	if ns.profile[name_lat].spacerWidth>0 then
+		str = ns.spacer(isModSys and name_sys or name_lat, str, 3)..str;
+	end
 	latency[a][b.."Str"] =  C( (latency[a][b]<40 and "ltblue") or (latency[a][b]<120 and "green") or (latency[a][b]<250 and "dkyellow") or (latency[a][b]<400 and "orange") or (latency[a][b]<1200 and "red") or "violet", ns.FormatLargeNumber(name_traf,latency[a][b]) ) .. ns.suffixColour("ms");
 end
 
@@ -152,7 +151,7 @@ local function memoryStr(t,k)
 	t[k.."Str"] = value..""..ns.suffixColour(suffix);
 end
 
-local function updateFPS()
+local function updateFPS(isModSys)
 	fps.cur = floor(GetFramerate() or 0);
 	if fps.min<-1 then
 		fps.min=fps.min+1;
@@ -163,12 +162,12 @@ local function updateFPS()
 	end
 	max(fps,"max","cur");
 	--prependHistory(fps.his,fps.cur,50);
-	fpsStr("cur");
+	fpsStr("cur",isModSys);
 	fpsStr("min");
 	fpsStr("max");
 end
 
-local function updateNetStats()
+local function updateNetStats(isModSys)
 	if netStatTimeout>0 then netStatTimeout=netStatTimeout-1; return end
 	netStatTimeout=10;
 
@@ -191,10 +190,10 @@ local function updateNetStats()
 	--prependHistory(latency.home.his,latency.home.cur,50);
 	--prependHistory(latency.world.his,latency.world.cur,50);
 
-	latencyStr("home","cur");
+	latencyStr("home","cur",isModSys);
 	latencyStr("home","min");
 	latencyStr("home","max");
-	latencyStr("world","cur");
+	latencyStr("world","cur",isModSys);
 	latencyStr("world","min");
 	latencyStr("world","max");
 
@@ -508,12 +507,12 @@ local function updateAll()
 
 	-- update fps
 	if enabled.fps_mod or enabled.fps_sys then
-		updateFPS();
+		updateFPS(true);
 	end
 
 	-- update network stats
 	if enabled.lat_mod or enabled.lat_sys or enabled.traf_mod or enabled.traf_sys then
-		updateNetStats();
+		updateNetStats(true);
 	end
 
 	-- update memmory usage
@@ -669,6 +668,7 @@ module_sys = {
 		showClientVersionOnBroker = false,
 		showClientBuildOnBroker = false,
 		showInterfaceVersionOnBroker = false,
+		spacerWidth = 9,
 
 		-- tooltip options
 		showTrafficInTooltip = true,
@@ -696,7 +696,7 @@ module_fps = {
 	},
 	config_defaults = {
 		enabled = false,
-		fillCharacter = "0none"
+		spacerWidth = 9,
 	},
 };
 
@@ -708,7 +708,8 @@ module_lat = {
 	config_defaults = {
 		enabled = false,
 		showHome = true,
-		showWorld = true
+		showWorld = true,
+		spacerWidth = 9,
 	},
 };
 
@@ -818,6 +819,9 @@ function module_sys.options()
 			showClientVersionOnBroker    = { type="toggle", order=9, name=L["Client version"],    desc=L["Display client version on broker"] },
 			showClientBuildOnBroker      = { type="toggle", order=10, name=L["Client build"],      desc=L["Display client build number on broker"] },
 			showInterfaceVersionOnBroker = { type="toggle", order=11, name=L["Interface version"], desc=L["Display interface version on broker"] },
+
+			spacerWidth=12,
+			spacerWidthInfo=13,
 		},
 		tooltip = {
 			showTrafficInTooltip     = { type="toggle", order=1, name=L["Traffic"],      desc=L["Display traffic in tooltip"] },
@@ -838,7 +842,9 @@ function module_lat.options()
 	return {
 		broker = {
 			showHome={ type="toggle", order=1, name=L["Home latency"],  desc=L["Display home latency"] },
-			showWorld={ type="toggle", order=2, name=L["World latency"], desc=L["Display world latency"] }
+			showWorld={ type="toggle", order=2, name=L["World latency"], desc=L["Display world latency"] },
+			spacerWidth=3,
+			spacerWidthInfo=4,
 		},
 		tooltip = nil,
 		misc = nil,
@@ -861,15 +867,9 @@ end
 
 function module_fps.options()
 	return {
-		misc = {
-			fillCharacter={ type="select", order=1, name=L["Prepend character"], desc=L["Prepend a character to fill displayed fps up to 3 character."], width="double",
-				values = {
-					["0none"] = NONE.."/"..ADDON_DISABLED,
-					["1zero"] = L["0 (zero) > [060 fps]"],
-					["2blank"] = L["blank > [ 60 fps]"],
-					["3undercore"] = L["_ (undercore) > [_60 fps]"]
-				}
-			}
+		broker = {
+			spacerWidth=1,
+			spacerWidthInfo=2,
 		},
 	}
 end
