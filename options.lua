@@ -370,6 +370,7 @@ ns.sharedOptions = {
 	delimiterBB     = { type="select", name=L["DelimiterBB"], desc=L["DelimiterBBDesc"], values = delimiterBBValues },
 	spacerWidth     = { type="range",  name=L["SpacerWidth"], desc=L["SpacerWidthDesc"], min=0, max=20, step=1 },
 	spacerWidthInfo = { type="description", name=L["SpacerWidthInfo"] },
+	useCtrlKeyInsteadAlt = { type="toggle", name=L["UseCtrlInsteadAlt"], desc=L["UseCtrlInsteadAltDesc"] },
 }
 
 local sharedDefaults = {
@@ -380,6 +381,7 @@ local sharedDefaults = {
 	showCharsFrom = "2",
 	minimap = {hide=false},
 	spacerWidth=9,
+	useCtrlKeyInsteadAlt=false,
 }
 
 local coords=nil;
