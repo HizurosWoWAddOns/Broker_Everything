@@ -219,7 +219,11 @@ end
 
 local function tooltipLineScript_OnMouseUp(self,data,button)
 	if data.type=="realm" then
-		if IsAltKeyDown() then
+		local isKeyDown = IsAltKeyDown
+		if ns.profile[name].useCtrlKeyInsteadAlt then
+			isKeyDown = IsControlKeyDown
+		end
+		if isKeyDown() then
 			-- party invite
 			if C_PartyInfo.InviteUnit then
 				C_PartyInfo.InviteUnit(data.fullName);
@@ -236,7 +240,11 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 		end
 	elseif data.type=="battlenet" then
 		-- battlenet whisper
-		if IsAltKeyDown() then
+		local isKeyDown = IsAltKeyDown
+		if ns.profile[name].useCtrlKeyInsteadAlt then
+			isKeyDown = IsControlKeyDown
+		end
+		if isKeyDown() then
 			if data.client=="WoW" then
 				BNInviteFriend(data.toonID);
 			end
@@ -611,9 +619,10 @@ local function createTooltip(tt)
 
 	if (ns.profile.GeneralOptions.showHints) then
 		tt:AddSeparator(3,0,0,0,0);
+		local modKey = ns.profile[name].useCtrlKeyInsteadAlt and "ModKeyC" or "ModKeyA"
 		tt:SetCell(tt:AddLine(),1,
 			C("ltblue",L["MouseBtn"]).." = "..C("green",WHISPER) .." || "..
-			C("ltblue",L["ModKeyA"].."+"..L["MouseBtn"]).." = "..C("green",TRAVEL_PASS_INVITE) .. " || "..
+			C("ltblue",L[modKey].."+"..L["MouseBtn"]).." = "..C("green",TRAVEL_PASS_INVITE) .. " || "..
 			C("ltblue",L["ModKeyS"].."+"..L["MouseBtn"]).." = "..C("green",L["FriendCopyIntoChatInput"]
 		),nil,nil,columns);
 		ns.ClickOpts.ttAddHints(tt,name,nil,2);
@@ -660,7 +669,10 @@ module = {
 		showFactionTT2 = false,
 		showZoneTT2 = false,
 		showGameTT2 = false,
-		showNotesTT2 = false
+		showNotesTT2 = false,
+
+		-- misc
+		controlKey = false,
 	},
 	clickOptionsRename = {
 		["friends"] = "1_open_character_info",
@@ -749,7 +761,9 @@ function module.options()
 			showGameTT2={ type="toggle", order=17, name=L["Show game"], desc=L["Display game in second tooltip"] },
 			showNotesTT2={ type="toggle", order=18, name=L["Show notes"], desc=L["Display notes in second tooltip"] },
 		},
-		misc = nil,
+		misc = {
+			useCtrlKeyInsteadAlt = 1,
+		},
 	}
 end
 
