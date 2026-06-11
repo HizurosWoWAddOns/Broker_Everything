@@ -61,7 +61,11 @@ chatcommand.lua
 core.xml
 
 ## modules
-## mainline, vanilla, tbc, wrath, cata, mists, wowlabs??, wowhack??
+
+## AllowLoadGameType selector
+## currently known: mainline, vanilla, tbc, wrath, cata, mists
+## the others are just guesses: wod, legion, bfa, shadow
+## better would be >=tbc or tbc+ to avoid the long lists
 
 modules/bags.lua
 modules/chatchannels.lua
@@ -74,10 +78,7 @@ modules/gamemenu.lua
 modules/gold.lua
 modules/gps.lua
 modules/guild.lua
-modules/ids.lua
-modules/instances.lua
 modules/mail.lua
-modules/nameplates.lua
 modules/notes.xml
 modules/questlog.lua
 modules/reputation.lua
@@ -103,15 +104,18 @@ modules/guildlog.lua [AllowLoadGameType mainline, wrath, cata, mists, wod, legio
 
 # modules since cata
 modules/archaeology.lua [AllowLoadGameType mainline, cata, mists, wod, legion, bfa, shadow]
+modules/ids.lua [AllowLoadGameType mainline, cata, mists, wod, legion, bfa, shadow]
 modules/surprise.lua [AllowLoadGameType mainline, cata, mists, wod, legion, bfa, shadow]
 
 # modules since mists aka mop
 modules/difficulty.lua [AllowLoadGameType mainline, mists, wod, legion, bfa, shadow]
+modules/instances.lua [AllowLoadGameType mainline, mists, wod, legion, bfa, shadow]
 
 # modules since wod
 modules/followers.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
 modules/garrison.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
 modules/missions.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
+modules/nameplates.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
 modules/tanaanjungle.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
 modules/wardrobe.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
 
@@ -123,27 +127,11 @@ modules/invasions.lua [AllowLoadGameType mainline, legion, bfa, shadow]
 modules/orderhall.lua [AllowLoadGameType mainline, legion, bfa, shadow]
 modules/wowtoken.lua [AllowLoadGameType mainline, legion, bfa, shadow]
 
+# modules since bfa
 modules/professions.lua [AllowLoadGameType mainline, bfa, shadow]
 
 #@do-not-package@
-#dev/modules/lookingfor.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/realm.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/chromietime.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/stats.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/guild.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/delves.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/talents_classic.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/communities.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/workorders.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/pvp.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/mythicplus.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/shadowlands.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/talents_classic.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/soulshards_classic.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/broker_everything.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/worldpvpareas.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/playerkills.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-#dev/modules/quickjoin.lua [AllowLoadGameType mainline, vanilla, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+dev/modules.xml
 #@end-do-not-package@
 
 ## /modules
