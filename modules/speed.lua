@@ -134,10 +134,12 @@ local function updateBroker()
 	else
 		speed = GetUnitSpeed( UnitInVehicle("player") and "vehicle" or "player" ) or 0;
 	end
-	local str = ("%."..ns.profile[name].precision.."f"):format(speed / 7 * 100 ) .. "%";
-	local l = 4 + (ns.profile[name].precision>0 and ns.profile[name].precision+1 or 0) - str:len();
-	ns.LDB:GetDataObjectByName(module.ldbName).text = strrep("|TInterface\\buttons\\ui-passivehighlight:9:9|t",l)..str;
-	-- hidden texture as placeholder is not nice but it works.
+	local precision = ns.profile[name].precision;
+	local str = ("%."..precision.."f"):format(speed / 7 * 100 ) .. "%";
+	if ns.profile[name].spacerWidth>0 then
+		str = ns.spacer(name,str,4 + (precision>0 and precision+1 or 0))..str;
+	end
+	ns.LDB:GetDataObjectByName(module.ldbName).text = str;
 end
 
 local function tooltipOnEnter(self,data)
@@ -203,7 +205,6 @@ local function tooltipOnEnter(self,data)
 			end
 		end
 	end
-	--/run local t=GameTooltip t:Hide(); t:SetOwner(UIParent,"ANCHOR_NONE") t:SetPoint("CENTER") t:SetUnit("Creature-0-0-0-0-35135-0"); t:Show();
 	GameTooltip:Show();
 end
 
@@ -473,6 +474,7 @@ module = {
 
 		-- broker
 		precision = 0,
+		spacerWidth = 9,
 
 		-- tooltip
 		showBonus = true,
@@ -488,7 +490,11 @@ end
 
 function module.options()
 	return {
-		broker = { precision={ type="range", name=L["Precision"], desc=L["Adjust the count of numbers behind the dot."], min = 0, max = 3, step=1 } },
+		broker = {
+			precision={ type="range", order=1, name=L["Precision"], desc=L["Adjust the count of numbers behind the dot."], min = 0, max = 3, step=1 },
+			spacerWidth=2,
+			spacerWidthInfo=3,
+		},
 		tooltip = {
 			showBonus = { type="toggle", order=1, name=L["SpeedBonus"], desc=L["SpeedBonusDesc"], hidden=(ns.client_version>=5) },
 			showLicenses = { type="toggle", order=2, name=L["SpeedLicenses"], desc=L["SpeedLicensesDesc"], hidden=(ns.client_version>=5) },
