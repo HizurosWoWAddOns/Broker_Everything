@@ -226,7 +226,8 @@ local function memberInviteOrWhisper(self,memberIndex)
 	if not mFullName then
 		return; -- GetGuildRosterInfo looks like buggy since 11.0
 	end
-	if IsAltKeyDown() then
+	local isKeyDown = ns.profile[name].useCtrlKeyInsteadAlt and IsControlKeyDown or IsAltKeyDown
+	if isKeyDown() then
 		if mIsMobile then
 			ns:print(L["GuildErrorInviteMobile"]);
 		elseif not mOnline then
@@ -793,14 +794,15 @@ local function createTooltip(tt,update)
 			tt:SetCell(l,1,C("orange",L["MouseBtn"]).." || "..C("green","Guild applications"),nil,"LEFT",ttColumns);
 		end
 
+		local modKey = ns.profile[name].useCtrlKeyInsteadAlt and "ModKeyC" or "ModKeyA"
 		if (ttColumns>4) then
 			local l = tt:AddLine();
-			tt:SetCell(l,1,C("ltblue",L["MouseBtn"]).." || "..C("green",WHISPER) .." - ".. C("ltblue",L["ModKeyA"].."+"..L["MouseBtn"]).." || "..C("green",TRAVEL_PASS_INVITE),nil,"LEFT",ttColumns);
+			tt:SetCell(l,1,C("ltblue",L["MouseBtn"]).." || "..C("green",WHISPER) .." - ".. C("ltblue",L[modKey].."+"..L["MouseBtn"]).." || "..C("green",TRAVEL_PASS_INVITE),nil,"LEFT",ttColumns);
 		else
 			local l = tt:AddLine();
 			tt:SetCell(l,1,C("ltblue",L["MouseBtn"]).." || "..C("green",WHISPER),nil,"LEFT",ttColumns);
 			local l = tt:AddLine();
-			tt:SetCell(l,1,C("ltblue",L["ModKeyA"].."+"..L["MouseBtn"]).." || "..C("green",TRAVEL_PASS_INVITE),nil,"LEFT",ttColumns);
+			tt:SetCell(l,1,C("ltblue",L[modKey].."+"..L["MouseBtn"]).." || "..C("green",TRAVEL_PASS_INVITE),nil,"LEFT",ttColumns);
 		end
 
 		if (module.clickHints) then
@@ -907,7 +909,8 @@ module = {
 		--splitTables = false, -- deprecated
 		showMembersLevelUp = true,
 		showMembersNotes = false,
-		showMembersOffNotes = false
+		showMembersOffNotes = false,
+		controlKey = false,
 	},
 	clickOptionsRename = {
 		["guild"] = "1_open_guild",
@@ -983,7 +986,8 @@ function module.options()
 			showMembersLevelUp  = { type="toggle", order=1, name=L["Show level up notification"], desc=L["Show guild member level up notification in chat frame. (This is not a gratulation bot!)"]},
 			showMembersNotes    = { type="toggle", order=2, name=L["Show notes in login"], desc=L["Display member notes in chat window after his/her login message"] },
 			showMembersOffNotes = { type="toggle", order=3, name=L["Show off. notes on login"], desc=L["Display member officer notes in chat window after his/her login message"] },
-		},
+			useCtrlKeyInsteadAlt= 4,
+	},
 	},
 	{
 		showProfessions=true
