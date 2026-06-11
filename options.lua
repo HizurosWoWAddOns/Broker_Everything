@@ -368,6 +368,8 @@ ns.sharedOptions = {
 	goldHideBB      = { type="select", name=L["HideMoney"], desc=L["HideMoneyDescBrokerButton"], width = "double", values = goldHideValues },
 	goldHideTT      = { type="select", name=L["HideMoney"], desc=L["HideMoneyDescTooltip"], width = "double", values = goldHideValues },
 	delimiterBB     = { type="select", name=L["DelimiterBB"], desc=L["DelimiterBBDesc"], values = delimiterBBValues },
+	spacerWidth     = { type="range",  name=L["SpacerWidth"], desc=L["SpacerWidthDesc"], min=0, max=20, step=1 },
+	spacerWidthInfo = { type="description", name=L["SpacerWidthInfo"] },
 }
 
 local sharedDefaults = {
@@ -376,7 +378,8 @@ local sharedDefaults = {
 	showAllFactions = true,
 	showRealmNames = true,
 	showCharsFrom = "2",
-	minimap = {hide=false}
+	minimap = {hide=false},
+	spacerWidth=9,
 }
 
 local coords=nil;

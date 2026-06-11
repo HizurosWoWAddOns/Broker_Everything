@@ -494,6 +494,20 @@ end
 
 ----------------------------------------
 
+do -- hidden texture as placeholder is not nice but it works.
+	local spacer = "|TInterface\\buttons\\ui-passivehighlight:%d:%d|t";
+	function ns.spacer(modName, str, numDigits)
+		local width = ns.profile[modName].spacerWidth;
+		local num = numDigits - tostring(str):len()
+		if num<1 or width==0 then
+			return "";
+		end
+		return strrep(spacer:format(width,width),num);
+	end
+end
+
+----------------------------------------
+
 ---@param frame frame
 ---@param func function
 function ns.RegisterMouseWheel(frame,func)
