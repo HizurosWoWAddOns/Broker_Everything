@@ -11,6 +11,11 @@ local name = "Speed"; -- SPEED L["ModDesc-Speed"]
 local ttName, ttColumns, tt, module = name.."TT", 3
 local riding_skills,licenses,bonus_spells,replace_unknown,trainer_faction,deprecated_licenses = {},{},{},{},{},{};
 local updateToonSkillLocked,currentMapID
+local skillColor = {
+	[90265] = "dkgreen",
+	[34090] = "green",
+};
+
 
 -- register icon names and default files --
 -------------------------------------------
@@ -25,16 +30,19 @@ local UnitInVehicle = UnitInVehicle or function()
 	return false;
 end
 
-local function updateToonSkill(...)
+local function updateToonSkill()
 	if ns.toon[name]==nil then
-		ns.toon[name] = {skill=0};
-	elseif ns.toon[name].skill==nil then
-		ns.toon[name].skill = 0;
+		ns.toon[name] = {ridingSkill=0};
+	elseif ns.toon[name].skill and ns.toon[name].ridingSkill==nil then
+		ns.toon[name].ridingSkill, ns.toon[name].skill=ns.toon[name].skill,nil -- migration
+	elseif ns.toon[name].ridingSkill==nil then
+		ns.toon[name].ridingSkill = 0;
 	end
 	for i=1, #riding_skills do
-		if C_SpellBook.IsSpellInSpellBook(riding_skills[i].spell) then
-			if ns.toon[name].skill<riding_skills[i].spell then
-				ns.toon[name].skill = riding_skills[i].spell;
+		local spellName = C_Spell.GetSpellName(riding_skills[i].spell);
+		if spellName and C_SpellBook.IsSpellInSpellBook(riding_skills[i].spell) then
+			if ns.toon[name].ridingSkill<riding_skills[i].spell then
+				ns.toon[name].ridingSkill = riding_skills[i].spell;
 			end
 			break;
 		end
@@ -230,7 +238,7 @@ local function createTooltip(tt)
 		end
 		local cell1color,cell2;
 		if learned==nil then -- not learned
-			if(lvl>=skill.minLevel)then
+			if lvl>=skill.minLevel then
 				cell1color = "yellow";
 				cell2 = C("ltgray",L["Learnable"]);
 				ttExtend = true;
@@ -263,17 +271,17 @@ local function createTooltip(tt)
 		end
 	end
 
-	if ns.client_version<2 then
+	if ns.client_version<=2.9 then
 		if lvl<40 then
 			tt:AddSeparator();
 			tt:SetCell(tt:AddLine(),1,C("orange","You must be reach level 40 to learn riding."),nil,nil,0);
 		end
-	elseif (lvl<20) then
+	elseif lvl<20 then
 		tt:AddSeparator();
 		tt:SetCell(tt:AddLine(),1,C("orange","You must be reach level 20 to learn riding."),nil,nil,0);
 	end
 
-	if ns.profile[name].showBonus then
+	if ns.client_version>=5 and ns.profile[name].showBonus then
 		tt:AddSeparator(4,0,0,0,0);
 		tt:SetCell(tt:AddLine(),1,C("ltblue",L["SpeedBonus"]),nil,nil,0);
 		tt:AddSeparator();
@@ -357,7 +365,7 @@ local function createTooltip(tt)
 		end
 	end
 
-	if ns.profile[name].showLicenses and ns.client_version>=3 and lvl>=20 then
+	if ns.profile[name].showLicenses and ns.client_version>=5 and lvl>=20 then
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",L["Flight licenses"]));
 		tt:AddSeparator();
@@ -401,7 +409,7 @@ local function createTooltip(tt)
 				local color1, color2, info = "green", "ltgray", " ";
 				if deprecated_licenses[v[1]] then
 					color1,info = ready and "green" or "gray",L["Deprecated"];
-				elseif lvl<v[2] then
+				elseif ns.client_version<=7.35 and lvl<v[2] then
 					-- need level
 					color1,info = "red", L["Need level"].." "..v[2];
 				elseif achievement and not ready then
@@ -429,10 +437,6 @@ local function createTooltip(tt)
 
 	if ns.profile[name].showChars then
 		local hasHeader = false;
-		local skillColor = {
-			[90265] = "dkgreen",
-			[34090] = "green",
-		};
 		for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true,]] currentHide=true,forceSameRealm=true}) do
 			if toonData[name] and toonData[name].skill then
 				if not hasHeader then
@@ -442,10 +446,10 @@ local function createTooltip(tt)
 					hasHeader = true;
 				end
 				local skillName,color = TRADE_SKILLS_UNLEARNED_TAB,"orange";
-				if toonData[name].skill>0 then
-					local spellInfo = C_Spell.GetSpellInfo(toonData[name].skill)
+				if toonData[name].ridingSkill>0 then
+					local spellInfo = C_Spell.GetSpellInfo(toonData[name].ridingSkill)
 					skillName = spellInfo.name;
-					color = skillColor[toonData[name].skill] or "yellow";
+					color = skillColor[toonData[name].ridingSkill] or "yellow";
 				end
 				local faction = ns.factionIcon(toonData.faction,16,16);
 				local line, column = tt:AddLine(C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction);
@@ -512,39 +516,55 @@ function module.init()
 	if ns.client_version<4 then
 		local skills = {};
 		if ns.player.faction=="Alliance" then
-			tinsert(skills,{spell=828,   minLevel=40, speed=60, race="NightElf", faction=69}); -- NightElf
-			tinsert(skills,{spell=824,   minLevel=40, speed=60, race="Human",    faction=72}); -- Human
-			tinsert(skills,{spell=826,   minLevel=40, speed=60, race="Dwarf",    faction=47}); -- Dwarf
-			tinsert(skills,{spell=10907, minLevel=40, speed=60, race="Gnome",    faction=54}); -- Gnome
+			tinsert(skills,{spell=828,   race="NightElf", faction=69}); -- NightElf
+			tinsert(skills,{spell=824,   race="Human",    faction=72}); -- Human
+			tinsert(skills,{spell=826,   race="Dwarf",    faction=47}); -- Dwarf
+			tinsert(skills,{spell=10907, race="Gnome",    faction=54}); -- Gnome
 		else
-			tinsert(skills,{spell=825,   minLevel=40, speed=60, race="Orc",      faction=76}); -- Orc
-			tinsert(skills,{spell=10861, minLevel=40, speed=60, race="Troll",    faction=530}); -- Troll
-			tinsert(skills,{spell=18995, minLevel=40, speed=60, race="Tauren",   faction=81}); -- Tauren
-			tinsert(skills,{spell=10906, minLevel=40, speed=60, race="Scourge",  faction=68}); -- Scourge
+			tinsert(skills,{spell=825,   race="Orc",      faction=76}); -- Orc
+			tinsert(skills,{spell=10861, race="Troll",    faction=530}); -- Troll
+			tinsert(skills,{spell=18995, race="Tauren",   faction=81}); -- Tauren
+			tinsert(skills,{spell=10906, race="Scourge",  faction=68}); -- Scourge
 		end
 
 		riding_skills = {};
 		for i=1, #skills do
-			if skills[i].race~=ns.player.race then
-				skills[i].race = false;
-				tinsert(riding_skills,skills[i]);
-			end
-		end
-		for i=1, #skills do
-			if skills[i].race==ns.player.race then
-				skills[i].race = true;
-				tinsert(riding_skills,skills[i]);
-			end
+			skills[i].minLevel = 40;
+			skills[i].speed = 60;
+			skills[i].race = skills[i].race==ns.player.race;
+			tinsert(riding_skills,skills[i]);
 		end
 		return;
 	end
 
 	riding_skills = { -- <spellid>, <minLevel>, <air speed increase>, <ground speed increase>
-		{spell=90265, minLevel=40, speed=310},
-		{spell=34090, minLevel=30, speed=150},
-		{spell=33391, minLevel=20, speed=100},
+		{spell=90265, minLevel=30, speed=310}, -- meisterhaftes reiten
+		{spell=34091, minLevel=30, speed=280}, -- gekonntes reiten
+		{spell=34090, minLevel=20, speed=150}, -- erfahrenes reiten
+		{spell=33391, minLevel=10, speed=100}, -- geübtes reiten
 		{spell=33388, minLevel=10, speed=60},
 	};
+
+	if ns.client_version < 3 then
+		tremove(riding_skill,3)
+		tremove(riding_skill,2)
+		tremove(riding_skill,1)
+		riding_skills[1].minLevel=60;
+		riding_skills[2].minLevel=30;
+	elseif ns.client_version < 6 then
+		riding_skills[1].minLevel=80;
+		riding_skills[2].minLevel=70;
+		riding_skills[3].minLevel=60;
+		riding_skills[4].minLevel=40;
+		riding_skills[5].minLevel=20;
+	elseif ns.client_version < 9 then
+		riding_skills[1].minLevel=40;
+		riding_skills[2].minLevel=30;
+		riding_skills[3].minLevel=20;
+		riding_skills[4].minLevel=10;
+	else
+		tremove(riding_skills,2) --
+	end
 
 	licenses = { -- <spellid>, <minLevel>, <mapIds>
 		{"a40231", 70, {}}, -- tww pathfinder
@@ -555,8 +575,13 @@ function module.init()
 		{54197,    80, {[485]=1,[486]=1,[510]=1,[504]=1,[488]=1,[490]=1,[491]=1,[541]=1,[492]=1,[493]=1,[495]=1,[501]=1,[496]=1}},
 		{90267,    70, {[4]=1,[9]=1,[11]=1,[13]=1,[14]=1,[16]=1,[17]=1,[19]=1,[20]=1,[21]=1,[22]=1,[23]=1,[24]=1,[26]=1,[27]=1,[28]=1,[29]=1,[30]=1,[32]=1,[34]=1,[35]=1,[36]=1,[37]=1,[38]=1,[39]=1,[40]=1,[41]=1,[42]=1,[43]=1,[61]=1,[81]=1,[101]=1,[121]=1,[141]=1,[161]=1,[181]=1,[182]=1,[201]=1,[241]=1,[261]=1,[281]=1,[301]=1,[321]=1,[341]=1,[362]=1,[381]=1,[382]=1,[462]=1,[463]=1,[464]=1,[471]=1,[476]=1,[480]=1,[499]=1,[502]=1,[545]=1,[606]=1,[607]=1,[610]=1,[611]=1,[613]=1,[614]=1,[615]=1,[640]=1,[673]=1,[684]=1,[685]=1,[689]=1,[700]=1,[708]=1,[709]=1,[720]=1,[772]=1,[795]=1,[864]=1,[866]=1,[888]=1,[889]=1,[890]=1,[891]=1,[892]=1,[893]=1,[894]=1,[895]=1}},
 	};
+	if ns.client_version <= 6 then
+		licenses[6][2] = 68; -- Cold Weather Flying
+		licenses[7][2] = 60; -- flight license
+	end
 	if ns.client_version>7.35 then
 		deprecated_licenses = {
+			["a13250"]=1,
 			["a11446"]=1,
 			["a10018"]=1,
 			[115913]=1,
@@ -589,7 +614,7 @@ function module.init()
 
 		-- class spells
 		-- class: druid, id: 11
-		{  5215,  true, "class",        11, LOCALIZED_CLASS_NAMES_MALE.DRUID, 30},
+		{  5215,  true, "class",        11, _G["LOCALIZED_CLASS_NAMES_"..(UnitSex("player")==3 and "FE" or "").."MALE"].DRUID, 30},
 		-- glyphes
 
 		-- misc
