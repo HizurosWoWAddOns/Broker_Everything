@@ -10,7 +10,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 local name = "Speed"; -- SPEED L["ModDesc-Speed"]
 local ttName, ttColumns, tt, module = name.."TT", 3
 local riding_skills,licenses,bonus_spells,replace_unknown,trainer_faction,deprecated_licenses = {},{},{},{},{},{};
-local updateToonSkillLocked,currentMapID
+local updateToonSkillLocked,currentMapID,oldFactionLicenses
 local skillColor = {
 	[90265] = "dkgreen",
 	[34090] = "green",
@@ -32,17 +32,18 @@ end
 
 local function updateToonSkill()
 	if ns.toon[name]==nil then
-		ns.toon[name] = {ridingSkill=0};
-	elseif ns.toon[name].skill and ns.toon[name].ridingSkill==nil then
-		ns.toon[name].ridingSkill, ns.toon[name].skill=ns.toon[name].skill,nil -- migration
-	elseif ns.toon[name].ridingSkill==nil then
-		ns.toon[name].ridingSkill = 0;
+		ns.toon[name] = {skill=0};
+	elseif ns.toon[name].skill==nil then
+		ns.toon[name].skill = 0;
+	end
+	if ns.toon[name].ridingSkill then
+		ns.toon[name].ridingSkill = nil
 	end
 	for i=1, #riding_skills do
 		local spellName = C_Spell.GetSpellName(riding_skills[i].spell);
 		if spellName and C_SpellBook.IsSpellInSpellBook(riding_skills[i].spell) then
-			if ns.toon[name].ridingSkill<riding_skills[i].spell then
-				ns.toon[name].ridingSkill = riding_skills[i].spell;
+			if ns.toon[name].skill<riding_skills[i].spell then
+				ns.toon[name].skill = riding_skills[i].spell;
 			end
 			break;
 		end
@@ -179,7 +180,7 @@ local function tooltipOnEnter(self,data)
 	elseif data.spell then
 		GameTooltip:SetSpellByID(data.spell)
 	end
-	if data.extend=="trainerfaction" and ns.client_version>4 then
+	if data.extend=="trainerfaction" and oldFactionLicenses then
 		GameTooltip:AddLine(" ");
 		GameTooltip:AddLine(C("ltblue",L["Trainer that offer reputation dicount"]));
 		local faction,ttTrainerLine,ttFactionLine,fInfo = false,"%s (%0.1f, %0.1f)","%s (%0.1f%%)";
@@ -437,8 +438,12 @@ local function createTooltip(tt)
 
 	if ns.profile[name].showChars then
 		local hasHeader = false;
+		local hideMaxLicenses = false
 		for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true,]] currentHide=true,forceSameRealm=true}) do
-			if toonData[name] and toonData[name].skill then
+			if not oldFactionLicenses then
+				hideMaxLicenses = ns.profile[name].hideMaxLicenses and riding_skills[1].spell==toonData[name].skill;
+			end
+			if toonData[name] and toonData[name].skill and not hideMaxLicenses then
 				if not hasHeader then
 					tt:AddSeparator(4,0,0,0,0);
 					tt:SetCell(tt:AddLine(),1,C("ltblue",L["Your other chars"]),nil,nil,0);
@@ -446,14 +451,14 @@ local function createTooltip(tt)
 					hasHeader = true;
 				end
 				local skillName,color = TRADE_SKILLS_UNLEARNED_TAB,"orange";
-				if toonData[name].ridingSkill>0 then
-					local spellInfo = C_Spell.GetSpellInfo(toonData[name].ridingSkill)
+				if toonData[name].skill>0 then
+					local spellInfo = C_Spell.GetSpellInfo(toonData[name].skill)
 					skillName = spellInfo.name;
-					color = skillColor[toonData[name].ridingSkill] or "yellow";
+					color = skillColor[toonData[name].skill] or "yellow";
 				end
 				local faction = ns.factionIcon(toonData.faction,16,16);
 				local line, column = tt:AddLine(C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction);
-				tt:SetCell(line,2, C(color,skillName), nil,"RIGHT", 0);
+				tt:SetCell(line,2, C(color,skillName).." "..C("gray","("..toonData[name].skill.."/"..riding_skills[1].spell..")"), nil,"RIGHT", 0);
 			end
 		end
 	end
@@ -484,7 +489,7 @@ module = {
 		showBonus = true,
 		showLicenses = true,
 		showLicensesDeprecated = true,
-
+		hideMaxLicenses = false,
 	}
 }
 
@@ -500,20 +505,22 @@ function module.options()
 			spacerWidthInfo=3,
 		},
 		tooltip = {
-			showBonus = { type="toggle", order=1, name=L["SpeedBonus"], desc=L["SpeedBonusDesc"], hidden=(ns.client_version>=5) },
-			showLicenses = { type="toggle", order=2, name=L["SpeedLicenses"], desc=L["SpeedLicensesDesc"], hidden=(ns.client_version>=5) },
-			showLicensesDeprecated  = { type="toggle", order=2, name=L["SpeedLicensesDeprec"], desc=L["SpeedLicensesDeprecDesc"], hidden=(ns.client_version>=5) },
-			showChars = {3,true},
-			showAllFactions=4,
-			showRealmNames=5,
-			showCharsFrom=6,
+			showBonus = { type="toggle", order=1, name=L["SpeedBonus"], desc=L["SpeedBonusDesc"], hidden=not oldFactionLicenses },
+			showLicenses = { type="toggle", order=2, name=L["SpeedLicenses"], desc=L["SpeedLicensesDesc"], hidden=not oldFactionLicenses },
+			hideMaxLicenses = { type="toggle", order=3, name=L["SpeedHideMaxLicenses"], desc=L["SpeedHideMaxLicensesDesc"] , hidden=not oldFactionLicenses},
+			showLicensesDeprecated  = { type="toggle", order=4, name=L["SpeedLicensesDeprec"], desc=L["SpeedLicensesDeprecDesc"], hidden=not oldFactionLicenses },
+			showChars = {5,true},
+			showAllFactions=6,
+			showRealmNames=7,
+			showCharsFrom=8,
 		},
 		misc = nil,
 	}
 end
 
 function module.init()
-	if ns.client_version<4 then
+	oldFactionLicenses = ns.client_version<4;
+	if oldFactionLicenses then
 		local skills = {};
 		if ns.player.faction=="Alliance" then
 			tinsert(skills,{spell=828,   race="NightElf", faction=69}); -- NightElf
@@ -546,9 +553,9 @@ function module.init()
 	};
 
 	if ns.client_version < 3 then
-		tremove(riding_skill,3)
-		tremove(riding_skill,2)
-		tremove(riding_skill,1)
+		tremove(riding_skills,3)
+		tremove(riding_skills,2)
+		tremove(riding_skills,1)
 		riding_skills[1].minLevel=60;
 		riding_skills[2].minLevel=30;
 	elseif ns.client_version < 6 then
@@ -656,7 +663,7 @@ function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	tt = ns.acquireTooltip(
 		{ttName, ttColumns, "LEFT","RIGHT", "RIGHT", "CENTER", "LEFT", "LEFT", "LEFT", "LEFT"}, -- for LibQTip:Aquire
-		{ns.client_version<4}, -- show/hide mode
+		{oldFactionLicenses}, -- show/hide mode
 		{self} -- anchor data
 	);
 	createTooltip(tt);
