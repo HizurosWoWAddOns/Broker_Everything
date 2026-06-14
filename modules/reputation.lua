@@ -613,10 +613,6 @@ module = {
 
 		rewardBeyondExalted = "value_max"
 	},
-	clickOptionsRename = {
-		["reputation"] = "1_open_reputation",
-		["menu"] = "2_open_menu"
-	},
 	clickOptions = {
 		["reputation"] = {REPUTATION,"call",{"ToggleCharacter","ReputationFrame"}},
 		["menu"] = "OptionMenuCustom"

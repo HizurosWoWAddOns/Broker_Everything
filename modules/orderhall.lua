@@ -277,10 +277,6 @@ module = {
 	config_defaults = {
 		enabled = false
 	},
-	clickOptionsRename = {
-		["garrreport"] = "1_open_garrison_report",
-		--["menu"] = "2_open_menu"
-	},
 	clickOptions = {
 		["garrreport"] = "GarrisonReport",
 		--["menu"] = "OptionMenu"

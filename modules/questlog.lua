@@ -444,10 +444,6 @@ module = {
 		tooltip2QuestTag = true,
 		tooltip2QuestID = true,
 	},
-	clickOptionsRename = {
-		["questlog"] = "1_open_quest_log",
-		["menu"] = "2_open_menu"
-	},
 	clickOptions = {
 		["questlog"] = "QuestLog",
 		["menu"] = "OptionMenu"

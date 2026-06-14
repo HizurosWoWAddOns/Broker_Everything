@@ -238,9 +238,6 @@ module = {
 		brokerArmor = "_none",
 		brokerIllusions = "_none"
 	},
-	clickOptionsRename = {
-		["menu"] = "9_open_menu"
-	},
 	clickOptions = {
 		--["wardrobe"] = {"Wardrobe","call",""}, -- problematically. colectionframe will be tained on open...
 		["menu"] = "OptionMenuCustom"

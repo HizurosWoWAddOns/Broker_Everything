@@ -276,10 +276,6 @@ module = {
 		showRealmNames=true,
 		showCharsFrom="2"
 	},
-	clickOptionsRename = {
-		["switch"] = "1_switch_mode",
-		["menu"] = "2_open_menu"
-	},
 	clickOptions = {
 		["switch"] = {"Switch (percent, absolute, til next and more)","module","switch"}, -- L["Switch (percent, absolute, til next and more)"]
 		["menu"] = "OptionMenu"

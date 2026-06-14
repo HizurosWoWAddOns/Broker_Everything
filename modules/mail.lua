@@ -285,9 +285,6 @@ module = {
 		showRealmNames=true,
 		showCharsFrom="2"
 	},
-	clickOptionsRename = {
-		["menu"] = "open_menu"
-	},
 	clickOptions = {
 		["menu"] = "OptionMenu"
 	}

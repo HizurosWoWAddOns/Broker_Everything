@@ -109,7 +109,6 @@ module = {
 		ttRows = 3,
 		ttHideTitles = {}
 	},
-	clickOptionsRename = {},
 	clickOptions = {
 		--["menu"] = "OptionMenuCustom"
 		--["ClearTitle"] = L["ClearTitle"]

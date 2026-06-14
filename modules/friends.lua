@@ -674,10 +674,6 @@ module = {
 		-- misc
 		controlKey = false,
 	},
-	clickOptionsRename = {
-		["friends"] = "1_open_character_info",
-		["menu"] = "2_open_menu"
-	},
 	clickOptions = {
 		["friends"] = {SOCIAL_BUTTON,"call",{"ToggleFriendsFrame",1}},
 		["menu"] = "OptionMenu"

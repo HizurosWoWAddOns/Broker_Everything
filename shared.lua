@@ -2326,13 +2326,6 @@ do
 		for _, actName in ipairs(order)do
 			local action = module.clickOptions[actName];
 			local cfgKey = ns.ClickOpts.prefix..actName;
-			if module.clickOptionsRename and module.clickOptionsRename[cfgKey] then
-				local altKey = module.clickOptionsRename[cfgKey];
-				if ns.profile[modName](altKey)~=nil then
-					ns.profile[modName][cfgKey] = ns.profile[modName][altKey];
-					ns.profile[modName][altKey] = nil;
-				end
-			end
 			local key = ns.profile[modName][cfgKey];
 			if key and key~="__NONE" then
 				local functionType,func = action[iSource];

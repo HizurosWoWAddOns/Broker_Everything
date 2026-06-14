@@ -130,7 +130,6 @@ module = {
 		enabled = true,
 		showNameBroker = true
 	},
-	clickOptionsRename = {},
 	clickOptions = {}
 }
 

@@ -217,10 +217,6 @@ module = {
 		showCommunityEvents  = true,
 		showHolidayEvents    = true,
 	},
-	clickOptionsRename = {
-		["charinfo"] = "1_open_character_info",
-		["menu"] = "2_open_menu"
-	},
 	clickOptions = {
 		["calendar"] = {"Calendar","call","ToggleCalendar"},
 		["charinfo"] = "CharacterInfo",

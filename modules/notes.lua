@@ -256,11 +256,6 @@ module = {
 	config_defaults = {
 		enabled = false,
 	},
-	clickOptionsRename = {
-		["newnote"] = "1_new_note",
-		["resetwindow"] = "2_reset_frame",
-		["menu"] = "9_open_menu"
-	},
 	clickOptions = {
 		["newnote"] = {"Add new note","module","newNote"},
 		["resetwindow"] = {"Reset window size and position"},

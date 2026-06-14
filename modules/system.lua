@@ -28,12 +28,6 @@ local GetAddOnMecmoryUsage = GetAddOnMemoryUsage or C_AddOns.GetAddOnMemoryUsage
 local addonpanels,updateAllTicker,memUpdateLocked = {};
 local triggerUpdateToken = {};
 local addonpanels_select = {["none"]=L["None (disable right click)"]};
-local clickOptionsRename = {
-	["options"] = "2_optionpanel",
-	["addons"] = "3_addonlist",
-	["menu"] = "4_open_menu",
-	--["memoryusage"] = "5_update_memoryusage"
-};
 local clickOptions = {
 	["1_garbage"] = false, -- deprecated option. false should automatically remove savedvariables entry
 	["options"] = "OptionPanel",

@@ -234,10 +234,6 @@ module = {
 		showMissionItemLevel = true,
 		showMissionFollowerSlots = true,
 	},
-	clickOptionsRename = {
-		["garrreport"] = "1_open_garrison_report",
-		["menu"] = "2_open_menu"
-	},
 	clickOptions = {
 		["garrreport"] = "GarrisonReport",
 		["menu"] = "OptionMenu"

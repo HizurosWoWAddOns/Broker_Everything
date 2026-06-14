@@ -354,12 +354,6 @@ module = {
 		movieVolumeEnable = true,
 		movieVolume = 100,
 	},
-	clickOptionsRename = {
-		["mute"] = "0_mute",
-		["louder"] = "1_louder",
-		["quieter"] = "2_quieter",
-		["menu"] = "3_open_menu"
-	},
 	clickOptions = {
 		["mute"] = {"Mute game sound","module","mute"}, -- L["Mute game sound"]
 		["louder"] = {"Louder","module","volumeAdjust"}, -- L["Louder"]

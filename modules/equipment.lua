@@ -434,11 +434,6 @@ module = {
 		ignoreMainHand = "2",
 		ignoreOffHand = "2"
 	},
-	clickOptionsRename = {
-		["charinfo"] = "1_open_character_info",
-		["sets"] = "3_open_equipment_sets_tab",
-		["menu"] = "2_open_menu"
-	},
 	clickOptions = {
 		["charinfo"] = "CharacterInfo",
 		["sets"] = {EQUIPMENT_MANAGER,"module","equipMan"},

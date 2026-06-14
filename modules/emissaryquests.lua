@@ -401,9 +401,6 @@ module = {
 		showCharacters = true,
 		showID = false,
 	},
-	clickOptionsRename = {
-		["menu"] = "9_open_menu"
-	},
 	clickOptions = {
 		["menu"] = "OptionMenu"
 	}

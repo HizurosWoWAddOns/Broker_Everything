@@ -262,7 +262,6 @@ module = {
 	config_defaults = {
 		enabled = false
 	},
-	clickOptionsRename = nil,
 	clickOptions = {
 		["rollneed"] = {ROLL..CHAT_HEADER_SUFFIX..NEED, "module", "roll"},
 		["rollgreed"] = {ROLL..CHAT_HEADER_SUFFIX..GREED,"module","roll"},

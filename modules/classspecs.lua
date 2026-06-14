@@ -319,13 +319,6 @@ module = {
 		showTalentsShort = false,
 		showPvPTalents = true,
 	},
-	clickOptionsRename = {
-		["pvespec"] = "1_open_specialization",
-		["pvetalents"] = "2_open_talents",
-		["pvptalents"] = "3_open_pvp_talents",
-		["petspec"] = "4_open_pet_specialization",
-		["menu"] = "6_open_menu"
-	},
 	clickOptions = {
 		["pvespec"] = {SPECIALIZATION,"call",{"ToggleTalentFrame",SPECIALIZATION_TAB}},
 		["pvetalents"] = {TALENTS,"call",{"ToggleTalentFrame",TALENTS_TAB}},

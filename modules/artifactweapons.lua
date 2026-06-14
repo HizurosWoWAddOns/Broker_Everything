@@ -633,11 +633,6 @@ module = {
 		showKnowledge = true,
 		showAlt = true,
 	},
-	clickOptionsRename = {
-		["charinfo"] = "1_open_character_info",
-		["artifactframe"] = "2_artifact_frame",
-		["menu"] = "3_open_menu"
-	},
 	clickOptions = {
 		["charinfo"] = "CharacterInfo",
 		["artifactframe"] = {"Artifact frame","call",{"SocketInventoryItem",16}}, -- L["Artifact frame"]

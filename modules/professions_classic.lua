@@ -269,10 +269,6 @@ module = {
 		showCharsFrom="2",
 		ttOnClick = false,
 	},
-	clickOptionsRename = {
-		["profmenu"] = "1_open_character_info",
-		["menu"] = "2_open_menu"
-	},
 	clickOptions = {
 		["profmenu"] = {"Profession menu","module","ProfessionMenu"}, -- L["Profession menu"]
 		["menu"] = "OptionMenuCustom"

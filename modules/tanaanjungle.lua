@@ -171,10 +171,6 @@ module = {
 		enabled = false,
 		showQuestIDs = false,
 	},
-	clickOptionsRename = {
-		["questlog"] = "1_open_questlog",
-		["menu"] = "2_open_menu"
-	},
 	clickOptions = {
 		["questlog"] = "QuestLog",
 		["menu"] = "OptionMenu"

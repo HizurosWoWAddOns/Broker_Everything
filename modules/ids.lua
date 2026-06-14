@@ -235,9 +235,6 @@ module = {
 		-- show expired types
 		showExpiredEntries = true,
 	},
-	clickOptionsRename = {
-		["menu"] = "5_open_menu"
-	},
 	clickOptions = {
 		["menu"] = "OptionMenu"
 	}

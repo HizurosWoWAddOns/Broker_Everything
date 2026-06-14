@@ -34,11 +34,6 @@ local zoneDisplayValues = {
 }
 local foundItems, foundToys, foundToysNum, teleports, portals, spells, hearthstoneLocation = {},{},0,{},{},{};
 local _classSpecialSpellIds,_teleportIds,_portalIds,_itemIds,_toyIds,_hearthstones,_itemMustBeEquipped,_itemFactions,_namelessToys,_toyUsableBug = {},{},{},{},{},{},{},{},{},{};
-local sharedclickOptionsRename = {
-	["1_open_world_map"] = "worldmap",
-	["2_open_transport_menu"] = "transport",
-	["3_open_menu"] = "menu"
-};
 local sharedclickOptions = {
 	["worldmap"] = {"World map","call",{"ToggleWorldMap"}},
 	["transport"] = {"Transport menu","module","transportMenu"},

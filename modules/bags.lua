@@ -413,10 +413,6 @@ module = {
 
 		-- "showBagTypeBB-1:1" -- filled by function
 	},
-	clickOptionsRename = {
-		["bags"] = "1_open_bags",
-		["menu"] = "3_open_menu"
-	},
 	clickOptions = {
 		["bags"] = {"Open all bags","call","ToggleAllBags"}, -- L["Open all bags"]
 		["menu"] = "OptionMenu"

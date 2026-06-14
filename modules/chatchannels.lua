@@ -153,10 +153,6 @@ module = {
 	config_defaults = {
 		enabled = false,
 	},
-	clickOptionsRename = {
-		["chats"] = "1_open_chats",
-		["menu"] = "2_open_menu"
-	},
 	clickOptions = {
 		["chats"] = {CHAT_CHANNELS,"call",{"ToggleFrame","ChannelFrame"}},
 		["menu"] = "OptionMenu"

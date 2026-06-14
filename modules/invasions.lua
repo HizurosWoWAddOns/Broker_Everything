@@ -204,7 +204,6 @@ module = {
 		timerRegion = 0, -- 0 = automatically
 		numNext = 3,
 	},
-	clickOptionsRename = {},
 	clickOptions = {
 		["menu"] = "OptionMenu"
 	}

@@ -131,13 +131,6 @@ module = {
 		showUTC = true,
 		dateFormat = "%Y-%m-%d"
 	},
-	clickOptionsRename = {
-		["timemanager"] = "1_timemanager",
-		["time"] = "2_toggle_time",
-		["calendar"] = "3_calendar",
-		["hoursmode"] = "4_hours_mode",
-		["menu"] = "5_open_menu"
-	},
 	clickOptions = {
 		["timemanager"] = {TIMEMANAGER_TITLE,"call","ToggleTimeManager"},
 		["time"] = {"Switch (local or realm time)","module","switchTime"}, -- L["Switch (local or realm time)"]

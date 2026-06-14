@@ -266,10 +266,6 @@ module = {
 		continentOrder=true,
 		infoMaxFragments=true,
 	},
-	clickOptionsRename = {
-		["archaeology"] = "1_open_archaeology_frame",
-		["menu"] = "2_open_menu"
-	},
 	clickOptions = {
 		["archaeology"] = {PROFESSIONS_ARCHAEOLOGY,"module","ToggleArchaeologyFrame"},
 		["menu"] = "OptionMenu"

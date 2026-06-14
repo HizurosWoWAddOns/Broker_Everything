@@ -12,10 +12,6 @@ local nameC,nameF,nameS = "FollowersCore","Followers","Ships"; -- GARRISON_FOLLO
 local ttNameF, ttColumnsF, ttF, moduleF = nameF.."TT", 7;
 local ttNameS, ttColumnsS, ttS, moduleS = nameS.."TT" ,7;
 local moduleC
-local clickOptionsRename = {
-	["1_open_garrison_report"] = "garrreport",
-	["2_open_menu"] = "OptionMenu"
-};
 local  clickOptions = {
 	["garrreport"] = "GarrisonReport",
 	["menu"] = "OptionMenu"
@@ -513,7 +509,6 @@ moduleC = {
 	config_defaults = {
 		enabled = false, -- autoenabled by other modules
 	},
-	--clickOptionsRename = {},
 	--clickOptions = {}
 };
 
@@ -522,7 +517,6 @@ moduleF = {
 	name = GARRISON_FOLLOWERS,
 	events = {"PLAYER_LOGIN"},
 	config_defaults = CopyTable(config_defaults),
-	clickOptionsRename = clickOptionsRename,
 	clickOptions = clickOptions
 };
 
@@ -531,7 +525,6 @@ moduleS = {
 	name = GARRISON_SHIPYARD_FOLLOWERS,
 	events = {"PLAYER_LOGIN"},
 	config_defaults = CopyTable(config_defaults),
-	clickOptionsRename = clickOptionsRename,
 	clickOptions = clickOptions
 };
 

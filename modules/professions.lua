@@ -330,7 +330,6 @@ local function CreateTooltip2(self, content)
 		for _, recipeData in ipairs(recipes) do
 			local factionId, standing, itemId, spellId, recipeRank = unpack(recipeData);
 			if skillNameById[tsId] then
-				--local Name = ((C_Spell and C_Spell.GetSpellInfo) or () or GetSpellInfo)(spellId);
 				local spellInfo = C_Spell.GetSpellInfo(spellId)
 				if spellInfo and spellInfo.name then
 					-- faction header
@@ -653,10 +652,6 @@ module = {
 		showAllFactions=true,
 		showRealmNames=true,
 		showCharsFrom="2"
-	},
-	clickOptionsRename = {
-		["profmenu"] = "1_open_character_info",
-		["menu"] = "2_open_menu"
 	},
 	clickOptions = {
 		["profmenu"] = {"Profession menu","module","ProfessionMenu"}, -- L["Profession menu"]

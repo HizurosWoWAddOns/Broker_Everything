@@ -159,10 +159,6 @@ module = {
 		hideDemote = false,
 		showRealmNames = true
 	},
-	clickOptionsRename = {
-		["guild"] = "1_open_guild",
-		["menu"] = "2_open_menu"
-	},
 	clickOptions = {
 		["guild"] = "Guild",
 		["menu"] = "OptionMenu"

@@ -293,10 +293,6 @@ module = {
 		lowestItem = true,
 		chatRepairInfo = false
 	},
-	clickOptionsRename = {
-		["charinfo"] = "1_open_character_info",
-		["menu"] = "2_open_menu"
-	},
 	clickOptions = {
 		["charinfo"] = "CharacterInfo", -- _LEFT
 		["menu"] = "OptionMenuCustom"

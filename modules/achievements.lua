@@ -230,9 +230,6 @@ module = {
 		showPointsSess = true,
 		criteriaPerLine = false,
 	},
-	clickOptionsRename = {
-		["menu"] = "open_menu"
-	},
 	clickOptions = {
 		["achievements"] = {ACHIEVEMENTS,"call","ToggleAchievementFrame"},
 		["menu"] = "OptionMenuCustom"

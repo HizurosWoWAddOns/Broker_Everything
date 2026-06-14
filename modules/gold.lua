@@ -476,12 +476,6 @@ module = {
 		accountBankShortcut = true,
 		delimiterBB = true,
 	},
-	clickOptionsRename = {
-		["1_open_tokenframe"] = "currency",
-		["2_open_character_info"] = "charinfo",
-		["3_open_bags"] = "bags",
-		["4_open_menu"] = "menu"
-	},
 	clickOptions = {
 		["currency"] = "Currency",
 		["charinfo"] = "CharacterInfo",
