@@ -463,6 +463,11 @@ local function createTooltip(tt)
 		end
 	end
 
+	if ns.profile.GeneralOptions.showHints then
+		tt:AddSeparator(4,0,0,0,0);
+		ns.ClickOpts.ttAddHints(tt,name);
+	end
+
 	ns.roundupTooltip(tt);
 end
 
@@ -490,8 +495,15 @@ module = {
 		showLicenses = true,
 		showLicensesDeprecated = true,
 		hideMaxLicenses = false,
+	},
+	clickOptions = {
+		["menu"] = "OptionMenu"
 	}
 }
+
+ns.ClickOpts.addDefaults(module,{
+	menu = "_RIGHT"
+});
 
 if ns.IsRetailClient() then
 	tinsert(module.events,"UNIT_SPELLCAST_SUCCEEDED");
