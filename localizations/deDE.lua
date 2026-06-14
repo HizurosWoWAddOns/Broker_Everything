@@ -10,6 +10,7 @@ L["Hidden currencies"]	= "Versteckte Währungen"
 L["Torghast"]			= "Torghast"
 L["DragonRacing"]		= "Drachenrennen"
 L["ExpansionFeatures"]	= "Erweiterungsfeatures"
+L["Game Menu"] = "Spielmenü"
 
 -- module speed
 L["npc_31238"] = "Hira Schneedämmerung"

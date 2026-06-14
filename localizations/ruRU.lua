@@ -10,6 +10,7 @@ L["Hidden currencies"]	= "Скрытые валюты"
 L["Torghast"]			= "Торгаст"
 L["DragonRacing"]		= "Гонки драконов"
 L["ExpansionFeatures"]	= "Особый контент"
+L["Game Menu"] = "Главное меню"
 
 -- module speed
 L["npc_31238"] = "Хира Снежная Заря"

@@ -8,6 +8,7 @@ L["Hidden currencies"]	="Hidden currencies"
 L["Torghast"]			="Torghast"
 L["DragonRacing"]		="Dragon Racing"
 L["ExpansionFeatures"]	="Expansion Features"
+L["Game Menu"] = "Game Menu"
 
 -- module speed
 L["npc_31238"] = "Hira Snowdawn"

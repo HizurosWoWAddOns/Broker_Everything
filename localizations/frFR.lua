@@ -10,6 +10,7 @@ L["Hidden currencies"]	= "Monnaies cachées"
 L["Torghast"]			= "Tourment"
 L["DragonRacing"]		= "Course de Dragons"
 L["ExpansionFeatures"]	= "Contenu d’extension"
+L["Game Menu"] = "Menu de jeu"
 
 -- module speed
 L["npc_31238"] = "Hira Aubeneige"

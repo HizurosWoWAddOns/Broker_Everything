@@ -13,7 +13,7 @@ local iconCoords = "16:16:0:-1:64:64:4:56:4:56" --"16:16:0:-1:64:64:3:58:3:58"
 local link = "|T%s:%s|t %s"
 local link_disabled = "|T%s:%s:66:66:66|t "..C("gray", "%s")
 local gmticket,ClassIconCoords = {},{};
-local customTitle = MAINMENU_BUTTON
+local customTitle = L["Game Menu"]
 local IsBlizzCon = IsBlizzCon or function() return false; end -- Legion Fix
 local menu = {};
 local ClassIconFile;

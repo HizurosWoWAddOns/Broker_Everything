@@ -10,6 +10,7 @@ L["Hidden currencies"]	= "숨겨진 통화"
 L["Torghast"]			= "토르가스트"
 L["DragonRacing"]		= "용 경주"
 L["ExpansionFeatures"]	= "확장팩 특징"
+L["Game Menu"] = "게임 메뉴"
 
 -- module speed
 L["npc_31238"] = "히라 스노우돈"

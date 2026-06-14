@@ -10,6 +10,7 @@ L["Hidden currencies"]	= "隱藏的貨幣"
 L["Torghast"]			= "托加斯特"
 L["DragonRacing"]		= "飛龍競速"
 L["ExpansionFeatures"]	= "資料片特色"
+L["Game Menu"] = "遊戲選項"
 
 -- module speed
 L["npc_31238"] = "席拉‧雪曦"

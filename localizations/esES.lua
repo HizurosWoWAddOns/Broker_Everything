@@ -10,6 +10,7 @@ L["Hidden currencies"]	= "Monedas ocultas"
 L["Torghast"]			= "Torghast"
 L["DragonRacing"]		= "Carreras de dragones"
 L["ExpansionFeatures"]	= "Características"
+L["Game Menu"] = "Menú de juego"
 
 -- module speed
 L["npc_31238"] = "Hira Albanieve"
