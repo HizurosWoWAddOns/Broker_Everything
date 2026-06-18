@@ -29,6 +29,7 @@ local renameManually = {}
 if LOCALE_enUS or LOCALE_enGB then
 	renameManually["Ahn'Qiraj Temple"] = "Temple of Ahn'Qiraj";
 end
+local currentExpansion = GetServerExpansionLevel();
 
 
 -- register icon names and default files --
@@ -82,9 +83,6 @@ do
 		-- Note: Tier 1-n is not
 		for ejTier=1, numTiers do
 			EJ_SelectTier(ejTier);
-			if not _G["EXPANSION_NAME"..(ejTier-1)] then
-				ejTier = ejTier-1; -- add entries from "Current season" to prev tier
-			end
 			if ejInstances[ejTier]==nil then
 				ejInstances[ejTier]={};
 			end
@@ -183,8 +181,13 @@ end
 
 local prevLabel
 local function addExpTitle(name, mode, ejTier, tt)
-	local exp = ejTier-1;
-	if prevLabel==_G["EXPANSION_NAME"..exp] then
+	local exp,expName = ejTier-1;
+	if exp>currentExpansion then
+		expName = L[name==nameD and "Current M+ Season" or "Current Season"]
+	else
+		expName = _G["EXPANSION_NAME"..exp];
+	end
+	if prevLabel==expName then
 		return;
 	end
 	local hColor,sState,_status_,_mode_ = "gray","Plus","","";
@@ -195,9 +198,9 @@ local function addExpTitle(name, mode, ejTier, tt)
 		hColor,sState,_status_,_mode_ = "ltblue","Minus",C("ltblue",STATUS),C("ltblue",MODE);
 	end
 	tt:AddSeparator(4,0,0,0,0);
-	local l=tt:AddLine(symbol:format(sState)..C(hColor,_G["EXPANSION_NAME"..exp]),_status_,_mode_);
+	local l=tt:AddLine(symbol:format(sState)..C(hColor,expName),_status_,_mode_);
 	tt:SetLineScript(l,"OnMouseUp",toggleExpansion, {name=name,mode=mode,expansion=exp});
-	prevLabel = _G["EXPANSION_NAME"..exp];
+	prevLabel = expName;
 	if ns.profile[name]['showExpansion'..exp] then
 		tt:AddSeparator();
 	end
