@@ -23,7 +23,8 @@ local dbDefaults,db = {
 			goldHideZero = true,
 			separateThousands = true,
 			showAddOnLoaded = true,
-			chatCommands = true
+			chatCommands = true,
+			charListFilterLvl=0,
 		}
 	}
 };
@@ -257,7 +258,8 @@ local options = {
 						suffixColour    = { type="toggle",order=2,name=L["SuffixColor"],desc=L["SuffixColorDesc"] },
 						usePrefix       = { type="toggle",order=3,name=L["Prefix"],desc=L["PrefixDesc"] },
 						chatCommands    = { type="toggle",order=4,name=L["ChatCommands"],desc=L["ChatCommandsDesc"] },
-						minimapOff      = { type="execute",order=5,name=L["HideAllMinimapButtons"],desc=L["HideAllMinimapButtonsDesc"], func = HideAllMinimapButtons}
+						minimapOff      = { type="execute",order=5,name=L["HideAllMinimapButtons"],desc=L["HideAllMinimapButtonsDesc"], func = HideAllMinimapButtons},
+						charListFilterLvl = { type="range", order=6, name=L["CharListFilterLvl"], desc=L["CharListFilterLvlDesc"], min=0, max=GetMaxPlayerLevel(), step=1},
 					}
 				},
 				gold = {

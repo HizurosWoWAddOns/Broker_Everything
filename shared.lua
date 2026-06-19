@@ -752,7 +752,8 @@ function ns.pairsToons(modName,opts)
 		local name,realm = strsplit("-",toonNameRealm,2);
 		local forceRealm = (opts.forceSameRealm==true and realm==ns.realm);
 		local forceFaction = (opts.forceSameFaction==true and ns.player.faction==ns.toonsDB[toonNameRealm].faction);
-		if not (opts.currentHide==true and toonNameRealm==ns.player.name_realm) and ns.showThisChar(modName,realm,ns.toonsDB[toonNameRealm].faction,forceRealm,forceFaction,toonNameRealm) then
+		local filerByLevel = ns.toonsDB[toonNameRealm].level<=ns.profile.GeneralOptions.charListFilterLvl
+		if not (opts.currentHide==true and toonNameRealm==ns.player.name_realm) and ns.showThisChar(modName,realm,ns.toonsDB[toonNameRealm].faction,forceRealm,forceFaction,toonNameRealm) and not filerByLevel then
 			if opts.currentFirst==true and toonNameRealm==ns.player.name_realm then
 				tinsert(t,1,index);
 			else
