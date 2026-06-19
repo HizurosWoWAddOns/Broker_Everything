@@ -312,6 +312,20 @@ local function ttAddProfit(all)
 	end
 end
 
+local function AddSummary(tt,totalGold)
+	if ns.profile[name].splitSummaryByFaction and ns.profile[name].showAllFactions then
+		tt:AddLine(L["Total Gold"].." "..ns.factionIcon("Alliance",16,16), ns.GetCoinColorOrTextureString(name,totalGold.Alliance,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
+		tt:AddLine(L["Total Gold"].." "..ns.factionIcon("Horde",16,16), ns.GetCoinColorOrTextureString(name,totalGold.Horde,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
+		if ns.profile[name].accountBankMoney and accountBankMoney~=nil then
+			tt:AddSeparator()
+			tt:AddLine(TOTAL..(accountBankMoney and " + "..C("dkyellow",ACCOUNT_BANK_PANEL_TITLE) or ""), ns.GetCoinColorOrTextureString(name,totalGold.Alliance+totalGold.Horde+totalGold.Neutral,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
+		end
+	else
+		tt:AddLine(L["Total Gold"], ns.GetCoinColorOrTextureString(name,totalGold.Alliance+totalGold.Horde+totalGold.Neutral,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}))
+	end
+
+end
+
 function createTooltip(tt,update)
 	if not (tt and tt.key and tt.key==ttName) or login_money==nil then return end -- don't override other LibQTip tooltips...
 
@@ -343,8 +357,20 @@ function createTooltip(tt,update)
 	end
 	tt:AddSeparator();
 
-
 	local lineCount=0;
+	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true,]] currentHide=true,--[[forceSameRealm=true]]}) do
+		local _sAF = sAF or ns.player.faction==toonData.faction;
+		if toonData[name] and toonData[name].money and _sAF then
+			totalGold[toonData.faction] = totalGold[toonData.faction] + toonData[name].money;
+			lineCount=lineCount+1;
+		end
+	end
+
+	if lineCount>0 and ns.profile[name].showSumOnTop then
+		AddSummary(tt,totalGold)
+		tt:AddSeparator()
+	end
+
 	for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{--[[currentFirst=true,]] currentHide=true,--[[forceSameRealm=true]]}) do
 		local _sAF = sAF or ns.player.faction==toonData.faction;
 		if toonData[name] and toonData[name].money and _sAF then
@@ -353,28 +379,14 @@ function createTooltip(tt,update)
 				C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction,
 				ns.GetCoinColorOrTextureString(name,toonData[name].money,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT})
 			);
-
 			tt:SetLineScript(line, "OnMouseUp", deleteCharacterGoldData, toonNameRealm);
-
-			totalGold[toonData.faction] = totalGold[toonData.faction] + toonData[name].money;
-
 			line = nil;
-			lineCount=lineCount+1;
 		end
 	end
 
-	if(lineCount>0)then
+	if lineCount>0 and not ns.profile[name].showSumOnTop then
 		tt:AddSeparator()
-		if ns.profile[name].splitSummaryByFaction and ns.profile[name].showAllFactions then
-			tt:AddLine(L["Total Gold"].." "..ns.factionIcon("Alliance",16,16), ns.GetCoinColorOrTextureString(name,totalGold.Alliance,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
-			tt:AddLine(L["Total Gold"].." "..ns.factionIcon("Horde",16,16), ns.GetCoinColorOrTextureString(name,totalGold.Horde,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
-			if ns.profile[name].accountBankMoney and accountBankMoney~=nil then
-				tt:AddSeparator()
-				tt:AddLine(TOTAL..(accountBankMoney and " + "..C("dkyellow",ACCOUNT_BANK_PANEL_TITLE) or ""), ns.GetCoinColorOrTextureString(name,totalGold.Alliance+totalGold.Horde+totalGold.Neutral,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}));
-			end
-		else
-			tt:AddLine(L["Total Gold"], ns.GetCoinColorOrTextureString(name,totalGold.Alliance+totalGold.Horde+totalGold.Neutral,{inTooltip=true,hideMoney=ns.profile[name].goldHideTT}))
-		end
+		AddSummary(tt,totalGold)
 	end
 
 	if ns.profile[name].showProfitSession or ns.profile[name].showProfitDaily or ns.profile[name].showProfitWeekly or ns.profile[name].showProfitMonthly then
@@ -463,6 +475,7 @@ module = {
 		accountBankShortcut = true,
 		delimiterBB = ", ",
 		profitMethod = 2,
+		showSumOnTop = false,
 	},
 	new = {
 		showProfitDailyAll = true,
@@ -508,7 +521,7 @@ function module.options()
 			showCharsFrom=4,
 			splitSummaryByFaction={type="toggle",order=5, name=L["Split summary by faction"], desc=L["Separate summary by faction (Alliance/Horde)"] },
 			accountBankMoney = {type="toggle",order=6, name=ACCOUNT_BANK_PANEL_TITLE or "Warband bank", desc=L["AccountBankMoneyDesc"], hidden=ns.IsClassicClient},
-
+			showSumOnTop = { type="toggle", order=7, name=L["SummaryOnTop"], desc=L["SummaryOnTopDesc"] },
 			profit = {
 				type = "group", order=7, inline = true,
 				name = L["GoldProfits"],
