@@ -29,7 +29,7 @@ local GetCVar,SetCVar = C_CVar and C_CVar.GetCVar or GetCVar,C_CVar and C_CVar.S
 
 -- secret values not present in classic; hopefully in near future too...
 local issecretvalue = issecretvalue or function() return false end
-local canaccesvalue = canaccesvalue or function() return true end
+local canaccessvalue = canaccessvalue or function() return true end
 
 -- Foreign addon functions
 local LibStub = _G.LibStub
@@ -1558,7 +1558,7 @@ do
 
 				data.lines={};
 				for _,line in ipairs(regions) do
-					if not (issecretvalue(line) and canaccesvalue(line)) then
+					if not (issecretvalue(line) and canaccessvalue(line)) then
 						-- ignore
 					elseif line~=nil and line:GetObjectType()=="FontString" then
 						local str = strtrim(line:GetText() or "");
