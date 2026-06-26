@@ -1461,7 +1461,6 @@ do
 				ttExtractInfo(data)
 			else -- for classic and as fallback
 				data.hasCooldown, data.repairCost = tt:SetBagItem(data.bag,data.slot);
-				data.link = ttData.hyperlink;
 				copyLines = true
 			end
 		elseif data._type=="inventory" or data._type=="inv" then
