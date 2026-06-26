@@ -92,11 +92,13 @@ end
 
 local function updateSpells()
 	wipe(teleports); wipe(portals); wipe(spells);
-	if (ns.player.class=="MAGE") then
+	if ns.player.class=="MAGE" then
 		if WOW_PROJECT_ID==WOW_PROJECT_MAINLINE then
-			GetMageTransportSpells(teleports,8) -- teleports
-			GetMageTransportSpells(portals,12) -- portals
-		else
+			local flyoutIDs = ns.player.faction=="Alliance" and {8,12} or {1,11}
+			GetMageTransportSpells(teleports,flyoutIDs[1]) -- teleports
+			GetMageTransportSpells(portals,flyoutIDs[2]) -- portals
+		end
+		if #teleports==0 then -- for classic and as fallback
 			for i=1, #_teleportIds do setSpell(teleports,_teleportIds[i]) end
 			for i=1, #_portalIds do setSpell(portals,_portalIds[i]) end
 		end
