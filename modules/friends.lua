@@ -772,11 +772,16 @@ function module.onevent(self,event,arg1)
 		if type(ns.profile[name].showBattleTags)=="boolean" then
 			ns.profile[name].showBattleTags = ns.profile[name].showBattleTags and "3" or "0";
 		end
-		for _,e in ipairs({
-			"BATTLETAG_INVITE_SHOW","BN_BLOCK_LIST_UPDATED","BN_CONNECTED","BN_CUSTOM_MESSAGE_CHANGED","BN_CUSTOM_MESSAGE_LOADED",
+		local events = {
+			"BN_BLOCK_LIST_UPDATED","BN_CONNECTED","BN_CUSTOM_MESSAGE_CHANGED","BN_CUSTOM_MESSAGE_LOADED",
 			"BN_DISCONNECTED","BN_FRIEND_ACCOUNT_OFFLINE","BN_FRIEND_ACCOUNT_ONLINE","BN_FRIEND_INFO_CHANGED","BN_FRIEND_INVITE_ADDED",
 			"BN_FRIEND_INVITE_REMOVED","BN_INFO_CHANGED","FRIENDLIST_UPDATE","PLAYER_ENTERING_WORLD","CHAT_MSG_SYSTEM"
-		}) do
+		}
+		if ns.client_version<12.1 then
+			tinsert(events,"BATTLETAG_INVITE_SHOW")
+			-- TOOD: search another way to track battle tag invites
+		end
+		for _,e in ipairs(events) do
 			self:RegisterEvent(e)
 		end
 	elseif (ns.eventPlayerEnteredWorld or event=="PLAYER_ENTERING_WORLD") and not self.locked then
