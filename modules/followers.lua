@@ -163,7 +163,7 @@ local function updateFollowers(name,Table,forTooltip)
 
 	for i=1, #data do
 		entryInfo = data[i];
-		if entryInfo.isCollected then
+		if entryInfo.isCollected and (entryInfo.garFollowerID or entryInfo.followerID) then
 			entryInfo.statusIndex = status2index[entryInfo.status] or 1; -- available
 			if entryInfo.statusIndex==2 then -- onmission
 				entryInfo.missionEnd = time()+C_Garrison.GetFollowerMissionTimeLeftSeconds(entryInfo.followerID);
