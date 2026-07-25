@@ -21,7 +21,9 @@ local ignoreWeapon = {
 	["1"] = L["Ignore all"],
 	["2"] = L["Ignore artifact weapons"],
 };
-
+local enchantExclude = {
+	[158075]=true -- hearth of azeroth can't be enchanted
+}
 
 -- register icon names and default files --
 -------------------------------------------
@@ -320,13 +322,13 @@ local function createTooltip(tt)
 						canEnchant = enchantSlots[i]==true;
 					end
 
-					if ns.profile[name].showNotEnchanted and obj.id~=158075 --[[ hearth of azeroth can't be enchanted ]] and canEnchant and (tonumber(itemInfo.linkData[1]) or 0)==0 then
-						enchanted=C("red"," #");
+					if ns.profile[name].showNotEnchanted and not enchantExclude[obj.id] and canEnchant and (tonumber(itemInfo.linkDataAssoc.enchantID) or 0)==0 then
+						enchanted=" "..C("red","#");
 						miss=true;
 					end
 
 					if ns.profile[name].showEmptyGems and itemInfo.empty_gem then
-						gems=C("yellow"," #");
+						gems=" "..C("yellow","#");
 						miss=true;
 					end
 

@@ -1390,9 +1390,44 @@ do
 	local duration = 0.05;
 	local try = 0;
 
+	local linkKeys = {
+		--[[ "itemID", ]]"enchantID","gemID1","gemID2","gemID3","gemID4","suffixID","uniqueID","linkLevel","specializationID","modifiersMask","itemContext",
+		{"numBonusIDs","bonusID%d"},{"numModifiers","modifierType%d","modifierValue%d"},{"relic1NumBonusIDs","relic1BonusID%d"},
+		{"relic2NumBonusIDs","relic2BonusID%d"},{"relic3NumBonusIDs","relic3BonusID%d"},"crafterGUID","extraEnchantID"
+	}
+
+	local function LinkData2Assoc(data)
+		local res = {}
+		local dIndex,kIndex = 1,1;
+		while data[dIndex]~=nil do
+			local key = linkKeys[kIndex];
+			local kType = type(key);
+			kIndex = kIndex+1;
+			local value = data[dIndex];
+			dIndex = dIndex+1;
+			if kType=="table" then
+				local _, keyPat1, keyPat2 = unpack(key);
+				res[key[1]] = value
+				for i=1, value do
+					res[keyPat1:format(i)] = data[dIndex];
+					dIndex = dIndex+1;
+					if keyPat2 then
+						res[keyPat2:format(i)] = data[dIndex];
+						dIndex = dIndex+1;
+					end
+				end
+			elseif kType=="string" then
+				res[key] = value;
+			else
+				ns:debug("<LinkData2Assoc>","<error>")
+			end
+		end
+		return res;
+	end
+
 	local function GetLinkData(link)
 		if not link then return end
-		local _,_,_,linkData = link:match("|c(%x*)|H([^:]*):(%d+):(.+)|h%[([^%[%]]*)%]|h|r");
+		local _,_,linkData = link:match("\124H([^:]*):(%d+):(.+)\124h");
 		linkData = {strsplit(":",linkData or "")};
 		local res = {};
 		for i=1, #linkData do
@@ -1449,6 +1484,7 @@ do
 				data.link = C_Container.GetContainerItemLink(data.bag,data.slot);
 			end
 			data.linkData = GetLinkData(data.link);
+			data.linkDataAssoc = LinkData2Assoc(data.linkData)
 			data.itemName, data.itemLink, data.itemRarity, data.itemLevel, data.itemMinLevel, data.itemType, data.itemSubType, data.itemStackCount, data.itemEquipLoc, data.itemTexture, data.itemSellPrice = C_Item.GetItemInfo(data.link);
 			data.startTime, data.duration, data.isEnabled = C_Container.GetContainerItemCooldown(data.bag,data.slot);
 			local itemData
@@ -1468,6 +1504,7 @@ do
 				data.link = GetInventoryItemLink("player",data.slot);
 			end
 			data.linkData = GetLinkData(data.link);
+			data.linkDataAssoc = LinkData2Assoc(data.linkData)
 			local invData
 			if C_TooltipInfo and C_TooltipInfo.GetInventoryItem then
 				invData = C_TooltipInfo.GetInventoryItem("player", data.slot);
