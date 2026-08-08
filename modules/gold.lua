@@ -415,6 +415,7 @@ if (C_Bank and C_Bank.FetchDepositedMoney and Enum and Enum.BankType and Enum.Ba
 		if not login_money then
 			initFirstUpdate()
 		end
+		if not login_money then return end
 		login_money = login_money + value
 		for _,interval in ipairs({"daily","weekly","monthly"}) do
 			local TblV1,TblV2,_date = ns.toon[name].profitv1,ns.toon[name].profitv2,Date[interval];
