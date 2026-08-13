@@ -1,4 +1,4 @@
-## Interface: 120007, 50504, 38001, 20505, 11508
+## Interface: 120100, 50504, 38002, 20506, 11509
 ## Title: Broker: Everything
 ## IconTexture: Interface/AddOns/Broker_Everything/media/Ability_Siege_Engineer_pattern_recognition.tga
 ## Notes: A collection of modules to display various informations as Broker-buttons on Broker Display AddOns or minimap buttons.
