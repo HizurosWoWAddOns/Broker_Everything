@@ -63,9 +63,7 @@ core.xml
 ## modules
 
 ## AllowLoadGameType selector
-## currently known: mainline, vanilla, tbc, wrath, cata, mists
-## the others are just guesses: wod, legion, bfa, shadow
-## better would be >=tbc or tbc+ to avoid the long lists
+## currently known: mainline, classic, tbc, wrath, cata, mists
 
 modules/bags.lua
 modules/chatchannels.lua
@@ -93,42 +91,42 @@ modules/professions_classic.lua [AllowLoadGameType classic]
 modules/ammo_classic.lua [AllowLoadGameType classic]
 
 # modules since tbc
-modules/titles.lua [AllowLoadGameType mainline, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
-modules/tracking.lua [AllowLoadGameType mainline, tbc, wrath, cata, mists, wod, legion, bfa, shadow]
+modules/titles.lua [AllowLoadGameType mainline, tbc, wrath, cata, mists]
+modules/tracking.lua [AllowLoadGameType mainline, tbc, wrath, cata, mists]
 
 # modules since wrath aka wotlk
-modules/achievements.lua [AllowLoadGameType mainline, wrath, cata, mists, wod, legion, bfa, shadow]
-modules/calendar.lua [AllowLoadGameType mainline, wrath, cata, mists, wod, legion, bfa, shadow]
-modules/currency.lua [AllowLoadGameType mainline, wrath, cata, mists, wod, legion, bfa, shadow]
-modules/guildlog.lua [AllowLoadGameType mainline, wrath, cata, mists, wod, legion, bfa, shadow]
+modules/achievements.lua [AllowLoadGameType mainline, wrath, cata, mists]
+modules/calendar.lua [AllowLoadGameType mainline, wrath, cata, mists]
+modules/currency.lua [AllowLoadGameType mainline, wrath, cata, mists]
+modules/guildlog.lua [AllowLoadGameType mainline, wrath, cata, mists]
 
 # modules since cata
-modules/archaeology.lua [AllowLoadGameType mainline, cata, mists, wod, legion, bfa, shadow]
-modules/ids.lua [AllowLoadGameType mainline, cata, mists, wod, legion, bfa, shadow]
-modules/surprise.lua [AllowLoadGameType mainline, cata, mists, wod, legion, bfa, shadow]
+modules/archaeology.lua [AllowLoadGameType mainline, cata, mists]
+modules/ids.lua [AllowLoadGameType mainline, cata, mists]
+modules/surprise.lua [AllowLoadGameType mainline, cata, mists]
 
 # modules since mists aka mop
-modules/difficulty.lua [AllowLoadGameType mainline, mists, wod, legion, bfa, shadow]
-modules/instances.lua [AllowLoadGameType mainline, mists, wod, legion, bfa, shadow]
+modules/difficulty.lua [AllowLoadGameType mainline, mists]
+modules/instances.lua [AllowLoadGameType mainline, mists]
 
 # modules since wod
-modules/followers.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
-modules/garrison.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
-modules/missions.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
-modules/nameplates.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
-modules/tanaanjungle.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
-modules/wardrobe.lua [AllowLoadGameType mainline, wod, legion, bfa, shadow]
+modules/followers.lua [AllowLoadGameType mainline]
+modules/garrison.lua [AllowLoadGameType mainline]
+modules/missions.lua [AllowLoadGameType mainline]
+modules/nameplates.lua [AllowLoadGameType mainline]
+modules/tanaanjungle.lua [AllowLoadGameType mainline]
+modules/wardrobe.lua [AllowLoadGameType mainline]
 
 # modules since legion
-modules/artifactweapons.lua [AllowLoadGameType mainline, legion, bfa, shadow]
-modules/classspecs.lua [AllowLoadGameType mainline, legion, bfa, shadow]
-modules/emissaryquests.lua [AllowLoadGameType mainline, legion, bfa, shadow]
-modules/invasions.lua [AllowLoadGameType mainline, legion, bfa, shadow]
-modules/orderhall.lua [AllowLoadGameType mainline, legion, bfa, shadow]
-modules/wowtoken.lua [AllowLoadGameType mainline, legion, bfa, shadow]
+modules/artifactweapons.lua [AllowLoadGameType mainline]
+modules/classspecs.lua [AllowLoadGameType mainline]
+modules/emissaryquests.lua [AllowLoadGameType mainline]
+modules/invasions.lua [AllowLoadGameType mainline]
+modules/orderhall.lua [AllowLoadGameType mainline]
+modules/wowtoken.lua [AllowLoadGameType mainline]
 
 # modules since bfa
-modules/professions.lua [AllowLoadGameType mainline, bfa, shadow]
+modules/professions.lua [AllowLoadGameType mainline]
 
 #@do-not-package@
 dev/modules.xml
