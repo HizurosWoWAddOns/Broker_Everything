@@ -555,7 +555,8 @@ function module.onevent(self,event,msg)
 	if event=="PLAYER_LOGIN" or event=="QUEST_LOG_UPDATE" then
 		local numEntries, numQuests = (GetNumQuestLogEntries or C_QuestLog.GetNumQuestLogEntries)();
 		local header, _ = false;
-		sum,quests,numQuestStatus = numQuests,{},{fail=0,complete=0,active=0};
+		quests,numQuestStatus = {},{fail=0,complete=0,active=0};
+		sum=0
 
 		for index=1, numEntries do
 			local q = ns.deprecated.C_QuestLog.GetInfo(index) or {};
@@ -653,6 +654,9 @@ function module.onevent(self,event,msg)
 					q.text,
 					mapId or 0
 				});
+				if not q.isHidden then
+					sum=sum+1
+				end
 				numQuestStatus[status]=numQuestStatus[status]+1;
 			end
 		end
