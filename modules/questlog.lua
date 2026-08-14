@@ -11,16 +11,14 @@ local name = "Quest Log" -- QUESTLOG_BUTTON L["ModDesc-Quest Log"]
 local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module,createTooltip = name.."TT",name.."TT2",10,2;
 local quests,numQuestStatus,sum,url,tt2created,requested
 local tradeskills = {}
+local exp = {"classic","tbc","wotlk","cata","mop-classic"}
 local urls = {
 	WoWHead = {"WoWHead",function(id)
 		local url,lc,bv = {"https://www.wowhead.com"},(GetLocale()),GetBuildInfo()
 		local lang = {deDE="de",esES="es",esMX="es",frFR="fr",ptBR="pt",ptPT="pt",itIT="it",ruRU="ru",koKR="ko",zhCN="cn",zhTW="cn"};
-		if bv:match("^1%.") then
-			tinsert(url,"classic")
-		elseif bv:match("^3%.") then
-			tinsert(url,"wotlk");
-		elseif bv:match("^4%.") then
-			tinsert(tar,"cata")
+		bv = tonumber((bv:match("^([0-9]*)\.")))
+		if bv and exp[bv] then
+			tinsert(url,exp[bv])
 		end
 		if lc and lang[lc] then
 			tinsert(url,lang[lc]);
