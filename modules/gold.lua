@@ -13,7 +13,7 @@ local ttName, ttName2, ttColumns, ttColumns2, tt, tt2, createTooltip, module = n
 local login_money,Date = nil,{};
 local GetMoney = _G.GetMoney;
 local listTopProfit,accountBankMoney = {};
-local tickerDuration, tickerInterations,tickerCounter, ticker = 1/5, 10*5, -1, nil -- 20 seconds to get current player money; i hope it is enough for slow pc's and net connections.
+local tickerDuration, tickerInterations,tickerCounter, ticker = 0.314159, 10, -1, nil -- ~31 seconds to get current player money; i hope it is enough for slow pc's and net connections.
 local ttLines = {
 	{"showProfitSession",L["Session"],"session"},
 	{"showProfitDaily",HONOR_TODAY,"daily",false},
@@ -200,30 +200,19 @@ local function updateBroker()
 	ns.LDB:GetDataObjectByName(module.ldbName).text = table.concat(broker,ns.profile[name].delimiterBB);
 end
 
-function ns.GlobalFunctionError(funcName,msgGeneral,msgTaint)
-	local _, taintBy = issecurevariable(_G,funcName)
-	if taintBy then
-		ns:print(L[msgTaint]:format(taintBy))
-	else
-		ns:print(L[msgGeneral])
-	end
-end
-
-local function initFirstUpdate(...)
-	if (...) and ticker==...  then
-		tickerCounter=tickerCounter+1;
-	elseif not module.lockFirstUpdate then
-		 return;
-	end
+local function initFirstUpdate()
+	if not module.lockFirstUpdate then return end
+	tickerCounter = tickerCounter + 1
 	local money = GetMoney()
 	if money then
-		ticker:Cancel()
-		login_money,ns.toon[name].money,ticker = money,money;
+		if ticker then
+			ticker:Cancel()
+			ticker = nil
+		end
+		login_money,ns.toon[name].money = money,money;
 		updateProfit();
 		updateBroker();
 		module.lockFirstUpdate = false;
-	elseif (...) and ticker==... and tickerCounter==tickerInterations then
-		ns.GlobalFunctionError("GetMoney","ErrorMsgGetMoney","ErrorMsgGetMoneyTaint")
 	end
 end
 
@@ -571,7 +560,7 @@ function module.onevent(self,event,arg1)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 	end
-	if module.lockFirstUpdate and not ticker then
+	if ns.eventPlayerEnteredWorld and module.lockFirstUpdate and not login_money and not ticker then
 		tickerCounter = 0;
 		ticker = C_Timer.NewTicker(tickerDuration, initFirstUpdate , tickerInterations)
 	end
