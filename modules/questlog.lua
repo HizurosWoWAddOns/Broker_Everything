@@ -295,28 +295,31 @@ local function ttAddLine(obj)
 		tt:SetCellScript(l,cell,"OnMouseUp",showQuestURL,obj[QuestId]);
 		cell=cell+1; -- [7]
 
-		-- quest tracking
-		if ns.client_version>=5 then
-			tt:SetCell(l,cell,IsQuestWatched(obj[Index]) and UNTRACK_QUEST_ABBREV or TRACK_QUEST_ABBREV);
-			tt:SetCellScript(l,cell,"OnMouseUp",trackQuest,obj[QuestId]);
-			cell=cell+1; -- [8]
-		end
-
-		-- quest cancel
-		tt:SetCell(l,cell,CANCEL .. (requested==obj[QuestId] and C("orange"," ("..L["really?"]..")") or ""));
-		tt:SetCellScript(l,cell,"OnMouseUp",deleteQuest,obj[QuestId]);
-		cell=cell+1; -- [9]
-
-		-- quest sharing
-		if IsInGroup() then
-			if GetNumGroupMembers()>1 and GetQuestLogPushable(obj[Index]) then
-				tt:SetCell(l,cell,SHARE_QUEST_ABBREV);
-				tt:SetCellScript(l,cell,"OnMouseUp",pushQuest,obj[Index]);
-				cell=cell+1 -- [10]
+		if not obj[IsHidden] then
+			-- quest tracking
+			if ns.client_version>=5 then
+				tt:SetCell(l,cell,IsQuestWatched(obj[Index]) and UNTRACK_QUEST_ABBREV or TRACK_QUEST_ABBREV);
+				tt:SetCellScript(l,cell,"OnMouseUp",trackQuest,obj[QuestId]);
+				cell=cell+1; -- [8]
 			end
-			if #GroupQuest>0 and IsShiftKeyDown() then
-				tt:SetCell(tt:AddLine(),1,table.concat(GroupQuest,", "), nil, nil, ttColumns);
-				tt:AddSeparator();
+
+			-- quest cancel
+			tt:SetCell(l,cell,CANCEL .. (requested==obj[QuestId] and C("orange"," ("..L["really?"]..")") or ""));
+			tt:SetCellScript(l,cell,"OnMouseUp",deleteQuest,obj[QuestId]);
+			cell=cell+1; -- [9]
+
+
+			-- quest sharing
+			if IsInGroup() then
+				if GetNumGroupMembers()>1 and GetQuestLogPushable(obj[Index]) then
+					tt:SetCell(l,cell,SHARE_QUEST_ABBREV);
+					tt:SetCellScript(l,cell,"OnMouseUp",pushQuest,obj[Index]);
+					cell=cell+1 -- [10]
+				end
+				if #GroupQuest>0 and IsShiftKeyDown() then
+					tt:SetCell(tt:AddLine(),1,table.concat(GroupQuest,", "), nil, nil, ttColumns);
+					tt:AddSeparator();
+				end
 			end
 		end
 	end
