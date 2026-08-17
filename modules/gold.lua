@@ -201,7 +201,9 @@ local function updateBroker()
 end
 
 local function initFirstUpdate()
-	if not module.lockFirstUpdate then return end
+	if not module.lockFirstUpdate then
+		return
+	end
 	tickerCounter = tickerCounter + 1
 	local money = GetMoney()
 	if money then
@@ -209,10 +211,11 @@ local function initFirstUpdate()
 			ticker:Cancel()
 			ticker = nil
 		end
-		login_money,ns.toon[name].money = money,money;
-		updateProfit();
-		updateBroker();
-		module.lockFirstUpdate = false;
+		login_money,ns.toon[name].money = money,money
+		updateProfit()
+		updateBroker()
+		module.lockFirstUpdate = false
+		return true
 	end
 end
 
@@ -401,8 +404,8 @@ end
 -- removing drawed / adding withdrawed player money; thats not loss or profit.
 if (C_Bank and C_Bank.FetchDepositedMoney and Enum and Enum.BankType and Enum.BankType.Account) then
 	local function updateToonProfits(value)
-		if not login_money then
-			initFirstUpdate()
+		if not login_money and not initFirstUpdate() then
+			return
 		end
 		if not login_money then return end
 		login_money = login_money + value
@@ -560,11 +563,11 @@ function module.onevent(self,event,arg1)
 	if event=="BE_UPDATE_CFG" and arg1 and arg1:find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 	end
-	if ns.eventPlayerEnteredWorld and module.lockFirstUpdate and not login_money and not ticker then
+	if ns.eventPlayerEnteredWorld and module.lockFirstUpdate and not login_money and not initFirstUpdate() then
 		tickerCounter = 0;
 		ticker = C_Timer.NewTicker(tickerDuration, initFirstUpdate , tickerInterations)
 	end
-	if ns.eventPlayerEnteredWorld and not module.lockFirstUpdate then
+	if ns.eventPlayerEnteredWorld then
 		-- PLAYER_MONEY, PLAYER_TRADE_MONEY, TRADE_MONEY_CHANGED
 		ns.toon[name].money = GetMoney();
 		updateBroker();
