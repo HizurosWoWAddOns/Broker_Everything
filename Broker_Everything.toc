@@ -122,7 +122,6 @@ modules/artifactweapons.lua [AllowLoadGameType mainline]
 modules/classspecs.lua [AllowLoadGameType mainline]
 modules/emissaryquests.lua [AllowLoadGameType mainline]
 modules/invasions.lua [AllowLoadGameType mainline]
-modules/orderhall.lua [AllowLoadGameType mainline]
 modules/wowtoken.lua [AllowLoadGameType mainline]
 
 # modules since bfa
