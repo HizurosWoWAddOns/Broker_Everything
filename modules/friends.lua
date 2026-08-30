@@ -335,8 +335,16 @@ local function createTooltip(tt)
 				local nt = C_BattleNet.GetFriendNumGameAccounts(i);
 				local fi = C_BattleNet.GetFriendAccountInfo(i);
 				if nt and fi and fi.gameAccountInfo.isOnline then
+					local wowIndex;
 					for I=1, nt do
-						local ti =  C_BattleNet.GetFriendGameAccountInfo(i,I) or {};
+						local acc = C_BattleNet.GetFriendGameAccountInfo(i,I);
+						if acc and acc.clientProgram=="WoW" and not (acc.characterLevel==0 and acc.realmID==0) then
+							wowIndex = I;
+							break;
+						end
+					end
+					for I=1, nt do
+						local ti =  C_BattleNet.GetFriendGameAccountInfo(i,wowIndex or I) or {};
 						local bcIcon = fi.customMessage~="" and "|Tinterface\\chatframe\\ui-chatinput-focusicon:0|t" or "";
 						local cl = ti.clientProgram;
 						local mobileApp =  cl~="BSAp" or (cl=="BSAp" and ns.profile[name].showMobileApp); -- filter mobile app
