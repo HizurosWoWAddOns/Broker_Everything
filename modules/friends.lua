@@ -335,10 +335,11 @@ local function createTooltip(tt)
 				local nt = C_BattleNet.GetFriendNumGameAccounts(i);
 				local fi = C_BattleNet.GetFriendAccountInfo(i);
 				if nt and fi and fi.gameAccountInfo.isOnline then
+					-- ponytail: prefer the WoW game account; bnet lists App/Mobile first so ingame friends showed as "Desktop App"
 					local wowIndex;
 					for I=1, nt do
 						local acc = C_BattleNet.GetFriendGameAccountInfo(i,I);
-						if acc and acc.clientProgram=="WoW" and not (acc.characterLevel==0 and acc.realmID==0) then
+						if acc and acc.clientProgram=="WoW" and ((acc.characterName and acc.characterName~="") or (acc.areaName and acc.areaName~="") or not (acc.characterLevel==0 and acc.realmID==0)) then
 							wowIndex = I;
 							break;
 						end
@@ -357,7 +358,8 @@ local function createTooltip(tt)
 							local l = tt:AddLine();
 
 							-- wow logout is buggy. sometimes level==0 and reamid==0. player is logout out but displayed as playing wow
-							if ti.characterLevel==0 and ti.realmID==0 then
+							-- ponytail: but only downgrade to App if there is also no character/zone info, otherwise ingame friends show as "Desktop App"
+							if ti.characterLevel==0 and ti.realmID==0 and not ((ti.characterName and ti.characterName~="") or (ti.areaName and ti.areaName~="")) then
 								ti.clientProgram = "App"
 							end
 
