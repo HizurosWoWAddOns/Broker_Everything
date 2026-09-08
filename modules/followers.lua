@@ -115,9 +115,9 @@ I[nameS]  = {iconfile="Interface\\Icons\\Achievement_GarrisonFolLower_Rare", coo
 --------------------------
 local sortKey;
 do -- creates a string with big number for sorting
-	local sortKeyFormat = "%02d%02d%03d%04d%04d";
+	local sortKeyFormat = "%03d%02d%03d%04d%04d";
 	function sortKey(count,level,xp,quality,iLevel)
-		return sortKeyFormat:format(100-level,10 --[[-quality]],100-ceil(xp),9999-iLevel,count);
+		return sortKeyFormat:format(200-level,20-(quality or 0),100-ceil(xp),9999-(iLevel or 0),count);
 	end
 end
 
@@ -135,15 +135,15 @@ local function isTrait(icon)
 	return false;
 end
 
--- for broker only
-local function updateFollowers(name,Table,forTooltip)
+local function updateFollowersBB(Table)
 	-- get garrison/shipyard level
-	local garrLevel,name = false,nameF;
+	local followerType,name = Enum.GarrisonFollowerType["Follower"..Table.type..(not Table.type:match("Boat$") and "Follower" or "")],nil
 	if Table.type=="Type_6_0_Boat" then
 		Table.garrLevel = (C_Garrison.GetOwnedBuildingInfoAbbrev(98) or 0) - 204;
-		name = nameS;
+		name=nameS
 	else
 		Table.garrLevel = C_Garrison.GetGarrisonInfo(Enum.GarrisonType[Table.type]) or 0;
+		name=nameF
 	end
 	if Table.garrLevel<1 then
 		-- garrison / shipyard not enabled
@@ -159,68 +159,75 @@ local function updateFollowers(name,Table,forTooltip)
 		Table["status"..i.."_num"] = 0;
 	end
 
-	local follower,troop,data,entryInfo,_ = {},{},C_Garrison.GetFollowers(Enum.GarrisonFollowerType["Follower"..Table.type]) or {},nil,nil;
+	local followers,_ = C_Garrison.GetFollowers(followerType) or {},nil;
 
-	for i=1, #data do
-		entryInfo = data[i];
-		if entryInfo.isCollected and (entryInfo.garFollowerID or entryInfo.followerID) then
-			entryInfo.statusIndex = status2index[entryInfo.status] or 1; -- available
-			if entryInfo.statusIndex==2 then -- onmission
-				entryInfo.missionEnd = time()+C_Garrison.GetFollowerMissionTimeLeftSeconds(entryInfo.followerID);
+	for i=1, #followers do
+		local followerID = (followers[i].garrFollowerID or followers[i].followerID)
+		if followers[i].isCollected and followerID then
+			followers[i].statusIndex = status2index[followers[i].status] or 1; -- available
+			local missionEnd
+			if followers[i].statusIndex==2 then -- onmission
+				missionEnd = time()+C_Garrison.GetFollowerMissionTimeLeftSeconds(followers[i].followerID);
 			end
-			if forTooltip then
-				entryInfo.classColor = "red";
-				if type(entryInfo.classAtlas)=="string" then -- has classAtlas
-					_,entryInfo.classColor = strsplit("-",entryInfo.classAtlas);
-				end
-				if strlen(entryInfo.name)==0 then
-					entryInfo.name = "["..UNKNOWN.."]";
-				end
-				entryInfo.xpPercent = 100;
-				if entryInfo.levelXP>0 then
-					entryInfo.xpPercent = entryInfo.xp/entryInfo.levelXP*100;
-					entryInfo.xpPercentStr = ("%1.1f"):format(entryInfo.xpPercent).."%";
-				end
-				if entryInfo.isTroop then
-					entryInfo.durabilityIconStr = "";
-					local t = {};
-					for i=1, entryInfo.maxDurability do
-						if i<=entryInfo.durability then
-							tinsert(t,"|T1384099:11:12:0:0:256:256:1:16:1:14|t"); --"GarrisonTroops-Health"
-						else
-							tinsert(t,"|T1384099:11:12:0:0:256:256:18:33:1:14|t"); --"GarrisonTroops-Health-Consume"
-						end
-					end
-					entryInfo.durabilityIconStr = table.concat(t," ");
-				end
-			end
-			if entryInfo.isTroop and Table.labelTroops then
-				-- for broker button
+			if followers[i].isTroop and Table.labelTroops then
 				Table.troop_num = Table.troop_num + 1;
-
-				-- sortable entries for tooltip
-				if forTooltip then
-					troop[ sortKey(Table.troop_num, entryInfo.level, entryInfo.xpPercent, entryInfo.quality, entryInfo.iLevel) ] = entryInfo;
-				end
-			elseif not entryInfo.isTroop then
-				-- for broker button
-				Table["status"..entryInfo.statusIndex.."_num"] = Table["status"..entryInfo.statusIndex.."_num"] + 1;
+			elseif not followers[i].isTroop then
+				Table["status"..followers[i].statusIndex.."_num"] = Table["status"..followers[i].statusIndex.."_num"] + 1;
 				Table.follower_num = Table.follower_num + 1;
 
-				-- sortable entries for tooltip
-				if forTooltip then
-					follower[ sortKey(Table.follower_num, entryInfo.level, entryInfo.xpPercent, entryInfo.quality, entryInfo.iLevel) ] = entryInfo;
-				end
-
 				-- for alts/twink display in tooltip
-				ns.toon[name][Table.type][entryInfo.garrFollowerID or entryInfo.followerID] = entryInfo.missionEnd or entryInfo.statusIndex; -- n < 10 == statusIndex; n > 10 == mission ending time
+				ns.toon[name][Table.type][followers[i].garrFollowerID or followers[i].followerID] = missionEnd or followers[i].statusIndex; -- n < 10 == statusIndex; n > 10 == mission ending time
+			end
+		end
+	end
+end
+
+local function updateFollowersTT(Table)
+	if Table.garrLevel<1 then
+		-- garrison / shipyard not enabled
+		return false;
+	end
+
+	local followerType = Enum.GarrisonFollowerType["Follower"..Table.type..(not Table.type:match("Boat$") and "Follower" or "")]
+	local follower,troop,followers,_ = {},{},C_Garrison.GetFollowers(followerType) or {},nil;
+
+	for i=1, #followers do
+		local followerID = (followers[i].garrFollowerID or followers[i].followerID)
+		if followers[i].isCollected and followerID then
+			followers[i].statusIndex = status2index[followers[i].status] or 1; -- available
+			followers[i].classColor = "red";
+			if type(followers[i].classAtlas)=="string" then -- has classAtlas
+				_,followers[i].classColor = strsplit("-",followers[i].classAtlas);
+			end
+			if strlen(followers[i].name)==0 then
+				followers[i].name = "["..UNKNOWN.."]";
+			end
+			followers[i].xpPercent = 100;
+			if followers[i].levelXP>0 then
+				followers[i].xpPercent = followers[i].xp/followers[i].levelXP*100;
+				followers[i].xpPercentStr = ("%1.1f"):format(followers[i].xpPercent).."%";
+			end
+			if followers[i].isTroop then
+				followers[i].durabilityIconStr = "";
+				local t = {};
+				for j=1, followers[i].maxDurability do
+					if j<=followers[i].durability then
+						tinsert(t,"|A:GarrisonTroops-Health:12:12|a"); --"GarrisonTroops-Health"
+					else
+						tinsert(t,"|A:GarrisonTroops-Health-Consume:12:12|a"); --"GarrisonTroops-Health-Consume"
+					end
+				end
+				followers[i].durabilityIconStr = table.concat(t," ");
+			end
+			if followers[i].isTroop and Table.labelTroops then
+				troop[ sortKey(Table.troop_num, followers[i].level, followers[i].xpPercent, followers[i].quality, followers[i].iLevel) ] = followers[i];
+			elseif not followers[i].isTroop then
+				follower[ sortKey(Table.follower_num, followers[i].level, followers[i].xpPercent, followers[i].quality, followers[i].iLevel) ] = followers[i];
 			end
 		end
 	end
 
-	if forTooltip then
-		return follower,troop;
-	end
+	return follower,troop;
 end
 
 local function updateBroker(name)
@@ -311,7 +318,7 @@ local function addEntries(tt,name,entriesList,statusIndex,statusLabel,Table)
 			if #traitIcons>0 then
 				tinsert(abilities,table.concat(traitIcons," "));
 			end
-			local combatSpells = false
+			local combatSpells = nil
 			if Table.hasCombatSpells then
 				combatSpells = C_Garrison.GetFollowerAutoCombatSpells(entryInfo.followerID,entryInfo.level);
 			end
@@ -334,7 +341,8 @@ local function addEntries(tt,name,entriesList,statusIndex,statusLabel,Table)
 					entryInfo.level.." ",
 					entryInfo.xpPercentStr or C("gray","100%"),
 					entryInfo.iLevel,
-					abilitiesStr
+					abilitiesStr,
+					entryInfo.durabilityIconStr
 				);
 			else
 				line = tt:AddLine(
@@ -404,59 +412,64 @@ local function createTooltip(tt,name,ttName)
 		local t = time();
 		for index, toonNameRealm, toonName, toonRealm, toonData, isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
 			-- available, onmission, working, exhausted, disabled, aftermission
-			local countStatus,collected,cMission,cWorking,cCollected,clients,show = {},{},{},{},{},{};
-			local nextMissionEnding,activeMission = 0,0;
-			for _,e in ipairs(name==nameF and typeListF or typeListS) do
-				local Type = e.type;
-				if ns.profile[name]["showSummary_"..Type] and toonData[name] and toonData[name][Type] then
-					local ExpansionFollowers = toonData[name][Type];
-					countStatus[Type],collected[Type] = {0,0,0,0,0,0},0;
-					for followerID, followerStatus in pairs(ExpansionFollowers)do
-						if followerStatus>10 then
-							if followerStatus>t and (nextMissionEnding==0 or followerStatus<nextMissionEnding) then
-								nextMissionEnding = followerStatus;
+			if index==0 and not toonData then
+				tt:AddLine(C("gray",toonRealm))
+				--inset = "   "
+			elseif toonData then
+				local countStatus,collected,cMission,cWorking,cCollected,clients,show = {},{},{},{},{},{};
+				local nextMissionEnding,activeMission = 0,0;
+				for _,e in ipairs(name==nameF and typeListF or typeListS) do
+					local Type = e.type;
+					if ns.profile[name]["showSummary_"..Type] and toonData[name] and toonData[name][Type] then
+						local ExpansionFollowers = toonData[name][Type];
+						countStatus[Type],collected[Type] = {0,0,0,0,0,0},0;
+						for followerID, followerStatus in pairs(ExpansionFollowers)do
+							if followerStatus>10 then
+								if followerStatus>t and (nextMissionEnding==0 or followerStatus<nextMissionEnding) then
+									nextMissionEnding = followerStatus;
+								end
+								if followerStatus>activeMission then
+									activeMission = followerStatus;
+								end
+								followerStatus = followerStatus>t and 2 or 6;
 							end
-							if followerStatus>activeMission then
-								activeMission = followerStatus;
-							end
-							followerStatus = followerStatus>t and 2 or 6;
+							countStatus[Type][followerStatus] = countStatus[Type][followerStatus] + 1;
+							collected[Type] = collected[Type] + 1;
+							show = true
 						end
-						countStatus[Type][followerStatus] = countStatus[Type][followerStatus] + 1;
-						collected[Type] = collected[Type] + 1;
-						show = true
+						tinsert(clients,    clientShortcut(Type));
+						tinsert(cMission,   (countStatus[Type][6]==0 and "−" or C("green",countStatus[Type][6])) .."/".. (countStatus[Type][2]==0 and "−" or C("yellow",countStatus[Type][2])) );
+						tinsert(cWorking,   (countStatus[Type][4]==0 and "−" or C("green",countStatus[Type][4])) .."/".. (countStatus[Type][3]==0 and "−" or C("yellow",countStatus[Type][3])) );
+						tinsert(cCollected, C("cyan",collected[Type]) .. "/" .. C("green",collected[Type]-countStatus[Type][5]) .. "/" .. C("yellow",countStatus[Type][5]) );
 					end
-					tinsert(clients,    clientShortcut(Type));
-					tinsert(cMission,   (countStatus[Type][6]==0 and "−" or C("green",countStatus[Type][6])) .."/".. (countStatus[Type][2]==0 and "−" or C("yellow",countStatus[Type][2])) );
-					tinsert(cWorking,   (countStatus[Type][4]==0 and "−" or C("green",countStatus[Type][4])) .."/".. (countStatus[Type][3]==0 and "−" or C("yellow",countStatus[Type][3])) );
-					tinsert(cCollected, C("cyan",collected[Type]) .. "/" .. C("green",collected[Type]-countStatus[Type][5]) .. "/" .. C("yellow",countStatus[Type][5]) );
 				end
-			end
-			if show then
-				local faction,str,l = ns.factionIcon(toonData.faction,16,16,true);
+				if show then
+					local faction,str,l = ns.factionIcon(toonData.faction,16,16,true);
 
-				if IsShiftKeyDown() then
-					str = SecondsToTime(nextMissionEnding-t) .. " / " .. SecondsToTime(activeMission-t);
-				else
-					str = table.concat(cMission,"|n");
-				end
+					if IsShiftKeyDown() then
+						str = SecondsToTime(nextMissionEnding-t) .. " / " .. SecondsToTime(activeMission-t);
+					else
+						str = table.concat(cMission,"|n");
+					end
 
-				l = tt:AddLine(C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction );
-				tt:SetCell(l, 2, table.concat(clients,"|n"), nil, "CENTER");
-				tt:SetCell(l, 3, str, nil, "RIGHT", 2);
-				tt:SetCell(l, 5, table.concat(cWorking, "|n"), nil, "RIGHT", 2);
-				tt:SetCell(l, 7, table.concat(cCollected, "|n") );
+					l = tt:AddLine(C(toonData.class,ns.scm(toonName)) .. ns.showRealmName(name,toonRealm) .. faction );
+					tt:SetCell(l, 2, table.concat(clients,"|n"), nil, "CENTER");
+					tt:SetCell(l, 3, str, nil, "RIGHT", 2);
+					tt:SetCell(l, 5, table.concat(cWorking, "|n"), nil, "RIGHT", 2);
+					tt:SetCell(l, 7, table.concat(cCollected, "|n") );
 
-				if isCurrent then -- highlight current toon
-					tt:SetLineColor(l, 0.1, 0.3, 0.6);
+					if isCurrent then -- highlight current toon
+						tt:SetLineColor(l, 0.1, 0.3, 0.6);
+					end
 				end
 			end
 		end
 	end
 
 	local followerList,troopList,tableList = {},{},{};
-	for i, Table in ipairs(name==nameF and typeListF or typeListS) do
+	for _, Table in ipairs(name==nameF and typeListF or typeListS) do
 		if ns.profile[name]["showTooltip_"..Table.type] then
-			local follower,troop = updateFollowers(name,Table,true);
+			local follower,troop = updateFollowersTT(Table);
 			if follower then
 				tinsert(tableList,Table);
 				followerList[#tableList] = follower;
@@ -600,9 +613,7 @@ do
 			for _, e in ipairs(t)do -- typeListF / typeListS
 				cfgDef["showBroker_"..e.type] = state;
 				cfgDef["showTooltip_"..e.type] = state;
-				if e.labelTroops then
-					cfgDef["showTooltip_"..e.type.."t"] = state;
-				end
+				cfgDef["showTooltip_"..e.type.."t"] = e.labelTroops and state or false;
 				cfgDef["showSummary_"..e.type] = state;
 				-- only the first (current expansion) will be enabled by default
 				state = false;
@@ -688,7 +699,7 @@ function moduleC.onevent(self,event,arg1,...)
 			if ns.toon[nameF][Table.type]==nil then
 				ns.toon[nameF][Table.type] = {};
 			end
-			updateFollowers(nameF,Table);
+			updateFollowersBB(Table);
 		end
 		updateBroker(nameF);
 	end
@@ -700,7 +711,7 @@ function moduleC.onevent(self,event,arg1,...)
 			if ns.toon[nameS][Table.type]==nil then
 				ns.toon[nameS][Table.type] = {};
 			end
-			updateFollowers(nameS,Table);
+			updateFollowersBB(Table);
 		end
 		updateBroker(nameS);
 	end
