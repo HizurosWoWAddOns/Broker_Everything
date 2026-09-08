@@ -8,6 +8,7 @@ if ns.client_version<5 then return end
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
+local group = "InstancesGroup"
 local nameR = "Raids" -- RAIDS L["ModDesc-Raids"]
 local nameD = "Dungeons" -- DUNGEONS L["ModDesc-Dungeons"]
 local ttNameR, ttNameD, ttColumns, ttR, ttD, createTooltip, moduleR, moduleD = nameR.."TT", nameD.."TT", 5
@@ -318,6 +319,7 @@ end
 ------------------------------------
 moduleR = {
 	name = RAIDS,
+	group = group,
 	events = {
 		"PLAYER_LOGIN",
 		"UPDATE_INSTANCE_INFO",
@@ -332,6 +334,7 @@ moduleR = {
 
 moduleD = {
 	name = DUNGEONS,
+	group = group,
 	events = {
 		"PLAYER_LOGIN",
 		"UPDATE_INSTANCE_INFO",

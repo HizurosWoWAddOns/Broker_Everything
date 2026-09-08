@@ -269,6 +269,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	group = "SocialGroup",
 	name = BUTTON_LAG_MAIL,
 	events = {
 		"PLAYER_LOGIN",

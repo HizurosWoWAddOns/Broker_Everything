@@ -635,6 +635,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	group = "SocialGroup",
 	name = FRIENDS,
 	events = {
 		"PLAYER_LOGIN",

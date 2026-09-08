@@ -171,7 +171,7 @@ end
 local function opt(info,value,...)
 	if not db then return end
 	-- section = GeneralOptions or module names
-	local key,section,isModEnable = info[#info],info[#info-2],(info[#info-1]=="modEnable");
+	local key,section,isModEnable = info[#info],info[#info-2],(info[#info-1]=="modEnable" or info[#info-2]=="modEnable");
 	if #info>=5 then
 		local modOptDepth = nil;
 		for i=#info, 1, -1 do
@@ -488,7 +488,6 @@ function ns.Options_RegisterDefaults() -- re-registration for dbDefaults after '
 	db:RegisterDefaults(dbDefaults);
 end
 
-local groupOrders,groupCount = {},0;
 function ns.Options_RegisterModule(modName)
 	local mod,modOptions = ns.modules[modName],{};
 
@@ -515,12 +514,12 @@ function ns.Options_RegisterModule(modName)
 		-- add toggle to ModToggleTab
 		local modEnable = options.args.modEnable;
 		if mod.group then
-			if not modEnable.args[mod.group] then
-				groupCount=groupCount+2;
-				modEnable.args[mod.group] = {type="header",name=L[mod.group], order=-groupCount};
-				groupOrders[mod.group] = groupCount-1;
+			local groupName = L[mod.group]
+			if not modEnable.args[groupName] then
+				modEnable.args[groupName] = {type="group", name=groupName, inline=true, args={}, order=-1}
+				--modEnable.args[groupName].args.header = {type="header",name=L[groupName], order=1};
 			end
-			modEnable.args[modName] = {type="toggle",name=mod.name or L[modName],desc=L["ModDesc-"..modName],order=-groupOrders[mod.group]};
+			modEnable.args[groupName].args[modName] = {type="toggle",name=mod.name or L[modName],desc=L["ModDesc-"..modName],order=2};
 		else
 			modEnable.args[modName] = {type="toggle",name=mod.name or L[modName],desc=L["ModDesc-"..modName]};
 		end

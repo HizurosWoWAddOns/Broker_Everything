@@ -141,6 +141,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	group = "SocialGroup",
 	events = {
 		"PLAYER_LOGIN",
 		"GUILD_ROSTER_UPDATE",

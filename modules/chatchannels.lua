@@ -143,6 +143,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	group = "SocialGroup",
 	name = CHAT_CHANNELS,
 	events = {
 		"PLAYER_ENTERING_WORLD",

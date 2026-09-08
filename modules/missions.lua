@@ -214,7 +214,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	group = L["ExpansionFeatures"],
+	group = "ExpansionFeatures",
 	name = GARRISON_MISSIONS,
 	events = {
 		"PLAYER_LOGIN",
