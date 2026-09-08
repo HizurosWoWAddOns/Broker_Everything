@@ -23,7 +23,7 @@ local function updateTracking()
 	local tbl = {}
 	for i = 1, C_Minimap.GetNumTrackingTypes() do
 		local info = C_Minimap.GetTrackingInfo(i)
-		if info.active then
+		if info and info.active then
 			tinsert(tbl,info)
 		end
 	end
@@ -125,12 +125,12 @@ end
 
 local function trackingMenuOnClick(button)
 	local info = C_Minimap.GetTrackingInfo(button.arg1);
-	C_Minimap.SetTracking(button.arg1,not info.active);
+	C_Minimap.SetTracking(button.arg1,not (info and info.active));
 end
 
 local function trackingIsActive(button)
 	local info = C_Minimap.GetTrackingInfo(button.arg1);
-	return active or info.active;
+	return info and info.active;
 end
 
 function module.onclick(self,button)

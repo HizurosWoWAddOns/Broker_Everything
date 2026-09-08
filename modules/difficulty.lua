@@ -12,8 +12,8 @@ local name = "Difficulty" -- L["Difficulty"] L["ModDesc-Difficulty"]
 L["ModDesc-"..name] = L["Display current group and instance modes"];
 
 local ttName, ttColumns, tt, module,createTooltip = name.."TT", 4
-local mode,roleCount = 0,", T: %d, H: %d, D: %d";
-local modes = {
+local roleCount = ", T: %d, H: %d, D: %d";
+local groupModes = {
 	{name=SOLO,  short="S", color="ltgray"},	-- 1
 	{name=GROUP, short="G", color="quality2"},		-- 2
 	{name=RAID,  short="R", color="quality4"},		-- 3
@@ -22,7 +22,7 @@ local diff = {
 	dungeons = {
 		{id=1,long=PLAYER_DIFFICULTY1,short=L["DifficultyNormalShort"],color="quality2"},
 		{id=2,long=PLAYER_DIFFICULTY2,short=L["DifficultyHeroicShort"],color="quality3"},
-		{id=23,long=PLAYER_DIFFICULTY6,short=L["DifficultyMythicShort"],color="quality4"}
+		--{id=23,long=PLAYER_DIFFICULTY6,short=L["DifficultyMythicShort"],color="quality4"},
 	},
 	raids = {
 		{id=14,long=PLAYER_DIFFICULTY1,short=L["DifficultyNormalShort"],color="quality2"}, -- 9 / 14

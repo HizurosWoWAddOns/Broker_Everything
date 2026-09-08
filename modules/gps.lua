@@ -260,8 +260,6 @@ local function createTooltip(tt,ttName,modName)
 	local zoneColor,zoneLabel,zoneType = GetZoneInfo()
 	local line, column
 
-	if buttonFrame then buttonFrame:ClearAllPoints() buttonFrame:Hide() end
-
 	if tt.lines~=nil then tt:Clear(); end
 
 	tt:AddHeader(C("dkyellow",L[modName]))

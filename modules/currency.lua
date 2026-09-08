@@ -449,7 +449,7 @@ do
 	end
 end
 
-local initCurrencies,currentExp,playerLevel
+local initCurrencies,currentExpansion,playerLevel
 do
 	local firstExp,tmp
 	function initCurrencies(t,list)
@@ -461,9 +461,9 @@ do
 			Currencies = tmp;
 		elseif t==true then
 			local isExpList,currentExpOnly = list==CurrenciesExpansionDefault,nil;
-			if isExpList and currentExp==nil then
-				currentExp = GetExpansionForLevel(UnitLevel("player"))
-				currentExpOnly = "EXPANSION_NAME"..currentExp;
+			if isExpList and currentExpansion==nil then
+				currentExpansion = GetExpansionForLevel(UnitLevel("player"))
+				currentExpOnly = "EXPANSION_NAME"..currentExpansion;
 			end
 			local start = isExpList and firstExp or 1
 			for i=start or 1, #list do
@@ -540,7 +540,7 @@ local function updateCurrencies()
 	end
 	-- default currencies
 	if #Currencies==0 or cE~=currentExpansion then
-		currentExp=nil
+		currentExpansion=nil
 		initCurrencies();
 	end
 

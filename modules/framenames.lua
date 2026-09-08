@@ -162,9 +162,7 @@ function module.onupdate()
 end
 
 function module.init()
---@do-not-package@
 	ns.profileSilenceFIXME=true;
---@end-do-not-package@
 	if ns.profile[name].creatureid~=nil then
 		ns.profile[name].unitid = ns.profile[name].creatureid;
 		ns.profile[name].creatureid = nil;

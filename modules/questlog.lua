@@ -16,7 +16,7 @@ local urls = {
 	WoWHead = {"WoWHead",function(id)
 		local url,lc,bv = {"https://www.wowhead.com"},(GetLocale()),GetBuildInfo()
 		local lang = {deDE="de",esES="es",esMX="es",frFR="fr",ptBR="pt",ptPT="pt",itIT="it",ruRU="ru",koKR="ko",zhCN="cn",zhTW="cn"};
-		bv = tonumber((bv:match("^([0-9]*)\.")))
+		bv = tonumber((bv:match("^([0-9]*)%.")))
 		if bv and exp[bv] then
 			tinsert(url,exp[bv])
 		end

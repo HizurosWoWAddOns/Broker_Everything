@@ -16,6 +16,7 @@ local slots = {"HEAD","NECK","SHOULDER","SHIRT","CHEST","WAIST","LEGS","FEET","W
 local inventory,enchantSlots = {iLevelMin=0,iLevelMax=0},{}; -- (enchantSlots) -1 = [iLevel<600], 0 = both, 1 = [iLevel=>600]
 local warlords_crafted,tSetItems = {},{};
 local extendedItemInfos,isRegistered = {};
+local LE_ITEM_CLASS_WEAPON = Enum.ItemClass.Weapon or 2
 local ignoreWeapon = {
 	["0"] = L["Do not ignore"],
 	["1"] = L["Ignore all"],
@@ -48,7 +49,7 @@ end
 function ns.toggleEquipment(eSetID)
 	if InCombatLockdown() or UnitIsDeadOrGhost("player") then
 		equipPending = eSetID
-		module.onevent("BE_DUMMY_EVENT")
+		module.onevent({},"BE_DUMMY_EVENT")
 	else
 		C_EquipmentSet.UseEquipmentSet(eSetID);
 	end
@@ -233,7 +234,7 @@ local function createTooltip(tt)
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",WARDROBE_SETS));
 		tt:AddSeparator();
-		if (CanUseEquipmentSets) and (not CanUseEquipmentSets()) then  -- prevent error if function removed
+		if CanUseEquipmentSets and not CanUseEquipmentSets() then  -- prevent error if function removed
 			ns.AddSpannedLine(tt,L["Equipment manager is not enabled"]);
 			ns.AddSpannedLine(tt,L["Enable it from the character info"]);
 		else

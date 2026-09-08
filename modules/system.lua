@@ -65,25 +65,6 @@ I[name_rlm] = {iconfile=ns.media.."server128"} --IconName::Realm--
 
 -- some local functions --
 --------------------------
-local function checkAddonManager()
-	addonpanels["Blizzard's Addons Panel"] = function(chk) if (chk) then local AddonList = _G["AddonList"]; return (AddonList); end if (AddonList:IsShown()) then AddonList:Hide(); else AddonList:Show(); end end;
-	addonpanels_select["Blizzard's Addons Panel"] = "Blizzard's Addons Panel";
-	addonpanels["ACP"] = function(chk) if (chk) then return (C_AddOns.IsAddOnLoaded("ACP")); end ACP:ToggleUI() end
-	addonpanels["Ampere"] = function(chk) if (chk) then return (C_AddOns.IsAddOnLoaded("Ampere")); end Settings.OpenToCategory("Ampere"); end
-	addonpanels["OptionHouse"] = function(chk) if (chk) then return (C_AddOns.IsAddOnLoaded("OptionHouse")); end OptionHouse:Open(1) end
-	addonpanels["stAddonManager"] = function(chk) if (chk) then return (C_AddOns.IsAddOnLoaded("stAddonManager")); end stAddonManager:LoadWindow() end
-	addonpanels["BetterAddonList"] = function(chk) if (chk) then return (C_AddOns.IsAddOnLoaded("BetterAddonList")); end end
-	local panelstates,d,s = {};
-	local addonname,title,notes,loadable,reason,security,newVersion = 1,2,3,4,5,6,7;
-	for i=1, C_AddOns.GetNumAddOns() do
-		d = {C_AddOns.GetAddOnInfo(i)};
-		s = (C_AddOns.GetAddOnEnableState(ns.player.name,i)>0);
-		if (addonpanels[d[addonname]]) and (s) then
-			addonpanels_select[d[addonname]] = d[title];
-		end
-	end
-end
-
 local function addonpanel(self,button)
 	local ap = ns.profile[name_sys].addonpanel;
 	if (ap~="none") then

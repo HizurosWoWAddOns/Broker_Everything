@@ -217,6 +217,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
+	group = "InstancesGroup",
 	events = {
 		"PLAYER_LOGIN",
 		"UPDATE_INSTANCE_INFO",

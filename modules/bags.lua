@@ -247,7 +247,7 @@ local function bagStr(free,total)
 end
 
 local function updateBroker()
-	local txt, free, total = {},bags.sumFree,bags.sumTotal,0;
+	local txt, free, total = {},bags.sumFree,bags.sumTotal;
 	if total==0 or total==nil then
 		return;
 	end

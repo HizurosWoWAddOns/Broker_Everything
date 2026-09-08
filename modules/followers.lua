@@ -677,8 +677,8 @@ function moduleC.onevent(self,event,arg1,...)
 			if moduleS.isEnabled then
 				ns.ClickOpts.update(nameS);
 			end
-			return;
 		end
+		return;
 	end
 	if moduleF.isEnabled then
 		if ns.toon[nameF]==nil then
@@ -713,14 +713,10 @@ local function onevent(self,event,arg1,...)
 			return
 		end
 		-- update broker on config changes
-		if self.eventframe==moduleF.eventframe then
-			if moduleF.isEnabled then
-				updateBroker(nameF);
-			end
-		else
-			if moduleS.isEnabled then
-				updateBroker(nameS);
-			end
+		if self.eventframe==moduleF.eventframe and moduleF.isEnabled then
+			updateBroker(nameF);
+		elseif moduleS.isEnabled then
+			updateBroker(nameS);
 		end
 	elseif event=="PLAYER_LOGIN" and not moduleC.isEnabled then
 		ns.moduleInit(nameC,true);

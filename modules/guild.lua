@@ -246,23 +246,6 @@ local function memberInviteOrWhisper(self,memberIndex)
 	end
 end
 
-local function showApplication(self,appIndex)
-	if IsInGuild() then
-		if (not GuildFrame) then
-			GuildFrame_LoadUI();
-		end
-		if (not GuildFrame:IsShown()) then
-			ShowUIPanel(GuildFrame)
-		end
-		if (not GuildInfoFrameApplicantsContainer:IsVisible()) then
-			GuildFrameTab5:Click();
-			GuildInfoFrameTab3:Click();
-		end
-		SetGuildApplicantSelection(appIndex);
-		GuildInfoFrameApplicants_Update();
-	end
-end
-
 local function guildChallengeLineColor(bool)
 	if bool then
 		return 1,1,1, 0,1,0;

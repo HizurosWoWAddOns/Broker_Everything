@@ -511,7 +511,7 @@ end
 ---@param frame frame
 ---@param func function
 function ns.RegisterMouseWheel(frame,func)
-	frame:EnableMouseWheel(1);
+	frame:EnableMouseWheel(true);
 	frame:SetScript("OnMouseWheel", func);
 end
 
@@ -577,15 +577,16 @@ do
 	};
 	ns.coexist = {};
 	local function search()
-		found = {};
+		local t = {};
 		for name in pairs(list) do
 			if C_AddOns.GetAddOnInfo(name) and C_AddOns.GetAddOnEnableState(name,ns.player.name)==2 then
-				tinsert(found,name);
+				tinsert(t,name);
 			end
 		end
+		return t
 	end
 	function ns.coexist.IsNotAlone(info)
-		if not found then search() end
+		found = found or search()
 		local b = #found>0;
 		if info and info[#info]:find("Info$") then -- for Ace3 Options (<hidden|disabled>=<thisFunction>)
 			return not b;
@@ -593,7 +594,7 @@ do
 		return b;
 	end
 	function ns.coexist.optionInfo()
-		if not found then search() end
+		found = found or search()
 		-- This option is disabled because:
 		-- <addon> >> <msg>
 		local msgs = {};
@@ -974,7 +975,7 @@ do
 	local cbCounter = {any=0,inv=0,bags=0,item=0,equip=0,prepare=0,toys=0,ammo=0};
 	local eventFrame,inventoryDelayed = CreateFrame("Frame");
 	local LE_ITEM_CLASS_PROJECTILE = LE_ITEM_CLASS_PROJECTILE or Enum.ItemClass.Projectile or 6;
-	local LR_ITEM_CLASS_WEAPON = LR_ITEM_CLASS_WEAPON or Enum.ItemClass.Weapon or 2;
+	local LR_ITEM_CLASS_WEAPON = LE_ITEM_CLASS_WEAPON or Enum.ItemClass.Weapon or 2;
 	local LE_ITEM_WEAPON_THROWN = LE_ITEM_WEAPON_THROWN or 16;
 
 	local function doCallbacks(tbl,...)
@@ -1092,7 +1093,7 @@ do
 					link=link,
 					diff=table.concat({link,durability,durabilityMax},"^"),
 					equip=true,
-					ammo=(itemClassID==LR_ITEM_CLASS_WEAPON and itemSubClassID==LE_ITEM_WEAPON_THROWN and 2) or 0
+					ammo=(itemClassID==LE_ITEM_CLASS_WEAPON and itemSubClassID==LE_ITEM_WEAPON_THROWN and 2) or 0
 				},"inv");
 				if link and link:find("%[%]") then
 					retry = true; -- Query heirloom item info looks like unstable. too often return invalid item links
@@ -1168,7 +1169,7 @@ do
 								link=link,
 								diff=table.concat({link,count,durability, durabilityMax},"^"),
 								equip=isEquipment,
-								ammo=(itemClassID==LE_ITEM_CLASS_PROJECTILE and 1) or (itemClassID==LR_ITEM_CLASS_WEAPON and itemSubClassID==LE_ITEM_WEAPON_THROWN and 2) or 0
+								ammo=(itemClassID==LE_ITEM_CLASS_PROJECTILE and 1) or (itemClassID==LE_ITEM_CLASS_WEAPON and itemSubClassID==LE_ITEM_WEAPON_THROWN and 2) or 0
 							},"bags");
 						elseif itemsBySlot[sharedSlotIndex] then
 							removeItem(sharedSlotIndex,"bags");
@@ -1428,7 +1429,7 @@ do
 	local function GetLinkData(link)
 		if not link then return end
 		local _,_,linkData = link:match("\124H([^:]*):(%d+):(.+)\124h");
-		linkData = {strsplit(":",linkData or "")};
+		linkData = {strsplit(":",linkData==nil and "" or linkData)};
 		local res = {};
 		for i=1, #linkData do
 			tinsert(res,tonumber(linkData[i]) or 0)
@@ -1448,7 +1449,7 @@ do
 				data.upgrades = line.leftText:gsub(ITEM_UPGRADE_TOOLTIP_1,"")
 			elseif ITEM_UPGRADE_TOOLTIP_2 and line.leftText:find(ITEM_UPGRADE_TOOLTIP_2) then
 				data.upgrades = line.leftText:gsub(ITEM_UPGRADE_TOOLTIP_2,"")
-			elseif i>4 and data.setname==nil and line.leftText:find("%(%d*/%d*%)$") then
+			elseif i>4 and data.setname==nil and line.leftText:find("%(%d+/%d+%)$") then
 				data.setname = strsplit("(",line.leftText);
 			end
 		end

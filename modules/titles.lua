@@ -183,7 +183,7 @@ end
 
 function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip({ttName, ttColumns, "CENTER", "CENTER", "CENTER", "CENTER", "CENTER","CENTER","CENTER","CENTER"},{false},{self,mod=module},{OnHide=tooltipOnHide});
+	tt = ns.acquireTooltip({ttName, ttColumns, "CENTER", "CENTER", "CENTER", "CENTER", "CENTER","CENTER","CENTER","CENTER"},{false},{self,mod=module},{--[[ OnHide=tooltipOnHide ]]});
 	createTooltip(tt);
 end
 

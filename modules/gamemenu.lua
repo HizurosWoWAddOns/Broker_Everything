@@ -12,9 +12,8 @@ local ttName,tt,module = name.."TT"
 local iconCoords = "16:16:0:-1:64:64:4:56:4:56" --"16:16:0:-1:64:64:3:58:3:58"
 local link = "|T%s:%s|t %s"
 local link_disabled = "|T%s:%s:66:66:66|t "..C("gray", "%s")
-local gmticket,ClassIconCoords = {},{};
+local gmticket,ClassIconCoords = {},nil;
 local customTitle = L["Game Menu"]
-local IsBlizzCon = IsBlizzCon or function() return false; end -- Legion Fix
 local menu = {};
 local ClassIconFile;
 
@@ -32,7 +31,7 @@ local function updateGMTicket()
 		obj.text = C("cyan",(gmticket.waitTime) and SecondsToTime(gmticket.waitTime*60) or L["Open GM Ticket"]) .. link:format(icon.iconfile,(icon.coordsStr or iconCoords),"")
 	else
 		gmticket.hasTicket = false
-		module.onevent("BE_DUMMY_EVENT")
+		module.onevent({},"BE_DUMMY_EVENT")
 	end
 end
 
@@ -50,9 +49,11 @@ local function tooltipCellScript_OnAction(self,info)
 end
 
 local function showGMTicket()
-	HelpFrame_ShowFrame(HELPFRAME_SUBMIT_TICKET)
-	if gmticket.caseIndex then
-		HelpBrowser:OpenTicket(gmticket.caseIndex)
+	if HelpFrame_ShowFrame then
+		HelpFrame_ShowFrame(HELPFRAME_SUBMIT_TICKET)
+		if gmticket.caseIndex then
+			HelpBrowser:OpenTicket(gmticket.caseIndex)
+		end
 	end
 end
 
@@ -323,11 +324,11 @@ function module.init()
 	end
 	menu = { --section 1
 		{name=CHARACTER_BUTTON,		iconName="Character-{class}",	func=function() securecall("ToggleCharacter", "PaperDollFrame") end },
-		{name=SPELLBOOK,			iconName="Spellbook",			click='SpellbookMicroButton',			disabled=IsBlizzCon(), taint=true},
+		{name=SPELLBOOK,			iconName="Spellbook",			click='SpellbookMicroButton',			taint=true},
 		{name=TALENTS,				iconName="Talents",				click='TalentsMicroButton',				disabled=function() return UnitLevel("player")<10 end, taint=true},
 		{name=ACHIEVEMENT_BUTTON,	iconName="Achievments",			click='AchievementMicroButton',			taint=true, hide=ns.IsClassicEraClient},
 		{name=QUESTLOG_BUTTON,		iconName="Questlog",			click='QuestLogMicroButton',			taint=true},
-		{name=LOOKINGFORGUILD,		iconName="LFGuild",				click='GuildMicroButton',				disabled=(IsTrialAccount() or IsBlizzCon()), get=lfg_get, taint=true},
+		{name=LOOKINGFORGUILD,		iconName="LFGuild",				click='GuildMicroButton',				disabled=IsTrialAccount(), get=lfg_get, taint=true},
 		{name=SOCIAL_BUTTON,		iconName="Friends",			func=function() securecall("ToggleFriendsFrame", 1) end,		disabled=IsTrialAccount()},
 
 		{name=GROUP_FINDER,			iconName="LFDungeon",		func=function() securecall("PVEFrame_ToggleFrame","GroupFinderFrame"); end, disabled=not canLFD, hide=ns.IsClassicEraClient},
@@ -371,11 +372,11 @@ function module.init()
 	end
 	if PlayerSpellsMicroButton then -- new Micro button bar
 		menu[3]["click"] = "PlayerSpellsMicroButton";
-		menu[3]["disabled"] = false;
+		menu[3]["disabled"] = nil;
 	end
 	if _G.ProfessionMicroButton then
 		-- replace spellbook
-		menu[2] = {name=TRADE_SKILLS,iconName='Professions',click='ProfessionMicroButton',disabled=IsBlizzCon(), taint=true};
+		menu[2] = {name=TRADE_SKILLS,iconName='Professions',click='ProfessionMicroButton', taint=true};
 	end
 	if _G.DELVES_LABEL then
 		local delvesDisabled = function()

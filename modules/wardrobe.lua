@@ -13,7 +13,7 @@ local ldbName, ttName, ttColumns, tt, module = name, name.."TT", 4
 local illusions,weapons = {0,0},{};
 local ctForm = C("green","%d")..C("gray","/")..C("dkyellow","%d");
 local pForm = C("ltgrey","%.1f");
-local session = nil;
+local session = {};
 local brokerValues = {
 	["_none"] = NONE.."/"..HIDE,
 	p = "<"..STATUS_TEXT_PERCENT..">".." "..L["+<Collected in this session>"],
@@ -98,10 +98,8 @@ local function updateBroker()
 	obj.text = #tmp>0 and table.concat(tmp,", ") or WARDROBE;
 end
 
-local function resetSessionCounter(x)
-	if not session then
-		session = {};
-	end
+local function resetSessionCounter(update_broker)
+	session.loaded = true
 	session.armor = {};
 	for k, v in pairs(TRANSMOG_SLOTS) do
 		if v.armorCategoryID then
@@ -128,7 +126,7 @@ local function resetSessionCounter(x)
 		illusions = count,
 		sets = (C_TransmogSets.GetFullBaseSetsCounts())
 	}
-	if x then
+	if update_broker then
 		updateBroker();
 	end
 end
@@ -275,7 +273,7 @@ function module.onevent(self,event,...)
 	if event=="BE_UPDATE_CFG" and ... and (...):find("^ClickOpt") then
 		ns.ClickOpts.update(name);
 	elseif ns.eventPlayerEnteredWorld then
-		if not session then
+		if not session.misc then
 			resetSessionCounter();
 		end
 		C_Timer.After(0.314,updateBroker);
