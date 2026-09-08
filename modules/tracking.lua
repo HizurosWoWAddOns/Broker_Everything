@@ -144,12 +144,16 @@ function module.onclick(self,button)
 	ns.EasyMenu:AddEntry({label=MINIMAP_TRACKING_NONE, checked=MiniMapTrackingDropDown_IsNoTrackingActive, func=C_Minimap.ClearAllTracking });
 	ns.EasyMenu:AddEntry({separator=true});
 
-	local hunterHeader,townHeader = false;
+	local hunterHeader,townHeader,resourceHeader = false,false,false;
+	local resourceSearches = {[43308]=true,[2383]=true,[2580]=true,[8387]=true,[8388]=true,[1256697]=true,[1263084]=true,[167924]=true,[167898]=true}
 	for id=1, count do
 		info = C_Minimap.GetTrackingInfo(id);
-		if info.subType==-1 then -- only show normal entries first in list
+		if info and resourceSearches[info.spellID] then
+			info.subType = -2
+		end
+		if info and info.subType==-1 then -- only show normal entries first in list
 			local entry={label=info.name, icon=info.texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};
-			if info.category=="spell" then
+			if info.type=="spell" then
 				entry.tCoordLeft = 0.0625;
 				entry.tCoordRight = 0.9;
 				entry.tCoordTop = 0.0625;
@@ -169,7 +173,6 @@ function module.onclick(self,button)
 				ns.EasyMenu:AddEntry({label=HUNTER_TRACKING_TEXT, title=true});
 				hunterHeader=true;
 			end
-
 			entry = {label=list[id].name, icon=list[id].texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};
 		elseif list[id].subType==(TOWNSFOLK_TRACKING or 2)  then
 			if not townHeader then
@@ -178,9 +181,16 @@ function module.onclick(self,button)
 				townHeader=true
 			end
 			entry = {label=list[id].name, icon=list[id].texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};
+		elseif list[id].subType==-2 then
+			if not resourceHeader then
+				ns.EasyMenu:AddEntry({separator=true});
+				ns.EasyMenu:AddEntry({label=L["Resources"], title=true});
+				resourceHeader = true
+			end
+			entry = {label=list[id].name, icon=list[id].texture, arg1=id, checked=trackingIsActive, func=trackingMenuOnClick};
 		end
 		if entry then
-			if info.type=="spell" then
+			if list[id].type=="spell" then
 				entry.tCoordLeft = 0.0625;
 				entry.tCoordRight = 0.9;
 				entry.tCoordTop = 0.0625;
