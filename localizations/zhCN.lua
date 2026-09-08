@@ -11,6 +11,8 @@ L["Torghast"]			= "托加斯特"
 L["DragonRacing"]		= "巨龙竞速"
 L["ExpansionFeatures"]	= "特色更新"
 L["Game Menu"] = "主菜单"
+L["ENABLE_DSP_EFFECTS"] = "死亡骑士语音"
+L["Resources"] = "资源"
 
 -- module speed
 L["npc_31238"] = "希拉·雪晨"

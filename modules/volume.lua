@@ -15,29 +15,6 @@ local VIDEO_VOLUME_TITLE = L["Video Volume"];
 local volume,cvars,updateBroker,vol = {},{};
 local GetCVar,SetCVar = GetCVar or C_CVar.GetCVar, SetCVar or C_CVar.SetCVar;
 
-if not ENABLE_DSP_EFFECTS then
-	if LOCALE_deDE then
-		L.ENABLE_DSP_EFFECTS = "Todesritterstimmen"
-	elseif LOCALE_esES or LOCALE_esMX then
-		L.ENABLE_DSP_EFFECTS = "Voces caballeros de la M."
-	elseif LOCALE_frFR then
-		L.ENABLE_DSP_EFFECTS = "Voix ch. de la mort"
-	elseif LOCALE_itIT then
-		L.ENABLE_DSP_EFFECTS = "Voci Cavalieri della Morte"
-	elseif LOCALE_koKR then
-		L.ENABLE_DSP_EFFECTS = "죽음의 기사 음성"
-	elseif LOCALE_ptBR or LOCALE_ptPT then
-		L.ENABLE_DSP_EFFECTS = "Vozes de CdM"
-	elseif LOCALE_ruRU then
-		L.ENABLE_DSP_EFFECTS = "Голоса рыцарей смерти"
-	elseif LOCALE_zhCN then
-		L.ENABLE_DSP_EFFECTS = "死亡骑士语音"
-	elseif LOCALE_zhTW then
-		L.ENABLE_DSP_EFFECTS = "死亡騎士語音"
-	else
-		L.ENABLE_DSP_EFFECTS = "Death Knight Voices"
-	end
-end
 
 -- register icon names and default files --
 -------------------------------------------

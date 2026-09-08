@@ -11,6 +11,8 @@ L["Torghast"]			= "Thanator"
 L["DragonRacing"]		= "Corrida de Dragões"
 L["ExpansionFeatures"]	= "Características da Expansão"
 L["Game Menu"] = "Menu do Jogo"
+L["ENABLE_DSP_EFFECTS"] = "Vozes de CdM"
+L["Resources"] = "Recursos"
 
 -- module speed
 L["npc_31238"] = "Hira Albaneve"

@@ -11,6 +11,8 @@ L["Torghast"]			= "Torgast"
 L["DragonRacing"]		= "Corsa dei Draghi"
 L["ExpansionFeatures"]	= "Contenuti specifici per espansioni"
 L["Game Menu"] = "Menu di gioco"
+L["ENABLE_DSP_EFFECTS"] = "Voci Cavalieri della Morte"
+L["Resources"] = "Risorse"
 
 -- module speed
 L["npc_31238"] = "Hira Albaneve"

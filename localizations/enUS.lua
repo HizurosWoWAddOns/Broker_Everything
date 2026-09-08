@@ -9,6 +9,8 @@ L["Torghast"]			="Torghast"
 L["DragonRacing"]		="Dragon Racing"
 L["ExpansionFeatures"]	="Expansion Features"
 L["Game Menu"] = "Game Menu"
+L["ENABLE_DSP_EFFECTS"] = "Death Knight Voices"
+L["Resources"] = "Resources"
 
 -- module speed
 L["npc_31238"] = "Hira Snowdawn"

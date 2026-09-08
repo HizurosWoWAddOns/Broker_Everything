@@ -11,6 +11,8 @@ L["Torghast"]			= "托加斯特"
 L["DragonRacing"]		= "飛龍競速"
 L["ExpansionFeatures"]	= "資料片特色"
 L["Game Menu"] = "遊戲選項"
+L["ENABLE_DSP_EFFECTS"] = "死亡騎士語音"
+L["Resources"] = "資源"
 
 -- module speed
 L["npc_31238"] = "席拉‧雪曦"
