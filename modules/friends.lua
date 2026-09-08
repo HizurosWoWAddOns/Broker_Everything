@@ -105,6 +105,59 @@ local function _status(afk,dnd)
 	return "";
 end
 
+local function battleTagColoring(tagName,tagIndex)
+	return C("ltblue",ns.scm(tagName))..C("ltgray","#"..ns.scm(tagIndex))
+end
+
+local function AddRealmInfo(data)
+	local realmName,region,timezone,_
+	_, realmName, _, _, data.realmLocale, _, region, timezone = ns.LRI:GetRealmInfo((data.realmName and data.realmName~="" and data.realmName) or data.realmID,ns.region);
+	if realmName then
+		if data.realmName=="" then
+			-- get realmName from realmInfo
+			data.realmName = realmName;
+		end
+		-- fix language code
+		if region=="EU" and data.realmLocale=="enUS" then
+			data.realmLocale = "enGB"; -- Great Britain
+		elseif region=="US" and timezone=="AEST" then
+			data.realmLocale = "enAU"; -- Australian
+		end
+	end
+end
+
+local function UpdateBNClientEntry(client)
+	local bnFriendAccInfo = client.bnFriendAccInfo
+	client.friendType="battlenet" -- required for tooltipLineScript_OnMouseUp
+	client.accountName = bnFriendAccInfo.accountName -- ChatFrame_SendBNetTell() and ChatFrame_SendTell() in tooltipLineScript_OnMouseUp()
+	client.note = bnFriendAccInfo.note -- createTooltip2()
+	client.customMessage = bnFriendAccInfo.customMessage -- createTooltip2()
+	client.customMessageTime = bnFriendAccInfo.customMessageTime -- createTooltip2()
+	client.battleTag = bnFriendAccInfo.battleTag -- AddBNFriendLine()
+	client.isBattleTagFriend = bnFriendAccInfo.isBattleTagFriend
+	client.isAFK = bnFriendAccInfo.isAFK
+	client.isDND = bnFriendAccInfo.isDND
+	if client.clientProgram=="WoW" then
+		if client.factionName then
+			local factionUpperCase = client.factionName:upper();
+			client.factionTexture = factionUpperCase -- createTooltip2()
+			client.factionLocale = _G["FACTION_"..factionUpperCase]; -- createTooltip2()
+		end
+		client.richPresence = client.richPresence or ""
+		if client.richPresence~="" then
+			local z,r = strsplit("-",client.richPresence)
+			z,r = z:trim(),r:trim()
+			if (client.realmName==nil or client.realmName=="") and r~="" then client.realmName = r end
+			if (client.areaName==nil or client.areaName=="") and z~="" then client.areaName = z end
+		end
+		AddRealmInfo(client)
+		if WOW_PROJECT_ID ~= client.wowProjectID then
+			-- add project name
+			client.wowProjectStr = "|cffffee00("..L["WoWProjectId"..client.wowProjectID]..")|r";
+		end
+	end
+end
+
 local function updateBroker()
 	local txt, numBNFriends, numOnlineBNFriends, IsBNetOnline,numFriends,friendsOnline  = {},0,0,BNConnected();
 
