@@ -4,6 +4,7 @@ local addonLabel = addon;
 local C, L, I = ns.LC.color, ns.L, ns.I;
 local setmetatable,type,rawget,tostring=setmetatable,type,rawget,tostring;
 local ipairs,pairs,wipe,strsplit,tremove=ipairs,pairs,wipe,strsplit,tremove;
+local blizOptions
 
 local dbDefaults,db = {
 	profile = {
@@ -721,8 +722,8 @@ function ns.RegisterOptions()
 	options.args.profiles.order=-1;
 
 	LibStub("AceConfig-3.0"):RegisterOptionsTable(addonLabel, options);
-	local opts = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonLabel);
-	LibStub("HizurosSharedTools").BlizzOptions_ExpandOnShow(opts);
+	blizOptions = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonLabel);
+	LibStub("HizurosSharedTools").BlizzOptions_ExpandOnShow(blizOptions);
 	LibStub("HizurosSharedTools").AddCredit(addon);
 
 	local goldColor = ns.profile.GeneralOptions.goldColor;
@@ -732,7 +733,7 @@ function ns.RegisterOptions()
 end
 
 function ns.ToggleBlizzOptionPanel()
-	Settings.OpenToCategory(opts)
+	Settings.OpenToCategory(blizOptions)
 end
 
 if AddonCompartmentFrame then
