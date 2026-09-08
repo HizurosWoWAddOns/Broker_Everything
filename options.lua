@@ -671,6 +671,7 @@ function buildCharDataOptions()
 		if charInfo and charInfo.name and charInfo.level then
 			local charName, realm = strsplit("%-",name_realm,2);
 			local lst = getRealmList(realm);
+			local label = C(charInfo.class,charName).. ns.factionIcon(charInfo.faction,16,16) .." | " .. C("dkyellow",realm).." | ".. C("ltgray",LEVEL.." "..charInfo.level);
 
 			lst[name_realm] = {
 				type = "group", order = order, inline=true,
@@ -685,10 +686,13 @@ function buildCharDataOptions()
 						type = "description", order = 11, width = "half",
 						name = calcDataSize,
 					},
-					del  = {type="execute", order = 14, width="half", name=DELETE, desc=label, disabled=(name_realm==ns.player.name_realm) },
+					del  = {
+						type="execute", order = 14, width="half",
+						name=DELETE, desc=label,
+						disabled=(name_realm==ns.player.name_realm)
+					},
 				}
 			};
-			local label = C(charInfo.class,charName).. ns.factionIcon(charInfo.faction,16,16) .." | " .. C("dkyellow",realm).." | ".. C("ltgray",LEVEL.." "..charInfo.level);
 			lstAll[name_realm] = {
 				type = "group", order = order, inline=true,
 				name = "",
