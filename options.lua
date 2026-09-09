@@ -515,12 +515,10 @@ function ns.Options_RegisterModule(modName)
 		-- add toggle to ModToggleTab
 		local modEnable = options.args.modEnable;
 		if mod.group then
-			local groupName = L[mod.group]
-			if not modEnable.args[groupName] then
-				modEnable.args[groupName] = {type="group", name=groupName, inline=true, args={}, order=-1}
-				--modEnable.args[groupName].args.header = {type="header",name=L[groupName], order=1};
+			if not modEnable.args[mod.group] then
+				modEnable.args[mod.group] = {type="group", name=C("ltblue",mod.group), inline=true, args={}, order=-1}
 			end
-			modEnable.args[groupName].args[modName] = {type="toggle",name=mod.name or L[modName],desc=L["ModDesc-"..modName],order=2};
+			modEnable.args[mod.group].args[modName] = {type="toggle",name=mod.name or L[modName],desc=L["ModDesc-"..modName],order=2};
 		else
 			modEnable.args[modName] = {type="toggle",name=mod.name or L[modName],desc=L["ModDesc-"..modName]};
 		end

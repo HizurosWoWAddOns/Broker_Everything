@@ -141,7 +141,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	group = "SocialGroup",
+	group = L["Social"],
 	events = {
 		"PLAYER_LOGIN",
 		"GUILD_ROSTER_UPDATE",

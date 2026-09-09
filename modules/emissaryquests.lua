@@ -383,7 +383,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	group = "ExpansionFeatures",
+	group = L["ExpansionFeatures"],
 	events = {
 		"VARIABLES_LOADED",
 		"QUEST_LOG_UPDATE"

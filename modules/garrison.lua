@@ -297,7 +297,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	group = "ExpansionFeatures",
+	group = L["ExpansionFeatures"],
 	name = GARRISON_LOCATION_TOOLTIP,
 	events = {
 		"VARIABLES_LOADED",

@@ -525,7 +525,7 @@ moduleC = {
 };
 
 moduleF = {
-	group = "ExpansionFeatures",
+	group = L["ExpansionFeatures"],
 	name = GARRISON_FOLLOWERS,
 	events = {"PLAYER_LOGIN"},
 	config_defaults = CopyTable(config_defaults),
@@ -533,7 +533,7 @@ moduleF = {
 };
 
 moduleS = {
-	group = "ExpansionFeatures",
+	group = L["ExpansionFeatures"],
 	name = GARRISON_SHIPYARD_FOLLOWERS,
 	events = {"PLAYER_LOGIN"},
 	config_defaults = CopyTable(config_defaults),

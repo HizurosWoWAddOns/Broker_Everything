@@ -610,7 +610,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	group = "ExpansionFeatures",
+	group = L["ExpansionFeatures"],
 	events = {
 		"PLAYER_LOGIN",
 		"ARTIFACT_XP_UPDATE",

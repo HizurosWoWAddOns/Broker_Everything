@@ -161,7 +161,7 @@ end
 -- module variables for registration --
 ---------------------------------------
 module = {
-	group = "ExpansionFeatures",
+	group = L["ExpansionFeatures"],
 	events = {
 		"PLAYER_LOGIN",
 		"PLAYER_REGEN_ENABLED",

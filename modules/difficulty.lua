@@ -247,6 +247,7 @@ end
 ---------------------------------------
 module = {
 	--icon_suffix = "",
+	group = L["Instances"],
 	events = {
 		"GROUP_ROSTER_UPDATE",
 		"PARTY_LEADER_CHANGED",

@@ -143,7 +143,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	group = "SocialGroup",
+	group = L["Social"],
 	name = CHAT_CHANNELS,
 	events = {
 		"PLAYER_ENTERING_WORLD",

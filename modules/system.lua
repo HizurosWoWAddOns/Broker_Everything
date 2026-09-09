@@ -7,7 +7,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local group = "SystemGroup"
+local group = SYSTEMOPTIONS_MENU or L["System"]
 local name_sys,name_fps,name_traf,name_lat,name_mem,name_rlm = "System","FPS","Traffic","Latency","Memory","Realm";
 -- L["Traffic"] L["Latency"] L["Memory"]
 -- L["ModDesc-System"] L["ModDesc-FPS"] L["ModDesc-Traffic"] L["ModDesc-Latency"] L["ModDesc-Memory"] L["ModDesc-Realm"]

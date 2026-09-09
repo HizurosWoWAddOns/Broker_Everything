@@ -849,7 +849,7 @@ end
 -- module functions and variables --
 ------------------------------------
 module = {
-	group = "SocialGroup",
+	group = L["Social"],
 	name = GUILD,
 	events = {
 		"PLAYER_LOGIN",
