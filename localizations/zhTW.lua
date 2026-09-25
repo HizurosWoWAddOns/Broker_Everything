@@ -13,6 +13,7 @@ L["ExpansionFeatures"]	= "資料片特色"
 L["Game Menu"] = "遊戲選項"
 L["ENABLE_DSP_EFFECTS"] = "死亡騎士語音"
 L["Resources"] = "資源"
+L["Upgrade"] = "升級"
 
 -- module speed
 L["npc_31238"] = "席拉‧雪曦"

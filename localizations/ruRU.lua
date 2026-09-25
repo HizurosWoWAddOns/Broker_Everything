@@ -13,6 +13,7 @@ L["ExpansionFeatures"]	= "Особый контент"
 L["Game Menu"] = "Главное меню"
 L["ENABLE_DSP_EFFECTS"] = "Голоса рыцарей смерти"
 L["Resources"] = "Ресурсы"
+L["Upgrade"] = "Улучшение"
 
 -- module speed
 L["npc_31238"] = "Хира Снежная Заря"

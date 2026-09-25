@@ -8,7 +8,7 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Equipment"; -- BAG_FILTER_EQUIPMENT L["ModDesc-Equipment"]
-local ttName, ttColumns, tt, module, equipPending = name.."TT", 3;
+local ttName, ttColumns, tt, module, equipPending = name.."TT", 4;
 local objLink,objColor,objType,objId,objData,objName,objInfo,objTooltip=1,2,3,4,6,5,7,8;
 local itemEnchant,itemGem1,itemGem2,itemGem3,itemGem4=1,2,3,4,5;
 local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice=1,2,3,4,5,6,7,8,9,10,11;
@@ -268,7 +268,10 @@ local function createTooltip(tt)
 			C("ltblue",NAME)
 		);
 		if ns.client_version>=6 then
-			tt:SetCell(l,3,C("ltblue",LEVEL));
+			if ns.profile[name].showUpgrades then
+				tt:SetCell(l,3,C("ltblue",L["Upgrade"]))
+			end
+			tt:SetCell(l,4,C("ltblue",LEVEL));
 		end
 
 		tt:AddSeparator();
@@ -364,9 +367,14 @@ local function createTooltip(tt)
 						tSetItem=C("yellow"," T"..tSetItems[obj.id]);
 					end
 
+					if slots[i]=="FINGER0" or slots[i]=="TRINKET0" or slots[i]=="MAINHAND" or slots[i]=="RANGED" then
+						tt:AddSeparator(1,1,1,1,.65)
+					end
+
 					local l = tt:AddLine(
 						C("ltyellow",_G[slots[i].."SLOT"]),
-						C("quality"..itemQuality,itemName) .. greenline .. tSetItem .. setName .. upgrades .. enchanted .. gems,
+						C("quality"..itemQuality,itemName) .. greenline .. tSetItem .. setName .. enchanted .. gems,
+						upgrades,
 						itemLevelStr
 					);
 
@@ -387,8 +395,9 @@ local function createTooltip(tt)
 		tt:AddSeparator();
 		if ns.client_version>=6 and GetAverageItemLevel then
 			local _, avgItemLevelEquipped = GetAverageItemLevel();
-			local l = tt:AddLine(nil,nil,C(GetILevelColor(avgItemLevelEquipped),"%.1f"):format(avgItemLevelEquipped));
+			local l = tt:AddLine();
 			tt:SetCell(l,1,C("ltblue",STAT_AVERAGE_ITEM_LEVEL),nil,nil,2);
+			tt:SetCell(l,3,C(GetILevelColor(avgItemLevelEquipped),"%.1f"):format(avgItemLevelEquipped), nil,nil,0)
 		end
 		if (miss) then
 			ns.AddSpannedLine(tt,C("red","#")..CHAT_HEADER_SUFFIX..C("ltgray",L["Item is not enchanted"]) .. " || " .. C("yellow","#")..CHAT_HEADER_SUFFIX..C("ltgray",L["Item has empty socket"]));
@@ -652,7 +661,7 @@ end
 
 function module.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
-	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "LEFT", "RIGHT"},{false},{self});
+	tt = ns.acquireTooltip({ttName, ttColumns, "LEFT", "LEFT", "RIGHT", "RIGHT"},{false},{self});
 	createTooltip(tt);
 end
 

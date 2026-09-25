@@ -11,6 +11,7 @@ L["ExpansionFeatures"]	="Expansion Features"
 L["Game Menu"] = "Game Menu"
 L["ENABLE_DSP_EFFECTS"] = "Death Knight Voices"
 L["Resources"] = "Resources"
+L["Upgrade"] = "Upgrade"
 
 -- module speed
 L["npc_31238"] = "Hira Snowdawn"

@@ -13,6 +13,7 @@ L["ExpansionFeatures"]	= "확장팩 특징"
 L["Game Menu"] = "게임 메뉴"
 L["ENABLE_DSP_EFFECTS"] = "죽음의 기사 음성"
 L["Resources"] = "자원"
+L["Upgrade"] = "강화"
 
 -- module speed
 L["npc_31238"] = "히라 스노우돈"

@@ -13,6 +13,7 @@ L["ExpansionFeatures"]	= "Características da Expansão"
 L["Game Menu"] = "Menu do Jogo"
 L["ENABLE_DSP_EFFECTS"] = "Vozes de CdM"
 L["Resources"] = "Recursos"
+L["Upgrade"] = "Aprimoramento"
 
 -- module speed
 L["npc_31238"] = "Hira Albaneve"

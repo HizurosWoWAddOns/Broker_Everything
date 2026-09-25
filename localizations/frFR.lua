@@ -13,6 +13,7 @@ L["ExpansionFeatures"]	= "Contenu d’extension"
 L["Game Menu"] = "Menu de jeu"
 L["ENABLE_DSP_EFFECTS"] = "Voix ch. de la mort"
 L["Resources"] = "Ressources"
+L["Upgrade"] = "Amélioration"
 
 -- module speed
 L["npc_31238"] = "Hira Aubeneige"

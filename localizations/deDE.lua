@@ -13,6 +13,7 @@ L["ExpansionFeatures"]	= "Erweiterungsfeatures"
 L["Game Menu"] = "Spielmenü"
 L["ENABLE_DSP_EFFECTS"] = "Todesritterstimmen"
 L["Resources"] = "Ressourcen"
+L["Upgrade"] = "Aufwertung"
 
 -- module speed
 L["npc_31238"] = "Hira Schneedämmerung"
