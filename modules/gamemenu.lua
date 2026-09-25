@@ -229,18 +229,21 @@ end
 function module.init()
 	ClassIconCoords = "16:16:0:-1"
 	if C_Texture and C_Texture.GetAtlasInfo then
-		local a = C_Texture.GetAtlasInfo("classicon-"..ns.player.class)
-		ClassIconFile = tostring(a.file)
-		ClassIconCoords = table.concat({
-			16,16,
-			0,-1,
-			a.width,a.height,
-			(a.width*a.leftTexCoord),
-			(a.width*a.rightTexCoord),
-			(a.height*a.topTexCoord),
-			(a.height*a.bottomTexCoord)
-		},":");
-	else
+		local a = C_Texture.GetAtlasInfo("classicon-"..ns.player.class:lower()) -- @blizz: why does this function return nil on classicon-monk on MoP classic client? thats makes no sense...
+		if a and a.file then
+			ClassIconFile = tostring(a.file)
+			ClassIconCoords = table.concat({
+				16,16,
+				0,-1,
+				a.width,a.height,
+				(a.width*a.leftTexCoord),
+				(a.width*a.rightTexCoord),
+				(a.height*a.topTexCoord),
+				(a.height*a.bottomTexCoord)
+			},":");
+		end
+	end
+	if not ClassIconFile then
 		ClassIconFile = "Interface\\Glues\\CharacterCreate\\UI-CharacterCreate-Classes"
 		local coords = {
 			["WARRIOR"] = "5:59:5:59",
