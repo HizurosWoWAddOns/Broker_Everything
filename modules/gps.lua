@@ -9,7 +9,7 @@ local C, L, I, _ = ns.LC.color, ns.L, ns.I
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
-local group = "GPSGroup";
+local group = L["GPS"].." / "..L["Location"];
 local name1 = "GPS"; -- L["GPS"] L["ModDesc-GPS"]
 local name2 = "Location"; -- L["Location"] L["ModDesc-Location"]
 local name3 = "ZoneText"; -- L["ZoneText"] L["ModDesc-ZoneText"]
