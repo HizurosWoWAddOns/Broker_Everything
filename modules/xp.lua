@@ -258,7 +258,8 @@ module = {
 		"PLAYER_XP_UPDATE",
 		"DISABLE_XP_GAIN",
 		"ENABLE_XP_GAIN",
-		"UNIT_INVENTORY_CHANGED"
+		"UNIT_INVENTORY_CHANGED",
+		"QUEST_LOG_UPDATE"
 	},
 	config_defaults = {
 		enabled = false,
@@ -417,6 +418,8 @@ function module.onevent(self,event,msg)
 	elseif event=="PLAYER_LOGOUT" then
 		ns.toon.xp.logoutTime = time();
 		ns.toon.xp.isResting = IsResting();
+	elseif event=="QUEST_LOG_UPDATE" then
+		updateBroker() -- for update chromie timeline info
 	elseif ns.eventPlayerEnteredWorld and not (event=="UNIT_INVENTORY_CHANGED" and msg~="player") and not triggerLocked then
 		triggerLocked = true
 		C_Timer.After(0.314159,OnEventUpdateXP);
