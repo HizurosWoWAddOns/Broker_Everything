@@ -16,7 +16,7 @@ local C_AddOns = C_AddOns or {}
 local UnitName,UnitSex,UnitClass,UnitFactionGroup=UnitName,UnitSex,UnitClass,UnitFactionGroup;
 local UnitRace,GetRealmName,GetLocale=UnitRace,GetRealmName,GetLocale;
 local InCombatLockdown,CreateFrame=InCombatLockdown,CreateFrame;
-local GetScreenHeight,GetMouseFocus=GetScreenHeight,GetMouseFocus;
+local GetScreenHeight=GetScreenHeight;
 local IsAltKeyDown=IsAltKeyDown;
 local IsShiftKeyDown,IsControlKeyDown=IsShiftKeyDown,IsControlKeyDown
 local GetInventoryItemLink,GetInventoryItemID=GetInventoryItemLink,GetInventoryItemID;
@@ -462,12 +462,7 @@ end
 function ns.hideTooltip(tooltip)
 	if type(tooltip)~="table" then return; end
 	if type(tooltip.secureButtons)=="table" then
-		local f
-		if GetMouseFoci then
-			f = GetMouseFoci()[1]
-		else
-			f = GetMouseFocus()
-		end
+		local f = GetMouseFoci()[1]
 		if f and not f:IsForbidden() and (not f:IsProtected() and InCombatLockdown()) and type(f.key)=="string" and type(tooltip.key)=="string" and f.key==tooltip.key then
 			return; -- why that? tooltip can't be closed in combat with securebuttons as child elements. results in addon_action_blocked...
 		end

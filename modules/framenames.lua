@@ -55,12 +55,9 @@ end
 -- function module.onevent(self,event,msg) end
 
 function module.onupdate()
-	local f;
-	if GetMouseFoci then
-		local objs = GetMouseFoci();
-		f = objs[1] or WorldFrame; -- WorldFrame no longer listed with GetMouseFoci
-	else
-		f = GetMouseFocus();
+	local objs = GetMouseFoci();
+	if not (objs and objs[1]) then
+		f = WorldFrame -- WorldFrame no longer listed with GetMouseFoci
 	end
 	if not f then return end
 	local mod = IsShiftKeyDown();
