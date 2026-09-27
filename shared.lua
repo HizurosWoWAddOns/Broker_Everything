@@ -161,7 +161,7 @@ ns.realms = {};
 ns.realm_shorts = {}
 do
 	local pattern = "^"..(ns.realm:gsub("(.)","[%1]*")).."$";
-	for i,v in ipairs(GetAutoCompleteRealms()) do
+	for i,v in ipairs((C_AutoComplete and C_AutoComplete.GetAutoCompleteRealms or GetAutoCompleteRealms)()) do
 		if v:match(pattern) then
 			ns.realm_short = v;
 		end
@@ -462,8 +462,8 @@ end
 function ns.hideTooltip(tooltip)
 	if type(tooltip)~="table" then return; end
 	if type(tooltip.secureButtons)=="table" then
-		local f = GetMouseFoci()[1]
-		if f and not f:IsForbidden() and (not f:IsProtected() and InCombatLockdown()) and type(f.key)=="string" and type(tooltip.key)=="string" and f.key==tooltip.key then
+		local f = GetMouseFoci()
+		if f and f[1] and not f[1]:IsForbidden() and (not f[1]:IsProtected() and InCombatLockdown()) and type(f[1].key)=="string" and type(tooltip.key)=="string" and f[1].key==tooltip.key then
 			return; -- why that? tooltip can't be closed in combat with securebuttons as child elements. results in addon_action_blocked...
 		end
 		ns.secureButton(false);
