@@ -11,9 +11,6 @@ local name = "Reputation"; -- REPUTATION L["ModDesc-Reputation"]
 local ttName, ttColumns, tt, module, createTooltip, updateBroker = name.."TT",6;
 
 local tinsert,tconcat,ipairs=tinsert,table.concat,ipairs;
-local GetFactionInfoByID = GetFactionInfoByID;
-local GetNumFactions,GetFactionInfo,GetFactionInfoByID = GetNumFactions,GetFactionInfo,GetFactionInfoByID;
-
 local bars,factions,sessionInfo,spacer,initReputationListTicker = {},{},{},"    ";
 local allinone = {faction=85000,friend=43000,bodyguard=31000,major=false};
 local bodyguards,paragonFactions = {[193]=1,[207]=1,[216]=1,[218]=1,[219]=1},{};
@@ -46,7 +43,7 @@ if not GetRGB then
 	end
 end
 
-local C_Reputation_GetFactionInfo,C_Reputation_GetFactionInfoByID
+local getFactionInfo
 do
 	-- faction to currency; for missing renown max level value from major faction info function
 	local faction2Currency = {
@@ -62,12 +59,13 @@ do
 		return a>0 and a or 1, b>0 and b or 1;
 	end
 
-	local function _GetFactionInfo(f,faction,extended)
+	function getFactionInfo(faction,extended)
 		faction = tonumber(faction)
 		if not (faction and faction>0) then
 			return;
 		end
-		local info = f(faction);
+
+		local info = ns.deprecated.C_Reputation.GetFactionDataByID(faction);
 
 		if info.factionID==nil then
 			-- there area 2 header entries without factionID. Misc and Inactive.
@@ -174,10 +172,6 @@ do
 
 		return info;
 	end
-
-	function C_Reputation_GetFactionInfoByID(faction_id)
-		return _GetFactionInfo(ns.deprecated.C_Reputation.GetFactionDataByID,faction_id,true);
-	end
 end
 
 local function initReputationList()
@@ -217,7 +211,7 @@ local function initReputationList()
 			end
 		end
 		round=round+1;
-	else
+	elseif initReputationListTicker then
 		-- collapse headers again
 		local collapsed = round==1 and collapsedL2 or collapsedL1;
 		if collapsed and #collapsed>0 then
@@ -237,7 +231,7 @@ end
 local function resetSession()
 	for factionID in ipairs(sessionInfo) do
 		sessionInfo[factionID]=nil;
-		C_Reputation_GetFactionInfoByID(factionID);
+		getFactionInfo(factionID,true);
 	end
 	updateBroker();
 end
@@ -262,7 +256,7 @@ function updateBroker()
 	local watchedFactionInfo = ns.deprecated.C_Reputation.GetWatchedFactionData()
 
 	if watchedFactionInfo then
-		info = C_Reputation_GetFactionInfoByID(watchedFactionInfo.factionID);
+		info = getFactionInfo(watchedFactionInfo.factionID,true);
 	end
 
 	if info then
@@ -487,7 +481,7 @@ function createTooltip(tt)
 					tt:SetLineScript(l,"OnMouseUp",toggleHeader,faction);
 				end
 			else
-				info = C_Reputation_GetFactionInfoByID(faction.factionID);
+				info = getFactionInfo(faction.factionID,true);
 			end
 			if info and info.name then
 				count = count + 1;
@@ -694,6 +688,10 @@ function module.onevent(self,event,arg1,...)
 		if ns.toon[name]==nil or (ns.toon[name] and ns.toon[name].headers==nil) then
 			ns.toon[name] = {headers={[-1]=true}};
 		end
+	end
+	if event=="ADDON_LOADED" and arg1=="ReputationGuide" then
+		round = 0 -- waiting for REP_Orig_ExpandFactionHeader function from ReputationGuide
+		return
 	end
 	if ns.eventPlayerEnteredWorld then
 		if ns.client_version >= 6 and not self.loadedBodyguards then
