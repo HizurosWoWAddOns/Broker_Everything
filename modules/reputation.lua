@@ -67,6 +67,10 @@ do
 
 		local info = ns.deprecated.C_Reputation.GetFactionDataByID(faction);
 
+		if not info then
+			return
+		end
+
 		if info.factionID==nil then
 			-- there area 2 header entries without factionID. Misc and Inactive.
 			info.factionID = missingFactionID;
