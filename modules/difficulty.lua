@@ -54,12 +54,17 @@ local instanceTypeInfo = {
 	raid =     {isRaid=true,         instanceTypeShort=L["InstaceTypeNameShortR"],   instanceType=RAID, instanceTypeColor="quality4"},
 	party =    {isDungeon=true,      instanceTypeShort=L["InstaceTypeNameShortD"],   instanceType=LFG_TYPE_DUNGEON, instanceTypeColor="quality3"},
 	szenario = {isSzenario=true,     instanceTypeShort=L["InstaceTypeNameShortSZ"],  instanceType=GUILD_CHALLENGE_TYPE4, instanceTypeColor="quality2"},
-	-- delves are instanceType szenario with difficultyID = 208...
-	delve =    {isDelve=true,        instanceTypeShort=L["InstaceTypeNameShortDlv"], instanceType=DELVE_LABEL, instanceTypeColor="quality3"},
 	arena =    {isArena=true,        instanceTypeShort=L["InstaceTypeNameShortA"],   instanceType=ARENA, instanceTypeColor="violet"},
 	pvp =      {isBattleground=true, instanceTypeShort=L["InstaceTypeNameShortBG"],  instanceType=BATTLEGROUND, instanceTypeColor="violet"},
 	world =    {isOpenWorld=true,    instanceTypeShort=L["InstaceTypeNameShortOW"],  instanceType=L["Open World"], instanceTypeColor="quality6"}
 }
+if DELVE_LABEL then
+	-- delves are instanceType szenario with difficultyID = 208...
+	instanceTypeInfo.delve =    {isDelve=true,        instanceTypeShort=L["InstaceTypeNameShortDlv"], instanceType=DELVE_LABEL, instanceTypeColor="quality3"}
+end
+if HOUSING_DASHBOARD_NEIGHBORHOOD_LABEL then
+	instanceTypeInfo.neighborhood = {instanceTypeShort=L["InstaceTypeNameShortNH"],  instanceType=HOUSING_DASHBOARD_NEIGHBORHOOD_LABEL:gsub(":",""), instanceTypeColor="quality2"}
+end
 
 local difficultyIDInfo = {
 	-- dungeons
@@ -163,7 +168,7 @@ local function GetInstanceInfoExtended()
 	_, info.groupType, info.isHeroic, info.isChallengeMode, info.displayHeroic, info.displayMystic, info.toggleDifficultyID, info.isLFR, info.minPlayers, _ = GetDifficultyInfo(info.difficultyID);
 
 	-- custom infos
-	local custom = CopyTable((info.difficultyID==208 and instanceTypeInfo.delve) or instanceTypeInfo[info.instanceType])
+	local custom = CopyTable((info.difficultyID==208 and instanceTypeInfo.delve) or instanceTypeInfo[info.instanceType] or instanceTypeInfo.world)
 	Mixin(custom,difficultyIDInfo[info.difficultyID] or difficultyIDInfo[-1])
 	info.custom = custom
 
