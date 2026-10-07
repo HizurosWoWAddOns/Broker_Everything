@@ -66,9 +66,13 @@ if HOUSING_DASHBOARD_NEIGHBORHOOD_LABEL then
 	instanceTypeInfo.neighborhood = {instanceTypeShort=L["InstaceTypeNameShortNH"],  instanceType=HOUSING_DASHBOARD_NEIGHBORHOOD_LABEL:gsub(":",""), instanceTypeColor="quality2"}
 end
 
+if LAIR then
+	instanceTypeInfo.lair = {instanceTypeShort=L["InstaceTypeNameShortL"],  instanceType=LAIR, instanceTypeColor="quality4"}
+end
+
 local difficultyIDInfo = {
 	-- dungeons
-	[1] ={diffName=PLAYER_DIFFICULTY1,diffNameShort=L["DifficultyNormalShort"],diffColor="quality2",diffType=LFG_TYPE_DUNGEON,},
+	[1] ={diffName=PLAYER_DIFFICULTY1,diffNameShort=L["DifficultyNormalShort"],diffColor="quality2",diffType=LFG_TYPE_DUNGEON},
 	[2] ={diffName=PLAYER_DIFFICULTY2,diffNameShort=L["DifficultyHeroicShort"],diffColor="quality3",diffType=LFG_TYPE_DUNGEON},
 	[8] ={diffName=PLAYER_DIFFICULTY5,diffNameShort=L["DifficultyChallengeShort"],diffColor="quality4",diffType=LFG_TYPE_DUNGEON},
 	[23]={diffName=PLAYER_DIFFICULTY6,diffNameShort=L["DifficultyMythicShort"],diffColor="quality4",diffType=LFG_TYPE_DUNGEON},
@@ -83,13 +87,15 @@ local difficultyIDInfo = {
 	-- 5 = 3
 	-- 6 = 4
 	-- scenario {GUILD_CHALLENGE_TYPE4}
-	-- delves {}
+	-- delves
+	-- lairs
 	[-1] ={diffName="",diffNameShort=STRING_SCHOOL_CHAOS,diffColor="quality5",diffType=""}, -- unknown
 }
 
-difficultyIDInfo[5] = difficultyIDInfo[3]
-difficultyIDInfo[6] = difficultyIDInfo[4]
-difficultyIDInfo[9] = difficultyIDInfo[14]
+difficultyIDInfo[5] = difficultyIDInfo[3] -- old dungeons
+difficultyIDInfo[6] = difficultyIDInfo[4] -- old dungeons
+difficultyIDInfo[9] = difficultyIDInfo[14] -- old raids
+difficultyIDInfo[250] = difficultyIDInfo[14] -- lairs
 
 local specials = {
 	{rid=9,cid=5,legacy={long=RAID_DIFFICULTY_40PLAYER,short="40",color="quality4"}},
@@ -166,6 +172,10 @@ local function GetInstanceInfoExtended()
 	local info,_ = {customInfo={}}
 	info.name, info.instanceType, info.difficultyID, info.difficultyName, info.maxPlayers, info.dynamicDifficulty, info.isDynamic, info.instanceMapID, info.instanceGroupSize, info.LfgDungeonID = GetInstanceInfo();
 	_, info.groupType, info.isHeroic, info.isChallengeMode, info.displayHeroic, info.displayMystic, info.toggleDifficultyID, info.isLFR, info.minPlayers, _ = GetDifficultyInfo(info.difficultyID);
+
+	if info.difficultyID==250 then
+		info.difficultyName=LAIR
+	end
 
 	-- custom infos
 	local custom = CopyTable((info.difficultyID==208 and instanceTypeInfo.delve) or instanceTypeInfo[info.instanceType] or instanceTypeInfo.world)
@@ -245,11 +255,13 @@ local function updateBroker()
 		currentModeSettings = {}
 		-- list current difficulty modes
 		for i,id in ipairs({ GetDungeonDifficultyID(), GetRaidDifficultyID(), GetLegacyRaidDifficultyID() }) do
-			local info = difficultyIDInfo[id];
-			if info then
-				tinsert(currentModeSettings,C(info.diffColor,info.diffNameShort));
-			else
-				ns:debug("<difficultyIDInfo>",i,id, "missing?")
+			if id~=0 then -- new return value in lairs is 0
+				local info = difficultyIDInfo[id];
+				if info then
+					tinsert(currentModeSettings,C(info.diffColor,info.diffNameShort));
+				else
+					ns:debug("<difficultyIDInfo>",i,id, "missing?")
+				end
 			end
 		end
 		if #currentModeSettings>0 then
