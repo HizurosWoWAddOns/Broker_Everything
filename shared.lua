@@ -715,6 +715,7 @@ do
 	local function invert(a,b)
 		return a>b;
 	end
+
 	---@param t table
 	---@param f? function|true
 	function ns.pairsByKeys(t, f)
@@ -765,77 +766,29 @@ do
 		return table.concat(r,delim1);
 	end
 
-	local function sortRealm(a,b)
-		if a==true then
-			return true;
-		end
-		return
-	end
-
 	---@param modName string module name
 	---@param opts table
 	---@return function iterationFunction
 	function ns.pairsToons(modName,opts)
-		-- opts = {currentFirst=<bool>,currentHide=<bool>,forceSameRealm=<bool>,forceSameFaction=<bool>,realmHeader=<bool>}
-		opts.realmHeader=true
-		local t = {
-			realms = {},
-			realm_toons = {},
-			toons = {}
-		};
+		-- opts = {currentFirst=<bool>,currentHide=<bool>,forceSameRealm=<bool>,forceSameFaction=<bool>}
+		local t = {};
 		for index, toonNameRealm in ipairs(ns.toonsDB.order) do
 			local name,realm = strsplit("-",toonNameRealm,2);
 			local forceRealm = (opts.forceSameRealm==true and realm==ns.realm);
 			local forceFaction = (opts.forceSameFaction==true and ns.player.faction==ns.toonsDB[toonNameRealm].faction);
 			local filerByLevel = ns.toonsDB[toonNameRealm].level<=ns.profile.GeneralOptions.charListFilterLvl
-			if not (opts.currentHide==true and toonNameRealm==ns.player.name_realm) and ns.showThisChar(modName,realm,ns.toonsDB[toonNameRealm].faction,forceRealm,forceFaction) and not filerByLevel then
-				if not t.realm_toons[realm] then
-					t.realm_toons[realm] = {}
-				end
+			if not (opts.currentHide==true and toonNameRealm==ns.player.name_realm) and ns.showThisChar(modName,realm,ns.toonsDB[toonNameRealm].faction,forceRealm,forceFaction,toonNameRealm) and not filerByLevel then
 				if opts.currentFirst==true and toonNameRealm==ns.player.name_realm then
-					tinsert(t.realm_toons[realm],1,index)
-					tinsert(t.toons,1,index);
+					tinsert(t,1,index);
 				else
-					tinsert(t.realm_toons[realm],index)
-					tinsert(t.toons,index);
+					tinsert(t,index);
 				end
-				t.realms[realm] = realm==ns.realm;
 			end
 		end
-		if opts.realmHeader then
-			local r,r2 = {},{}
-			-- realm names (key) prepare for sorting
-			for k,v in pairs(t.realms)do
-				tinsert(r,k)
-			end
-			-- sorting realm names
-			table.sort(r)
-			-- copy entries and move current realm to first place in new table
-			for i, v in pairs(r)do
-				if t.realms[v] then
-					tinsert(r,1,tremove(r,i))
-					break;
-				end
-			end
-			local T = {}
-			-- merge realm table and prev. separated toons per realm into a new table
-			for _, v in ipairs(r)do
-				tinsert(T,v)
-				for _,V in ipairs(t.realm_toons[v])do
-					tinsert(T,V)
-				end
-			end
-			t = T
-		else
-			t = t.toons
-		end
-		local i=1;
+		local i=0;
 		local function iter()
-			local index = t[i];
 			i=i+1;
-			if type(index)=="string" then
-				return 0, false, false, index
-			end
+			local index = t[i];
 			if ns.toonsDB.order[index]==nil then
 				return nil;
 			end
