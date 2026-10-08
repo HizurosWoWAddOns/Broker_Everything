@@ -43,61 +43,63 @@ ns.HST.RegisterPrint(ns,addon,"BE");
   -------------
 --- Libraries ---
   -------------
-ns.LDB = LibStub("LibDataBroker-1.1");
-ns.LQT = LibStub("LibQTip-1.0");
-ns.LDBI = LibStub("LibDBIcon-1.0");
-ns.LSM = LibStub("LibSharedMedia-3.0");
-ns.LT = LibStub("LibTime-1.0");
-ns.LC = LibStub("LibColors-1.0");
-ns.LRI = LibStub("LibRealmInfo");
+do
+	ns.LDB = LibStub("LibDataBroker-1.1");
+	ns.LQT = LibStub("LibQTip-1.0");
+	ns.LDBI = LibStub("LibDBIcon-1.0");
+	ns.LSM = LibStub("LibSharedMedia-3.0");
+	ns.LT = LibStub("LibTime-1.0");
+	ns.LC = LibStub("LibColors-1.0");
+	ns.LRI = LibStub("LibRealmInfo");
 
 
--- broker_everything colors
-ns.LC.colorset({
-	["ltyellow"]	= "fff569",
-	["dkyellow"]	= "ffcc00",
-	["dkyellow2"]	= "bbbb00",
+	-- broker_everything colors
+	ns.LC.colorset({
+		["ltyellow"]	= "fff569",
+		["dkyellow"]	= "ffcc00",
+		["dkyellow2"]	= "bbbb00",
 
-	["ltorange"]	= "ff9d6a",
-	["dkorange"]	= "905d0a",
-	["dkorange2"]	= "c06d0a",
+		["ltorange"]	= "ff9d6a",
+		["dkorange"]	= "905d0a",
+		["dkorange2"]	= "c06d0a",
 
-	--["dkred"]		= "c41f3b",
-	["ltred"]		= "ff8080",
-	["dkred"]		= "800000",
+		--["dkred"]		= "c41f3b",
+		["ltred"]		= "ff8080",
+		["dkred"]		= "800000",
 
-	["violet"]		= "f000f0",
-	["ltviolet"]	= "f060f0",
-	["dkviolet"]	= "800080",
+		["violet"]		= "f000f0",
+		["ltviolet"]	= "f060f0",
+		["dkviolet"]	= "800080",
 
-	["ltblue"]		= "69ccf0",
-	["dkblue"]		= "000088",
-	["dailyblue"]	= "00b3ff",
+		["ltblue"]		= "69ccf0",
+		["dkblue"]		= "000088",
+		["dailyblue"]	= "00b3ff",
 
-	["ltcyan"]		= "80ffff",
-	["dkcyan"]		= "008080",
+		["ltcyan"]		= "80ffff",
+		["dkcyan"]		= "008080",
 
-	["ltgreen"]		= "80ff80",
-	["dkgreen"]		= "00aa00",
+		["ltgreen"]		= "80ff80",
+		["dkgreen"]		= "00aa00",
 
-	["dkgray"]		= "404040",
-	["gray2"]		= "A0A0A0",
-	["ltgray"]		= "b0b0b0",
+		["dkgray"]		= "404040",
+		["gray2"]		= "A0A0A0",
+		["ltgray"]		= "b0b0b0",
 
-	["gold"]		= "ffd700",
-	["silver"]		= "eeeeef",
-	["copper"]		= "f0a55f",
+		["gold"]		= "ffd700",
+		["silver"]		= "eeeeef",
+		["copper"]		= "f0a55f",
 
-	["unknown"]		= "ee0000",
-});
+		["unknown"]		= "ee0000",
+	});
 
-ns.color = setmetatable({},{
-	__index = function(t,k)
-		local c = ns.LC.color(k,"colortable");
-		rawset(t,k,c)
-		return c;
-	end
-})
+	ns.color = setmetatable({},{
+		__index = function(t,k)
+			local c = ns.LC.color(k,"colortable");
+			rawset(t,k,c)
+			return c;
+		end
+	})
+end
 
 
   ---------------------------------------
@@ -110,38 +112,51 @@ ns.locale = GetLocale();
 ns.ui = {size={UIParent:GetSize()},center={UIParent:GetCenter()}};
 
 
-  -----------------------
--- Client version checks --
-  -----------------------
+  -------------------------
+--- Client version checks ---
+  -------------------------
 do
 	local version,build = GetBuildInfo();
 	local v1,v2,v3 = strsplit(".",version or "0.0.0");
 	ns.client_version = tonumber(v1.."."..v2..v3..build) or 0;
-end
 
----@return boolean
-function ns.IsRetailClient()
-	return WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
-end
+	-- https://warcraft.wiki.gg/wiki/WOW_PROJECT_ID
+	local WOW_PROJECT_ID=WOW_PROJECT_ID
+	local WOW_PROJECT_MAINLINE=WOW_PROJECT_MAINLINE
+	local WOW_PROJECT_CLASSIC=WOW_PROJECT_CLASSIC
+	local WOW_PROJECT_CAMELOT=WOW_PROJECT_CAMELOT or 18
 
----@return boolean
-function ns.IsClassicClient() -- for AceOptions
-	return not (WOW_PROJECT_ID==WOW_PROJECT_MAINLINE);
-end
+	if WOW_PROJECT_MAINLINE==18 then
+		WOW_PROJECT_MAINLINE=nil
+	elseif WOW_PROJECT_ID==WOW_PROJECT_MAINLINE and ns.client_version < 2 then
+		WOW_PROJECT_ID = WOW_PROJECT_CAMELOT
+		WOW_PROJECT_MAINLINE = nil
+	end
 
----@return boolean
-function ns.IsClassicEraClient()
-	return WOW_PROJECT_ID==WOW_PROJECT_CLASSIC;
-end
+	---@return boolean
+	function ns.IsRetailClient()
+		return WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
+	end
 
----@return boolean
-function ns.IsClassicWotlkClient()
-	return WOW_PROJECT_ID==WOW_PROJECT_WRATH_CLASSIC;
-end
+	---@return boolean
+	function ns.IsForverClient()
+		return WOW_PROJECT_ID==WOW_PROJECT_CAMELOT;
+	end
 
----@return boolean
-function ns.IsNotClassicClient() -- for AceOptions
-	return WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
+	---@return boolean
+	function ns.IsClassicClient() -- for AceOptions
+		return not (WOW_PROJECT_ID==WOW_PROJECT_MAINLINE) or ns.IsForverClient();
+	end
+
+	---@return boolean
+	function ns.IsClassicEraClient() -- for AceOptions
+		return WOW_PROJECT_ID==WOW_PROJECT_CLASSIC or ns.IsForverClient();
+	end
+
+	---@return boolean
+	function ns.IsNotClassicClient() -- for AceOptions
+		return WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
+	end
 end
 
 
@@ -181,131 +196,133 @@ end
   ---------------------------------------
 --- player and twinks dependent data    ---
   ---------------------------------------
----@param name string
----@return string name
-function ns.stripRealm(name)
-	name = name:gsub(" ","");
-	name = name:gsub("%-","");
-	return name;
-end
-ns.region = ns.LRI:GetCurrentRegion() or ({"US","KR","EU","TW","CN"})[GetCurrentRegion()];
-ns.realm = GetRealmName();
-ns.realms = {};
-ns.realm_shorts = {}
 do
-	local pattern = "^"..(ns.realm:gsub("(.)","[%1]*")).."$";
-	for i,v in ipairs((C_AutoComplete and C_AutoComplete.GetAutoCompleteRealms or GetAutoCompleteRealms)()) do
-		if v:match(pattern) then
-			ns.realm_short = v;
-		end
+	---@param name string
+	---@return string name
+	function ns.stripRealm(name)
+		name = name:gsub(" ","");
+		name = name:gsub("%-","");
+		return name;
 	end
-	if not ns.realm_short then
-		ns.realm_short = ns.realm:gsub(" ",""):gsub("%-","");
-	end
-
-	local realms = {}
-	local _,_,_,_,_,_,_,_,ids = ns.LRI:GetRealmInfo(ns.realm,ns.region);
-	if type(ids)=="table" then
-		for i=1, #ids do
-			local _,name,apiName = ns.LRI:GetRealmInfoByID(ids[i]);
-			if type(name)=="string" and type(apiName)=="string" then
-				realms[name] = apiName;
-				if apiName~=name then
-					ns.realm_shorts[apiName] = name
-				end
+	ns.region = ns.LRI:GetCurrentRegion() or ({"US","KR","EU","TW","CN"})[GetCurrentRegion()];
+	ns.realm = GetRealmName();
+	ns.realms = {};
+	ns.realm_shorts = {}
+	do
+		local pattern = "^"..(ns.realm:gsub("(.)","[%1]*")).."$";
+		for i,v in ipairs((C_AutoComplete and C_AutoComplete.GetAutoCompleteRealms or GetAutoCompleteRealms)()) do
+			if v:match(pattern) then
+				ns.realm_short = v;
 			end
 		end
-	else
-		realms[ns.realm] = ns.realm_short;
-		if ns.realm~=ns.realm_short then
-			ns.realm_shorts[ns.realm_short] = ns.realm;
+		if not ns.realm_short then
+			ns.realm_short = ns.realm:gsub(" ",""):gsub("%-","");
 		end
-	end
-	ns.realms = realms;
-end
 
-ns.realmLocale = setmetatable({},{
-	__index = function(t,k)
-		local _,name,apiName,_,locale = ns.LRI:GetRealmInfo(k)
-		if name then
-			rawset(t,k,locale);
-			return locale;
-		end
-		return false;
-	end
-})
-
-ns.player = {
-	name = UnitName("player"),
-	female = UnitSex("player")==3,
-};
-ns.player.name_realm = ns.player.name.."-"..ns.realm;
-ns.player.name_realm_short = ns.player.name.."-"..ns.realm_short;
-_, ns.player.class,ns.player.classId = UnitClass("player");
-ns.player.faction,ns.player.factionL  = UnitFactionGroup("player");
-L[ns.player.faction] = ns.player.factionL;
-ns.player.classLocale = ns.player.female and _G["LOCALIZED_CLASS_NAMES_FEMALE"][ns.player.class] or _G["LOCALIZED_CLASS_NAMES_MALE"][ns.player.class];
-ns.player.raceLocale,ns.player.race,ns.player.raceIndex = UnitRace("player");
-ns.LC.colorset("suffix",ns.LC.colorset[ns.player.class:lower()]);
-
----@param name string
----@return string name
-function ns.realmCheckOrAppend(name)
-	if not name:find("-") then
-		name = name.."-"..ns.realm_short;
-	end
-	return name;
-end
-
----@param modName string module name
----@param realm string realm name
----@param faction string faction name
----@param forceFaction boolean
----@return boolean
-function ns.showThisChar(modName,realm,faction,forceRealm,forceFaction)
-	local result
-
-	if not (ns.profile[modName].showAllFactions or ns.player.faction==faction or forceFaction) then
-		return false;
-	end
-	return forceRealm
-		or (ns.profile[modName].showCharsFrom=="1" and realm==ns.realm) -- same realm
-		or (ns.profile[modName].showCharsFrom=="2" and ns.realms[realm]~=false) -- connected realms
-		or (ns.profile[modName].showCharsFrom=="3" and ns.realmLocale[realm]==ns.locale) -- same language
-		or (ns.profile[modName].showCharsFrom=="4") -- all realms; was missing... Oops :-)
-		or false;
-end
-
----@param modName string module name
----@param name string player name
----@param color string color name or color code
----@param prepDash boolean prepend dash
----@return string
-function ns.showRealmName(modName,name,color,prepDash)
-	if not (ns.realm_short==name or ns.realm==name) then
-		local Color = color and ns.LC.color(color,"colortable") or ns.color.dkyellow;
-		if ns.profile[modName].showRealmNames then
-			if type(name)=="string" and name:len()>0 then
-				local _,_name = ns.LRI:GetRealmInfo(name,ns.region);
-				if _name then
-					return (prepDash~=false and ns.color.white:wrapText(" - "))..Color:wrapText(ns.scm(name));
+		local realms = {}
+		local _,_,_,_,_,_,_,_,ids = ns.LRI:GetRealmInfo(ns.realm,ns.region);
+		if type(ids)=="table" then
+			for i=1, #ids do
+				local _,name,apiName = ns.LRI:GetRealmInfoByID(ids[i]);
+				if type(name)=="string" and type(apiName)=="string" then
+					realms[name] = apiName;
+					if apiName~=name then
+						ns.realm_shorts[apiName] = name
+					end
 				end
 			end
 		else
-			return Color:wrapText(" *");
+			realms[ns.realm] = ns.realm_short;
+			if ns.realm~=ns.realm_short then
+				ns.realm_shorts[ns.realm_short] = ns.realm;
+			end
 		end
+		ns.realms = realms;
 	end
-	return "";
-end
 
----@param faction string
----@param w string|number
----@param h string|number
----@param prependSpace boolean
----@return string
-function ns.factionIcon(faction,w,h,prependSpace)
-	w,h = w or 16,h or 16;
-	return faction~="Neutral" and (prependSpace and " " or "").."|TInterface\\PVPFrame\\PVP-Currency-"..faction..":"..w..":"..h..":0:0:32:32:2:30:2:30|t" or ""
+	ns.realmLocale = setmetatable({},{
+		__index = function(t,k)
+			local _,name,apiName,_,locale = ns.LRI:GetRealmInfo(k)
+			if name then
+				rawset(t,k,locale);
+				return locale;
+			end
+			return false;
+		end
+	})
+
+	ns.player = {
+		name = UnitName("player"),
+		female = UnitSex("player")==3,
+	};
+	ns.player.name_realm = ns.player.name.."-"..ns.realm;
+	ns.player.name_realm_short = ns.player.name.."-"..ns.realm_short;
+	_, ns.player.class,ns.player.classId = UnitClass("player");
+	ns.player.faction,ns.player.factionL  = UnitFactionGroup("player");
+	L[ns.player.faction] = ns.player.factionL;
+	ns.player.classLocale = ns.player.female and _G["LOCALIZED_CLASS_NAMES_FEMALE"][ns.player.class] or _G["LOCALIZED_CLASS_NAMES_MALE"][ns.player.class];
+	ns.player.raceLocale,ns.player.race,ns.player.raceIndex = UnitRace("player");
+	ns.LC.colorset("suffix",ns.LC.colorset[ns.player.class:lower()]);
+
+	---@param name string
+	---@return string name
+	function ns.realmCheckOrAppend(name)
+		if not name:find("-") then
+			name = name.."-"..ns.realm_short;
+		end
+		return name;
+	end
+
+	---@param modName string module name
+	---@param realm string realm name
+	---@param faction string faction name
+	---@param forceFaction boolean
+	---@return boolean
+	function ns.showThisChar(modName,realm,faction,forceRealm,forceFaction)
+		local result
+
+		if not (ns.profile[modName].showAllFactions or ns.player.faction==faction or forceFaction) then
+			return false;
+		end
+		return forceRealm
+			or (ns.profile[modName].showCharsFrom=="1" and realm==ns.realm) -- same realm
+			or (ns.profile[modName].showCharsFrom=="2" and ns.realms[realm]~=false) -- connected realms
+			or (ns.profile[modName].showCharsFrom=="3" and ns.realmLocale[realm]==ns.locale) -- same language
+			or (ns.profile[modName].showCharsFrom=="4") -- all realms; was missing... Oops :-)
+			or false;
+	end
+
+	---@param modName string module name
+	---@param name string player name
+	---@param color string color name or color code
+	---@param prepDash boolean prepend dash
+	---@return string
+	function ns.showRealmName(modName,name,color,prepDash)
+		if not (ns.realm_short==name or ns.realm==name) then
+			local Color = color and ns.LC.color(color,"colortable") or ns.color.dkyellow;
+			if ns.profile[modName].showRealmNames then
+				if type(name)=="string" and name:len()>0 then
+					local _,_name = ns.LRI:GetRealmInfo(name,ns.region);
+					if _name then
+						return (prepDash~=false and ns.color.white:wrapText(" - "))..Color:wrapText(ns.scm(name));
+					end
+				end
+			else
+				return Color:wrapText(" *");
+			end
+		end
+		return "";
+	end
+
+	---@param faction string
+	---@param w string|number
+	---@param h string|number
+	---@param prependSpace boolean
+	---@return string
+	function ns.factionIcon(faction,w,h,prependSpace)
+		w,h = w or 16,h or 16;
+		return faction~="Neutral" and (prependSpace and " " or "").."|TInterface\\PVPFrame\\PVP-Currency-"..faction..":"..w..":"..h..":0:0:32:32:2:30:2:30|t" or ""
+	end
 end
 
 
@@ -336,252 +353,254 @@ end
 
 
   ---------------------------------------
---- Helpful function for extra tooltips ---
+--- Tooltips functions                  ---
   ---------------------------------------
-local brokerDragHooks, openTooltip, hiddenMouseOver = {};
+do
+	local brokerDragHooks, openTooltip, hiddenMouseOver = {};
 
----@param frame frame
----@param direction string
----@param parentTT frame
----@return string point
----@return frame|string
----@return string relativePoint
----@return number x
----@return number y
-function ns.GetTipAnchor(frame, direction, parentTT)
-	local f,u,i,H,h,v,V = {frame:GetCenter()},{},0;
-	if f[1]==nil or ns.ui.center[1]==nil then
-		return "LEFT", frame, "LEFT", 0, 0;
-	end
-	h = (f[1]>ns.ui.center[1] and "RIGHT") or "LEFT";
-	v = (f[2]>ns.ui.center[2] and "TOP") or "BOTTOM";
-	u[4]=ns.ui.center[1]/4; u[5]=ns.ui.center[2]/4; u[6]=(ns.ui.center[1]*2)-u[4]; u[7]=(ns.ui.center[2]*2)-u[5];
-	H = (f[1]>u[6] and "RIGHT") or (f[1]<u[4] and "LEFT") or "";
-	V = (f[2]>u[7] and "TOP") or (f[2]<u[5] and "BOTTOM") or "";
-	if parentTT then
-		local p,ph,pv,pH,pV = {parentTT:GetCenter()};
-		ph,pv = (p[1]>ns.ui.center[1] and "RIGHT") or "LEFT", (p[2]>ns.ui.center[2] and "TOP") or "BOTTOM";
-		pH = (p[1]>u[6] and "RIGHT") or (p[1]<u[4] and "LEFT") or "";
-		pV = (p[2]>u[7] and "TOP") or (p[2]<u[5] and "BOTTOM") or "";
-		if direction=="horizontal" then
-			return pV..ph, parentTT, pV..(ph=="LEFT" and "RIGHT" or "LEFT"), ph=="LEFT" and i or -i, 0;
+	---@param frame frame
+	---@param direction string
+	---@param parentTT frame
+	---@return string point
+	---@return frame|string
+	---@return string relativePoint
+	---@return number x
+	---@return number y
+	function ns.GetTipAnchor(frame, direction, parentTT)
+		local f,u,i,H,h,v,V = {frame:GetCenter()},{},0;
+		if f[1]==nil or ns.ui.center[1]==nil then
+			return "LEFT", frame, "LEFT", 0, 0;
 		end
-		return pv..pH, parentTT, (pv=="TOP" and "BOTTOM" or "TOP")..pH, 0, pv=="TOP" and i or -i;
-	else
-		if direction=="horizontal" then
-			return V..h, frame, V..(h=="LEFT" and "RIGHT" or "LEFT"), h=="LEFT" and i or -i, 0;
+		h = (f[1]>ns.ui.center[1] and "RIGHT") or "LEFT";
+		v = (f[2]>ns.ui.center[2] and "TOP") or "BOTTOM";
+		u[4]=ns.ui.center[1]/4; u[5]=ns.ui.center[2]/4; u[6]=(ns.ui.center[1]*2)-u[4]; u[7]=(ns.ui.center[2]*2)-u[5];
+		H = (f[1]>u[6] and "RIGHT") or (f[1]<u[4] and "LEFT") or "";
+		V = (f[2]>u[7] and "TOP") or (f[2]<u[5] and "BOTTOM") or "";
+		if parentTT then
+			local p,ph,pv,pH,pV = {parentTT:GetCenter()};
+			ph,pv = (p[1]>ns.ui.center[1] and "RIGHT") or "LEFT", (p[2]>ns.ui.center[2] and "TOP") or "BOTTOM";
+			pH = (p[1]>u[6] and "RIGHT") or (p[1]<u[4] and "LEFT") or "";
+			pV = (p[2]>u[7] and "TOP") or (p[2]<u[5] and "BOTTOM") or "";
+			if direction=="horizontal" then
+				return pV..ph, parentTT, pV..(ph=="LEFT" and "RIGHT" or "LEFT"), ph=="LEFT" and i or -i, 0;
+			end
+			return pv..pH, parentTT, (pv=="TOP" and "BOTTOM" or "TOP")..pH, 0, pv=="TOP" and i or -i;
+		else
+			if direction=="horizontal" then
+				return V..h, frame, V..(h=="LEFT" and "RIGHT" or "LEFT"), h=="LEFT" and i or -i, 0;
+			end
+			return v..H, frame, (v=="TOP" and "BOTTOM" or "TOP")..H, 0, v=="TOP" and i or -i;
 		end
-		return v..H, frame, (v=="TOP" and "BOTTOM" or "TOP")..H, 0, v=="TOP" and i or -i;
 	end
-end
 
 
-----------------------------------
--- ttMode [ 1: close on leave broker button (bool/nil) | 2: dont use hiddenMouseOver (bool/nil) ],
--- ttParent [ 1: parent frame element (frame) | 2: anchor direction (string) | 3: alternative anchor target (frame/optional) ]
+	----------------------------------
+	-- ttMode [ 1: close on leave broker button (bool/nil) | 2: dont use hiddenMouseOver (bool/nil) ],
+	-- ttParent [ 1: parent frame element (frame) | 2: anchor direction (string) | 3: alternative anchor target (frame/optional) ]
 
-local function MouseIsOver(region, topOffset, bottomOffset, leftOffset, rightOffset)
-	if region and region.IsMouseOver then -- stupid blizzard does not check if exists...
-		return region:IsMouseOver(topOffset, bottomOffset, leftOffset, rightOffset);
+	local function MouseIsOver(region, topOffset, bottomOffset, leftOffset, rightOffset)
+		if region and region.IsMouseOver then -- stupid blizzard does not check if exists...
+			return region:IsMouseOver(topOffset, bottomOffset, leftOffset, rightOffset);
+		end
 	end
-end
 
-local function hideOnLeave(self)
-	local _, hiddenMouseOverAnchor = hiddenMouseOver:GetPoint();
-	if self.parent and self.parent[1] and (MouseIsOver(self.parent[1]) or (self.parent[1]==hiddenMouseOverAnchor and MouseIsOver(hiddenMouseOver))) then return end -- mouse is over broker and/or extended broker button area
-	if MouseIsOver(self) and ( (self.slider and self.slider:IsShown()) or (self.mode and self.mode[1]~=true) ) then return end -- tooltip with active scrollframe or mouse over tooltip with clickable elements
-	if self.OnHide then
-		self.OnHide(self);
-		self.OnHide = nil;
+	local function hideOnLeave(self)
+		local _, hiddenMouseOverAnchor = hiddenMouseOver:GetPoint();
+		if self.parent and self.parent[1] and (MouseIsOver(self.parent[1]) or (self.parent[1]==hiddenMouseOverAnchor and MouseIsOver(hiddenMouseOver))) then return end -- mouse is over broker and/or extended broker button area
+		if MouseIsOver(self) and ( (self.slider and self.slider:IsShown()) or (self.mode and self.mode[1]~=true) ) then return end -- tooltip with active scrollframe or mouse over tooltip with clickable elements
+		if self.OnHide then
+			self.OnHide(self);
+			self.OnHide = nil;
+		end
+		ns.hideTooltip(self);
 	end
-	ns.hideTooltip(self);
-end
 
-local function hideOnUpdate(self, elapse)
-	if not self:IsShown() then
-		self:SetScript("OnUpdate",nil);
-		return;
+	local function hideOnUpdate(self, elapse)
+		if not self:IsShown() then
+			self:SetScript("OnUpdate",nil);
+			return;
+		end
+		if (self.elapsed or 1)>0 then
+			self.elapsed = 0;
+			hideOnLeave(self);
+		else
+			self.elapsed = (self.elapsed or 0) + elapse;
+		end
 	end
-	if (self.elapsed or 1)>0 then
-		self.elapsed = 0;
-		hideOnLeave(self);
-	else
-		self.elapsed = (self.elapsed or 0) + elapse;
-	end
-end
 
-local function hookDragStart(self)
-	if brokerDragHooks[self] and brokerDragHooks[self][1]==brokerDragHooks[self][2].key and brokerDragHooks[self][2]:IsShown() then
-		ns.hideTooltip(brokerDragHooks[self][2]);
+	local function hookDragStart(self)
+		if brokerDragHooks[self] and brokerDragHooks[self][1]==brokerDragHooks[self][2].key and brokerDragHooks[self][2]:IsShown() then
+			ns.hideTooltip(brokerDragHooks[self][2]);
+		end
 	end
-end
 
----@param ttData table
----@param ttMode table
----@param ttParent table
----@param ttScripts table
-function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
-	if openTooltip and openTooltip.key~=ttData[1] and openTooltip.parent and not (ttParent[1]==openTooltip or (ttParent[3] and ttParent[3]==openTooltip)) then
-		ns.hideTooltip(openTooltip);
-	end
-	if ns.LQT:IsAcquired(ttData[1]) then
-		openTooltip = ns.LQT:Acquire(ttData[1])
-		return openTooltip;
-	end
-	local modifier = ns.profile.GeneralOptions.ttModifierKey2;
-	local tooltip = ns.LQT:Acquire(unpack(ttData)); openTooltip = tooltip;
+	---@param ttData table
+	---@param ttMode table
+	---@param ttParent table
+	---@param ttScripts table
+	function ns.acquireTooltip(ttData,ttMode,ttParent,ttScripts)
+		if openTooltip and openTooltip.key~=ttData[1] and openTooltip.parent and not (ttParent[1]==openTooltip or (ttParent[3] and ttParent[3]==openTooltip)) then
+			ns.hideTooltip(openTooltip);
+		end
+		if ns.LQT:IsAcquired(ttData[1]) then
+			openTooltip = ns.LQT:Acquire(ttData[1])
+			return openTooltip;
+		end
+		local modifier = ns.profile.GeneralOptions.ttModifierKey2;
+		local tooltip = ns.LQT:Acquire(unpack(ttData)); openTooltip = tooltip;
 
-	tooltip.parent,tooltip.mode,tooltip.scripts = ttParent,ttMode,ttScripts;
-	tooltip.mode[1] = tooltip.mode[1]==true or (modifier~="NONE" and ns.tooltipChkOnShowModifier(modifier))
-	if hiddenMouseOver==nil then
-		hiddenMouseOver = CreateFrame("Frame",addon.."TooltipHideShowFix2",UIParent);
-		hiddenMouseOver:SetFrameStrata("BACKGROUND");
+		tooltip.parent,tooltip.mode,tooltip.scripts = ttParent,ttMode,ttScripts;
+		tooltip.mode[1] = tooltip.mode[1]==true or (modifier~="NONE" and ns.tooltipChkOnShowModifier(modifier))
+		if hiddenMouseOver==nil then
+			hiddenMouseOver = CreateFrame("Frame",addon.."TooltipHideShowFix2",UIParent);
+			hiddenMouseOver:SetFrameStrata("BACKGROUND");
+		end
+		if not tooltip.mode[2] and ttParent[1] and not ttParent[1].parent then
+			hiddenMouseOver:SetPoint("TOPLEFT",ttParent[1],"TOPLEFT",0,1);
+			hiddenMouseOver:SetPoint("BOTTOMRIGHT",ttParent[1],"BOTTOMRIGHT",0,-1);
+
+			-- TitalPanelAutoHide
+			if TitanPanelSetVar and TitanUtils_GetWhichBar then
+				local titanBar,current,ldbName = nil,nil,string.match(ttParent[1]:GetName() or "", "TitanPanel(.*)Button");
+				if ldbName then
+					titanBar = TitanUtils_GetWhichBar(ldbName);
+				end
+				if titanBar then
+					current = TitanPanelGetVar(titanBar.."_Hide"); -- get autohide status
+				end
+				if current then
+					tooltip.TitanBar_AutoHide = titanBar;
+					TitanPanelSetVar(titanBar.."_Hide",false);
+				end
+			end
+		end
+		tooltip:SetScript("OnUpdate",hideOnUpdate);
+		tooltip:SetScript("OnLeave",hideOnLeave);
+
+		local TipTac = _G["TipTac"]
+		if TipTac and TipTac.AddModifiedTip then
+			TipTac:AddModifiedTip(tooltip, true); -- Tiptac Support for LibQTip Tooltips
+		elseif AddOnSkins and AddOnSkins.SkinTooltip then
+			AddOnSkins:SkinTooltip(tooltip); -- AddOnSkins support
+		end
+
+		tooltip:SetClampedToScreen(true);
+		tooltip:SetPoint(ns.GetTipAnchor(unpack(ttParent)));
+
+		if type(ttParent[1])=="table" and ttParent[1]:GetObjectType()=="Button" then
+			if not brokerDragHooks[ttParent[1]] then
+				-- close tooltips if broker button fire OnDragStart
+				ttParent[1]:HookScript("OnDragStart",hookDragStart);
+			end
+			brokerDragHooks[ttParent[1]]={tooltip.key,tooltip};
+		end
+
+		return tooltip;
 	end
-	if not tooltip.mode[2] and ttParent[1] and not ttParent[1].parent then
-		hiddenMouseOver:SetPoint("TOPLEFT",ttParent[1],"TOPLEFT",0,1);
-		hiddenMouseOver:SetPoint("BOTTOMRIGHT",ttParent[1],"BOTTOMRIGHT",0,-1);
+
+	---@param tooltip frame|LibQTipTooltip
+	---@param ignoreMaxTooltipHeight boolean
+	function ns.roundupTooltip(tooltip,ignoreMaxTooltipHeight)
+		if not tooltip then return end
+		if not ignoreMaxTooltipHeight then
+			tooltip:UpdateScrolling(GetScreenHeight() * (ns.profile.GeneralOptions.maxTooltipHeight/100));
+		end
+		tooltip:SetClampedToScreen(true);
+		tooltip:Show();
+	end
+
+	---@param tooltip frame|LibQTipTooltip
+	function ns.hideTooltip(tooltip)
+		if type(tooltip)~="table" then return; end
+		if type(tooltip.secureButtons)=="table" then
+			local f = GetMouseFoci()
+			if f and f[1] and not f[1]:IsForbidden() and (not f[1]:IsProtected() and InCombatLockdown()) and type(f[1].key)=="string" and type(tooltip.key)=="string" and f[1].key==tooltip.key then
+				return; -- why that? tooltip can't be closed in combat with securebuttons as child elements. results in addon_action_blocked...
+			end
+			ns.secureButton(false);
+		end
+		tooltip:SetScript("OnLeave",nil);
+		tooltip:SetScript("OnUpdate",nil);
+		hiddenMouseOver:ClearAllPoints();
+		if tooltip.scripts and type(tooltip.scripts.OnHide)=="function" then
+			tooltip.scripts.OnHide(tooltip);
+		end
 
 		-- TitalPanelAutoHide
-		if TitanPanelSetVar and TitanUtils_GetWhichBar then
-			local titanBar,current,ldbName = nil,nil,string.match(ttParent[1]:GetName() or "", "TitanPanel(.*)Button");
-			if ldbName then
-				titanBar = TitanUtils_GetWhichBar(ldbName);
+		if tooltip.TitanBar_AutoHide then
+			TitanPanelSetVar(tooltip.TitanBar_AutoHide.."_Hide",true);
+			tooltip.TitanBar_AutoHide = nil;
+		end
+
+		tooltip.parent = nil;
+		tooltip.mode = nil;
+		tooltip.scripts = nil;
+		ns.LQT:Release(tooltip);
+	end
+
+	----------------------------------------
+
+	do -- hidden texture as placeholder is not nice but it works.
+		local spacer = "|TInterface\\buttons\\ui-passivehighlight:%d:%d|t";
+		function ns.spacer(modName, str, numDigits)
+			local width = ns.profile[modName].spacerWidth;
+			local num = numDigits - tostring(str):len()
+			if num<1 or width==0 then
+				return "";
 			end
-			if titanBar then
-				current = TitanPanelGetVar(titanBar.."_Hide"); -- get autohide status
+			return strrep(spacer:format(width,width),num);
+		end
+	end
+
+	----------------------------------------
+
+	---@param frame frame
+	---@param func function
+	function ns.RegisterMouseWheel(frame,func)
+		frame:EnableMouseWheel(true);
+		frame:SetScript("OnMouseWheel", func);
+	end
+
+	-- L["ModKey" .. ns.tooltipModifiers.<key>.l]
+	ns.tooltipModifiers = {
+		SHIFT      = {l="S",  f="Shift"},
+		LEFTSHIFT  = {l="LS", f="LeftShift"},
+		RIGHTSHIFT = {l="RS", f="RightShift"},
+		ALT        = {l="A",  f="Alt"},
+		LEFTALT    = {l="LA", f="LeftAlt"},
+		RIGHTALT   = {l="RA", f="RightAlt"},
+		CTRL       = {l="C",  f="Control"},
+		LEFTCTRL   = {l="LC", f="LeftControl"},
+		RIGHTCTRL  = {l="RC", f="RightControl"}
+	}
+
+	---@param bool boolean
+	---@return boolean|string
+	function ns.tooltipChkOnShowModifier(bool)
+		local modifier = ns.profile.GeneralOptions.ttModifierKey1;
+		if (modifier~="NONE") then
+			modifier = (ns.tooltipModifiers[modifier]) and _G["Is"..ns.tooltipModifiers[modifier].f.."KeyDown"]();
+			if (bool) then
+				return modifier;
+			else
+				return not modifier;
 			end
-			if current then
-				tooltip.TitanBar_AutoHide = titanBar;
-				TitanPanelSetVar(titanBar.."_Hide",false);
-			end
 		end
-	end
-	tooltip:SetScript("OnUpdate",hideOnUpdate);
-	tooltip:SetScript("OnLeave",hideOnLeave);
-
-	local TipTac = _G["TipTac"]
-	if TipTac and TipTac.AddModifiedTip then
-		TipTac:AddModifiedTip(tooltip, true); -- Tiptac Support for LibQTip Tooltips
-	elseif AddOnSkins and AddOnSkins.SkinTooltip then
-		AddOnSkins:SkinTooltip(tooltip); -- AddOnSkins support
+		return false;
 	end
 
-	tooltip:SetClampedToScreen(true);
-	tooltip:SetPoint(ns.GetTipAnchor(unpack(ttParent)));
-
-	if type(ttParent[1])=="table" and ttParent[1]:GetObjectType()=="Button" then
-		if not brokerDragHooks[ttParent[1]] then
-			-- close tooltips if broker button fire OnDragStart
-			ttParent[1]:HookScript("OnDragStart",hookDragStart);
-		end
-		brokerDragHooks[ttParent[1]]={tooltip.key,tooltip};
+	---@param tooltip frame|LibQTipTooltip
+	---@param content string
+	---@param cells table
+	---@param align string
+	---@param font string
+	---@return number line
+	function ns.AddSpannedLine(tooltip,content,cells,align,font)
+		local line = tooltip:AddLine();
+		cells = cells or {};
+		tooltip:SetCell(line,cells.start or 1,content,font,align,cells.count or 0);
+		return line;
 	end
-
-	return tooltip;
-end
-
----@param tooltip frame|LibQTipTooltip
----@param ignoreMaxTooltipHeight boolean
-function ns.roundupTooltip(tooltip,ignoreMaxTooltipHeight)
-	if not tooltip then return end
-	if not ignoreMaxTooltipHeight then
-		tooltip:UpdateScrolling(GetScreenHeight() * (ns.profile.GeneralOptions.maxTooltipHeight/100));
-	end
-	tooltip:SetClampedToScreen(true);
-	tooltip:Show();
-end
-
----@param tooltip frame|LibQTipTooltip
-function ns.hideTooltip(tooltip)
-	if type(tooltip)~="table" then return; end
-	if type(tooltip.secureButtons)=="table" then
-		local f = GetMouseFoci()
-		if f and f[1] and not f[1]:IsForbidden() and (not f[1]:IsProtected() and InCombatLockdown()) and type(f[1].key)=="string" and type(tooltip.key)=="string" and f[1].key==tooltip.key then
-			return; -- why that? tooltip can't be closed in combat with securebuttons as child elements. results in addon_action_blocked...
-		end
-		ns.secureButton(false);
-	end
-	tooltip:SetScript("OnLeave",nil);
-	tooltip:SetScript("OnUpdate",nil);
-	hiddenMouseOver:ClearAllPoints();
-	if tooltip.scripts and type(tooltip.scripts.OnHide)=="function" then
-		tooltip.scripts.OnHide(tooltip);
-	end
-
-	-- TitalPanelAutoHide
-	if tooltip.TitanBar_AutoHide then
-		TitanPanelSetVar(tooltip.TitanBar_AutoHide.."_Hide",true);
-		tooltip.TitanBar_AutoHide = nil;
-	end
-
-	tooltip.parent = nil;
-	tooltip.mode = nil;
-	tooltip.scripts = nil;
-	ns.LQT:Release(tooltip);
-end
-
-----------------------------------------
-
-do -- hidden texture as placeholder is not nice but it works.
-	local spacer = "|TInterface\\buttons\\ui-passivehighlight:%d:%d|t";
-	function ns.spacer(modName, str, numDigits)
-		local width = ns.profile[modName].spacerWidth;
-		local num = numDigits - tostring(str):len()
-		if num<1 or width==0 then
-			return "";
-		end
-		return strrep(spacer:format(width,width),num);
-	end
-end
-
-----------------------------------------
-
----@param frame frame
----@param func function
-function ns.RegisterMouseWheel(frame,func)
-	frame:EnableMouseWheel(true);
-	frame:SetScript("OnMouseWheel", func);
-end
-
--- L["ModKey" .. ns.tooltipModifiers.<key>.l]
-ns.tooltipModifiers = {
-	SHIFT      = {l="S",  f="Shift"},
-	LEFTSHIFT  = {l="LS", f="LeftShift"},
-	RIGHTSHIFT = {l="RS", f="RightShift"},
-	ALT        = {l="A",  f="Alt"},
-	LEFTALT    = {l="LA", f="LeftAlt"},
-	RIGHTALT   = {l="RA", f="RightAlt"},
-	CTRL       = {l="C",  f="Control"},
-	LEFTCTRL   = {l="LC", f="LeftControl"},
-	RIGHTCTRL  = {l="RC", f="RightControl"}
-}
-
----@param bool boolean
----@return boolean|string
-function ns.tooltipChkOnShowModifier(bool)
-	local modifier = ns.profile.GeneralOptions.ttModifierKey1;
-	if (modifier~="NONE") then
-		modifier = (ns.tooltipModifiers[modifier]) and _G["Is"..ns.tooltipModifiers[modifier].f.."KeyDown"]();
-		if (bool) then
-			return modifier;
-		else
-			return not modifier;
-		end
-	end
-	return false;
-end
-
----@param tooltip frame|LibQTipTooltip
----@param content string
----@param cells table
----@param align string
----@param font string
----@return number line
-function ns.AddSpannedLine(tooltip,content,cells,align,font)
-	local line = tooltip:AddLine();
-	cells = cells or {};
-	tooltip:SetCell(line,cells.start or 1,content,font,align,cells.count or 0);
-	return line;
 end
 
 
@@ -632,19 +651,6 @@ do
 		return ns.color.orange:wrapText(L["CoExistDisabled"]).."\n"
 			.. tconcat(msgs,"\n");
 	end
-end
-
-
-  ---------------------------------------
---- suffix colour function              ---
-  ---------------------------------------
----@param str string
----@return string
-function ns.suffixColour(str)
-	if (ns.profile.GeneralOptions.suffixColour) then
-		return ns.color.suffix:wrapText(str)
-	end
-	return str;
 end
 
 
@@ -701,22 +707,11 @@ do
 end
 
 
--- ------------------------------ --
--- missing real round function    --
--- ------------------------------ --
----@param num number
----@param precision? number
----@return number
-function ns.round(num,precision)
-	return tonumber(("%."..(tonumber(precision) or 0).."f"):format(num or 0)) or 0;
-end
-
-
--- -------------------------------------------------- --
--- Function to Sort a table by the keys               --
--- Sort function fom http://www.lua.org/pil/19.3.html --
--- -------------------------------------------------- --
+  ------------------------
+--- Some table functions ---
+  ------------------------
 do
+	-- Sort function fom http://www.lua.org/pil/19.3.html
 	local function invert(a,b)
 		return a>b;
 	end
@@ -743,72 +738,120 @@ do
 		end
 		return iter
 	end
-end
 
-function ns.table2string(tbl)
-	local tmp={};
-	for k,v in ns.pairsByKeys(tbl) do
-		tinsert(tmp,"["..k.."]="..tostring(v));
+	function ns.table2string(tbl)
+		local tmp={};
+		for k,v in ns.pairsByKeys(tbl) do
+			tinsert(tmp,"["..k.."]="..tostring(v));
+		end
+		return "{"..table.concat(tmp,", ").."}";
 	end
-	return "{"..table.concat(tmp,", ").."}";
-end
 
-function ns.tConcatMod(t,delim1,delim2)
-	local r = {}
-	delim1 = delim1 or ", ";
-	delim2 = delim2 or " ";
-	if #t>0 then
-		for i=1, #t do
-			if i>1 and t[i]:match("^[%[%{%(]") then
-				t[i-1] = t[i-1]..delim2..t[i];
-			else
-				tinsert(r,t[i])
+	function ns.tConcatMod(t,delim1,delim2)
+		local r = {}
+		delim1 = delim1 or ", ";
+		delim2 = delim2 or " ";
+		if #t>0 then
+			for i=1, #t do
+				if i>1 and t[i]:match("^[%[%{%(]") then
+					t[i-1] = t[i-1]..delim2..t[i];
+				else
+					tinsert(r,t[i])
+				end
+			end
+		else
+			r=t;
+		end
+		return table.concat(r,delim1);
+	end
+
+	local function sortRealm(a,b)
+		if a==true then
+			return true;
+		end
+		return
+	end
+
+	---@param modName string module name
+	---@param opts table
+	---@return function iterationFunction
+	function ns.pairsToons(modName,opts)
+		-- opts = {currentFirst=<bool>,currentHide=<bool>,forceSameRealm=<bool>,forceSameFaction=<bool>,realmHeader=<bool>}
+		opts.realmHeader=true
+		local t = {
+			realms = {},
+			realm_toons = {},
+			toons = {}
+		};
+		for index, toonNameRealm in ipairs(ns.toonsDB.order) do
+			local name,realm = strsplit("-",toonNameRealm,2);
+			local forceRealm = (opts.forceSameRealm==true and realm==ns.realm);
+			local forceFaction = (opts.forceSameFaction==true and ns.player.faction==ns.toonsDB[toonNameRealm].faction);
+			local filerByLevel = ns.toonsDB[toonNameRealm].level<=ns.profile.GeneralOptions.charListFilterLvl
+			if not (opts.currentHide==true and toonNameRealm==ns.player.name_realm) and ns.showThisChar(modName,realm,ns.toonsDB[toonNameRealm].faction,forceRealm,forceFaction) and not filerByLevel then
+				if not t.realm_toons[realm] then
+					t.realm_toons[realm] = {}
+				end
+				if opts.currentFirst==true and toonNameRealm==ns.player.name_realm then
+					tinsert(t.realm_toons[realm],1,index)
+					tinsert(t.toons,1,index);
+				else
+					tinsert(t.realm_toons[realm],index)
+					tinsert(t.toons,index);
+				end
+				t.realms[realm] = realm==ns.realm;
 			end
 		end
-	else
-		r=t;
-	end
-	return table.concat(r,delim1);
-end
-
----@param modName string module name
----@param opts table
----@return function iterationFunction
-function ns.pairsToons(modName,opts)
-	-- opts = {currentFirst=<bool>,currentHide=<bool>,forceSameRealm=<bool>,forceSameFaction=<bool>}
-	local t = {};
-	for index, toonNameRealm in ipairs(ns.toonsDB.order) do
-		local name,realm = strsplit("-",toonNameRealm,2);
-		local forceRealm = (opts.forceSameRealm==true and realm==ns.realm);
-		local forceFaction = (opts.forceSameFaction==true and ns.player.faction==ns.toonsDB[toonNameRealm].faction);
-		local filerByLevel = ns.toonsDB[toonNameRealm].level<=ns.profile.GeneralOptions.charListFilterLvl
-		if not (opts.currentHide==true and toonNameRealm==ns.player.name_realm) and ns.showThisChar(modName,realm,ns.toonsDB[toonNameRealm].faction,forceRealm,forceFaction,toonNameRealm) and not filerByLevel then
-			if opts.currentFirst==true and toonNameRealm==ns.player.name_realm then
-				tinsert(t,1,index);
-			else
-				tinsert(t,index);
+		if opts.realmHeader then
+			local r,r2 = {},{}
+			-- realm names (key) prepare for sorting
+			for k,v in pairs(t.realms)do
+				tinsert(r,k)
 			end
+			-- sorting realm names
+			table.sort(r)
+			-- copy entries and move current realm to first place in new table
+			for i, v in pairs(r)do
+				if t.realms[v] then
+					tinsert(r,1,tremove(r,i))
+					break;
+				end
+			end
+			local T = {}
+			-- merge realm table and prev. separated toons per realm into a new table
+			for _, v in ipairs(r)do
+				tinsert(T,v)
+				for _,V in ipairs(t.realm_toons[v])do
+					tinsert(T,V)
+				end
+			end
+			t = T
+		else
+			t = t.toons
 		end
-	end
-	local i=0;
-	local function iter()
-		i=i+1;
-		local index = t[i];
-		if ns.toonsDB.order[index]==nil then
-			return nil;
+		local i=1;
+		local function iter()
+			local index = t[i];
+			i=i+1;
+			if type(index)=="string" then
+				return 0, false, false, index
+			end
+			if ns.toonsDB.order[index]==nil then
+				return nil;
+			end
+			local toonNameRealm = ns.toonsDB.order[index];
+			local toonName,toonRealm = strsplit("-",toonNameRealm,2);
+			return index, toonNameRealm, toonName, toonRealm, ns.toonsDB[toonNameRealm], toonNameRealm==ns.player.name_realm;
+			-- index, toonNameRealm, toonName, toonRealm, toonData, isCurrent
 		end
-		local toonNameRealm = ns.toonsDB.order[index];
-		local toonName,toonRealm = strsplit("-",toonNameRealm,2);
-		return index, toonNameRealm, toonName, toonRealm, ns.toonsDB[toonNameRealm], toonNameRealm==ns.player.name_realm;
-		-- index, toonNameRealm, toonName, toonRealm, toonData, isCurrent
+		return iter;
 	end
-	return iter;
 end
 
 
--- ------------------------------------------------------------ --
--- Function to check/create a table structure by given path
--- ------------------------------------------------------------ --
+  ------------------------------------------------------------
+--- Function to check/create a table structure by given path ---
+  ------------------------------------------------------------
 ---@param tbl table
 ---@param a string
 ---@param ... string
@@ -827,9 +870,9 @@ function ns.tablePath(tbl,a,...)
 end
 
 
--- ------------------------------------ --
--- FormatLargeNumber function advanced  --
--- ------------------------------------ --
+  ---------------------------------------
+--- FormatLargeNumber function advanced ---
+  ---------------------------------------
 do
 	-- L["SizeSuffix-10E18"] L["SizeSuffix-10E15"] L["SizeSuffix-10E12"] L["SizeSuffix-10E9"] L["SizeSuffix-10E6"] L["SizeSuffix-10E3"]
 	local floatformat,sizes = "%0.1f",{
@@ -862,89 +905,107 @@ do
 end
 
 
--- --------------------- --
--- Some string  function --
--- --------------------- --
----@param text string
----@param limit number
----@param insetCount? number
----@param insetChr? string
----@param insetLastChr? string
----@return string
-function ns.strWrap(text, limit, insetCount, insetChr, insetLastChr)
-	if not text then return ""; end
-	if text:match("\n") or text:match("%|n") then
-		local txt = text:gsub("%|n","\n");
-		local strings,tmp = {strsplit("\n",txt)},{};
-		for i=1, #strings do
-			tinsert(tmp,ns.strWrap(strings[i], limit, insetCount, insetChr, insetLastChr));
+  ------------------------------------
+--- Some string and number function ---
+  ------------------------------------
+do
+	---@param num number
+	---@param precision? number
+	---@return number
+	function ns.round(num,precision)
+		return tonumber(("%."..(tonumber(precision) or 0).."f"):format(num or 0)) or 0;
+	end
+
+	---@param text string
+	---@param limit number
+	---@param insetCount? number
+	---@param insetChr? string
+	---@param insetLastChr? string
+	---@return string
+	function ns.strWrap(text, limit, insetCount, insetChr, insetLastChr)
+		if not text then return ""; end
+		if text:match("\n") or text:match("%|n") then
+			local txt = text:gsub("%|n","\n");
+			local strings,tmp = {strsplit("\n",txt)},{};
+			for i=1, #strings do
+				tinsert(tmp,ns.strWrap(strings[i], limit, insetCount, insetChr, insetLastChr));
+			end
+			return tconcat(tmp,"\n");
 		end
-		return tconcat(tmp,"\n");
-	end
-	if text:len()<=limit then return text; end
-	local tmp,result,inset = "",{},"";
-	if type(insetCount)=="number" then
-		inset = (insetChr or " "):rep(insetCount-(insetLastChr or ""):len())..(insetLastChr or "");
-	end
-	for str in text:gmatch("([^ \n]+)") do
-		local tmp2 = strtrim(tmp.." "..str);
-		if tmp2:len()>=limit then
+		if text:len()<=limit then return text; end
+		local tmp,result,inset = "",{},"";
+		if type(insetCount)=="number" then
+			inset = (insetChr or " "):rep(insetCount-(insetLastChr or ""):len())..(insetLastChr or "");
+		end
+		for str in text:gmatch("([^ \n]+)") do
+			local tmp2 = strtrim(tmp.." "..str);
+			if tmp2:len()>=limit then
+				tinsert(result,tmp);
+				tmp = strtrim(str);
+			else
+				tmp = tmp2;
+			end
+		end
+		if tmp~="" then
 			tinsert(result,tmp);
-			tmp = strtrim(str);
-		else
-			tmp = tmp2;
 		end
+		return tconcat(result,"|n"..inset)
 	end
-	if tmp~="" then
-		tinsert(result,tmp);
+
+	---@param str string
+	---@param limit number
+	---@return string
+	function ns.strCut(str,limit)
+		if str:len()>limit-3 then str = strsub(str,1,limit-3).."..." end
+		return str
 	end
-	return tconcat(result,"|n"..inset)
+
+	---@param str string
+	---@param pat string
+	---@param count number
+	---@param append boolean
+	---@return string
+	function ns.strFill(str,pat,count,append)
+		local l = (count or 1) - str:len();
+		if l<=0 then return str; end
+		local p = (pat or " "):rep(l);
+		if append then return str..p; end
+		return p..str;
+	end
+
+	---@param str string
+	---@return string
+	function ns.suffixColour(str)
+		if (ns.profile.GeneralOptions.suffixColour) then
+			return ns.color.suffix:wrapText(str)
+		end
+		return str;
+	end
 end
 
----@param str string
----@param limit number
----@return string
-function ns.strCut(str,limit)
-	if str:len()>limit-3 then str = strsub(str,1,limit-3).."..." end
-	return str
-end
 
----@param str string
----@param pat string
----@param count number
----@param append boolean
----@return string
-function ns.strFill(str,pat,count,append)
-	local l = (count or 1) - str:len();
-	if l<=0 then return str; end
-	local p = (pat or " "):rep(l);
-	if append then return str..p; end
-	return p..str;
-end
-
-
--- ----------------------------------------
--- secure button as transparent overlay
--- http://wowpedia.org/SecureActionButtonTemplate
--- be careful...
---
--- @param self UI_ELEMENT
--- @param obj  TABLE
---		obj = {
---			{
---				typeName  STRING  | see "Modified attributes"
---				typeValue STRING  | see "Action types" "Type"-column
---				attrName  STRING  | see "Action types" "Used attributes"-column
---				attrValue ~mixed~ | see "Action types" "Behavior"-column.
---				                  | Note: if typeValue is click then attrValue must
---										  be a ui element with :Click() function like
---										  buttons. thats a good way to open frames
---										  like spellbook without risk tainting it by
---										  an addon.
---			},
---			{ ... }
---		}
--- ----------------------------------------
+  ------------------------------------------
+--- secure button as transparent overlay
+--- http://wowpedia.org/SecureActionButtonTemplate
+--- be careful...
+---
+--- @param self UI_ELEMENT
+--- @param obj  TABLE
+---		obj = {
+---			{
+---				typeName  STRING  | see "Modified attributes"
+---				typeValue STRING  | see "Action types" "Type"-column
+---				attrName  STRING  | see "Action types" "Used attributes"-column
+---				attrValue ~mixed~ | see "Action types" "Behavior"-column.
+---				                  | Note: if typeValue is click then attrValue must
+---										  be a ui element with :Click() function like
+---										  buttons. thats a good way to open frames
+---										  like spellbook without risk tainting it by
+---										  an addon.
+---			},
+---			{ ... }
+---		}
+  ------------------------------------------
 do
 	local sbfObject,sbf = {};
 	function ns.secureButton(self,obj)
@@ -990,10 +1051,10 @@ do
 end
 
 
--- -------------------------------------------------------------- --
--- module independent bags and inventory scanner                  --
--- event driven with delayed execution                            --
--- -------------------------------------------------------------- --
+  ------------------------------------------------------------------
+--- module independent bags and inventory scanner                  ---
+--- event driven with delayed execution                            ---
+  ------------------------------------------------------------------
 do
 	local itemsByID,itemsBySlot,itemsBySpell,equip,ammo = {},{},{},{},{};
 	ns.items = {byID=itemsByID,bySlot=itemsBySlot,bySpell=itemsBySpell,equip=equip,ammo=ammo};
@@ -1292,8 +1353,7 @@ do
 		IsEnabledBags = true;
 
 		-- bag events
-		eventFrame:RegisterEvent("BAG_UPDATE");
-		eventFrame:RegisterEvent("BAG_UPDATE_DELAYED");
+		ns.eventRegister(eventFrame,{"BAG_UPDATE","BAG_UPDATE_DELAYED"},{"shared.lua","<nsItems>","<initBags>"})
 
 		if ns.eventPlayerEnteredWorld then
 			-- module registered after PLAYER_ENTERING_WORLD
@@ -1307,14 +1367,17 @@ do
 		IsEnabledInv = true;
 
 		-- inventory events
-		eventFrame:RegisterEvent("PLAYER_LOGIN")
-		eventFrame:RegisterEvent("PLAYER_EQUIPMENT_CHANGED");
-		eventFrame:RegisterEvent("UPDATE_INVENTORY_DURABILITY");
-		--eventFrame:RegisterEvent("GET_ITEM_INFO_RECEIVED");
-		eventFrame:RegisterEvent("MERCHANT_CLOSED");
+		local events = {
+			"PLAYER_LOGIN",
+			"PLAYER_EQUIPMENT_CHANGED",
+			"UPDATE_INVENTORY_DURABILITY",
+			--"GET_ITEM_INFO_RECEIVED",
+			"MERCHANT_CLOSED"
+		}
 		if ns.ammo_classic then
-			eventFrame:RegisterEvent("UNIT_INVENTORY_CHANGED");
+			tinsert(events,"UNIT_INVENTORY_CHANGED");
 		end
+		ns.eventRegister(eventFrame,events,{"shared.lua","<nsItems>","<initInventory>"})
 
 		if ns.eventPlayerEnteredWorld then
 			-- module registered after PLAYER_ENTERING_WORLD
@@ -1361,9 +1424,9 @@ do
 end
 
 
--- -------------------------------------------------------------- --
--- UseContainerItem hook
--- -------------------------------------------------------------- --
+  -------------------------
+--- UseContainerItem hook ---
+  -------------------------
 do
 	local callback = {};
 	local function UseContainerItemHook(bag, slot)
@@ -1390,9 +1453,9 @@ do
 end
 
 
--- --------------------- --
--- scanTooltip functions --
--- --------------------- --
+  -------------------------
+--- scanTooltip functions ---
+  -------------------------
 do
 	local QueueModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip",UIParent,"GameTooltipTemplate");
 	local InstantModeScanTT = CreateFrame("GameTooltip",addon.."ScanTooltip2",UIParent,"GameTooltipTemplate");
@@ -1405,7 +1468,7 @@ do
 	end
 	-- remove scripts from tooltip... prevents taint log spamming.
 	local badScripts = {"OnLoad","OnHide","OnTooltipSetDefaultAnchor","OnTooltipCleared"};
-	if ns.client_version<=9 then
+	if ns.client_version<=9 and not ns.IsForeverClient() then
 		tinsert(badScripts,"OnTooltipAddMoney");
 	end
 	for _,v in ipairs(badScripts)do
@@ -1712,11 +1775,11 @@ do
 end
 
 
--- ----------------------------------------------------- --
--- goldColor function to display amount of gold          --
--- in colored strings or with coin textures depending on --
--- a per module and a addon wide toggle.                 --
--- ----------------------------------------------------- --
+-----------------------------------------------------------
+--- goldColor function to display amount of gold          ---
+--- in colored strings or with coin textures depending on ---
+--- a per module and a addon wide toggle.                 ---
+-----------------------------------------------------------
 function ns.GetCoinColorOrTextureString(modName,amount,opts)
 	local zz,tex,stop="%02d","|TInterface\\MoneyFrame\\UI-%sIcon:14:14:2:0|t",false;
 	opts,amount = opts or {},tonumber(amount) or 0;
@@ -1779,9 +1842,9 @@ function ns.GetCoinColorOrTextureString(modName,amount,opts)
 end
 
 
--- ----------------------------------------------------- --
--- screen capture mode - string replacement function     --
--- ----------------------------------------------------- --
+  ---------------------------------------------------------
+--- screen capture mode - string replacement function     ---
+  ---------------------------------------------------------
 function ns.scm(str,all,str2)
 	if str==nil then return "" end
 	str2,str = (str2 or "*"),tostring(str);
@@ -1793,9 +1856,9 @@ function ns.scm(str,all,str2)
 end
 
 
--- ------------------------ --
--- Hide blizzard elements   --
--- ------------------------ --
+  ----------------------------
+--- Hide blizzard elements   ---
+  ----------------------------
 do
 	local hideFrames = CreateFrame("Frame",addon.."_HideFrames",UIParent);
 	hideFrames.origParent = {};
@@ -1818,9 +1881,9 @@ do
 end
 
 
--- ---------------- --
--- EasyMenu wrapper --
--- ---------------- --
+  --------------------
+--- EasyMenu wrapper ---
+  --------------------
 do
 	local LDDM = LibStub("LibDropDownMenu");
 	local EasyMenu = LDDM.Create_DropDownMenu(addon.."_LibDropDownMenu",UIParent);
@@ -2252,9 +2315,9 @@ do
 end
 
 
--- ----------------------- --
--- DurationOrExpireDate    --
--- ----------------------- --
+  ---------------------------
+--- DurationOrExpireDate    ---
+  ---------------------------
 ---@param timeLeft number
 ---@param lastTime number
 ---@param durationTitle string
@@ -2275,9 +2338,9 @@ function ns.DurationOrExpireDate(timeLeft,lastTime,durationTitle,expireTitle)
 end
 
 
--- ------------------------ --
--- clickOptions System      --
--- ------------------------ --
+  ----------------------------
+--- clickOptions System      ---
+  ----------------------------
 do
 	ns.ClickOpts = {prefix="ClickOpt:"};
 	local shared,values = {},{
@@ -2501,9 +2564,9 @@ do
 end
 
 
--- -----------------
--- text bar
--- ----------------
+  -------------------
+-- text bar         ---
+  -------------------
 -- num, {<max>,<cur>[,<rest>]},{<max>,<cur>[,<rest>]}
 ---@param num number
 ---@param values table
