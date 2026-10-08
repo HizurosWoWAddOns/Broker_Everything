@@ -117,10 +117,5 @@ Broker_Everything:SetScript("OnEvent", function (self, event, ...)
 	end
 end)
 
-Broker_Everything:RegisterEvent("ADDON_LOADED");
-Broker_Everything:RegisterEvent("PLAYER_LOGIN");
-Broker_Everything:RegisterEvent("PLAYER_LEVEL_UP");
-Broker_Everything:RegisterEvent("DISPLAY_SIZE_CHANGED");
-if ns.client_version>=5 then -- mop
-	Broker_Everything:RegisterEvent("NEUTRAL_FACTION_SELECT_RESULT");
-end
+ns.eventRegister(Broker_Everything, {"ADDON_LOADED","PLAYER_LOGIN","DISPLAY_SIZE_CHANGED","NEUTRAL_FACTION_SELECT_RESULT"}, {"core.lua"})
+

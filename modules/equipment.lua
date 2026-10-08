@@ -645,7 +645,7 @@ function module.onevent(self,event,arg1,...)
 		if UpgradeItem then
 			hooksecurefunc("UpgradeItem",updateBroker);
 		end
-		self:RegisterEvent("ADDON_LOADED");
+		ns.eventRegister(self,"ADDON_LOADED",{name,"<onevent>"})
 	elseif (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and equipPending~=nil then
 		if C_EquipmentSet then
 			C_EquipmentSet.UseEquipmentSet(equipPending);

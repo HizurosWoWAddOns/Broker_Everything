@@ -145,6 +145,39 @@ function ns.IsNotClassicClient() -- for AceOptions
 end
 
 
+  -------------------------------------
+--- Event validation and registration ---
+  -------------------------------------
+do
+	local C_EventUtils_IsEventValid = C_EventUtils and C_EventUtils.IsEventValid or function() return true end
+	function ns.eventRegister(eventFrame, event, dbgInfo)
+		local eventType = type(event)
+		if eventType=="table" then
+			for _, e in ipairs(event) do
+				ns.eventRegister(eventFrame, e, dbgInfo)
+			end
+			return
+		end
+
+		local dbgStr = ""
+		if eventType~="string" then
+			dbgStr = "<eventValueWrongType:"..eventType..">"
+		elseif not C_EventUtils_IsEventValid(event) then
+			dbgStr = "<IsEventValid:false>"
+		else
+			--eventFrame:RegisterEvent(event)
+			local ok, result = pcall(eventFrame.RegisterEvent,eventFrame,event)
+			if ok then
+				return
+			end
+			dbgStr = "<pcallFailed("..tostring(result)..")>"
+		end
+
+		ns:debug("<EventRegisterFailed("..event..")>",dbgStr,unpack(dbgInfo))
+	end
+end
+
+
   ---------------------------------------
 --- player and twinks dependent data    ---
   ---------------------------------------

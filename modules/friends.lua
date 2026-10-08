@@ -822,13 +822,11 @@ function module.onevent(self,event,arg1)
 			"BN_DISCONNECTED","BN_FRIEND_ACCOUNT_OFFLINE","BN_FRIEND_ACCOUNT_ONLINE","BN_FRIEND_INFO_CHANGED","BN_FRIEND_INVITE_ADDED",
 			"BN_FRIEND_INVITE_REMOVED","BN_INFO_CHANGED","FRIENDLIST_UPDATE","PLAYER_ENTERING_WORLD","CHAT_MSG_SYSTEM"
 		}
-		if ns.client_version<12.1 then
+		if ns.client_version<12.1 and not ns.IsForeverClient() then
 			tinsert(events,"BATTLETAG_INVITE_SHOW")
 			-- TOOD: search another way to track battle tag invites
 		end
-		for _,e in ipairs(events) do
-			self:RegisterEvent(e)
-		end
+		ns.eventRegister(self,events,{name,"<onevent>"})
 	elseif (ns.eventPlayerEnteredWorld or event=="PLAYER_ENTERING_WORLD") and not self.locked then
 		self.locked=true -- catch up mass triggered events
 		C_Timer.After(0.314159,function()

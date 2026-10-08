@@ -1041,7 +1041,7 @@ function module.onevent(self,event,arg1)
 			covenantID = C_Covenants.GetActiveCovenantID() or 0;
 			if covenantID==0 then
 				-- covenant not choosen; wait  for event
-				self:RegisterEvent("COVENANT_CHOSEN");
+				ns.eventRegister(self,"COVENANT_CHOSEN",{name,"<onevent>"});
 			end
 		end
 	elseif event=="COVENANT_CHOSEN" then
