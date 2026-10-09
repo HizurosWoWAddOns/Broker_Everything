@@ -139,18 +139,18 @@ do
 	end
 
 	---@return boolean
-	function ns.IsForverClient()
+	function ns.IsForeverClient()
 		return WOW_PROJECT_ID==WOW_PROJECT_CAMELOT;
 	end
 
 	---@return boolean
 	function ns.IsClassicClient() -- for AceOptions
-		return not (WOW_PROJECT_ID==WOW_PROJECT_MAINLINE) or ns.IsForverClient();
+		return not (WOW_PROJECT_ID==WOW_PROJECT_MAINLINE) or ns.IsForeverClient();
 	end
 
 	---@return boolean
 	function ns.IsClassicEraClient() -- for AceOptions
-		return WOW_PROJECT_ID==WOW_PROJECT_CLASSIC or ns.IsForverClient();
+		return WOW_PROJECT_ID==WOW_PROJECT_CLASSIC or ns.IsForeverClient();
 	end
 
 	---@return boolean
