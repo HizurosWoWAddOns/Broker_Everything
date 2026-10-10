@@ -222,7 +222,11 @@ local function updateFollowersTT(Table)
 			if followers[i].isTroop and Table.labelTroops then
 				troop[ sortKey(Table.troop_num, followers[i].level, followers[i].xpPercent, followers[i].quality, followers[i].iLevel) ] = followers[i];
 			elseif not followers[i].isTroop then
-				follower[ sortKey(Table.follower_num, followers[i].level, followers[i].xpPercent, followers[i].quality, followers[i].iLevel) ] = followers[i];
+				local sKey = sortKey(Table.follower_num, followers[i].level, followers[i].xpPercent, followers[i].quality, followers[i].iLevel)
+				if Table.type=="Type_6_0_Boat" then
+					sKey = sKey.."."..tonumber(followers[i].followerID)
+				end
+				follower[ sKey ] = followers[i];
 			end
 		end
 	end
@@ -750,7 +754,7 @@ end
 function moduleS.onenter(self)
 	if (ns.tooltipChkOnShowModifier(false)) then return; end
 	ttS = ns.acquireTooltip({ttNameS, ttColumnsS, "LEFT", "LEFT", "CENTER", "CENTER", "CENTER", "RIGHT","RIGHT"},{true},{self});
-	createTooltip(ttS, nameS)
+	createTooltip(ttS, nameS, ttNameS)
 end
 
 -- function module.onleave(self) end
