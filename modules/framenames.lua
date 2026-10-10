@@ -55,8 +55,10 @@ end
 -- function module.onevent(self,event,msg) end
 
 function module.onupdate()
-	local objs = GetMouseFoci();
-	if not (objs and objs[1]) then
+	local objs,f = GetMouseFoci();
+	if objs and objs[1] then
+		f = objs[1]
+	else
 		f = WorldFrame -- WorldFrame no longer listed with GetMouseFoci
 	end
 	if not f then return end
