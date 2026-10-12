@@ -137,7 +137,7 @@ end
 
 local function updateBroker()
 	local speed = 0
-	if ns.IsRetailClient() then
+	if ns.IsRetailClient() or ns.IsForeverClient() then
 		CalcSpeed:Update();
 		speed = CalcSpeed.s;
 	else
