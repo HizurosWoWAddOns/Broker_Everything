@@ -158,9 +158,12 @@ function module.init()
 		[181818] = {ITEM_LOOTABLE},
 
 		-- 15, Weathered Eagle Egg >> Scruffbeak
-
 		[255008] = {ITEM_DURATION, "tooltip", 4},
 		[255151] = {ITEM_USABLE},
+
+		-- 16. Hawkstrider Egg >> Hawkstrider Hatchling
+		[262510] = {ITEM_DURATION, "tooltip", 4},
+		[244339] = {ITEM_USABLE},
 	}
 	ns.items.RegisterCallback(name,bagCheck,"bags");
 end
