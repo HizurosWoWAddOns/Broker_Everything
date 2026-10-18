@@ -567,7 +567,7 @@ local function createTooltip(tt)
 						if type(client)=="table" and client.clientProgram then
 							if not showApp[client.clientProgram]
 								-- wow logout is buggy. sometimes level==0 and reamid==0 or characterName is empty. player is logout out (mostly by disconnect) but displayed as playing wow
-								and not (client.clientProgram=="WoW" and ((client.characterName and client.characterName=="") or (client.characterLevel==0 and client.realmID==0)))
+								and not (client.clientProgram=="WoW" and ((client.characterName and client.characterName=="") or (client.characterLevel==0 --[[ and client.realmID==0 ]])))
 							then
 								tinsert(clientList,client)
 							elseif ns.profile[name][showApp[client.clientProgram]] then
