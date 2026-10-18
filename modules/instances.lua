@@ -18,6 +18,7 @@ local BossKillQueryUpdate,UpdateInstaceInfoLock = false,{};
 local ejInstanceId2instanceMapId = {};
 -- some entries have not exact matching names between encounter journal and raidinfo frame
 local ignore_ej = {};
+local ejLair = {[3004]=true}
 local diffModeShort = {
 	[RAID_DIFFICULTY_10PLAYER] = "10n",
 	[RAID_DIFFICULTY_20PLAYER] = "20n",
@@ -293,8 +294,9 @@ function createTooltip(tt,name,mode)
 							-- ejDoubleInstanceNames
 							id = C("gray"," ("..instanceMapId..")");
 						end
+						local lair = ejLair[instanceMapId] and " "..C("ltblue","("..LAIR..")") or ""
 						local l=tt:AddLine(
-							C("ltyellow","    "..ejInfo.instanceName)..id,
+							C("ltyellow","    "..ejInfo.instanceName)..lair..id,
 							#status==0 and C("gray",L["Free"]) or table.concat(status,"\n"),
 							#diff==0 and "" or table.concat(diff,"\n")
 						);
