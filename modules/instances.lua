@@ -76,24 +76,48 @@ do
 		end
 	end
 
-	function LoadEjInstances()
-		if LoadEjInstancesLock then return end LoadEjInstancesLock = true;
+	local timeout,numTiers,ejTierIndex = 3.14159/20
+	function LoadEjInstances(ejTierUpdate)
+		if LoadEjInstancesLock and ejTierUpdate==nil then
+			return
+		end
+		LoadEjInstancesLock = true;
 
-		local numTiers = EJ_GetNumTiers();
+		if ejTierUpdate==nil then
+			numTiers = EJ_GetNumTiers();
 
-		-- Note: Tier 1-n is not
-		for ejTier=1, numTiers do
-			EJ_SelectTier(ejTier);
-			if ejInstances[ejTier]==nil then
-				ejInstances[ejTier]={};
-			end
-			-- get all raids
-			getEjInstances(ejTier,true);
-			-- get all dungeons
-			getEjInstances(ejTier,false);
+			ejTierIndex = 1
+			EJ_SelectTier(ejTierIndex);
+
+			C_Timer.After(timeout, function()
+				LoadEjInstances(true)
+			end)
+
+			return
 		end
 
-		ejInstancesFinished=true;
+		-- create tabl
+		if ejInstances[ejTierIndex]==nil then
+			ejInstances[ejTierIndex]={};
+		end
+
+		-- get all raids
+		getEjInstances(ejTierIndex,true);
+
+		-- get all dungeons
+		getEjInstances(ejTierIndex,false);
+
+		if numTiers==ejTierIndex then
+			ejInstancesFinished=true;
+			LoadEjInstancesLock=nil;
+		else
+			ejTierIndex = ejTierIndex+1
+			EJ_SelectTier(ejTierIndex)
+
+			C_Timer.After(timeout, function()
+				LoadEjInstances(true)
+			end)
+		end
 	end
 end
 
