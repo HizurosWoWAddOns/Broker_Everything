@@ -160,10 +160,11 @@ function crap.search()
 end
 
 local function updateBagTypes()
+	-- bagTypes: a list of possible bag types for bag space summary by type.
 	bagTypes[LE_ITEM_CLASS_CONTAINER..":0"] = {name=L["Bags"],icon=133633};
 	for i=1, 11 do
 		local n = C_Item.GetItemSubClassInfo(LE_ITEM_CLASS_CONTAINER,i);
-		bagTypes[LE_ITEM_CLASS_CONTAINER..HEADER_COLON..i] = {name=n,icon=0};
+		bagTypes[LE_ITEM_CLASS_CONTAINER..":"..i] = {name=n,icon=0};
 	end
 end
 
@@ -230,8 +231,8 @@ local function colorLowFree(free)
 end
 
 local function sortBags(a,b)
-	local a1,a2 = strsplit(":",a); a = tonumber(a1:trim())*100+tonumber(a2:trim());
-	local b1,b2 = strsplit(":",b); b = tonumber(b1:trim())*100+tonumber(b2:trim());
+	local a1,a2 = strsplit(":",a); a = tonumber(a1)*100+tonumber(a2);
+	local b1,b2 = strsplit(":",b); b = tonumber(b1)*100+tonumber(b2);
 	return a < b;
 end
 
