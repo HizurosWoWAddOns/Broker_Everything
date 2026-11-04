@@ -56,6 +56,39 @@ do
 	}
 end
 
+local supporter = {
+	-- {<color>,<name>}, <localizations>, <donations>, <otherSupportTypes>, <special text>,
+	{"github","4C51"},false,false,false,{"githubPR"},
+	{"github","agentschmitt"},false,false,false,{"githubPR"},
+	{"github","BelegCufea"},false,false,false,{"githubPR"},
+	{"github","Brixus3"},false,false,false,{"githubPR"},
+	{"github","flaicher"},false,false,false,{"githubPR"},
+	{"github","itegumo"},false,false,false,{"githubPR"},
+	{"github","kanegasi"},false,false,false,{"githubPR"},
+	{"github","lowlee"},false,false,false,{"githubPR"},
+	{"github","rockschtar"},false,false,false,{"githubPR"},
+	{"github","rodalpho"},false,false,false,{"githubPR"},
+	{"github","viruscamp"},false,false,false,{"githubPR"},
+	{"curseforge","Araldwenn"},		{"frFR"},false,false,false,
+	{"curseforge","Braincell1980"},	{"frFR"},false,false,false,
+	{"curseforge","cikichen"},		{"zhCN","zhTW"},false,false,false,
+	{"curseforge","Der_Adrinator"}, {"deDE"},false,false,false,
+	{"curseforge","kuaishan"},		{"zhCN"},false,false,false,
+	{"curseforge","netaras"},		{"koKR"},false,false,false,
+	{"curseforge","Nierhain"},		{"deDE"},false,false,false,
+	{"curseforge","sanxy00"},		{"zhCN"},false,false,false,
+	{"curseforge","spridar"},		{"zhTW"},false,false,false,
+	{"curseforge","ZamestoTV"},		{"ruRU"},false,false,false,
+	{"curseforge","적셔줄게"},		{"koKR"},false,false,false,
+	{"curseforge","半熟魷魚"},		{"zhTW"},false,false,false,
+	{"curseforge","雪夜霜刀"},		{"zhCN"},false,false,false,
+	{"curseforge","Subly"},			{"frFR"},false,false,false,
+	{"curseforge","FunnyBunnyNikita"},{"ruRU"},false,false,false,
+	{"curseforge","雪夜霜刀"},		{"zhCN"},false,false,false,
+	{"battlenet","pas06",false,"/", "curseforge","Bullseiify"},{"deDE"},false,false,false,
+}
+
+
 local nsProfileMT
 --@do-not-package@
 do
@@ -726,7 +759,7 @@ function ns.RegisterOptions()
 	LibStub("AceConfig-3.0"):RegisterOptionsTable(addonLabel, options);
 	blizOptions = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(addonLabel);
 	LibStub("HizurosSharedTools").BlizzOptions_ExpandOnShow(blizOptions);
-	LibStub("HizurosSharedTools").AddCredit(addon);
+	LibStub("HizurosSharedTools").AddCredit(addon,options.args,{supporter=supporter});
 
 	local goldColor = ns.profile.GeneralOptions.goldColor;
 	if type(goldColor)~="string" then
