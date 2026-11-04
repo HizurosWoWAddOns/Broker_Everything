@@ -399,9 +399,14 @@ local function AddTooltipLine(tt,data)
 	end
 
 	-- character name string
-	local nameStr = (data.characterName and data.characterName~="" and data.characterName)
-				or  (data.isBattleTagFriend and data.accountName and data.accountName~="" and data.accountName)
-				or  strsplit("#",data.battleTag);
+	local nameStr = "?"
+	if data.characterName and data.characterName~="" then
+		nameStr = data.characterName
+	elseif data.isBattleTagFriend and data.accountName and data.accountName~="" then
+		nameStr = data.accountName
+	elseif data.battleTag then
+		nameStr = strsplit("#",data.battleTag)
+	end
 
 	local classColor = "ltgray" -- color if not wow or class not available (buggy blizzard function)
 	if data.clientProgram=="WoW" and data.className then
