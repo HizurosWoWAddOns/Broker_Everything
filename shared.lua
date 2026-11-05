@@ -251,8 +251,12 @@ do
 		end
 	})
 
+	local playerName,playerName2 = UnitName("player")
+	if ns.IsForeverClient() then
+		playerName = playerName.." "..playerName2 -- forever
+	end
 	ns.player = {
-		name = UnitName("player"),
+		name = playerName,
 		female = UnitSex("player")==3,
 	};
 	ns.player.name_realm = ns.player.name.."-"..ns.realm;

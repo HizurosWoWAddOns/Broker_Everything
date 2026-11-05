@@ -92,7 +92,10 @@ function module.onupdate()
 			if F=="WorldFrame" then
 				-- Units
 				local guid,id,_ = UnitGUID("mouseover");
-				local uName = UnitName("mouseover");
+				local uName,uName2 = UnitName("mouseover");
+				if ns.IsForeverClient() then
+					uName = uName.." "..uName2 -- forever
+				end
 				if guid and ns.HST.BullShitDetector("generalTesting",guid) and uName then
 					O = "?";
 					P,_,_,_,_,id = strsplit("-",guid);
