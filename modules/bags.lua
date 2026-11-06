@@ -11,7 +11,6 @@ local name = "Bags" -- L["Bags"] L["ModDesc-Bags"]
 local ttName,ttColumns,tt,module,createTooltip = name.."TT",3;
 local IsMerchantOpen,G = false,{};
 local crap,bags,bagTypes,retry = {limit=2,sum=0,items={},exclude={}},{sumFree=0,sumTotal=0,byTypeFree={},byTypeTotal={}},{};
-local LE_ITEM_CLASS_CONTAINER = LE_ITEM_CLASS_CONTAINER or Enum.ItemClass.Container;
 local qualityModeValues = {
 	["1"]=L["BagsQualityAll"],
 	["2"]=L["BagsQualityAll"].." + "..L["BagsQualityVendor"],
@@ -159,12 +158,22 @@ function crap.search()
 	end
 end
 
-local function updateBagTypes()
-	-- bagTypes: a list of possible bag types for bag space summary by type.
-	bagTypes[LE_ITEM_CLASS_CONTAINER..":0"] = {name=L["Bags"],icon=133633};
-	for i=1, 11 do
-		local n = C_Item.GetItemSubClassInfo(LE_ITEM_CLASS_CONTAINER,i);
-		bagTypes[LE_ITEM_CLASS_CONTAINER..":"..i] = {name=n,icon=0};
+local function updateBagTypes(classID,subClassID)
+	if classID==nil and subClassID==nil then
+		-- bagTypes: a list of possible bag types for bag space summary by type.
+		bagTypes[Enum.ItemClass.Container..":0"] = {name=L["Bags"],icon=133633};
+		for i=1, 11 do
+			updateBagTypes(Enum.ItemClass.Container,i)
+		end
+		if ns.IsClassicEraClient() then
+			updateBagTypes(Enum.ItemClass.Quiver,2)
+			updateBagTypes(Enum.ItemClass.Quiver,3)
+		end
+		return
+	end
+	local subClassName = C_Item.GetItemSubClassInfo(classID,subClassID);
+	if subClassName then
+		bagTypes[classID..":"..subClassID] = {name=subClassName,icon=0};
 	end
 end
 
