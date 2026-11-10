@@ -11,6 +11,7 @@ local name = "Notes" -- L["Notes"] L["ModDesc-Notes"]
 local ttName,ttColumns,tt,module = name.."TT",2;
 local delIndex,editor,createTooltip,note_edit
 local titleLimit,textLimit = 32,10000;
+local playerName = ns.IsForeverClient() and ns.player.name or ns.player.name_realm_short
 
 
 -- register icon names and default files --
@@ -41,7 +42,7 @@ local function note_save(self)
 
 	local title = editor.title:GetText():trim();
 	local text = editor.text:GetText():trim();
-	local charOnly = editor.charOnly:GetChecked() and ns.player.name_realm_short or false;
+	local charOnly = editor.charOnly:GetChecked() and playerName or false;
 
 	local titleCount,textCount = strlen(title),strlen(text);
 
@@ -55,7 +56,7 @@ local function note_save(self)
 	if editor.index then
 		ns.data[name][editor.index][1] = title;
 		ns.data[name][editor.index][2] = text;
-		if not (type(ns.data[name][editor.index][3])=="string" and ns.data[name][editor.index][3]~=ns.player.name_realm_short) then -- do not override charOnly entry with another char name
+		if not (type(ns.data[name][editor.index][3])=="string" and ns.data[name][editor.index][3]~=playerName) then -- do not override charOnly entry with another char name
 			ns.data[name][editor.index][3] = charOnly;
 		end
 	else
@@ -81,10 +82,10 @@ function note_edit(self,index)
 		editor.charOnly:SetEnabled(
 			not ns.data[name][index][3]
 			or (ns.data[name][index][3]
-			and ns.data[name][index][3]==ns.player.name_realm_short)
+			and ns.data[name][index][3]==playerName)
 		)
 	end
-	if index and ns.data[name][index][3] and ns.data[name][index][3]~=ns.player.name_realm_short then
+	if index and ns.data[name][index][3] and ns.data[name][index][3]~=playerName then
 		editor.charOnly.Text:SetText(ns.data[name][index][3])
 	else
 		editor.charOnly.Text:SetText(L["NotesCharOnly"])
@@ -203,19 +204,19 @@ function createTooltip(tt)
 	tt:AddHeader(C("dkyellow",L[name]));
 	tt:AddSeparator();
 	for i=1, #ns.data[name] do
-		if ns.data[name][i][3]==false or ns.data[name][i][3]==nil or ns.data[name][i][3]==ns.player.name_realm_short --[[ or IsShiftKeyDown() ]] then
+		if ns.data[name][i][3]==false or ns.data[name][i][3]==nil or ns.data[name][i][3]==playerName --[[ or IsShiftKeyDown() ]] then
 			local str = ns.data[name][i][1];
 			if strlen(str)==0 then
 				str = strsplit("\n",ns.data[name][i][2]);
 				str = ns.strCut(str,32);
 			end
-			if ns.data[name][i][3]==ns.player.name_realm_short then
+			if ns.data[name][i][3]==playerName then
 				str = C("ltyellow",str)
 			elseif not not ns.data[name][i][3] then
 				str = C("ltgray",str)
 			end
 			local l=tt:AddLine(str);
-			if ns.data[name][i][3] and ns.data[name][i][3]~=ns.player.name_realm_short then
+			if ns.data[name][i][3] and ns.data[name][i][3]~=playerName then
 				tt:SetCell(l,2,ns.data[name][i][3])
 			end
 			if delIndex==i then
@@ -295,6 +296,13 @@ end
 function module.init()
 	if ns.data[name]==nil then
 		ns.data[name] = {};
+	end
+	if ns.IsForeverClient() then
+		for i, v in pairs(ns.data[name])do
+			if v[3]:match("CAMWOW") then
+				v[3] = v[3]:gsub("%-CAMWOW.*$","") -- remove realm name on Forever client
+			end
+		end
 	end
 end
 
