@@ -299,7 +299,7 @@ function module.init()
 	end
 	if ns.IsForeverClient() then
 		for i, v in pairs(ns.data[name])do
-			if v[3]:match("CAMWOW") then
+			if v and v[3] and v[3]:match("CAMWOW") then
 				v[3] = v[3]:gsub("%-CAMWOW.*$","") -- remove realm name on Forever client
 			end
 		end
