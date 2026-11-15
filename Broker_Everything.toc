@@ -99,7 +99,7 @@ modules/tracking.lua [AllowLoadGameType mainline, tbc, wrath, cata, mists]
 modules/achievements.lua [AllowLoadGameType mainline, wrath, cata, mists]
 modules/calendar.lua [AllowLoadGameType mainline, wrath, cata, mists]
 modules/currency.lua [AllowLoadGameType mainline, wrath, cata, mists]
-modules/guildlog.lua [AllowLoadGameType mainline, wrath, cata, mists]
+modules/guildlog.lua [AllowLoadGameType mainline, wrath, cata, mists, camelot, forever]
 
 # modules since cata
 modules/archaeology.lua [AllowLoadGameType mainline, cata, mists]
