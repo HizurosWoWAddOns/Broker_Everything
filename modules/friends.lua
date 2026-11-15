@@ -110,8 +110,41 @@ local function battleTagColoring(tagName,tagIndex)
 end
 
 local function AddRealmInfo(data)
+	--ns:debug(data.realmName)
+	local realm = (data.realmName and data.realmName~="" and data.realmName) or data.realmID
+	if not realm then
+		return
+	end
+	local info = ns.GetRealmInfo(realm,ns.region)
+	if info and info.name then
+		-- for correct country flags
+		if info.region=="EU" and data.realmLocale=="enUS" then
+			data.realmLocale = "enGB" -- Great Britain
+		elseif info.region=="US" and info.timezone=="AEST" then
+			data.realmLocale = "enAU" -- Australian
+		end
+
+		data.realmInfo = info
+		if data.realmName and data.realmName:match("CAMWOW") then
+			data.realmName = info.name
+		end
+
+		-- bnet infos (class, zone, realm) sometimes not available from broken? api...
+		if (data.realmName==nil or data.realmName=="") and data.richPresence and data.richPresence~="" then
+			local zone, realm = strsplit("-",data.richPresence)
+			if realm then
+				zone, realm = zone:trim(), realm:trim()
+				if ns.debugMode then
+					zone, realm=zone.."°", realm.."°"
+				end
+				if (data.realmName==nil or data.realmName=="") and realm~="" then data.realmName = realm end
+				if (data.areaName==nil or data.areaName=="") and zone~="" then data.areaName = zone end
+			end
+		end
+		return
+	end
 	local realmName,region,timezone,_
-	_, realmName, _, _, data.realmLocale, _, region, timezone = ns.LRI:GetRealmInfo((data.realmName and data.realmName~="" and data.realmName) or data.realmID,ns.region);
+	_, realmName, _, _, data.realmLocale, _, region, timezone = ns.LRI:GetRealmInfo(realm,ns.region);
 	if realmName then
 		if data.realmName=="" then
 			-- get realmName from realmInfo
@@ -143,17 +176,12 @@ local function UpdateBNClientEntry(client)
 			client.factionTexture = factionUpperCase -- createTooltip2()
 			client.factionLocale = _G["FACTION_"..factionUpperCase]; -- createTooltip2()
 		end
-		client.richPresence = client.richPresence or ""
-		if client.richPresence~="" then
-			local z,r = strsplit("-",client.richPresence)
-			z,r = z:trim(),r:trim()
-			if (client.realmName==nil or client.realmName=="") and r~="" then client.realmName = r end
-			if (client.areaName==nil or client.areaName=="") and z~="" then client.areaName = z end
-		end
+
 		AddRealmInfo(client)
+
 		if WOW_PROJECT_ID ~= client.wowProjectID then
 			-- add project name
-			client.wowProjectStr = "|cffffee00("..L["WoWProjectId"..client.wowProjectID]..")|r";
+			client.wowProjectStr = "|cffffee00("..L["WoWProjectId"..client.wowProjectID]..(ns.debugMode and "|cff999999-"..client.wowProjectID.."|r|cffffee00" or "")..")|r";
 		end
 	end
 end
@@ -292,6 +320,7 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 		if ns.profile[name].useCtrlKeyInsteadAlt then
 			isKeyDown = IsControlKeyDown
 		end
+		-- FIXME invite friends not working with forever client
 		if isKeyDown() then
 			-- party invite
 			if C_PartyInfo.InviteUnit then
@@ -326,22 +355,15 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 				AddNameToEditBox(data.characterName,data.realmName)
 			end
 		else
-			local friendName,chatType,editBox;
-			if button=="RightButton" then
-				if WOW_PROJECT_ID ~= data.wowProjectID then
-					ns:print(L["Sorry, could not whisper to another wow version."])
-					return;
-				end
+			local friendName,chatType,editBox=data.accountName,"BN_WHISPER";
+			if button=="RightButton" and WOW_PROJECT_ID==data.wowProjectID then
 				chatType = "WHISPER"
+				local realm = data.realmNameOrig or data.realmName
 				friendName = data.characterName;
-				if ns.realmName~=data.realmName then
-					friendName = data.characterName .."-".. ns.stripRealm(data.realmName);
+				if not realm:match("^CAMWOW") and ns.realmName~=realm then
+					friendName = data.characterName .."-".. (realm:gsub("[%s%-]", ""));
 				end
-			else
-				chatType = "BN_WHISPER"
-				friendName = data.accountName;
 			end
-
 			if ChatFrameUtil and ChatFrameUtil.ChooseBoxForSend then
 				-- from ChatFrameUtil.lua - ChatFrameUtil.Send[BNet]Tell does not work very well.
 				editBox = ChatFrameUtil.ChooseBoxForSend();
@@ -471,10 +493,15 @@ local function AddTooltipLine(tt,data)
 			local realmColor = "white"
 
 			if realmName==nil or realmName=="" then
-				realmName = UNKNOWN --..(data.realmID and " ("..data.realmID..")" or "")
-				realmColor = "gray"
-			elseif ns.realms[data.realmName] then -- connect realm
+				--realmName = UNKNOWN
+				realmName = ""
+				--realmColor = "gray"
+			elseif ns.realms[realmName] or ns.realm_short[(realmName:gsub("[%s%-]", ""))] then -- connect realm
 				realmColor = "green"
+			end
+
+			if ns.debugMode and data.realmID then
+				realmName = realmName .. " |cff999999("..data.realmID..")|r"
 			end
 
 			-- country/language flag
@@ -650,6 +677,15 @@ local function createTooltip(tt)
 					regionID = ns.region,
 					wowProjectID = WOW_PROJECT_ID,
 				}
+
+				if v.realm then
+					data.realmData = ns.GetRealmInfo(v.realm)
+					if data.realmData and data.realmData.name~=v.realm then
+						data.realmNameOrig = data.realmName
+						data.realmName = data.realmData.name -- replace realm name from Forever
+					end
+				end
+
 				AddRealmInfo(data)
 				AddTooltipLine(tt,data)
 				friendsDisplayed = true
@@ -829,7 +865,7 @@ function module.onevent(self,event,arg1)
 		}
 		if ns.client_version<12.1 and not ns.IsForeverClient() then
 			tinsert(events,"BATTLETAG_INVITE_SHOW")
-			-- TOOD: search another way to track battle tag invites
+			-- TODO: search another way to track battle tag invites
 		end
 		ns.eventRegister(self,events,{name,"<onevent>"})
 	elseif (ns.eventPlayerEnteredWorld or event=="PLAYER_ENTERING_WORLD") and not self.locked then
