@@ -197,26 +197,35 @@ end
 --- player and twinks dependent data    ---
   ---------------------------------------
 do
-	---@param name string
-	---@return string name
-	function ns.stripRealm(name)
-		name = name:gsub(" ","");
-		name = name:gsub("%-","");
-		return name;
-	end
-	ns.region = ns.LRI:GetCurrentRegion() or ({"US","KR","EU","TW","CN"})[GetCurrentRegion()];
-	ns.realm = GetRealmName();
-	ns.realms = {};
-	ns.realm_shorts = {}
-	do
-		local pattern = "^"..(ns.realm:gsub("(.)","[%1]*")).."$";
-		for i,v in ipairs((C_AutoComplete and C_AutoComplete.GetAutoCompleteRealms or GetAutoCompleteRealms)()) do
-			if v:match(pattern) then
-				ns.realm_short = v;
+	ns.regions = {"US","KR","EU","TW","CN"}
+	ns.region = ns.LRI:GetCurrentRegion() or ns.regions[GetCurrentRegion()]
+	ns.realm = GetRealmName()
+	ns.realm_short = ns.realm:gsub("[%s%-]", "")
+	ns.realms = {}
+	local PARENS_TEMPLATE = strtrim(PARENS_TEMPLATE)
+	local CAMWOW_PATTERN = "^CAMWOW([A-Za-z]*)(%d+)Realm(%d+)([pPvVrReE]*)$"
+	local ForeverRealmTypes = {
+		["PVE"] = GDAPI_REALMTYPE_NORMAL,
+		["PVP"] = GDAPI_REALMTYPE_PVP,
+		["RP"] = GDAPI_REALMTYPE_RP,
+		["RPPVP"] = GDAPI_REALMTYPE_RP.."-"..GDAPI_REALMTYPE_PVP,
+	}
+
+	if ns.IsForeverClient() then
+		local realmRegion, id1, id2, realmType = ns.realm:gsub("[%s%-]", ""):match(CAMWOW_PATTERN)
+		ns.realm = ForeverRealmTypes[realmType:upper()].." "..PARENS_TEMPLATE:format(realmRegion)
+		ns.realm_short = ns.realm:gsub("[%s%-]", "")
+		for i=1, #ns.regions do
+			for _, v in pairs(ForeverRealmTypes) do
+				v = v.." "..PARENS_TEMPLATE:format(ns.regions[i])
+				tinsert(ns.realms,v)
+				tinsert(ns.realms,(v:gsub("[%s%-]", "")))
 			end
 		end
-		if not ns.realm_short then
-			ns.realm_short = ns.realm:gsub(" ",""):gsub("%-","");
+	else
+		local pattern = "^"..(ns.realm:gsub("(.)","[%1]*")).."$";
+		for i,v in ipairs(C_AutoComplete.GetAutoCompleteRealms()) do
+			tinsert(ns.realms,v)
 		end
 
 		local realms = {}
@@ -227,16 +236,17 @@ do
 				if type(name)=="string" and type(apiName)=="string" then
 					realms[name] = apiName;
 					if apiName~=name then
-						ns.realm_shorts[apiName] = name
+						ns.realms[apiName] = name
 					end
 				end
 			end
 		else
 			realms[ns.realm] = ns.realm_short;
 			if ns.realm~=ns.realm_short then
-				ns.realm_shorts[ns.realm_short] = ns.realm;
+				ns.realms[ns.realm_short] = ns.realm;
 			end
 		end
+
 		ns.realms = realms;
 	end
 
@@ -251,7 +261,36 @@ do
 		end
 	})
 
-	local playerName,playerName2 = UnitName("player")
+	function ns.GetRealmInfo(realm,region)
+		region = region or ns.region
+		local info = ns.LRI:GetRealmInfo(realm,region,true)
+		if not info and type(realm)=="string" and realm:match("CAMWOW") then
+			-- forever realm names
+			local realmAPI = realm:gsub("[%s%-]", "");
+			local realmRegion, id1, id2, realmType = realm:gsub("[%s%-]", ""):match(CAMWOW_PATTERN)
+			if not realmRegion then
+				return {name = realm, nameForAPI=realmAPI} -- theoretically impossible ^.^
+			end
+			local realmName = ForeverRealmTypes[realmType:upper()].." "..PARENS_TEMPLATE:format(realmRegion)
+			info = {
+				id = tonumber(id1.."."..id2),
+				idInfo = {id1,id2},
+				name = realmName,
+				nameForAPI = realmAPI,
+				rules = realmType,
+				locale = false,
+				region = realmRegion,
+				timezone = false,
+				utc = false,
+				englishName = realm,
+				englishNameForAPI = realmAPI,
+				gameClient = "camelot"
+			}
+		end
+		return info
+	end
+
+	local playerName, playerName2 = UnitName("player")
 	if ns.IsForeverClient() then
 		playerName = playerName.." "..playerName2 -- forever
 	end
@@ -267,6 +306,7 @@ do
 	ns.player.classLocale = ns.player.female and _G["LOCALIZED_CLASS_NAMES_FEMALE"][ns.player.class] or _G["LOCALIZED_CLASS_NAMES_MALE"][ns.player.class];
 	ns.player.raceLocale,ns.player.race,ns.player.raceIndex = UnitRace("player");
 	ns.LC.colorset("suffix",ns.LC.colorset[ns.player.class:lower()]);
+
 
 	---@param name string
 	---@return string name
@@ -302,7 +342,7 @@ do
 	---@param prepDash boolean prepend dash
 	---@return string
 	function ns.showRealmName(modName,name,color,prepDash)
-		if not (ns.realm_short==name or ns.realm==name) then
+		if not (ns.realm_short==name or ns.realm==name) then -- TODO: check Forever client
 			local Color = color and ns.LC.color(color,"colortable") or ns.color.dkyellow;
 			if ns.profile[modName].showRealmNames then
 				if type(name)=="string" and name:len()>0 then
