@@ -436,7 +436,7 @@ local function createTooltip(tt, name, ttName, update)
 		local short = ns.realms[ns.realm]
 		local tmp = {}
 		for k in ns.pairsByKeys(ns.realms) do
-			if k~=short and k~=ns.realm and ns.realm_shorts[k]==nil then
+			if k~=short and k~=ns.realm and ns.realms[k]==nil then
 				tinsert(tmp,k)
 			end
 		end

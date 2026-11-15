@@ -205,8 +205,8 @@ function createTooltip(tt)
 		for i,toonNameRealm,toonName,toonRealm,toonData,isCurrent in ns.pairsToons(name,{currentFirst=true,forceSameRealm=true}) do
 			if toonData.xp~=nil and not isCurrent and not (ns.profile[name].showNonMaxLevelOnly and toonData.level==MAX_PLAYER_LEVEL) then
 				if type(toonRealm)=="string" and toonRealm:len()>0 then
-					local _,_realm = ns.LRI:GetRealmInfo(toonRealm,ns.region);
-					if _realm then toonRealm = _realm; end
+					local info = ns.GetRealmInfo(toonRealm,ns.region);
+					if info then toonRealm = info.realm; end
 				end
 
 				local factionSymbol = "";
