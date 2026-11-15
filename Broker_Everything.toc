@@ -77,6 +77,7 @@ modules/gold.lua
 modules/gps.lua
 modules/guild.lua
 modules/mail.lua
+modules/nameplates.lua
 modules/notes.xml
 modules/questlog.lua
 modules/reputation.lua
@@ -109,23 +110,18 @@ modules/surprise.lua [AllowLoadGameType mainline, cata, mists]
 modules/difficulty.lua [AllowLoadGameType mainline, mists]
 modules/instances.lua [AllowLoadGameType mainline, mists]
 
-# modules since wod
-modules/followers.lua [AllowLoadGameType mainline]
-modules/garrison.lua [AllowLoadGameType mainline]
-modules/missions.lua [AllowLoadGameType mainline]
-modules/nameplates.lua [AllowLoadGameType mainline]
-modules/tanaanjungle.lua [AllowLoadGameType mainline]
-modules/wardrobe.lua [AllowLoadGameType mainline]
-
-# modules since legion
+# modules for retail only
 modules/artifactweapons.lua [AllowLoadGameType mainline]
 modules/classspecs.lua [AllowLoadGameType mainline]
 modules/emissaryquests.lua [AllowLoadGameType mainline]
+modules/followers.lua [AllowLoadGameType mainline]
+modules/garrison.lua [AllowLoadGameType mainline]
 modules/invasions.lua [AllowLoadGameType mainline]
-modules/wowtoken.lua [AllowLoadGameType mainline]
-
-# modules since bfa
+modules/missions.lua [AllowLoadGameType mainline]
 modules/professions.lua [AllowLoadGameType mainline]
+modules/tanaanjungle.lua [AllowLoadGameType mainline]
+modules/wardrobe.lua [AllowLoadGameType mainline]
+modules/wowtoken.lua [AllowLoadGameType mainline]
 
 #@do-not-package@
 dev/modules.xml

@@ -3,13 +3,12 @@
 ----------------------------------
 local addon, ns = ...
 local C, L, I = ns.LC.color, ns.L, ns.I
-if ns.client_version<6 then return end
 
 
 -- module own local variables and local cached functions --
 -----------------------------------------------------------
 local name = "Nameplates" -- L["Nameplates"] L["ModDesc-Nameplates"]
-local ttName,ttColumns,tt,createTooltip,module = name.."TT",5
+local ttName,ttColumns,tt,createTooltip,module = name.."TT",4
 local nameplateStatus = {};
 
 
@@ -36,6 +35,24 @@ local function toggleCVar(self,v)
 	createTooltip(tt);
 end
 
+local function tooltipOnEnter(_, tooltipData)
+	GameTooltip:SetOwner(tt,"ANCHOR_NONE")
+	local pos = {"LEFT",tt,"RIGHT",0,5}
+	if tt:GetCenter() > UIParent:GetCenter() then
+		pos = {"RIGHT",tt,"LEFT",0,-5}
+	end
+	GameTooltip:SetPoint(unpack(pos))
+	GameTooltip:SetText(tooltipData[1],1,1,1,1)
+	for i=2, #tooltipData do
+		GameTooltip:AddLine(tooltipData[i])
+	end
+	GameTooltip:Show()
+end
+
+local function tooltipOnLeave()
+	GameTooltip:Hide();
+end
+
 function createTooltip(tt)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
@@ -50,49 +67,66 @@ function createTooltip(tt)
 	for _,row in ipairs(nameplateStatus)do
 		local l=tt:AddLine();
 		local cell = 1;
-		for i,v in ipairs(row) do
-			local color = "white";
-			if v.txt and v.txt:find("\124") then
-				v.txt=gsub(v.txt,"\124T.+\124t","");
-			end
-			v.txt = gsub(v.txt,"\n"," ");
-			if v.cvar then
-				v.state,v.dstate=nil,nil; -- cvar state, dependency cvar state
-				if v.type=="single" then
-					v.state = GetCVarBool(v.cvar);
-				elseif v.type=="group" then
-					v.state = true;
-					for cvar, value in pairs(v.cvar)do
-						if type(cvar)=="string" and  GetCVar(cvar)~=value then
-							v.state = false;
+		if row then
+			for i,v in ipairs(row) do
+				local color = "white";
+				if v.txt and v.txt:find("\124") then
+					v.txt=gsub(v.txt,"\124T.+\124t","");
+				end
+				if v.txt == nil then
+					ns:debug("<vTxtNil>",_,i)
+				end
+				v.txt = gsub(v.txt,"\n"," ");
+				if v.cvar then
+					v.state,v.dstate=nil,nil; -- cvar state, dependency cvar state
+
+					if v.type=="single" then
+						v.state = GetCVarBool(v.cvar);
+					elseif v.type=="group" then
+						v.state = true;
+						for cvar, value in pairs(v.cvar)do
+							if type(cvar)=="string" and  GetCVar(cvar)~=value then
+								v.state = false;
+							end
 						end
 					end
+
+					if v.cvar_depend then
+						v.dstate = GetCVarBool(v.cvar_depend);
+					elseif v.cvar_depend_inv then
+						v.dstate = not GetCVarBool(v.cvar_depend_inv);
+					end
 				end
-				if v.cvar_depend then
-					v.dstate = GetCVarBool(v.cvar_depend);
-				elseif v.cvar_depend_inv then
-					v.dstate = not GetCVarBool(v.cvar_depend_inv);
+
+				local tColors = type(v.colors);
+
+				if tColors=="table" then
+					local cIndex = v.state and 1 or #v.colors
+					if v.dstate~=nil then
+						cIndex = (v.state and v.dstate and 3) or (v.state and not v.dstate and 2) or 1
+					end
+					color = v.colors[cIndex] or "red" -- red as error
+				elseif tColors=="string" then
+					color = v.colors;
+				elseif v.state~=nil then
+					color = v.state and "white" or "gray"
+					if v.dstate~=nil then
+						color = (v.state and v.dstate and "white") or (v.state and not v.dstate and "ltgray") or "gray"
+					end
 				end
-			end
-			local tColors = type(v.colors);
-			if tColors=="table" then
-				local cIndex = v.state and 1 or 2;
-				if v.dstate==false then
-					cIndex = cIndex+2;
+
+				tt:SetCell(l,cell,C(color,v.txt:trim()), nil, v.align, v.rows);
+				if v.cvar and v.cvar_toggle then
+					tt:SetCellScript(l, cell, "OnMouseUp", toggleCVar, v);
 				end
-				color = v.colors[cIndex];
-			elseif tColors=="string" then
-				color = v.colors;
-			elseif v.state~=nil then
-				color = v.state and "white" or "ltgray";
+				if v.tooltip then
+					tt:SetCellScript(l, cell, "OnEnter", tooltipOnEnter, v.tooltip)
+					tt:SetCellScript(l, cell, "OnLeave", tooltipOnLeave)
+				end
+				cell = cell + (v.rows or 1);
 			end
-			tt:SetCell(l,cell,C(color,v.txt:trim()), nil, nil, v.rows);
-			if v.cvar then
-				tt:SetCellScript(l, cell, "OnMouseUp", toggleCVar, v);
-			end
-			cell = cell + (v.rows or 1);
 		end
-		if row.separator then
+		if row and row.separator then
 			if row.separator==1 then
 				tt:AddSeparator();
 			else
@@ -123,95 +157,88 @@ module = {
 }
 
 -- function module.options() return {} end
+-- L["NameplateShowFriendlyNpcsDesc"] = "This option and all other friendly name plates only visible in combat. To see it out of combat use \"Nameplates out of combat\" option."
 
 function module.init()
-	ttColumns = 6;
-	local colors1,colors2,colors3 = {"white","gray"},{"white","gray","gray","dkgray"},{"dkgray","black","white","gray"};
-	local UNML = InterfaceOptionsNamesPanelUnitNameplatesMakeLarger
+	--ttColumns = 6;
+	local colors1,colors2,colors3 = {"white","gray"},{"gray","ltgray","white"},{"dkgray","black","white","gray"};
 	local UpdateNamePlateOptions = function() NamePlateDriverFrame:UpdateNamePlateOptions() end
+	local p = "+ "
+	if HOUSING_BULLETINBOARD_NPCS then
+		L["NPCs"] = HOUSING_BULLETINBOARD_NPCS
+	end
+	local CATALOG_SHOP_ALSO_INCLUDES = CATALOG_SHOP_ALSO_INCLUDES or L["AlsoIncludes"]
+	local ttINCLUDES_F		= {CATALOG_SHOP_ALSO_INCLUDES,PET,UNIT_NAME_FRIENDLY_GUARDIANS,UNIT_NAME_FRIENDLY_TOTEMS}
+	local ttINCLUDES_F_NP	= {CATALOG_SHOP_ALSO_INCLUDES,PET,UNIT_NAMEPLATES_SHOW_FRIENDLY_GUARDIANS,UNIT_NAMEPLATES_SHOW_FRIENDLY_TOTEMS}
+	local ttINCLUDES_E		= {CATALOG_SHOP_ALSO_INCLUDES,PET,UNIT_NAME_ENEMY_GUARDIANS,UNIT_NAME_ENEMY_TOTEMS}
+	local ttINCLUDES_E_NP	= {CATALOG_SHOP_ALSO_INCLUDES,PET,UNIT_NAMEPLATES_SHOW_ENEMY_GUARDIANS,UNIT_NAMEPLATES_SHOW_ENEMY_TOTEMS}
+	local realmAndColor,rows = {},4
+	if _G["UNIT_NAMEPLATES_SHOW_FRIENDLY_REALM_NAME"] and not ns.IsForeverClient() then
+		tinsert(realmAndColor,{txt=UNIT_NAMEPLATES_SHOW_FRIENDLY_REALM_NAME,  type="single", cvar="nameplateShowFriendlyRealmName", 		colors=colors1, cvar_toggle=true, rows=2 })
+		rows = 2
+	end
+	if _G["UNIT_NAMEPLATES_SHOW_FRIENDLY_CLASS_COLORS"] then
+		tinsert(realmAndColor,{txt=UNIT_NAMEPLATES_SHOW_FRIENDLY_CLASS_COLORS,type="single", cvar="nameplateUseClassColorForFriendlyPlayerUnitNames", colors=colors1, cvar_toggle=true, rows=rows })
+	end
+
+
 	nameplateStatus = {
-		{{txt=PLAYER,colors="ltblue"}, {txt=FRIENDLY,colors="ltgreen",rows=2}, {txt=ENEMY,colors="ltred",rows=3}, separator=1},
 		{
-			{txt=NAMES_LABEL, colors="ltyellow" },
-			{txt=PLAYER,					type="single", cvar="UnitNameFriendlyPlayerName",	colors=colors1 },
-			{txt=UNIT_NAME_FRIENDLY_MINIONS,type="single", cvar="UnitNameFriendlyMinionName",	colors=colors2,	cvar_depend="UnitNameFriendlyPlayerName" },
-			{txt=PLAYER,					type="single", cvar="UnitNameEnemyPlayerName",		colors=colors1 },
-			{txt=UNIT_NAME_ENEMY_MINIONS,	type="single", cvar="UnitNameEnemyMinionName",		colors=colors2,	cvar_depend="UnitNameEnemyPlayerName" },
+			{txt=FRIENDLY,colors="ltgreen",rows=2,align="CENTER"},
+			{txt=ENEMY,colors="ltred",rows=2,align="CENTER"}
 		},
 		{
-			{txt=L["Nameplates"], colors="ltyellow" },
-			{txt=PLAYER,								type="single", cvar="nameplateShowFriends",			colors=colors1 },
-			{txt=UNIT_NAMEPLATES_SHOW_FRIENDLY_MINIONS,	type="single", cvar="nameplateShowFriendlyMinions",	colors=colors2,	cvar_depend="nameplateShowFriends" },
-			{txt=PLAYER,								type="single", cvar="nameplateShowEnemies",			colors=colors1 },
-			{txt=UNIT_NAMEPLATES_SHOW_ENEMY_MINIONS,	type="single", cvar="nameplateShowEnemyMinions",	colors=colors2,		cvar_depend="nameplateShowEnemies" },
-			{txt=UNIT_NAMEPLATES_SHOW_ENEMY_MINUS,		type="single", cvar="nameplateShowEnemyMinus",		colors=colors2,		cvar_depend="nameplateShowEnemies" },
+			{txt=NAMES_LABEL,  colors="ltyellow" },
+			{txt=L["Plates"],  colors="ltyellow" },
+			{txt=NAMES_LABEL,  colors="ltyellow" },
+			{txt=L["Plates"],  colors="ltyellow" },
+			separator=1
 		},
-
+		{
+			{txt=PLAYER,						type="single", cvar="UnitNameFriendlyPlayerName",	colors=colors1, cvar_toggle=true },
+			{txt=PLAYER,						type="single", cvar="nameplateShowFriendlyPlayers",	colors=colors1, cvar_toggle=true },
+			{txt=PLAYER,						type="single", cvar="UnitNameEnemyPlayerName",		colors=colors1, cvar_toggle=true },
+			{txt=PLAYER,						type="single", cvar="nameplateShowEnemies",			colors=colors1, cvar_toggle=true },
+		},
+		{
+			{txt=UNIT_NAME_FRIENDLY_MINIONS,				type="single", cvar="UnitNameFriendlyMinionName",			colors=colors2,	cvar_depend="UnitNameFriendlyPlayerName", cvar_toggle=true, tooltip=ttINCLUDES_F },
+			{txt=UNIT_NAMEPLATES_SHOW_FRIENDLY_MINIONS,		type="single", cvar="nameplateShowFriendlyPlayerMinions",	colors=colors2,	cvar_depend="nameplateShowFriendlyPlayers", cvar_toggle=true, tooltip=ttINCLUDES_F_NP },
+			{txt=UNIT_NAME_ENEMY_MINIONS,					type="single", cvar="UnitNameEnemyMinionName",				colors=colors2,	cvar_depend="UnitNameEnemyPlayerName", cvar_toggle=true, tooltip=ttINCLUDES_E },
+			{txt=UNIT_NAMEPLATES_SHOW_ENEMY_MINIONS,		type="single", cvar="nameplateShowEnemyMinions",			colors=colors2,	cvar_depend="nameplateShowEnemies", cvar_toggle=true, tooltip=ttINCLUDES_E_NP },
+		},
+		{
+			{txt=""},
+			{txt=L["NPCs"],									type="single", cvar="nameplateShowFriendlyNpcs",			colors=colors1, cvar_toggle=true, --[[ tooltip={UNIT_NAMEPLATES_SHOW_FRIENDLY_NPCS_TOOLTIP,L["NameplateShowFriendlyNpcsDesc"]} ]] },
+			{txt=""},
+			{txt=UNIT_NAMEPLATES_SHOW_ENEMY_MINUS,			type="single", cvar="nameplateShowEnemyMinus",				colors=colors2,	cvar_depend="nameplateShowEnemies", cvar_toggle=true },
+			separator=1
+		},
+		{
+			{txt=L["Nameplates out of combat"],  type="single", cvar="nameplateShowAll", colors=colors1, rows=4, cvar_toggle=true },
+		},
 		{separator=4},
-
-		{{txt=UNIT_NAME_NPC,colors="ltblue"}, separator=1},
 		{
-			{txt=NPC_NAMES_DROPDOWN_ALL,type="single", cvar="UnitNameNPC",						colors=colors1 },
-			{txt=L["Interactive NPCs"],	type="single", cvar="UnitNameInteractiveNPC",			colors=colors2,	cvar_depend_inv="UnitNameNPC", rows=2},
-			{txt=L["Special NPCs"],		type="single", cvar="UnitNameFriendlySpecialNPCName",	colors=colors2,	cvar_depend_inv="UnitNameNPC", rows=2},
-			{txt=L["Hostile NPCs"],		type="single", cvar="UnitNameHostleNPC",				colors=colors2,	cvar_depend_inv="UnitNameNPC"},
-		},
-
-		{separator=4},
-
-		{{txt=L["More names"],	colors="ltblue" },separator=1},
-		{
-			{txt=UNIT_NAME_OWN,		type="single", cvar="UnitNameOwn", colors=colors1 },
-			{txt=UNIT_NAME_NONCOMBAT_CREATURE,	type="single", cvar="UnitNameNonCombatCreatureName", colors=colors1, rows=3},
-		},
-
-		{separator=4},
-
-		{{txt=L["More nameplate options"],	colors="ltblue" },separator=1},
-		{
-			{ txt=L["Nameplate size"], colors="dkyellow" },
-
-			{ txt=PLAYER_DIFFICULTY1,
-				colors=colors1,
-				onChange=UpdateNamePlateOptions,
-				type="group", cvar={NamePlateHorizontalScale="1",   NamePlateVerticalScale="1", NamePlateClassificationScale="1"} -- 1, 1.4
-			},
-			{ txt=VIDEO_OPTIONS_FAIR,
-				colors=colors1,
-				onChange=UpdateNamePlateOptions,
-				type="group", cvar={NamePlateHorizontalScale="1.18", NamePlateVerticalScale="1.9", NamePlateClassificationScale="1.25"}
-			},
-			{ txt=LARGE,
-				colors=colors1,
-				onChange=UpdateNamePlateOptions,
-				type="group", cvar={NamePlateHorizontalScale="1.4", NamePlateVerticalScale="2.7", NamePlateClassificationScale="1.25"} -- 1.4, 2.7
-			},
-			{ txt=L["Larger"], colors=colors1,
-				onChange=UpdateNamePlateOptions,
-				type="group", cvar={NamePlateHorizontalScale="1.9", NamePlateVerticalScale="3.8", NamePlateClassificationScale="1.25"}
-			},
-			{ txt=L["Even larger"], colors=colors1,
-				row=2,
-				onChange=UpdateNamePlateOptions,
-				type="group", cvar={NamePlateHorizontalScale="2.6", NamePlateVerticalScale="5.2", NamePlateClassificationScale="1.25"}
-			},
+			{txt=AUCTION_SUBCATEGORY_OTHER,colors="ltblue",row=5},
+			separator=1
 		},
 		{
-			{txt=L["Nameplates out of combat"],  type="single", cvar="nameplateShowAll", colors=colors1, rows=1},
-			{txt=SHOW_NAMEPLATE_LOSE_AGGRO_FLASH,  type="single", cvar="ShowNamePlateLoseAggroFlash", colors=colors1, rows=4},
+			{txt=UNIT_NAME_OWN,								type="single", cvar="UnitNameOwn", 							colors=colors1, cvar_toggle=true, rows=2 },
+			{txt=UNIT_NAME_NONCOMBAT_CREATURE,				type="single", cvar="UnitNameNonCombatCreatureName", 		colors=colors1, cvar_toggle=true, rows=2 },
 		},
+		#realmAndColor and realmAndColor or false,
+		{separator=1},
+		{
+			{txt=NPC_NAMES_DROPDOWN_ALL,					type="single", cvar="UnitNameNPC",							colors=colors1, cvar_toggle=true, rows=2 },
+			{txt=L["Interactive NPCs"],						type="single", cvar="UnitNameInteractiveNPC",				colors=colors2,	cvar_depend_inv="UnitNameNPC", cvar_toggle=true, rows=2 },
+		},{
+			{txt=L["Special NPCs"],							type="single", cvar="UnitNameFriendlySpecialNPCName",		colors=colors2,	cvar_depend_inv="UnitNameNPC", cvar_toggle=true, rows=2 },
+			{txt=L["Hostile NPCs"],							type="single", cvar="UnitNameHostleNPC",					colors=colors2,	cvar_depend_inv="UnitNameNPC", cvar_toggle=true, rows=2 },
+		},
+		--{separator=4},
+		--{{txt=DISPLAY_PERSONAL_RESOURCE,		type="single", cvar="nameplateShowSelf", 	colors=colors1,	cvar_toggle=true }},
 
-		{separator=4},
+	}
 
-		{{txt=DISPLAY_PERSONAL_RESOURCE,colors="ltblue" },separator=1},
-		{{txt=DISPLAY_PERSONAL_RESOURCE,type="single", cvar="nameplateShowSelf", colors=colors1,rows=ttColumns}},
-		{{txt=DISPLAY_PERSONAL_RESOURCE_ON_ENEMY,type="single", cvar="nameplateResourceOnTarget", colors=colors1, rows=ttColumns}},
-
-		{separator=4},
-
-		{{txt=AUCTION_SUBCATEGORY_OTHER,colors="ltblue"},separator=1},
-		{{txt=L["Show quest unit circles"],type="single", cvar="ShowQuestUnitCircles", colors=colors1,rows=ttColumns}}
-	};
 end
 
 function module.onevent(self,event,msg,msg2)
@@ -227,6 +254,12 @@ function module.onevent(self,event,msg,msg2)
 		dataobj.text = ENEMY
 	else
 		dataobj.text = NONE
+	end
+
+	if event=="PLAYER_LOGIN" and ns.IsRetailClient() then
+		if GetCVar("ShowQuestUnitCircles")~="1" then
+			SetCVar("ShowQuestUnitCircles","1") -- back to default
+		end
 	end
 end
 
