@@ -240,9 +240,13 @@ local function ttAddLine(obj)
 
 	if (type(obj[QuestId])=="number") and (IsInGroup()) then
 		for i=1, GetNumSubgroupMembers() do -- GetNumSubgroupMembers
+			local partyMemberName, partyMemberName2 = UnitName("party"..i)
+			if ns.IsForeverClient() then
+				partyMemberName = partyMemberName.." "..partyMemberName2 -- forever
+			end
 			if (IsUnitOnQuest and IsUnitOnQuest(obj[Index],"party"..i)) -- classic
 			or (C_QuestLog and C_QuestLog.IsUnitOnQuest and C_QuestLog.IsUnitOnQuest("party"..i,obj[QuestId])) then -- retail
-				tinsert(GroupQuest,C(select(2,UnitClass("party"..i)),UnitName("party"..i)));
+				tinsert(GroupQuest,C(select(2,UnitClass("party"..i)),partyMemberName));
 			end
 		end
 		if (#GroupQuest>0) then
