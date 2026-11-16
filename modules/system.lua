@@ -612,6 +612,10 @@ local function updateAll()
 			createTooltip(ttTraf, name_traf, ttNameTraf, true);
 		end
 	end
+
+	if enabled.rlm_mod then
+		ns.LDB:GetDataObjectByName(module_rlm.ldbName).text = ns.realm;
+	end
 end
 
 local function init()
