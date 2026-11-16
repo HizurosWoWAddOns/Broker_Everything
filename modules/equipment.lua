@@ -459,6 +459,8 @@ module = {
 	clickOptions = {
 		["charinfo"] = "CharacterInfo",
 		["sets"] = {EQUIPMENT_MANAGER,"module","equipMan"},
+		["nextSet"] = setsSupported and {"Next equipment set","module","nextSet"}, -- L["Next equipment set"]
+		["prevSet"] = setsSupported and {"Previous equipment set","module","prevSet"}, -- L["Previous equipment set"]
 		["menu"] = "OptionMenu"
 	}
 }
@@ -470,10 +472,36 @@ if hasItemLevels or setsSupported then
 end
 
 ns.ClickOpts.addDefaults(module,{
-	charinfo = "_LEFT",
+	charinfo = ns.IsForeverClient() and "__NONE" or "_LEFT",
 	sets = "__NONE",
+	nextSet = ns.IsForeverClient() and "_LEFT" or "__NONE",
+	prevSet = "__NONE",
 	menu = "_RIGHT"
 });
+
+-- equip the set after (step 1) or before (step -1) the one worn or pending, wrapping around
+local function switchEquipmentSet(step)
+	local setIDs = C_EquipmentSet.GetEquipmentSetIDs() or {};
+	if #setIDs==0 then return end
+	local current;
+	for i, setID in ipairs(setIDs) do
+		if equipPending then
+			if setID==equipPending then current=i; break; end
+		elseif select(4,C_EquipmentSet.GetEquipmentSetInfo(setID)) then
+			current=i; break;
+		end
+	end
+	local index = current and ((current-1+step) % #setIDs + 1) or (step>0 and 1 or #setIDs);
+	ns.toggleEquipment(setIDs[index]);
+end
+
+function module.nextSet()
+	switchEquipmentSet(1);
+end
+
+function module.prevSet()
+	switchEquipmentSet(-1);
+end
 
 function module.equipMan(self,button)
 	securecall("ToggleCharacter","PaperDollFrame");
