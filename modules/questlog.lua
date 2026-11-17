@@ -11,14 +11,21 @@ local name = "Quest Log" -- QUESTLOG_BUTTON L["ModDesc-Quest Log"]
 local ttName,ttName2,ttColumns,ttColumns2,tt,tt2,module,createTooltip = name.."TT",name.."TT2",10,2;
 local quests,numQuestStatus,sum,url,tt2created,requested
 local tradeskills = {}
-local exp = {"classic","tbc","wotlk","cata","mop-classic"}
+local exp = {
+	[WOW_PROJECT_CLASSIC or 2] = "classic",
+	[WOW_PROJECT_BURNING_CRUSADE_CLASSIC or 5] = "tbc",
+	[WOW_PROJECT_WRATH_CLASSIC or 11] = "wotlk",
+	[WOW_PROJECT_CATACLYSM_CLASSIC or 14] = "cata",
+	[WOW_PROJECT_MISTS_CLASSIC or 19] = "mop-classic",
+	[WOW_PROJECT_CAMELOT or 18] = "forever",
+}
+
 local urls = {
 	WoWHead = {"WoWHead",function(id)
-		local url,lc,bv = {"https://www.wowhead.com"},(GetLocale()),GetBuildInfo()
+		local url,lc = {"https://www.wowhead.com"},(GetLocale())
 		local lang = {deDE="de",esES="es",esMX="es",frFR="fr",ptBR="pt",ptPT="pt",itIT="it",ruRU="ru",koKR="ko",zhCN="cn",zhTW="cn"};
-		bv = tonumber((bv:match("^([0-9]*)%.")))
-		if bv and exp[bv] then
-			tinsert(url,exp[bv])
+		if exp[WOW_PROJECT_ID] then
+			tinsert(url,exp[WOW_PROJECT_ID])
 		end
 		if lc and lang[lc] then
 			tinsert(url,lang[lc]);
