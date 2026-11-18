@@ -637,6 +637,9 @@ local function init()
 
 		-- hearth stones
 		54452,64488,93672,142542,162973,163045,165669,165670,165802,166746,166747,168862,168907,172179,184353,180290,182773,183716,184871,188952,190196,190237,193588,200630,206195,208704,209035,212337,228940,235016,236687,245970,246565,257736,263933,265100,
+
+		-- hearth stones - forever
+		284164,
 	};
 
 	-- on some toys C_ToyBox.IsToyUsable returns wrong state
@@ -689,6 +692,9 @@ local function init()
 		[257736]=1, -- Toy - Lightcalled Hearthstone
 		[263933]=1, -- Toy - Preyseeker's Hearthstone
 		[265100]=1, -- Toy - Corewarden's Hearthstone
+
+		-- forever
+		[284164]=1, -- Toy - Scarlet Hearthstone
 	};
 
 	--_itemReplacementIds = {64488,28585,6948,44315,44314,37118,142542,142298};
