@@ -429,7 +429,7 @@ local function tpmAddObject(tt,parent,name,line,column,data)
 			start, duration, enabled = GetInventoryItemCooldown("player", slotIndex)
 		end
 		if not (start and duration and enabled) then
-			start, duration, enabled = ns.deprecated.C_Item.GetItemCooldown(data.id)
+			start, duration, enabled = C_Container.GetItemCooldown(data.id)
 		end
 	end
 	if start and duration then

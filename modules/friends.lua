@@ -323,18 +323,14 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 		-- FIXME invite friends not working with forever client
 		if isKeyDown() then
 			-- party invite
-			if C_PartyInfo.InviteUnit then
-				C_PartyInfo.InviteUnit(data.fullName);
-			elseif InviteUnit then
-				InviteUnit(data.fullName);
-			end
+			C_PartyInfo.InviteUnit(data.fullName);
 		elseif IsShiftKeyDown() then
 			-- copy to chatbox
 			if data.clientProgram=="WoW" then
 				AddNameToEditBox(data.characterName,data.realmName)
 			end
 		else
-			(ChatFrameUtil and ChatFrameUtil.SendTell or ChatFrame_SendTell)(data.fullName:gsub(" ",""));
+			ns.deprecated.ChatFrameUtil.SendTell(data.fullName:gsub(" ","")); -- TODO: check deprecated in all client versions
 			-- ChatFrameUtil.SendTell; 2026-06-01 not in classic available
 			if not ns.IsRetailClient() and ChatFrameUtil and ChatFrameUtil.SendTell then
 				ns:debug("friends.lua","ChatFrameUtil.SendTell","available")

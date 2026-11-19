@@ -57,7 +57,7 @@ local foreignFactions = Alliance and {
 
 local factionName = setmetatable({},{__index=function(t,k)
 	---local v = GetFactionInfoByID(k);
-	local info = ns.deprecated.C_Reputation.GetFactionDataByID(k)
+	local info = ns.deprecated.C_Reputation.GetFactionDataByID(k) -- TODO: check deprecated in all client versions
 	if info and info.name then
 		rawset(t,k,info.name);
 	end
@@ -279,7 +279,7 @@ local function createTooltip(tt)
 					local faction = UNKNOWN;
 					if bounties[ns.player.faction] then
 						--faction = GetFactionInfoByID(bounties[ns.player.faction]);
-						local info = ns.deprecated.C_Reputation.GetFactionDataByID(bounties[ns.player.faction])
+						local info = ns.deprecated.C_Reputation.GetFactionDataByID(bounties[ns.player.faction]) -- TODO: check deprecated in all client versions
 						faction = info.name;
 					else
 						missing = true;

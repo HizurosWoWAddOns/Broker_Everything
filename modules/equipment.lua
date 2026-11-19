@@ -112,7 +112,7 @@ local function UpdateInventory()
 				end
 			end
 			-- get sockets and gems of eqiupment
-			local stats = ns.deprecated.C_Item.GetItemStats(obj.link);
+			local stats = ns.deprecated.C_Item.GetItemStats(obj.link); -- TODO: check deprecated in all client versions
 			local numGems,_ = 0;
 			lst.gems = false;
 			if stats then

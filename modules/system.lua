@@ -239,7 +239,7 @@ local function updateMemory(updateToken)
 
 		if not group then
 			if IsLoaded then
-				local tmp = {name=Name,cur=floor(ns.deprecated.C_AddOns.GetAddOnMemoryUsage(i)*1000),min=0,max=0,curStr="",minStr="",maxStr=""};
+				local tmp = {name=Name,cur=floor(ns.deprecated.C_AddOns.GetAddOnMemoryUsage(i)*1000),min=0,max=0,curStr="",minStr="",maxStr=""}; -- TODO: check deprecated in all client versions
 				min(tmp,"min","cur");
 				max(tmp,"max","cur");
 				memoryStr(tmp,"cur");
@@ -255,7 +255,7 @@ local function updateMemory(updateToken)
 				memory.numAddOns=memory.numAddOns+1;
 			end
 			if IsLoaded then
-				grps[group].cur=grps[group].cur+floor(ns.deprecated.C_AddOns.GetAddOnMemoryUsage(i)*1000);
+				grps[group].cur=grps[group].cur+floor(ns.deprecated.C_AddOns.GetAddOnMemoryUsage(i)*1000); -- TODO: check deprecated in all client versions
 			end
 		end
 	end

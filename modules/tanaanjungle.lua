@@ -42,7 +42,7 @@ local function updateQuestStatus()
 		Q=Q+1;
 		if c[id]==nil then c[id]=0; end
 		if nC[v]==nil then nC[v]=0; end
-		local index = (GetQuestLogIndexByID or C_QuestLog.GetLogIndexForQuestID)(id) or 0; -- TODO: removed in shadowlands
+		local index = C_QuestLog.GetLogIndexForQuestID(id) or 0;
 		if C_QuestLog.IsQuestFlaggedCompleted(id)==true then
 			c[id]=t; nC[v]=nC[v]+1; cQ=cQ+1;
 		elseif index>0 then

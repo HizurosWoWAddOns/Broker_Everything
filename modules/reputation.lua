@@ -65,7 +65,7 @@ do
 			return;
 		end
 
-		local info = ns.deprecated.C_Reputation.GetFactionDataByID(faction);
+		local info = ns.deprecated.C_Reputation.GetFactionDataByID(faction); -- TODO: check deprecated in all client versions
 
 		if not info then
 			return
@@ -191,19 +191,19 @@ local function initReputationList()
 			collapsedL2 = collapsedL2 or {};
 			collapsed = collapsedL2;
 		end
-		for i = ns.deprecated.C_Reputation.GetNumFactions(),1,-1 do
-			local info = ns.deprecated.C_Reputation.GetFactionDataByIndex(i);
+		for i = ns.deprecated.C_Reputation.GetNumFactions(),1,-1 do -- TODO: check deprecated in all client versions
+			local info = ns.deprecated.C_Reputation.GetFactionDataByIndex(i); -- TODO: check deprecated in all client versions
 			if info and info.isCollapsed then
 				tinsert(collapsed,1,i);
-				ns.deprecated.C_Reputation.ExpandFactionHeader(i);
+				ns.deprecated.C_Reputation.ExpandFactionHeader(i); -- TODO: check deprecated in all client versions
 			end
 		end
 		round=round+1;
 	elseif round==0 then
 		-- read factions
 		wipe(factions);
-		for i=1, ns.deprecated.C_Reputation.GetNumFactions() do
-			local info = ns.deprecated.C_Reputation.GetFactionDataByIndex(i);
+		for i=1, ns.deprecated.C_Reputation.GetNumFactions() do -- TODO: check deprecated in all client versions
+			local info = ns.deprecated.C_Reputation.GetFactionDataByIndex(i); -- TODO: check deprecated in all client versions
 			if info then
 				tinsert(factions,{
 					factionID=info.factionID,
@@ -219,7 +219,7 @@ local function initReputationList()
 		-- collapse headers again
 		local collapsed = round==1 and collapsedL2 or collapsedL1;
 		if collapsed and #collapsed>0 then
-			ns.deprecated.C_Reputation.CollapseFactionHeader(collapsed[1]); -- TODO: Is function in TWW beta buggy? // works, but something revert action
+			ns.deprecated.C_Reputation.CollapseFactionHeader(collapsed[1]); -- TODO: Is function in TWW beta buggy? // works, but something revert action  -- TODO: check deprecated in all client versions
 			tremove(collapsed,1);
 			if #collapsed==0 then
 				round=round+1;
@@ -257,7 +257,7 @@ end
 
 function updateBroker()
 	local txt,info,_ = REPUTATION;
-	local watchedFactionInfo = ns.deprecated.C_Reputation.GetWatchedFactionData()
+	local watchedFactionInfo = C_Reputation.GetWatchedFactionData()
 
 	if watchedFactionInfo then
 		info = getFactionInfo(watchedFactionInfo.factionID,true);

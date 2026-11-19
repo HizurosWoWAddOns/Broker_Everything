@@ -214,7 +214,7 @@ function module.onevent(self,event,msg)
 				tinsert(tmp,{
 					type = type,
 					char = player1 or UNKNOWN,
-					recent = (RecentTimeDate or TimeUtil.GetRecentTimeDate)(year, month, day, hour),
+					recent = ns.deprecated.TimeUtil.GetRecentTimeDate(year, month, day, hour), -- TODO: check deprecated in all client versions
 					time = time({year=cY-year,month=cM-month,day=cD-day,hour=cH-hour,min=0,sec=0})
 				});
 			else
@@ -223,7 +223,7 @@ function module.onevent(self,event,msg)
 					char = player2 or UNKNOWN,
 					by = player1 or UNKNOWN,
 					rank = rank,
-					recent = (RecentTimeDate or TimeUtil.GetRecentTimeDate)(year, month, day, hour),
+					recent = ns.deprecated.TimeUtil.GetRecentTimeDate(year, month, day, hour), -- TODO: check deprecated in all client versions
 					time = time({year=cY-year,month=cM-month,day=cD-day,hour=cH-hour,min=0,sec=0})
 				});
 			end

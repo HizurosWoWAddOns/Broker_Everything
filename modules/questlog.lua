@@ -565,13 +565,13 @@ function module.onevent(self,event,msg)
 		end)
 	end
 	if event=="PLAYER_LOGIN" or event=="QUEST_LOG_UPDATE" then
-		local numEntries, numQuests = (GetNumQuestLogEntries or C_QuestLog.GetNumQuestLogEntries)();
+		local numEntries, numQuests = ns.deprecated.C_QuestLog.GetNumQuestLogEntries(); -- TODO: check deprecated in all client versions
 		local header, _ = false;
 		quests,numQuestStatus = {},{fail=0,complete=0,active=0};
 		sum=0
 
 		for index=1, numEntries do
-			local q = ns.deprecated.C_QuestLog.GetInfo(index) or {};
+			local q = ns.deprecated.C_QuestLog.GetInfo(index) or {}; -- TODO: check deprecated in all client versions
 			if q.isHeader==true then
 				header = q.title;
 			elseif header and q.questID and not hideQuestsAnytime[q.questID] then
@@ -588,7 +588,7 @@ function module.onevent(self,event,msg)
 				end
 
 				-- main quest tags (long and short) like instance types and more
-				local tagInfo = ns.deprecated.C_QuestLog.GetQuestTagInfo(q.questID);
+				local tagInfo = ns.deprecated.C_QuestLog.GetQuestTagInfo(q.questID); -- TODO: check deprecated in all client versions
 				local tags,shortTags = {},{};
 				if tagInfo then
 					local long

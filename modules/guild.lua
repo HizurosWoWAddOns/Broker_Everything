@@ -366,11 +366,14 @@ local function ttAddApplicant(lineIndex,applicantInfo)
 
 	local isDps,isHealer,isTank = false,false,false;
 	for _, specID in ipairs(applicantInfo.specIds) do
-		local role=nil;
+		local role,_=nil;
 		if C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo then
-			role = C_SpecializationInfo.GetSpecializationInfo(specID);
+			_,_,_,_,role = C_SpecializationInfo.GetSpecializationInfo(specID);
+			if not ns.IsRetailClient() then
+				ns:debug(name,"GetSpecializationRoleEnumByID","<isDeprecated>")
+			end
 		elseif GetSpecializationRoleEnumByID then
-			role = GetSpecializationRoleEnumByID(specID);
+			role = GetSpecializationRoleEnumByID(specID); -- TODO: check deprecated on classic clients
 		end
 		if role=="DAMAGER" and not isDps then
 			isDps = true;
@@ -416,7 +419,7 @@ local function ttAddMember(lineIndex,memberIndex)
 
 	local status;
 	if mIsMobile then
-		status = (mIsAway==2 and MOBILE_BUSY_ICON) or (mIsAway==1 and MOBILE_AWAY_ICON) or (ChatFrameUtil and ChatFrameUtil.GetMobileEmbeddedTexture or ChatFrame_GetMobileEmbeddedTexture)(73/255, 177/255, 73/255)
+		status = (mIsAway==2 and MOBILE_BUSY_ICON) or (mIsAway==1 and MOBILE_AWAY_ICON) or ns.deprecated.ChatFrameUtil.GetMobileEmbeddedTexture(73/255, 177/255, 73/255) -- TODO: check deprecated in all client versions
 	else
 		status = ("|T%s:0|t"):format(_G["FRIENDS_TEXTURE_"  .. ((mIsAway==1 and "AFK") or (mIsAway==2 and "DND") or "ONLINE")]);
 	end
@@ -1025,7 +1028,7 @@ function module.onevent(self,event,msg,...)
 			--state,member = "offline",msg:match(pattern_FRIEND_OFFLINE);
 		end
 		if member and not member:find("-") then
-			member = member.."-"..ns.realm_short;
+			member = member.."-"..ns.realm_short; -- TODO: check Forever client
 		end
 		if member and memberIndex[member] then
 			-- On/Off post notes of guild members in general chat.
@@ -1048,7 +1051,7 @@ function module.onevent(self,event,msg,...)
 				if #txt>0 then
 					local mobileIcon = "";
 					if mIsMobile then
-						mobileIcon = (ChatFrameUtil and ChatFrameUtil.GetMobileEmbeddedTexture or ChatFrame_GetMobileEmbeddedTexture)(73/255, 177/255, 73/255)
+						mobileIcon = ns.deprecated.ChatFrameUtil.GetMobileEmbeddedTexture(73/255, 177/255, 73/255) -- TODO: check deprecated in all client versions
 					end
 					tinsert(txt,1,C("ltgray",LFG_LIST_GUILD_MEMBER)..CHAT_HEADER_SUFFIX..C(mClassFile,mName).." "..mobileIcon);
 					C_Timer.After(0.1,function()

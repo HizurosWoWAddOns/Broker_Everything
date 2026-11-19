@@ -10,6 +10,9 @@ local C, L, I = ns.LC.color, ns.L, ns.I
 -----------------------------------------------------------
 local name = "ClassSpecs" -- L["ClassSpecs"] L["ModDesc-ClassSpecs"]
 local ttName, ttColumns, tt, module, createTooltip = name.."TT", 4;
+local PET_SPECIALIZATION_TAB = _G["PET_SPECIALIZATION_TAB"]
+local CLASS_TALENT_LEVELS = _G["CLASS_TALENT_LEVELS"]
+local PVP_TALENTS_TAB = _G["PVP_TALENTS_TAB"]
 
 
 -- register icon names and default files --
@@ -25,7 +28,7 @@ local function infoTooltipShow(self, info)
 		GameTooltip:SetPoint(ns.GetTipAnchor(tt,"horizontal"));
 		if info.type=="text" and #info>0 then
 			for i=1, #info do
-				GameTooltip:AddLine(unpack(info[i]),nil,nil,nil,1);
+				GameTooltip:AddLine(unpack(info[i]));
 			end
 		elseif info.type=="spell" and info.spellId then
 			GameTooltip:SetHyperlink("spell:"..info.spellId);
@@ -43,7 +46,7 @@ end
 
 local function setSpec(self, spec)
 	if not InCombatLockdown() then
-		(C_SpecializationInfo and C_SpecializationInfo.SetSpecialization or SetSpecialization)(spec.index,spec.ispet);
+		ns.HST.deprecated.C_SpecializationInfo.SetSpecialization(spec.index,spec.ispet);
 	end
 end
 
@@ -73,11 +76,11 @@ local function updateBroker()
 	local obj = ns.LDB:GetDataObjectByName(module.ldbName) or {};
 	local specName,txt,_ = L["No Spec!"],"";
 	local icon = I(name);
-	local spec = (C_SpecializationInfo and C_SpecializationInfo.GetSpecialization or GetSpecialization)();
+	local spec = C_SpecializationInfo.GetSpecialization();
 
 	if spec ~= nil then
 		local current = icon.iconfile;
-		 _, specName, _, icon.iconfile, _, _ = (C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo or GetSpecializationInfo)(spec);
+		 _, specName, _, icon.iconfile, _, _ = C_SpecializationInfo.GetSpecializationInfo(spec);
 		 if current ~= icon.iconfile then
 			obj.iconCoords, obj.icon = icon.coords, icon.iconfile;
 		 end
@@ -111,20 +114,13 @@ local function updateBroker()
 	obj.text = txt;
 end
 
-local GetTalentTabInfo = GetTalentTabInfo or function(specializationIndex, isInspect, isPet, groupIndex)
-	local inspectTarget = nil;
-	local sex = nil;
-	local specId, name, description, icon, role, primaryStat, pointsSpent, background, previewPointsSpent, isUnlocked = C_SpecializationInfo.GetSpecializationInfo(specializationIndex, isInspect, isPet, inspectTarget, sex, groupIndex);
-	return specId, name, description, icon, pointsSpent, background, previewPointsSpent, isUnlocked;
-end
-
 function createTooltip(tt,update)
 	if not (tt and tt.key and tt.key==ttName) then return end -- don't override other LibQTip tooltips...
 
 	if tt.lines~=nil then tt:Clear(); end
 	tt:SetCell(tt:AddLine(),1,C("dkyellow",SPECIALIZATION.." & "..TALENTS),tt:GetHeaderFont(),"LEFT",ttColumns);
 
-	local spec,active = {},{index=(C_SpecializationInfo and C_SpecializationInfo.GetSpecialization or GetSpecialization)(),id=nil,name=nil,icon=nil};
+	local spec,active = {},{index=C_SpecializationInfo.GetSpecialization(),id=nil,name=nil,icon=nil};
 	local lootSpecID = GetLootSpecialization();
 	local num = GetNumSpecializations();
 	local iconStr,str,_ = "|T%s:0|t","|T%s:0|t %s";
@@ -137,7 +133,7 @@ function createTooltip(tt,update)
 	tt:AddSeparator();
 	for i=1, num do
 		spec[i]={};
-		spec[i].id, spec[i].name, spec[i].desc, spec[i].icon, spec[i].role = (C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo or GetSpecializationInfo)(i);
+		spec[i].id, spec[i].name, spec[i].desc, spec[i].icon, spec[i].role = C_SpecializationInfo.GetSpecializationInfo(i);
 		if active.index==i then
 			active.id,active.name,active.icon = spec[i].id,spec[i].name,spec[i].icon;
 		end
@@ -174,7 +170,7 @@ function createTooltip(tt,update)
 		tt:AddSeparator(4,0,0,0,0);
 
 		-- pet spec
-		local spec,active = {},{index=(C_SpecializationInfo and C_SpecializationInfo.GetSpecialization or GetSpecialization)(nil,true),id=nil,name=nil,icon=nil};
+		local spec,active = {},{index=C_SpecializationInfo.GetSpecialization(nil,true),id=nil,name=nil,icon=nil};
 		local num = GetNumSpecializations(nil,true);
 		local iconStr = "|T%s:0|t";
 
@@ -186,7 +182,7 @@ function createTooltip(tt,update)
 		if HasPetUI() then
 			for i=1, num do
 				spec[i]={};
-				spec[i].id, spec[i].name, spec[i].desc, spec[i].icon, spec[i].role = (C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo or GetSpecializationInfo)(i,nil,true);
+				spec[i].id, spec[i].name, spec[i].desc, spec[i].icon, spec[i].role = C_SpecializationInfo.GetSpecializationInfo(i,nil,true);
 				if active.index==i then
 					active.id,active.name,active.icon = spec[i].id,spec[i].name,spec[i].icon;
 				end
@@ -198,7 +194,7 @@ function createTooltip(tt,update)
 					C( (spec[i].role=="TANK" and "ltblue") or (spec[i].role=="HEALER" and "ltgreen") or "ltred", _G[spec[i].role] )
 				);
 				if i~=active then
-					tt:SetLineScript(l,"OnMouseUp",setSpec, {index=i, true});
+					tt:SetLineScript(l,"OnMouseUp",setSpec, {index=i});
 				end
 			end
 		else
@@ -207,7 +203,7 @@ function createTooltip(tt,update)
 	end
 
 	-- PVE Talents
-	local talentGroup = (C_SpecializationInfo and C_SpecializationInfo.GetActiveSpecGroup or GetActiveSpecGroup)(false);
+	local talentGroup = C_SpecializationInfo.GetActiveSpecGroup(false)
 	if ns.profile[name].showTalents then
 		tt:AddSeparator(4,0,0,0,0);
 		local l=tt:AddLine(C("ltblue",LEVEL_ABBR));

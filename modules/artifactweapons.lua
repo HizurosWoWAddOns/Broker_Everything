@@ -410,7 +410,7 @@ end
 
 local function addAltArtifactLine(tt,c,id)
 	local l=tt:AddLine(C("ltyellow",c..". "..L["Artifact weapon"]));
-	tt:SetCell(l,3,"|T"..(ns.deprecated.C_Spell.GetSpellIcon(id) or ns.icon_fallback)..":0|t "..C("ltyellow",ns.toon[name][id].name));
+	tt:SetCell(l,3,"|T"..(C_Spell.GetSpellTexture(id) or ns.icon_fallback)..":0|t "..C("ltyellow",ns.toon[name][id].name));
 	tt:SetLineScript(l, "OnEnter", createTooltip2, id);
 	tt:SetLineScript(l, "OnLeave");
 end

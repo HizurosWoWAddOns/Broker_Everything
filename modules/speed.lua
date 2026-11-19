@@ -187,7 +187,7 @@ local function tooltipOnEnter(self,data)
 		for i=1, #trainer_faction do
 			local v = trainer_faction[i];
 			if faction~=v[1] then
-				fInfo = ns.deprecated.C_Reputation.GetFactionDataByID(v[1]);
+				fInfo = ns.deprecated.C_Reputation.GetFactionDataByID(v[1]); -- TODO: check deprecated in all client versions
 			end
 			if fInfo and fInfo.name then
 				if faction~=v[1] then

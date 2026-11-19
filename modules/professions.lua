@@ -335,7 +335,7 @@ local function CreateTooltip2(self, content)
 					-- faction header
 					if factionID~=recipeData[1] then
 						factionID = factionId;
-						local info = ns.deprecated.C_Reputation.GetFactionDataByID(factionID);
+						local info = ns.deprecated.C_Reputation.GetFactionDataByID(factionID); -- TODO: check deprecated in all client versions
 						factionName,_,currentStanding = info.name, info.reaction or info.standing;
 						local currentStandingStr = "Error";
 						if factions[factionID].isMajor then
@@ -398,7 +398,7 @@ local function AddFactionRecipeLines(tt,expansion,recipesByProfession)
 			for _,recipe in ipairs(recipes) do
 				if not factions[recipe[1]] then -- fill factions table
 					factions[recipe[1]] = {};
-					local info = ns.deprecated.C_Reputation.GetFactionDataByID(recipe[1]);
+					local info = ns.deprecated.C_Reputation.GetFactionDataByID(recipe[1]); -- TODO: check deprecated in all client versions
 					factions[recipe[1]].name,_,factions[recipe[1]].standing = info.name, info.reaction or info.standing
 					if C_Reputation.IsMajorFaction(recipe[1]) then
 						local info2 = C_MajorFactions.GetMajorFactionData(recipe[1])
