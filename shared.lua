@@ -116,22 +116,16 @@ ns.ui = {size={UIParent:GetSize()},center={UIParent:GetCenter()}};
 --- Client version checks ---
   -------------------------
 do
-	local version,build = GetBuildInfo();
+	local version,build,_,interface = GetBuildInfo();
 	local v1,v2,v3 = strsplit(".",version or "0.0.0");
 	ns.client_version = tonumber(v1.."."..v2..v3..build) or 0;
+	ns.interface = interface
 
 	-- https://warcraft.wiki.gg/wiki/WOW_PROJECT_ID
 	local WOW_PROJECT_ID=WOW_PROJECT_ID
 	local WOW_PROJECT_MAINLINE=WOW_PROJECT_MAINLINE
 	local WOW_PROJECT_CLASSIC=WOW_PROJECT_CLASSIC
-	local WOW_PROJECT_CAMELOT=WOW_PROJECT_CAMELOT or 18
-
-	if WOW_PROJECT_MAINLINE==18 then
-		WOW_PROJECT_MAINLINE=nil
-	elseif WOW_PROJECT_ID==WOW_PROJECT_MAINLINE and ns.client_version < 2 then
-		WOW_PROJECT_ID = WOW_PROJECT_CAMELOT
-		WOW_PROJECT_MAINLINE = nil
-	end
+	local WOW_PROJECT_CAMELOT=WOW_PROJECT_CAMELOT
 
 	---@return boolean
 	function ns.IsRetailClient()
@@ -843,27 +837,26 @@ do
 		end
 		return iter;
 	end
-end
 
-
-  ------------------------------------------------------------
---- Function to check/create a table structure by given path ---
-  ------------------------------------------------------------
----@param tbl table
----@param a string
----@param ... string
----@return table
-function ns.tablePath(tbl,a,...)
-	if type(a)~="string" then
+	------------------------------------------------------------
+	--- Function to check/create a table structure by given path ---
+	------------------------------------------------------------
+	---@param tbl table
+	---@param a string
+	---@param ... string
+	---@return table
+	function ns.tablePath(tbl,a,...)
+		if type(a)~="string" then
+			return tbl;
+		end
+		if type(tbl[a])~="table" then
+			tbl[a]={};
+		end
+		if (...) then
+			return ns.tablePath(tbl[a],...);
+		end
 		return tbl;
 	end
-	if type(tbl[a])~="table" then
-		tbl[a]={};
-	end
-	if (...) then
-		return ns.tablePath(tbl[a],...);
-	end
-	return tbl;
 end
 
 
