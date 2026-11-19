@@ -92,7 +92,7 @@ modules/professions_classic.lua [AllowLoadGameType classic]
 modules/ammo_classic.lua [AllowLoadGameType classic]
 
 # modules since tbc
-modules/titles.lua [AllowLoadGameType mainline, tbc, wrath, cata, mists]
+modules/titles.lua [AllowLoadGameType mainline, tbc, wrath, cata, mists, camelot]
 modules/tracking.lua [AllowLoadGameType mainline, tbc, wrath, cata, mists]
 
 # modules since wrath aka wotlk
