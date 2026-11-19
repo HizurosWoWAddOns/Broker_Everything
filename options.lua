@@ -37,24 +37,13 @@ ns.showCharsFrom_Values = { -- used in xp.lua to display current mode in tooltip
 	["4"] = L["All realms"]
 };
 
-local goldHideValues = {
+ns.goldHideValues = {
 	["0"]=ADDON_DISABLED,
 	["1"]=L["HideMoneyCopper"],
 	["2"]=L["HideMoneySilver"],
 	["3"]=L["HideMoneyZeros"],
 	["4"]=L["ShowHighestOnly"]
 };
-
-local delimiterBBValues
-do
-	local t = LOCALE_TEXT_LABEL or "Text"
-	delimiterBBValues = {
-		[", "]   = t..", "..t,
-		[" / "]  = t.." / "..t,
-		[" || "] = t.." || "..t,
-		[" \\ "] = t.." \\ "..t,
-	}
-end
 
 local supporter = {
 	-- {<color>,<name>}, <localizations>, <donations>, <otherSupportTypes>, <special text>,
@@ -303,7 +292,7 @@ local options = {
 						goldColor          = {type="select",order=1,name=L["GoldColor"],desc=L["GoldColorDesc"],values={_none=ADDON_DISABLED,color=L["GoldColorCoin"],white=L["GoldColorWhite"]} },
 						goldCoins          = {type="toggle",order=2,name=L["GoldCoins"],desc=L["GoldCoinsDesc"]},
 						separateThousands  = {type="toggle",order=3,name=L["DigitGroup"],desc=L["DigitGroupDesc"]},
-						goldHide           = {type="select",order=4,name=L["HideMoney"],desc=L["HideMoneyDescEverywhere"], width = "double", values= goldHideValues },
+						goldHide           = {type="select",order=4,name=L["HideMoney"],desc=L["HideMoneyDescEverywhere"], width = "double", values= ns.goldHideValues },
 						goldHideZero       = {type="toggle",order=5,name=L["HideMoneyZero"],desc=L["HideMoneyZeroDesc"], hidden=function() return ns.profile.GeneralOptions.goldHide~="0" end},
 					}
 				},
@@ -401,9 +390,6 @@ ns.sharedOptions = {
 	showRealmNames  = { type="toggle", name=L["RealmNames"], desc=L["RealmNamesDesc"]},
 	showChars       = { type="toggle", name=L["ShowChars"], desc=L["ShowCharsDesc"], customDescFormat="ShowCharsDesc-%s" }, -- TODO: translation ShowCharsDesc
 	showCharsFrom   = { type="select", name=L["CharsFrom"], desc=L["CharsFromDesc"], values=ns.showCharsFrom_Values },
-	goldHideBB      = { type="select", name=L["HideMoney"], desc=L["HideMoneyDescBrokerButton"], width = "double", values = goldHideValues },
-	goldHideTT      = { type="select", name=L["HideMoney"], desc=L["HideMoneyDescTooltip"], width = "double", values = goldHideValues },
-	delimiterBB     = { type="select", name=L["DelimiterBB"], desc=L["DelimiterBBDesc"], values = delimiterBBValues },
 	spacerWidth     = { type="range",  name=L["SpacerWidth"], desc=L["SpacerWidthDesc"], min=0, max=20, step=1 },
 	spacerWidthInfo = { type="description", name=L["SpacerWidthInfo"] },
 	useCtrlKeyInsteadAlt = { type="toggle", name=L["UseCtrlInsteadAlt"], desc=L["UseCtrlInsteadAltDesc"] },

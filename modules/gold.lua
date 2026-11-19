@@ -30,6 +30,16 @@ local showAllRealmsLabel = {
 	["4"]=L["All Realms"]
 };
 
+local delimiterBBValues
+do
+	local t = LOCALE_TEXT_LABEL or "Text"
+	delimiterBBValues = {
+		[", "]   = t..", "..t,
+		[" / "]  = t.." / "..t,
+		[" || "] = t.." || "..t,
+		[" \\ "] = t.." \\ "..t,
+	}
+end
 
 -- register icon names and default files --
 -------------------------------------------
@@ -500,15 +510,15 @@ ns.ClickOpts.addDefaults(module,{
 function module.options()
 	return {
 		broker = {
-			goldHideBB = 0,
-			delimiterBB = 1,
+			goldHideBB      = { type="select", order=0, name=L["HideMoney"], desc=L["HideMoneyDescBrokerButton"], width = "double", values = ns.goldHideValues },
+			delimiterBB     = { type="select", order=1, name=L["DelimiterBB"], desc=L["DelimiterBBDesc"], values = delimiterBBValues },
 			showCharGold={ type="toggle", order=2, name=L["Show character gold"],     desc=L["Show character gold on broker button"] },
 			showProfitSessionBroker={ type="toggle", order=3, name=L["Show session profit"],     desc=L["Show session profit on broker button"] },
 			accountBankMoneyBroker = {type="toggle", order=4, name=ACCOUNT_BANK_PANEL_TITLE or "Warband bank", desc=L["AccountBankMoneyBrokerDesc"], hidden=ns.IsClassicClient},
 			accountBankShortcut = {type="toggle", order=5, name=L["AccountBankShortcutBB"], desc=L["AccountBankShortcutBBDesc"], hidden=ns.IsClassicClient},
 		},
 		tooltip = {
-			goldHideTT = 1,
+			goldHideTT      = { type="select", order=1, name=L["HideMoney"], desc=L["HideMoneyDescTooltip"], width = "double", values = ns.goldHideValues },
 			showAllFactions=2,
 			showRealmNames=3,
 			showCharsFrom=4,
