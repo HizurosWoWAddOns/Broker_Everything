@@ -218,7 +218,22 @@ do
 				end
 			end
 		else
-			ns.realm = UNKNOWN
+			local regionStr = " ("..ns.region..")"
+			local mode = ForeverRealmTypes.PVE
+			if RegionalUniqueNamesEnabled and RegionalUniqueNamesEnabled() then
+				-- thanks Ace3-DB
+				-- and thanks at Thaodan on Github #88
+				local isRP = C_GameRules.IsGameRuleActive(Enum.GameRule.RPRuleset)
+				local isPVP = C_GameRules.IsGameRuleActive(Enum.GameRule.PvPRuleset)
+				if isRP and isPVP then
+					mode = ForeverRealmTypes.RPPVP
+				elseif isRP then
+					mode = ForeverRealmTypes.RP
+				elseif isPVP then
+					mode = ForeverRealmTypes.PVP
+				end
+			end
+			ns.realm = mode..regionStr
 		end
 	else
 		local pattern = "^"..(ns.realm:gsub("(.)","[%1]*")).."$";
