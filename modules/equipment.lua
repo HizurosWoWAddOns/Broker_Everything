@@ -22,6 +22,12 @@ local ignoreWeapon = {
 	["1"] = L["Ignore all"],
 	["2"] = L["Ignore artifact weapons"],
 };
+-- The Forever client runs on the retail engine but reports a 1.x client version,
+-- so check for it explicitly to enable equipment sets and item levels there.
+local hasItemLevels = ns.client_version>=6 or ns.IsForeverClient();
+local setsSupported = C_EquipmentSet~=nil and (ns.IsForeverClient() or not ns.IsClassicClient());
+local function noSets() return not setsSupported end
+local function hiddenOnClassic() return ns.IsClassicClient() and not ns.IsForeverClient() end
 local enchantExclude = {
 	[158075]=true -- hearth of azeroth can't be enchanted
 }
@@ -61,7 +67,7 @@ local function updateBroker()
 	local icon,iconCoords,text = I[name].iconfile,{0.1,0.9,0.1,0.9},{};
 	local pending = (equipPending and C("orange",equipPending)) or false;
 
-	if ns.profile[name].showCurrentSet and C_EquipmentSet and not ns.IsClassicClient() then
+	if ns.profile[name].showCurrentSet and setsSupported then
 		for equipName, iconFileID, setID, isEquipped, _, _, _, numMissing in pairsEquipmentSets() do
 			if equipName and isEquipped then
 				icon,iconCoords = iconFileID,{0.05,0.95,0.05,0.95};
@@ -102,7 +108,11 @@ local function UpdateInventory()
 			ns.ScanTT.query(obj,true);
 			lst[d.slot] = obj;
 			-- calc min/max item level
-			if ns.client_version>=6 and d.slot~=4 and d.slot~=19 then
+			if hasItemLevels and d.slot~=4 and d.slot~=19 then
+				if not obj.level and obj.link and C_Item.GetDetailedItemLevelInfo then
+					-- fallback if the item tooltip has no item level line
+					obj.level = C_Item.GetDetailedItemLevelInfo(obj.link);
+				end
 				obj.level = obj.level or 0;
 				if lst.iLevelMin==0 or obj.level<lst.iLevelMin then
 					lst.iLevelMin=obj.level;
@@ -229,7 +239,7 @@ local function createTooltip(tt)
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",BAG_FILTER_EQUIPMENT))
 
-	if (ns.profile[name].showSets) and C_EquipmentSet and not ns.IsClassicClient() then
+	if (ns.profile[name].showSets) and setsSupported then
 		-- equipment sets
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",WARDROBE_SETS));
@@ -267,8 +277,8 @@ local function createTooltip(tt)
 			C("ltblue",TRADESKILL_FILTER_SLOTS),
 			C("ltblue",NAME)
 		);
-		if ns.client_version>=6 then
-			if ns.profile[name].showUpgrades then
+		if hasItemLevels then
+			if ns.profile[name].showUpgrades and ns.client_version>=6 then
 				tt:SetCell(l,3,C("ltblue",L["Upgrade"]))
 			end
 			tt:SetCell(l,4,C("ltblue",LEVEL));
@@ -359,7 +369,7 @@ local function createTooltip(tt)
 					end
 
 					local itemLevelStr = "";
-					if (ns.client_version>=6 and itemInfo.level) and not (i==19 or i==4) then
+					if (hasItemLevels and itemInfo.level) and not (i==19 or i==4) then
 						itemLevelStr = C(GetILevelColor(itemInfo.level),itemInfo.level);
 					end
 
@@ -393,7 +403,7 @@ local function createTooltip(tt)
 			tt:SetCell(l,1,L["All slots are empty"],nil,nil,ttColumns);
 		end
 		tt:AddSeparator();
-		if ns.client_version>=6 and GetAverageItemLevel then
+		if hasItemLevels and GetAverageItemLevel then
 			local _, avgItemLevelEquipped = GetAverageItemLevel();
 			local l = tt:AddLine();
 			tt:SetCell(l,1,C("ltblue",STAT_AVERAGE_ITEM_LEVEL),nil,nil,2);
@@ -449,21 +459,49 @@ module = {
 	clickOptions = {
 		["charinfo"] = "CharacterInfo",
 		["sets"] = {EQUIPMENT_MANAGER,"module","equipMan"},
+		["nextSet"] = setsSupported and {"Next equipment set","module","nextSet"}, -- L["Next equipment set"]
+		["prevSet"] = setsSupported and {"Previous equipment set","module","prevSet"}, -- L["Previous equipment set"]
 		["menu"] = "OptionMenu"
 	}
 }
 
-if ns.client_version>=6 then
+if hasItemLevels or setsSupported then
 	tinsert(module.events,"EQUIPMENT_SWAP_FINISHED");
 	--tinsert(module.events,"ITEM_UPGRADE_MASTER_UPDATE"); -- TODO: removed in 9.1.5
 	tinsert(module.events,"EQUIPMENT_SETS_CHANGED");
 end
 
 ns.ClickOpts.addDefaults(module,{
-	charinfo = "_LEFT",
+	charinfo = ns.IsForeverClient() and "__NONE" or "_LEFT",
 	sets = "__NONE",
+	nextSet = ns.IsForeverClient() and "_LEFT" or "__NONE",
+	prevSet = "__NONE",
 	menu = "_RIGHT"
 });
+
+-- equip the set after (step 1) or before (step -1) the one worn or pending, wrapping around
+local function switchEquipmentSet(step)
+	local setIDs = C_EquipmentSet.GetEquipmentSetIDs() or {};
+	if #setIDs==0 then return end
+	local current;
+	for i, setID in ipairs(setIDs) do
+		if equipPending then
+			if setID==equipPending then current=i; break; end
+		elseif select(4,C_EquipmentSet.GetEquipmentSetInfo(setID)) then
+			current=i; break;
+		end
+	end
+	local index = current and ((current-1+step) % #setIDs + 1) or (step>0 and 1 or #setIDs);
+	ns.toggleEquipment(setIDs[index]);
+end
+
+function module.nextSet()
+	switchEquipmentSet(1);
+end
+
+function module.prevSet()
+	switchEquipmentSet(-1);
+end
 
 function module.equipMan(self,button)
 	securecall("ToggleCharacter","PaperDollFrame");
@@ -473,19 +511,19 @@ end
 function module.options()
 	return {
 		broker = {
-			showCurrentSet={ type="toggle", order=1, name=L["CurrentSet"], desc=L["CurrentSetDesc"], hidden=ns.IsClassicClient},
-			showItemLevel={ type="toggle", order=2, name=L["AvItemLvl"], desc=L["AvItemLvlDesc"], hidden=ns.IsClassicClient},
-			showShorterInfo={ type="toggle", order=3, name=L["ShorterSetInfo"], desc=L["ShorterSetInfoDesc"], hidden=ns.IsClassicClient},
+			showCurrentSet={ type="toggle", order=1, name=L["CurrentSet"], desc=L["CurrentSetDesc"], hidden=noSets},
+			showItemLevel={ type="toggle", order=2, name=L["AvItemLvl"], desc=L["AvItemLvlDesc"], hidden=hiddenOnClassic},
+			showShorterInfo={ type="toggle", order=3, name=L["ShorterSetInfo"], desc=L["ShorterSetInfoDesc"], hidden=noSets},
 		},
 		tooltip = {
-			showSets        ={ type="toggle", order=1, name=L["EquipSets"], desc=L["EquipSetsDesc"], hidden=ns.IsClassicClient},
+			showSets        ={ type="toggle", order=1, name=L["EquipSets"], desc=L["EquipSetsDesc"], hidden=noSets},
 			showInventory   ={ type="toggle", order=2, name=L["Show inventory"], desc=L["Display a list of currently equipped items"]},
 			showItemLevelGradient={ type="toggle", order=3, name=L["ColorGradient"], desc=L["ColorGradientDescItemLevel"] },
 			showEmptySlots  ={ type="toggle", order=4, name=L["Show emtpy slots"], desc=L["Display empty equipment slots"]},
 			showNotEnchanted={ type="toggle", order=5, name=L["Show 'not enchanted' mark"], desc=L["Display a red # on not enchanted/enchantable items"]},
 			showEmptyGems   ={ type="toggle", order=6, name=L["Show 'empty socket' mark"], desc=L["Display a yellow # on items with empty sockets"]},
 			showTSet        ={ type="toggle", order=7, name=L["Show T-Set"], desc=L["Display a T-Set label on items"], hidden=ns.IsClassicClient},
-			showSetName     ={ type="toggle", order=8, name=L["Show Set name"], desc=L["Display set name on items"], hidden=ns.IsClassicClient},
+			showSetName     ={ type="toggle", order=8, name=L["Show Set name"], desc=L["Display set name on items"], hidden=hiddenOnClassic},
 			showGreenText   ={ type="toggle", order=9, name=L["Show green text"], desc=L["Display green text line from item tooltip like titanforged"], hidden=ns.IsClassicClient},
 			showUpgrades    ={ type="toggle", order=10, name=L["Show upgrade info"], desc=L["Display upgrade info like 2/6"], hidden=ns.IsClassicClient},
 			fullyUpgraded   ={ type="toggle", order=11, name=L["Darker blue for fully upgraded"], desc=L["Display upgrade counter in darker blue on fully upgraded items"], hidden=ns.IsClassicClient},
@@ -493,8 +531,8 @@ function module.options()
 			showShirt       ={ type="toggle", order=13, name=L["ShowShirt"], desc=L["ShowShirtDesc"]},
 		},
 		misc = {
-			ignoreMainHand={ type="select", order=1, name=L["Ignore main hand"], desc=L["'Save set' should ignore main hand weapon"], values=ignoreWeapon, hidden=ns.IsClassicClient },
-			ignoreOffHand={ type="select", order=2, name=L["Ignore off-hand"], desc=L["'Save set' should ignore off-hand weapon"], values=ignoreWeapon, hidden=ns.IsClassicClient }
+			ignoreMainHand={ type="select", order=1, name=L["Ignore main hand"], desc=L["'Save set' should ignore main hand weapon"], values=ignoreWeapon, hidden=noSets },
+			ignoreOffHand={ type="select", order=2, name=L["Ignore off-hand"], desc=L["'Save set' should ignore off-hand weapon"], values=ignoreWeapon, hidden=noSets }
 		},
 	}
 end
