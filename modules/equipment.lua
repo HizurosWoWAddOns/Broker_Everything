@@ -229,12 +229,12 @@ local function createTooltip(tt)
 	if tt.lines~=nil then tt:Clear(); end
 	tt:AddHeader(C("dkyellow",BAG_FILTER_EQUIPMENT))
 
-	if (ns.profile[name].showSets) and C_EquipmentSet and not ns.IsClassicClient() then
+	if (ns.profile[name].showSets) and C_EquipmentSet and (not ns.IsClassicClient() or ns.IsForeverClient()) then
 		-- equipment sets
 		tt:AddSeparator(4,0,0,0,0);
 		tt:AddLine(C("ltblue",WARDROBE_SETS));
 		tt:AddSeparator();
-		if CanUseEquipmentSets and not CanUseEquipmentSets() then  -- prevent error if function removed
+		if not C_EquipmentSet.CanUseEquipmentSets() then
 			ns.AddSpannedLine(tt,L["Equipment manager is not enabled"]);
 			ns.AddSpannedLine(tt,L["Enable it from the character info"]);
 		else
@@ -642,8 +642,8 @@ function module.onevent(self,event,arg1,...)
 			ns.items.RegisterCallback(name,UpdateInventory,"inv");  -- oops. register twice
 			isRegistered = true;
 		end
-		if UpgradeItem then
-			hooksecurefunc("UpgradeItem",updateBroker);
+		if C_ItemUpgrade.UpgradeItem then
+			hooksecurefunc(C_ItemUpgrade,"UpgradeItem",updateBroker);
 		end
 		ns.eventRegister(self,"ADDON_LOADED",{name,"<onevent>"})
 	elseif (event=="PLAYER_REGEN_ENABLED" or event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST") and equipPending~=nil then
