@@ -206,15 +206,19 @@ do
 	}
 
 	if ns.IsForeverClient() then
-		local realmRegion, id1, id2, realmType = ns.realm:gsub("[%s%-]", ""):match(CAMWOW_PATTERN)
-		ns.realm = ForeverRealmTypes[realmType:upper()].." "..PARENS_TEMPLATE:format(realmRegion)
-		ns.realm_short = ns.realm:gsub("[%s%-]", "")
-		for i=1, #ns.regions do
-			for _, v in pairs(ForeverRealmTypes) do
-				v = v.." "..PARENS_TEMPLATE:format(ns.regions[i])
-				tinsert(ns.realms,v)
-				tinsert(ns.realms,(v:gsub("[%s%-]", "")))
+		if ns.realm and ns.realm~="" then
+			local realmRegion, id1, id2, realmType = ns.realm:gsub("[%s%-]", ""):match(CAMWOW_PATTERN)
+			ns.realm = ForeverRealmTypes[realmType:upper()].." "..PARENS_TEMPLATE:format(realmRegion)
+			ns.realm_short = ns.realm:gsub("[%s%-]", "")
+			for i=1, #ns.regions do
+				for _, v in pairs(ForeverRealmTypes) do
+					v = v.." "..PARENS_TEMPLATE:format(ns.regions[i])
+					tinsert(ns.realms,v)
+					tinsert(ns.realms,(v:gsub("[%s%-]", "")))
+				end
 			end
+		else
+			ns.realm = UNKNOWN
 		end
 	else
 		local pattern = "^"..(ns.realm:gsub("(.)","[%1]*")).."$";
