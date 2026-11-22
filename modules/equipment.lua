@@ -102,8 +102,8 @@ local function UpdateInventory()
 			ns.ScanTT.query(obj,true);
 			lst[d.slot] = obj;
 			-- calc min/max item level
-			if ns.client_version>=6 and d.slot~=4 and d.slot~=19 then
-				obj.level = obj.level or 0;
+			if d.slot~=4 and d.slot~=19 then
+				obj.level = obj.level or obj.itemLevel or 0;
 				if lst.iLevelMin==0 or obj.level<lst.iLevelMin then
 					lst.iLevelMin=obj.level;
 				end
@@ -359,7 +359,7 @@ local function createTooltip(tt)
 					end
 
 					local itemLevelStr = "";
-					if (ns.client_version>=6 and itemInfo.level) and not (i==19 or i==4) then
+					if itemInfo.level and not (i==19 or i==4) then
 						itemLevelStr = C(GetILevelColor(itemInfo.level),itemInfo.level);
 					end
 

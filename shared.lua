@@ -1181,12 +1181,14 @@ do
 			if id then
 				local link = GetInventoryItemLink("player",slotIndex);
 				-- back again; need durability for detect changes to trigger update of durability module broker display
+				local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice = C_Item.GetItemInfo(link);
 				local _, _, _, _, _, itemClassID, itemSubClassID = C_Item.GetItemInfoInstant(link);
 				local durability, durabilityMax = GetInventoryItemDurability(slotIndex);
 				addItem({
 					bag=-1,
 					slot=slotIndex,
 					sharedSlot=sharedSlotIndex,
+					level=itemLevel,
 					id=id,
 					link=link,
 					diff=table.concat({link,durability,durabilityMax},"^"),
@@ -1219,11 +1221,9 @@ do
 	local function scanBags()
 		if scanBagsDelayedTicker==nil or tonumber(scanBagsDelayedCounter)==nil then return end
 		if scanBagsDelayedCounter>0 then
-			--ns:debug("<scanBags>",scanBagsDelayedCounter);
 			scanBagsDelayedCounter = scanBagsDelayedCounter - 1;
 			return;
 		end
-		--ns:debugPrint("<scanBags>");
 		for bagIndex,bool in pairs(updateBags) do
 			bagIndex=tonumber(bagIndex)
 			if bagIndex and bool==true then
@@ -1543,7 +1543,7 @@ do
 		end
 		for i, line in ipairs(data.cTooltipInfo.lines) do
 			local lvl = tonumber(line.leftText:match(_ITEM_LEVEL));
-			if lvl then
+			if lvl and data.level~=lvl then
 				data.level=lvl;
 			elseif line.leftText:find(ITEM_UPGRADE_TOOLTIP_1) then
 				data.upgrades = line.leftText:gsub(ITEM_UPGRADE_TOOLTIP_1,"")
