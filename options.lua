@@ -78,6 +78,14 @@ local supporter = {
 }
 
 
+local function debugMsg(mType,...)
+	local ds = debugstack(3) or "<debugstack-nil>"
+	if ds then
+		ds = ds:gsub("\n.*$","") -- could not reduce debugstack by arguments to a real single line... how stupid is that??
+	end
+	ns:debug("Options","<"..mType..">",ds,tostringall(...));
+end
+
 local nsProfileMT
 --@do-not-package@
 do
@@ -89,7 +97,7 @@ do
 			elseif ns.profileSilenceFIXME then
 				ns.profileSilenceFIXME=false;
 			else
-				ns:debug("Options","<FIXME:nsProfileMT:MissingSection>",tostring(s),tostring(k));
+				debugMsg("FIXME:nsProfileMT:MissingSection",s,k)
 			end
 		end,
 		__index = function(t,k)
@@ -101,12 +109,12 @@ do
 				elseif ns.profileSilenceFIXME then
 					ns.profileSilenceFIXME=false;
 				else
-					ns:debug("Options","<FIXME:nsProfileMT:NilValue>",tostring(s),tostring(k));
+					debugMsg("FIXME:nsProfileMT:NilValue",s,k)
 				end
 			elseif ns.profileSilenceFIXME then
 				ns.profileSilenceFIXME=false;
 			else
-				ns:debug("Options","<FIXME:nsProfileMT:MissingSectionOrDB>",tostring(s),tostring(k));
+				debugMsg("FIXME:nsProfileMT:MissingSectionOrDB",s,k)
 			end
 		end
 	};
@@ -210,7 +218,7 @@ local function opt(info,value,...)
 	if value~=nil then
 		if isModEnable then
 --@do-not-package@
-			ns:debug("Options","<ToggleModuleEnableState>",key,type(db.profile),type(db.profile[key]));
+			debugMsg("ToggleModuleEnableState",key,type(db.profile),type(db.profile[key]))
 --@end-do-not-package@
 			db.profile[key].enabled = value;
 			if value then
@@ -238,7 +246,7 @@ local function opt(info,value,...)
 				ns.modules[section].onevent(ns.modules[section].eventFrame,"BE_UPDATE_CFG",key);
 --@do-not-package@
 			else
-				ns:debug("Options","<FIXME:opt:MissingEventFunction>",section);
+				debugMsg("FIXME:opt:MissingEventFunction",section)
 --@end-do-not-package@
 			end
 		end
@@ -253,8 +261,7 @@ local function opt(info,value,...)
 		end
 --@do-not-package@
 		if db.profile[section][key]==nil then
-			local x = debugstack();
-			ns:debug("Options","<FIXME:opt:NilOptions>",tostring(section),tostring(key),tostring(key):len(),x);
+			debugMsg("FIXME:opt:NilOptions",section,key,tostring(key):len())
 		end
 --@end-do-not-package@
 		return db.profile[section][key];
@@ -467,13 +474,13 @@ local function optionWalker(modName,group,lst)
 			end
 			if v.type=="slider" or v.type=="desc" then
 --@do-not-package@
-				ns:debug("Options","<FIXME:optionWalker:BadType>",k,modName);
+				debugMsg("FIXME:optionWalker:BadType",k,modName)
 --@end-do-not-package@
 				lst[k]=nil;
 			end
 			if (v.default or v.inMenuInvisible or v.text or v.isSubMenu or v.alpha or v.tooltip or v.label or v.format or v.rep or v.minText or v.maxText)~=nil then
 --@do-not-package@
-				ns:debug("Options","<FIXME:optionWalker:BadKey>",k,modName);
+				debugMsg("FIXME:optionWalker:BadKey",k,modName)
 --@end-do-not-package@
 				lst[k]=nil;
 			end
@@ -517,9 +524,9 @@ function ns.Options_RegisterModule(modName)
 	end
 --@do-not-package@
 	if not mod.config_defaults then
-		ns:debug("Options","<FIXME:MissingModConfigDefault>",modName);
+		debugMsg("FIXME:MissingModConfigDefault",modName)
 	elseif mod.config_defaults.enabled==nil then
-		ns:debug("Options","<FIXME:MissingModEnableState>",modName);
+		debugMsg("FIXME:MissingModEnableState",modName)
 	end
 --@end-do-not-package@
 
