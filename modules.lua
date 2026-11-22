@@ -46,14 +46,6 @@ local function moduleInit(name, force)
 	if ns.profile[name] and (ns.profile[name].enabled==true or force) then
 		local mod = ns.modules[name];
 
-		mod.isEnabled = true;
-
-		-- module init
-		if mod.init then
-			mod.init();
-			mod.init = nil;
-		end
-
 		if not mod.isHiddenModule then
 			-- new clickOptions system
 			local onclick;
@@ -99,20 +91,51 @@ local function moduleInit(name, force)
 				parent        = addon
 			};
 
-			mod.ldbName = (ns.profile.GeneralOptions.usePrefix and "BE.." or "")..name;
-			mod.obj = ns.LDB:NewDataObject(mod.ldbName,ldbOblectTable);
-			if not mod.obj then -- another addon has used the same name for registration
-				mod.ldbName = "BE.."..mod.ldbName;
-				mod.obj = ns.LDB:NewDataObject(mod.ldbName,ldbOblectTable);
+			-- several names for LibDataBroker registration
+			local names = {
+				name.." (BE)",
+				name.." [BE]",
+				name.." ("..addon..")",
+				name.." ["..addon.."]",
+			}
+
+			-- TODO: remove deprecated parts of usePrefix
+			if ns.profile.GeneralOptions.usePrefix~=nil then
+				if ns.profile.GeneralOptions.usePrefix then
+					tinsert(names,1,"BE.."..name)
+				else
+					tinsert(names,1,name)
+				end
+			end
+
+			-- try to register module
+			for _, ldbName in ipairs(names) do
+				if not ns.LDB:GetDataObjectByName(ldbName) then
+					mod.obj = ns.LDB:NewDataObject(ldbName,ldbOblectTable);
+					if mod.obj then
+						mod.ldbName = ldbName
+						break
+					end
+				end
+			end
+
+			if not mod.obj then
+				ns:print("Sorry, "..addon.." was not able to register the module \""..name.."\". Currently the reason is unknown. Please report it on curseforge or github.")
+				return -- stop the module
 			end
 
 			ns.updateIcons(name);
 
-			-- is possible that
-			if mod.obj then
-				-- register minimap button
-				ns.updateMinimapButton(name);
-			end
+			-- register minimap button
+			ns.updateMinimapButton(name);
+		end
+
+		mod.isEnabled = true;
+
+		-- module init
+		if mod.init then
+			mod.init();
+			mod.init = nil;
 		end
 
 		-- event handling
