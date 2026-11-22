@@ -303,7 +303,7 @@ local function createTooltip2(self,data)
 end
 
 local function AddNameToEditBox(name,realm)
-	if ns.realm~=realm then
+	if ns.realm~=realm and not ns.IsForeverClient() then
 		name = name.."-"..realm;
 	end
 	for _,editbox in ipairs(editboxes) do
@@ -356,7 +356,7 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 				chatType = "WHISPER"
 				local realm = data.realmNameOrig or data.realmName
 				friendName = data.characterName;
-				if not realm:match("^CAMWOW") and ns.realmName~=realm then
+				if not ns.IsForeverClient() then
 					friendName = data.characterName .."-".. (realm:gsub("[%s%-]", ""));
 				end
 			end

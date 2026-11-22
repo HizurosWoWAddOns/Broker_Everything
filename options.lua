@@ -30,12 +30,20 @@ local dbDefaults,db = {
 	}
 };
 
-ns.showCharsFrom_Values = { -- used in xp.lua to display current mode in tooltip
-	["1"] = ns.realm,
-	["2"] = L["Connected realms"],
-	["3"] = L["Current language"],
-	["4"] = L["All realms"]
-};
+-- used in xp.lua to display current mode in tooltip
+if ns.IsForeverClient() then
+	ns.showCharsFrom_Values = {
+		["1"] = ns.realm,
+		["4"] = L["All realms"]
+	};
+else
+	ns.showCharsFrom_Values = {
+		["1"] = ns.realm,
+		["2"] = L["Connected realms"],
+		["3"] = L["Current language"],
+		["4"] = L["All realms"]
+	};
+end
 
 ns.goldHideValues = {
 	["0"]=ADDON_DISABLED,
@@ -57,6 +65,7 @@ local supporter = {
 	{"github","lowlee"},false,false,false,{"githubPR"},
 	{"github","rockschtar"},false,false,false,{"githubPR"},
 	{"github","rodalpho"},false,false,false,{"githubPR"},
+	{"github","Thaodan"},false,false,false,{"githubPR"},
 	{"github","viruscamp"},false,false,false,{"githubPR"},
 	{"curseforge","Araldwenn"},		{"frFR"},false,false,false,
 	{"curseforge","Braincell1980"},	{"frFR"},false,false,false,
@@ -394,9 +403,9 @@ local options = {
 ns.sharedOptions = {
 	shortNumbers    = { type="toggle", name=L["ShortNum"], desc=L["ShortNumDesc"]},
 	showAllFactions = { type="toggle", name=L["AllFactions"], desc=L["AllFactionsDesc"]},
-	showRealmNames  = { type="toggle", name=L["RealmNames"], desc=L["RealmNamesDesc"]},
+	showRealmNames  = { type="toggle", name=L["RealmNames"], desc=L["RealmNamesDesc"], hidden=ns.IsForeverClient },
 	showChars       = { type="toggle", name=L["ShowChars"], desc=L["ShowCharsDesc"], customDescFormat="ShowCharsDesc-%s" }, -- TODO: translation ShowCharsDesc
-	showCharsFrom   = { type="select", name=L["CharsFrom"], desc=L["CharsFromDesc"], values=ns.showCharsFrom_Values },
+	showCharsFrom   = { type="select", name=L["CharsFrom"], desc=L["CharsFromDesc"], values=ns.showCharsFrom_Values, hidden=ns.IsForeverClient },
 	spacerWidth     = { type="range",  name=L["SpacerWidth"], desc=L["SpacerWidthDesc"], min=0, max=20, step=1 },
 	spacerWidthInfo = { type="description", name=L["SpacerWidthInfo"] },
 	useCtrlKeyInsteadAlt = { type="toggle", name=L["UseCtrlInsteadAlt"], desc=L["UseCtrlInsteadAltDesc"] },
@@ -412,6 +421,10 @@ local sharedDefaults = {
 	spacerWidth=9,
 	useCtrlKeyInsteadAlt=false,
 }
+if ns.IsForeverClient() then
+	sharedDefaults.showRealmNames = false
+	sharedDefaults.showCharsFrom = "4"
+end
 
 local coords=nil;
 local function Icon(info)

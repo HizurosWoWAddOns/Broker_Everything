@@ -904,6 +904,10 @@ module = {
 		["menu"] = "OptionMenu"
 	}
 }
+if ns.IsForeverClient() then
+	module.config_defaults.showRealmNames=false
+	module.config_defaults.showCharsFrom="4"
+end
 
 if ns.client_version<5 then
 	module.config_defaults.showONotes = false
@@ -1027,8 +1031,8 @@ function module.onevent(self,event,msg,...)
 			success, _, state, member = pcall(chkMsgIsBullShit, msg, "offline", pattern_FRIEND_OFFLINE);
 			--state,member = "offline",msg:match(pattern_FRIEND_OFFLINE);
 		end
-		if member and not member:find("-") then
-			member = member.."-"..ns.realm_short; -- TODO: check Forever client
+		if member and not member:find("-") and not ns.IsForeverClient() then
+			member = member.."-"..ns.realm_short;
 		end
 		if member and memberIndex[member] then
 			-- On/Off post notes of guild members in general chat.

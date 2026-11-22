@@ -516,6 +516,7 @@ function module.init()
 		enchantSlots = {
 			[8]=true, [9]=true,[5]=true,[10]=true,[15]=true,[17]=true,[16]=true, -- enchanters
 		}
+		-- TODO: check Forever professions
 	elseif ns.client_version<6 then -- pre wod
 		enchantSlots = {
 			[1]=true,[5]=true,[6]=true,[8]=true,[9]=true,[10]=true,[11]=true,[12]=true,[15]=true,[16]=true,[17]=true, -- enchanters

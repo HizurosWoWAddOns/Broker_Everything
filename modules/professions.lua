@@ -639,6 +639,10 @@ module = {
 	}
 
 }
+if ns.IsForeverClient() then
+	module.config_defaults.showRealmNames=false
+	module.config_defaults.showCharsFrom="4"
+end
 
 do
 	local max = GetNumExpansions()-1;

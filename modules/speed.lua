@@ -495,11 +495,17 @@ module = {
 		showLicenses = true,
 		showLicensesDeprecated = true,
 		hideMaxLicenses = false,
+		showRealmNames=true,
+		showCharsFrom="2"
 	},
 	clickOptions = {
 		["menu"] = "OptionMenu"
 	}
 }
+if ns.IsForeverClient() then
+	module.config_defaults.showRealmNames=false
+	module.config_defaults.showCharsFrom="4"
+end
 
 ns.ClickOpts.addDefaults(module,{
 	menu = "_RIGHT"

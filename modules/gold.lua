@@ -499,6 +499,10 @@ module = {
 		["menu"] = "OptionMenuCustom"
 	}
 }
+if ns.IsForeverClient() then
+	module.config_defaults.showRealmNames=false
+	module.config_defaults.showCharsFrom="4"
+end
 
 ns.ClickOpts.addDefaults(module,{
 	currency = "_LEFT",

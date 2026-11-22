@@ -282,6 +282,10 @@ module = {
 		["menu"] = "OptionMenu"
 	}
 };
+if ns.IsForeverClient() then
+	module.config_defaults.showRealmNames=false
+	module.config_defaults.showCharsFrom="4"
+end
 
 if ns.IsClassicClient() then
 	module.config_defaults.chromieTimeBroker = false

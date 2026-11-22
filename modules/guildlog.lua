@@ -165,6 +165,9 @@ module = {
 	}
 
 }
+if ns.IsForeverClient() then
+	module.config_defaults.showRealmNames=false
+end
 
 ns.ClickOpts.addDefaults(module,{
 	guild = "_LEFT",
