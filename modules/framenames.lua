@@ -11,6 +11,7 @@ local name = "Framenames" -- L["Framenames"] L["ModDesc-Framenames"]
 local ttName,ldbObject,module = name.."TT";
 local lastFrame,lastMod,lastCombatState,ticker = nil,nil,nil;
 local GetName,GetDebugName = UIParent.GetName,UIParent.GetDebugName;
+local canaccessvalue = canaccessvalue or function() return true end
 
 
 -- register icon names and default files --
@@ -96,7 +97,7 @@ function module.onupdate()
 				if ns.IsForeverClient() and uName2 then
 					uName = uName.." "..uName2 -- forever
 				end
-				if guid and ns.HST.BullShitDetector("generalTesting",guid) and uName then
+				if guid and canaccessvalue(guid) and uName then
 					O = "?";
 					P,_,_,_,_,id = strsplit("-",guid);
 					if _G[P:upper()] then
