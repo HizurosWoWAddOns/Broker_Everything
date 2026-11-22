@@ -286,7 +286,7 @@ local options = {
 					args = {
 						showAddOnLoaded = { type="toggle",order=1,name=L["AddOnLoaded"],desc=L["AddOnLoadedDesc"].."|n|n|cff44ff44"..L["AddOnLoadedDescAlt"].."|r" },
 						suffixColour    = { type="toggle",order=2,name=L["SuffixColor"],desc=L["SuffixColorDesc"] },
-						usePrefix       = { type="toggle",order=3,name=L["Prefix"],desc=L["PrefixDesc"] },
+						usePrefix       = { type="toggle",order=3,name=L["Prefix"],desc=L["PrefixDesc"], hidden=function() return Broker_Everything_AceDB and Broker_Everything_AceDB.GeneralOptions and Broker_Everything_AceDB.GeneralOptions.usePrefix=="suffix" end }, -- hide option if usePrefix = "suffix" in savedvariables; true and false must be changed later by migration script
 						chatCommands    = { type="toggle",order=4,name=L["ChatCommands"],desc=L["ChatCommandsDesc"] },
 						minimapOff      = { type="execute",order=5,name=L["HideAllMinimapButtons"],desc=L["HideAllMinimapButtonsDesc"], func = HideAllMinimapButtons},
 						charListFilterLvl = { type="range", order=6, name=L["CharListFilterLvl"], desc=L["CharListFilterLvlDesc"], min=0, max=GetMaxPlayerLevel(), step=1},
@@ -736,7 +736,11 @@ end
 
 function ns.RegisterOptions()
 	if Broker_Everything_AceDB==nil then
-		Broker_Everything_AceDB = {};
+		Broker_Everything_AceDB = {
+			GeneralOptions = {
+				usePrefix = "suffix" -- new planned suffix instead of prefix and to remove the option.
+			}
+		};
 	end
 
 	buildCharDataOptions();
