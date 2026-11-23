@@ -459,25 +459,28 @@ module = {
 	clickOptions = {
 		["charinfo"] = "CharacterInfo",
 		["sets"] = {EQUIPMENT_MANAGER,"module","equipMan"},
-		["nextSet"] = setsSupported and {"Next equipment set","module","nextSet"}, -- L["Next equipment set"]
-		["prevSet"] = setsSupported and {"Previous equipment set","module","prevSet"}, -- L["Previous equipment set"]
 		["menu"] = "OptionMenu"
 	}
 }
 
-if hasItemLevels or setsSupported then
-	tinsert(module.events,"EQUIPMENT_SWAP_FINISHED");
-	--tinsert(module.events,"ITEM_UPGRADE_MASTER_UPDATE"); -- TODO: removed in 9.1.5
-	tinsert(module.events,"EQUIPMENT_SETS_CHANGED");
-end
-
 ns.ClickOpts.addDefaults(module,{
-	charinfo = ns.IsForeverClient() and "__NONE" or "_LEFT",
+	charinfo = "_LEFT",
 	sets = "__NONE",
-	nextSet = ns.IsForeverClient() and "_LEFT" or "__NONE",
-	prevSet = "__NONE",
 	menu = "_RIGHT"
 });
+
+if setsSupported then
+	module.clickOptions.nextSet = {"EquipmentSetNext","module","nextSet"}
+	module.clickOptions.prevSet = {"EquipmentSetPrevious","module","prevSet"}
+
+	ns.ClickOpts.addDefaults(module,{
+		nextSet = "SHIFTLEFT",
+		prevSet = "__NONE",
+	});
+
+	tinsert(module.events,"EQUIPMENT_SWAP_FINISHED");
+	tinsert(module.events,"EQUIPMENT_SETS_CHANGED");
+end
 
 -- equip the set after (step 1) or before (step -1) the one worn or pending, wrapping around
 local function switchEquipmentSet(step)
