@@ -1188,7 +1188,7 @@ do
 			if id then
 				local link = GetInventoryItemLink("player",slotIndex);
 				-- back again; need durability for detect changes to trigger update of durability module broker display
-				local itemName, itemLink, itemRarity, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount, itemEquipLoc, itemTexture, itemSellPrice = C_Item.GetItemInfo(link);
+				local itemLevel = C_Item.GetDetailedItemLevelInfo(link)
 				local _, _, _, _, _, itemClassID, itemSubClassID = C_Item.GetItemInfoInstant(link);
 				local durability, durabilityMax = GetInventoryItemDurability(slotIndex);
 				addItem({
@@ -1485,11 +1485,17 @@ do
 	-- remove scripts from tooltip... prevents taint log spamming.
 	local badScripts = {"OnLoad","OnHide","OnTooltipSetDefaultAnchor","OnTooltipCleared"};
 	if ns.ClientIs("classic") then
-		tinsert(badScripts,"OnTooltipAddMoney");
+		tinsert(badScripts,"OnTooltipAddMoney")
+		tinsert(badScripts,"OnTooltipSetUnit")
+		tinsert(badScripts,"OnTooltipSetItem")
+		tinsert(badScripts,"OnTooltipSetSpell")
 	end
 	for _,v in ipairs(badScripts)do
-		QueueModeScanTT:SetScript(v,nil);
-		InstantModeScanTT:SetScript(v,nil);
+		if pcall(QueueModeScanTT.SetScript,QueueModeScanTT,v,nil) then
+			InstantModeScanTT:SetScript(v,nil)
+		else
+			ns:debug("<ScanTT.badScripts>","<errorOnRemove>",v)
+		end
 	end
 
 	ns.ScanTT = {};

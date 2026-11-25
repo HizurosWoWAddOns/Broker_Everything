@@ -88,11 +88,9 @@ local supporter = {
 
 
 local function debugMsg(mType,...)
-	local ds = debugstack(3) or "<debugstack-nil>"
-	if ds then
-		ds = ds:gsub("\n.*$","") -- could not reduce debugstack by arguments to a real single line... how stupid is that??
-	end
-	ns:debug("Options","<"..mType..">",ds,tostringall(...));
+	--local ds = (debugstack(3) or "<debugstack-nil>"):gsub("\n.*$","") -- could not reduce debugstack by arguments to a real single line... how stupid is that??
+	ns.debugStack=true
+	ns:debug("Options","<"..mType..">",tostringall(...));
 end
 
 local nsProfileMT
