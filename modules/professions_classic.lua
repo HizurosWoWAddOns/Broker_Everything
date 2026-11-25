@@ -3,7 +3,7 @@
 ----------------------------------
 local addon, ns = ...;
 local C,L,I = ns.LC.color,ns.L,ns.I;
-if ns.IsRetailClient() then return end
+if ns.ClientIs("retail") then return end
 
 
 -- module own local variables and local cached functions --

@@ -282,12 +282,12 @@ module = {
 		["menu"] = "OptionMenu"
 	}
 };
-if ns.IsForeverClient() then
+if ns.ClientIs("forever") then
 	module.config_defaults.showRealmNames=false
 	module.config_defaults.showCharsFrom="4"
 end
 
-if ns.IsClassicClient() then
+if ns.ClientIs("classic") then
 	module.config_defaults.chromieTimeBroker = false
 	module.config_defaults.chromieTimeTooltip = false
 	module.config_defaults.chromieTimeTooltipLong = false
@@ -321,7 +321,7 @@ function module.options()
 		broker = {
 			order=1,
 			display={ type="select", order=1, name=L["Display XP in broker"], desc=L["Select to show XP as an absolute value; Deselected will show it as a percentage."], values=displayValues, width="double" },
-			chromieTimeBroker = { type="toggle", order=2, name=L["XPChromieTimeShow"], desc=L["XPChromieTimeBrokerDesc"], hidden=ns.IsClassicClient }
+			chromieTimeBroker = { type="toggle", order=2, name=L["XPChromieTimeShow"], desc=L["XPChromieTimeBrokerDesc"], hidden=ns.ClientIs("classic")}
 		},
 		broker2 = {
 			order=2,
@@ -332,8 +332,8 @@ function module.options()
 		},
 		tooltip = {
 			order=3,
-			chromieTimeTooltip = { type="toggle", order=1, name=L["XPChromieTimeShow"], desc=L["XPChromieTimeTooltipDesc"], hidden=ns.IsClassicClient },
-			chromieTimeTooltipLong = { type="toggle", order=2, name=L["XPChromieTimeTooltipLong"], desc=L["XPChromieTimeTooltipLongDesc"], hidden=ns.IsClassicClient },
+			chromieTimeTooltip = { type="toggle", order=1, name=L["XPChromieTimeShow"], desc=L["XPChromieTimeTooltipDesc"], hidden=ns.ClientIs("classic")},
+			chromieTimeTooltipLong = { type="toggle", order=2, name=L["XPChromieTimeTooltipLong"], desc=L["XPChromieTimeTooltipLongDesc"], hidden=ns.ClientIs("classic")},
 			showMyOtherChars={ type="toggle", order=3, name=L["Show other chars xp"], desc=L["Display a list of my chars on same realm with her level and xp"] },
 			showNonMaxLevelOnly={ type="toggle", order=4, name=L["Hide characters at maximum level"], desc=L["Hide all characters who have reached the level cap."] },
 			showAllFactions=5,
@@ -351,7 +351,7 @@ end
 
 function module.init()
 	-- gametables/xp.txt
-	if WOW_PROJECT_ID==WOW_PROJECT_MAINLINE and not ns.IsForeverClient() then
+	if ns.ClientIs("retail") then
 		xp2levelup = {
 			    250,    655,   1245,   2025,   2995,   4155,   5505,   7040,   8770,    10590, --  1-10
 			  11685,  12795,  13920,  15055,  16210,  17380,  18560,  19755,  20970,    22195, -- 11-20
@@ -363,7 +363,7 @@ function module.init()
 			  60335,  62045,  63780,  65540,  67325,  69130,  70965,  72820,  74700,   403725, -- 71-80
 			 423390, 443395, 463740, 484430, 505455, 526825, 548535, 570590, 592980, 99999999, -- 81-90
 		};
-	elseif ns.IsForeverClient() then
+	elseif ns.ClientIs("forever") then
 		xp2levelup = {
 			   400,    900,   1400,   2100,   2800,   3600,   4500,   5400,   6500,   7600, --  1-10
 			  8800,  10100,  11400,  12900,  14400,  16000,  17700,  19400 , 21300,  23200, -- 11-20

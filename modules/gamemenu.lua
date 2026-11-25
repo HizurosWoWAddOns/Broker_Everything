@@ -319,7 +319,7 @@ function module.init()
 		if not v.disabled and IsInGuild() then
 			v.name=GUILD;
 			v.iconName = "Guild";
-			if ns.IsClassicClient() then
+			if ns.ClientIs("classic") then
 				function v.func() securecall("ToggleFriendsFrame",FRIEND_TAB_GUILD); end
 				v.click = nil;
 			end
@@ -329,22 +329,22 @@ function module.init()
 		{name=CHARACTER_BUTTON,		iconName="Character-{class}",	func=function() securecall("ToggleCharacter", "PaperDollFrame") end },
 		{name=SPELLBOOK,			iconName="Spellbook",			click='SpellbookMicroButton',			taint=true},
 		{name=TALENTS,				iconName="Talents",				click='TalentsMicroButton',				disabled=function() return UnitLevel("player")<10 end, taint=true},
-		{name=ACHIEVEMENT_BUTTON,	iconName="Achievments",			click='AchievementMicroButton',			taint=true, hide=ns.IsClassicEraClient},
+		{name=ACHIEVEMENT_BUTTON,	iconName="Achievments",			click='AchievementMicroButton',			taint=true, hide=ns.ClientIs("era")},
 		{name=QUESTLOG_BUTTON,		iconName="Questlog",			click='QuestLogMicroButton',			taint=true},
 		{name=LOOKINGFORGUILD,		iconName="LFGuild",				click='GuildMicroButton',				disabled=IsTrialAccount(), get=lfg_get, taint=true},
 		{name=SOCIAL_BUTTON,		iconName="Friends",			func=function() securecall("ToggleFriendsFrame", 1) end,		disabled=IsTrialAccount()},
 
-		{name=GROUP_FINDER,			iconName="LFDungeon",		func=function() securecall("PVEFrame_ToggleFrame","GroupFinderFrame"); end, disabled=not canLFD, hide=ns.IsClassicEraClient},
-		{name=PLAYER_V_PLAYER,		iconName="PvP-{faction}",	func=function() securecall("PVEFrame_ToggleFrame","PVPUIFrame"); end, disabled=not canLFD, hide=ns.IsClassicEraClient},
-		{name=CHALLENGES,			iconName="Challenges",		func=function() securecall("PVEFrame_ToggleFrame","ChallengesFrame"); end, disabled=not canLFD, hide=ns.IsClassicClient},
+		{name=GROUP_FINDER,			iconName="LFDungeon",		func=function() securecall("PVEFrame_ToggleFrame","GroupFinderFrame"); end, disabled=not canLFD, hide=ns.ClientIs("era")},
+		{name=PLAYER_V_PLAYER,		iconName="PvP-{faction}",	func=function() securecall("PVEFrame_ToggleFrame","PVPUIFrame"); end, disabled=not canLFD, hide=ns.ClientIs("era")},
+		{name=CHALLENGES,			iconName="Challenges",		func=function() securecall("PVEFrame_ToggleFrame","ChallengesFrame"); end, disabled=not canLFD, hide=ns.ClientIs("classic")},
 
-		{name=MOUNTS,				iconName="Mounts",			func=function() OpenCollectionsJournalPanel(1) end, taint=true, hide=ns.IsClassicEraClient},
-		{name=PET_JOURNAL,			iconName="Pets",			func=function() OpenCollectionsJournalPanel(2) end, taint=true, hide=ns.IsClassicEraClient},
-		{name=TOY_BOX,				iconName="ToyBox",			func=function() OpenCollectionsJournalPanel(3) end, taint=true, hide=ns.IsClassicEraClient},
-		{name=HEIRLOOMS,			iconName="Heirlooms",		func=function() OpenCollectionsJournalPanel(4) end, taint=true, hide=ns.IsClassicEraClient},
+		{name=MOUNTS,				iconName="Mounts",			func=function() OpenCollectionsJournalPanel(1) end, taint=true, hide=ns.ClientIs("era")},
+		{name=PET_JOURNAL,			iconName="Pets",			func=function() OpenCollectionsJournalPanel(2) end, taint=true, hide=ns.ClientIs("era")},
+		{name=TOY_BOX,				iconName="ToyBox",			func=function() OpenCollectionsJournalPanel(3) end, taint=true, hide=ns.ClientIs("era")},
+		{name=HEIRLOOMS,			iconName="Heirlooms",		func=function() OpenCollectionsJournalPanel(4) end, taint=true, hide=ns.ClientIs("era")},
 
-		{name=ENCOUNTER_JOURNAL,	iconName="EJ",				func=function() securecall("ToggleEncounterJournal") end, iconCoords="", hide=ns.IsClassicEraClient},
-		{name=BLIZZARD_STORE,		iconName="Store",			click='StoreMicroButton', disabled=IsTrialAccount(), taint=true, hide=ns.IsClassicClient},
+		{name=ENCOUNTER_JOURNAL,	iconName="EJ",				func=function() securecall("ToggleEncounterJournal") end, iconCoords="", hide=ns.ClientIs("era")},
+		{name=BLIZZARD_STORE,		iconName="Store",			click='StoreMicroButton', disabled=IsTrialAccount(), taint=true, hide=ns.ClientIs("classic")},
 		{sep=true}, -- section 2
 		{name=GAMEMENU_HELP,		iconName="Help",			func=function() securecall("ToggleHelpFrame") end,		},
 		{name=UIOPTIONS_MENU,		iconName="UiOpts",			func=function() securecall("InterfaceOptionsFrame_Show") end,		},
@@ -385,7 +385,7 @@ function module.init()
 		local delvesDisabled = function()
 			return not (GetExpansionLevel() >= LE_EXPANSION_WAR_WITHIN);
 		end
-		tinsert(menu,11,{name=DELVES_LABEL, iconName="Delves", func=function() securecall("PVEFrame_ToggleFrame","DelvesDashboardFrame"); end, disabled=delvesDisabled, hide=ns.IsClassicClient})
+		tinsert(menu,11,{name=DELVES_LABEL, iconName="Delves", func=function() securecall("PVEFrame_ToggleFrame","DelvesDashboardFrame"); end, disabled=delvesDisabled, hide=ns.ClientIs("classic")})
 	end
 end
 

@@ -2,7 +2,6 @@
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
-if ns.client_version<6 then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 

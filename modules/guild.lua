@@ -369,7 +369,7 @@ local function ttAddApplicant(lineIndex,applicantInfo)
 		local role,_=nil;
 		if C_SpecializationInfo and C_SpecializationInfo.GetSpecializationInfo then
 			_,_,_,_,role = C_SpecializationInfo.GetSpecializationInfo(specID);
-			if not ns.IsRetailClient() then
+			if not ns.ClientIs("retail") then
 				ns:debug(name,"GetSpecializationRoleEnumByID","<isDeprecated>")
 			end
 		elseif GetSpecializationRoleEnumByID then
@@ -904,7 +904,7 @@ module = {
 		["menu"] = "OptionMenu"
 	}
 }
-if ns.IsForeverClient() then
+if ns.ClientIs("forever") then
 	module.config_defaults.showRealmNames=false
 	module.config_defaults.showCharsFrom="4"
 end
@@ -928,7 +928,7 @@ ns.ClickOpts.addDefaults(module,{
 function module.options()
 	return {
 		broker = {
-			showApplicantsBroker    = { type="toggle", order=1, name=L["Applicants"], desc=L["Show applicants on broker button"], hidden=ns.IsClassicClient },
+			showApplicantsBroker    = { type="toggle", order=1, name=L["Applicants"], desc=L["Show applicants on broker button"], hidden=ns.ClientIs("classic")},
 			showMobileChatterBroker = { type="toggle", order=2, name=L["Mobile app user"], desc=L["Show count of mobile chatter on broker button"] },
 			showTotalMembersBroker  = { type="toggle", order=3, name=L["Total members count"], desc=L["Show total members count on broker button"] },
 		},
@@ -937,23 +937,23 @@ function module.options()
 			order = 2,
 			showRep           = { type="toggle", order= 1, name=GUILD_REPUTATION, desc=L["Enable/Disable the display of Guild Reputation in tooltip"] },
 			showMOTD          = { type="toggle", order= 2, name=L["Guild MotD"], desc=L["Show Guild Message of the Day in tooltip"] },
-			showInfo          = { type="toggle", order= 3, name=GUILD_INFORMATION, desc=L["GuildShowInfoDesc"], hidden=ns.IsClassicClient },
-			showChallenges    = { type="toggle", order= 4, name=GUILD_CHALLENGE_LABEL, desc=L["GuildShowChallengesDesc"], hidden=ns.IsClassicClient },
+			showInfo          = { type="toggle", order= 3, name=GUILD_INFORMATION, desc=L["GuildShowInfoDesc"], hidden=ns.ClientIs("classic")},
+			showChallenges    = { type="toggle", order= 4, name=GUILD_CHALLENGE_LABEL, desc=L["GuildShowChallengesDesc"], hidden=ns.ClientIs("classic")},
 
 			showRealmNames    = 20,
 			showRace          = { type="toggle", order=21, name=RACE, desc=L["Show race from guild members in tooltip"]},
-			showFaction       = { type="toggle", order=22, name=FACTION, desc=L["Show faction from guild members in tooltip"],hidden=ns.IsClassicClient },
+			showFaction       = { type="toggle", order=22, name=FACTION, desc=L["Show faction from guild members in tooltip"],hidden=ns.ClientIs("classic")},
 			showZone          = { type="toggle", order=23, name=ZONE, desc=L["Show current zone from guild members in tooltip"]},
 			showNotes         = { type="toggle", order=24, name=L["Notes"], desc=L["Show notes from guild members in tooltip"]},
-			showONotes        = { type="toggle", order=25, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"], hidden=ns.IsClassicClient},
+			showONotes        = { type="toggle", order=25, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild members in tooltip. (This option will be ignored if you have not permission to read the officer notes)"], hidden=ns.ClientIs("classic")},
 			showRank          = { type="toggle", order=26, name=RANK, desc=L["Show rank name from guild members in tooltip"]},
 			showRankID        = { type="toggle", order=27, name=RANK.."ID", desc=L["Show rank id from guild members in tooltip"]},
-			showProfessions   = { type="toggle", order=28, name=TRADE_SKILLS, desc=L["Show professions from guild members in tooltip"], hidden=ns.IsClassicClient },
-			showApplicants    = { type="toggle", order=29, name=L["Applicants"], desc=L["Show applicants in tooltip"], hidden=ns.IsClassicClient },
+			showProfessions   = { type="toggle", order=28, name=TRADE_SKILLS, desc=L["Show professions from guild members in tooltip"], hidden=ns.ClientIs("classic")},
+			showApplicants    = { type="toggle", order=29, name=L["Applicants"], desc=L["Show applicants in tooltip"], hidden=ns.ClientIs("classic")},
 			showMobileChatter = { type="toggle", order=30, name=L["Mobile app user"], desc=L["Show mobile chatter in tooltip (Armory App users)"] },
 			--splitTables       = { type="toggle", order=30, name=L["Separate mobile app user"], desc=L["Display mobile chatter with own table in tooltip"] }, -- deprecated
-			showBattleTag     = { type="toggle", order=31, name=BATTLETAG, desc=L["Append the BattleTag of your friends to the character name"], hidden=ns.IsClassicClient },
-			showTableBackground={ type="toggle", order=32, name=L["GuildTableBg"], desc=L["GuildTableBgDesc"], hidden=ns.IsClassicClient },
+			showBattleTag     = { type="toggle", order=31, name=BATTLETAG, desc=L["Append the BattleTag of your friends to the character name"], hidden=ns.ClientIs("classic")},
+			showTableBackground={ type="toggle", order=32, name=L["GuildTableBg"], desc=L["GuildTableBgDesc"], hidden=ns.ClientIs("classic")},
 			numMembersScroll  = { type="range", order=33, name=L["NumMembersScroll"], desc=L["NumMembersScrollDesc"], min=15, max=80, step=1},
 		},
 		tooltip2 = {
@@ -964,9 +964,9 @@ function module.options()
 			showFactionInTT2     = { type="toggle",      order=3, name=FACTION, desc=L["Show faction from guild member"]},
 			showZoneInTT2        = { type="toggle",      order=4, name=ZONE, desc=L["Show current zone from guild member"]},
 			showNotesInTT2       = { type="toggle",      order=5, name=L["Notes"], desc=L["Show notes from guild member"]},
-			showONotesInTT2      = { type="toggle",      order=6, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild member"], hidden=ns.IsClassicClient},
+			showONotesInTT2      = { type="toggle",      order=6, name=OFFICER_NOTE_COLON, desc=L["Show officer notes from guild member"], hidden=ns.ClientIs("classic")},
 			showRankInTT2        = { type="toggle",      order=7, name=RANK, desc=L["Show rank from guild member"]},
-			showProfessionsInTT2 = { type="toggle",      order=8, name=TRADE_SKILLS, desc=L["Show professions from guild member"], hidden=ns.IsClassicClient}
+			showProfessionsInTT2 = { type="toggle",      order=8, name=TRADE_SKILLS, desc=L["Show professions from guild member"], hidden=ns.ClientIs("classic")}
 		},
 		misc = {
 			order = 4,
@@ -1015,7 +1015,7 @@ function module.onevent(self,event,msg,...)
 				end
 			end
 		end
-		if ns.IsClassicClient then
+		if ns.ClientIs("classic")then
 			ns.profile[name].showFaction = false;
 		end
 		RequestGuildRosterUpdate();
@@ -1031,7 +1031,7 @@ function module.onevent(self,event,msg,...)
 			success, _, state, member = pcall(chkMsgIsBullShit, msg, "offline", pattern_FRIEND_OFFLINE);
 			--state,member = "offline",msg:match(pattern_FRIEND_OFFLINE);
 		end
-		if member and not member:find("-") and not ns.IsForeverClient() then
+		if member and not member:find("-") and not ns.ClientIs("forever") then
 			member = member.."-"..ns.realm_short;
 		end
 		if member and memberIndex[member] then

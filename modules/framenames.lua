@@ -94,7 +94,7 @@ function module.onupdate()
 				-- Units
 				local guid,id,_ = UnitGUID("mouseover");
 				local uName, uName2 = UnitName("mouseover");
-				if ns.IsForeverClient() and uName2 then
+				if ns.ClientIs("forever") and uName2 then
 					uName = uName.." "..uName2 -- forever
 				end
 				if guid and canaccessvalue(guid) and uName then

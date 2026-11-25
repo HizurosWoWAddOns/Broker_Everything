@@ -137,7 +137,7 @@ end
 
 local function updateBroker()
 	local speed = 0
-	if ns.IsRetailClient() or ns.IsForeverClient() then
+	if ns.ClientIs("retail,forever") then
 		CalcSpeed:Update();
 		speed = CalcSpeed.s;
 	else
@@ -502,7 +502,7 @@ module = {
 		["menu"] = "OptionMenu"
 	}
 }
-if ns.IsForeverClient() then
+if ns.ClientIs("forever") then
 	module.config_defaults.showRealmNames=false
 	module.config_defaults.showCharsFrom="4"
 end
@@ -511,7 +511,7 @@ ns.ClickOpts.addDefaults(module,{
 	menu = "_RIGHT"
 });
 
-if ns.IsRetailClient() then
+if ns.ClientIs("retail") then
 	tinsert(module.events,"UNIT_SPELLCAST_SUCCEEDED");
 end
 

@@ -24,10 +24,9 @@ local ignoreWeapon = {
 };
 -- The Forever client runs on the retail engine but reports a 1.x client version,
 -- so check for it explicitly to enable equipment sets and item levels there.
-local hasItemLevels = ns.client_version>=6 or ns.IsForeverClient();
-local setsSupported = C_EquipmentSet~=nil and (ns.IsForeverClient() or not ns.IsClassicClient());
+local hasItemLevels = ns.ClientIs("retail,forever"); -- TODO check from which version it was added
+local setsSupported = C_EquipmentSet~=nil and ns.ClientIs("retail,forever");
 local function noSets() return not setsSupported end
-local function hiddenOnClassic() return ns.IsClassicClient() and not ns.IsForeverClient() end
 local enchantExclude = {
 	[158075]=true -- hearth of azeroth can't be enchanted
 }
@@ -515,7 +514,7 @@ function module.options()
 	return {
 		broker = {
 			showCurrentSet={ type="toggle", order=1, name=L["CurrentSet"], desc=L["CurrentSetDesc"], hidden=noSets},
-			showItemLevel={ type="toggle", order=2, name=L["AvItemLvl"], desc=L["AvItemLvlDesc"], hidden=hiddenOnClassic},
+			showItemLevel={ type="toggle", order=2, name=L["AvItemLvl"], desc=L["AvItemLvlDesc"], hidden=ns.ClientIs("classic")},
 			showShorterInfo={ type="toggle", order=3, name=L["ShorterSetInfo"], desc=L["ShorterSetInfoDesc"], hidden=noSets},
 		},
 		tooltip = {
@@ -525,11 +524,11 @@ function module.options()
 			showEmptySlots  ={ type="toggle", order=4, name=L["Show emtpy slots"], desc=L["Display empty equipment slots"]},
 			showNotEnchanted={ type="toggle", order=5, name=L["Show 'not enchanted' mark"], desc=L["Display a red # on not enchanted/enchantable items"]},
 			showEmptyGems   ={ type="toggle", order=6, name=L["Show 'empty socket' mark"], desc=L["Display a yellow # on items with empty sockets"]},
-			showTSet        ={ type="toggle", order=7, name=L["Show T-Set"], desc=L["Display a T-Set label on items"], hidden=ns.IsClassicClient},
-			showSetName     ={ type="toggle", order=8, name=L["Show Set name"], desc=L["Display set name on items"], hidden=hiddenOnClassic},
-			showGreenText   ={ type="toggle", order=9, name=L["Show green text"], desc=L["Display green text line from item tooltip like titanforged"], hidden=ns.IsClassicClient},
-			showUpgrades    ={ type="toggle", order=10, name=L["Show upgrade info"], desc=L["Display upgrade info like 2/6"], hidden=ns.IsClassicClient},
-			fullyUpgraded   ={ type="toggle", order=11, name=L["Darker blue for fully upgraded"], desc=L["Display upgrade counter in darker blue on fully upgraded items"], hidden=ns.IsClassicClient},
+			showTSet        ={ type="toggle", order=7, name=L["Show T-Set"], desc=L["Display a T-Set label on items"], hidden=ns.ClientIs("classic")},
+			showSetName     ={ type="toggle", order=8, name=L["Show Set name"], desc=L["Display set name on items"], hidden=ns.ClientIs("classic")},
+			showGreenText   ={ type="toggle", order=9, name=L["Show green text"], desc=L["Display green text line from item tooltip like titanforged"], hidden=ns.ClientIs("classic")},
+			showUpgrades    ={ type="toggle", order=10, name=L["Show upgrade info"], desc=L["Display upgrade info like 2/6"], hidden=ns.ClientIs("classic")},
+			fullyUpgraded   ={ type="toggle", order=11, name=L["Darker blue for fully upgraded"], desc=L["Display upgrade counter in darker blue on fully upgraded items"], hidden=ns.ClientIs("classic")},
 			showTabard      ={ type="toggle", order=12, name=L["ShowTabard"], desc=L["ShowTabardDesc"]},
 			showShirt       ={ type="toggle", order=13, name=L["ShowShirt"], desc=L["ShowShirtDesc"]},
 		},

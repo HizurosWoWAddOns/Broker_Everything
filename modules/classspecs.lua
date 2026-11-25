@@ -2,7 +2,6 @@
 -- module independent variables --
 ----------------------------------
 local addon, ns = ...
-if ns.client_version<7 then return end
 local C, L, I = ns.LC.color, ns.L, ns.I
 
 
@@ -267,7 +266,7 @@ function createTooltip(tt,update)
 	end
 
 	-- PVP Talents
-	if ns.profile[name].showPvPTalents then
+	if ns.profile[name].showPvPTalents and ns.ClientIs("retail") then
 		tt:AddSeparator(4,0,0,0,0);
 		local l=tt:AddLine(C("ltblue",LEVEL_ABBR));
 		tt:SetCell(l,2,C("ltblue",PVP_TALENTS),nil,"LEFT",0);

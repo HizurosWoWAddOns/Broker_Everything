@@ -80,7 +80,7 @@ local function UpdateStatus(event)
 			local _, _, sender_realm, _, _, _, daysLeft = GetInboxHeaderInfo(i);
 			if sender_realm then
 				local returns = _time + floor(daysLeft * 86400);
-				if not sender_realm:find("%-") and not ns.IsForeverClient() then
+				if not sender_realm:find("%-") and not ns.ClientIs("forever") then
 					sender_realm = sender_realm.."-"..ns.realm_short;
 				end
 				tinsert(ns.toon.mail.stored,sender_realm..";"..returns);
@@ -290,7 +290,7 @@ module = {
 		["menu"] = "OptionMenu"
 	}
 }
-if ns.IsForeverClient() then
+if ns.ClientIs("forever") then
 	module.config_defaults.showRealmNames=false
 	module.config_defaults.showCharsFrom="4"
 end

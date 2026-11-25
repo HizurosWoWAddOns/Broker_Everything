@@ -165,7 +165,7 @@ module = {
 	}
 
 }
-if ns.IsForeverClient() then
+if ns.ClientIs("forever") then
 	module.config_defaults.showRealmNames=false
 end
 

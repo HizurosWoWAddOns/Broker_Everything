@@ -19,7 +19,7 @@ local cd_groups = { -- %s cooldown group
 }
 
 local expansionSkillLines = {}
-if not ns.IsForeverClient() then
+if not ns.ClientIs("forever") then
 	local expansion2Index = {};
 	do
 		for e=0, 10 do
@@ -499,7 +499,7 @@ local function createTooltip(tt)
 		end
 
 		-- link to second tooltip
-		if not ns.IsForeverClient() then
+		if not ns.ClientIs("forever") then
 			local showFactionRecipesHeader,showFactionRecipes = false,{
 				{"Legion",6,false},{"BFA",7,false},{"Shadow",8,false},{"DF",9,false},
 			};
@@ -639,7 +639,7 @@ module = {
 	}
 
 }
-if ns.IsForeverClient() then
+if ns.ClientIs("forever") then
 	module.config_defaults.showRealmNames=false
 	module.config_defaults.showCharsFrom="4"
 end
@@ -751,7 +751,7 @@ function module.options()
 end
 
 function module.init()
-	if not ns.IsForeverClient() then
+	if not ns.ClientIs("forever") then
 		-- [<tradeSkillId>]={ {<factionId>, <standingId>, <itemId>, <spellId>[, <recipeStars>]}, ... }
 		faction_recipes[6]={ -- legion
 			-- Alchemy
@@ -1133,7 +1133,7 @@ function module.onevent(self,event,arg1,...)
 			end
 		end
 
-		if ns.IsRetailClient() then
+		if ns.ClientIs("retail") then
 			unpackFactionRecipes();
 		end
 		updateTradeSkills();

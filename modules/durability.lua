@@ -318,7 +318,7 @@ function module.options()
 			},
 		},
 		tooltip = {
-			showDiscount={ type="toggle", order=1, name=L["Show discount"], desc=L["Show list of reputation discounts in tooltip"], hidden=ns.IsClassicClient },
+			showDiscount={ type="toggle", order=1, name=L["Show discount"], desc=L["Show list of reputation discounts in tooltip"], hidden=ns.ClientIs("classic")},
 			dateFormat={ type="select", order=2, name=L["Date format"], desc=L["Choose the date format if used in the list of repair costs"], values=date_formats },
 		},
 		misc = {

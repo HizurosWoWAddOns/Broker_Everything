@@ -499,7 +499,7 @@ module = {
 		["menu"] = "OptionMenuCustom"
 	}
 }
-if ns.IsForeverClient() then
+if ns.ClientIs("forever") then
 	module.config_defaults.showRealmNames=false
 	module.config_defaults.showCharsFrom="4"
 end
@@ -518,8 +518,8 @@ function module.options()
 			delimiterBB     = { type="select", order=1, name=L["DelimiterBB"], desc=L["DelimiterBBDesc"], values = delimiterBBValues },
 			showCharGold={ type="toggle", order=2, name=L["Show character gold"],     desc=L["Show character gold on broker button"] },
 			showProfitSessionBroker={ type="toggle", order=3, name=L["Show session profit"],     desc=L["Show session profit on broker button"] },
-			accountBankMoneyBroker = {type="toggle", order=4, name=ACCOUNT_BANK_PANEL_TITLE or "Warband bank", desc=L["AccountBankMoneyBrokerDesc"], hidden=ns.IsClassicClient},
-			accountBankShortcut = {type="toggle", order=5, name=L["AccountBankShortcutBB"], desc=L["AccountBankShortcutBBDesc"], hidden=ns.IsClassicClient},
+			accountBankMoneyBroker = {type="toggle", order=4, name=ACCOUNT_BANK_PANEL_TITLE or "Warband bank", desc=L["AccountBankMoneyBrokerDesc"], hidden=ns.ClientIs("classic")},
+			accountBankShortcut = {type="toggle", order=5, name=L["AccountBankShortcutBB"], desc=L["AccountBankShortcutBBDesc"], hidden=ns.ClientIs("classic")},
 		},
 		tooltip = {
 			goldHideTT      = { type="select", order=1, name=L["HideMoney"], desc=L["HideMoneyDescTooltip"], width = "double", values = ns.goldHideValues },
@@ -527,7 +527,7 @@ function module.options()
 			showRealmNames=3,
 			showCharsFrom=4,
 			splitSummaryByFaction={type="toggle",order=5, name=L["Split summary by faction"], desc=L["Separate summary by faction (Alliance/Horde)"] },
-			accountBankMoney = {type="toggle",order=6, name=ACCOUNT_BANK_PANEL_TITLE or "Warband bank", desc=L["AccountBankMoneyDesc"], hidden=ns.IsClassicClient},
+			accountBankMoney = {type="toggle",order=6, name=ACCOUNT_BANK_PANEL_TITLE or "Warband bank", desc=L["AccountBankMoneyDesc"], hidden=ns.ClientIs("classic")},
 			showSumOnTop = { type="toggle", order=7, name=L["SummaryOnTop"], desc=L["SummaryOnTopDesc"] },
 			profit = {
 				type = "group", order=7, inline = true,

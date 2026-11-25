@@ -173,7 +173,7 @@ function module.init()
 	local ttINCLUDES_E		= {CATALOG_SHOP_ALSO_INCLUDES,PET,UNIT_NAME_ENEMY_GUARDIANS,UNIT_NAME_ENEMY_TOTEMS}
 	local ttINCLUDES_E_NP	= {CATALOG_SHOP_ALSO_INCLUDES,PET,UNIT_NAMEPLATES_SHOW_ENEMY_GUARDIANS,UNIT_NAMEPLATES_SHOW_ENEMY_TOTEMS}
 	local realmAndColor,rows = {},4
-	if _G["UNIT_NAMEPLATES_SHOW_FRIENDLY_REALM_NAME"] and not ns.IsForeverClient() then
+	if _G["UNIT_NAMEPLATES_SHOW_FRIENDLY_REALM_NAME"] and not ns.ClientIs("forever") then
 		tinsert(realmAndColor,{txt=UNIT_NAMEPLATES_SHOW_FRIENDLY_REALM_NAME,  type="single", cvar="nameplateShowFriendlyRealmName", 		colors=colors1, cvar_toggle=true, rows=2 })
 		rows = 2
 	end
@@ -256,7 +256,7 @@ function module.onevent(self,event,msg,msg2)
 		dataobj.text = NONE
 	end
 
-	if event=="PLAYER_LOGIN" and ns.IsRetailClient() then
+	if event=="PLAYER_LOGIN" and ns.ClientIs("retail") then
 		if GetCVar("ShowQuestUnitCircles")~="1" then
 			SetCVar("ShowQuestUnitCircles","1") -- back to default
 		end

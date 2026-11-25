@@ -165,7 +165,7 @@ local function updateBagTypes(classID,subClassID)
 		for i=1, 11 do
 			updateBagTypes(Enum.ItemClass.Container,i)
 		end
-		if ns.IsClassicEraClient() then
+		if ns.ClientIs("era") then -- TODO check from which version it was removed
 			updateBagTypes(Enum.ItemClass.Quiver,2)
 			updateBagTypes(Enum.ItemClass.Quiver,3)
 		end
@@ -457,7 +457,7 @@ function module.options()
 			warnLowFree={ type="range", order=2, name=L["Warn low free slots"],             desc=L["Select the maximum free slot count to coloring in yellow."], min=2, max=100, step=1 },
 			shortNumbers=3,
 			autoCrapSelling = {
-				type = "group", order=4, hidden=ns.IsClassicClient,
+				type = "group", order=4, hidden=ns.ClientIs("classic"),
 				name = C("ltblue",L["CrapSellingOpts"]),
 				args = {
 					autoCrapSelling={ type="toggle", order=1, name=L["CrapSellingEnable"], desc=L["CrapSellingEnableDesc"] },

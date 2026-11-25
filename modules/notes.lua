@@ -11,7 +11,7 @@ local name = "Notes" -- L["Notes"] L["ModDesc-Notes"]
 local ttName,ttColumns,tt,module = name.."TT",2;
 local delIndex,editor,createTooltip,note_edit
 local titleLimit,textLimit = 32,10000;
-local playerName = ns.IsForeverClient() and ns.player.name or ns.player.name_realm_short
+local playerName = ns.ClientIs("forever") and ns.player.name or ns.player.name_realm_short
 
 
 -- register icon names and default files --
@@ -296,13 +296,6 @@ end
 function module.init()
 	if ns.data[name]==nil then
 		ns.data[name] = {};
-	end
-	if ns.IsForeverClient() then
-		for i, v in pairs(ns.data[name])do
-			if v and v[3] and v[3]:match("CAMWOW") then
-				v[3] = v[3]:gsub("%-CAMWOW.*$","") -- remove realm name on Forever client
-			end
-		end
 	end
 end
 

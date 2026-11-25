@@ -31,7 +31,7 @@ local dbDefaults,db = {
 };
 
 -- used in xp.lua to display current mode in tooltip
-if ns.IsForeverClient() then
+if ns.ClientIs("forever") then
 	ns.showCharsFrom_Values = {
 		["1"] = ns.realm,
 		["4"] = L["All realms"]
@@ -403,9 +403,9 @@ local options = {
 ns.sharedOptions = {
 	shortNumbers    = { type="toggle", name=L["ShortNum"], desc=L["ShortNumDesc"]},
 	showAllFactions = { type="toggle", name=L["AllFactions"], desc=L["AllFactionsDesc"]},
-	showRealmNames  = { type="toggle", name=L["RealmNames"], desc=L["RealmNamesDesc"], hidden=ns.IsForeverClient },
+	showRealmNames  = { type="toggle", name=L["RealmNames"], desc=L["RealmNamesDesc"], hidden=ns.ClientIs("forever") },
 	showChars       = { type="toggle", name=L["ShowChars"], desc=L["ShowCharsDesc"], customDescFormat="ShowCharsDesc-%s" }, -- TODO: translation ShowCharsDesc
-	showCharsFrom   = { type="select", name=L["CharsFrom"], desc=L["CharsFromDesc"], values=ns.showCharsFrom_Values, hidden=ns.IsForeverClient },
+	showCharsFrom   = { type="select", name=L["CharsFrom"], desc=L["CharsFromDesc"], values=ns.showCharsFrom_Values, hidden=ns.ClientIs("forever") },
 	spacerWidth     = { type="range",  name=L["SpacerWidth"], desc=L["SpacerWidthDesc"], min=0, max=20, step=1 },
 	spacerWidthInfo = { type="description", name=L["SpacerWidthInfo"] },
 	useCtrlKeyInsteadAlt = { type="toggle", name=L["UseCtrlInsteadAlt"], desc=L["UseCtrlInsteadAltDesc"] },
@@ -421,7 +421,7 @@ local sharedDefaults = {
 	spacerWidth=9,
 	useCtrlKeyInsteadAlt=false,
 }
-if ns.IsForeverClient() then
+if ns.ClientIs("forever") then
 	sharedDefaults.showRealmNames = false
 	sharedDefaults.showCharsFrom = "4"
 end

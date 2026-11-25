@@ -123,33 +123,40 @@ do
 
 	-- https://warcraft.wiki.gg/wiki/WOW_PROJECT_ID
 	local WOW_PROJECT_ID=WOW_PROJECT_ID
-	local WOW_PROJECT_MAINLINE=WOW_PROJECT_MAINLINE
-	local WOW_PROJECT_CLASSIC=WOW_PROJECT_CLASSIC
-	local WOW_PROJECT_CAMELOT=WOW_PROJECT_CAMELOT
 
-	---@return boolean
-	function ns.IsRetailClient()
-		return WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
+	local clients = {
+		-- classic
+		era     = WOW_PROJECT_ID==WOW_PROJECT_CLASSIC,
+		bc      = WOW_PROJECT_ID==WOW_PROJECT_TBC,
+		wotlk   = WOW_PROJECT_ID==WOW_PROJECT_CLASSIC_WRATH,
+		cata    = WOW_PROJECT_ID==WOW_PROJECT_CATACLYSM_CLASSIC,
+		mop     = WOW_PROJECT_ID==WOW_PROJECT_MISTS,
+
+		-- forever
+		forever = WOW_PROJECT_ID==WOW_PROJECT_CAMELOT,
+
+		-- retail
+		retail  = WOW_PROJECT_ID==WOW_PROJECT_MAINLINE,
+	}
+
+	function ns.ClientIs(str,invert)
+		str = tostring(str):lower()
+		for _, v in ipairs({strsplit(",",str)}) do
+--@do-not-package@
+			if clients[v]==nil then
+				--local ds = (debugstack(3) or "<debugstack-nil>"):gsub("\n.*$","") -- could not reduce debugstack by arguments to a real single line... how stupid is that??
+				ns.debugStack=true
+				ns:debug("<clientIs>","<invalidClientName>",v,"<from>",str)
+			end
+--@end-do-not-package@
+			if (invert and clients[v]==false) or (not invert and clients[v]==true) then
+				return true
+			end
+		end
 	end
 
-	---@return boolean
-	function ns.IsForeverClient()
-		return WOW_PROJECT_ID==WOW_PROJECT_CAMELOT;
-	end
-
-	---@return boolean
-	function ns.IsClassicClient() -- for AceOptions
-		return not (WOW_PROJECT_ID==WOW_PROJECT_MAINLINE) or ns.IsForeverClient();
-	end
-
-	---@return boolean
-	function ns.IsClassicEraClient() -- for AceOptions
-		return WOW_PROJECT_ID==WOW_PROJECT_CLASSIC or ns.IsForeverClient();
-	end
-
-	---@return boolean
-	function ns.IsNotClassicClient() -- for AceOptions
-		return WOW_PROJECT_ID==WOW_PROJECT_MAINLINE;
+	if clients.classic then
+		clients.classic = ns.ClientIs("era,bc,wotlk,cata,mop") -- one for all classic versions
 	end
 end
 
@@ -205,7 +212,7 @@ do
 		["RPPVP"] = GDAPI_REALMTYPE_RP.."-"..GDAPI_REALMTYPE_PVP,
 	}
 
-	if ns.IsForeverClient() then
+	if ns.ClientIs("forever") then
 		if ns.realm and ns.realm~="" then
 			local realmRegion, id1, id2, realmType = ns.realm:gsub("[%s%-]", ""):match(CAMWOW_PATTERN)
 			ns.realm = ForeverRealmTypes[realmType:upper()].." "..PARENS_TEMPLATE:format(realmRegion)
@@ -304,7 +311,7 @@ do
 	end
 
 	local playerName, playerName2 = UnitName("player")
-	if ns.IsForeverClient() then
+	if ns.ClientIs("forever") then
 		playerName = playerName.." "..playerName2 -- forever
 	end
 	ns.player = {
@@ -1477,7 +1484,7 @@ do
 	end
 	-- remove scripts from tooltip... prevents taint log spamming.
 	local badScripts = {"OnLoad","OnHide","OnTooltipSetDefaultAnchor","OnTooltipCleared"};
-	if ns.client_version<=9 and not ns.IsForeverClient() then
+	if ns.ClientIs("classic") then
 		tinsert(badScripts,"OnTooltipAddMoney");
 	end
 	for _,v in ipairs(badScripts)do

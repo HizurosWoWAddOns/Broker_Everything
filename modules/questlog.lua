@@ -248,7 +248,7 @@ local function ttAddLine(obj)
 	if (type(obj[QuestId])=="number") and (IsInGroup()) then
 		for i=1, GetNumSubgroupMembers() do -- GetNumSubgroupMembers
 			local partyMemberName, partyMemberName2 = UnitName("party"..i)
-			if ns.IsForeverClient() then
+			if ns.ClientIs("forever") then
 				partyMemberName = partyMemberName.." "..partyMemberName2 -- forever
 			end
 			if (IsUnitOnQuest and IsUnitOnQuest(obj[Index],"party"..i)) -- classic
@@ -489,9 +489,9 @@ function module.options()
 		tooltip = {
 			order=1,
 			showQuestIds={ type="toggle", order=1, name=L["Show quest id's"], desc=L["Show quest id's in tooltip."] },
-			showQuestZone={ type="toggle", order=2, name=L["Show quest zone"], desc=L["Show quest zone in tooltip."], hidden=ns.IsClassicClient },
-			showQuestTags={ type="toggle", order=3, name=L["Show quest tags"], desc=L["Show quest tags in tooltip."], hidden=ns.IsClassicClient },
-			showQuestTagsShort={ type="toggle", order=4, name=L["Show short quest tags"], desc=L["Show short quest tags in tooltip."], hidden=ns.IsClassicClient },
+			showQuestZone={ type="toggle", order=2, name=L["Show quest zone"], desc=L["Show quest zone in tooltip."], hidden=ns.ClientIs("classic")},
+			showQuestTags={ type="toggle", order=3, name=L["Show quest tags"], desc=L["Show quest tags in tooltip."], hidden=ns.ClientIs("classic")},
+			showQuestTagsShort={ type="toggle", order=4, name=L["Show short quest tags"], desc=L["Show short quest tags in tooltip."], hidden=ns.ClientIs("classic")},
 			showQuestOptions={ type="toggle", order=5, name=L["Show quest option"], desc=L["Show quest options like track, untrack, share and cancel in tooltip."] },
 			showPvPWeeklys={ type="toggle", order=6, name=L["Show PvP weeklys"], desc=L["Show PvP weekly quests in tooltip"]},
 			showWorldQuests={ type="toggle", order=7, name=L["Show world quests"], desc=L["Show quests to complete 4 world quests for a faction in tooltip."], width="full" },
@@ -510,8 +510,8 @@ function module.options()
 			name = L["Second tooltip options"],
 			tooltip2QuestText={ type="toggle", order=1, name=L["Show quest text"], desc=L["Display quest text in tooltip"] },
 			tooltip2QuestLevel={ type="toggle", order=2, name=L["Show quest level"], desc=L["Display quest level in tooltip"] },
-			tooltip2QuestZone={ type="toggle", order=3, name=L["Show quest zone"], desc=L["Display quest zone in tooltip"], hidden=ns.IsClassicClient },
-			tooltip2QuestTag={ type="toggle", order=4, name=L["Show quest tag"], desc=L["Display quest tags in tooltip"], hidden=ns.IsClassicClient },
+			tooltip2QuestZone={ type="toggle", order=3, name=L["Show quest zone"], desc=L["Display quest zone in tooltip"], hidden=ns.ClientIs("classic")},
+			tooltip2QuestTag={ type="toggle", order=4, name=L["Show quest tag"], desc=L["Display quest tags in tooltip"], hidden=ns.ClientIs("classic")},
 			tooltip2QuestID={ type="toggle", order=5, name=L["Show quest id"], desc=L["Display quest id in tooltip"] },
 		},
 		misc = nil,

@@ -303,7 +303,7 @@ local function createTooltip2(self,data)
 end
 
 local function AddNameToEditBox(name,realm)
-	if ns.realm~=realm and not ns.IsForeverClient() then
+	if ns.realm~=realm and not ns.ClientIs("forever") then
 		name = name.."-"..realm;
 	end
 	for _,editbox in ipairs(editboxes) do
@@ -332,7 +332,7 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 		else
 			ns.deprecated.ChatFrameUtil.SendTell(data.fullName:gsub(" ","")); -- TODO: check deprecated in all client versions
 			-- ChatFrameUtil.SendTell; 2026-06-01 not in classic available
-			if not ns.IsRetailClient() and ChatFrameUtil and ChatFrameUtil.SendTell then
+			if not ns.ClientIs("retail") and ChatFrameUtil and ChatFrameUtil.SendTell then
 				ns:debug("friends.lua","ChatFrameUtil.SendTell","available")
 			end
 		end
@@ -356,7 +356,7 @@ local function tooltipLineScript_OnMouseUp(self,data,button)
 				chatType = "WHISPER"
 				local realm = data.realmNameOrig or data.realmName
 				friendName = data.characterName;
-				if not ns.IsForeverClient() then
+				if not ns.ClientIs("forever") then
 					friendName = data.characterName .."-".. (realm:gsub("[%s%-]", ""));
 				end
 			end
@@ -859,7 +859,7 @@ function module.onevent(self,event,arg1)
 			"BN_DISCONNECTED","BN_FRIEND_ACCOUNT_OFFLINE","BN_FRIEND_ACCOUNT_ONLINE","BN_FRIEND_INFO_CHANGED","BN_FRIEND_INVITE_ADDED",
 			"BN_FRIEND_INVITE_REMOVED","BN_INFO_CHANGED","FRIENDLIST_UPDATE","PLAYER_ENTERING_WORLD","CHAT_MSG_SYSTEM"
 		}
-		if ns.client_version<12.1 and not ns.IsForeverClient() then
+		if ns.client_version<12.1 and not ns.ClientIs("forever") then
 			tinsert(events,"BATTLETAG_INVITE_SHOW")
 			-- TODO: search another way to track battle tag invites
 		end
